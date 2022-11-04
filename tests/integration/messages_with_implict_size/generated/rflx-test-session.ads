@@ -146,7 +146,7 @@ private
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Reply =>
-                    Universal.Message.Structural_Valid_Message (Ctx.P.M_S_Ctx)
+                    Universal.Message.Well_Formed_Message (Ctx.P.M_S_Ctx)
                     and Universal.Message.Byte_Size (Ctx.P.M_S_Ctx) > 0,
                  when others =>
                     False)));

@@ -122,7 +122,7 @@ is
     with
      Pre =>
        RFLX.Universal.Message.Has_Buffer (Ctx)
-       and RFLX.Universal.Message.Structural_Valid (Ctx, Fld)
+       and RFLX.Universal.Message.Well_Formed (Ctx, Fld)
        and RFLX.Universal.Message.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
@@ -257,7 +257,7 @@ is
                Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                if Composite_Field (Fld) then
-                  Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
+                  Ctx.Cursors (Fld) := (State => S_Well_Formed, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
@@ -336,7 +336,7 @@ is
        and then Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
-       and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Structural_Valid (Ctx, Fld))
+       and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
        and then (case Fld is
                     when F_Message_Type =>
                        Get_Message_Type (Ctx) = To_Actual (Val)
@@ -357,7 +357,7 @@ is
                             then
                                Predecessor (Ctx, F_Options) = F_Message_Type
                                and Valid_Next (Ctx, F_Options))
-                       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
+                       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                     when F_Length =>
                        Get_Length (Ctx) = To_Actual (Val)
                        and (if
@@ -387,12 +387,12 @@ is
                                Predecessor (Ctx, F_Values) = F_Length
                                and Valid_Next (Ctx, F_Values)),
                     when F_Data | F_Option_Types | F_Options =>
-                       (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
+                       (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                     when F_Value =>
                        Get_Value (Ctx) = To_Actual (Val)
-                       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
+                       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                     when F_Values =>
-                       (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+                       (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and then (for all F in Field =>
                     (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
    is
@@ -449,7 +449,7 @@ is
       if State_Valid then
          Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       else
-         Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
+         Ctx.Cursors (Fld) := (State => S_Well_Formed, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       end if;
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
       pragma Assert (Last = (Field_First (Ctx, Fld) + Size) - 1);
@@ -490,7 +490,7 @@ is
                        then
                           Predecessor (Ctx, F_Options) = F_Message_Type
                           and Valid_Next (Ctx, F_Options))
-                  and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
+                  and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                when F_Length =>
                   Get_Length (Ctx) = To_Actual (Val)
                   and (if
@@ -520,12 +520,12 @@ is
                           Predecessor (Ctx, F_Values) = F_Length
                           and Valid_Next (Ctx, F_Values)),
                when F_Data | F_Option_Types | F_Options =>
-                  (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
+                  (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                when F_Value =>
                   Get_Value (Ctx) = To_Actual (Val)
-                  and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
+                  and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                when F_Values =>
-                  (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+                  (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and (for all F in Field =>
                (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -628,7 +628,7 @@ is
        and then RFLX.Universal.Message.Field_First (Ctx, RFLX.Universal.Message.F_Data) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Data)
+       and Well_Formed (Ctx, F_Data)
        and Field_Size (Ctx, F_Data) = RFLX_Types.To_Bit_Length (Length)
        and Ctx.Verified_Last = Field_Last (Ctx, F_Data)
        and Invalid (Ctx, F_Option_Types)
@@ -653,7 +653,7 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Data) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Data).Predecessor);
+      Ctx.Cursors (F_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Data).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data);
    end Initialize_Data_Private;
 
@@ -672,7 +672,7 @@ is
        and then RFLX.Universal.Message.Field_First (Ctx, RFLX.Universal.Message.F_Option_Types) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Option_Types)
+       and Well_Formed (Ctx, F_Option_Types)
        and Field_Size (Ctx, F_Option_Types) = RFLX_Types.To_Bit_Length (Length)
        and Ctx.Verified_Last = Field_Last (Ctx, F_Option_Types)
        and Invalid (Ctx, F_Options)
@@ -697,7 +697,7 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Option_Types) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
+      Ctx.Cursors (F_Option_Types) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Option_Types)) := (State => S_Invalid, Predecessor => F_Option_Types);
    end Initialize_Option_Types_Private;
 
@@ -716,7 +716,7 @@ is
        and then RFLX.Universal.Message.Field_First (Ctx, RFLX.Universal.Message.F_Options) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Options)
+       and Well_Formed (Ctx, F_Options)
        and Field_Size (Ctx, F_Options) = RFLX_Types.To_Bit_Length (Length)
        and Ctx.Verified_Last = Field_Last (Ctx, F_Options)
        and Invalid (Ctx, F_Value)
@@ -739,7 +739,7 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Options) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Options).Predecessor);
+      Ctx.Cursors (F_Options) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Options).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
    end Initialize_Options_Private;
 
@@ -758,7 +758,7 @@ is
        and then RFLX.Universal.Message.Field_First (Ctx, RFLX.Universal.Message.F_Values) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Values)
+       and Well_Formed (Ctx, F_Values)
        and Field_Size (Ctx, F_Values) = RFLX_Types.To_Bit_Length (Length)
        and Ctx.Verified_Last = Field_Last (Ctx, F_Values)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -780,7 +780,7 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Values) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Values).Predecessor);
+      Ctx.Cursors (F_Values) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Values).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Values)) := (State => S_Invalid, Predecessor => F_Values);
    end Initialize_Values_Private;
 
@@ -818,7 +818,7 @@ is
          pragma Warnings (Off, "attribute Update is an obsolescent feature");
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
-         Ctx.Cursors (F_Option_Types) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
+         Ctx.Cursors (F_Option_Types) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_Option_Types)) := (State => S_Invalid, Predecessor => F_Option_Types);
       end if;
       Take_Buffer (Ctx, Buffer);
@@ -837,7 +837,7 @@ is
          pragma Warnings (Off, "attribute Update is an obsolescent feature");
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
-         Ctx.Cursors (F_Options) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Options).Predecessor);
+         Ctx.Cursors (F_Options) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Options).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
       end if;
       Take_Buffer (Ctx, Buffer);
@@ -856,7 +856,7 @@ is
          pragma Warnings (Off, "attribute Update is an obsolescent feature");
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
-         Ctx.Cursors (F_Values) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Values).Predecessor);
+         Ctx.Cursors (F_Values) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Values).Predecessor);
          Ctx.Cursors (Successor (Ctx, F_Values)) := (State => S_Invalid, Predecessor => F_Values);
       end if;
       Take_Buffer (Ctx, Buffer);

@@ -536,13 +536,11 @@ class Generator:
             ),
             self._executor.submit(parser_generator.create_verify_message_procedure, message),
             self._executor.submit(parser_generator.create_present_function),
-            self._executor.submit(parser_generator.create_structural_valid_function),
+            self._executor.submit(parser_generator.create_well_formed_function),
             self._executor.submit(parser_generator.create_valid_function),
             self._executor.submit(parser_generator.create_incomplete_function),
             self._executor.submit(parser_generator.create_invalid_function),
-            self._executor.submit(
-                parser_generator.create_structural_valid_message_function, message
-            ),
+            self._executor.submit(parser_generator.create_well_formed_message_function, message),
             self._executor.submit(parser_generator.create_valid_message_function, message),
             self._executor.submit(parser_generator.create_incomplete_message_function),
             self._executor.submit(
@@ -1419,7 +1417,7 @@ class Generator:
             conditions.extend(
                 [
                     expr.Call(
-                        pdu_identifier * "Structural_Valid",
+                        pdu_identifier * "Well_Formed",
                         [
                             expr.Variable(pdu_context),
                             expr.Variable(pdu_identifier * refinement.field.affixed_name),

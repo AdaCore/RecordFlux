@@ -31,7 +31,7 @@ is
       -- tests/integration/session_conversion/test.rflx:13:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
-         Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
+         Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx)
          and then Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx) = Universal.MT_Data
       then
          Ctx.P.Next_State := S_Process;

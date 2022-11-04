@@ -185,7 +185,7 @@ package body RFLX.IPv4_Tests is
          end if;
       end if;
 
-      Valid := IPv4.Packet.Structural_Valid_Message (Context);
+      Valid := IPv4.Packet.Well_Formed_Message (Context);
       Assert (Valid, "Invalid packet");
 
       IPv4.Packet.Take_Buffer (Context, Buffer);
@@ -243,7 +243,7 @@ package body RFLX.IPv4_Tests is
          end if;
       end if;
 
-      Valid := IPv4.Option.Structural_Valid_Message (Context);
+      Valid := IPv4.Option.Well_Formed_Message (Context);
       Assert (Valid, "Invalid option");
 
       IPv4.Option.Take_Buffer (Context, Buffer);
@@ -280,8 +280,8 @@ package body RFLX.IPv4_Tests is
    --
    --          IPv4.Options.Switch (Sequence_Context, Element_Context);
    --          IPv4.Option.Verify_Message (Element_Context);
-   --          Assert (IPv4.Option.Structural_Valid_Message (Element_Context),
-   --                  "Structural invalid IPv4 Option " & I'Image);
+   --          Assert (IPv4.Option.Well_Formed_Message (Element_Context),
+   --                  "Invalid IPv4 Option " & I'Image);
    --          IPv4.Options.Update (Sequence_Context, Element_Context);
    --
    --          I := I + 1;
@@ -326,7 +326,7 @@ package body RFLX.IPv4_Tests is
       Data := (0, 53, 0, 53, 0, 24, 1, 82, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
       Set_Payload (Context, 24);
 
-      Assert (IPv4.Packet.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (IPv4.Packet.Well_Formed_Message (Context), "Invalid message");
       Assert (not IPv4.Packet.Valid_Message (Context), "Valid message");
 
       Message_Last := IPv4.Packet.Message_Last (Context);
@@ -362,7 +362,7 @@ package body RFLX.IPv4_Tests is
       Data := (42, others => 0);
       Set_Option_Data (Context, 1);
 
-      Assert (IPv4.Option.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (IPv4.Option.Well_Formed_Message (Context), "Invalid message");
       Assert (not IPv4.Option.Valid_Message (Context), "Valid message");
 
       Message_Last := IPv4.Option.Message_Last (Context);

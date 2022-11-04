@@ -566,9 +566,7 @@ class ParserGenerator:
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
-                        Call(
-                            "Structural_Valid", [Indexed(Variable("Ctx.Cursors"), Variable("Fld"))]
-                        ),
+                        Call("Well_Formed", [Indexed(Variable("Ctx.Cursors"), Variable("Fld"))]),
                         Less(
                             Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "First"),
                             Add(
@@ -582,9 +580,9 @@ class ParserGenerator:
         )
 
     @staticmethod
-    def create_structural_valid_function() -> UnitPart:
+    def create_well_formed_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Structural_Valid",
+            "Well_Formed",
             "Boolean",
             [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
@@ -602,7 +600,7 @@ class ParserGenerator:
                                 ),
                                 Variable(s),
                             )
-                            for s in ("S_Valid", "S_Structural_Valid")
+                            for s in ("S_Valid", "S_Well_Formed")
                         ]
                     ),
                 )
@@ -627,7 +625,7 @@ class ParserGenerator:
                                         Result("Valid"),
                                         And(
                                             Call(
-                                                "Structural_Valid",
+                                                "Well_Formed",
                                                 [Variable("Ctx"), Variable("Fld")],
                                             ),
                                             Call("Present", [Variable("Ctx"), Variable("Fld")]),
@@ -703,9 +701,9 @@ class ParserGenerator:
             ],
         )
 
-    def create_structural_valid_message_function(self, message: Message) -> UnitPart:
+    def create_well_formed_message_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification(
-            "Structural_Valid_Message", "Boolean", [Parameter(["Ctx"], "Context")]
+            "Well_Formed_Message", "Boolean", [Parameter(["Ctx"], "Context")]
         )
 
         return UnitPart(
@@ -725,7 +723,7 @@ class ParserGenerator:
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    self.valid_message_condition(message, structural=True),
+                    self.valid_message_condition(message, well_formed=True),
                 )
             ],
         )
@@ -865,7 +863,7 @@ class ParserGenerator:
                                     [Variable("Ctx")],
                                 ),
                                 Call(
-                                    self.prefix * message.identifier * "Structural_Valid",
+                                    self.prefix * message.identifier * "Well_Formed",
                                     [
                                         Variable("Ctx"),
                                         Variable(self.prefix * message.identifier * f.affixed_name),
@@ -971,7 +969,7 @@ class ParserGenerator:
                                     [Variable("Ctx")],
                                 ),
                                 Call(
-                                    self.prefix * message.identifier * "Structural_Valid",
+                                    self.prefix * message.identifier * "Well_Formed",
                                     [
                                         Variable("Ctx"),
                                         Variable(self.prefix * message.identifier * f.affixed_name),
@@ -1174,14 +1172,14 @@ class ParserGenerator:
             ],
         )
 
-    def valid_message_condition(self, message: Message, structural: bool = False) -> Expr:
+    def valid_message_condition(self, message: Message, well_formed: bool = False) -> Expr:
         return (
             expr.Or(
                 *[
                     expr.AndThen(
                         expr.Call(
-                            "Structural_Valid"
-                            if structural and isinstance(message.field_types[l.source], Composite)
+                            "Well_Formed"
+                            if well_formed and isinstance(message.field_types[l.source], Composite)
                             else "Valid",
                             [
                                 expr.Variable("Ctx"),
@@ -1223,7 +1221,7 @@ def set_context_cursor_composite_field(field_name: str) -> Assignment:
             Variable(field_name),
         ),
         NamedAggregate(
-            ("State", Variable("S_Structural_Valid")),
+            ("State", Variable("S_Well_Formed")),
             (
                 "First",
                 Call(

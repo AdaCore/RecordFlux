@@ -32,7 +32,7 @@ is
       -- tests/integration/session_message_optimization/test.rflx:24:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
-         (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
+         (Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx)
           and then Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx) = Universal.MT_Data)
          and then Universal.Message.Get_Length (Ctx.P.Message_Ctx) = 3
       then
@@ -61,7 +61,7 @@ is
    begin
       pragma Assert (Process_Invariant);
       -- tests/integration/session_message_optimization/test.rflx:38:10
-      if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+      if Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          declare
             RFLX_Get_Option_Data_Arg_0_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
             RFLX_Get_Option_Data_Arg_0_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data)) + 1;

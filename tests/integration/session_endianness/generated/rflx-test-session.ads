@@ -160,10 +160,10 @@ private
           when C_O =>
              (case Ctx.P.Next_State is
                  when S_Reply =>
-                    Messages.Msg_LE.Structural_Valid_Message (Ctx.P.Out_Msg_Ctx)
+                    Messages.Msg_LE.Well_Formed_Message (Ctx.P.Out_Msg_Ctx)
                     and Messages.Msg_LE.Byte_Size (Ctx.P.Out_Msg_Ctx) > 0,
                  when S_Reply2 =>
-                    Messages.Msg.Structural_Valid_Message (Ctx.P.Out_Msg2_Ctx)
+                    Messages.Msg.Well_Formed_Message (Ctx.P.Out_Msg2_Ctx)
                     and Messages.Msg.Byte_Size (Ctx.P.Out_Msg2_Ctx) > 0,
                  when others =>
                     False)));

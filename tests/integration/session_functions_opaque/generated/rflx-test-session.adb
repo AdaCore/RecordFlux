@@ -86,7 +86,7 @@ is
          RFLX_Check_Size_Arg_1_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          RFLX_Check_Size_Arg_1_Message_Length : constant RFLX_Types.Length := Universal.Message.Byte_Size (Message_Ctx);
       begin
-         if not Universal.Message.Structural_Valid_Message (Message_Ctx) then
+         if not Universal.Message.Well_Formed_Message (Message_Ctx) then
             Ctx.P.Next_State := S_Error;
             pragma Assert (Check_Message_Invariant);
             goto Finalize_Check_Message;

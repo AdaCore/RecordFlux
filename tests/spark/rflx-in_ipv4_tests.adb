@@ -47,16 +47,16 @@ package body RFLX.In_IPv4_Tests is
    begin
       IPv4.Packet.Initialize (IPv4_Packet_Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       IPv4.Packet.Verify_Message (IPv4_Packet_Context);
-      Valid := IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context);
-      Assert (Valid, "Structural invalid IPv4 packet");
+      Valid := IPv4.Packet.Well_Formed_Message (IPv4_Packet_Context);
+      Assert (Valid, "Invalid IPv4 packet");
       if Valid then
          Valid := In_IPv4.Contains.UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_Context);
          Assert (Valid, "Ethernet frame contains no UDP datagram");
          if Valid then
             In_IPv4.Contains.Switch_To_Payload (IPv4_Packet_Context, UDP_Datagram_Context);
             UDP.Datagram.Verify_Message (UDP_Datagram_Context);
-            Valid := UDP.Datagram.Structural_Valid_Message (UDP_Datagram_Context);
-            Assert (Valid, "Structural invalid UDP datagram");
+            Valid := UDP.Datagram.Well_Formed_Message (UDP_Datagram_Context);
+            Assert (Valid, "Invalid UDP datagram");
          end if;
       end if;
 
@@ -82,24 +82,24 @@ package body RFLX.In_IPv4_Tests is
    begin
       Ethernet.Frame.Initialize (Ethernet_Frame_Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Ethernet.Frame.Verify_Message (Ethernet_Frame_Context);
-      Valid := Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context);
-      Assert (Valid, "Structural invalid Ethernet frame");
+      Valid := Ethernet.Frame.Well_Formed_Message (Ethernet_Frame_Context);
+      Assert (Valid, "Invalid Ethernet frame");
       if Valid then
          Valid := In_Ethernet.Contains.IPv4_Packet_In_Ethernet_Frame_Payload (Ethernet_Frame_Context);
          Assert (Valid, "Ethernet frame contains no IPv4 packet");
          if Valid then
             In_Ethernet.Contains.Switch_To_Payload (Ethernet_Frame_Context, IPv4_Packet_Context);
             IPv4.Packet.Verify_Message (IPv4_Packet_Context);
-            Valid := IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context);
-            Assert (Valid, "Structural invalid IPv4 packet");
+            Valid := IPv4.Packet.Well_Formed_Message (IPv4_Packet_Context);
+            Assert (Valid, "Invalid IPv4 packet");
             if Valid then
                Valid := In_IPv4.Contains.UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_Context);
                Assert (Valid, "IPv4 packet contains no UDP datagram");
                if Valid then
                   In_IPv4.Contains.Switch_To_Payload (IPv4_Packet_Context, UDP_Datagram_Context);
                   UDP.Datagram.Verify_Message (UDP_Datagram_Context);
-                  Valid := UDP.Datagram.Structural_Valid_Message (UDP_Datagram_Context);
-                  Assert (Valid, "Structural invalid UDP datagram");
+                  Valid := UDP.Datagram.Well_Formed_Message (UDP_Datagram_Context);
+                  Assert (Valid, "Invalid UDP datagram");
                end if;
             end if;
          end if;
@@ -140,7 +140,7 @@ package body RFLX.In_IPv4_Tests is
       Ethernet.Frame.Initialize_Payload (Ethernet_Frame_Context, 46);
       pragma Assert (Ethernet.Frame.Field_Size (Ethernet_Frame_Context, Ethernet.Frame.F_Payload) = 368);
 
-      Assert (Ethernet.Frame.Structural_Valid_Message (Ethernet_Frame_Context), "Structural invalid frame");
+      Assert (Ethernet.Frame.Well_Formed_Message (Ethernet_Frame_Context), "Invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Ethernet_Frame_Context), "Valid frame");
 
       if In_Ethernet.Contains.IPv4_Packet_In_Ethernet_Frame_Payload (Ethernet_Frame_Context) then
@@ -169,7 +169,7 @@ package body RFLX.In_IPv4_Tests is
          pragma Assert (IPv4.Packet.Field_Size (IPv4_Packet_Context, IPv4.Packet.F_Payload) = 208);
          IPv4.Packet.Initialize_Payload (IPv4_Packet_Context);
 
-         Assert (IPv4.Packet.Structural_Valid_Message (IPv4_Packet_Context), "Structural invalid message");
+         Assert (IPv4.Packet.Well_Formed_Message (IPv4_Packet_Context), "Invalid message");
          Assert (not IPv4.Packet.Valid_Message (IPv4_Packet_Context), "Valid message");
 
          if In_IPv4.Contains.UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_Context) then

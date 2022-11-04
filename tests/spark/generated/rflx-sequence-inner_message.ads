@@ -169,14 +169,14 @@ is
    procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Inner_Message.Structural_Valid_Message (Ctx)
+       and then RFLX.Sequence.Inner_Message.Well_Formed_Message (Ctx)
        and then RFLX.Sequence.Inner_Message.Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Inner_Message.Structural_Valid_Message (Ctx);
+       and then RFLX.Sequence.Inner_Message.Well_Formed_Message (Ctx);
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
@@ -191,7 +191,7 @@ is
    procedure Generic_Read (Ctx : Context) with
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Inner_Message.Structural_Valid_Message (Ctx)
+       and then RFLX.Sequence.Inner_Message.Well_Formed_Message (Ctx)
        and then Pre (Read (Ctx));
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
@@ -232,14 +232,14 @@ is
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Inner_Message.Structural_Valid_Message (Ctx);
+       and then RFLX.Sequence.Inner_Message.Well_Formed_Message (Ctx);
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
    procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Inner_Message.Structural_Valid_Message (Ctx)
+       and then RFLX.Sequence.Inner_Message.Well_Formed_Message (Ctx)
        and then Data'Length = RFLX.Sequence.Inner_Message.Byte_Size (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -357,17 +357,17 @@ is
 
    function Present (Ctx : Context; Fld : Field) return Boolean;
 
-   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean;
+   function Well_Formed (Ctx : Context; Fld : Field) return Boolean;
 
    function Valid (Ctx : Context; Fld : Field) return Boolean with
      Post =>
-       (if Valid'Result then Structural_Valid (Ctx, Fld) and Present (Ctx, Fld));
+       (if Valid'Result then Well_Formed (Ctx, Fld) and Present (Ctx, Fld));
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean;
 
    function Invalid (Ctx : Context; Fld : Field) return Boolean;
 
-   function Structural_Valid_Message (Ctx : Context) return Boolean with
+   function Well_Formed_Message (Ctx : Context) return Boolean with
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx);
 
@@ -395,7 +395,7 @@ is
      Ghost,
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Inner_Message.Structural_Valid (Ctx, RFLX.Sequence.Inner_Message.F_Payload)
+       and then RFLX.Sequence.Inner_Message.Well_Formed (Ctx, RFLX.Sequence.Inner_Message.F_Payload)
        and then RFLX.Sequence.Inner_Message.Valid_Next (Ctx, RFLX.Sequence.Inner_Message.F_Payload),
      Post =>
        Get_Payload'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
@@ -403,7 +403,7 @@ is
    procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Inner_Message.Structural_Valid (Ctx, RFLX.Sequence.Inner_Message.F_Payload)
+       and then RFLX.Sequence.Inner_Message.Well_Formed (Ctx, RFLX.Sequence.Inner_Message.F_Payload)
        and then RFLX.Sequence.Inner_Message.Valid_Next (Ctx, RFLX.Sequence.Inner_Message.F_Payload)
        and then Data'Length = RFLX_Types.To_Length (RFLX.Sequence.Inner_Message.Field_Size (Ctx, RFLX.Sequence.Inner_Message.F_Payload)),
      Post =>
@@ -464,8 +464,8 @@ is
        and then RFLX.Sequence.Inner_Message.Field_Size (Ctx, RFLX.Sequence.Inner_Message.F_Payload) = 0,
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Payload)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Well_Formed (Ctx, F_Payload)
+       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -484,8 +484,8 @@ is
        and then RFLX.Sequence.Inner_Message.Available_Space (Ctx, RFLX.Sequence.Inner_Message.F_Payload) >= RFLX.Sequence.Inner_Message.Field_Size (Ctx, RFLX.Sequence.Inner_Message.F_Payload),
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Payload)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Well_Formed (Ctx, F_Payload)
+       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -507,8 +507,8 @@ is
        and then RFLX.Sequence.Inner_Message.Field_Condition (Ctx, RFLX.Sequence.Inner_Message.F_Payload),
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Payload)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Well_Formed (Ctx, F_Payload)
+       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -534,8 +534,8 @@ is
        and then Process_Data_Pre (Length),
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Payload)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Well_Formed (Ctx, F_Payload)
+       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -572,7 +572,7 @@ is
    procedure To_Structure (Ctx : Context; Struct : out Structure) with
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Inner_Message.Structural_Valid_Message (Ctx),
+       and then RFLX.Sequence.Inner_Message.Well_Formed_Message (Ctx),
      Post =>
        Valid_Structure (Struct);
 
@@ -586,7 +586,7 @@ is
        and then RFLX.Sequence.Inner_Message.Sufficient_Buffer_Length (Ctx, Struct),
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid_Message (Ctx)
+       and Well_Formed_Message (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old;
 
@@ -600,13 +600,13 @@ is
 
 private
 
-   type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
+   type Cursor_State is (S_Valid, S_Well_Formed, S_Invalid, S_Incomplete);
 
    type Field_Cursor (State : Cursor_State := S_Invalid) is
       record
          Predecessor : Virtual_Field := F_Final;
          case State is
-            when S_Valid | S_Structural_Valid =>
+            when S_Valid | S_Well_Formed =>
                First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
                Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
                Value : RFLX_Types.Base_Integer := 0;
@@ -617,9 +617,9 @@ private
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
-   function Structural_Valid (Cursor : Field_Cursor) return Boolean is
+   function Well_Formed (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid
-      or Cursor.State = S_Structural_Valid);
+      or Cursor.State = S_Well_Formed);
 
    function Valid (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid);
@@ -651,26 +651,26 @@ private
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then (for all F in Field =>
                    (if
-                       Structural_Valid (Cursors (F))
+                       Well_Formed (Cursors (F))
                     then
                        Cursors (F).First >= First
                        and Cursors (F).Last <= Verified_Last
                        and Cursors (F).First <= Cursors (F).Last + 1
                        and Valid_Value (F, Cursors (F).Value)))
       and then ((if
-                    Structural_Valid (Cursors (F_Payload))
+                    Well_Formed (Cursors (F_Payload))
                  then
                     (Valid (Cursors (F_Length))
                      and then Cursors (F_Payload).Predecessor = F_Length)))
       and then ((if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Payload))))
       and then (if
-                   Structural_Valid (Cursors (F_Length))
+                   Well_Formed (Cursors (F_Length))
                 then
                    Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
                    and then Cursors (F_Length).Predecessor = F_Initial
                    and then Cursors (F_Length).First = First
                    and then (if
-                                Structural_Valid (Cursors (F_Payload))
+                                Well_Formed (Cursors (F_Payload))
                              then
                                 Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
                                 and then Cursors (F_Payload).Predecessor = F_Length
@@ -761,7 +761,7 @@ private
              (Valid (Ctx.Cursors (F_Length))
               and Ctx.Cursors (Fld).Predecessor = F_Length),
           when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Payload))
+             (Well_Formed (Ctx.Cursors (F_Payload))
               and Ctx.Cursors (Fld).Predecessor = F_Payload)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
@@ -775,12 +775,12 @@ private
      (Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld));
 
    function Present (Ctx : Context; Fld : Field) return Boolean is
-     (Structural_Valid (Ctx.Cursors (Fld))
+     (Well_Formed (Ctx.Cursors (Fld))
       and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
 
-   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
+   function Well_Formed (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Valid
-      or Ctx.Cursors (Fld).State = S_Structural_Valid);
+      or Ctx.Cursors (Fld).State = S_Well_Formed);
 
    function Valid (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Valid
@@ -793,8 +793,8 @@ private
      (Ctx.Cursors (Fld).State = S_Invalid
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
-   function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Structural_Valid (Ctx, F_Payload));
+   function Well_Formed_Message (Ctx : Context) return Boolean is
+     (Well_Formed (Ctx, F_Payload));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Payload));

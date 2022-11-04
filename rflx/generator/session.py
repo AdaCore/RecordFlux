@@ -1245,8 +1245,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                                 Variable(state_id(write.state)),
                                                 And(
                                                     Call(
-                                                        write.message_type
-                                                        * "Structural_Valid_Message",
+                                                        write.message_type * "Well_Formed_Message",
                                                         [
                                                             Variable(
                                                                 context_id(write.message, is_global)
@@ -2669,7 +2668,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 target_buffer_size = self._allocator.get_size(target, state)
 
                 return [
-                    self._if_structural_valid_message(
+                    self._if_well_formed_message(
                         message_type,
                         context_id(message_id, is_global),
                         [
@@ -2802,7 +2801,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                             target_type * "Verify_Message",
                                             [Variable(element_context)],
                                         ),
-                                        self._if_structural_valid_message(
+                                        self._if_well_formed_message(
                                             target_type,
                                             element_context,
                                             [
@@ -2957,7 +2956,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
                 return [
                     reset_target,
-                    self._if_structural_valid_message(
+                    self._if_well_formed_message(
                         message_type,
                         context_id(message_id, is_global),
                         [
@@ -3234,7 +3233,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                                 Call(
                                     type_identifier
                                     * (
-                                        "Structural_Valid_Message"
+                                        "Well_Formed_Message"
                                         if isinstance(a.prefix.type_, rty.Message)
                                         else "Valid"
                                     ),
@@ -3631,7 +3630,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ),
             *unique(
                 Call(
-                    s.prefix.type_.identifier * "Structural_Valid",
+                    s.prefix.type_.identifier * "Well_Formed",
                     [
                         Variable(context_id(s.prefix.identifier, is_global)),
                         Variable(s.prefix.type_.identifier * model.Field(s.selector).affixed_name),
@@ -3687,7 +3686,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 if isinstance(expression.prefix, expr.Variable):
                     if isinstance(expression.prefix.type_, rty.Message):
                         return expr.Call(
-                            expression.prefix.type_.identifier * "Structural_Valid_Message",
+                            expression.prefix.type_.identifier * "Well_Formed_Message",
                             [expr.Variable(context_id(expression.prefix.identifier, is_global))],
                         )
 
@@ -3708,7 +3707,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         * (
                             "Valid"
                             if isinstance(expression.prefix.type_, (rty.Integer, rty.Enumeration))
-                            else "Structural_Valid"
+                            else "Well_Formed"
                         ),
                         [
                             expr.Variable(
@@ -3923,7 +3922,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             exception_handler,
         )
 
-    def _if_structural_valid_message(
+    def _if_well_formed_message(
         self,
         message_type: ID,
         message_context: ID,
@@ -3932,7 +3931,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     ) -> IfStatement:
         return self._if(
             Call(
-                message_type * "Structural_Valid_Message",
+                message_type * "Well_Formed_Message",
                 [Variable(message_context)],
             ),
             statements,
@@ -3940,7 +3939,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             exception_handler,
         )
 
-    def _if_structural_valid_message_field(
+    def _if_well_formed_message_field(
         self,
         message_type: ID,
         message_context: ID,
@@ -3950,7 +3949,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     ) -> IfStatement:
         return self._if(
             Call(
-                message_type * "Structural_Valid",
+                message_type * "Well_Formed",
                 [
                     Variable(message_context),
                     Variable(message_type * model.Field(message_field).affixed_name),
@@ -4287,7 +4286,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 statements,
                 Call(
                     value_message_type_id
-                    * ("Structural_Valid" if isinstance(value.type_, rty.Sequence) else "Valid"),
+                    * ("Well_Formed" if isinstance(value.type_, rty.Sequence) else "Valid"),
                     [
                         Variable(value_message_context),
                         Variable(value_message_type_id * f"F_{value.selector}"),
@@ -4479,7 +4478,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     [Variable(temporary_message_context)],
                 ),
                 Call(
-                    message_type * "Structural_Valid",
+                    message_type * "Well_Formed",
                     [
                         Variable(temporary_message_context),
                         Variable(message_type * f"F_{message_field}"),
@@ -4607,7 +4606,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     [Variable(message_context)],
                 ),
                 Call(
-                    message_type * "Structural_Valid_Message",
+                    message_type * "Well_Formed_Message",
                     [
                         Variable(message_context),
                     ],
@@ -4740,7 +4739,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     target_buffer_is_smaller,
                     local_exception_handler,
                 ),
-                self._if_structural_valid_message_field(
+                self._if_well_formed_message_field(
                     message_type,
                     context_id(message_identifier, is_global),
                     message_field,
@@ -5009,7 +5008,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             target_buffer = "RFLX_Target_" + target_identifier
 
             assign_element = [
-                self._if_structural_valid_message(
+                self._if_well_formed_message(
                     target_type.identifier,
                     element_id,
                     [
@@ -5099,7 +5098,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 target_type.element.identifier * "Size",
                 [Variable(element_id)],
             )
-            append_element = self._if_structural_valid_message(
+            append_element = self._if_well_formed_message(
                 target_type.element.identifier,
                 element_id,
                 [

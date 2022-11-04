@@ -81,7 +81,7 @@ package body RFLX.TLV_Tests is
             end if;
          end if;
       end if;
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid Message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid Message");
       Assert (TLV.Message.Byte_Size (Context)'Image, RFLX_Builtin_Types.Length'Image (7), "Invalid message size");
 
@@ -113,7 +113,7 @@ package body RFLX.TLV_Tests is
             Assert (not TLV.Message.Present (Context, TLV.Message.F_Value), "Valid Value");
          end if;
       end if;
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid Message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid Message");
       Assert (TLV.Message.Byte_Size (Context)'Image, RFLX_Builtin_Types.Length'Image (3), "Invalid message size");
 
@@ -138,7 +138,7 @@ package body RFLX.TLV_Tests is
          Tag := TLV.Message.Get_Tag (Context);
          Assert (Tag'Image, TLV.Tag'Image (TLV.Msg_Error), "Unexpected Tag");
       end if;
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid Message");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid Message");
       Assert (TLV.Message.Valid_Message (Context), "Invalid Message");
 
       TLV.Message.Take_Buffer (Context, Buffer);
@@ -156,7 +156,7 @@ package body RFLX.TLV_Tests is
    begin
       TLV.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       TLV.Message.Verify_Message (Context);
-      Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message");
+      Assert (not TLV.Message.Well_Formed_Message (Context), "Well formed message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
 
       TLV.Message.Take_Buffer (Context, Buffer);
@@ -178,7 +178,7 @@ package body RFLX.TLV_Tests is
       TLV.Message.Set_Length (Context, 4);
       TLV.Message.Set_Value (Context, (1, 2, 3, 4));
 
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
       Assert (TLV.Message.Byte_Size (Context)'Image, RFLX_Builtin_Types.Length'Image (7), "Invalid message size");
 
@@ -209,7 +209,7 @@ package body RFLX.TLV_Tests is
       Data := (1, 2, 3, 4);
       Set_Value (Context, Data'Length);
 
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
 
       TLV.Message.Take_Buffer (Context, Buffer);
@@ -237,7 +237,7 @@ package body RFLX.TLV_Tests is
       TLV.Message.Set_Length (Context, 0);
       TLV.Message.Set_Value_Empty (Context);
 
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid message");
       Assert (not TLV.Message.Valid_Message (Context), "Valid message");
 
       TLV.Message.Take_Buffer (Context, Buffer);
@@ -264,7 +264,7 @@ package body RFLX.TLV_Tests is
       TLV.Message.Initialize (Context, Buffer);
       TLV.Message.Set_Tag (Context, TLV.Msg_Error);
 
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid message");
       Assert (TLV.Message.Valid_Message (Context), "Invalid message");
 
       TLV.Message.Take_Buffer (Context, Buffer);
@@ -289,7 +289,7 @@ package body RFLX.TLV_Tests is
       TLV.Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       TLV.Message.Verify_Message (Context);
 
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after initialization");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid message after initialization");
 
       declare
          pragma Warnings (Off, "subprogram ""Read"" has no effect");
@@ -305,13 +305,13 @@ package body RFLX.TLV_Tests is
          Message_Read (Context);
       end;
 
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after reading");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid message after reading");
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
       Assert (TLV.Message.Get_Length (Context)'Image, TLV.Length (4)'Image, "Invalid length after reading");
 
       TLV.Message.Reset (Context);
 
-      Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after reset");
+      Assert (not TLV.Message.Well_Formed_Message (Context), "Well formed message after reset");
 
       declare
          procedure Write
@@ -330,17 +330,17 @@ package body RFLX.TLV_Tests is
          Message_Write (Context);
       end;
 
-      Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after writing");
+      Assert (not TLV.Message.Well_Formed_Message (Context), "Well formed message after writing");
 
       TLV.Message.Verify_Message (Context);
 
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after verification");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid message after verification");
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
       Assert (TLV.Message.Get_Length (Context)'Image, TLV.Length (2)'Image, "Invalid length after writing");
 
       TLV.Message.Reset (Context);
 
-      Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after reset");
+      Assert (not TLV.Message.Well_Formed_Message (Context), "Well formed message after reset");
 
       declare
          function Write_Pre
@@ -376,11 +376,11 @@ package body RFLX.TLV_Tests is
          Message_Write (Context, 3);
       end;
 
-      Assert (not TLV.Message.Structural_Valid_Message (Context), "Structural valid message after writing");
+      Assert (not TLV.Message.Well_Formed_Message (Context), "Well formed message after writing");
 
       TLV.Message.Verify_Message (Context);
 
-      Assert (TLV.Message.Structural_Valid_Message (Context), "Structural invalid message after verification");
+      Assert (TLV.Message.Well_Formed_Message (Context), "Invalid message after verification");
       Assert (TLV.Message.Valid (Context, TLV.Message.F_Length), "Invalid Length");
       Assert (TLV.Message.Get_Length (Context)'Image, TLV.Length (2)'Image, "Invalid length after writing");
 

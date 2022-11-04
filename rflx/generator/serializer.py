@@ -251,7 +251,7 @@ class SerializerGenerator:
 
         class CursorState(Enum):
             VALID = 1
-            STRUCTURAL_VALID = 2
+            WELL_FORMED = 2
 
         def set_context_cursor(field_type: CursorState) -> Assignment:
             return Assignment(
@@ -261,7 +261,7 @@ class SerializerGenerator:
                         "State",
                         Variable("S_Valid")
                         if field_type == CursorState.VALID
-                        else Variable("S_Structural_Valid"),
+                        else Variable("S_Well_Formed"),
                     ),
                     ("First", Variable("First")),
                     ("Last", Variable("Last")),
@@ -359,7 +359,7 @@ class SerializerGenerator:
                                     [set_context_cursor(CursorState.VALID)],
                                 )
                             ],
-                            [set_context_cursor(CursorState.STRUCTURAL_VALID)],
+                            [set_context_cursor(CursorState.WELL_FORMED)],
                         ),
                         Assignment(
                             Indexed(
@@ -541,7 +541,7 @@ class SerializerGenerator:
                                             ),
                                         )
                                     ],
-                                    Call("Structural_Valid", [Variable("Ctx"), Variable("Fld")]),
+                                    Call("Well_Formed", [Variable("Ctx"), Variable("Fld")]),
                                 ),
                                 self.scalar_setter_and_getter_relation(message, scalar_fields),
                                 *(
@@ -1677,7 +1677,7 @@ class SerializerGenerator:
                     If(
                         [
                             (
-                                Call("Structural_Valid_Message", [Variable("Ctx")]),
+                                Call("Well_Formed_Message", [Variable("Ctx")]),
                                 Equal(
                                     Call("Message_Last", [Variable("Ctx")]),
                                     Call(
@@ -1760,7 +1760,7 @@ class SerializerGenerator:
     def composite_setter_postconditions(field: Field) -> list[Expr]:
         return [
             Call("Has_Buffer", [Variable("Ctx")]),
-            Call("Structural_Valid", [Variable("Ctx"), Variable(field.affixed_name)]),
+            Call("Well_Formed", [Variable("Ctx"), Variable(field.affixed_name)]),
         ]
 
     def composite_setter_field_condition_precondition(
@@ -1819,7 +1819,7 @@ class SerializerGenerator:
                                     [
                                         (
                                             Call(
-                                                "Structural_Valid_Message",
+                                                "Well_Formed_Message",
                                                 [Variable("Ctx")],
                                             ),
                                             Equal(

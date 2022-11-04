@@ -155,7 +155,7 @@ private
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Reply | S_Reply_2 =>
-                    Test.Definite_Message.Structural_Valid_Message (Ctx.P.Definite_Message_Ctx)
+                    Test.Definite_Message.Well_Formed_Message (Ctx.P.Definite_Message_Ctx)
                     and Test.Definite_Message.Byte_Size (Ctx.P.Definite_Message_Ctx) > 0,
                  when others =>
                     False)));

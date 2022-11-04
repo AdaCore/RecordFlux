@@ -807,7 +807,7 @@ package body RFLX.Sequence_Tests is
       Message.Set_Length (Context, 0);
       Message.Set_Modular_Vector (Context, Modular_Vector_Context);
 
-      Assert (Message.Structural_Valid (Context, Message.F_Modular_Vector),
+      Assert (Message.Well_Formed (Context, Message.F_Modular_Vector),
               "Invalid Modular_Vector after context update");
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
@@ -827,7 +827,7 @@ package body RFLX.Sequence_Tests is
 
       Assert (Message.Valid (Context, Message.F_AV_Enumeration_Vector),
               "Invalid AV_Enumeration_Vector after context update");
-      Assert (Message.Structural_Valid_Message (Context), "Invalid Message after complete generating");
+      Assert (Message.Well_Formed_Message (Context), "Invalid Message after complete generating");
 
       Message.Take_Buffer (Context, Buffer);
 
@@ -890,7 +890,7 @@ package body RFLX.Sequence_Tests is
       Length := Inner_Message.Get_Length (Element_Context);
 
       Assert (Length'Image, Sequence.Length'Image (1), "Unexpected Length of element 1");
-      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
+      Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 1");
 
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
@@ -911,8 +911,8 @@ package body RFLX.Sequence_Tests is
       Length := Inner_Message.Get_Length (Element_Context);
 
       Assert (Length'Image, Sequence.Length'Image (2), "Unexpected Length of element 2");
-      Assert (Inner_Message.Structural_Valid_Message (Element_Context),
-              "Structural invalid element 2");
+      Assert (Inner_Message.Well_Formed_Message (Element_Context),
+              "Invalid element 2");
 
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
@@ -995,8 +995,8 @@ package body RFLX.Sequence_Tests is
          Length := Inner_Message.Get_Length (Element_Context);
 
          Assert (Length'Image, I'Image, "Unexpected Length of element " & I'Image);
-         Assert (Inner_Message.Structural_Valid_Message (Element_Context),
-                 "Structural invalid element " & I'Image);
+         Assert (Inner_Message.Well_Formed_Message (Element_Context),
+                 "Invalid element " & I'Image);
 
          Sequence.Inner_Messages.Update (Sequence_Context, Element_Context);
 
@@ -1054,7 +1054,7 @@ package body RFLX.Sequence_Tests is
       Data := (3, 0);
       Set_Payload (Element_Context, 1);
 
-      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
+      Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 1");
 
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
@@ -1070,7 +1070,7 @@ package body RFLX.Sequence_Tests is
       Data := (4, 6);
       Set_Payload (Element_Context, 2);
 
-      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
+      Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 2");
 
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
@@ -1131,7 +1131,7 @@ package body RFLX.Sequence_Tests is
       Data := (3, 0);
       Set_Payload (Element_Context, 1);
 
-      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 1");
+      Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 1");
 
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
@@ -1147,7 +1147,7 @@ package body RFLX.Sequence_Tests is
       Data := (4, 6);
       Set_Payload (Element_Context, 2);
 
-      Assert (Inner_Message.Structural_Valid_Message (Element_Context), "Structural invalid element 2");
+      Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 2");
 
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
@@ -1211,7 +1211,7 @@ package body RFLX.Sequence_Tests is
       Assert (not Message.Valid (Context, Message.F_Messages),
               "Valid Messages before setting field");
       Message.Set_Messages (Context, Sequence_Context);
-      Assert (Message.Structural_Valid (Context, Message.F_Messages),
+      Assert (Message.Well_Formed (Context, Message.F_Messages),
               "Invalid Messages after setting field");
 
       Message.Take_Buffer (Context, Buffer);
@@ -1323,7 +1323,7 @@ package body RFLX.Sequence_Tests is
 
       Assert (Header'Image, Sequence.One'Image, "Invalid value of Header");
       Assert (not Message.Present (Context, Message.F_Vector), "Present Vector");
-      Assert (Message.Structural_Valid_Message (Context), "Invalid Message");
+      Assert (Message.Well_Formed_Message (Context), "Invalid Message");
 
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""Context""");
@@ -1399,8 +1399,8 @@ package body RFLX.Sequence_Tests is
       Message.Set_Header (Context, Sequence.One);
       Message.Set_Vector_Empty (Context);
 
-      Assert (Message.Structural_Valid (Context, Message.F_Vector), "Invalid Modular_Vector");
-      Assert (Message.Structural_Valid_Message (Context), "Invalid Message");
+      Assert (Message.Well_Formed (Context, Message.F_Vector), "Invalid Modular_Vector");
+      Assert (Message.Well_Formed_Message (Context), "Invalid Message");
 
       Message.Take_Buffer (Context, Buffer);
 

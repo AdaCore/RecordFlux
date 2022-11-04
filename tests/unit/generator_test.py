@@ -1139,7 +1139,7 @@ begin
             declare
                function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
                  (Universal.Option.Has_Buffer (C_Ctx)
-                  and then Universal.Option.Structural_Valid_Message (C_Ctx)
+                  and then Universal.Option.Well_Formed_Message (C_Ctx)
                   and then Length = Universal.Option.Byte_Size (C_Ctx));
                procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
                  Pre =>
@@ -2351,7 +2351,7 @@ def test_session_write_error(
         ),
         (
             expr.Valid(expr.Variable("X", type_=rty.Message("P::M"))),
-            expr.Call("P::M::Structural_Valid_Message", [expr.Variable("X_Ctx")]),
+            expr.Call("P::M::Well_Formed_Message", [expr.Variable("X_Ctx")]),
         ),
         (
             expr.Valid(expr.Variable("X", type_=rty.Sequence("P::S", rty.Message("P::M")))),
@@ -2369,9 +2369,7 @@ def test_session_write_error(
             expr.Valid(
                 expr.Selected(expr.Variable("X", type_=rty.Message("P::M")), "Y", type_=rty.OPAQUE)
             ),
-            expr.Call(
-                "P::M::Structural_Valid", [expr.Variable("X_Ctx"), expr.Variable("P::M::F_Y")]
-            ),
+            expr.Call("P::M::Well_Formed", [expr.Variable("X_Ctx"), expr.Variable("P::M::F_Y")]),
         ),
         (
             expr.Present(expr.Selected(expr.Variable("X", type_=rty.Message("P::M")), "Y")),

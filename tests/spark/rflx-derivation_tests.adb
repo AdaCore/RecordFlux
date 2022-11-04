@@ -69,7 +69,7 @@ package body RFLX.Derivation_Tests is
             end if;
          end if;
       end if;
-      Assert (Derivation.Message.Structural_Valid_Message (Context), "Structural invalid Message");
+      Assert (Derivation.Message.Well_Formed_Message (Context), "Invalid Message");
       Assert (not Derivation.Message.Valid_Message (Context), "Valid Message");
 
       Derivation.Message.Take_Buffer (Context, Buffer);
@@ -93,7 +93,7 @@ package body RFLX.Derivation_Tests is
       Data := (0, 0, 0, 0);
       Set_Value (Context, Data'Length);
 
-      Assert (Derivation.Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (Derivation.Message.Well_Formed_Message (Context), "Invalid message");
       Assert (not Derivation.Message.Valid_Message (Context), "Valid message");
 
       Derivation.Message.Take_Buffer (Context, Buffer);

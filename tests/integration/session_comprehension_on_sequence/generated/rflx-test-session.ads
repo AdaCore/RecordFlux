@@ -133,10 +133,10 @@ private
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Send_1 =>
-                    Universal.Message.Structural_Valid_Message (Ctx.P.Message_1_Ctx)
+                    Universal.Message.Well_Formed_Message (Ctx.P.Message_1_Ctx)
                     and Universal.Message.Byte_Size (Ctx.P.Message_1_Ctx) > 0,
                  when S_Send_2 =>
-                    Universal.Message.Structural_Valid_Message (Ctx.P.Message_2_Ctx)
+                    Universal.Message.Well_Formed_Message (Ctx.P.Message_2_Ctx)
                     and Universal.Message.Byte_Size (Ctx.P.Message_2_Ctx) > 0,
                  when others =>
                     False)));

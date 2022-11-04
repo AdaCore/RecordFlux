@@ -63,7 +63,7 @@ package body RFLX.Ethernet_Tests is
                   Get_Payload_Length (Context);
                   Assert (Payload_Length'Image, RFLX_Builtin_Types.Length'Image (46), "Invalid Payload length");
                else
-                  Assert (False, "Structural invalid Payload");
+                  Assert (False, "Invalid Payload");
                end if;
             else
                Assert (False, "Invalid Type_Length");
@@ -75,7 +75,7 @@ package body RFLX.Ethernet_Tests is
          Assert (False, "Invalid Destination");
       end if;
 
-      Assert (Ethernet.Frame.Structural_Valid_Message (Context), "Structural invalid frame");
+      Assert (Ethernet.Frame.Well_Formed_Message (Context), "Invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
 
       Ethernet.Frame.Take_Buffer (Context, Buffer);
@@ -130,7 +130,7 @@ package body RFLX.Ethernet_Tests is
          Assert (False, "Invalid Destination");
       end if;
 
-      Assert (Ethernet.Frame.Structural_Valid_Message (Context), "Structural invalid frame");
+      Assert (Ethernet.Frame.Well_Formed_Message (Context), "Invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
 
       Ethernet.Frame.Take_Buffer (Context, Buffer);
@@ -181,7 +181,7 @@ package body RFLX.Ethernet_Tests is
          end if;
       end if;
 
-      Assert (Ethernet.Frame.Structural_Valid_Message (Context), "Structural invalid frame");
+      Assert (Ethernet.Frame.Well_Formed_Message (Context), "Invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
 
       Ethernet.Frame.Take_Buffer (Context, Buffer);
@@ -201,7 +201,7 @@ package body RFLX.Ethernet_Tests is
 
       Ethernet.Frame.Verify_Message (Context);
 
-      Assert (not Ethernet.Frame.Structural_Valid_Message (Context), "Structural valid frame");
+      Assert (not Ethernet.Frame.Well_Formed_Message (Context), "Well formed frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
       Assert (not Ethernet.Frame.Incomplete_Message (Context), "Incomplete frame");
 
@@ -222,7 +222,7 @@ package body RFLX.Ethernet_Tests is
 
       Ethernet.Frame.Verify_Message (Context);
 
-      Assert (not Ethernet.Frame.Structural_Valid_Message (Context), "Structural valid frame");
+      Assert (not Ethernet.Frame.Well_Formed_Message (Context), "Well formed frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
       Assert (not Ethernet.Frame.Incomplete_Message (Context), "Incomplete frame");
 
@@ -243,7 +243,7 @@ package body RFLX.Ethernet_Tests is
 
       Ethernet.Frame.Verify_Message (Context);
 
-      Assert (not Ethernet.Frame.Structural_Valid_Message (Context), "Structural valid frame");
+      Assert (not Ethernet.Frame.Well_Formed_Message (Context), "Well formed frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
       Assert (not Ethernet.Frame.Incomplete_Message (Context), "Incomplete frame");
 
@@ -264,7 +264,7 @@ package body RFLX.Ethernet_Tests is
 
       Ethernet.Frame.Verify_Message (Context);
 
-      Assert (not Ethernet.Frame.Structural_Valid_Message (Context), "Structural valid frame");
+      Assert (not Ethernet.Frame.Well_Formed_Message (Context), "Well formed frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
       Assert (Ethernet.Frame.Incomplete_Message (Context), "Not incomplete frame");
 
@@ -291,7 +291,7 @@ package body RFLX.Ethernet_Tests is
               "Not incomplete Type_Length_TPID");
       Assert (not Ethernet.Frame.Valid (Context, Ethernet.Frame.F_Type_Length), "Valid Type_Length");
       Assert (not Ethernet.Frame.Valid (Context, Ethernet.Frame.F_TPID), "Valid TPID");
-      Assert (not Ethernet.Frame.Structural_Valid_Message (Context), "Structural valid frame");
+      Assert (not Ethernet.Frame.Well_Formed_Message (Context), "Well formed frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
       Assert (Ethernet.Frame.Incomplete_Message (Context), "Not incomplete frame");
 
@@ -320,7 +320,7 @@ package body RFLX.Ethernet_Tests is
                                             53, 0, 53, 0, 26, 1, 78, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                             0));
 
-      Assert (Ethernet.Frame.Structural_Valid_Message (Context), "Structural invalid frame");
+      Assert (Ethernet.Frame.Well_Formed_Message (Context), "Invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
       Assert (Ethernet.Frame.Byte_Size (Context)'Img, Expected'Length'Img,
               "Invalid buffer length");
@@ -372,7 +372,7 @@ package body RFLX.Ethernet_Tests is
       Ethernet.Frame.Set_Payload (Context, (69, 0, 0, 20, 0, 1, 0, 0, 64, 0, 124, 231, 127, 0, 0, 1, 127, 0, 0, 1, 0, 0,
                                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
-      Assert (Ethernet.Frame.Structural_Valid_Message (Context), "Structural invalid frame");
+      Assert (Ethernet.Frame.Well_Formed_Message (Context), "Invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
       Assert (Ethernet.Frame.Byte_Size (Context)'Img, Expected'Length'Img,
               "Invalid buffer length");
@@ -427,7 +427,7 @@ package body RFLX.Ethernet_Tests is
                                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                             10));
 
-      Assert (Ethernet.Frame.Structural_Valid_Message (Context), "Structural invalid frame");
+      Assert (Ethernet.Frame.Well_Formed_Message (Context), "Invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
 
       Message_Last := Ethernet.Frame.Message_Last (Context);
@@ -477,7 +477,7 @@ package body RFLX.Ethernet_Tests is
                                                0, 10));
       end if;
 
-      Assert (Ethernet.Frame.Structural_Valid_Message (Context), "Structural invalid frame");
+      Assert (Ethernet.Frame.Well_Formed_Message (Context), "Invalid frame");
       Assert (not Ethernet.Frame.Valid_Message (Context), "Valid frame");
 
       Message_Last := Ethernet.Frame.Message_Last (Context);

@@ -274,7 +274,7 @@ is
                            Universal.Option.Get_Option_Type (E_Ctx).Known
                            and then Universal.Option.Get_Option_Type (E_Ctx).Enum = Universal.OT_Data
                         then
-                           if Universal.Option.Structural_Valid_Message (E_Ctx) then
+                           if Universal.Option.Well_Formed_Message (E_Ctx) then
                               declare
                                  RFLX_Target_First_Option_Buffer : RFLX_Types.Bytes_Ptr;
                               begin
@@ -443,7 +443,7 @@ is
    begin
       pragma Assert (Process_2_Invariant);
       -- tests/integration/session_comprehension_head/test.rflx:61:10
-      if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
+      if Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
          declare
             RFLX_Message_Options_Ctx : Universal.Options.Context;
             RFLX_Message_Options_Buffer : RFLX_Types.Bytes_Ptr;
@@ -453,7 +453,7 @@ is
             Ctx.P.Slots.Slot_Ptr_4 := null;
             pragma Warnings (On, "unused assignment");
             Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
-            if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+            if Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
                Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options), Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options));
                declare
                   RFLX_First_Option_Found : Boolean := False;
@@ -477,7 +477,7 @@ is
                               Universal.Option.Get_Option_Type (E_Ctx).Known
                               and then Universal.Option.Get_Option_Type (E_Ctx).Enum = Universal.OT_Data
                            then
-                              if Universal.Option.Structural_Valid_Message (E_Ctx) then
+                              if Universal.Option.Well_Formed_Message (E_Ctx) then
                                  declare
                                     RFLX_Target_First_Option_Buffer : RFLX_Types.Bytes_Ptr;
                                  begin
