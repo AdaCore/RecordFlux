@@ -218,12 +218,17 @@ def check_rflx_code(block: str, subtype: str = None) -> None:
 
 
 def check_ada_code(block: str, subtype: str = None) -> None:
+    args = []
     unit = "main"
 
     if subtype is None:
         data = block
     elif subtype == "declaration":
         data = f"procedure {unit.title()} is {block} begin null; end {unit.title()};"
+    elif subtype == "api":
+        args = ["-gnats", "-gnaty", "-gnatwe"]
+        formated_block = textwrap.indent(textwrap.dedent(block), "   ")
+        data = f"package {unit.title()} is\n{formated_block}\nend {unit.title()};"
     else:
         raise CheckDocError(f"invalid Ada subtype '{subtype}'")
 
@@ -235,7 +240,7 @@ def check_ada_code(block: str, subtype: str = None) -> None:
         os.symlink(GENERATED_DIR.resolve(), tmpdir / "generated", target_is_directory=True)
 
         result = subprocess.run(
-            ["gprbuild", "-j0", "--no-project", "-q", "-u", "--src-subdirs=generated", unit],
+            ["gprbuild", "-j0", "--no-project", "-q", "-u", "--src-subdirs=generated", unit, *args],
             check=False,
             capture_output=True,
             encoding="utf-8",
