@@ -404,7 +404,7 @@ is
                            Universal.Options.Has_Element (Message_Options_Ctx)
                            and then Universal.Options.Available_Space (Message_Options_Ctx) >= Universal.Option.Size (E_Ctx)
                         then
-                           if Universal.Option.Structural_Valid_Message (E_Ctx) then
+                           if Universal.Option.Well_Formed_Message (E_Ctx) then
                               if Universal.Option.Size (E_Ctx) > 0 then
                                  Universal.Options.Append_Element (Message_Options_Ctx, E_Ctx);
                               else

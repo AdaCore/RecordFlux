@@ -28,7 +28,7 @@ package body RFLX.Fixed_Size_Tests is
       Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       Message.Verify_Message (Context);
 
-      Assert (Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (Message.Well_Formed_Message (Context), "Invalid message");
 
       Message.To_Structure (Context, Structure);
 
@@ -60,7 +60,7 @@ package body RFLX.Fixed_Size_Tests is
       Message.Initialize (Context, Buffer);
       Message.To_Context (Structure, Context);
 
-      Assert (Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (Message.Well_Formed_Message (Context), "Invalid message");
       Assert (Message.Get_Message_Type (Context).Known, "Unknown Message_Type");
       Assert (Message.Get_Message_Type (Context).Enum'Img, Universal.OT_Data'Img, "Unexpected Message_Type");
 

@@ -26,7 +26,7 @@ is
       pragma Assert (Start_Invariant);
       -- tests/integration/session_case_expression_numeric/test.rflx:19:10
       Test.Message.Verify_Message (Ctx.P.Message_Ctx);
-      if Test.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
+      if Test.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Prepare;
       else
          Ctx.P.Next_State := S_Final;

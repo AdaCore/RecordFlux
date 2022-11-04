@@ -134,7 +134,7 @@ private
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Reply_1 | S_Reply_2 =>
-                    TLV.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
+                    TLV.Message.Well_Formed_Message (Ctx.P.Message_Ctx)
                     and TLV.Message.Byte_Size (Ctx.P.Message_Ctx) > 0,
                  when others =>
                     False)));

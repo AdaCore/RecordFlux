@@ -81,7 +81,7 @@ is
     with
      Pre =>
        RFLX.Expression.Message.Has_Buffer (Ctx)
-       and RFLX.Expression.Message.Structural_Valid (Ctx, Fld)
+       and RFLX.Expression.Message.Well_Formed (Ctx, Fld)
        and RFLX.Expression.Message.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
@@ -151,7 +151,7 @@ is
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
                Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
-               Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
+               Ctx.Cursors (Fld) := (State => S_Well_Formed, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
             else
                Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
             end if;
@@ -205,7 +205,7 @@ is
        and then RFLX.Expression.Message.Field_First (Ctx, RFLX.Expression.Message.F_Payload) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Payload)
+       and Well_Formed (Ctx, F_Payload)
        and Field_Size (Ctx, F_Payload) = RFLX_Types.To_Bit_Length (Length)
        and Ctx.Verified_Last = Field_Last (Ctx, F_Payload)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -224,7 +224,7 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Payload) := (State => S_Structural_Valid, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Payload).Predecessor);
+      Ctx.Cursors (F_Payload) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Payload).Predecessor);
       Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, Predecessor => F_Payload);
    end Initialize_Payload_Private;
 

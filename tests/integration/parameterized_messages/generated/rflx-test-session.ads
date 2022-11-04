@@ -146,7 +146,7 @@ private
           when C_C =>
              (case Ctx.P.Next_State is
                  when S_Reply =>
-                    Test.Message.Structural_Valid_Message (Ctx.P.M_S_Ctx)
+                    Test.Message.Well_Formed_Message (Ctx.P.M_S_Ctx)
                     and Test.Message.Byte_Size (Ctx.P.M_S_Ctx) > 0,
                  when others =>
                     False)));

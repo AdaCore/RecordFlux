@@ -202,9 +202,7 @@ def create_state_type() -> UnitPart:
         private=[
             EnumerationType(
                 "Cursor_State",
-                dict.fromkeys(
-                    map(ID, ("S_Valid", "S_Structural_Valid", "S_Invalid", "S_Incomplete"))
-                ),
+                dict.fromkeys(map(ID, ("S_Valid", "S_Well_Formed", "S_Invalid", "S_Incomplete"))),
             )
         ]
     )
@@ -233,7 +231,7 @@ def create_cursor_type() -> UnitPart:
                     "State",
                     [
                         Variant(
-                            [Variable("S_Valid"), Variable("S_Structural_Valid")],
+                            [Variable("S_Valid"), Variable("S_Well_Formed")],
                             [
                                 Component(
                                     "First",
@@ -271,10 +269,10 @@ def create_cursor_validation_functions() -> UnitPart:
         [],
         [
             ExpressionFunctionDeclaration(
-                FunctionSpecification("Structural_Valid", "Boolean", parameters),
+                FunctionSpecification("Well_Formed", "Boolean", parameters),
                 Or(
                     Equal(Variable("Cursor.State"), Variable("S_Valid")),
-                    Equal(Variable("Cursor.State"), Variable("S_Structural_Valid")),
+                    Equal(Variable("Cursor.State"), Variable("S_Well_Formed")),
                 ),
             ),
             ExpressionFunctionDeclaration(
@@ -961,7 +959,7 @@ def create_copy_procedure(prefix: str, message: Message) -> UnitPart:
                         AndThen(
                             Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Structural_Valid_Message",
+                                prefix * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                             Equal(
@@ -1038,7 +1036,7 @@ def create_read_function(prefix: str, message: Message) -> UnitPart:
                         AndThen(
                             Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Structural_Valid_Message",
+                                prefix * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                         )
@@ -1095,7 +1093,7 @@ def create_generic_read_procedure(prefix: str, message: Message) -> UnitPart:
                         AndThen(
                             Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Structural_Valid_Message",
+                                prefix * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                             Call("Pre", [Call("Read", [Variable("Ctx")])]),
@@ -1928,7 +1926,7 @@ def create_successor_function(prefix: str, message: Message) -> UnitPart:
                         And(
                             Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Structural_Valid",
+                                prefix * message.identifier * "Well_Formed",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                             Call(
@@ -2050,9 +2048,7 @@ def create_valid_predecessor_function(
                                 *[
                                     expr.And(
                                         expr.Call(
-                                            "Structural_Valid"
-                                            if p in composite_fields
-                                            else "Valid",
+                                            "Well_Formed" if p in composite_fields else "Valid",
                                             [
                                                 expr.Indexed(
                                                     expr.Variable(ID("Ctx") * "Cursors"),
@@ -2150,7 +2146,7 @@ def create_message_last_function(prefix: str, message: Message) -> UnitPart:
                         AndThen(
                             Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Structural_Valid_Message",
+                                prefix * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                         )
@@ -2194,7 +2190,7 @@ def create_data_procedure(prefix: str, message: Message) -> UnitPart:
                         AndThen(
                             Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Structural_Valid_Message",
+                                prefix * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                             Equal(
@@ -2748,7 +2744,7 @@ def create_switch_procedures(
                     ContractCases(
                         (
                             Call(
-                                "Structural_Valid",
+                                "Well_Formed",
                                 [Variable("Ctx"), Variable(f.affixed_name)],
                             ),
                             And(*common.context_cursor_unchanged(message, f, predecessors=False)),
@@ -3352,7 +3348,7 @@ def _create_to_structure_procedure(prefix: str, message: Message) -> UnitPart:
                         AndThen(
                             Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                             Call(
-                                prefix * message.identifier * "Structural_Valid_Message",
+                                prefix * message.identifier * "Well_Formed_Message",
                                 [Variable("Ctx")],
                             ),
                         )
@@ -3497,7 +3493,7 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
                     Postcondition(
                         And(
                             Call("Has_Buffer", [Variable("Ctx")]),
-                            Call("Structural_Valid_Message", [Variable("Ctx")]),
+                            Call("Well_Formed_Message", [Variable("Ctx")]),
                             *[
                                 Equal(e, Old(e))
                                 for e in [

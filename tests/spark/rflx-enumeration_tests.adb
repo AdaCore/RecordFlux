@@ -90,7 +90,7 @@ package body RFLX.Enumeration_Tests is
 
       Enumeration.Message.Set_Priority (Context, Enumeration.Medium);
 
-      Assert (Enumeration.Message.Structural_Valid_Message (Context), "Structural invalid message");
+      Assert (Enumeration.Message.Well_Formed_Message (Context), "Invalid message");
       Assert (Enumeration.Message.Valid_Message (Context), "Invalid message");
 
       Message_Last := Enumeration.Message.Message_Last (Context);

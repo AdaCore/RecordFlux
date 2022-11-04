@@ -37,7 +37,7 @@ is
       -- tests/integration/session_comprehension_on_message_field/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
-         Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx)
+         Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx)
          and then Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx) = Universal.MT_Options
       then
          Ctx.P.Next_State := S_Process;
@@ -77,7 +77,7 @@ is
       pragma Assert (Process_Invariant);
       -- tests/integration/session_comprehension_on_message_field/test.rflx:24:10
       Universal.Option_Types.Reset (Option_Types_Ctx);
-      if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
+      if Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
          declare
             RFLX_Message_Options_Ctx : Universal.Options.Context;
             RFLX_Message_Options_Buffer : RFLX_Types.Bytes_Ptr;
@@ -87,7 +87,7 @@ is
             Ctx.P.Slots.Slot_Ptr_3 := null;
             pragma Warnings (On, "unused assignment");
             Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
-            if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+            if Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
                Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options), Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options));
                while Universal.Options.Has_Element (RFLX_Message_Options_Ctx) loop
                   pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Message_Options_Ctx));
@@ -174,7 +174,7 @@ is
       end if;
       -- tests/integration/session_comprehension_on_message_field/test.rflx:26:10
       Universal.Option_Types.Reset (Option_Types_Ctx);
-      if Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) then
+      if Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
          declare
             RFLX_Message_Options_Ctx : Universal.Options.Context;
             RFLX_Message_Options_Buffer : RFLX_Types.Bytes_Ptr;
@@ -184,7 +184,7 @@ is
             Ctx.P.Slots.Slot_Ptr_4 := null;
             pragma Warnings (On, "unused assignment");
             Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
-            if Universal.Message.Structural_Valid (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+            if Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
                Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options), Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options));
                while Universal.Options.Has_Element (RFLX_Message_Options_Ctx) loop
                   pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Message_Options_Ctx));

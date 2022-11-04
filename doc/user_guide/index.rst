@@ -202,11 +202,11 @@ All types and subprograms related to ``Message`` can be found in the package ``R
 - ``procedure Verify_Message (Ctx : in out Context)``
    - Verify all fields of message
 
-- ``function Structural_Valid (Ctx : Context; Fld : Field) return Boolean``
-   - Check if composite field is structural valid (i.e. location and size of field is correct, but content is not necessarily valid)
+- ``function Well_Formed (Ctx : Context; Fld : Field) return Boolean``
+   - Check if composite field is well formed (i.e. location and size of field is correct, but content is not necessarily valid)
 
 - ``function Present (Ctx : Context; Fld : Field) return Boolean``
-   - Check if composite field is structural valid and has non-zero size
+   - Check if composite field is well formed and has non-zero size
 
 - ``function Valid (Ctx : Context; Fld : Field) return Boolean``
    - Check if field is valid (i.e. it has valid structure and valid content)
@@ -214,8 +214,8 @@ All types and subprograms related to ``Message`` can be found in the package ``R
 - ``function Incomplete (Ctx : Context; Fld : Field) return Boolean``
    - Check if buffer was too short to verify field
 
-- ``function Structural_Valid_Message (Ctx : Context) return Boolean``
-   - Check if all fields of message are at least structural valid
+- ``function Well_Formed_Message (Ctx : Context) return Boolean``
+   - Check if all fields of message are at least well formed
 
 - ``function Valid_Message (Ctx : Context) return Boolean``
    - Check if all fields of message are valid
@@ -267,7 +267,7 @@ A simple program to parse a ``TLV.Message`` could be as follows:
    begin
       RFLX.TLV.Message.Initialize (Context, Buffer, RFLX.RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       RFLX.TLV.Message.Verify_Message (Context);
-      if RFLX.TLV.Message.Structural_Valid_Message (Context) then
+      if RFLX.TLV.Message.Well_Formed_Message (Context) then
          case RFLX.TLV.Message.Get_Tag (Context) is
             when RFLX.TLV.Msg_Data =>
                if RFLX.TLV.Message.Present (Context, RFLX.TLV.Message.F_Value) then

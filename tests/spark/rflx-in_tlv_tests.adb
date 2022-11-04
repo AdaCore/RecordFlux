@@ -26,8 +26,8 @@ package body RFLX.In_TLV_Tests is
    begin
       TLV.Message.Initialize (TLV_Message_Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
       TLV.Message.Verify_Message (TLV_Message_Context);
-      Valid := TLV.Message.Structural_Valid_Message (TLV_Message_Context);
-      Assert (Valid, "Structural invalid TLV message");
+      Valid := TLV.Message.Well_Formed_Message (TLV_Message_Context);
+      Assert (Valid, "Invalid TLV message");
       if Valid then
          Valid := In_TLV.Contains.Null_Message_In_TLV_Message_Value (TLV_Message_Context);
          Assert (Valid, "TLV message contains no null message");

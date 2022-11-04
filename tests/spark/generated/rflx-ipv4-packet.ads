@@ -173,14 +173,14 @@ is
    procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx)
-       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx)
+       and then RFLX.IPv4.Packet.Well_Formed_Message (Ctx)
        and then RFLX.IPv4.Packet.Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx)
-       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx);
+       and then RFLX.IPv4.Packet.Well_Formed_Message (Ctx);
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
@@ -195,7 +195,7 @@ is
    procedure Generic_Read (Ctx : Context) with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx)
-       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx)
+       and then RFLX.IPv4.Packet.Well_Formed_Message (Ctx)
        and then Pre (Read (Ctx));
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
@@ -236,14 +236,14 @@ is
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx)
-       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx);
+       and then RFLX.IPv4.Packet.Well_Formed_Message (Ctx);
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
    procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx)
-       and then RFLX.IPv4.Packet.Structural_Valid_Message (Ctx)
+       and then RFLX.IPv4.Packet.Well_Formed_Message (Ctx)
        and then Data'Length = RFLX.IPv4.Packet.Byte_Size (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -362,17 +362,17 @@ is
 
    function Present (Ctx : Context; Fld : Field) return Boolean;
 
-   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean;
+   function Well_Formed (Ctx : Context; Fld : Field) return Boolean;
 
    function Valid (Ctx : Context; Fld : Field) return Boolean with
      Post =>
-       (if Valid'Result then Structural_Valid (Ctx, Fld) and Present (Ctx, Fld));
+       (if Valid'Result then Well_Formed (Ctx, Fld) and Present (Ctx, Fld));
 
    function Incomplete (Ctx : Context; Fld : Field) return Boolean;
 
    function Invalid (Ctx : Context; Fld : Field) return Boolean;
 
-   function Structural_Valid_Message (Ctx : Context) return Boolean with
+   function Well_Formed_Message (Ctx : Context) return Boolean with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx);
 
@@ -456,7 +456,7 @@ is
      Ghost,
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx)
-       and then RFLX.IPv4.Packet.Structural_Valid (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Well_Formed (Ctx, RFLX.IPv4.Packet.F_Payload)
        and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Payload),
      Post =>
        Get_Payload'Result'Length = RFLX_Types.To_Length (Field_Size (Ctx, F_Payload));
@@ -464,7 +464,7 @@ is
    procedure Get_Payload (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx)
-       and then RFLX.IPv4.Packet.Structural_Valid (Ctx, RFLX.IPv4.Packet.F_Payload)
+       and then RFLX.IPv4.Packet.Well_Formed (Ctx, RFLX.IPv4.Packet.F_Payload)
        and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Payload)
        and then Data'Length = RFLX_Types.To_Length (RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload)),
      Post =>
@@ -1119,7 +1119,7 @@ is
        and then RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Options) = 0,
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Options)
+       and Well_Formed (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (Predecessor (Ctx, F_Payload) = F_Options
             and Valid_Next (Ctx, F_Payload))
@@ -1156,8 +1156,8 @@ is
        and then RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload) = 0,
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Payload)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Well_Formed (Ctx, F_Payload)
+       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1193,7 +1193,7 @@ is
        and then RFLX.IPv4.Options.Valid (Seq_Ctx),
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Options)
+       and Well_Formed (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (Predecessor (Ctx, F_Payload) = F_Options
             and Valid_Next (Ctx, F_Payload))
@@ -1229,7 +1229,7 @@ is
        and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Options) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Options),
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Options)
+       and Well_Formed (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
        and (Predecessor (Ctx, F_Payload) = F_Options
             and Valid_Next (Ctx, F_Payload))
@@ -1264,8 +1264,8 @@ is
        and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload),
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Payload)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Well_Formed (Ctx, F_Payload)
+       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1300,8 +1300,8 @@ is
        and then RFLX.IPv4.Packet.Field_Condition (Ctx, RFLX.IPv4.Packet.F_Payload, 0),
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Payload)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Well_Formed (Ctx, F_Payload)
+       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1340,8 +1340,8 @@ is
        and then Process_Data_Pre (Length),
      Post =>
        Has_Buffer (Ctx)
-       and Structural_Valid (Ctx, F_Payload)
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and Well_Formed (Ctx, F_Payload)
+       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1395,7 +1395,7 @@ is
        and (for all F in Field range F_Version .. F_Destination =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
      Contract_Cases =>
-       (Structural_Valid (Ctx, F_Options) =>
+       (Well_Formed (Ctx, F_Options) =>
            (for all F in Field range F_Payload .. F_Payload =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
         others =>
@@ -1465,13 +1465,13 @@ is
 
 private
 
-   type Cursor_State is (S_Valid, S_Structural_Valid, S_Invalid, S_Incomplete);
+   type Cursor_State is (S_Valid, S_Well_Formed, S_Invalid, S_Incomplete);
 
    type Field_Cursor (State : Cursor_State := S_Invalid) is
       record
          Predecessor : Virtual_Field := F_Final;
          case State is
-            when S_Valid | S_Structural_Valid =>
+            when S_Valid | S_Well_Formed =>
                First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
                Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
                Value : RFLX_Types.Base_Integer := 0;
@@ -1482,9 +1482,9 @@ private
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
 
-   function Structural_Valid (Cursor : Field_Cursor) return Boolean is
+   function Well_Formed (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid
-      or Cursor.State = S_Structural_Valid);
+      or Cursor.State = S_Well_Formed);
 
    function Valid (Cursor : Field_Cursor) return Boolean is
      (Cursor.State = S_Valid);
@@ -1516,93 +1516,93 @@ private
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then (for all F in Field =>
                    (if
-                       Structural_Valid (Cursors (F))
+                       Well_Formed (Cursors (F))
                     then
                        Cursors (F).First >= First
                        and Cursors (F).Last <= Verified_Last
                        and Cursors (F).First <= Cursors (F).Last + 1
                        and Valid_Value (F, Cursors (F).Value)))
       and then ((if
-                    Structural_Valid (Cursors (F_IHL))
+                    Well_Formed (Cursors (F_IHL))
                  then
                     (Valid (Cursors (F_Version))
                      and then Cursors (F_IHL).Predecessor = F_Version))
                 and then (if
-                             Structural_Valid (Cursors (F_DSCP))
+                             Well_Formed (Cursors (F_DSCP))
                           then
                              (Valid (Cursors (F_IHL))
                               and then Cursors (F_DSCP).Predecessor = F_IHL))
                 and then (if
-                             Structural_Valid (Cursors (F_ECN))
+                             Well_Formed (Cursors (F_ECN))
                           then
                              (Valid (Cursors (F_DSCP))
                               and then Cursors (F_ECN).Predecessor = F_DSCP))
                 and then (if
-                             Structural_Valid (Cursors (F_Total_Length))
+                             Well_Formed (Cursors (F_Total_Length))
                           then
                              (Valid (Cursors (F_ECN))
                               and then Cursors (F_Total_Length).Predecessor = F_ECN))
                 and then (if
-                             Structural_Valid (Cursors (F_Identification))
+                             Well_Formed (Cursors (F_Identification))
                           then
                              (Valid (Cursors (F_Total_Length))
                               and then Cursors (F_Identification).Predecessor = F_Total_Length
                               and then RFLX_Types.Base_Integer (Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Cursors (F_IHL).Value) * 4))
                 and then (if
-                             Structural_Valid (Cursors (F_Flag_R))
+                             Well_Formed (Cursors (F_Flag_R))
                           then
                              (Valid (Cursors (F_Identification))
                               and then Cursors (F_Flag_R).Predecessor = F_Identification))
                 and then (if
-                             Structural_Valid (Cursors (F_Flag_DF))
+                             Well_Formed (Cursors (F_Flag_DF))
                           then
                              (Valid (Cursors (F_Flag_R))
                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
                               and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))))
                 and then (if
-                             Structural_Valid (Cursors (F_Flag_MF))
+                             Well_Formed (Cursors (F_Flag_MF))
                           then
                              (Valid (Cursors (F_Flag_DF))
                               and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF))
                 and then (if
-                             Structural_Valid (Cursors (F_Fragment_Offset))
+                             Well_Formed (Cursors (F_Fragment_Offset))
                           then
                              (Valid (Cursors (F_Flag_MF))
                               and then Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF))
                 and then (if
-                             Structural_Valid (Cursors (F_TTL))
+                             Well_Formed (Cursors (F_TTL))
                           then
                              (Valid (Cursors (F_Fragment_Offset))
                               and then Cursors (F_TTL).Predecessor = F_Fragment_Offset))
                 and then (if
-                             Structural_Valid (Cursors (F_Protocol))
+                             Well_Formed (Cursors (F_Protocol))
                           then
                              (Valid (Cursors (F_TTL))
                               and then Cursors (F_Protocol).Predecessor = F_TTL))
                 and then (if
-                             Structural_Valid (Cursors (F_Header_Checksum))
+                             Well_Formed (Cursors (F_Header_Checksum))
                           then
                              (Valid (Cursors (F_Protocol))
                               and then Cursors (F_Header_Checksum).Predecessor = F_Protocol))
                 and then (if
-                             Structural_Valid (Cursors (F_Source))
+                             Well_Formed (Cursors (F_Source))
                           then
                              (Valid (Cursors (F_Header_Checksum))
                               and then Cursors (F_Source).Predecessor = F_Header_Checksum))
                 and then (if
-                             Structural_Valid (Cursors (F_Destination))
+                             Well_Formed (Cursors (F_Destination))
                           then
                              (Valid (Cursors (F_Source))
                               and then Cursors (F_Destination).Predecessor = F_Source))
                 and then (if
-                             Structural_Valid (Cursors (F_Options))
+                             Well_Formed (Cursors (F_Options))
                           then
                              (Valid (Cursors (F_Destination))
                               and then Cursors (F_Options).Predecessor = F_Destination))
                 and then (if
-                             Structural_Valid (Cursors (F_Payload))
+                             Well_Formed (Cursors (F_Payload))
                           then
-                             (Structural_Valid (Cursors (F_Options))
+                             (Well_Formed (Cursors (F_Options))
                               and then Cursors (F_Payload).Predecessor = F_Options)))
       and then ((if Invalid (Cursors (F_Version)) then Invalid (Cursors (F_IHL)))
                 and then (if Invalid (Cursors (F_IHL)) then Invalid (Cursors (F_DSCP)))
@@ -1621,105 +1621,105 @@ private
                 and then (if Invalid (Cursors (F_Destination)) then Invalid (Cursors (F_Options)))
                 and then (if Invalid (Cursors (F_Options)) then Invalid (Cursors (F_Payload))))
       and then (if
-                   Structural_Valid (Cursors (F_Version))
+                   Well_Formed (Cursors (F_Version))
                 then
                    Cursors (F_Version).Last - Cursors (F_Version).First + 1 = 4
                    and then Cursors (F_Version).Predecessor = F_Initial
                    and then Cursors (F_Version).First = First
                    and then (if
-                                Structural_Valid (Cursors (F_IHL))
+                                Well_Formed (Cursors (F_IHL))
                              then
                                 Cursors (F_IHL).Last - Cursors (F_IHL).First + 1 = 4
                                 and then Cursors (F_IHL).Predecessor = F_Version
                                 and then Cursors (F_IHL).First = Cursors (F_Version).Last + 1
                                 and then (if
-                                             Structural_Valid (Cursors (F_DSCP))
+                                             Well_Formed (Cursors (F_DSCP))
                                           then
                                              Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1 = 6
                                              and then Cursors (F_DSCP).Predecessor = F_IHL
                                              and then Cursors (F_DSCP).First = Cursors (F_IHL).Last + 1
                                              and then (if
-                                                          Structural_Valid (Cursors (F_ECN))
+                                                          Well_Formed (Cursors (F_ECN))
                                                        then
                                                           Cursors (F_ECN).Last - Cursors (F_ECN).First + 1 = 2
                                                           and then Cursors (F_ECN).Predecessor = F_DSCP
                                                           and then Cursors (F_ECN).First = Cursors (F_DSCP).Last + 1
                                                           and then (if
-                                                                       Structural_Valid (Cursors (F_Total_Length))
+                                                                       Well_Formed (Cursors (F_Total_Length))
                                                                     then
                                                                        Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1 = 16
                                                                        and then Cursors (F_Total_Length).Predecessor = F_ECN
                                                                        and then Cursors (F_Total_Length).First = Cursors (F_ECN).Last + 1
                                                                        and then (if
-                                                                                    Structural_Valid (Cursors (F_Identification))
+                                                                                    Well_Formed (Cursors (F_Identification))
                                                                                     and then RFLX_Types.Base_Integer (Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Cursors (F_IHL).Value) * 4
                                                                                  then
                                                                                     Cursors (F_Identification).Last - Cursors (F_Identification).First + 1 = 16
                                                                                     and then Cursors (F_Identification).Predecessor = F_Total_Length
                                                                                     and then Cursors (F_Identification).First = Cursors (F_Total_Length).Last + 1
                                                                                     and then (if
-                                                                                                 Structural_Valid (Cursors (F_Flag_R))
+                                                                                                 Well_Formed (Cursors (F_Flag_R))
                                                                                               then
                                                                                                  Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1 = 1
                                                                                                  and then Cursors (F_Flag_R).Predecessor = F_Identification
                                                                                                  and then Cursors (F_Flag_R).First = Cursors (F_Identification).Last + 1
                                                                                                  and then (if
-                                                                                                              Structural_Valid (Cursors (F_Flag_DF))
+                                                                                                              Well_Formed (Cursors (F_Flag_DF))
                                                                                                               and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))
                                                                                                            then
                                                                                                               Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1 = 1
                                                                                                               and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
                                                                                                               and then Cursors (F_Flag_DF).First = Cursors (F_Flag_R).Last + 1
                                                                                                               and then (if
-                                                                                                                           Structural_Valid (Cursors (F_Flag_MF))
+                                                                                                                           Well_Formed (Cursors (F_Flag_MF))
                                                                                                                         then
                                                                                                                            Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1 = 1
                                                                                                                            and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF
                                                                                                                            and then Cursors (F_Flag_MF).First = Cursors (F_Flag_DF).Last + 1
                                                                                                                            and then (if
-                                                                                                                                        Structural_Valid (Cursors (F_Fragment_Offset))
+                                                                                                                                        Well_Formed (Cursors (F_Fragment_Offset))
                                                                                                                                      then
                                                                                                                                         Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1 = 13
                                                                                                                                         and then Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF
                                                                                                                                         and then Cursors (F_Fragment_Offset).First = Cursors (F_Flag_MF).Last + 1
                                                                                                                                         and then (if
-                                                                                                                                                     Structural_Valid (Cursors (F_TTL))
+                                                                                                                                                     Well_Formed (Cursors (F_TTL))
                                                                                                                                                   then
                                                                                                                                                      Cursors (F_TTL).Last - Cursors (F_TTL).First + 1 = 8
                                                                                                                                                      and then Cursors (F_TTL).Predecessor = F_Fragment_Offset
                                                                                                                                                      and then Cursors (F_TTL).First = Cursors (F_Fragment_Offset).Last + 1
                                                                                                                                                      and then (if
-                                                                                                                                                                  Structural_Valid (Cursors (F_Protocol))
+                                                                                                                                                                  Well_Formed (Cursors (F_Protocol))
                                                                                                                                                                then
                                                                                                                                                                   Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1 = 8
                                                                                                                                                                   and then Cursors (F_Protocol).Predecessor = F_TTL
                                                                                                                                                                   and then Cursors (F_Protocol).First = Cursors (F_TTL).Last + 1
                                                                                                                                                                   and then (if
-                                                                                                                                                                               Structural_Valid (Cursors (F_Header_Checksum))
+                                                                                                                                                                               Well_Formed (Cursors (F_Header_Checksum))
                                                                                                                                                                             then
                                                                                                                                                                                Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1 = 16
                                                                                                                                                                                and then Cursors (F_Header_Checksum).Predecessor = F_Protocol
                                                                                                                                                                                and then Cursors (F_Header_Checksum).First = Cursors (F_Protocol).Last + 1
                                                                                                                                                                                and then (if
-                                                                                                                                                                                            Structural_Valid (Cursors (F_Source))
+                                                                                                                                                                                            Well_Formed (Cursors (F_Source))
                                                                                                                                                                                          then
                                                                                                                                                                                             Cursors (F_Source).Last - Cursors (F_Source).First + 1 = 32
                                                                                                                                                                                             and then Cursors (F_Source).Predecessor = F_Header_Checksum
                                                                                                                                                                                             and then Cursors (F_Source).First = Cursors (F_Header_Checksum).Last + 1
                                                                                                                                                                                             and then (if
-                                                                                                                                                                                                         Structural_Valid (Cursors (F_Destination))
+                                                                                                                                                                                                         Well_Formed (Cursors (F_Destination))
                                                                                                                                                                                                       then
                                                                                                                                                                                                          Cursors (F_Destination).Last - Cursors (F_Destination).First + 1 = 32
                                                                                                                                                                                                          and then Cursors (F_Destination).Predecessor = F_Source
                                                                                                                                                                                                          and then Cursors (F_Destination).First = Cursors (F_Source).Last + 1
                                                                                                                                                                                                          and then (if
-                                                                                                                                                                                                                      Structural_Valid (Cursors (F_Options))
+                                                                                                                                                                                                                      Well_Formed (Cursors (F_Options))
                                                                                                                                                                                                                    then
                                                                                                                                                                                                                       Cursors (F_Options).Last - Cursors (F_Options).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_IHL).Value) - 5) * 32
                                                                                                                                                                                                                       and then Cursors (F_Options).Predecessor = F_Destination
                                                                                                                                                                                                                       and then Cursors (F_Options).First = Cursors (F_Destination).Last + 1
                                                                                                                                                                                                                       and then (if
-                                                                                                                                                                                                                                   Structural_Valid (Cursors (F_Payload))
+                                                                                                                                                                                                                                   Well_Formed (Cursors (F_Payload))
                                                                                                                                                                                                                                 then
                                                                                                                                                                                                                                    Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Total_Length).Value) * 8 + RFLX_Types.Bit_Length (Cursors (F_IHL).Value) * (-32)
                                                                                                                                                                                                                                    and then Cursors (F_Payload).Predecessor = F_Options
@@ -1906,10 +1906,10 @@ private
              (Valid (Ctx.Cursors (F_Destination))
               and Ctx.Cursors (Fld).Predecessor = F_Destination),
           when F_Payload =>
-             (Structural_Valid (Ctx.Cursors (F_Options))
+             (Well_Formed (Ctx.Cursors (F_Options))
               and Ctx.Cursors (Fld).Predecessor = F_Options),
           when F_Final =>
-             (Structural_Valid (Ctx.Cursors (F_Payload))
+             (Well_Formed (Ctx.Cursors (F_Payload))
               and Ctx.Cursors (Fld).Predecessor = F_Payload)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
@@ -1923,12 +1923,12 @@ private
      (Available_Space (Ctx, Fld) >= Field_Size (Ctx, Fld));
 
    function Present (Ctx : Context; Fld : Field) return Boolean is
-     (Structural_Valid (Ctx.Cursors (Fld))
+     (Well_Formed (Ctx.Cursors (Fld))
       and then Ctx.Cursors (Fld).First < Ctx.Cursors (Fld).Last + 1);
 
-   function Structural_Valid (Ctx : Context; Fld : Field) return Boolean is
+   function Well_Formed (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Valid
-      or Ctx.Cursors (Fld).State = S_Structural_Valid);
+      or Ctx.Cursors (Fld).State = S_Well_Formed);
 
    function Valid (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Cursors (Fld).State = S_Valid
@@ -1941,8 +1941,8 @@ private
      (Ctx.Cursors (Fld).State = S_Invalid
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
-   function Structural_Valid_Message (Ctx : Context) return Boolean is
-     (Structural_Valid (Ctx, F_Payload));
+   function Well_Formed_Message (Ctx : Context) return Boolean is
+     (Well_Formed (Ctx, F_Payload));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Payload));

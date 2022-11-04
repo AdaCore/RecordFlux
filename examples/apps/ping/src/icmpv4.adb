@@ -239,7 +239,7 @@ is
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf, RFLX.RFLX_Types.To_Last_Bit_Index (Buf'Last));
       RFLX.IPv4.Packet.Verify_Message (IP_Context);
       if
-         not RFLX.IPv4.Packet.Structural_Valid_Message (IP_Context)
+         not RFLX.IPv4.Packet.Well_Formed_Message (IP_Context)
          or else not RFLX.IPv4.Contains.ICMP_Message_In_Packet_Payload (IP_Context)
       then
          RFLX.IPv4.Packet.Take_Buffer (IP_Context, Buf);
@@ -249,7 +249,7 @@ is
       RFLX.IPv4.Contains.Switch_To_Payload (IP_Context, ICMP_Context);
       RFLX.ICMP.Message.Verify_Message (ICMP_Context);
       if
-         not RFLX.ICMP.Message.Structural_Valid_Message (ICMP_Context)
+         not RFLX.ICMP.Message.Well_Formed_Message (ICMP_Context)
          or else RFLX.ICMP.Message.Get_Tag (ICMP_Context) /= RFLX.ICMP.Echo_Reply
       then
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);

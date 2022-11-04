@@ -95,7 +95,7 @@ is
                begin
                   TLV.Messages.Switch (RFLX_Copy_Messages_Ctx, RFLX_Head_Ctx);
                   TLV.Message.Verify_Message (RFLX_Head_Ctx);
-                  if TLV.Message.Structural_Valid_Message (RFLX_Head_Ctx) then
+                  if TLV.Message.Well_Formed_Message (RFLX_Head_Ctx) then
                      pragma Warnings (Off, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
                      TLV.Message.Take_Buffer (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer);
                      pragma Warnings (On, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
@@ -367,7 +367,7 @@ is
                begin
                   TLV.Messages.Switch (RFLX_Copy_Local_Messages_Ctx, RFLX_Head_Ctx);
                   TLV.Message.Verify_Message (RFLX_Head_Ctx);
-                  if TLV.Message.Structural_Valid_Message (RFLX_Head_Ctx) then
+                  if TLV.Message.Well_Formed_Message (RFLX_Head_Ctx) then
                      pragma Warnings (Off, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
                      TLV.Message.Take_Buffer (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer);
                      pragma Warnings (On, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");

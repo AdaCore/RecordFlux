@@ -64,7 +64,7 @@ is
       if
          not (Universal.Option.Size (Ctx.P.Option_Ctx) <= 32768
           and then Universal.Option.Size (Ctx.P.Option_Ctx) mod RFLX_Types.Byte'Size = 0
-          and then Universal.Option.Structural_Valid (Ctx.P.Option_Ctx, Universal.Option.F_Data))
+          and then Universal.Option.Well_Formed (Ctx.P.Option_Ctx, Universal.Option.F_Data))
       then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
@@ -96,14 +96,14 @@ is
          end if;
          if Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
             if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data))) then
-               if Universal.Option.Structural_Valid (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
+               if Universal.Option.Well_Formed (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
                   declare
                      pragma Warnings (Off, "is not modified, could be declared constant");
                      RFLX_Ctx_P_Option_Ctx_Tmp : Universal.Option.Context := Ctx.P.Option_Ctx;
                      pragma Warnings (On, "is not modified, could be declared constant");
                      function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
                        (Universal.Option.Has_Buffer (RFLX_Ctx_P_Option_Ctx_Tmp)
-                        and then Universal.Option.Structural_Valid (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)
+                        and then Universal.Option.Well_Formed (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)
                         and then Length = RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
                      procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
                        Pre =>

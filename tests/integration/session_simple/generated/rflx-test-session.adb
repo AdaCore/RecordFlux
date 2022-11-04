@@ -31,7 +31,7 @@ is
       -- tests/integration/session_simple/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       if
-         (Universal.Message.Structural_Valid_Message (Ctx.P.Message_Ctx) = True
+         (Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) = True
           and then Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx) = Universal.MT_Data)
          and then Universal.Message.Get_Length (Ctx.P.Message_Ctx) = 1
       then

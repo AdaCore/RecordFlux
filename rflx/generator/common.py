@@ -370,7 +370,7 @@ def message_structure_invariant(
             (
                 AndThen(
                     Call(
-                        "Structural_Valid",
+                        "Well_Formed",
                         [Indexed(prefixed("Cursors").ada_expr(), Variable(target.affixed_name))],
                     ),
                     *([condition.ada_expr()] if condition != expr.TRUE else []),
@@ -433,7 +433,7 @@ def context_predicate(
         Create the invariant that defines valid representations of fields.
 
         Each field cursor represents the state of one parsed or serialized message field.
-        This invariant ensures for all structurally valid fields that
+        This invariant ensures for all well formed fields that
 
             - the field bounds are inside the range of verified buffer part,
             - the field size is greater or equal to zero,
@@ -446,7 +446,7 @@ def context_predicate(
                 [
                     (
                         Call(
-                            "Structural_Valid",
+                            "Well_Formed",
                             [Indexed(Variable("Cursors"), Variable("F"))],
                         ),
                         And(
@@ -488,13 +488,13 @@ def context_predicate(
         """
         Create the invariant that defines the state of predecessors of valid fields.
 
-        This invariant ensures for all structurally valid message fields that
+        This invariant ensures for all well formed message fields that
 
-            - one of its predecessor fields is structurally valid,
+            - one of its predecessor fields is well formed,
             - the predecessor component in the cursor refers to a valid predecessor,
             - and the condition on the link between the field and its predecessor is fulfilled.
 
-        This ensures that there is a valid message path from each structurally valid field to the
+        This ensures that there is a valid message path from each well formed field to the
         initial field.
         """
         return AndThen(
@@ -503,7 +503,7 @@ def context_predicate(
                     [
                         (
                             Call(
-                                "Structural_Valid",
+                                "Well_Formed",
                                 [
                                     Indexed(
                                         Variable("Cursors"),
@@ -515,7 +515,7 @@ def context_predicate(
                                 *[
                                     expr.AndThen(
                                         expr.Call(
-                                            "Structural_Valid"
+                                            "Well_Formed"
                                             if l.source in composite_fields
                                             else "Valid",
                                             [
@@ -794,7 +794,7 @@ def initialize_field_statements(
         Assignment(
             Indexed(Variable("Ctx.Cursors"), Variable(field.affixed_name)),
             NamedAggregate(
-                ("State", Variable("S_Structural_Valid")),
+                ("State", Variable("S_Well_Formed")),
                 ("First", Variable("First")),
                 ("Last", Variable("Last")),
                 ("Value", Number(0)),
@@ -983,7 +983,7 @@ def create_sequence_instantiation(
                 element_type_identifier * "Size",
                 element_type_identifier * "Message_Last",
                 element_type_identifier * "Initialized",
-                element_type_identifier * "Structural_Valid_Message",
+                element_type_identifier * "Well_Formed_Message",
             ],
         )
     elif isinstance(element_type, model.Scalar):

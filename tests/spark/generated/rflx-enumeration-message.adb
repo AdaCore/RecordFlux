@@ -77,7 +77,7 @@ is
     with
      Pre =>
        RFLX.Enumeration.Message.Has_Buffer (Ctx)
-       and RFLX.Enumeration.Message.Structural_Valid (Ctx, Fld)
+       and RFLX.Enumeration.Message.Well_Formed (Ctx, Fld)
        and RFLX.Enumeration.Message.Valid_Predecessor (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
@@ -205,11 +205,11 @@ is
        and then Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
-       and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Structural_Valid (Ctx, Fld))
+       and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
        and then (case Fld is
                     when F_Priority =>
                        Get_Priority (Ctx) = To_Actual (Val)
-                       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+                       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
    is
       First : RFLX_Types.Bit_Index;
       Last : RFLX_Types.Bit_Length;
@@ -230,7 +230,7 @@ is
       if State_Valid then
          Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       else
-         Ctx.Cursors (Fld) := (State => S_Structural_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
+         Ctx.Cursors (Fld) := (State => S_Well_Formed, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       end if;
       Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
       pragma Assert (Last = (Field_First (Ctx, Fld) + Size) - 1);
@@ -253,7 +253,7 @@ is
        and (case Fld is
                when F_Priority =>
                   Get_Priority (Ctx) = To_Actual (Val)
-                  and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+                  and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -288,7 +288,7 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, F_Priority)
        and Get_Priority (Ctx) = Val
-       and (if Structural_Valid_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Priority))
+       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Priority))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old

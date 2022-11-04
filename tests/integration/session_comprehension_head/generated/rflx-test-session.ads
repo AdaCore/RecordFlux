@@ -153,7 +153,7 @@ private
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Send_1 | S_Send_2 =>
-                    Universal.Option.Structural_Valid_Message (Ctx.P.First_Option_Ctx)
+                    Universal.Option.Well_Formed_Message (Ctx.P.First_Option_Ctx)
                     and Universal.Option.Byte_Size (Ctx.P.First_Option_Ctx) > 0,
                  when others =>
                     False)));

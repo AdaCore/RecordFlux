@@ -37,13 +37,13 @@ package body RFLX.Expression_Tests is
 
       Expression.Message.Verify_Message (Context);
 
-      if Expression.Message.Structural_Valid (Context, Expression.Message.F_Payload) then
+      if Expression.Message.Well_Formed (Context, Expression.Message.F_Payload) then
          Get_Payload_Content (Context);
          Assert (Payload_Content = (1, 2), "Invalid Payload Content");
       else
          Assert (False, "Invalid Payload");
       end if;
-      Assert (Expression.Message.Structural_Valid_Message (Context), "Invalid Message");
+      Assert (Expression.Message.Well_Formed_Message (Context), "Invalid Message");
 
       Expression.Message.Take_Buffer (Context, Buffer);
       RFLX_Types.Free (Buffer);
@@ -62,9 +62,9 @@ package body RFLX.Expression_Tests is
 
       Expression.Message.Verify_Message (Context);
 
-      Assert (not Expression.Message.Structural_Valid (Context, Expression.Message.F_Payload),
-              "Structural Valid Payload");
-      Assert (not Expression.Message.Structural_Valid_Message (Context), "Structural Valid Message");
+      Assert (not Expression.Message.Well_Formed (Context, Expression.Message.F_Payload),
+              "Well Formed Payload");
+      Assert (not Expression.Message.Well_Formed_Message (Context), "Well Formed Message");
 
       Expression.Message.Take_Buffer (Context, Buffer);
       RFLX_Types.Free (Buffer);

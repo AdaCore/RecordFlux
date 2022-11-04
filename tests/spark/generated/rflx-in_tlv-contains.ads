@@ -12,7 +12,7 @@ is
 
    function Null_Message_In_TLV_Message_Value (Ctx : RFLX.TLV.Message.Context) return Boolean is
      (RFLX.TLV.Message.Has_Buffer (Ctx)
-      and then RFLX.TLV.Message.Structural_Valid (Ctx, RFLX.TLV.Message.F_Value)
+      and then RFLX.TLV.Message.Well_Formed (Ctx, RFLX.TLV.Message.F_Value)
       and then not RFLX.TLV.Message.Present (Ctx, RFLX.TLV.Message.F_Value));
 
 end RFLX.In_TLV.Contains;
