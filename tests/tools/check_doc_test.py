@@ -117,6 +117,31 @@ def test_invalid_ada_code() -> None:
         )
 
 
+@pytest.mark.compilation
+def test_invalid_ada_api_style() -> None:
+    with pytest.raises(
+        CheckDocError,
+        match=(
+            r"^<stdin>:4: error in code block\n"
+            r"main.adb:2:25: \(style\) space required\n"
+            r"gprbuild: [*][*][*] compilation phase failed\n$"
+        ),
+    ):
+        check_file(
+            STDIN,
+            """\
+
+.. doc-check: ada,api
+.. code:: ada
+    :number-lines:
+
+    function Get_Tag (Ctx:Context) return RFLX.TLV.Tag_Type;
+
+Some more text...
+""",
+        )
+
+
 def test_invalid_rflx_spec() -> None:
     with pytest.raises(
         CheckDocError,
@@ -297,6 +322,30 @@ An Ada declaration looks as follows:
     :number-lines:
 
     I : Integer;
+
+Some more text...
+""",
+    )
+
+
+@pytest.mark.compilation
+def test_valid_ada_api() -> None:
+    check_file(
+        STDIN,
+        """\
+An Ada API looks as follows:
+
+.. doc-check: ada,api
+.. code:: ada
+    :number-lines:
+
+    function Get_Tag    (Ctx : Context) return RFLX.TLV.Tag_Type;
+    function Get_Length (Ctx : Context) return RFLX.TLV.Length_Type;
+    function Get_Value  (Ctx : Context) return RFLX_Types.Bytes;
+    procedure Get_Value (Ctx : Context; Data : out RFLX_Types.Bytes);
+    generic
+       with procedure Process_Value (Value : RFLX_Types.Bytes);
+    procedure Generic_Get_Value (Ctx : Context);
 
 Some more text...
 """,
