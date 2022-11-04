@@ -14,7 +14,6 @@ from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
     OPAQUE,
-    ModularInteger,
     Session,
     State,
     Transition,
@@ -1065,54 +1064,6 @@ def test_unused_function() -> None:
         ],
         types=[BOOLEAN],
         regex=r'^<stdin>:10:20: model: error: unused function "X"$',
-    )
-
-
-def test_type_declaration() -> None:
-    Session(
-        identifier="P::S",
-        states=[
-            State(
-                "Start",
-                transitions=[
-                    Transition(
-                        target=ID("null"),
-                        condition=expr.Greater(expr.Variable("V"), expr.Number(128)),
-                    ),
-                    Transition(target=ID("null")),
-                ],
-                declarations=[],
-            ),
-        ],
-        declarations=[decl.VariableDeclaration("V", "P::T", location=Location((11, 20)))],
-        parameters=[
-            decl.TypeDeclaration(ModularInteger("P::T", expr.Number(256), Location((10, 20))))
-        ],
-        types=[],
-    )
-
-
-def test_shadowed_type_declaration() -> None:
-    assert_session_model_error(
-        states=[
-            State(
-                "Start",
-                transitions=[
-                    Transition(
-                        target=ID("null"),
-                        condition=expr.Greater(expr.Variable("V"), expr.Number(128)),
-                    ),
-                    Transition(target=ID("null")),
-                ],
-                declarations=[],
-            ),
-        ],
-        declarations=[decl.VariableDeclaration("V", "P::T", location=Location((11, 20)))],
-        parameters=[
-            decl.TypeDeclaration(ModularInteger("P::T", expr.Number(256), Location((10, 20))))
-        ],
-        types=[ModularInteger("P::T", expr.Number(128), Location((12, 20)))],
-        regex=r'^<stdin>:10:20: model: error: type "P::T" shadows type$',
     )
 
 

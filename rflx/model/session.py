@@ -575,15 +575,7 @@ class Session(AbstractSession):
 
             self._reference_variable_declaration(d.variables(), visible_declarations)
 
-            if isinstance(d, decl.TypeDeclaration):
-                type_identifier = mty.internal_type_identifier(k, self.package)
-                if type_identifier in self.types:
-                    self.error.extend(
-                        [(f'type "{k}" shadows type', Subsystem.MODEL, Severity.ERROR, d.location)],
-                    )
-                self.types[type_identifier] = d.type_definition
-
-            elif isinstance(d, decl.TypeCheckableDeclaration):
+            if isinstance(d, decl.TypeCheckableDeclaration):
                 type_identifier = mty.internal_type_identifier(d.type_identifier, self.package)
                 if type_identifier in self.types:
                     self.error.extend(
@@ -606,9 +598,6 @@ class Session(AbstractSession):
                         else:
                             a.type_ = rty.Any()
                             undefined_type(a.type_identifier, d.location)
-
-                if d.type_identifier in self._global_declarations:
-                    self._global_declarations[d.type_identifier].reference()
 
             visible_declarations[k] = d
 
