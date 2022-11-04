@@ -424,13 +424,6 @@ class UnknownDeclaration(decl.FormalDeclaration, decl.BasicDeclaration):
             r'sequence as parameter of function "F" not yet supported',
         ),
         (
-            decl.TypeDeclaration(
-                mty.ModularInteger("T", expr.Number(8), location=Location((10, 20)))
-            ),
-            RecordFluxError,
-            r'type declaration "T" not yet supported',
-        ),
-        (
             UnknownDeclaration("X", location=Location((10, 20))),
             FatalError,
             r'unexpected formal parameter "X"',

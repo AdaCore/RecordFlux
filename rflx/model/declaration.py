@@ -272,21 +272,6 @@ class ChannelDeclaration(FormalDeclaration):
         return self._writable
 
 
-class TypeDeclaration(FormalDeclaration):
-    DESCRIPTIVE_NAME: ClassVar[str] = "type"
-
-    def __init__(self, type_: mty.Type):
-        super().__init__(type_.identifier, type_.location)
-        self.type_definition = type_
-
-    def __str__(self) -> str:
-        return str(self.type_definition)
-
-    @property
-    def type_(self) -> rty.Type:
-        raise NotImplementedError
-
-
 def ada_type_name(identifier: ID) -> StrID:
     if mty.is_builtin_type(identifier) or mty.is_internal_type(identifier):
         return identifier.name

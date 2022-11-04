@@ -487,12 +487,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 pass
             elif isinstance(parameter, decl.FunctionDeclaration):
                 result.extend(self._create_abstract_function(parameter))
-            elif isinstance(parameter, decl.TypeDeclaration):
-                fail(
-                    f'type declaration "{parameter.identifier}" not yet supported',
-                    Subsystem.GENERATOR,
-                    location=parameter.location,
-                )
             else:
                 fatal_fail(
                     f'unexpected formal parameter "{parameter.identifier}"',
