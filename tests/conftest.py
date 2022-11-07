@@ -8,7 +8,7 @@ from collections.abc import Sequence
 import hypothesis
 from _pytest.config import Config
 
-from rflx import expression as expr
+from rflx import expression as expr, model
 from tests.const import FIXTURE_DIR
 
 hypothesis.settings.register_profile(
@@ -34,6 +34,20 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
     if isinstance(left, expr.Expr) and isinstance(right, expr.Expr) and op == "==":
         return [
             "Expr instances",
+            "repr:",
+            *[f"    {l}" for l in ("Actual:   " + repr(left)).split("\n")],
+            *[f"    {l}" for l in ("Expected: " + repr(right)).split("\n")],
+            "str:",
+            "    Actual:   " + re.sub(r"\n +", " ", str(left)),
+            "    Expected: " + re.sub(r"\n +", " ", str(right)),
+        ]
+    if (
+        isinstance(left, model.AbstractMessage)
+        and isinstance(right, model.AbstractMessage)
+        and op == "=="
+    ):
+        return [
+            "Message instances",
             "repr:",
             *[f"    {l}" for l in ("Actual:   " + repr(left)).split("\n")],
             *[f"    {l}" for l in ("Expected: " + repr(right)).split("\n")],
