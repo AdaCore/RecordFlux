@@ -17,7 +17,7 @@ package TLS_Handshake is
        HT_MESSAGE_HASH           => 254)
    with Size => 8;
 
-   type Length is mod 2 ** 24;
+   type Length is range 0 .. 2 ** 24 - 1 with Size => 24;
 
    type Handshake is
       message
@@ -295,8 +295,8 @@ package TLS_Handshake is
 
    -- Post-Handshake Messages
 
-   type Ticket_Lifetime is mod 2 ** 32;
-   type Ticket_Age_Add is mod 2 ** 32;
+   type Ticket_Lifetime is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Ticket_Age_Add is range 0 .. 2 ** 32 - 1 with Size => 32;
    type Ticket_Nonce_Length is range 0 .. 255 with Size => 8;
    type Ticket_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
    type New_Session_Ticket_Extensions_Length is range 0 .. 2 ** 16 - 2 with Size => 16;
@@ -608,7 +608,7 @@ package TLS_Handshake is
 
    -- Early Data Indication Extension
 
-   type Max_Early_Data_Size is mod 2 ** 32;
+   type Max_Early_Data_Size is range 0 .. 2 ** 32 - 1 with Size => 32;
 
    type Early_Data_Indication is
       message
@@ -627,7 +627,7 @@ package TLS_Handshake is
    -- Pre-Shared Key Extension
 
    type Identity_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
-   type Obfuscated_Ticket_Age is mod 2 ** 32;
+   type Obfuscated_Ticket_Age is range 0 .. 2 ** 32 - 1 with Size => 32;
 
    type PSK_Identity is
       message
@@ -663,7 +663,7 @@ package TLS_Handshake is
             with Size => 8 * Binders_Length;
       end message;
 
-   type Identity_Index is mod 2 ** 16;
+   type Identity_Index is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type Pre_Shared_Key_SH is
       message

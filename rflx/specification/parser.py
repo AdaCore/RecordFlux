@@ -903,15 +903,28 @@ def create_modular(
     _workers: int,
     _cache: Cache,
     filename: Path,
-) -> Optional[model.Type]:
+) -> None:
     assert isinstance(modular, lang.ModularTypeDef)
-    result = model.ModularInteger(
-        identifier,
-        create_math_expression(error, modular.f_mod, filename),
-        type_location(identifier, modular),
+    modulus = create_math_expression(error, modular.f_mod, filename).simplified()
+    assert isinstance(modulus, expr.Number)
+    upper = int(modulus) - 1
+    error.extend(
+        [
+            (
+                "modular integer types are not supported",
+                Subsystem.PARSER,
+                Severity.ERROR,
+                type_location(identifier, modular),
+            ),
+            (
+                f'use "type {identifier.name} is range 0 .. {upper}'
+                f' with Size => {upper.bit_length()}" instead',
+                Subsystem.PARSER,
+                Severity.INFO,
+                type_location(identifier, modular),
+            ),
+        ]
     )
-    error.extend(result.error)
-    return result
 
 
 def create_range(
@@ -939,7 +952,7 @@ def create_range(
             ]
         )
     size = create_math_expression(error, rangetype.f_size.f_value, filename)
-    result = model.RangeInteger(
+    result = model.Integer(
         identifier,
         create_math_expression(error, rangetype.f_first, filename),
         create_math_expression(error, rangetype.f_last, filename),

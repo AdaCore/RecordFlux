@@ -85,115 +85,6 @@ class Scalar(Type):
 
 
 class Integer(Scalar):
-    @property
-    def type_(self) -> rty.Type:
-        return rty.Integer(
-            self.full_name, rty.Bounds(self.first.value, self.last.value), location=self.location
-        )
-
-    @property
-    def value_count(self) -> expr.Number:
-        return self.last - self.first + expr.Number(1)
-
-    @property
-    @abstractmethod
-    def first(self) -> expr.Number:
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def last(self) -> expr.Number:
-        raise NotImplementedError
-
-
-class ModularInteger(Integer):
-    def __init__(self, identifier: StrID, modulus: expr.Expr, location: Location = None) -> None:
-        super().__init__(identifier, expr.UNDEFINED, location)
-
-        modulus_num = modulus.simplified()
-
-        if not isinstance(modulus_num, expr.Number):
-            self.error.extend(
-                [
-                    (
-                        f'modulus of "{self.name}" contains variable',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    )
-                ],
-            )
-            return
-
-        modulus_int = int(modulus_num)
-
-        # https://github.com/Componolit/RecordFlux/issues/1077
-        # size of integers is limited to 63bits
-
-        if modulus_int > 2**const.MAX_SCALAR_SIZE:
-            self.error.extend(
-                [
-                    (
-                        f'modulus of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        modulus.location,
-                    )
-                ],
-            )
-        if modulus_int == 0 or (modulus_int & (modulus_int - 1)) != 0:
-            self.error.extend(
-                [
-                    (
-                        f'modulus of "{self.name}" not power of two',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    )
-                ],
-            )
-
-        self._modulus = modulus
-        self._size = expr.Number((modulus_int - 1).bit_length())
-
-    def __repr__(self) -> str:
-        return verbose_repr(self, ["identifier", "modulus"])
-
-    def __str__(self) -> str:
-        return f"type {self.name} is mod {self.modulus}"
-
-    @property
-    def modulus(self) -> expr.Expr:
-        return self._modulus
-
-    @property
-    def first(self) -> expr.Number:
-        return expr.Number(0)
-
-    @property
-    def last(self) -> expr.Number:
-        modulus = self.modulus.simplified()
-        assert isinstance(modulus, expr.Number)
-        return modulus - expr.Number(1)
-
-    def constraints(
-        self, name: str, proof: bool = False, same_package: bool = True
-    ) -> abc.Sequence[expr.Expr]:
-        if proof:
-            return [
-                expr.Less(
-                    expr.Variable(name, type_=self.type_), self._modulus, location=self.location
-                ),
-                expr.GreaterEqual(
-                    expr.Variable(name, type_=self.type_), expr.Number(0), location=self.location
-                ),
-                expr.Equal(expr.Size(name), self.size, location=self.location),
-            ]
-
-        raise NotImplementedError
-
-
-class RangeInteger(Integer):
     def __init__(
         self,
         identifier: StrID,
@@ -326,6 +217,16 @@ class RangeInteger(Integer):
             f"type {self.name} is range {self.first_expr} .. {self.last_expr}"
             f" with Size => {self.size_expr}"
         )
+
+    @property
+    def type_(self) -> rty.Type:
+        return rty.Integer(
+            self.full_name, rty.Bounds(self.first.value, self.last.value), location=self.location
+        )
+
+    @property
+    def value_count(self) -> expr.Number:
+        return self.last - self.first + expr.Number(1)
 
     @property
     def first(self) -> expr.Number:

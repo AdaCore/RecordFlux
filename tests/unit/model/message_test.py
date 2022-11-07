@@ -53,10 +53,9 @@ from rflx.model import (
     DerivedMessage,
     Enumeration,
     Field,
+    Integer,
     Link,
     Message,
-    ModularInteger,
-    RangeInteger,
     Refinement,
     Sequence,
     Type,
@@ -70,17 +69,16 @@ from tests.data.models import (
     ETHERNET_FRAME,
     FIXED_SIZE_MESSAGE,
     FIXED_SIZE_SIMPLE_MESSAGE,
+    INTEGER,
     MESSAGE,
-    MODULAR_INTEGER,
     NULL_MESSAGE,
-    RANGE_INTEGER,
     REFINEMENT,
     SEQUENCE_INNER_MESSAGE,
     SEQUENCE_INNER_MESSAGES,
+    SEQUENCE_INTEGER_VECTOR,
     SEQUENCE_LENGTH,
     SEQUENCE_MESSAGE,
     SEQUENCE_MESSAGES_MESSAGE,
-    SEQUENCE_MODULAR_VECTOR,
     TLV_LENGTH,
     TLV_MESSAGE,
     TLV_TAG,
@@ -114,9 +112,9 @@ M_NO_REF = UnprovenMessage(
     ],
     {
         Field("F1"): OPAQUE,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F2"): INTEGER,
         Field("F3"): ENUMERATION,
-        Field("F4"): RANGE_INTEGER,
+        Field("F4"): INTEGER,
     },
 )
 
@@ -141,12 +139,12 @@ M_CMPLX_REF = UnprovenMessage(
         Link(Field("F6"), FINAL),
     ],
     {
-        Field("F1"): deepcopy(MODULAR_INTEGER),
-        Field("F2"): deepcopy(MODULAR_INTEGER),
-        Field("F3"): deepcopy(RANGE_INTEGER),
+        Field("F1"): deepcopy(INTEGER),
+        Field("F2"): deepcopy(INTEGER),
+        Field("F3"): deepcopy(INTEGER),
         Field("NR"): deepcopy(M_NO_REF),
-        Field("F5"): deepcopy(MODULAR_INTEGER),
-        Field("F6"): deepcopy(RANGE_INTEGER),
+        Field("F5"): deepcopy(INTEGER),
+        Field("F6"): deepcopy(INTEGER),
     },
 )
 
@@ -176,9 +174,9 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
     ],
     {
         Field("F1"): OPAQUE,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F2"): INTEGER,
         Field("F3"): ENUMERATION,
-        Field("F4"): RANGE_INTEGER,
+        Field("F4"): INTEGER,
     },
 )
 
@@ -214,10 +212,10 @@ PARAMETERIZED_MESSAGE = Message(
         ),
     ],
     {
-        Field("P1"): MODULAR_INTEGER,
+        Field("P1"): INTEGER,
         Field("P2"): ENUMERATION,
         Field("F1"): OPAQUE,
-        Field("F2"): RANGE_INTEGER,
+        Field("F2"): INTEGER,
     },
 )
 
@@ -230,7 +228,7 @@ M_PARAM_NO_REF = UnprovenMessage(
         Link(Field("F1"), FINAL, condition=Equal(Variable("P1"), Number(2))),
         Link(Field("F2"), FINAL),
     ],
-    {Field("P1"): MODULAR_INTEGER, Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER},
+    {Field("P1"): INTEGER, Field("F1"): INTEGER, Field("F2"): INTEGER},
 )
 
 
@@ -240,7 +238,7 @@ M_PARAM_PARAM_REF = UnprovenMessage(
         Link(INITIAL, Field("PNR")),
         Link(Field("PNR"), FINAL),
     ],
-    {Field("P2"): MODULAR_INTEGER, Field("PNR"): deepcopy(M_PARAM_NO_REF)},
+    {Field("P2"): INTEGER, Field("PNR"): deepcopy(M_PARAM_NO_REF)},
 )
 
 
@@ -271,11 +269,11 @@ def test_invalid_identifier() -> None:
 
 @pytest.mark.parametrize(
     "parameter_type",
-    [NULL_MESSAGE, TLV_MESSAGE, SEQUENCE_MODULAR_VECTOR, SEQUENCE_INNER_MESSAGES, OPAQUE],
+    [NULL_MESSAGE, TLV_MESSAGE, SEQUENCE_INTEGER_VECTOR, SEQUENCE_INNER_MESSAGES, OPAQUE],
 )
 def test_invalid_parameter_type_composite(parameter_type: Type) -> None:
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
-    types = {Field(ID("P", Location((1, 2)))): parameter_type, Field("X"): MODULAR_INTEGER}
+    types = {Field(ID("P", Location((1, 2)))): parameter_type, Field("X"): INTEGER}
 
     assert_message_model_error(
         structure,
@@ -289,7 +287,7 @@ def test_invalid_parameter_type_always_valid_enum() -> None:
         "P::E", [("A", Number(1)), ("B", Number(3))], Number(8), always_valid=True
     )
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
-    types = {Field(ID("P", Location((1, 2)))): always_valid_enum, Field("X"): MODULAR_INTEGER}
+    types = {Field(ID("P", Location((1, 2)))): always_valid_enum, Field("X"): INTEGER}
 
     assert_message_model_error(
         structure,
@@ -310,7 +308,7 @@ def test_missing_type() -> None:
 
 
 def test_ambiguous_first_field() -> None:
-    t = ModularInteger("P::T", Number(2))
+    t = Integer("P::T", Number(0), Number(1), Number(1))
 
     structure = [
         Link(INITIAL, Field(ID("X", Location((2, 6))))),
@@ -333,7 +331,7 @@ def test_ambiguous_first_field() -> None:
 
 
 def test_illegal_first_aspect_at_initial_link() -> None:
-    t = ModularInteger("P::T", Number(2))
+    t = Integer("P::T", Number(0), Number(1), Number(1))
 
     structure = [
         Link(INITIAL, Field("X"), first=Number(2, location=Location((10, 20)))),
@@ -373,7 +371,7 @@ def test_name_conflict_field_enum() -> None:
 
 
 def test_duplicate_link() -> None:
-    t = ModularInteger("P::T", Number(2))
+    t = Integer("P::T", Number(0), Number(1), Number(1))
     x = Field(ID("X", location=Location((1, 5))))
 
     structure = [
@@ -394,7 +392,7 @@ def test_duplicate_link() -> None:
 
 
 def test_multiple_duplicate_links() -> None:
-    t = ModularInteger("P::T", Number(2))
+    t = Integer("P::T", Number(0), Number(1), Number(1))
     x = Field(ID("X", location=Location((1, 5))))
     y = Field(ID("Y", location=Location((2, 5))))
 
@@ -440,7 +438,7 @@ def test_unsupported_expression() -> None:
         ),
     ]
 
-    types = {x: MODULAR_INTEGER}
+    types = {x: INTEGER}
 
     assert_message_model_error(
         structure,
@@ -468,7 +466,7 @@ def test_unreachable_field() -> None:
 
 
 def test_cycle() -> None:
-    t = ModularInteger("P::T", Number(2))
+    t = Integer("P::T", Number(0), Number(1), Number(1))
 
     structure = [
         Link(INITIAL, Field("X")),
@@ -519,7 +517,7 @@ def test_fields() -> None:
 
 def test_parameter_types() -> None:
     assert PARAMETERIZED_MESSAGE.parameter_types == {
-        Field("P1"): MODULAR_INTEGER,
+        Field("P1"): INTEGER,
         Field("P2"): ENUMERATION,
     }
 
@@ -527,7 +525,7 @@ def test_parameter_types() -> None:
 def test_field_types() -> None:
     assert PARAMETERIZED_MESSAGE.field_types == {
         Field("F1"): OPAQUE,
-        Field("F2"): RANGE_INTEGER,
+        Field("F2"): INTEGER,
     }
 
 
@@ -692,7 +690,7 @@ def test_field_locations() -> None:
     message = UnprovenMessage(
         "P::M",
         [Link(INITIAL, f2), Link(f2, f3), Link(f3, FINAL)],
-        {Field("F2"): MODULAR_INTEGER, Field("F3"): MODULAR_INTEGER},
+        {Field("F2"): INTEGER, Field("F3"): INTEGER},
         location=Location((17, 9)),
     )
     assert message.fields == (f2, f3)
@@ -701,18 +699,18 @@ def test_field_locations() -> None:
 @pytest.mark.parametrize(
     "expression",
     [
-        Variable(MODULAR_INTEGER.identifier, location=Location((1, 2))),
+        Variable(INTEGER.identifier, location=Location((1, 2))),
         And(
             TRUE,
-            Variable(MODULAR_INTEGER.identifier, location=Location((1, 2))),
+            Variable(INTEGER.identifier, location=Location((1, 2))),
             location=Location((3, 4)),
         ),
         Equal(
-            Add(Variable(MODULAR_INTEGER.identifier, location=Location((1, 2))), Number(1)),
+            Add(Variable(INTEGER.identifier, location=Location((1, 2))), Number(1)),
             Number(1),
         ),
         Equal(
-            Variable(MODULAR_INTEGER.identifier, location=Location((1, 2))),
+            Variable(INTEGER.identifier, location=Location((1, 2))),
             Variable("X"),
         ),
     ],
@@ -722,12 +720,12 @@ def test_invalid_use_of_type_literal(expression: Expr) -> None:
         Link(INITIAL, Field("X")),
         Link(Field("X"), FINAL, condition=expression),
     ]
-    types = {Field("X"): MODULAR_INTEGER}
+    types = {Field("X"): INTEGER}
 
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:1:2: model: error: invalid use of type literal "P::Modular" in expression$',
+        r'^<stdin>:1:2: model: error: invalid use of type literal "P::Integer" in expression$',
     )
 
 
@@ -769,7 +767,7 @@ def test_invalid_message_field_type() -> None:
 
 def test_unused_parameter() -> None:
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
-    types = {Field(ID("P", Location((1, 2)))): MODULAR_INTEGER, Field("X"): MODULAR_INTEGER}
+    types = {Field(ID("P", Location((1, 2)))): INTEGER, Field("X"): INTEGER}
 
     assert_message_model_error(
         structure,
@@ -795,7 +793,7 @@ def test_unused_parameter() -> None:
 def test_undefined_variable(
     operation: abc.Callable[[Expr, Expr], Expr], condition: tuple[Expr, Expr]
 ) -> None:
-    mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
+    mod_type = Integer("P::MT", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     enum_type = Enumeration(
         "P::ET", [("Val1", Number(0)), ("Val2", Number(1))], Number(8), always_valid=True
     )
@@ -820,7 +818,7 @@ def test_undefined_variable(
 
 
 def test_undefined_variable_boolean_condition_value() -> None:
-    mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
+    mod_type = Integer("P::MT", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), condition=Variable("X", location=Location((10, 20)))),
@@ -834,7 +832,7 @@ def test_undefined_variable_boolean_condition_value() -> None:
 
 
 def test_undefined_variable_size() -> None:
-    mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
+    mod_type = Integer("P::MT", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), size=Variable("Field_Size", location=Location((10, 20)))),
@@ -848,7 +846,7 @@ def test_undefined_variable_size() -> None:
 
 
 def test_undefined_variable_first() -> None:
-    mod_type = ModularInteger("P::MT", Pow(Number(2), Number(32)))
+    mod_type = Integer("P::MT", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), size=Variable("Field_First", location=Location((10, 20)))),
@@ -875,7 +873,7 @@ def test_undefined_variables() -> None:
         Link(Field("F2"), FINAL),
     ]
 
-    types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
+    types = {Field("F1"): INTEGER, Field("F2"): INTEGER}
 
     assert_message_model_error(
         structure,
@@ -888,7 +886,7 @@ def test_undefined_variables() -> None:
 def test_subsequent_variable() -> None:
     f1 = Field("F1")
     f2 = Field("F2")
-    t = ModularInteger("P::T", Pow(Number(2), Number(32)))
+    t = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     structure = [
         Link(INITIAL, f1),
         Link(f1, f2, Equal(Variable("F2", location=Location((1024, 57))), Number(42))),
@@ -945,9 +943,9 @@ def test_reference_to_optional_field_2() -> None:
         Link(Field("Data"), FINAL),
     ]
     types = {
-        Field("Flag"): MODULAR_INTEGER,
-        Field("Opt"): MODULAR_INTEGER,
-        Field("Any"): MODULAR_INTEGER,
+        Field("Flag"): INTEGER,
+        Field("Opt"): INTEGER,
+        Field("Any"): INTEGER,
         Field("Data"): OPAQUE,
     }
     assert_message_model_error(
@@ -965,7 +963,7 @@ def test_invalid_use_of_size_attribute() -> None:
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), FINAL, Equal(Size(Number(1)), Number(32), Location((400, 17)))),
     ]
-    types = {Field("F1"): MODULAR_INTEGER}
+    types = {Field("F1"): INTEGER}
     assert_message_model_error(
         structure,
         types,
@@ -983,7 +981,7 @@ def test_invalid_relation_to_opaque() -> None:
             condition=Equal(Variable("Data"), Number(42, location=Location((10, 20)))),
         ),
     ]
-    types = {Field("Length"): RANGE_INTEGER, Field("Data"): OPAQUE}
+    types = {Field("Length"): INTEGER, Field("Data"): OPAQUE}
     assert_message_model_error(
         structure,
         types,
@@ -1021,6 +1019,7 @@ def test_invalid_relation_to_aggregate() -> None:
 
 
 def test_invalid_element_in_relation_to_aggregate() -> None:
+    integer = Integer("P::Integer", Number(0), Number(255), Number(8))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(
@@ -1030,12 +1029,12 @@ def test_invalid_element_in_relation_to_aggregate() -> None:
         ),
     ]
 
-    types = {Field("F1"): MODULAR_INTEGER}
+    types = {Field("F1"): integer}
 
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected integer type "P::Modular" \(0 .. 255\)\n'
+        r'^<stdin>:10:20: model: error: expected integer type "P::Integer" \(0 .. 255\)\n'
         r"<stdin>:10:20: model: info: found aggregate with element type universal integer"
         r" \(1 .. 2\)\n"
         r"model: info: on path F1 -> Final$",
@@ -1085,7 +1084,9 @@ def test_sequence_aggregate_out_of_range() -> None:
         ),
     ]
 
-    types = {Field("F"): Sequence("P::Sequence", ModularInteger("P::Element", Number(64)))}
+    types = {
+        Field("F"): Sequence("P::Sequence", Integer("P::Element", Number(0), Number(63), Number(6)))
+    }
 
     assert_message_model_error(
         structure,
@@ -1102,7 +1103,7 @@ def test_sequence_aggregate_invalid_element_type() -> None:
     inner = Message(
         "P::I",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-        {Field("F"): MODULAR_INTEGER},
+        {Field("F"): INTEGER},
     )
     sequence_type = Sequence("P::Sequence", inner)
     f = Field("F")
@@ -1142,7 +1143,7 @@ def test_opaque_not_byte_aligned() -> None:
         Message(
             "P::M",
             [Link(INITIAL, Field("P")), Link(Field("P"), o, size=Number(128)), Link(o, FINAL)],
-            {Field("P"): ModularInteger("P::T", Number(4)), o: OPAQUE},
+            {Field("P"): Integer("P::T", Number(0), Number(3), Number(2)), o: OPAQUE},
         )
 
 
@@ -1168,8 +1169,8 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
                 Link(o2, FINAL),
             ],
             {
-                Field("L1"): MODULAR_INTEGER,
-                Field("L2"): ModularInteger("P::T", Number(4)),
+                Field("L1"): INTEGER,
+                Field("L2"): Integer("P::T", Number(0), Number(3), Number(2)),
                 Field("O1"): OPAQUE,
                 o2: OPAQUE,
             },
@@ -1184,7 +1185,7 @@ def test_opaque_valid_byte_aligned_dynamic_mul() -> None:
             Link(Field("L"), Field("O1"), size=Mul(Number(8), Variable("L"))),
             Link(Field("O1"), FINAL),
         ],
-        {Field("L"): MODULAR_INTEGER, Field("O1"): OPAQUE},
+        {Field("L"): INTEGER, Field("O1"): OPAQUE},
     )
 
 
@@ -1202,7 +1203,7 @@ def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
             Link(Field("O1"), Field("O2"), size=Number(128)),
             Link(Field("O2"), FINAL),
         ],
-        {Field("L"): MODULAR_INTEGER, Field("O1"): OPAQUE, Field("O2"): OPAQUE},
+        {Field("L"): INTEGER, Field("O1"): OPAQUE, Field("O2"): OPAQUE},
     )
 
 
@@ -1230,7 +1231,7 @@ def test_opaque_size_not_multiple_of_8_dynamic() -> None:
         Message(
             "P::M",
             [Link(INITIAL, Field("L")), Link(Field("L"), o, size=Variable("L")), Link(o, FINAL)],
-            {Field("L"): MODULAR_INTEGER, o: OPAQUE},
+            {Field("L"): INTEGER, o: OPAQUE},
         )
 
 
@@ -1247,7 +1248,7 @@ def test_opaque_size_valid_multiple_of_8_dynamic_cond() -> None:
             ),
             Link(Field("O"), FINAL),
         ],
-        {Field("L"): MODULAR_INTEGER, Field("O"): OPAQUE},
+        {Field("L"): INTEGER, Field("O"): OPAQUE},
     )
 
 
@@ -1273,9 +1274,9 @@ def test_prefixed_message_attribute() -> None:
             Link(Field("F4"), FINAL),
         ],
         {
-            Field("F1"): deepcopy(MODULAR_INTEGER),
-            Field("F2"): deepcopy(MODULAR_INTEGER),
-            Field("F3"): deepcopy(RANGE_INTEGER),
+            Field("F1"): deepcopy(INTEGER),
+            Field("F2"): deepcopy(INTEGER),
+            Field("F3"): deepcopy(INTEGER),
             Field("F4"): OPAQUE,
         },
     ).prefixed("X_")
@@ -1301,9 +1302,9 @@ def test_prefixed_message_attribute() -> None:
             Link(Field("X_F4"), FINAL),
         ],
         {
-            Field("X_F1"): deepcopy(MODULAR_INTEGER),
-            Field("X_F2"): deepcopy(MODULAR_INTEGER),
-            Field("X_F3"): deepcopy(RANGE_INTEGER),
+            Field("X_F1"): deepcopy(INTEGER),
+            Field("X_F2"): deepcopy(INTEGER),
+            Field("X_F3"): deepcopy(INTEGER),
             Field("X_F4"): OPAQUE,
         },
     )
@@ -1319,8 +1320,8 @@ def test_exclusive_valid() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     Message("P::M", structure, types)
 
@@ -1334,7 +1335,7 @@ def test_exclusive_enum_valid() -> None:
     ]
     types = {
         Field("F1"): ENUMERATION,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F2"): INTEGER,
     }
     Message("P::M", structure, types)
 
@@ -1367,8 +1368,8 @@ def test_exclusive_conflict() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): RANGE_INTEGER,
-        Field("F2"): RANGE_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -1398,9 +1399,9 @@ def test_exclusive_with_size_valid() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
         Field("F2"): OPAQUE,
-        Field("F3"): MODULAR_INTEGER,
+        Field("F3"): INTEGER,
     }
     Message("P::M", structure, types)
 
@@ -1422,9 +1423,9 @@ def test_exclusive_with_size_valid_and_not() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
         Field("F2"): OPAQUE,
-        Field("F3"): MODULAR_INTEGER,
+        Field("F3"): INTEGER,
     }
     Message("P::M", structure, types)
 
@@ -1439,7 +1440,7 @@ def test_exclusive_with_size_invalid() -> None:
     ]
     types = {
         Field("F1"): OPAQUE,
-        Field("F2"): RANGE_INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -1464,9 +1465,9 @@ def test_no_valid_path() -> None:
         Link(f3, FINAL, condition=LessEqual(Variable("F1"), Number(80), Location((23, 5)))),
     ]
     types = {
-        Field("F1"): RANGE_INTEGER,
-        Field("F2"): RANGE_INTEGER,
-        Field("F3"): RANGE_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
+        Field("F3"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -1500,7 +1501,7 @@ def test_invalid_path_1(monkeypatch: MonkeyPatch) -> None:
         Link(f1, FINAL, condition=Equal(Number(1), Number(2), Location((5, 10)))),
     ]
     types = {
-        Field("F1"): RANGE_INTEGER,
+        Field("F1"): INTEGER,
     }
     monkeypatch.setattr(Message, "_prove_reachability", lambda x: None)
     assert_message_model_error(
@@ -1520,8 +1521,8 @@ def test_invalid_path_2(monkeypatch: MonkeyPatch) -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): RANGE_INTEGER,
-        Field("F2"): RANGE_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     monkeypatch.setattr(Message, "_prove_reachability", lambda x: None)
     assert_message_model_error(
@@ -1535,14 +1536,15 @@ def test_invalid_path_2(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_contradiction() -> None:
+    integer = Integer("P::Integer", Number(1), Number(100), Number(8))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), condition=Greater(Variable("F1"), Number(1000))),
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): RANGE_INTEGER,
-        Field("F2"): RANGE_INTEGER,
+        Field("F1"): integer,
+        Field("F2"): integer,
     }
     assert_message_model_error(
         structure,
@@ -1562,8 +1564,8 @@ def test_invalid_type_condition_range_low() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): RANGE_INTEGER,
-        Field("F2"): RANGE_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -1577,14 +1579,15 @@ def test_invalid_type_condition_range_low() -> None:
 
 
 def test_invalid_type_condition_range_high() -> None:
+    integer = Integer("P::Integer", Number(1), Number(100), Number(8))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), condition=Greater(Variable("F1"), Number(200))),
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): RANGE_INTEGER,
-        Field("F2"): RANGE_INTEGER,
+        Field("F1"): integer,
+        Field("F2"): integer,
     }
     assert_message_model_error(
         structure,
@@ -1594,48 +1597,6 @@ def test_invalid_type_condition_range_high() -> None:
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 <= 100"\n'
         r'model: info: unsatisfied "F1 > 200"',
-    )
-
-
-def test_invalid_type_condition_modular_upper() -> None:
-    structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), condition=Greater(Variable("F1"), Number(2**16 + 1))),
-        Link(Field("F2"), FINAL),
-    ]
-    types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
-    }
-    assert_message_model_error(
-        structure,
-        types,
-        r"^"
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: unsatisfied "F1 < 256"\n'
-        r'model: info: unsatisfied "F1 > 65537"',
-    )
-
-
-def test_invalid_type_condition_modular_lower() -> None:
-    structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), condition=Less(Variable("F1"), Number(0))),
-        Link(Field("F2"), FINAL),
-    ]
-    types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
-    }
-    assert_message_model_error(
-        structure,
-        types,
-        r"^"
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: unsatisfied "F1 >= 0"\n'
-        r'model: info: unsatisfied "F1 < 0"',
     )
 
 
@@ -1695,7 +1656,7 @@ def test_tlv_valid_enum() -> None:
         Link(Field("V"), FINAL),
     ]
     types = {
-        Field("L"): RANGE_INTEGER,
+        Field("L"): INTEGER,
         Field("T"): ENUMERATION,
         Field("V"): OPAQUE,
     }
@@ -1709,8 +1670,8 @@ def test_invalid_fixed_size_field_with_size() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -1726,8 +1687,8 @@ def test_valid_first() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     Message("P::M", structure, types)
 
@@ -1741,8 +1702,8 @@ def test_invalid_first() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -1758,8 +1719,8 @@ def test_invalid_first_is_last() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -1776,9 +1737,9 @@ def test_invalid_first_forward_reference() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
-        Field("F3"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
+        Field("F3"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -1795,7 +1756,7 @@ def test_valid_size_reference() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
         Field("F2"): OPAQUE,
     }
     Message("P::M", structure, types)
@@ -1808,7 +1769,7 @@ def test_invalid_size_forward_reference() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
         Field("F2"): OPAQUE,
     }
     assert_message_model_error(
@@ -1819,14 +1780,14 @@ def test_invalid_size_forward_reference() -> None:
     )
 
 
-def test_invalid_negative_field_size_modular() -> None:
+def test_invalid_negative_field_size_1() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), size=Sub(Variable("F1"), Number(2))),
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
         Field("F2"): OPAQUE,
     }
     assert_message_model_error(
@@ -1839,7 +1800,7 @@ def test_invalid_negative_field_size_modular() -> None:
     )
 
 
-def test_invalid_negative_field_size_range_integer() -> None:
+def test_invalid_negative_field_size_2() -> None:
     o = Field(ID("O", location=Location((44, 3))))
     structure = [
         Link(INITIAL, Field("L")),
@@ -1850,7 +1811,10 @@ def test_invalid_negative_field_size_range_integer() -> None:
         ),
         Link(o, FINAL),
     ]
-    types = {Field("L"): RANGE_INTEGER, o: OPAQUE}
+    types = {
+        Field("L"): INTEGER,
+        o: OPAQUE,
+    }
     assert_message_model_error(
         structure,
         types,
@@ -1880,8 +1844,8 @@ def test_sequence_no_size() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): SEQUENCE_MODULAR_VECTOR,
-        Field("F2"): SEQUENCE_MODULAR_VECTOR,
+        Field("F1"): SEQUENCE_INTEGER_VECTOR,
+        Field("F2"): SEQUENCE_INTEGER_VECTOR,
     }
     assert_message_model_error(
         structure, types, '^model: error: unconstrained field "F1" without size aspect$'
@@ -1896,8 +1860,8 @@ def test_incongruent_overlay() -> None:
         Link(Field("F3"), Field("F4")),
         Link(Field("F4"), FINAL),
     ]
-    u8 = ModularInteger("P::U8", Number(256))
-    u16 = ModularInteger("P::U16", Number(65536))
+    u8 = Integer("P::U8", Number(0), Sub(Pow(Number(2), Number(8)), Number(1)), Number(8))
+    u16 = Integer("P::U16", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16))
     types = {
         Field("F1"): u8,
         Field("F2"): u8,
@@ -1923,7 +1887,7 @@ def test_field_coverage_1(monkeypatch: MonkeyPatch) -> None:
         Link(Field("F2"), FINAL),
     ]
 
-    types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
+    types = {Field("F1"): INTEGER, Field("F2"): INTEGER}
     monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
@@ -1952,10 +1916,10 @@ def test_field_coverage_2(monkeypatch: MonkeyPatch) -> None:
     ]
 
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
-        Field("F3"): MODULAR_INTEGER,
-        Field("F4"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
+        Field("F3"): INTEGER,
+        Field("F4"): INTEGER,
     }
     monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
     assert_message_model_error(
@@ -1978,7 +1942,7 @@ def test_field_after_message_start(monkeypatch: MonkeyPatch) -> None:
         Link(Field("F2"), FINAL),
     ]
 
-    types = {Field("F1"): MODULAR_INTEGER, Field("F2"): MODULAR_INTEGER}
+    types = {Field("F1"): INTEGER, Field("F2"): INTEGER}
     monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
     assert_message_model_error(
         structure,
@@ -2001,7 +1965,7 @@ def test_field_after_message_start(monkeypatch: MonkeyPatch) -> None:
         Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
     ],
 )
-@pytest.mark.parametrize("type_", [OPAQUE, SEQUENCE_MODULAR_VECTOR])
+@pytest.mark.parametrize("type_", [OPAQUE, SEQUENCE_INTEGER_VECTOR])
 def test_message_with_implicit_size_single_field(size: Expr, condition: Expr, type_: Type) -> None:
     x = Field("X")
 
@@ -2025,7 +1989,7 @@ def test_message_with_implicit_size_single_field(size: Expr, condition: Expr, ty
         Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
     ],
 )
-@pytest.mark.parametrize("type_", [OPAQUE, SEQUENCE_MODULAR_VECTOR])
+@pytest.mark.parametrize("type_", [OPAQUE, SEQUENCE_INTEGER_VECTOR])
 def test_message_with_implicit_size_multiple_fields(
     size: Expr, condition: Expr, type_: Type
 ) -> None:
@@ -2087,10 +2051,10 @@ def test_no_path_to_final() -> None:
     ]
 
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
-        Field("F3"): MODULAR_INTEGER,
-        Field("F4"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
+        Field("F3"): INTEGER,
+        Field("F4"): INTEGER,
     }
     assert_message_model_error(
         structure, types, '^model: error: no path to FINAL for field "F4" in "P::M"$'
@@ -2109,12 +2073,12 @@ def test_no_path_to_final_transitive() -> None:
     ]
 
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
-        Field("F3"): MODULAR_INTEGER,
-        Field("F4"): MODULAR_INTEGER,
-        Field("F5"): MODULAR_INTEGER,
-        Field("F6"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
+        Field("F3"): INTEGER,
+        Field("F4"): INTEGER,
+        Field("F5"): INTEGER,
+        Field("F6"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -2134,8 +2098,8 @@ def test_conditionally_unreachable_field_mod_first() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -2163,8 +2127,8 @@ def test_conditionally_unreachable_field_mod_last() -> None:
         Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -2190,8 +2154,8 @@ def test_conditionally_unreachable_field_range_first() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): RANGE_INTEGER,
-        Field("F2"): RANGE_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -2219,8 +2183,8 @@ def test_conditionally_unreachable_field_range_last() -> None:
         Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
     ]
     types = {
-        Field("F1"): RANGE_INTEGER,
-        Field("F2"): RANGE_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -2303,8 +2267,8 @@ def test_conditionally_unreachable_field_outgoing() -> None:
         Link(Field("F2"), FINAL, Greater(Variable("F1"), Number(32))),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -2336,9 +2300,9 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
-        Field("F3"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
+        Field("F3"): INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -2358,8 +2322,8 @@ def test_size_aspect_final() -> None:
         Link(Field("F2"), FINAL, size=Number(100, location=Location((4, 12)))),
     ]
     types = {
-        Field("F1"): MODULAR_INTEGER,
-        Field("F2"): MODULAR_INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
     }
     assert_message_model_error(
         structure, types, '^<stdin>:4:12: model: error: size aspect for final field in "P::M"$'
@@ -2481,7 +2445,9 @@ def test_aggregate_equal_sequence_valid_size() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Sequence("P::Arr", ModularInteger("P::Modular", Number(128))),
+        Field("Magic"): Sequence(
+            "P::Arr", Integer("P::Integer", Number(0), Number(127), Number(7))
+        ),
     }
     Message("P::M", structure, types)
 
@@ -2500,7 +2466,8 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
     ]
     types = {
         Field("Magic"): Sequence(
-            "P::Arr", ModularInteger("P::Modular", Number(128), location=Location((66, 3)))
+            "P::Arr",
+            Integer("P::Integer", Number(0), Number(127), Number(7), location=Location((66, 3))),
         ),
     }
     assert_message_model_error(
@@ -2509,8 +2476,8 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
         r"^"
         r'<stdin>:17:3: model: error: contradicting condition in "P::M"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
-        r'<stdin>:17:3: model: info: unsatisfied "2 [*] Modular\'Size = Magic\'Size"\n'
-        r'<stdin>:66:3: model: info: unsatisfied "Modular\'Size = 7"\n'
+        r'<stdin>:17:3: model: info: unsatisfied "2 [*] Integer\'Size = Magic\'Size"\n'
+        r'<stdin>:66:3: model: info: unsatisfied "Integer\'Size = 7"\n'
         r'<stdin>:19:17: model: info: unsatisfied "Magic\'Size = 40"',
     )
 
@@ -2532,7 +2499,7 @@ def test_aggregate_equal_invalid_size_field() -> None:
         ),
     ]
     types = {
-        Field("Length"): RangeInteger(
+        Field("Length"): Integer(
             "P::Length_Type", Number(10), Number(100), Number(8), Location((5, 10))
         ),
         Field(ID("Magic", Location((17, 3)))): OPAQUE,
@@ -2564,12 +2531,12 @@ def test_no_contradiction_multi() -> None:
         Link(Field("F5"), FINAL),
     ]
     types = {
-        Field("F0"): RANGE_INTEGER,
-        Field("F1"): RANGE_INTEGER,
-        Field("F2"): RANGE_INTEGER,
-        Field("F3"): RANGE_INTEGER,
-        Field("F4"): RANGE_INTEGER,
-        Field("F5"): RANGE_INTEGER,
+        Field("F0"): INTEGER,
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
+        Field("F3"): INTEGER,
+        Field("F4"): INTEGER,
+        Field("F5"): INTEGER,
     }
     Message("P::M", structure, types)
 
@@ -2605,9 +2572,9 @@ def test_discontiguous_optional_fields() -> None:
         ),
     ]
     types = {
-        Field("Flag"): MODULAR_INTEGER,
-        Field("Opt1"): MODULAR_INTEGER,
-        Field("Data"): MODULAR_INTEGER,
+        Field("Flag"): INTEGER,
+        Field("Opt1"): INTEGER,
+        Field("Data"): INTEGER,
         Field("Opt2"): OPAQUE,
     }
     Message("P::M", structure, types)
@@ -2652,7 +2619,7 @@ def test_checksum(checksums: abc.Mapping[ID, abc.Sequence[Expr]], condition: Exp
         Link(f2, f3),
         Link(f3, FINAL, condition),
     ]
-    types = {f1: MODULAR_INTEGER, f2: MODULAR_INTEGER, f3: MODULAR_INTEGER}
+    types = {f1: INTEGER, f2: INTEGER, f3: INTEGER}
     message = Message("P::M", structure, types, checksums=checksums)
     assert message.checksums == checksums
 
@@ -2708,7 +2675,7 @@ def test_checksum_error(
         Link(f2, f3),
         Link(f3, FINAL, condition),
     ]
-    types = {f1: MODULAR_INTEGER, f2: MODULAR_INTEGER, f3: MODULAR_INTEGER}
+    types = {f1: INTEGER, f2: INTEGER, f3: INTEGER}
     assert_message_model_error(structure, types, error, checksums=checksums)
 
 
@@ -2722,7 +2689,7 @@ def test_field_size() -> None:
             Link(Field("B"), Field("C")),
             Link(Field("C"), FINAL),
         ],
-        {Field("A"): MODULAR_INTEGER, Field("B"): OPAQUE, Field("C"): OPAQUE},
+        {Field("A"): INTEGER, Field("B"): OPAQUE, Field("C"): OPAQUE},
         location=Location((30, 10)),
     )
 
@@ -2747,38 +2714,38 @@ def test_copy() -> None:
     message = Message(
         "P::M",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-        {Field("F"): MODULAR_INTEGER},
+        {Field("F"): INTEGER},
     )
     assert_equal(
         message.copy(identifier="A::B"),
         Message(
             "A::B",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): MODULAR_INTEGER},
+            {Field("F"): INTEGER},
         ),
     )
     assert_equal(
         message.copy(
             structure=[Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            types={Field("C"): RANGE_INTEGER},
+            types={Field("C"): INTEGER},
             byte_order={Field("C"): ByteOrder.HIGH_ORDER_FIRST},
         ),
         Message(
             "P::M",
             [Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            {Field("C"): RANGE_INTEGER},
+            {Field("C"): INTEGER},
         ),
     )
     assert_equal(
         message.copy(
             structure=[Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            types={Field("C"): RANGE_INTEGER},
+            types={Field("C"): INTEGER},
             byte_order={Field("C"): ByteOrder.LOW_ORDER_FIRST},
         ),
         Message(
             "P::M",
             [Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            {Field("C"): RANGE_INTEGER},
+            {Field("C"): INTEGER},
             byte_order=ByteOrder.LOW_ORDER_FIRST,
         ),
     )
@@ -2788,7 +2755,7 @@ def test_proven() -> None:
     message = Message(
         "P::M",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-        {Field("F"): MODULAR_INTEGER},
+        {Field("F"): INTEGER},
     )
     assert message.proven() == message
 
@@ -2798,7 +2765,8 @@ def test_is_possibly_empty() -> None:
     b = Field("B")
     c = Field("C")
 
-    sequence = Sequence("P::Sequence", MODULAR_INTEGER)
+    integer = Integer("P::Integer", Number(0), Number(100), Number(8))
+    sequence = Sequence("P::Sequence", integer)
 
     message = Message(
         "P::M",
@@ -2809,7 +2777,7 @@ def test_is_possibly_empty() -> None:
             Link(b, c, size=Variable("A")),
             Link(c, FINAL),
         ],
-        {a: MODULAR_INTEGER, b: sequence, c: sequence},
+        {a: integer, b: sequence, c: sequence},
     )
 
     assert not message.is_possibly_empty(a)
@@ -3396,7 +3364,7 @@ def test_max_size() -> None:
     assert NULL_MESSAGE.max_size() == Number(0)
     assert FIXED_SIZE_MESSAGE.max_size() == Number(8 + 3 * 64)
     assert TLV_MESSAGE.max_size() == Number(8 + 16 + (2**16 - 1) * 8)
-    assert SEQUENCE_MESSAGE.max_size() == Number(8 + (2**8 - 1) * 8 + 3 * 16)
+    assert SEQUENCE_MESSAGE.max_size() == Number(8 + (2**8 - 1) * 8 + 2 * 16)
 
 
 def test_max_size_error() -> None:
@@ -3446,7 +3414,7 @@ def test_derived_message_proven() -> None:
         Message(
             "X::M",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): MODULAR_INTEGER},
+            {Field("F"): INTEGER},
         ),
     )
     assert message.proven() == message
@@ -3475,9 +3443,9 @@ def test_prefixed_message() -> None:
                 Link(Field("F4"), FINAL),
             ],
             {
-                Field("F1"): deepcopy(MODULAR_INTEGER),
+                Field("F1"): deepcopy(INTEGER),
                 Field("F2"): deepcopy(BOOLEAN),
-                Field("F3"): deepcopy(RANGE_INTEGER),
+                Field("F3"): deepcopy(INTEGER),
                 Field("F4"): OPAQUE,
             },
         ).prefixed("X_"),
@@ -3502,9 +3470,9 @@ def test_prefixed_message() -> None:
                 Link(Field("X_F4"), FINAL),
             ],
             {
-                Field("X_F1"): deepcopy(MODULAR_INTEGER),
+                Field("X_F1"): deepcopy(INTEGER),
                 Field("X_F2"): deepcopy(BOOLEAN),
-                Field("X_F3"): deepcopy(RANGE_INTEGER),
+                Field("X_F3"): deepcopy(INTEGER),
                 Field("X_F4"): OPAQUE,
             },
         ),
@@ -3512,35 +3480,32 @@ def test_prefixed_message() -> None:
 
 
 def test_merge_message_simple() -> None:
-    assert_equal(
-        deepcopy(M_SMPL_REF).merged(),
-        UnprovenMessage(
-            "P::Smpl_Ref",
-            [
-                Link(INITIAL, Field("NR_F1"), size=Number(16)),
-                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::One"))),
-                Link(Field("NR_F4"), FINAL),
-                Link(Field("NR_F1"), Field("NR_F2")),
-                Link(
-                    Field("NR_F2"),
-                    Field("NR_F3"),
-                    LessEqual(Variable("NR_F2"), Number(100)),
-                    first=First("NR_F2"),
-                ),
-                Link(
-                    Field("NR_F2"),
-                    Field("NR_F4"),
-                    GreaterEqual(Variable("NR_F2"), Number(200)),
-                    first=First("NR_F2"),
-                ),
-            ],
-            {
-                Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(MODULAR_INTEGER),
-                Field("NR_F3"): deepcopy(ENUMERATION),
-                Field("NR_F4"): deepcopy(RANGE_INTEGER),
-            },
-        ),
+    assert deepcopy(M_SMPL_REF).merged() == UnprovenMessage(
+        "P::Smpl_Ref",
+        [
+            Link(INITIAL, Field("NR_F1"), size=Number(16)),
+            Link(Field("NR_F1"), Field("NR_F2")),
+            Link(
+                Field("NR_F2"),
+                Field("NR_F3"),
+                LessEqual(Variable("NR_F2"), Number(100)),
+                first=First("NR_F2"),
+            ),
+            Link(
+                Field("NR_F2"),
+                Field("NR_F4"),
+                GreaterEqual(Variable("NR_F2"), Number(200)),
+                first=First("NR_F2"),
+            ),
+            Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::One"))),
+            Link(Field("NR_F4"), FINAL),
+        ],
+        {
+            Field("NR_F1"): OPAQUE,
+            Field("NR_F2"): deepcopy(INTEGER),
+            Field("NR_F3"): deepcopy(ENUMERATION),
+            Field("NR_F4"): deepcopy(INTEGER),
+        },
     )
 
 
@@ -3600,15 +3565,15 @@ def test_merge_message_complex() -> None:
                 ),
             ],
             {
-                Field("F1"): deepcopy(MODULAR_INTEGER),
-                Field("F2"): deepcopy(MODULAR_INTEGER),
-                Field("F3"): deepcopy(RANGE_INTEGER),
+                Field("F1"): deepcopy(INTEGER),
+                Field("F2"): deepcopy(INTEGER),
+                Field("F3"): deepcopy(INTEGER),
                 Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(MODULAR_INTEGER),
+                Field("NR_F2"): deepcopy(INTEGER),
                 Field("NR_F3"): deepcopy(ENUMERATION),
-                Field("NR_F4"): deepcopy(RANGE_INTEGER),
-                Field("F5"): deepcopy(MODULAR_INTEGER),
-                Field("F6"): deepcopy(RANGE_INTEGER),
+                Field("NR_F4"): deepcopy(INTEGER),
+                Field("F5"): deepcopy(INTEGER),
+                Field("F6"): deepcopy(INTEGER),
             },
         ),
     )
@@ -3659,13 +3624,13 @@ def test_merge_message_recursive() -> None:
             ],
             {
                 Field("SR_NR_F1"): OPAQUE,
-                Field("SR_NR_F2"): deepcopy(MODULAR_INTEGER),
+                Field("SR_NR_F2"): deepcopy(INTEGER),
                 Field("SR_NR_F3"): deepcopy(ENUMERATION),
-                Field("SR_NR_F4"): deepcopy(RANGE_INTEGER),
+                Field("SR_NR_F4"): deepcopy(INTEGER),
                 Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(MODULAR_INTEGER),
+                Field("NR_F2"): deepcopy(INTEGER),
                 Field("NR_F3"): deepcopy(ENUMERATION),
-                Field("NR_F4"): deepcopy(RANGE_INTEGER),
+                Field("NR_F4"): deepcopy(INTEGER),
             },
         ),
     )
@@ -3697,9 +3662,9 @@ def test_merge_message_simple_derived() -> None:
             ],
             {
                 Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(MODULAR_INTEGER),
+                Field("NR_F2"): deepcopy(INTEGER),
                 Field("NR_F3"): deepcopy(ENUMERATION),
-                Field("NR_F4"): deepcopy(RANGE_INTEGER),
+                Field("NR_F4"): deepcopy(INTEGER),
             },
             byte_order=ByteOrder.HIGH_ORDER_FIRST,
         ),
@@ -3710,7 +3675,7 @@ def test_merge_byte_order() -> None:
     inner_msg = UnprovenMessage(
         "P::Merge_Test_Byte_Order",
         [Link(INITIAL, Field("F1")), Link(Field("F1"), Field("F2")), Link(Field("F2"), FINAL)],
-        {Field("F1"): MODULAR_INTEGER, Field("F2"): ENUMERATION},
+        {Field("F1"): INTEGER, Field("F2"): ENUMERATION},
         byte_order=ByteOrder.LOW_ORDER_FIRST,
     )
     outer_msg = UnprovenMessage(
@@ -3730,7 +3695,7 @@ def test_merge_byte_order() -> None:
                 Link(Field("NR_F1"), Field("NR_F2")),
                 Link(Field("NR_F2"), FINAL),
             ],
-            {Field("NR_F1"): MODULAR_INTEGER, Field("NR_F2"): ENUMERATION},
+            {Field("NR_F1"): INTEGER, Field("NR_F2"): ENUMERATION},
             byte_order={
                 Field("NR_F1"): ByteOrder.LOW_ORDER_FIRST,
                 Field("NR_F2"): ByteOrder.LOW_ORDER_FIRST,
@@ -3828,7 +3793,7 @@ def test_merge_message_error_name_conflict() -> None:
     m2 = UnprovenMessage(
         "P::M2",
         [Link(INITIAL, m2_f2), Link(m2_f2, FINAL)],
-        {m2_f2: MODULAR_INTEGER},
+        {m2_f2: INTEGER},
         location=Location((15, 3)),
     )
 
@@ -3838,7 +3803,7 @@ def test_merge_message_error_name_conflict() -> None:
     m1 = UnprovenMessage(
         "P::M1",
         [Link(INITIAL, m1_f1), Link(m1_f1, m1_f1_f2), Link(m1_f1_f2, FINAL)],
-        {m1_f1: m2, m1_f1_f2: MODULAR_INTEGER},
+        {m1_f1: m2, m1_f1_f2: INTEGER},
         location=Location((2, 9)),
     )
 
@@ -3865,9 +3830,9 @@ def test_merge_message_parameterized() -> None:
                 Link(Field("PNR_F2"), FINAL),
             ],
             {
-                Field("P2"): MODULAR_INTEGER,
-                Field("PNR_F1"): MODULAR_INTEGER,
-                Field("PNR_F2"): MODULAR_INTEGER,
+                Field("P2"): INTEGER,
+                Field("PNR_F1"): INTEGER,
+                Field("PNR_F2"): INTEGER,
             },
         ).proven(),
     )
@@ -3893,7 +3858,7 @@ def test_merge_message_with_message_last_attribute() -> None:
             ),
             Link(Field("I2"), FINAL),
         ],
-        {Field("I1"): MODULAR_INTEGER, Field("I2"): OPAQUE},
+        {Field("I1"): INTEGER, Field("I2"): OPAQUE},
     )
 
     inner.error.propagate()
@@ -3906,7 +3871,7 @@ def test_merge_message_with_message_last_attribute() -> None:
                 Link(Field("O1"), Field("O2")),
                 Link(Field("O2"), FINAL),
             ],
-            {Field("O1"): MODULAR_INTEGER, Field("O2"): inner},
+            {Field("O1"): INTEGER, Field("O2"): inner},
         )
         .merged()
         .proven()
@@ -3934,7 +3899,7 @@ def test_merge_message_with_message_last_attribute() -> None:
                 ),
                 Link(Field("O2_I2"), FINAL),
             ],
-            {Field("O1"): MODULAR_INTEGER, Field("O2_I1"): MODULAR_INTEGER, Field("O2_I2"): OPAQUE},
+            {Field("O1"): INTEGER, Field("O2_I1"): INTEGER, Field("O2_I2"): OPAQUE},
         ),
     )
     with pytest.raises(
@@ -3957,7 +3922,7 @@ def test_merge_message_with_message_last_attribute() -> None:
                     Link(o1, Field("O2")),
                     Link(Field("O2"), FINAL),
                 ],
-                {o1: inner, Field("O2"): MODULAR_INTEGER},
+                {o1: inner, Field("O2"): INTEGER},
             )
             .merged()
             .proven()
@@ -4000,9 +3965,9 @@ def test_merge_message_with_message_size_attribute() -> None:
             Link(Field("B"), FINAL),
         ],
         {
-            Field("O1"): MODULAR_INTEGER,
-            Field("O2"): MODULAR_INTEGER,
-            Field("O3"): MODULAR_INTEGER,
+            Field("O1"): INTEGER,
+            Field("O2"): INTEGER,
+            Field("O3"): INTEGER,
             Field("A"): inner,
             Field("B"): inner,
         },
@@ -4040,9 +4005,9 @@ def test_merge_message_with_message_size_attribute() -> None:
             ),
         ],
         {
-            Field("O1"): MODULAR_INTEGER,
-            Field("O2"): MODULAR_INTEGER,
-            Field("O3"): MODULAR_INTEGER,
+            Field("O1"): INTEGER,
+            Field("O2"): INTEGER,
+            Field("O3"): INTEGER,
             Field("A_I"): OPAQUE,
             Field("B_I"): OPAQUE,
         },
@@ -4116,7 +4081,7 @@ def test_paths() -> None:
             Link(Field("L"), Field("O"), condition=LessEqual(Variable("L"), Number(100))),
             Link(Field("O"), FINAL),
         ],
-        {Field("L"): MODULAR_INTEGER, Field("O"): MODULAR_INTEGER},
+        {Field("L"): INTEGER, Field("O"): INTEGER},
     )
     assert message.paths(Field("O")) == {
         (
@@ -4202,9 +4167,9 @@ def test_message_str() -> None:
         ],
         {
             Field("A"): BOOLEAN,
-            Field("L"): MODULAR_INTEGER,
-            Field("O"): MODULAR_INTEGER,
-            Field("P"): MODULAR_INTEGER,
+            Field("L"): INTEGER,
+            Field("O"): INTEGER,
+            Field("P"): INTEGER,
         },
     )
     assert_equal(
@@ -4213,15 +4178,15 @@ def test_message_str() -> None:
             """\
             type M (A : Boolean) is
                message
-                  L : P::Modular
+                  L : P::Integer
                      then O
                         if L > 100
                            and A = True
                      then P
                         if L <= 100;
-                  O : P::Modular
+                  O : P::Integer
                      then null;
-                  P : P::Modular;
+                  P : P::Integer;
                end message"""
         ),
     )
@@ -4260,7 +4225,7 @@ def test_refinement_invalid_package() -> None:
 def test_refinement_invalid_field_type() -> None:
     x = Field(ID("X", Location((20, 10))))
 
-    message = Message("P::M", [Link(INITIAL, x), Link(x, FINAL)], {x: MODULAR_INTEGER})
+    message = Message("P::M", [Link(INITIAL, x), Link(x, FINAL)], {x: INTEGER})
 
     assert_type_error(
         Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
@@ -4339,8 +4304,8 @@ def test_boolean_variable_as_condition() -> None:
             Link(Field("Tag_2"), FINAL),
         ],
         {
-            Field("Tag_1"): MODULAR_INTEGER,
-            Field("Tag_2"): MODULAR_INTEGER,
+            Field("Tag_1"): INTEGER,
+            Field("Tag_2"): INTEGER,
             Field("Has_Tag"): BOOLEAN,
         },
     )

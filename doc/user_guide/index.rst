@@ -115,7 +115,7 @@ A more detailed description can be found in the :ref:`Language Reference`.
    package TLV is
 
       type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 8;
-      type Length is mod 2 ** 16;
+      type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
       type Message is
          message
@@ -177,7 +177,7 @@ For ``TLV`` the following types are defined in the package ``RFLX.TLV``:
 
 - ``type Tag is (Msg_Data, Msg_Error) with Size => 8``
 - ``for Tag use (Msg_Data => 1, Msg_Error => 3);``
-- ``type Length is mod 2**16``
+- ``type Length is range 0 .. 2 ** 16 - 1 with Size => 16``
 
 All types and subprograms related to ``Message`` can be found in the package ``RFLX.TLV.Message``:
 

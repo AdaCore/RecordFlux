@@ -626,6 +626,32 @@ def test_package_renaming_declaration() -> None:
     assert str(ada.PackageRenamingDeclaration("A", "B")) == "package A renames B;"
 
 
+def test_modular_type() -> None:
+    assert str(ada.ModularType("A", ada.Number(256))) == "type A is mod 256;"
+
+
+def test_range_type() -> None:
+    assert (
+        str(ada.RangeType("A", ada.Number(1), ada.Number(100), [ada.SizeAspect(ada.Number(8))]))
+        == "type A is range 1 .. 100 with\n  Size =>\n    8;"
+    )
+
+
+def test_enumeration_type() -> None:
+    assert (
+        str(ada.EnumerationType("A", {ID("B"): None, ID("C"): None}, ada.Number(8)))
+        == "type A is (B, C) with\n  Size =>\n    8;"
+    )
+    assert (
+        str(
+            ada.EnumerationType(
+                "A", {ID("B"): ada.Number(1), ID("C"): ada.Number(2)}, ada.Number(8)
+            )
+        )
+        == "type A is (B, C) with\n  Size =>\n    8;\nfor A use (B => 1, C => 2);"
+    )
+
+
 def test_subtype() -> None:
     assert str(ada.Subtype("A", "B")) == "subtype A is B;"
 

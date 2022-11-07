@@ -18,6 +18,7 @@ is
                                          Sequence_Number : ICMP.Sequence_Number;
                                          Data            : Types.Bytes) return ICMP.Checksum
    is
+      use type Interfaces.Unsigned_16;
       use type ICMP.Checksum;
       use type Types.Index;
       Checksum : ICMP.Checksum := Shift_Left (ICMP.Checksum (ICMP.To_Base_Integer (Tag)))
@@ -37,7 +38,7 @@ is
             Checksum := Add (Checksum, Shift_Left (To_Checksum (Data (Index))));
          end if;
       end if;
-      return not Checksum;
+      return ICMP.Checksum (not Interfaces.Unsigned_16 (Checksum));
    end Echo_Request_Reply_Checksum;
 
    function Add (C1 : ICMP.Checksum;

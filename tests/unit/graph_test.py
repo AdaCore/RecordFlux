@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pydotplus import Dot
 
-from rflx.expression import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Variable
+from rflx.expression import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Sub, Variable
 from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
 from rflx.model import (
@@ -11,9 +11,9 @@ from rflx.model import (
     INITIAL,
     OPAQUE,
     Field,
+    Integer,
     Link,
     Message,
-    ModularInteger,
     Session,
     State,
     Transition,
@@ -29,7 +29,7 @@ def assert_graph(graph: Dot, expected: str, tmp_path: Path) -> None:
 
 
 def test_graph_object() -> None:
-    f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
+    f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
         "P::M",
         structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
@@ -76,7 +76,7 @@ def test_empty_message_graph(tmp_path: Path) -> None:
 
 
 def test_dot_graph(tmp_path: Path) -> None:
-    f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
+    f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
         "P::M",
         structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
@@ -107,7 +107,7 @@ def test_dot_graph(tmp_path: Path) -> None:
 
 
 def test_dot_graph_with_condition(tmp_path: Path) -> None:
-    f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
+    f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
         "P::M",
         structure=[
@@ -140,7 +140,7 @@ def test_dot_graph_with_condition(tmp_path: Path) -> None:
 
 
 def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
-    f_type = ModularInteger("P::T", Pow(Number(2), Number(32)))
+    f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
         "P::M",
         structure=[

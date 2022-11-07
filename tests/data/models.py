@@ -25,11 +25,10 @@ from rflx.model import (
     DerivedMessage,
     Enumeration,
     Field,
+    Integer,
     Link,
     Message,
     Model,
-    ModularInteger,
-    RangeInteger,
     Refinement,
     Sequence,
     Session,
@@ -44,7 +43,9 @@ NULL_MODEL = Model([NULL_MESSAGE])
 TLV_TAG = Enumeration(
     "TLV::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(8), always_valid=False
 )
-TLV_LENGTH = ModularInteger("TLV::Length", Pow(Number(2), Number(16)))
+TLV_LENGTH = Integer(
+    "TLV::Length", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+)
 TLV_MESSAGE = Message(
     "TLV::Message",
     [
@@ -68,9 +69,11 @@ TLV_WITH_CHECKSUM_TAG = Enumeration(
     Number(8),
     always_valid=False,
 )
-TLV_WITH_CHECKSUM_LENGTH = ModularInteger("TLV_With_Checksum::Length", Pow(Number(2), Number(16)))
-TLV_WITH_CHECKSUM_CHECKSUM = ModularInteger(
-    "TLV_With_Checksum::Checksum", Pow(Number(2), Number(16))
+TLV_WITH_CHECKSUM_LENGTH = Integer(
+    "TLV_With_Checksum::Length", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+)
+TLV_WITH_CHECKSUM_CHECKSUM = Integer(
+    "TLV_With_Checksum::Checksum", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
 )
 TLV_WITH_CHECKSUM_MESSAGE = Message(
     "TLV_With_Checksum::Message",
@@ -100,12 +103,16 @@ NULL_MESSAGE_IN_TLV_MESSAGE_MODEL = Model(
     [TLV_TAG, TLV_LENGTH, TLV_MESSAGE, NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE]
 )
 
-ETHERNET_ADDRESS = ModularInteger("Ethernet::Address", Pow(Number(2), Number(48)))
-ETHERNET_TYPE_LENGTH = RangeInteger(
+ETHERNET_ADDRESS = Integer(
+    "Ethernet::Address", Number(0), Sub(Pow(Number(2), Number(48)), Number(1)), Number(48)
+)
+ETHERNET_TYPE_LENGTH = Integer(
     "Ethernet::Type_Length", Number(46), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
 )
-ETHERNET_TPID = RangeInteger("Ethernet::TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16))
-ETHERNET_TCI = ModularInteger("Ethernet::TCI", Pow(Number(2), Number(16)))
+ETHERNET_TPID = Integer("Ethernet::TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16))
+ETHERNET_TCI = Integer(
+    "Ethernet::TCI", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+)
 ETHERNET_FRAME = Message(
     "Ethernet::Frame",
     [
@@ -175,11 +182,11 @@ ENUMERATION_MESSAGE = Message(
 )
 ENUMERATION_MODEL = Model([ENUMERATION_PRIORITY, ENUMERATION_MESSAGE])
 
-SEQUENCE_LENGTH = ModularInteger("Sequence::Length", Pow(Number(2), Number(8)))
-SEQUENCE_MODULAR_INTEGER = ModularInteger("Sequence::Modular_Integer", Pow(Number(2), Number(16)))
-SEQUENCE_MODULAR_VECTOR = Sequence("Sequence::Modular_Vector", SEQUENCE_MODULAR_INTEGER)
-SEQUENCE_RANGE_INTEGER = RangeInteger("Sequence::Range_Integer", Number(1), Number(100), Number(8))
-SEQUENCE_RANGE_VECTOR = Sequence("Sequence::Range_Vector", SEQUENCE_RANGE_INTEGER)
+SEQUENCE_LENGTH = Integer(
+    "Sequence::Length", Number(0), Sub(Pow(Number(2), Number(8)), Number(1)), Number(8)
+)
+SEQUENCE_INTEGER = Integer("Sequence::Integer", Number(1), Number(100), Number(16))
+SEQUENCE_INTEGER_VECTOR = Sequence("Sequence::Integer_Vector", SEQUENCE_INTEGER)
 SEQUENCE_ENUMERATION = Enumeration(
     "Sequence::Enumeration",
     [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
@@ -200,16 +207,14 @@ SEQUENCE_MESSAGE = Message(
     "Sequence::Message",
     [
         Link(INITIAL, Field("Length")),
-        Link(Field("Length"), Field("Modular_Vector"), size=Mul(Variable("Length"), Number(8))),
-        Link(Field("Modular_Vector"), Field("Range_Vector"), size=Number(16)),
-        Link(Field("Range_Vector"), Field("Enumeration_Vector"), size=Number(16)),
+        Link(Field("Length"), Field("Integer_Vector"), size=Mul(Variable("Length"), Number(8))),
+        Link(Field("Integer_Vector"), Field("Enumeration_Vector"), size=Number(16)),
         Link(Field("Enumeration_Vector"), Field("AV_Enumeration_Vector"), size=Number(16)),
         Link(Field("AV_Enumeration_Vector"), FINAL),
     ],
     {
         Field("Length"): SEQUENCE_LENGTH,
-        Field("Modular_Vector"): SEQUENCE_MODULAR_VECTOR,
-        Field("Range_Vector"): SEQUENCE_RANGE_VECTOR,
+        Field("Integer_Vector"): SEQUENCE_INTEGER_VECTOR,
         Field("Enumeration_Vector"): SEQUENCE_ENUMERATION_VECTOR,
         Field("AV_Enumeration_Vector"): SEQUENCE_AV_ENUMERATION_VECTOR,
     },
@@ -245,17 +250,15 @@ SEQUENCE_SEQUENCE_SIZE_DEFINED_BY_MESSAGE_SIZE = Message(
     ],
     {
         Field("Header"): SEQUENCE_ENUMERATION,
-        Field("Vector"): SEQUENCE_MODULAR_VECTOR,
+        Field("Vector"): SEQUENCE_INTEGER_VECTOR,
     },
     skip_proof=True,
 )
 SEQUENCE_MODEL = Model(
     [
         SEQUENCE_LENGTH,
-        SEQUENCE_MODULAR_INTEGER,
-        SEQUENCE_MODULAR_VECTOR,
-        SEQUENCE_RANGE_INTEGER,
-        SEQUENCE_RANGE_VECTOR,
+        SEQUENCE_INTEGER,
+        SEQUENCE_INTEGER_VECTOR,
         SEQUENCE_ENUMERATION,
         SEQUENCE_ENUMERATION_VECTOR,
         SEQUENCE_AV_ENUMERATION,
@@ -300,8 +303,7 @@ INVALID_MESSAGE = UnprovenMessage(
     {Field("F"): OPAQUE},
 )
 
-MODULAR_INTEGER = ModularInteger("P::Modular", Number(256))
-RANGE_INTEGER = RangeInteger("P::Range_Integer", Number(1), Number(100), Number(8))
+INTEGER = Integer("P::Integer", Number(1), Number(220), Number(8))
 ENUMERATION = Enumeration(
     "P::Enumeration",
     [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
@@ -335,10 +337,12 @@ UNIVERSAL_MESSAGE_TYPE = Enumeration(
     size=Number(8),
     always_valid=False,
 )
-UNIVERSAL_LENGTH = RangeInteger(
+UNIVERSAL_LENGTH = Integer(
     "Universal::Length", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
 )
-UNIVERSAL_VALUE = ModularInteger("Universal::Value", Number(256))
+UNIVERSAL_VALUE = Integer(
+    "Universal::Value", Number(0), Sub(Pow(Number(2), Number(8)), Number(1)), Number(8)
+)
 UNIVERSAL_VALUES = Sequence("Universal::Values", UNIVERSAL_VALUE)
 UNIVERSAL_OPTION_TYPE = Enumeration(
     "Universal::Option_Type",

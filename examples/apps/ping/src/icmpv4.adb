@@ -1,5 +1,5 @@
-with Basalt.Strings_Generic;
 with Interfaces;
+with Basalt.Strings_Generic;
 with RFLX.IPv4.Packet;
 with RFLX.IPv4.Contains;
 with RFLX.ICMP;
@@ -14,7 +14,7 @@ package body ICMPv4 with
 is
 
    package Checksum is new Generic_Checksum (RFLX.RFLX_Types);
-   function Image is new Basalt.Strings_Generic.Image_Modular (RFLX.ICMP.Sequence_Number);
+   function Image is new Basalt.Strings_Generic.Image_Ranged (RFLX.ICMP.Sequence_Number);
    function Image is new Basalt.Strings_Generic.Image_Ranged (RFLX.RFLX_Builtin_Types.Length);
 
    function Image (Addr : RFLX.IPv4.Address) return String with
@@ -26,15 +26,15 @@ is
 
    function Image (Addr : RFLX.IPv4.Address) return String
    is
-      use type RFLX.IPv4.Address;
+      use type Interfaces.Unsigned_32;
       subtype Octet is RFLX.IPv4.Address range 0 .. 255;
-      function Img is new Basalt.Strings_Generic.Image_Modular (Octet);
+      function Img is new Basalt.Strings_Generic.Image_Ranged (Octet);
       type Octet_Address is array (1 .. 4) of Octet;
-      Addr_Var : RFLX.IPv4.Address := Addr;
+      Addr_Var : Interfaces.Unsigned_32 := Interfaces.Unsigned_32 (Addr);
       Address  : Octet_Address;
    begin
       for O of Address loop
-         O        := Addr_Var and 16#ff#;
+         O        := Octet (Addr_Var and 16#ff#);
          Addr_Var := Addr_Var / 256;
       end loop;
       return Img (Address (4)) & "."
@@ -107,7 +107,7 @@ is
       package Int renames Interfaces;
       subtype Octet is RFLX.IPv4.Address range 0 .. 255;
       type Octet_Address is array (1 .. 4) of Octet;
-      package Val is new Basalt.Strings_Generic.Value_Option_Modular (Octet);
+      package Val is new Basalt.Strings_Generic.Value_Option_Ranged (Octet);
       Address   : Octet_Address := (others => 0);
       Oct_First : Natural;
       Oct_Last  : Natural;

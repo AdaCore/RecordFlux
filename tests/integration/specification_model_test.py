@@ -16,10 +16,10 @@ from rflx.model import (
     OPAQUE,
     Enumeration,
     Field,
+    Integer,
     Link,
     Message,
     Model,
-    ModularInteger,
     Session,
     State,
     Transition,
@@ -69,7 +69,7 @@ def test_message_field_first_conflict() -> None:
         """\
         package Test is
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 
            type M is
               message
@@ -95,7 +95,7 @@ def test_message_field_size_conflict() -> None:
         """\
         package Test is
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 
            type M is
               message
@@ -134,21 +134,10 @@ def test_illegal_redefinition() -> None:
     assert_error_string(
         """\
         package Test is
-           type Boolean is mod 2;
+           type Boolean is range 0 .. 1 with Size => 2;
         end Test;
         """,
         r'^<stdin>:2:4: model: error: illegal redefinition of built-in type "Boolean"',
-    )
-
-
-def test_invalid_modular_type() -> None:
-    assert_error_string(
-        """\
-        package Test is
-           type T is mod 2 ** 128;
-        end Test;
-        """,
-        r'^<stdin>:2:18: model: error: modulus of "T" exceeds limit \(2\*\*63\)',
     )
 
 
@@ -206,7 +195,7 @@ def test_refinement_invalid_field() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type PDU is
               message
                  Foo : T;
@@ -246,7 +235,7 @@ def test_model_name_conflict_messages() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type PDU is
               message
                  Foo : T;
@@ -286,7 +275,7 @@ def test_model_name_conflict_derivations() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type Foo is
               message
                  Foo : T;
@@ -304,7 +293,7 @@ def test_model_name_conflict_sessions() -> None:
     assert_error_string(
         """\
         package Test is
-           type X is mod 2 ** 8;
+           type X is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            generic
            session X is
@@ -326,7 +315,7 @@ def test_model_illegal_first_aspect_at_initial_link() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type PDU is
               message
                  null
@@ -344,7 +333,7 @@ def test_model_errors_in_type_and_session() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 256;
+           type T is range 0 .. 2 ** 256 - 1 with Size => 256;
 
            generic
            session S is
@@ -353,7 +342,7 @@ def test_model_errors_in_type_and_session() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:2:18: model: error: modulus of "T" exceeds limit \(2\*\*63\)\n'
+        r'<stdin>:2:9: model: error: last of "T" exceeds limit \(2\*\*63 - 1\)\n'
         r"<stdin>:4:4: model: error: empty states"
         r"$",
     )
@@ -364,7 +353,7 @@ def test_message_with_two_size_fields() -> None:
     p.parse_string(
         """\
         package Test is
-           type Length is mod 2 ** 8;
+           type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
            type Packet is
               message
                  Length_1 : Length;
@@ -385,7 +374,7 @@ def test_message_same_field_and_type_name_with_different_size() -> None:
         """\
         package Test is
 
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type M is
               message
@@ -405,7 +394,7 @@ def test_invalid_implicit_size() -> None:
         """\
         package Test is
 
-           type Kind is mod 2 ** 16;
+           type Kind is range 0 .. 2 ** 16 - 1 with Size => 16;
 
            type M is
               message
@@ -433,7 +422,7 @@ def test_invalid_use_of_message_type_with_implicit_size() -> None:
         """\
         package Test is
 
-           type T is mod 2 ** 16;
+           type T is range 0 .. 2 ** 16 - 1 with Size => 16;
 
            type Inner is
               message
@@ -485,7 +474,7 @@ def test_invalid_message_with_field_after_field_with_implicit_size() -> None:
         """\
         package Test is
 
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type M is
               message
@@ -542,7 +531,12 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
         expr.Number(8),
         always_valid=False,
     )
-    length = ModularInteger("Test::Length", expr.Pow(expr.Number(2), expr.Number(16)))
+    length = Integer(
+        "Test::Length",
+        expr.Number(0),
+        expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
+        expr.Number(16),
+    )
     message = Message(
         "Test::Message",
         [
@@ -717,7 +711,7 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
 
            type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
-           type Value is mod 256;
+           type Value is range 0 .. 255 with Size => 8;
 
            type Message is
               message

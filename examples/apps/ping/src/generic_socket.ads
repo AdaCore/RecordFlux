@@ -2,7 +2,7 @@ generic
    type Element_Type is (<>);
    type Index_Type is (<>);
    type Buffer_Type is array (Index_Type range <>) of Element_Type;
-   type IP4_Address is mod <>;
+   type IP4_Address is range <>;
 package Generic_Socket with
    SPARK_Mode,
    Abstract_State => Network,

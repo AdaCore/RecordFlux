@@ -39,7 +39,7 @@ is
 
    pragma Warnings (On, "unreachable branch");
 
-   type Length is mod 2**16 with
+   type Length is range 0 .. 2**16 - 1 with
      Size =>
        16;
 

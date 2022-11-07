@@ -5,8 +5,7 @@ with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Types;
 
 with RFLX.Sequence.Message;
-with RFLX.Sequence.Modular_Vector;
-with RFLX.Sequence.Range_Vector;
+with RFLX.Sequence.Integer_Vector;
 with RFLX.Sequence.Enumeration_Vector;
 with RFLX.Sequence.AV_Enumeration_Vector;
 with RFLX.Sequence.Messages_Message;
@@ -43,7 +42,7 @@ package body RFLX.Sequence_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 3, 4, 0, 1, 1, 2);
+      Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(4, 0, 3, 0, 4, 0, 1, 1, 2);
       Context : Sequence.Message.Context;
       Length  : Sequence.Length;
       package Message renames Sequence.Message;
@@ -56,91 +55,49 @@ package body RFLX.Sequence_Tests is
       Length := Message.Get_Length (Context);
 
       Assert (Length'Image, Sequence.Length'Image (4), "Unexpected Length");
-      Assert (Message.Present (Context, Message.F_Modular_Vector), "Invalid Modular_Vector or Buffer");
-
-      declare
-         Sequence_Context : Sequence.Modular_Vector.Context;
-         Element          : Sequence.Modular_Integer;
-      begin
-         Message.Switch_To_Modular_Vector (Context, Sequence_Context);
-
-         Assert (Sequence.Modular_Vector.Has_Element (Sequence_Context), "Missing element 1");
-
-         Sequence.Modular_Vector.Next (Sequence_Context);
-
-         Assert (Sequence.Modular_Vector.Valid_Element (Sequence_Context), "Invalid element 2");
-
-         Element := Sequence.Modular_Vector.Get_Element (Sequence_Context);
-
-         Assert (Element'Image, Sequence.Modular_Integer'Image (1), "Invalid value of element 1");
-         Assert (Sequence.Modular_Vector.Has_Element (Sequence_Context), "Missing element 2");
-
-         Sequence.Modular_Vector.Next (Sequence_Context);
-
-         Assert (Sequence.Modular_Vector.Valid_Element (Sequence_Context), "Invalid element 2");
-
-         Element := Sequence.Modular_Vector.Get_Element (Sequence_Context);
-
-         Assert (Element'Image, Sequence.Modular_Integer'Image (2), "Invalid value of element 2");
-         Assert (not Sequence.Modular_Vector.Has_Element (Sequence_Context),
-                 "Invalid acceptance of further element");
-         Assert (not Message.Valid (Context, Message.F_Modular_Vector),
-                 "Valid Modular_Vector before context update");
-         Assert (Message.Complete_Modular_Vector (Context, Sequence_Context), "Incomplete Modular_Vector");
-
-         -- https://github.com/Componolit/Workarounds/issues/32
-         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
-         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
-         Message.Update_Modular_Vector (Context, Sequence_Context);
-         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
-         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
-
-         Assert (Message.Valid (Context, Message.F_Modular_Vector),
-                 "Invalid Modular_Vector after context update");
-      end;
-
       Assert (Message.Has_Buffer (Context) and then not Message.Valid_Message (Context),
               "Valid Message before complete parsing");
-      Assert (Message.Present (Context, Message.F_Range_Vector), "Invalid Range_Vector or Buffer");
+      Assert (Message.Present (Context, Message.F_Integer_Vector), "Invalid Integer_Vector or Buffer");
 
       declare
-         Sequence_Context : Sequence.Range_Vector.Context;
-         Element          : Sequence.Range_Integer;
+         Sequence_Context : Sequence.Integer_Vector.Context;
+         Element          : Sequence.Integer;
       begin
-         Message.Switch_To_Range_Vector (Context, Sequence_Context);
+         Message.Switch_To_Integer_Vector (Context, Sequence_Context);
 
-         Assert (Sequence.Range_Vector.Has_Element (Sequence_Context), "Missing element 1");
+         Assert (Sequence.Integer_Vector.Has_Element (Sequence_Context), "Missing element 1");
 
-         Sequence.Range_Vector.Next (Sequence_Context);
+         Sequence.Integer_Vector.Next (Sequence_Context);
 
-         Assert (Sequence.Range_Vector.Valid_Element (Sequence_Context), "Invalid element 1");
+         Assert (Sequence.Integer_Vector.Valid_Element (Sequence_Context), "Invalid element 1");
 
-         Element := Sequence.Range_Vector.Get_Element (Sequence_Context);
+         Element := Sequence.Integer_Vector.Get_Element (Sequence_Context);
 
-         Assert (Element'Image, Sequence.Range_Integer'Image (3), "Invalid value of element 1");
-         Assert (Sequence.Range_Vector.Has_Element (Sequence_Context), "Missing element 2");
+         Assert (Element'Image, Sequence.Integer'Image (3), "Invalid value of element 1");
+         Assert (Sequence.Integer_Vector.Has_Element (Sequence_Context), "Missing element 2");
 
-         Sequence.Range_Vector.Next (Sequence_Context);
+         Sequence.Integer_Vector.Next (Sequence_Context);
 
-         Assert (Sequence.Range_Vector.Valid_Element (Sequence_Context), "Invalid element 2");
+         Assert (Sequence.Integer_Vector.Valid_Element (Sequence_Context), "Invalid element 2");
 
-         Element := Sequence.Range_Vector.Get_Element (Sequence_Context);
+         Element := Sequence.Integer_Vector.Get_Element (Sequence_Context);
 
-         Assert (Element'Image, Sequence.Range_Integer'Image (4), "Invalid value of element 2");
-         Assert (not Sequence.Range_Vector.Has_Element (Sequence_Context),
+         Assert (Element'Image, Sequence.Integer'Image (4), "Invalid value of element 2");
+         Assert (not Sequence.Integer_Vector.Has_Element (Sequence_Context),
                  "Invalid acceptance of further element");
-         Assert (not Message.Valid (Context, Message.F_Range_Vector),
-                 "Valid Range_Vector before context update");
+         Assert (not Message.Valid (Context, Message.F_Integer_Vector),
+                 "Valid Integer_Vector before context update");
+         Assert (Message.Complete_Integer_Vector (Context, Sequence_Context), "Incomplete Integer_Vector");
 
          -- https://github.com/Componolit/Workarounds/issues/32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
          pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
-         Message.Update_Range_Vector (Context, Sequence_Context);
+         Message.Update_Integer_Vector (Context, Sequence_Context);
          pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
-         Assert (Message.Valid (Context, Message.F_Range_Vector),
-                 "Invalid Range_Vector after context update");
+         Assert (Message.Valid (Context, Message.F_Integer_Vector),
+                 "Invalid Integer_Vector after context update");
       end;
 
       Assert (Message.Has_Buffer (Context) and then not Message.Valid_Message (Context),
@@ -238,7 +195,7 @@ package body RFLX.Sequence_Tests is
       Message.Take_Buffer (Context, Buffer);
       RFLX_Types.Free (Buffer);
 
-      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (88)'Image, "Invalid Context.Last");
+      Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (72)'Image, "Invalid Context.Last");
    end Test_Parsing_Scalar_Sequence_Sequential;
 
    procedure Test_Parsing_Scalar_Sequence_Loop (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -261,19 +218,19 @@ package body RFLX.Sequence_Tests is
       Assert (not Message.Valid_Message (Context), "Valid Message before complete parsing");
 
       declare
-         Sequence_Context : Sequence.Modular_Vector.Context;
-         Element          : Sequence.Modular_Integer;
+         Sequence_Context : Sequence.Integer_Vector.Context;
+         Element          : Sequence.Integer;
          I                : Natural := 1;
       begin
-         Assert (Message.Present (Context, Message.F_Modular_Vector),
-                 "Invalid Modular_Vector or Buffer");
+         Assert (Message.Present (Context, Message.F_Integer_Vector),
+                 "Invalid Integer_Vector or Buffer");
 
-         Message.Switch_To_Modular_Vector (Context, Sequence_Context);
+         Message.Switch_To_Integer_Vector (Context, Sequence_Context);
 
-         Assert (Sequence.Modular_Vector.Size (Sequence_Context)'Image, Natural (0)'Image, "Invalid size");
+         Assert (Sequence.Integer_Vector.Size (Sequence_Context)'Image, Natural (0)'Image, "Invalid size");
 
-         while Sequence.Modular_Vector.Has_Element (Sequence_Context) loop
-            pragma Loop_Invariant (Sequence.Modular_Vector.Has_Buffer (Sequence_Context));
+         while Sequence.Integer_Vector.Has_Element (Sequence_Context) loop
+            pragma Loop_Invariant (Sequence.Integer_Vector.Has_Buffer (Sequence_Context));
             pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
             pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
             pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
@@ -281,87 +238,34 @@ package body RFLX.Sequence_Tests is
 
             Assert (I <= 2, "Unexpected element");
 
-            Sequence.Modular_Vector.Next (Sequence_Context);
+            Sequence.Integer_Vector.Next (Sequence_Context);
 
-            Assert (Sequence.Modular_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
+            Assert (Sequence.Integer_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
 
-            Element := Sequence.Modular_Vector.Get_Element (Sequence_Context);
-
-            Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
-
-            I := I + 1;
-         end loop;
-
-         Assert (Sequence.Modular_Vector.Size (Sequence_Context) = 2 * Sequence.Modular_Integer'Size, "Invalid size");
-         Assert (Sequence.Modular_Vector.Head (Sequence_Context)'Image, Natural (1)'Image, "Invalid head element");
-         Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
-         Assert (Sequence.Modular_Vector.Valid (Sequence_Context), "Invalid Modular_Vector after parsing");
-         Assert (not Message.Valid (Context, Message.F_Modular_Vector),
-                 "Valid Modular_Vector before context update");
-         Assert (Message.Complete_Modular_Vector (Context, Sequence_Context), "Incomplete Modular_Vector");
-
-         -- https://github.com/Componolit/Workarounds/issues/32
-         pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
-         pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
-         Message.Update_Modular_Vector (Context, Sequence_Context);
-         pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
-         pragma Warnings (On, "unused assignment to ""Sequence_Context""");
-
-         Assert (Message.Valid (Context, Message.F_Modular_Vector),
-                 "Invalid Modular_Vector after context update");
-      end;
-
-      Assert (not Message.Valid_Message (Context), "Valid Message before complete parsing");
-
-      declare
-         Sequence_Context : Sequence.Range_Vector.Context;
-         Element          : Sequence.Range_Integer;
-         I                : Natural := 1;
-      begin
-         Assert (Message.Present (Context, Message.F_Range_Vector),
-                 "Invalid Range_Vector or Buffer");
-
-         Message.Switch_To_Range_Vector (Context, Sequence_Context);
-
-         Assert (Sequence.Range_Vector.Size (Sequence_Context)'Image, Natural (0)'Image, "Invalid size");
-
-         while Sequence.Range_Vector.Has_Element (Sequence_Context) loop
-            pragma Loop_Invariant (Sequence.Range_Vector.Has_Buffer (Sequence_Context));
-            pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
-            pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
-            pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
-            pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
-
-            Assert (I <= 2, "Unexpected element");
-
-            Sequence.Range_Vector.Next (Sequence_Context);
-
-            Assert (Sequence.Range_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
-
-            Element := Sequence.Range_Vector.Get_Element (Sequence_Context);
+            Element := Sequence.Integer_Vector.Get_Element (Sequence_Context);
 
             Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
 
             I := I + 1;
          end loop;
 
-         Assert (Sequence.Range_Vector.Size (Sequence_Context) = 2 * Sequence.Range_Integer'Size, "Invalid size");
-         Assert (Sequence.Range_Vector.Head (Sequence_Context)'Image, Natural (1)'Image, "Invalid head element");
+         Assert (Sequence.Integer_Vector.Size (Sequence_Context) = 2 * Sequence.Integer'Size, "Invalid size");
+         Assert (Sequence.Integer_Vector.Head (Sequence_Context)'Image, Natural (1)'Image, "Invalid head element");
          Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
-         Assert (Sequence.Range_Vector.Valid (Sequence_Context), "Invalid Range_Vector after parsing");
-         Assert (not Message.Valid (Context, Message.F_Range_Vector),
-                 "Valid Range_Vector before context update");
-         Assert (Message.Complete_Range_Vector (Context, Sequence_Context), "Incomplete Range_Vector");
+         Assert (Sequence.Integer_Vector.Valid (Sequence_Context), "Invalid Integer_Vector after parsing");
+         Assert (not Message.Valid (Context, Message.F_Integer_Vector),
+                 "Valid Integer_Vector before context update");
+         Assert (Message.Complete_Integer_Vector (Context, Sequence_Context), "Incomplete Integer_Vector");
 
          -- https://github.com/Componolit/Workarounds/issues/32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
          pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
-         Message.Update_Range_Vector (Context, Sequence_Context);
+         Message.Update_Integer_Vector (Context, Sequence_Context);
          pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
          pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
-         Assert (Message.Valid (Context, Message.F_Range_Vector),
-                 "Invalid Range_Vector after context update");
+         Assert (Message.Valid (Context, Message.F_Integer_Vector),
+                 "Invalid Integer_Vector after context update");
       end;
 
       Assert (not Message.Valid_Message (Context), "Valid Message before complete parsing");
@@ -497,69 +401,45 @@ package body RFLX.Sequence_Tests is
    is
       pragma Unreferenced (T);
       Expected                      : RFLX_Builtin_Types.Bytes_Ptr :=
-        new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
+        new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2);
       Buffer                        : RFLX_Builtin_Types.Bytes_Ptr :=
-        new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0);
       Context                       : Sequence.Message.Context;
-      Modular_Vector_Context        : Sequence.Modular_Vector.Context;
-      Range_Vector_Context          : Sequence.Range_Vector.Context;
+      Integer_Vector_Context          : Sequence.Integer_Vector.Context;
       Enumeration_Vector_Context    : Sequence.Enumeration_Vector.Context;
       AV_Enumeration_Vector_Context : Sequence.AV_Enumeration_Vector.Context;
       package Message renames Sequence.Message;
    begin
       Message.Initialize (Context, Buffer);
       Message.Set_Length (Context, 4);
-      Message.Switch_To_Modular_Vector (Context, Modular_Vector_Context);
 
-      Assert (Sequence.Modular_Vector.Size (Modular_Vector_Context)'Image, Natural (0)'Image, "Invalid size");
-
-      Sequence.Modular_Vector.Append_Element (Modular_Vector_Context, 1);
-      Sequence.Modular_Vector.Append_Element (Modular_Vector_Context, 2);
-
-      Assert (Sequence.Modular_Vector.Size (Modular_Vector_Context)'Image,
-              Natural (2 * Sequence.Modular_Integer'Size)'Image,
-              "Invalid size");
-      Assert (Sequence.Modular_Vector.Head (Modular_Vector_Context)'Image, Natural (1)'Image, "Invalid head element");
-      Assert (not Sequence.Modular_Vector.Has_Element (Modular_Vector_Context),
-              "Invalid acceptance of further element");
-      Assert (not Message.Valid (Context, Message.F_Modular_Vector),
-              "Valid Modular_Vector before context update");
-
-      -- https://github.com/Componolit/Workarounds/issues/32
-      pragma Warnings (Off, "unused assignment to ""Modular_Vector_Context""");
-      pragma Warnings (Off, """Modular_Vector_Context"" is set by ""*"" but not used after the call");
-      Message.Update_Modular_Vector (Context, Modular_Vector_Context);
-      pragma Warnings (On, """Modular_Vector_Context"" is set by ""*"" but not used after the call");
-      pragma Warnings (On, "unused assignment to ""Modular_Vector_Context""");
-
-      Assert (Message.Valid (Context, Message.F_Modular_Vector),
-              "Invalid Modular_Vector after context update");
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
-      Message.Switch_To_Range_Vector (Context, Range_Vector_Context);
+      Message.Switch_To_Integer_Vector (Context, Integer_Vector_Context);
 
-      Assert (Sequence.Range_Vector.Size (Range_Vector_Context)'Image, Natural (0)'Image, "Invalid size");
+      Assert (Sequence.Integer_Vector.Size (Integer_Vector_Context)'Image, Natural (0)'Image, "Invalid size");
 
-      Sequence.Range_Vector.Append_Element (Range_Vector_Context, 1);
-      Sequence.Range_Vector.Append_Element (Range_Vector_Context, 2);
+      Sequence.Integer_Vector.Append_Element (Integer_Vector_Context, 1);
+      Sequence.Integer_Vector.Append_Element (Integer_Vector_Context, 2);
 
-      Assert (Sequence.Range_Vector.Size (Range_Vector_Context)'Image,
-              Natural (2 * Sequence.Range_Integer'Size)'Image,
+      Assert (Sequence.Integer_Vector.Size (Integer_Vector_Context)'Image,
+              Natural (2 * Sequence.Integer'Size)'Image,
               "Invalid size");
-      Assert (Sequence.Range_Vector.Head (Range_Vector_Context)'Image, Natural (1)'Image, "Invalid head element");
-      Assert (not Sequence.Range_Vector.Has_Element (Range_Vector_Context), "Invalid acceptance of further element");
-      Assert (not Message.Valid (Context, Message.F_Range_Vector),
-              "Valid Range_Vector before context update");
+      Assert (Sequence.Integer_Vector.Head (Integer_Vector_Context)'Image, Natural (1)'Image, "Invalid head element");
+      Assert (not Sequence.Integer_Vector.Has_Element (Integer_Vector_Context),
+              "Invalid acceptance of further element");
+      Assert (not Message.Valid (Context, Message.F_Integer_Vector),
+              "Valid Integer_Vector before context update");
 
       -- https://github.com/Componolit/Workarounds/issues/32
-      pragma Warnings (Off, "unused assignment to ""Range_Vector_Context""");
-      pragma Warnings (Off, """Range_Vector_Context"" is set by ""*"" but not used after the call");
-      Message.Update_Range_Vector (Context, Range_Vector_Context);
-      pragma Warnings (On, """Range_Vector_Context"" is set by ""*"" but not used after the call");
-      pragma Warnings (On, "unused assignment to ""Range_Vector_Context""");
+      pragma Warnings (Off, "unused assignment to ""Integer_Vector_Context""");
+      pragma Warnings (Off, """Integer_Vector_Context"" is set by ""*"" but not used after the call");
+      Message.Update_Integer_Vector (Context, Integer_Vector_Context);
+      pragma Warnings (On, """Integer_Vector_Context"" is set by ""*"" but not used after the call");
+      pragma Warnings (On, "unused assignment to ""Integer_Vector_Context""");
 
-      Assert (Message.Valid (Context, Message.F_Range_Vector),
-              "Invalid Range_Vector after context update");
+      Assert (Message.Valid (Context, Message.F_Integer_Vector),
+              "Invalid Integer_Vector after context update");
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
       Message.Switch_To_Enumeration_Vector (Context, Enumeration_Vector_Context);
@@ -645,37 +525,26 @@ package body RFLX.Sequence_Tests is
    is
       pragma Unreferenced (T);
       Expected                      : RFLX_Builtin_Types.Bytes_Ptr :=
-        new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2, 1, 2);
+        new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 1, 2, 1, 2);
       Buffer                        : RFLX_Builtin_Types.Bytes_Ptr :=
-        new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-      Modular_Vector_Buffer         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0);
-      Range_Vector_Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+        new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Integer_Vector_Buffer         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0);
       Enumeration_Vector_Buffer     : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       AV_Enumeration_Vector_Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context                       : Sequence.Message.Context;
-      Modular_Vector_Context        : Sequence.Modular_Vector.Context;
-      Range_Vector_Context          : Sequence.Range_Vector.Context;
+      Integer_Vector_Context        : Sequence.Integer_Vector.Context;
       Enumeration_Vector_Context    : Sequence.Enumeration_Vector.Context;
       AV_Enumeration_Vector_Context : Sequence.AV_Enumeration_Vector.Context;
       package Message renames Sequence.Message;
    begin
-      Sequence.Modular_Vector.Initialize (Modular_Vector_Context, Modular_Vector_Buffer);
-      Sequence.Modular_Vector.Append_Element (Modular_Vector_Context, 1);
-      Sequence.Modular_Vector.Append_Element (Modular_Vector_Context, 2);
+      Sequence.Integer_Vector.Initialize (Integer_Vector_Context, Integer_Vector_Buffer);
+      Sequence.Integer_Vector.Append_Element (Integer_Vector_Context, 1);
+      Sequence.Integer_Vector.Append_Element (Integer_Vector_Context, 2);
 
-      Assert (not Sequence.Modular_Vector.Has_Element (Modular_Vector_Context),
-              "Invalid acceptance of further element in Modular_Vector");
-      Assert (not Message.Valid (Context, Message.F_Modular_Vector),
-              "Valid Modular_Vector before context update");
-
-      Sequence.Range_Vector.Initialize (Range_Vector_Context, Range_Vector_Buffer);
-      Sequence.Range_Vector.Append_Element (Range_Vector_Context, 1);
-      Sequence.Range_Vector.Append_Element (Range_Vector_Context, 2);
-
-      Assert (not Sequence.Range_Vector.Has_Element (Range_Vector_Context),
-              "Invalid acceptance of further element in Range_Vector");
-      Assert (not Message.Valid (Context, Message.F_Range_Vector),
-              "Valid Range_Vector before context update");
+      Assert (not Sequence.Integer_Vector.Has_Element (Integer_Vector_Context),
+              "Invalid acceptance of further element in Integer_Vector");
+      Assert (not Message.Valid (Context, Message.F_Integer_Vector),
+              "Valid Integer_Vector before context update");
 
       Sequence.Enumeration_Vector.Initialize (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
       Sequence.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Sequence.One);
@@ -699,16 +568,10 @@ package body RFLX.Sequence_Tests is
 
       Message.Initialize (Context, Buffer);
       Message.Set_Length (Context, 4);
-      Message.Set_Modular_Vector (Context, Modular_Vector_Context);
+      Message.Set_Integer_Vector (Context, Integer_Vector_Context);
 
-      Assert (Message.Valid (Context, Message.F_Modular_Vector),
-              "Invalid Modular_Vector after context update");
-      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
-
-      Message.Set_Range_Vector (Context, Range_Vector_Context);
-
-      Assert (Message.Valid (Context, Message.F_Range_Vector),
-              "Invalid Range_Vector after context update");
+      Assert (Message.Valid (Context, Message.F_Integer_Vector),
+              "Invalid Integer_Vector after context update");
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
       Message.Set_Enumeration_Vector (Context, Enumeration_Vector_Context);
@@ -734,16 +597,14 @@ package body RFLX.Sequence_Tests is
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
-      Sequence.Modular_Vector.Take_Buffer (Modular_Vector_Context, Modular_Vector_Buffer);
-      Sequence.Range_Vector.Take_Buffer (Range_Vector_Context, Range_Vector_Buffer);
+      Sequence.Integer_Vector.Take_Buffer (Integer_Vector_Context, Integer_Vector_Buffer);
       Sequence.Enumeration_Vector.Take_Buffer (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
       Sequence.AV_Enumeration_Vector.Take_Buffer (AV_Enumeration_Vector_Context, AV_Enumeration_Vector_Buffer);
       pragma Warnings (On, "unused assignment to ""*_Context""");
 
       RFLX_Types.Free (Expected);
       RFLX_Types.Free (Buffer);
-      RFLX_Types.Free (Modular_Vector_Buffer);
-      RFLX_Types.Free (Range_Vector_Buffer);
+      RFLX_Types.Free (Integer_Vector_Buffer);
       RFLX_Types.Free (Enumeration_Vector_Buffer);
       RFLX_Types.Free (AV_Enumeration_Vector_Buffer);
    end Test_Generating_Scalar_Sequence_Independent;
@@ -753,35 +614,26 @@ package body RFLX.Sequence_Tests is
    is
       pragma Unreferenced (T);
       Expected                      : RFLX_Builtin_Types.Bytes_Ptr :=
-        new RFLX_Builtin_Types.Bytes'(0, 1, 2, 0, 1, 1, 2);
+        new RFLX_Builtin_Types.Bytes'(4, 0, 1, 0, 2, 0, 1, 1, 2);
       Buffer                        : RFLX_Builtin_Types.Bytes_Ptr :=
-        new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0);
-      Modular_Vector_Buffer         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
-      Range_Vector_Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
+        new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Integer_Vector_Buffer         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0);
       Enumeration_Vector_Buffer     : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       AV_Enumeration_Vector_Buffer  : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0);
       Context                       : Sequence.Message.Context;
-      Modular_Vector_Context        : Sequence.Modular_Vector.Context;
-      Range_Vector_Context          : Sequence.Range_Vector.Context;
+      Integer_Vector_Context        : Sequence.Integer_Vector.Context;
       Enumeration_Vector_Context    : Sequence.Enumeration_Vector.Context;
       AV_Enumeration_Vector_Context : Sequence.AV_Enumeration_Vector.Context;
       package Message renames Sequence.Message;
    begin
-      Sequence.Modular_Vector.Initialize (Modular_Vector_Context, Modular_Vector_Buffer);
+      Sequence.Integer_Vector.Initialize (Integer_Vector_Context, Integer_Vector_Buffer);
+      Sequence.Integer_Vector.Append_Element (Integer_Vector_Context, 1);
+      Sequence.Integer_Vector.Append_Element (Integer_Vector_Context, 2);
 
-      Assert (Sequence.Modular_Vector.Has_Element (Modular_Vector_Context),
-              "No acceptance of further element in Modular_Vector");
-      Assert (not Message.Valid (Context, Message.F_Modular_Vector),
-              "Valid Modular_Vector before context update");
-
-      Sequence.Range_Vector.Initialize (Range_Vector_Context, Range_Vector_Buffer);
-      Sequence.Range_Vector.Append_Element (Range_Vector_Context, 1);
-      Sequence.Range_Vector.Append_Element (Range_Vector_Context, 2);
-
-      Assert (not Sequence.Range_Vector.Has_Element (Range_Vector_Context),
-              "Invalid acceptance of further element in Range_Vector");
-      Assert (not Message.Valid (Context, Message.F_Range_Vector),
-              "Valid Range_Vector before context update");
+      Assert (not Sequence.Integer_Vector.Has_Element (Integer_Vector_Context),
+              "Invalid acceptance of further element in Integer_Vector");
+      Assert (not Message.Valid (Context, Message.F_Integer_Vector),
+              "Valid Integer_Vector before context update");
 
       Sequence.Enumeration_Vector.Initialize (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
       Sequence.Enumeration_Vector.Append_Element (Enumeration_Vector_Context, Sequence.Zero);
@@ -804,17 +656,11 @@ package body RFLX.Sequence_Tests is
               "Valid AV_Enumeration_Vector before context update");
 
       Message.Initialize (Context, Buffer);
-      Message.Set_Length (Context, 0);
-      Message.Set_Modular_Vector (Context, Modular_Vector_Context);
+      Message.Set_Length (Context, 4);
+      Message.Set_Integer_Vector (Context, Integer_Vector_Context);
 
-      Assert (Message.Well_Formed (Context, Message.F_Modular_Vector),
-              "Invalid Modular_Vector after context update");
-      Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
-
-      Message.Set_Range_Vector (Context, Range_Vector_Context);
-
-      Assert (Message.Valid (Context, Message.F_Range_Vector),
-              "Invalid Range_Vector after context update");
+      Assert (Message.Valid (Context, Message.F_Integer_Vector),
+              "Invalid Integer_Vector after context update");
       Assert (not Message.Valid_Message (Context), "Valid Message before complete generating");
 
       Message.Set_Enumeration_Vector (Context, Enumeration_Vector_Context);
@@ -840,16 +686,14 @@ package body RFLX.Sequence_Tests is
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
-      Sequence.Modular_Vector.Take_Buffer (Modular_Vector_Context, Modular_Vector_Buffer);
-      Sequence.Range_Vector.Take_Buffer (Range_Vector_Context, Range_Vector_Buffer);
+      Sequence.Integer_Vector.Take_Buffer (Integer_Vector_Context, Integer_Vector_Buffer);
       Sequence.Enumeration_Vector.Take_Buffer (Enumeration_Vector_Context, Enumeration_Vector_Buffer);
       Sequence.AV_Enumeration_Vector.Take_Buffer (AV_Enumeration_Vector_Context, AV_Enumeration_Vector_Buffer);
       pragma Warnings (On, "unused assignment to ""*_Context""");
 
       RFLX_Types.Free (Expected);
       RFLX_Types.Free (Buffer);
-      RFLX_Types.Free (Modular_Vector_Buffer);
-      RFLX_Types.Free (Range_Vector_Buffer);
+      RFLX_Types.Free (Integer_Vector_Buffer);
       RFLX_Types.Free (Enumeration_Vector_Buffer);
       RFLX_Types.Free (AV_Enumeration_Vector_Buffer);
    end Test_Generating_Scalar_Sequence_Independent_Empty;
@@ -1239,9 +1083,9 @@ package body RFLX.Sequence_Tests is
       pragma Unreferenced (T);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 1, 0, 2);
       Context          : Sequence.Sequence_Size_Defined_By_Message_Size.Context;
-      Sequence_Context : Sequence.Modular_Vector.Context;
+      Sequence_Context : Sequence.Integer_Vector.Context;
       Header           : Sequence.Enumeration;
-      Element          : Sequence.Modular_Integer;
+      Element          : Sequence.Integer;
       I                : Natural := 1;
       package Message renames Sequence.Sequence_Size_Defined_By_Message_Size;
    begin
@@ -1257,8 +1101,8 @@ package body RFLX.Sequence_Tests is
 
       Message.Switch_To_Vector (Context, Sequence_Context);
 
-      while Sequence.Modular_Vector.Has_Element (Sequence_Context) loop
-         pragma Loop_Invariant (Sequence.Modular_Vector.Has_Buffer (Sequence_Context));
+      while Sequence.Integer_Vector.Has_Element (Sequence_Context) loop
+         pragma Loop_Invariant (Sequence.Integer_Vector.Has_Buffer (Sequence_Context));
          pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
          pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
          pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
@@ -1266,11 +1110,11 @@ package body RFLX.Sequence_Tests is
 
          Assert (I <= 2, "Unexpected element");
 
-         Sequence.Modular_Vector.Next (Sequence_Context);
+         Sequence.Integer_Vector.Next (Sequence_Context);
 
-         Assert (Sequence.Modular_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
+         Assert (Sequence.Integer_Vector.Valid_Element (Sequence_Context), "Invalid element " & I'Image);
 
-         Element := Sequence.Modular_Vector.Get_Element (Sequence_Context);
+         Element := Sequence.Integer_Vector.Get_Element (Sequence_Context);
 
          Assert (Element'Image, Natural'Image (I), "Invalid value of element " & I'Image);
 
@@ -1278,7 +1122,7 @@ package body RFLX.Sequence_Tests is
       end loop;
 
       Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
-      Assert (Sequence.Modular_Vector.Valid (Sequence_Context), "Invalid Vector after parsing");
+      Assert (Sequence.Integer_Vector.Valid (Sequence_Context), "Invalid Vector after parsing");
       Assert (not Message.Valid (Context, Message.F_Vector),
               "Valid Vector before context update");
       Assert (Message.Complete_Vector (Context, Sequence_Context), "Incomplete Vector");
@@ -1342,22 +1186,22 @@ package body RFLX.Sequence_Tests is
       Expected         : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(1, 0, 1, 0, 2);
       Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(0, 0, 0, 0, 0);
       Context          : Sequence.Sequence_Size_Defined_By_Message_Size.Context;
-      Sequence_Context : Sequence.Modular_Vector.Context;
+      Sequence_Context : Sequence.Integer_Vector.Context;
       package Message renames Sequence.Sequence_Size_Defined_By_Message_Size;
    begin
       Message.Initialize (Context, Buffer);
       Message.Set_Header (Context, Sequence.One);
       Message.Initialize_Vector (Context, 4);
       Message.Switch_To_Vector (Context, Sequence_Context);
-      Sequence.Modular_Vector.Append_Element (Sequence_Context, 1);
-      Sequence.Modular_Vector.Append_Element (Sequence_Context, 2);
+      Sequence.Integer_Vector.Append_Element (Sequence_Context, 1);
+      Sequence.Integer_Vector.Append_Element (Sequence_Context, 2);
 
-      Assert (not Sequence.Modular_Vector.Has_Element (Sequence_Context),
+      Assert (not Sequence.Integer_Vector.Has_Element (Sequence_Context),
               "Invalid acceptance of further element");
       Assert (not Message.Valid (Context, Message.F_Vector),
-              "Valid Modular_Vector before context update");
+              "Valid Integer_Vector before context update");
       Assert (not Message.Valid (Context, Message.F_Vector),
-              "Valid Modular_Vector before context update");
+              "Valid Integer_Vector before context update");
 
       -- https://github.com/Componolit/Workarounds/issues/32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
@@ -1367,7 +1211,7 @@ package body RFLX.Sequence_Tests is
       pragma Warnings (On, "unused assignment to ""Sequence_Context""");
 
       Assert (Message.Valid (Context, Message.F_Vector),
-              "Invalid Modular_Vector after context update");
+              "Invalid Integer_Vector after context update");
       Assert (Message.Valid_Message (Context), "Invalid Message");
 
       Message.Take_Buffer (Context, Buffer);
@@ -1399,7 +1243,7 @@ package body RFLX.Sequence_Tests is
       Message.Set_Header (Context, Sequence.One);
       Message.Set_Vector_Empty (Context);
 
-      Assert (Message.Well_Formed (Context, Message.F_Vector), "Invalid Modular_Vector");
+      Assert (Message.Well_Formed (Context, Message.F_Vector), "Invalid Integer_Vector");
       Assert (Message.Well_Formed_Message (Context), "Invalid Message");
 
       Message.Take_Buffer (Context, Buffer);

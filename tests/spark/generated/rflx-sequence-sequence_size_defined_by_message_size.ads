@@ -1,7 +1,7 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
-with RFLX.Sequence.Modular_Vector;
+with RFLX.Sequence.Integer_Vector;
 
 package RFLX.Sequence.Sequence_Size_Defined_By_Message_Size with
   SPARK_Mode,
@@ -452,16 +452,16 @@ is
        and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
        and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Vector)) + Field_Size (Ctx, F_Vector);
 
-   procedure Set_Vector (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Modular_Vector.Context) with
+   procedure Set_Vector (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Integer_Vector.Context) with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx)
        and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Next (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector)
        and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Available_Space (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector) >= RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Field_Size (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector)
        and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Field_Condition (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector)
-       and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Length (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector, RFLX.Sequence.Modular_Vector.Byte_Size (Seq_Ctx))
-       and then RFLX.Sequence.Modular_Vector.Has_Buffer (Seq_Ctx)
-       and then RFLX.Sequence.Modular_Vector.Valid (Seq_Ctx),
+       and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Length (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector, RFLX.Sequence.Integer_Vector.Byte_Size (Seq_Ctx))
+       and then RFLX.Sequence.Integer_Vector.Has_Buffer (Seq_Ctx)
+       and then RFLX.Sequence.Integer_Vector.Valid (Seq_Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Well_Formed (Ctx, F_Vector)
@@ -499,7 +499,7 @@ is
        and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
        and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Vector)) + Field_Size (Ctx, F_Vector);
 
-   procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Modular_Vector.Context) with
+   procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Integer_Vector.Context) with
      Pre =>
        not Ctx'Constrained
        and then not Seq_Ctx'Constrained
@@ -511,13 +511,13 @@ is
        and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Field_Condition (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector),
      Post =>
        not RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx)
-       and RFLX.Sequence.Modular_Vector.Has_Buffer (Seq_Ctx)
+       and RFLX.Sequence.Integer_Vector.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Seq_Ctx.Buffer_First
        and Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and Seq_Ctx.First = Field_First (Ctx, F_Vector)
        and Seq_Ctx.Last = Field_Last (Ctx, F_Vector)
-       and RFLX.Sequence.Modular_Vector.Valid (Seq_Ctx)
-       and RFLX.Sequence.Modular_Vector.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
+       and RFLX.Sequence.Integer_Vector.Valid (Seq_Ctx)
+       and RFLX.Sequence.Integer_Vector.Sequence_Last (Seq_Ctx) = Seq_Ctx.First - 1
        and Present (Ctx, F_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
@@ -534,16 +534,16 @@ is
         others =>
            True);
 
-   function Complete_Vector (Ctx : Context; Seq_Ctx : RFLX.Sequence.Modular_Vector.Context) return Boolean with
+   function Complete_Vector (Ctx : Context; Seq_Ctx : RFLX.Sequence.Integer_Vector.Context) return Boolean with
      Pre =>
        RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Next (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector);
 
-   procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Modular_Vector.Context) with
+   procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Integer_Vector.Context) with
      Pre =>
        RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Present (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector)
        and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Complete_Vector (Ctx, Seq_Ctx)
        and then not RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Modular_Vector.Has_Buffer (Seq_Ctx)
+       and then RFLX.Sequence.Integer_Vector.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
        and then Ctx.Buffer_Last = Seq_Ctx.Buffer_Last
        and then Seq_Ctx.First = Field_First (Ctx, F_Vector)
@@ -551,7 +551,7 @@ is
      Post =>
        Present (Ctx, F_Vector)
        and Has_Buffer (Ctx)
-       and not RFLX.Sequence.Modular_Vector.Has_Buffer (Seq_Ctx)
+       and not RFLX.Sequence.Integer_Vector.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -802,9 +802,9 @@ private
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
      (Valid_Size (Ctx, Fld, RFLX_Types.To_Bit_Length (Length)));
 
-   function Complete_Vector (Ctx : Context; Seq_Ctx : RFLX.Sequence.Modular_Vector.Context) return Boolean is
-     (RFLX.Sequence.Modular_Vector.Valid (Seq_Ctx)
-      and RFLX.Sequence.Modular_Vector.Size (Seq_Ctx) = Field_Size (Ctx, F_Vector));
+   function Complete_Vector (Ctx : Context; Seq_Ctx : RFLX.Sequence.Integer_Vector.Context) return Boolean is
+     (RFLX.Sequence.Integer_Vector.Valid (Seq_Ctx)
+      and RFLX.Sequence.Integer_Vector.Size (Seq_Ctx) = Field_Size (Ctx, F_Vector));
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor is
      (Ctx.Cursors (Fld));

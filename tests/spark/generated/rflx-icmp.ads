@@ -208,7 +208,7 @@ is
      Pre =>
        Valid_Code_Zero (Val);
 
-   type Checksum is mod 2**16 with
+   type Checksum is range 0 .. 2**16 - 1 with
      Size =>
        16;
 
@@ -224,7 +224,7 @@ is
      Pre =>
        Valid_Checksum (Val);
 
-   type Identifier is mod 2**16 with
+   type Identifier is range 0 .. 2**16 - 1 with
      Size =>
        16;
 
@@ -240,7 +240,7 @@ is
      Pre =>
        Valid_Identifier (Val);
 
-   type Sequence_Number is mod 2**16 with
+   type Sequence_Number is range 0 .. 2**16 - 1 with
      Size =>
        16;
 
@@ -256,7 +256,7 @@ is
      Pre =>
        Valid_Sequence_Number (Val);
 
-   type Pointer is mod 2**8 with
+   type Pointer is range 0 .. 2**8 - 1 with
      Size =>
        8;
 
@@ -272,7 +272,7 @@ is
      Pre =>
        Valid_Pointer (Val);
 
-   type Timestamp is mod 2**32 with
+   type Timestamp is range 0 .. 2**32 - 1 with
      Size =>
        32;
 
@@ -288,7 +288,7 @@ is
      Pre =>
        Valid_Timestamp (Val);
 
-   type Gateway_Internet_Address is mod 2**32 with
+   type Gateway_Internet_Address is range 0 .. 2**32 - 1 with
      Size =>
        32;
 

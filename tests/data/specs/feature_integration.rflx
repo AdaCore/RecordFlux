@@ -12,7 +12,7 @@ package Feature_Integration is
          Enumeration : Enumeration_Type::Priority
             then Integer
                if Enumeration = Enumeration_Type::High;
-         Integer : Integer_Type::Byte
+         Integer : Integer_Type::Line_Size
             then Scalar_Sequence
                with Size => 8 * Integer;
          Scalar_Sequence : Sequence_Type::Bytes

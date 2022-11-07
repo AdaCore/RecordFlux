@@ -6,7 +6,7 @@ package RFLX.Messages with
   SPARK_Mode
 is
 
-   type Integer is mod 2**32 with
+   type Integer is range 0 .. 2**32 - 1 with
      Size =>
        32;
 

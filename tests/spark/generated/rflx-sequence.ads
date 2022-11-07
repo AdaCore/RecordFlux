@@ -6,7 +6,7 @@ package RFLX.Sequence with
   SPARK_Mode
 is
 
-   type Length is mod 2**8 with
+   type Length is range 0 .. 2**8 - 1 with
      Size =>
        8;
 
@@ -24,38 +24,22 @@ is
      Pre =>
        Valid_Length (Val);
 
-   type Modular_Integer is mod 2**16 with
+   type Integer is range 1 .. 100 with
      Size =>
        16;
 
-   function Valid_Modular_Integer (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
-     (Val <= 65535);
-
-   function To_Base_Integer (Val : RFLX.Sequence.Modular_Integer) return RFLX.RFLX_Types.Base_Integer is
-     (RFLX.RFLX_Types.Base_Integer (Val));
-
-   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Modular_Integer is
-     (RFLX.Sequence.Modular_Integer (Val))
-    with
-     Pre =>
-       Valid_Modular_Integer (Val);
-
-   type Range_Integer is range 1 .. 100 with
-     Size =>
-       8;
-
-   function Valid_Range_Integer (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
+   function Valid_Integer (Val : RFLX.RFLX_Types.Base_Integer) return Boolean is
      (Val >= 1
       and Val <= 100);
 
-   function To_Base_Integer (Val : RFLX.Sequence.Range_Integer) return RFLX.RFLX_Types.Base_Integer is
+   function To_Base_Integer (Val : RFLX.Sequence.Integer) return RFLX.RFLX_Types.Base_Integer is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
-   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Range_Integer is
-     (RFLX.Sequence.Range_Integer (Val))
+   function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Integer is
+     (RFLX.Sequence.Integer (Val))
     with
      Pre =>
-       Valid_Range_Integer (Val);
+       Valid_Integer (Val);
 
    type Enumeration is (Zero, One, Two) with
      Size =>

@@ -200,7 +200,7 @@ package IPv6 is
             with Size => 8 * Length;
       end message;
 
-   type SRH_HMAC_Key_ID is mod 2 ** 32;
+   type SRH_HMAC_Key_ID is range 0 .. 2 ** 32 - 1 with Size => 32;
 
    type SRH_HMAC_TLV is
       message
@@ -244,7 +244,7 @@ package IPv6 is
    -- Fragment Header (RFC 8200, 4.5)
 
    type FH_Offset is range 0 .. 2 ** 13 - 1 with Size => 13;
-   type FH_Identification is mod 2 ** 32;
+   type FH_Identification is range 0 .. 2 ** 32 - 1 with Size => 32;
 
    type Fragment_Header is
       message
@@ -266,8 +266,8 @@ package IPv6 is
    -- Packet (RFC 8200, 3)
 
    type Version is range 6 .. 6 with Size => 4;
-   type Traffic_Class is mod 2 ** 8;
-   type Flow_Label is mod 2 ** 20;
+   type Traffic_Class is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Flow_Label is range 0 .. 2 ** 20 - 1 with Size => 20;
    type Payload_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
    type Hop_Limit is range 0 .. 2 ** 8 - 1 with Size => 8;
 

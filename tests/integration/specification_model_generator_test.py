@@ -26,7 +26,6 @@ def test_prefix(prefix: str, tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "definition",
     [
-        "mod 2 ** 32",
         "range 1 .. 2 ** 32 - 1 with Size => 32",
         "(A, B, C) with Size => 32",
         "(A, B, C) with Size => 32, Always_Valid",
@@ -37,7 +36,7 @@ def test_type_name_equals_package_name(definition: str, tmp_path: Path) -> None:
     spec = """\
        package Test is
 
-          type T is mod 2 ** 8;
+          type T is range 0 .. 2 ** 8 - 1 with Size => 8;
 
           type Test is {};
 
@@ -173,7 +172,7 @@ def test_sequence_with_imported_element_type_scalar(tmp_path: Path) -> None:
     p.parse_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
         end Test;
         """
     )
@@ -217,7 +216,7 @@ def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "type_definition",
     [
-        "mod 2 ** 63",
+        "range 0 .. 2 ** 63 - 1 with Size => 63",
         "range 2 ** 8 .. 2 ** 48 with Size => 63",
         "(A, B, C) with Size => 63",
         "(A, B, C) with Always_Valid, Size => 63",
@@ -241,7 +240,7 @@ def test_message_fixed_size_sequence(tmp_path: Path) -> None:
         """\
         package Test is
 
-           type E is mod 2 ** 8;
+           type E is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type S is sequence of E;
 
@@ -283,7 +282,7 @@ def test_message_with_optional_field_based_on_message_size(tmp_path: Path) -> No
         """\
         package Test is
 
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type M is
               message
@@ -313,7 +312,7 @@ def test_size_attribute(tmp_path: Path, aspects: str) -> None:
         f"""\
         package Test is
 
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type M is
               message
@@ -333,7 +332,7 @@ def test_message_size_calculation(tmp_path: Path) -> None:
         """\
         package Test is
 
-           type T is mod 2 ** 16;
+           type T is range 0 .. 2 ** 16 - 1 with Size => 16;
 
            type Message is
               message
@@ -355,7 +354,7 @@ def test_transitive_type_use(tmp_path: Path) -> None:
         """\
         package Test is
 
-           type U8 is mod 2 ** 8;
+           type U8 is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type M1 is
               message
@@ -427,7 +426,7 @@ def test_refinement_with_self(tmp_path: Path) -> None:
 
            type Tag is (T1 => 1) with Size => 8;
 
-           type Length is mod 2 ** 8;
+           type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type Message is
               message
@@ -479,7 +478,7 @@ def test_message_expression_value_outside_type_range(tmp_path: Path) -> None:
     spec = """\
         package Test is
 
-           type Length is mod 2 ** 8;
+           type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type Packet is
               message
@@ -500,7 +499,7 @@ def test_message_field_conditions_on_corresponding_fields(tmp_path: Path) -> Non
     spec = """\
         package Test is
 
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type M is
               message
@@ -521,7 +520,7 @@ def test_message_field_conditions_on_subsequent_fields(tmp_path: Path) -> None:
     spec = """\
         package Test is
 
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            type M is
               message
@@ -662,7 +661,7 @@ def test_session_type_conversion_in_message_size_calculation(tmp_path: Path) -> 
     spec = """\
         package Test is
 
-           type Length is mod 2 ** 8;
+           type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
            type Elems is range 0 .. 1 with Size => 8;
 
            type Data is
@@ -707,7 +706,7 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
     spec = """\
         package Test is
 
-           type Payload_Size is mod 2 ** 16;
+           type Payload_Size is range 0 .. 2 ** 16 - 1 with Size => 16;
 
            type M1 is
               message
@@ -919,7 +918,7 @@ def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
     spec = """\
       package Test is
 
-         type Length_16 is mod 2 ** 16;
+         type Length_16 is range 0 .. 2 ** 16 - 1 with Size => 16;
 
          type Signature_Length is range 0 .. 512 with Size => 16;
 

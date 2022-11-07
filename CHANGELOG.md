@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Rename `Structural_Valid` to `Well_Formed` (#986)
 
+### Removed
+
+- Modular integer types (#727)
+
 ## [0.7.1] - 2022-11-04
 
 ### Fixed

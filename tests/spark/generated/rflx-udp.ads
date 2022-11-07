@@ -6,7 +6,7 @@ package RFLX.UDP with
   SPARK_Mode
 is
 
-   type Port is mod 2**16 with
+   type Port is range 0 .. 2**16 - 1 with
      Size =>
        16;
 
@@ -41,7 +41,7 @@ is
      Pre =>
        Valid_Length (Val);
 
-   type Checksum is mod 2**16 with
+   type Checksum is range 0 .. 2**16 - 1 with
      Size =>
        16;
 
