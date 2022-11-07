@@ -36,7 +36,14 @@ def test_verified(tmp_path: Path) -> None:
             model.Link(model.INITIAL, model.Field("A")),
             model.Link(model.Field("A"), model.FINAL),
         ],
-        {model.Field("A"): model.ModularInteger("P::T", expr.Pow(expr.Number(2), expr.Number(8)))},
+        {
+            model.Field("A"): model.Integer(
+                "P::T",
+                expr.Number(0),
+                expr.Sub(expr.Pow(expr.Number(2), expr.Number(8)), expr.Number(1)),
+                expr.Number(8),
+            )
+        },
     )
     m2 = model.Message(
         "P::M",
@@ -44,7 +51,14 @@ def test_verified(tmp_path: Path) -> None:
             model.Link(model.INITIAL, model.Field("B")),
             model.Link(model.Field("B"), model.FINAL),
         ],
-        {model.Field("B"): model.ModularInteger("P::T", expr.Pow(expr.Number(2), expr.Number(8)))},
+        {
+            model.Field("B"): model.Integer(
+                "P::T",
+                expr.Number(0),
+                expr.Sub(expr.Pow(expr.Number(2), expr.Number(8)), expr.Number(1)),
+                expr.Number(8),
+            )
+        },
     )
     m3 = model.Message(
         "P::M",
@@ -52,7 +66,14 @@ def test_verified(tmp_path: Path) -> None:
             model.Link(model.INITIAL, model.Field("A")),
             model.Link(model.Field("A"), model.FINAL),
         ],
-        {model.Field("A"): model.ModularInteger("P::T", expr.Pow(expr.Number(2), expr.Number(16)))},
+        {
+            model.Field("A"): model.Integer(
+                "P::T",
+                expr.Number(0),
+                expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
+                expr.Number(16),
+            )
+        },
     )
     cache.CACHE_DIR = tmp_path
     c = cache.Cache()

@@ -11,15 +11,7 @@ import rflx.model.type_ as mty
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Number
 from rflx.identifier import ID
-from rflx.model import (
-    BUILTIN_TYPES,
-    Enumeration,
-    Message,
-    Model,
-    ModularInteger,
-    RangeInteger,
-    Type,
-)
+from rflx.model import BUILTIN_TYPES, Enumeration, Integer, Message, Model, Type
 from rflx.model.message import FINAL, INITIAL, Field, Link
 from tests.data import models
 
@@ -32,10 +24,8 @@ def assert_model_error(types: Sequence[Type], regex: str) -> None:
 def test_name_conflict_types() -> None:
     assert_model_error(
         [
-            ModularInteger(ID("P::T"), Number(256), location=Location((10, 20))),
-            RangeInteger(
-                ID("P::T"), Number(1), Number(100), Number(8), location=Location((11, 30))
-            ),
+            Integer(ID("P::T"), Number(0), Number(255), Number(8), location=Location((10, 20))),
+            Integer(ID("P::T"), Number(1), Number(100), Number(8), location=Location((11, 30))),
         ],
         r"^"
         r'<stdin>:11:30: model: error: name conflict for type "P::T"\n'
@@ -107,8 +97,8 @@ def test_name_conflict_between_literal_and_type() -> None:
                 Number(1),
                 always_valid=False,
             ),
-            ModularInteger("P::Foo", Number(256), Location((4, 16))),
-            ModularInteger("P::Bar", Number(256), Location((5, 16))),
+            Integer("P::Foo", Number(0), Number(255), Number(8), Location((4, 16))),
+            Integer("P::Bar", Number(0), Number(255), Number(8), Location((5, 16))),
         ],
         r'<stdin>:3:27: model: error: literal "FOO" conflicts with type declaration\n'
         r'<stdin>:4:16: model: info: conflicting type "P::Foo"\n'
@@ -179,7 +169,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 
 
 def test_write_specification_files(tmp_path: Path) -> None:
-    t = ModularInteger("P::T", Number(256))
+    t = Integer("P::T", Number(0), Number(255), Number(8))
     v = mty.Sequence("P::V", element_type=t)
     m = Message("P::M", [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)], {Field("Foo"): t})
     Model([t, v, m]).write_specification_files(tmp_path)
@@ -189,7 +179,7 @@ def test_write_specification_files(tmp_path: Path) -> None:
         """\
         package P is
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 
            type V is sequence of P::T;
 
@@ -203,8 +193,8 @@ def test_write_specification_files(tmp_path: Path) -> None:
 
 
 def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
-    s = ModularInteger("P::S", Number(65536))
-    t = ModularInteger("P::T", Number(256))
+    s = Integer("P::S", Number(0), Number(65535), Number(16))
+    t = Integer("P::T", Number(0), Number(255), Number(8))
     v = mty.Sequence("P::V", element_type=t)
     m = Message("P::M", [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)], {Field("Foo"): t})
     Model([s, v, m]).write_specification_files(tmp_path)
@@ -214,9 +204,9 @@ def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
         """\
         package P is
 
-           type S is mod 65536;
+           type S is range 0 .. 65535 with Size => 16;
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 
            type V is sequence of P::T;
 
@@ -230,10 +220,10 @@ def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
 
 
 def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
-    t = ModularInteger("P::T", Number(256))
+    t = Integer("P::T", Number(0), Number(255), Number(8))
     u = mty.Sequence("Q::U", element_type=t)
     u1 = mty.Sequence("Q::U1", element_type=t)
-    v = ModularInteger("R::V", Number(65536))
+    v = Integer("R::V", Number(0), Number(65535), Number(16))
     links = [
         Link(INITIAL, Field("Victor")),
         Link(Field("Victor"), Field("Uniform")),
@@ -248,7 +238,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
         """\
         package P is
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 
         end P;"""
     )
@@ -270,7 +260,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
 
         package R is
 
-           type V is mod 65536;
+           type V is range 0 .. 65535 with Size => 16;
 
            type M is
               message
@@ -285,10 +275,10 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
 
 
 def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path) -> None:
-    t = ModularInteger("P::T", Number(256))
+    t = Integer("P::T", Number(0), Number(255), Number(8))
     u = mty.Sequence("R::U", element_type=t)
     u1 = mty.Sequence("Q::U1", element_type=t)
-    v = ModularInteger("R::V", Number(65536))
+    v = Integer("R::V", Number(0), Number(65535), Number(16))
     links = [
         Link(INITIAL, Field("Victor")),
         Link(Field("Victor"), Field("Uniform")),
@@ -303,7 +293,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
         """\
         package P is
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 
         end P;"""
     )
@@ -323,7 +313,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
 
         package R is
 
-           type V is mod 65536;
+           type V is range 0 .. 65535 with Size => 16;
 
            type U is sequence of P::T;
 
@@ -340,7 +330,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
 
 
 def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
-    t = ModularInteger("P::" + "T" * 120, Number(256))
+    t = Integer("P::" + "T" * 120, Number(0), Number(255), Number(8))
     Model([t]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
     assert list(tmp_path.glob("*.rflx")) == [expected_path]

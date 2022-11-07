@@ -14,23 +14,13 @@ from _pytest.monkeypatch import MonkeyPatch
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
-from rflx.model import (
-    BOOLEAN,
-    FINAL,
-    INITIAL,
-    OPAQUE,
-    Enumeration,
-    Field,
-    Link,
-    Message,
-    ModularInteger,
-)
+from rflx.model import BOOLEAN, FINAL, INITIAL, OPAQUE, Enumeration, Field, Integer, Link, Message
 from rflx.model.message import ByteOrder
 from rflx.specification import cache, parser
 from tests.const import SPEC_DIR
 from tests.data import models
 
-T = ModularInteger("Test::T", expr.Number(256))
+T = Integer("Test::T", expr.Number(0), expr.Number(255), expr.Number(8))
 
 # Generated from the Ada 202x LRM source code (http://ada-auth.org/arm-files/ARM_SRC.zip) retrieved
 # on 2022-09-16 using the following command:
@@ -349,24 +339,6 @@ def test_parse_integer_type_spec() -> None:
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Line_Size"},
                         "parameters": None,
                     },
-                    {
-                        "_kind": "TypeDecl",
-                        "definition": {
-                            "_kind": "ModularTypeDef",
-                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
-                        },
-                        "identifier": {"_kind": "UnqualifiedID", "_value": "Byte"},
-                        "parameters": None,
-                    },
-                    {
-                        "_kind": "TypeDecl",
-                        "definition": {
-                            "_kind": "ModularTypeDef",
-                            "mod": {"_kind": "NumericLiteral", "_value": "64"},
-                        },
-                        "identifier": {"_kind": "UnqualifiedID", "_value": "Hash_Index"},
-                        "parameters": None,
-                    },
                 ],
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Integer_Type"},
                 "identifier": {"_kind": "UnqualifiedID", "_value": "Integer_Type"},
@@ -618,8 +590,14 @@ def test_parse_sequence_type_spec() -> None:
                     {
                         "_kind": "TypeDecl",
                         "definition": {
-                            "_kind": "ModularTypeDef",
-                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
+                            "_kind": "RangeTypeDef",
+                            "first": {"_kind": "NumericLiteral", "_value": "0"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "8"},
+                            },
+                            "last": {"_kind": "NumericLiteral", "_value": "255"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Byte"},
                         "parameters": None,
@@ -760,8 +738,14 @@ def test_parse_message_type_spec() -> None:
                     {
                         "_kind": "TypeDecl",
                         "definition": {
-                            "_kind": "ModularTypeDef",
-                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
+                            "_kind": "RangeTypeDef",
+                            "first": {"_kind": "NumericLiteral", "_value": "0"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "8"},
+                            },
+                            "last": {"_kind": "NumericLiteral", "_value": "255"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
                         "parameters": None,
@@ -960,8 +944,14 @@ def test_parse_type_refinement_spec() -> None:
                     {
                         "_kind": "TypeDecl",
                         "definition": {
-                            "_kind": "ModularTypeDef",
-                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
+                            "_kind": "RangeTypeDef",
+                            "first": {"_kind": "NumericLiteral", "_value": "0"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "8"},
+                            },
+                            "last": {"_kind": "NumericLiteral", "_value": "255"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
                         "parameters": None,
@@ -1208,7 +1198,7 @@ def test_parse_type_derivation_spec() -> None:
     assert_ast_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type Foo is
               message
                  N : T;
@@ -1225,8 +1215,14 @@ def test_parse_type_derivation_spec() -> None:
                     {
                         "_kind": "TypeDecl",
                         "definition": {
-                            "_kind": "ModularTypeDef",
-                            "mod": {"_kind": "NumericLiteral", "_value": "256"},
+                            "_kind": "RangeTypeDef",
+                            "first": {"_kind": "NumericLiteral", "_value": "0"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "8"},
+                            },
+                            "last": {"_kind": "NumericLiteral", "_value": "255"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "T"},
                         "parameters": None,
@@ -1293,12 +1289,23 @@ def test_parse_ethernet_spec() -> None:
                     {
                         "_kind": "TypeDecl",
                         "definition": {
-                            "_kind": "ModularTypeDef",
-                            "mod": {
+                            "_kind": "RangeTypeDef",
+                            "first": {"_kind": "NumericLiteral", "_value": "0"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "48"},
+                            },
+                            "last": {
                                 "_kind": "BinOp",
-                                "left": {"_kind": "NumericLiteral", "_value": "2"},
-                                "op": {"_kind": "OpPow", "_value": "**"},
-                                "right": {"_kind": "NumericLiteral", "_value": "48"},
+                                "left": {
+                                    "_kind": "BinOp",
+                                    "left": {"_kind": "NumericLiteral", "_value": "2"},
+                                    "op": {"_kind": "OpPow", "_value": "**"},
+                                    "right": {"_kind": "NumericLiteral", "_value": "48"},
+                                },
+                                "op": {"_kind": "OpSub", "_value": "-"},
+                                "right": {"_kind": "NumericLiteral", "_value": "1"},
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Address"},
@@ -1347,12 +1354,23 @@ def test_parse_ethernet_spec() -> None:
                     {
                         "_kind": "TypeDecl",
                         "definition": {
-                            "_kind": "ModularTypeDef",
-                            "mod": {
+                            "_kind": "RangeTypeDef",
+                            "first": {"_kind": "NumericLiteral", "_value": "0"},
+                            "size": {
+                                "_kind": "Aspect",
+                                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                                "value": {"_kind": "NumericLiteral", "_value": "16"},
+                            },
+                            "last": {
                                 "_kind": "BinOp",
-                                "left": {"_kind": "NumericLiteral", "_value": "2"},
-                                "op": {"_kind": "OpPow", "_value": "**"},
-                                "right": {"_kind": "NumericLiteral", "_value": "16"},
+                                "left": {
+                                    "_kind": "BinOp",
+                                    "left": {"_kind": "NumericLiteral", "_value": "2"},
+                                    "op": {"_kind": "OpPow", "_value": "**"},
+                                    "right": {"_kind": "NumericLiteral", "_value": "16"},
+                                },
+                                "op": {"_kind": "OpSub", "_value": "-"},
+                                "right": {"_kind": "NumericLiteral", "_value": "1"},
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "TCI"},
@@ -1826,7 +1844,7 @@ def test_parse_error_illegal_redefinition() -> None:
             textwrap.dedent(
                 """\
                 package Test is
-                   type Boolean is mod 2;
+                   type Boolean is range 0 .. 1 with Size => 2;
                 end Test;
                 """
             )
@@ -1847,7 +1865,7 @@ def test_parse_error_unexpected_exception_in_parser(monkeypatch: MonkeyPatch) ->
         p.parse_string(
             """\
             package Test is
-               type T is mod 256;
+               type T is range 0 .. 255 with Size => 8;
             end Test;
             """
         )
@@ -1882,7 +1900,7 @@ def test_parse_error_message_undefined_message_field() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type PDU is
               message
                  Foo : T
@@ -1899,7 +1917,7 @@ def test_parse_error_invalid_location_expression() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type PDU is
               message
                  Foo : T
@@ -1940,7 +1958,7 @@ def test_parse_error_refinement_undefined_sdu() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type PDU is
               message
                  Foo : T;
@@ -1967,7 +1985,7 @@ def test_parse_error_derivation_unsupported_type() -> None:
     assert_error_string(
         """\
         package Test is
-           type Foo is mod 256;
+           type Foo is range 0 .. 255 with Size => 8;
            type Bar is new Foo;
         end Test;
         """,
@@ -1980,7 +1998,7 @@ def test_parse_error_multiple_initial_node_edges() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type PDU is
               message
                  null
@@ -1999,7 +2017,7 @@ def test_parse_error_multiple_initial_nodes() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type PDU is
               message
                  null
@@ -2020,7 +2038,7 @@ def test_parse_error_reserved_word_in_type_name(keyword: str) -> None:
     assert_error_string(
         f"""\
         package Test is
-           type {keyword.title()} is mod 256;
+           type {keyword.title()} is range 0 .. 255 with Size => 8;
         end Test;
         """,
         rf'^<stdin>:2:9: parser: error: reserved word "{keyword.title()}" used as identifier',
@@ -2032,7 +2050,7 @@ def test_parse_error_reserved_word_in_message_field(keyword: str) -> None:
     assert_error_string(
         f"""\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type PDU is
               message
                  {keyword.title()} : T;
@@ -2070,8 +2088,12 @@ def test_create_model_message_type_message() -> None:
     ]
 
     simple_types = {
-        model.Field("Bar"): model.ModularInteger("Message_Type::T", expr.Number(256)),
-        model.Field("Baz"): model.ModularInteger("Message_Type::T", expr.Number(256)),
+        model.Field("Bar"): model.Integer(
+            "Message_Type::T", expr.Number(0), expr.Number(255), expr.Number(8)
+        ),
+        model.Field("Baz"): model.Integer(
+            "Message_Type::T", expr.Number(0), expr.Number(255), expr.Number(8)
+        ),
     }
 
     simple_message = model.Message("Message_Type::Simple_PDU", simple_structure, simple_types)
@@ -2094,7 +2116,11 @@ def test_create_model_message_type_message() -> None:
 
     types = {
         **simple_types,
-        **{model.Field("Foo"): model.ModularInteger("Message_Type::T", expr.Number(256))},
+        **{
+            model.Field("Foo"): model.Integer(
+                "Message_Type::T", expr.Number(0), expr.Number(255), expr.Number(8)
+            )
+        },
     }
 
     message = model.Message("Message_Type::PDU", structure, types)
@@ -2107,8 +2133,11 @@ def test_create_model_message_type_message() -> None:
 
 
 def test_create_model_message_in_message() -> None:
-    length = model.ModularInteger(
-        "Message_In_Message::Length", expr.Pow(expr.Number(2), expr.Number(16))
+    length = model.Integer(
+        "Message_In_Message::Length",
+        expr.Number(0),
+        expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
+        expr.Number(16),
     )
 
     length_value = model.Message(
@@ -2167,7 +2196,7 @@ def test_create_model_ethernet_frame() -> None:
 
 
 def test_create_model_type_derivation_message() -> None:
-    t = model.ModularInteger("Test::T", expr.Number(256))
+    t = model.Integer("Test::T", expr.Number(0), expr.Number(255), expr.Number(8))
 
     structure = [
         model.Link(model.INITIAL, model.Field("Baz")),
@@ -2182,7 +2211,7 @@ def test_create_model_type_derivation_message() -> None:
     assert_messages_string(
         """\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type Foo is
               message
                  Baz : T;
@@ -2232,7 +2261,7 @@ def test_create_model_message_locations() -> None:
     p.parse_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M is
               message
                  F1 : T;
@@ -2282,7 +2311,7 @@ def test_create_model_sequence_with_imported_element_type() -> None:
     p.parse_string(
         """\
            package Test is
-              type T is mod 256;
+              type T is range 0 .. 255 with Size => 8;
            end Test;
         """
     )
@@ -2298,7 +2327,9 @@ def test_create_model_sequence_with_imported_element_type() -> None:
     sequences = [t for t in m.types if isinstance(t, model.Sequence)]
     assert len(sequences) == 1
     assert sequences[0].identifier == ID("Sequence_Test::T")
-    assert sequences[0].element_type == model.ModularInteger("Test::T", expr.Number(256))
+    assert sequences[0].element_type == model.Integer(
+        "Test::T", expr.Number(0), expr.Number(255), expr.Number(8)
+    )
 
 
 def test_create_model_checksum() -> None:
@@ -2306,7 +2337,7 @@ def test_create_model_checksum() -> None:
     p.parse_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M is
               message
                  F1 : T;
@@ -2342,7 +2373,7 @@ def test_create_model_checksum() -> None:
         (
             """\
             package Test is
-               type T is mod 2 ** 8;
+               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
                type M is
                   message
                      F1 : T;
@@ -2357,7 +2388,7 @@ def test_create_model_checksum() -> None:
         (
             """\
             package Test is
-               type T is mod 2 ** 8;
+               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
                type M is
                   message
                      F1 : T;
@@ -2372,7 +2403,7 @@ def test_create_model_checksum() -> None:
         (
             """\
             package Test is
-               type T is mod 2 ** 8;
+               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
                type M is
                   message
                      F1 : T;
@@ -2386,7 +2417,7 @@ def test_create_model_checksum() -> None:
         (
             """\
             package Test is
-               type T is mod 2 ** 8;
+               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
                type M is
                   message
                      F1 : T;
@@ -2453,7 +2484,7 @@ def test_message_field_condition(spec: str) -> None:
         f"""\
         package Test is
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 {spec}
         end Test;
         """,
@@ -2505,7 +2536,7 @@ def test_message_field_first(spec: str) -> None:
     assert_messages_string(
         f"""\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 {spec}
         end Test;
         """,
@@ -2551,7 +2582,7 @@ def test_message_field_size(spec: str) -> None:
         f"""\
         package Test is
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 
 {spec}
         end Test;
@@ -2594,7 +2625,7 @@ def test_message_field_condition_and_aspects(field_a: str, link: str, field_b: s
     assert_messages_string(
         f"""\
         package Test is
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
            type M is
               message
                  A : T{field_a}
@@ -2631,7 +2662,7 @@ def test_parameterized_messages() -> None:
         """\
         package Test is
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 
            type M (P : T) is
               message
@@ -2740,7 +2771,7 @@ def test_parse_error_invalid_arguments_for_parameterized_messages(
         f"""\
         package Test is
 
-           type T is mod 256;
+           type T is range 0 .. 255 with Size => 8;
 
            type M_P (P : T) is
               message
@@ -2802,7 +2833,6 @@ def test_parse_error_invalid_enum(spec: str, error: str) -> None:
 @pytest.mark.parametrize(
     "spec",
     [
-        "type X (P : Y) is mod 2 ** 8",
         "type X (P : Y) is range 1 .. 100 with Size => 8",
         "type X (P : Y) is (A, B) with Size => 8",
         "type X (P : Y) is sequence of T",
@@ -2814,7 +2844,7 @@ def test_parse_error_invalid_parameterized_type(spec: str) -> None:
     assert_error_string(
         f"""\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M is
               message
                  F : T;
@@ -2830,7 +2860,7 @@ def test_parse_error_undefined_parameter() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M (P : X) is
               message
                  F : T;
@@ -2845,7 +2875,7 @@ def test_parse_error_name_conflict_between_parameters() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M (P : T; P : T) is
               message
                  F : T
@@ -2865,7 +2895,7 @@ def test_parse_error_name_conflict_between_field_and_parameter() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M (P : T) is
               message
                  P : T;
@@ -2898,7 +2928,7 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
     p.parse_string(
         """\
         package Message_Type is
-           type T is mod 2 ** 32;
+           type T is range 0 .. 2 ** 32 - 1 with Size => 32;
            type M is
               message
                  F : T;
@@ -2956,7 +2986,7 @@ def test_parse_error_duplicate_message_aspect() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M is
               message
                  A : T;
@@ -2976,7 +3006,7 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type Message is
               message
                  A : T;
@@ -2998,6 +3028,20 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
         """,
         r'^<stdin>:8:44: parser: error: duplicate aspect "Readable"\n'
         "<stdin>:8:24: parser: info: previous location$",
+    )
+
+
+def test_parse_error_unsupported_modular_integer_type() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is mod 2 ** 16;
+        end Test;
+        """,
+        r"^"
+        r"<stdin>:2:9: parser: error: modular integer types are not supported\n"
+        r'<stdin>:2:9: parser: info: use "type T is range 0 .. 65535 with Size => 16" instead'
+        r"$",
     )
 
 
@@ -3030,7 +3074,7 @@ def test_parse_error_duplicate_message_checksum_aspect() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M is
               message
                  F1 : T;
@@ -3048,7 +3092,7 @@ def test_parse_error_duplicate_message_byte_order_aspect() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M is
               message
                  F1 : T;
@@ -3067,7 +3111,7 @@ def test_parse_error_duplicate_state_desc() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type Message is
               message
                  A : T;
@@ -3096,7 +3140,7 @@ def test_parse_error_duplicate_transition_desc() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type Message is
               message
                  A : T;
@@ -3256,7 +3300,7 @@ def test_parse_error_math_expression_in_bool_context(expression: str, message: s
     assert_error_string(
         f"""\
         package Test is
-           type T is mod 2 ** 8;
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
            type M is
               message
                  A : T

@@ -44,7 +44,6 @@ from rflx.ada import (
     InstantiationUnit,
     Last,
     Less,
-    ModularType,
     Not,
     NotIn,
     Number,
@@ -95,9 +94,7 @@ from rflx.model import (
     Integer,
     Message,
     Model,
-    ModularInteger,
     Opaque,
-    RangeInteger,
     Refinement,
     Scalar,
     Sequence,
@@ -711,11 +708,8 @@ class Generator:
         if isinstance(field_type, (Integer, Enumeration)):
             unit.declaration_context.append(WithClause(self._prefix * const.TYPES))
 
-        if isinstance(field_type, ModularInteger):
-            unit += UnitPart(modular_types(field_type))
-            unit += self._integer_functions(field_type)
-        elif isinstance(field_type, RangeInteger):
-            unit += UnitPart(range_types(field_type))
+        if isinstance(field_type, Integer):
+            unit += UnitPart(integer_types(field_type))
             unit += self._integer_functions(field_type)
         elif isinstance(field_type, Enumeration):
             unit += UnitPart(enumeration_types(field_type))
@@ -1469,17 +1463,7 @@ def create_file(filename: Path, content: str) -> None:
     filename.write_text(content)
 
 
-def modular_types(integer: ModularInteger) -> list[Declaration]:
-    return [
-        ModularType(
-            integer.name,
-            integer.modulus.ada_expr(),
-            aspects=[SizeAspect(integer.size_expr.ada_expr())],
-        )
-    ]
-
-
-def range_types(integer: RangeInteger) -> list[Declaration]:
+def integer_types(integer: Integer) -> list[Declaration]:
     return [
         RangeType(
             integer.name,

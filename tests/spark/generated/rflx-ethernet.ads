@@ -6,7 +6,7 @@ package RFLX.Ethernet with
   SPARK_Mode
 is
 
-   type Address is mod 2**48 with
+   type Address is range 0 .. 2**48 - 1 with
      Size =>
        48;
 
@@ -57,7 +57,7 @@ is
      Pre =>
        Valid_TPID (Val);
 
-   type TCI is mod 2**16 with
+   type TCI is range 0 .. 2**16 - 1 with
      Size =>
        16;
 

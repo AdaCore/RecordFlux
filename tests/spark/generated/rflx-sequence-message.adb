@@ -73,10 +73,8 @@ is
    function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
      ((case Fld is
           when F_Length =>
-             F_Modular_Vector,
-          when F_Modular_Vector =>
-             F_Range_Vector,
-          when F_Range_Vector =>
+             F_Integer_Vector,
+          when F_Integer_Vector =>
              F_Enumeration_Vector,
           when F_Enumeration_Vector =>
              F_AV_Enumeration_Vector,
@@ -93,10 +91,8 @@ is
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Length =>
-             Invalid (Ctx.Cursors (F_Modular_Vector)),
-          when F_Modular_Vector =>
-             Invalid (Ctx.Cursors (F_Range_Vector)),
-          when F_Range_Vector =>
+             Invalid (Ctx.Cursors (F_Integer_Vector)),
+          when F_Integer_Vector =>
              Invalid (Ctx.Cursors (F_Enumeration_Vector)),
           when F_Enumeration_Vector =>
              Invalid (Ctx.Cursors (F_AV_Enumeration_Vector)),
@@ -116,7 +112,7 @@ is
    function Equal (Ctx : Context; Fld : Field; Data : RFLX_Types.Bytes) return Boolean is
      (Sufficient_Buffer_Length (Ctx, Fld)
       and then (case Fld is
-                   when F_Modular_Vector | F_Range_Vector | F_Enumeration_Vector | F_AV_Enumeration_Vector =>
+                   when F_Integer_Vector | F_Enumeration_Vector | F_AV_Enumeration_Vector =>
                       Data'Length = RFLX_Types.To_Index (Field_Last (Ctx, Fld)) - RFLX_Types.To_Index (Field_First (Ctx, Fld)) + 1
                       and then (for all I in RFLX_Types.Index range RFLX_Types.To_Index (Field_First (Ctx, Fld)) .. RFLX_Types.To_Index (Field_Last (Ctx, Fld)) =>
                                    Ctx.Buffer.all (I) = Data (Data'First + (I - RFLX_Types.To_Index (Field_First (Ctx, Fld))))),
@@ -163,7 +159,7 @@ is
    end Reset_Dependent_Fields;
 
    function Composite_Field (Fld : Field) return Boolean is
-     (Fld in F_Modular_Vector | F_Range_Vector | F_Enumeration_Vector | F_AV_Enumeration_Vector);
+     (Fld in F_Integer_Vector | F_Enumeration_Vector | F_AV_Enumeration_Vector);
 
    function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
      Pre =>
@@ -267,13 +263,10 @@ is
        and then (case Fld is
                     when F_Length =>
                        Get_Length (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Modular_Vector) = F_Length
-                            and Valid_Next (Ctx, F_Modular_Vector)),
-                    when F_Modular_Vector =>
-                       (Predecessor (Ctx, F_Range_Vector) = F_Modular_Vector
-                        and Valid_Next (Ctx, F_Range_Vector)),
-                    when F_Range_Vector =>
-                       (Predecessor (Ctx, F_Enumeration_Vector) = F_Range_Vector
+                       and (Predecessor (Ctx, F_Integer_Vector) = F_Length
+                            and Valid_Next (Ctx, F_Integer_Vector)),
+                    when F_Integer_Vector =>
+                       (Predecessor (Ctx, F_Enumeration_Vector) = F_Integer_Vector
                         and Valid_Next (Ctx, F_Enumeration_Vector)),
                     when F_Enumeration_Vector =>
                        (Predecessor (Ctx, F_AV_Enumeration_Vector) = F_Enumeration_Vector
@@ -299,9 +292,9 @@ is
       pragma Assert (Size = (case Fld is
                          when F_Length =>
                             8,
-                         when F_Modular_Vector =>
+                         when F_Integer_Vector =>
                             RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value) * 8,
-                         when F_Range_Vector | F_Enumeration_Vector | F_AV_Enumeration_Vector =>
+                         when F_Enumeration_Vector | F_AV_Enumeration_Vector =>
                             16));
       if State_Valid then
          Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
@@ -330,13 +323,10 @@ is
        and (case Fld is
                when F_Length =>
                   Get_Length (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Modular_Vector) = F_Length
-                       and Valid_Next (Ctx, F_Modular_Vector)),
-               when F_Modular_Vector =>
-                  (Predecessor (Ctx, F_Range_Vector) = F_Modular_Vector
-                   and Valid_Next (Ctx, F_Range_Vector)),
-               when F_Range_Vector =>
-                  (Predecessor (Ctx, F_Enumeration_Vector) = F_Range_Vector
+                  and (Predecessor (Ctx, F_Integer_Vector) = F_Length
+                       and Valid_Next (Ctx, F_Integer_Vector)),
+               when F_Integer_Vector =>
+                  (Predecessor (Ctx, F_Enumeration_Vector) = F_Integer_Vector
                    and Valid_Next (Ctx, F_Enumeration_Vector)),
                when F_Enumeration_Vector =>
                   (Predecessor (Ctx, F_AV_Enumeration_Vector) = F_Enumeration_Vector
@@ -367,32 +357,22 @@ is
       Set_Scalar (Ctx, F_Length, RFLX.Sequence.To_Base_Integer (Val));
    end Set_Length;
 
-   procedure Set_Modular_Vector_Empty (Ctx : in out Context) is
+   procedure Set_Integer_Vector_Empty (Ctx : in out Context) is
       Unused_Buffer_First, Unused_Buffer_Last : RFLX_Types.Index;
       Unused_Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Modular_Vector, 0, 0, True, Unused_Buffer_First, Unused_Buffer_Last, Unused_Offset);
-   end Set_Modular_Vector_Empty;
+      Set (Ctx, F_Integer_Vector, 0, 0, True, Unused_Buffer_First, Unused_Buffer_Last, Unused_Offset);
+   end Set_Integer_Vector_Empty;
 
-   procedure Set_Modular_Vector (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Modular_Vector.Context) is
-      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.Sequence.Modular_Vector.Byte_Size (Seq_Ctx));
+   procedure Set_Integer_Vector (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Integer_Vector.Context) is
+      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.Sequence.Integer_Vector.Byte_Size (Seq_Ctx));
       Unused_First, Unused_Last : RFLX_Types.Bit_Index;
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Unused_Offset : RFLX_Types.Offset;
    begin
-      Set (Ctx, F_Modular_Vector, 0, Size, True, Buffer_First, Buffer_Last, Unused_Offset);
-      RFLX.Sequence.Modular_Vector.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Set_Modular_Vector;
-
-   procedure Set_Range_Vector (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Range_Vector.Context) is
-      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.Sequence.Range_Vector.Byte_Size (Seq_Ctx));
-      Unused_First, Unused_Last : RFLX_Types.Bit_Index;
-      Buffer_First, Buffer_Last : RFLX_Types.Index;
-      Unused_Offset : RFLX_Types.Offset;
-   begin
-      Set (Ctx, F_Range_Vector, 0, Size, True, Buffer_First, Buffer_Last, Unused_Offset);
-      RFLX.Sequence.Range_Vector.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
-   end Set_Range_Vector;
+      Set (Ctx, F_Integer_Vector, 0, Size, True, Buffer_First, Buffer_Last, Unused_Offset);
+      RFLX.Sequence.Integer_Vector.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+   end Set_Integer_Vector;
 
    procedure Set_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Enumeration_Vector.Context) is
       Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.Sequence.Enumeration_Vector.Byte_Size (Seq_Ctx));
@@ -414,94 +394,49 @@ is
       RFLX.Sequence.AV_Enumeration_Vector.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_AV_Enumeration_Vector;
 
-   procedure Initialize_Modular_Vector_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
+   procedure Initialize_Integer_Vector_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
        not Ctx'Constrained
        and then RFLX.Sequence.Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Message.Valid_Next (Ctx, RFLX.Sequence.Message.F_Modular_Vector)
-       and then RFLX.Sequence.Message.Valid_Length (Ctx, RFLX.Sequence.Message.F_Modular_Vector, Length)
-       and then RFLX_Types.To_Length (RFLX.Sequence.Message.Available_Space (Ctx, RFLX.Sequence.Message.F_Modular_Vector)) >= Length
-       and then RFLX.Sequence.Message.Field_First (Ctx, RFLX.Sequence.Message.F_Modular_Vector) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX.Sequence.Message.Valid_Next (Ctx, RFLX.Sequence.Message.F_Integer_Vector)
+       and then RFLX.Sequence.Message.Valid_Length (Ctx, RFLX.Sequence.Message.F_Integer_Vector, Length)
+       and then RFLX_Types.To_Length (RFLX.Sequence.Message.Available_Space (Ctx, RFLX.Sequence.Message.F_Integer_Vector)) >= Length
+       and then RFLX.Sequence.Message.Field_First (Ctx, RFLX.Sequence.Message.F_Integer_Vector) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Modular_Vector)
-       and Field_Size (Ctx, F_Modular_Vector) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_Modular_Vector)
-       and Invalid (Ctx, F_Range_Vector)
+       and Well_Formed (Ctx, F_Integer_Vector)
+       and Field_Size (Ctx, F_Integer_Vector) = RFLX_Types.To_Bit_Length (Length)
+       and Ctx.Verified_Last = Field_Last (Ctx, F_Integer_Vector)
        and Invalid (Ctx, F_Enumeration_Vector)
        and Invalid (Ctx, F_AV_Enumeration_Vector)
-       and (Predecessor (Ctx, F_Range_Vector) = F_Modular_Vector
-            and Valid_Next (Ctx, F_Range_Vector))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Modular_Vector) = Predecessor (Ctx, F_Modular_Vector)'Old
-       and Valid_Next (Ctx, F_Modular_Vector) = Valid_Next (Ctx, F_Modular_Vector)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Field_First (Ctx, F_Modular_Vector) = Field_First (Ctx, F_Modular_Vector)'Old
-       and Field_Last (Ctx, F_Modular_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Modular_Vector)) + Field_Size (Ctx, F_Modular_Vector)
-   is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
-      Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Modular_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
-   begin
-      pragma Assert (Last mod RFLX_Types.Byte'Size = 0);
-      Reset_Dependent_Fields (Ctx, F_Modular_Vector);
-      pragma Warnings (Off, "attribute Update is an obsolescent feature");
-      Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
-      pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Modular_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Modular_Vector)) := (State => S_Invalid, Predecessor => F_Modular_Vector);
-   end Initialize_Modular_Vector_Private;
-
-   procedure Initialize_Modular_Vector (Ctx : in out Context) is
-   begin
-      Initialize_Modular_Vector_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Modular_Vector)));
-   end Initialize_Modular_Vector;
-
-   procedure Initialize_Range_Vector_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
-     Pre =>
-       not Ctx'Constrained
-       and then RFLX.Sequence.Message.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Message.Valid_Next (Ctx, RFLX.Sequence.Message.F_Range_Vector)
-       and then RFLX.Sequence.Message.Valid_Length (Ctx, RFLX.Sequence.Message.F_Range_Vector, Length)
-       and then RFLX_Types.To_Length (RFLX.Sequence.Message.Available_Space (Ctx, RFLX.Sequence.Message.F_Range_Vector)) >= Length
-       and then RFLX.Sequence.Message.Field_First (Ctx, RFLX.Sequence.Message.F_Range_Vector) mod RFLX_Types.Byte'Size = 1,
-     Post =>
-       Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Range_Vector)
-       and Field_Size (Ctx, F_Range_Vector) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_Range_Vector)
-       and Invalid (Ctx, F_Enumeration_Vector)
-       and Invalid (Ctx, F_AV_Enumeration_Vector)
-       and (Predecessor (Ctx, F_Enumeration_Vector) = F_Range_Vector
+       and (Predecessor (Ctx, F_Enumeration_Vector) = F_Integer_Vector
             and Valid_Next (Ctx, F_Enumeration_Vector))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Range_Vector) = Predecessor (Ctx, F_Range_Vector)'Old
-       and Valid_Next (Ctx, F_Range_Vector) = Valid_Next (Ctx, F_Range_Vector)'Old
+       and Predecessor (Ctx, F_Integer_Vector) = Predecessor (Ctx, F_Integer_Vector)'Old
+       and Valid_Next (Ctx, F_Integer_Vector) = Valid_Next (Ctx, F_Integer_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Field_First (Ctx, F_Range_Vector) = Field_First (Ctx, F_Range_Vector)'Old
-       and Field_Last (Ctx, F_Range_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Range_Vector)) + Field_Size (Ctx, F_Range_Vector)
+       and Field_First (Ctx, F_Integer_Vector) = Field_First (Ctx, F_Integer_Vector)'Old
+       and Field_Last (Ctx, F_Integer_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Integer_Vector)) + Field_Size (Ctx, F_Integer_Vector)
    is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Range_Vector);
-      Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Range_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Integer_Vector);
+      Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Integer_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
    begin
       pragma Assert (Last mod RFLX_Types.Byte'Size = 0);
-      Reset_Dependent_Fields (Ctx, F_Range_Vector);
+      Reset_Dependent_Fields (Ctx, F_Integer_Vector);
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Range_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Range_Vector)) := (State => S_Invalid, Predecessor => F_Range_Vector);
-   end Initialize_Range_Vector_Private;
+      Ctx.Cursors (F_Integer_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Integer_Vector).Predecessor);
+      Ctx.Cursors (Successor (Ctx, F_Integer_Vector)) := (State => S_Invalid, Predecessor => F_Integer_Vector);
+   end Initialize_Integer_Vector_Private;
 
-   procedure Initialize_Range_Vector (Ctx : in out Context) is
+   procedure Initialize_Integer_Vector (Ctx : in out Context) is
    begin
-      Initialize_Range_Vector_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Range_Vector)));
-   end Initialize_Range_Vector;
+      Initialize_Integer_Vector_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_Integer_Vector)));
+   end Initialize_Integer_Vector;
 
    procedure Initialize_Enumeration_Vector_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
      Pre =>
@@ -586,43 +521,24 @@ is
       Initialize_AV_Enumeration_Vector_Private (Ctx, RFLX_Types.To_Length (Field_Size (Ctx, F_AV_Enumeration_Vector)));
    end Initialize_AV_Enumeration_Vector;
 
-   procedure Switch_To_Modular_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Modular_Vector.Context) is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Modular_Vector);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Modular_Vector);
+   procedure Switch_To_Integer_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Integer_Vector.Context) is
+      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Integer_Vector);
+      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Integer_Vector);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      if Invalid (Ctx, F_Modular_Vector) then
-         Reset_Dependent_Fields (Ctx, F_Modular_Vector);
+      if Invalid (Ctx, F_Integer_Vector) then
+         Reset_Dependent_Fields (Ctx, F_Integer_Vector);
          pragma Warnings (Off, "attribute Update is an obsolescent feature");
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
-         Ctx.Cursors (F_Modular_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
-         Ctx.Cursors (Successor (Ctx, F_Modular_Vector)) := (State => S_Invalid, Predecessor => F_Modular_Vector);
+         Ctx.Cursors (F_Integer_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Integer_Vector).Predecessor);
+         Ctx.Cursors (Successor (Ctx, F_Integer_Vector)) := (State => S_Invalid, Predecessor => F_Integer_Vector);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      RFLX.Sequence.Modular_Vector.Initialize (Seq_Ctx, Buffer, First, Last);
+      RFLX.Sequence.Integer_Vector.Initialize (Seq_Ctx, Buffer, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
-   end Switch_To_Modular_Vector;
-
-   procedure Switch_To_Range_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Range_Vector.Context) is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Range_Vector);
-      Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Range_Vector);
-      Buffer : RFLX_Types.Bytes_Ptr;
-   begin
-      if Invalid (Ctx, F_Range_Vector) then
-         Reset_Dependent_Fields (Ctx, F_Range_Vector);
-         pragma Warnings (Off, "attribute Update is an obsolescent feature");
-         Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
-         pragma Warnings (On, "attribute Update is an obsolescent feature");
-         Ctx.Cursors (F_Range_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
-         Ctx.Cursors (Successor (Ctx, F_Range_Vector)) := (State => S_Invalid, Predecessor => F_Range_Vector);
-      end if;
-      Take_Buffer (Ctx, Buffer);
-      pragma Warnings (Off, "unused assignment to ""Buffer""");
-      RFLX.Sequence.Range_Vector.Initialize (Seq_Ctx, Buffer, First, Last);
-      pragma Warnings (On, "unused assignment to ""Buffer""");
-   end Switch_To_Range_Vector;
+   end Switch_To_Integer_Vector;
 
    procedure Switch_To_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Enumeration_Vector.Context) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Enumeration_Vector);
@@ -662,27 +578,16 @@ is
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_AV_Enumeration_Vector;
 
-   procedure Update_Modular_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Modular_Vector.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Sequence.Modular_Vector.Valid (Seq_Ctx);
+   procedure Update_Integer_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Integer_Vector.Context) is
+      Valid_Sequence : constant Boolean := RFLX.Sequence.Integer_Vector.Valid (Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      RFLX.Sequence.Modular_Vector.Take_Buffer (Seq_Ctx, Buffer);
+      RFLX.Sequence.Integer_Vector.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
-         Ctx.Cursors (F_Modular_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Modular_Vector).First, Last => Ctx.Cursors (F_Modular_Vector).Last, Value => Ctx.Cursors (F_Modular_Vector).Value, Predecessor => Ctx.Cursors (F_Modular_Vector).Predecessor);
+         Ctx.Cursors (F_Integer_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Integer_Vector).First, Last => Ctx.Cursors (F_Integer_Vector).Last, Value => Ctx.Cursors (F_Integer_Vector).Value, Predecessor => Ctx.Cursors (F_Integer_Vector).Predecessor);
       end if;
-   end Update_Modular_Vector;
-
-   procedure Update_Range_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Range_Vector.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Sequence.Range_Vector.Valid (Seq_Ctx);
-      Buffer : RFLX_Types.Bytes_Ptr;
-   begin
-      RFLX.Sequence.Range_Vector.Take_Buffer (Seq_Ctx, Buffer);
-      Ctx.Buffer := Buffer;
-      if Valid_Sequence then
-         Ctx.Cursors (F_Range_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Range_Vector).First, Last => Ctx.Cursors (F_Range_Vector).Last, Value => Ctx.Cursors (F_Range_Vector).Value, Predecessor => Ctx.Cursors (F_Range_Vector).Predecessor);
-      end if;
-   end Update_Range_Vector;
+   end Update_Integer_Vector;
 
    procedure Update_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Enumeration_Vector.Context) is
       Valid_Sequence : constant Boolean := RFLX.Sequence.Enumeration_Vector.Valid (Seq_Ctx);

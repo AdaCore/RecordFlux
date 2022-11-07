@@ -1,6 +1,6 @@
 package Sequence_Message is
 
-   type Byte is mod 256;
+   type Byte is range 0 .. 255 with Size => 8;
    type Bytes is sequence of Byte;
 
    type Sequence_Element is

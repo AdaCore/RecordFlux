@@ -24,15 +24,6 @@ package RFLX_Invalid is
    -- error: undefined element type
    type A2 is sequence of Undef;
 
-   -- error: Modular type exceeds limit
-   type S is mod 2 ** 128;
-
-   -- error: Modular type is not base 2
-   type T is mod 1023;
-
-   -- error: Modulus contains variable
-   type Mod3 is mod 2 ** Value;
-
    -- error: Duplicate type
    type R is (R_E1, R_E2) with Size => 8;
 
@@ -82,7 +73,7 @@ package RFLX_Invalid is
       end message;
 
    -- error: unsupported element type size
-   type E6 is mod 2 ** 4;
+   type E6 is range 0 .. 2 ** 4 - 1 with Size => 4;
    type A3 is sequence of E6;
 
    type SDU1 is
@@ -193,29 +184,29 @@ package RFLX_Invalid is
                if Data = [1, 7, 1000];
       end message;
 
-   type Modular_32 is mod 2 ** 32;
+   type U32 is range 0 .. 2 ** 32 - 1 with Size => 32;
 
    -- error: conflicting condition
    type M8 is
       message
-         F1 : Modular_32
+         F1 : U32
             then null
                if F1 > 50
             then F2
                if F1 < 80;
-         F2 : Modular_32;
+         F2 : U32;
       end message;
 
    type M9 is
       message
-         F1 : Modular_32 then null;
+         F1 : U32 then null;
          -- error: unreachable field
-         F2 : Modular_32;
+         F2 : U32;
       end message;
 
    type M10 is
       message
-         F1 : Modular_32
+         F1 : U32
             -- error: contradicting condition
             then null if 1 = 2
             then null if F1 > 50;
@@ -227,7 +218,7 @@ package RFLX_Invalid is
             -- error: fixed size field with size aspect
             then F1
                with Size => 24;
-         F1 : Modular_32;
+         F1 : U32;
       end message;
 
    type M12 is
@@ -236,7 +227,7 @@ package RFLX_Invalid is
             then F1
                -- error: invalid first
                with First => 7;
-         F1 : Modular_32;
+         F1 : U32;
       end message;
 
    type M13 is
@@ -245,12 +236,12 @@ package RFLX_Invalid is
             then F1
                -- error: subsequent field referenced
                if F1 > 42;
-         F1 : Modular_32;
+         F1 : U32;
       end message;
 
    type M14 is
       message
-         F1 : Modular_32
+         F1 : U32
             then F2
                -- error: negative size
                with Size => F1 - 2 ** 33;
@@ -264,8 +255,8 @@ package RFLX_Invalid is
          F2 : Opaque;
       end message;
 
-   type U8 is mod 2 ** 8;
-   type U16 is mod 2 ** 16;
+   type U8 is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type U16 is range 0 .. 2 ** 16 - 1 with Size => 16;
    type M16 is
       message
          F1 : U8;
@@ -279,7 +270,7 @@ package RFLX_Invalid is
 
    type M17 is
       message
-         F1 : Modular_32
+         F1 : U32
             then null
                -- error: size aspect for final field
                with Size => 32;
@@ -292,12 +283,12 @@ package RFLX_Invalid is
 
    type M18 is
       message
-         F1 : Modular_32;
-         F2 : Modular_32
+         F1 : U32;
+         F2 : U32
             then F3
                -- error: undefined variable
                if F1 = 0 and Undef_Var;
-         F3 : Modular_32;
+         F3 : U32;
       end message;
 
 -- error: End identifier inconsistent with package identifier

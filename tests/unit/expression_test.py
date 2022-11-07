@@ -74,13 +74,13 @@ from rflx.expression import (
     var_id_gen,
 )
 from rflx.identifier import ID, StrID
-from rflx.model import RangeInteger
+from rflx.model import Integer
 from tests.data.models import ENUMERATION
 from tests.utils import assert_equal
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
-TINY_INT = RangeInteger("P::Tiny", Number(1), Number(3), Number(8), location=Location((1, 2)))
-INT = RangeInteger("P::Int", Number(1), Number(100), Number(8), location=Location((3, 2)))
+TINY_INT = Integer("P::Tiny", Number(1), Number(3), Number(8), location=Location((1, 2)))
+INT = Integer("P::Int", Number(1), Number(100), Number(8), location=Location((3, 2)))
 
 
 def assert_type(expr: Expr, type_: rty.Type) -> None:

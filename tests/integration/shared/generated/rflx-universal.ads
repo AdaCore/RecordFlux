@@ -79,7 +79,7 @@ is
      Pre =>
        Valid_Length (Val);
 
-   type Value is mod 256 with
+   type Value is range 0 .. 255 with
      Size =>
        8;
 

@@ -43,35 +43,22 @@ Integer Types
 
 ..
     Integers [§T-I]
-    Modular Integers [§T-I-M]
-    Range Integers [§T-I-R]
 
 An integer type is used to represent numbers.
-Two types of integers are supported: modular type and range type.
 
 **Syntax**
 
 .. productionlist::
-   modular_type: type `name` is mod `modulus`
-   range_type: type `name` is range `first` .. `last` with Size => `number`
-   modulus: `mathematical_expression`
+   integer_type: type `name` is range `first` .. `last` with Size => `number`
    first: `mathematical_expression`
    last: `mathematical_expression`
 
 **Static Semantics**
 
-A modular type represents the values from 0 to one less than the :token:`modulus`.
-The bit size of a modular type is determined by calculating the binary logarithm of :token:`modulus`.
-
-The set of values of a range type consists of all numbers from the lower bound to the upper bound.
-For a range type the bit size has to be specified explicitly.
+The set of values of a integer type consists of all numbers from the lower bound to the upper bound.
+The bit size has to be specified explicitly.
 
 **Example**
-
-.. doc-check: rflx,basic_declaration,3
-.. code:: ada
-
-   type Address is mod 2 ** 48
 
 .. doc-check: rflx,basic_declaration,3
 .. code:: ada
@@ -1641,7 +1628,7 @@ A package is used to structure a specification.
    package: package `name` is
           :    { `basic_declaration` }
           : end `name` ;
-   basic_declaration: ( `modular_type` | `range_type` | `enumeration_type` | `message_type` | `type_refinement` | `session` ) ;
+   basic_declaration: ( `integer_type` | `enumeration_type` | `message_type` | `type_refinement` | `session` ) ;
 
 **Static Semantics**
 
@@ -1655,10 +1642,10 @@ By convention one protocol is specified in one package.
 
    package Ethernet is
 
-      type Address is mod 2 ** 48;
+      type Address is range 0 .. 2 ** 48 - 1 with Size => 48;
       type Type_Length is range 46 .. 2 ** 16 - 1 with Size => 16;
       type TPID is range 16#8100# .. 16#8100# with Size => 16;
-      type TCI is mod 2 ** 16;
+      type TCI is range 0 .. 2 ** 16 - 1 with Size => 16;
       type Ether_Type is
          (ET_IPv4            => 16#0800#,
           ET_ARP             => 16#0806#,

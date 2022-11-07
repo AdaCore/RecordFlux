@@ -69,21 +69,21 @@ is
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
       Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value));
-      Universal.Message.Set_Value (Ctx.P.Message_Ctx, Universal.Value ((case Recv_Type is
+      Universal.Message.Set_Value (Ctx.P.Message_Ctx, (case Recv_Type is
           when Universal.MT_Null | Universal.MT_Data =>
              2,
           when Universal.MT_Value =>
-             8,
+             4,
           when Universal.MT_Values =>
-             16,
+             8,
           when Universal.MT_Option_Types =>
-             32,
+             16,
           when Universal.MT_Options =>
-             64,
+             32,
           when Universal.MT_Unconstrained_Data =>
-             128,
+             64,
           when Universal.MT_Unconstrained_Options =>
-             256)));
+             128));
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Prepare_Invariant);
       <<Finalize_Prepare>>

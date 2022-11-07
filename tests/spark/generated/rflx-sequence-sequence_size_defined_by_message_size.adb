@@ -342,14 +342,14 @@ is
       Set (Ctx, F_Vector, 0, 0, True, Unused_Buffer_First, Unused_Buffer_Last, Unused_Offset);
    end Set_Vector_Empty;
 
-   procedure Set_Vector (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Modular_Vector.Context) is
-      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.Sequence.Modular_Vector.Byte_Size (Seq_Ctx));
+   procedure Set_Vector (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Integer_Vector.Context) is
+      Size : constant RFLX_Types.Bit_Length := RFLX_Types.To_Bit_Length (RFLX.Sequence.Integer_Vector.Byte_Size (Seq_Ctx));
       Unused_First, Unused_Last : RFLX_Types.Bit_Index;
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Unused_Offset : RFLX_Types.Offset;
    begin
       Set (Ctx, F_Vector, 0, Size, True, Buffer_First, Buffer_Last, Unused_Offset);
-      RFLX.Sequence.Modular_Vector.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+      RFLX.Sequence.Integer_Vector.Copy (Seq_Ctx, Ctx.Buffer.all (Buffer_First .. Buffer_Last));
    end Set_Vector;
 
    procedure Initialize_Vector_Private (Ctx : in out Context; Length : RFLX_Types.Length) with
@@ -392,7 +392,7 @@ is
       Initialize_Vector_Private (Ctx, Length);
    end Initialize_Vector;
 
-   procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Modular_Vector.Context) is
+   procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Integer_Vector.Context) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Vector);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, F_Vector);
       Buffer : RFLX_Types.Bytes_Ptr;
@@ -407,15 +407,15 @@ is
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
-      RFLX.Sequence.Modular_Vector.Initialize (Seq_Ctx, Buffer, First, Last);
+      RFLX.Sequence.Integer_Vector.Initialize (Seq_Ctx, Buffer, First, Last);
       pragma Warnings (On, "unused assignment to ""Buffer""");
    end Switch_To_Vector;
 
-   procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Modular_Vector.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Sequence.Modular_Vector.Valid (Seq_Ctx);
+   procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Integer_Vector.Context) is
+      Valid_Sequence : constant Boolean := RFLX.Sequence.Integer_Vector.Valid (Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
-      RFLX.Sequence.Modular_Vector.Take_Buffer (Seq_Ctx, Buffer);
+      RFLX.Sequence.Integer_Vector.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Vector).First, Last => Ctx.Cursors (F_Vector).Last, Value => Ctx.Cursors (F_Vector).Value, Predecessor => Ctx.Cursors (F_Vector).Predecessor);

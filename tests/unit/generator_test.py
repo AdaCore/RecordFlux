@@ -286,7 +286,7 @@ def test_substitution_relation_scalar(
 
 
 def test_prefixed_type_identifier() -> None:
-    assert common.prefixed_type_identifier(ID("Modular"), "P") == ID("P.Modular")
+    assert common.prefixed_type_identifier(ID("Integer"), "P") == ID("P.Integer")
     for t in BUILTIN_TYPES:
         assert common.prefixed_type_identifier(ID(t), "P") == t.name
 
@@ -1959,18 +1959,18 @@ def test_session_state_action_error(
             r" in Head attribute not yet supported",
         ),
         (
-            models.SEQUENCE_MODULAR_VECTOR.type_,
+            models.SEQUENCE_INTEGER_VECTOR.type_,
             expr.Head(
                 expr.Call(
                     "F",
                     [expr.Variable("Y")],
-                    type_=rty.Sequence("S", models.SEQUENCE_MODULAR_VECTOR.type_),
+                    type_=rty.Sequence("S", models.SEQUENCE_INTEGER_VECTOR.type_),
                     location=Location((10, 20)),
                 ),
             ),
             FatalError,
-            r'unexpected sequence element type \(sequence type "Sequence::Modular_Vector" with '
-            r'element integer type "Sequence::Modular_Integer" \(0 .. 65535\)\) '
+            r'unexpected sequence element type \(sequence type "Sequence::Integer_Vector" with '
+            r'element integer type "Sequence::Integer" \(1 .. 100\)\) '
             r'for "F \(Y\)\'Head" in assignment of "X"',
         ),
         (
@@ -2552,7 +2552,7 @@ def test_session_with_only_null_state(tmp_path: Path) -> None:
 
 def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
     types = [
-        mty.RangeInteger(
+        mty.Integer(
             "P::T",
             first=expr.Number(0),
             last=expr.Sub(

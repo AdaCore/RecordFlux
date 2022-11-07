@@ -22,9 +22,7 @@ from rflx.model import (
     Link,
     Message,
     Model,
-    ModularInteger,
     Opaque,
-    RangeInteger,
     Refinement,
     Scalar,
     Sequence,
@@ -76,30 +74,17 @@ def sizes(
 
 
 @st.composite
-def modular_integers(
+def integers(
     draw: Draw,
     unique_identifiers: abc.Generator[ID, None, None],
     multiple_of_8: bool = False,
     align_to_8: int = 0,
-) -> ModularInteger:
-    return ModularInteger(
-        next(unique_identifiers),
-        expr.Pow(expr.Number(2), expr.Number(draw(sizes(multiple_of_8, align_to_8)))),
-    )
-
-
-@st.composite
-def range_integers(
-    draw: Draw,
-    unique_identifiers: abc.Generator[ID, None, None],
-    multiple_of_8: bool = False,
-    align_to_8: int = 0,
-) -> RangeInteger:
+) -> Integer:
     size = draw(sizes(multiple_of_8, align_to_8))
     max_value = min(2**size - 1, 2**63 - 1)
     first = draw(st.integers(min_value=0, max_value=max_value))
     last = draw(st.integers(min_value=first, max_value=max_value))
-    return RangeInteger(
+    return Integer(
         next(unique_identifiers), expr.Number(first), expr.Number(last), expr.Number(size)
     )
 
@@ -148,8 +133,7 @@ def scalars(
 ) -> Scalar:
     return draw(
         st.one_of(
-            modular_integers(unique_identifiers, multiple_of_8, align_to_8),
-            range_integers(unique_identifiers, multiple_of_8, align_to_8),
+            integers(unique_identifiers, multiple_of_8, align_to_8),
             enumerations(unique_identifiers, multiple_of_8, align_to_8),
         )
     )

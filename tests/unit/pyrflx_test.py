@@ -12,11 +12,10 @@ from rflx.model import (
     FINAL,
     INITIAL,
     Enumeration,
+    Integer,
     Link,
     Message,
-    ModularInteger,
     Opaque,
-    RangeInteger,
     Sequence,
     Type,
 )
@@ -439,7 +438,7 @@ def test_message_value_parse_from_bitstring(
     tlv_message_value: MessageValue, enum_value: EnumValue
 ) -> None:
     # pylint: disable=protected-access
-    intval = IntegerValue(ModularInteger("Test::Int", expr.Number(256)))
+    intval = IntegerValue(Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)))
     intval.parse(b"\x02")
     assert intval.value == 2
     enum_value.parse(b"\x01")
@@ -489,33 +488,9 @@ def test_message_value_set_invalid(ethernet_frame_value: MessageValue) -> None:
         ethernet_frame_value.set("Type_Length", 1501)
 
 
-def test_integer_value_mod() -> None:
+def test_integer_value() -> None:
     # pylint: disable=pointless-statement
-    modtype = ModularInteger("Test::Int", expr.Number(2**16))
-    modvalue = IntegerValue(modtype)
-    assert not modvalue.initialized
-    with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
-        modvalue.value
-    with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
-        modvalue.expr
-    modvalue.assign(128)
-    assert modvalue.initialized
-    assert modvalue.value == 128  # type: ignore[unreachable]
-    # https://github.com/python/mypy/issues/12598
-    assert str(modvalue.bitstring) == "0000000010000000"
-    with pytest.raises(
-        PyRFLXError, match=r"^pyrflx: error: value 65536 not in type range 0 .. 65535$"
-    ):
-        modvalue.assign(2**16)
-    with pytest.raises(
-        PyRFLXError, match=r"^pyrflx: error: value -1 not in type range 0 .. 65535$"
-    ):
-        modvalue.assign(-1)
-
-
-def test_integer_value_range() -> None:
-    # pylint: disable=pointless-statement
-    rangetype = RangeInteger("Test::Int", expr.Number(8), expr.Number(16), expr.Number(8))
+    rangetype = Integer("Test::Int", expr.Number(8), expr.Number(16), expr.Number(8))
     rangevalue = IntegerValue(rangetype)
     assert not rangevalue.initialized
     with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
@@ -663,25 +638,25 @@ def test_opaque_value_eq(enum_value: EnumValue) -> None:
     # pylint: disable=comparison-with-itself
     ov = OpaqueValue(Opaque())
     ev = enum_value
-    rangetype = RangeInteger("Test::Int", expr.Number(8), expr.Number(16), expr.Number(8))
+    rangetype = Integer("Test::Int", expr.Number(8), expr.Number(16), expr.Number(8))
     rv = IntegerValue(rangetype)
-    modtype = ModularInteger("Test::Int", expr.Number(2**16))
-    mv = IntegerValue(modtype)
-    mv2 = IntegerValue(modtype)
+    rangetype2 = Integer("Test::Int", expr.Number(0), expr.Number(100), expr.Number(16))
+    rv2 = IntegerValue(rangetype2)
+    rv3 = IntegerValue(rangetype2)
     assert ov == ov
     assert ev == ev
     assert rv == rv
-    assert mv == mv
+    assert rv2 == rv2
     assert ev != rv
-    assert mv == mv2
-    mv.assign(2)
-    assert mv != mv2
-    mv2.assign(10)
-    assert mv != mv2
-    mv.assign(10)
-    assert mv == mv2
+    assert rv2 == rv3
+    rv2.assign(2)
+    assert rv2 != rv3
+    rv3.assign(10)
+    assert rv2 != rv3
+    rv2.assign(10)
+    assert rv2 == rv3
     rv.assign(10)
-    assert mv != rv
+    assert rv2 != rv
 
 
 def test_opaque_value_clear() -> None:
@@ -730,9 +705,15 @@ def fixture_sequence_type_foo_value(sequence_type_package: Package) -> MessageVa
 
 
 def test_sequence_scalars(sequence_type_foo_value: MessageValue) -> None:
-    a = IntegerValue(ModularInteger("Sequence_Type::Byte_One", expr.Number(256)))
-    b = IntegerValue(ModularInteger("Sequence_Type::Byte_Two", expr.Number(256)))
-    c = IntegerValue(ModularInteger("Sequence_Type::Byte_Three", expr.Number(256)))
+    a = IntegerValue(
+        Integer("Sequence_Type::Byte_One", expr.Number(0), expr.Number(255), expr.Number(8))
+    )
+    b = IntegerValue(
+        Integer("Sequence_Type::Byte_Two", expr.Number(0), expr.Number(255), expr.Number(8))
+    )
+    c = IntegerValue(
+        Integer("Sequence_Type::Byte_Three", expr.Number(0), expr.Number(255), expr.Number(8))
+    )
     a.assign(5)
     b.assign(6)
     c.assign(7)
@@ -744,17 +725,20 @@ def test_sequence_scalars(sequence_type_foo_value: MessageValue) -> None:
 
 
 def test_sequence_preserve_value(enum_value: EnumValue) -> None:
-    intval = IntegerValue(ModularInteger("Test::Int", expr.Number(256)))
+    intval = IntegerValue(Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)))
     intval.assign(1)
     enum_value.assign("One")
     type_sequence = SequenceValue(
-        Sequence("Test::Sequence", ModularInteger("Test::Mod_Int", expr.Number(256)))
+        Sequence(
+            "Test::Sequence",
+            Integer("Test::Mod_Int", expr.Number(0), expr.Number(255), expr.Number(8)),
+        )
     )
     type_sequence.assign([intval])
     assert type_sequence.value == [intval]
     with pytest.raises(
         PyRFLXError,
-        match="^pyrflx: error: cannot assign EnumValue to an sequence of ModularInteger$",
+        match="^pyrflx: error: cannot assign EnumValue to an sequence of Integer$",
     ):
         type_sequence.assign([enum_value])
     assert type_sequence.value == [intval]
@@ -789,15 +773,18 @@ def test_sequence_assign_invalid(
 ) -> None:
     # pylint: disable=protected-access
     type_sequence = SequenceValue(
-        Sequence("Test::Sequence", ModularInteger("Test::Mod_Int", expr.Number(256)))
+        Sequence(
+            "Test::Sequence",
+            Integer("Test::Mod_Int", expr.Number(0), expr.Number(255), expr.Number(8)),
+        )
     )
     msg_sequence = SequenceValue(Sequence("Test::MsgSequence", tlv_message_value._type))
 
-    intval = IntegerValue(ModularInteger("Test::Int", expr.Number(256)))
+    intval = IntegerValue(Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)))
     enum_value.assign("One")
     with pytest.raises(
         PyRFLXError,
-        match="^pyrflx: error: cannot assign EnumValue to an sequence of ModularInteger$",
+        match="^pyrflx: error: cannot assign EnumValue to an sequence of Integer$",
     ):
         type_sequence.assign([enum_value])
 
@@ -1471,7 +1458,9 @@ def test_parameterized_message_invalid_type(parameterized_package: Package) -> N
 
 
 def test_json_serialization() -> None:
-    integer_value = IntegerValue(ModularInteger("Test::Int", expr.Number(256)))
+    integer_value = IntegerValue(
+        Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8))
+    )
     integer_value.assign(128)
     assert integer_value.as_json() == 128
 
@@ -1487,7 +1476,10 @@ def test_json_serialization() -> None:
     assert enum_value.as_json() == ("Test::Two", 2)
 
     sequence_value = SequenceValue(
-        Sequence("Test::ModularSequence", ModularInteger("Test::Int", expr.Number(256)))
+        Sequence(
+            "Test::Sequence",
+            Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)),
+        )
     )
     sequence_value.assign([integer_value, integer_value, integer_value])
     assert sequence_value.as_json() == [128, 128, 128]
