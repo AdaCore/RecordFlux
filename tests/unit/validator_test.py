@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
@@ -163,14 +163,7 @@ def test_validate_error_msg_not_in_package() -> None:
         validator.validate(ID("Ethernet::Message"), None, None, None)
 
 
-@pytest.fixture(name="tmp_path_restricted")
-def fixture_tmp_path_restricted(tmp_path: Path) -> Iterator[Path]:
-    tmp_path.chmod(0o100)
-    yield tmp_path
-    tmp_path.chmod(0o700)
-
-
-def test_validate_cannot_open_output_file(tmp_path_restricted: Path) -> None:
+def test_validate_cannot_open_output_file(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
@@ -178,8 +171,7 @@ def test_validate_cannot_open_output_file(tmp_path_restricted: Path) -> None:
         ValidationError,
         match=(
             r"^"
-            rf"cannot open output file {tmp_path_restricted}/test.json:"
-            rf" \[Errno 13\] Permission denied: '{tmp_path_restricted}/test.json'"
+            rf"cannot open output file {tmp_path}: \[Errno 21\] Is a directory: '{tmp_path}'"
             r"$"
         ),
     ):
@@ -187,7 +179,7 @@ def test_validate_cannot_open_output_file(tmp_path_restricted: Path) -> None:
             ID("Ethernet::Frame"),
             TEST_DIR / "ethernet/frame/valid",
             TEST_DIR / "ethernet/frame/invalid",
-            tmp_path_restricted / "test.json",
+            tmp_path,
         )
 
 
