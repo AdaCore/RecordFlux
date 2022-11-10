@@ -114,18 +114,21 @@ class State(Base):
             or (
                 isinstance(a, stmt.VariableAssignment)
                 and (
-                    a.expression.findall(
-                        lambda x: isinstance(
-                            x,
-                            (
-                                expr.Selected,
-                                expr.Head,
-                                expr.Comprehension,
-                                expr.MessageAggregate,
-                                expr.DeltaMessageAggregate,
-                                expr.Conversion,
-                                expr.Opaque,
-                            ),
+                    isinstance(a.type_, rty.Message)
+                    or (
+                        a.expression.findall(
+                            lambda x: isinstance(
+                                x,
+                                (
+                                    expr.Selected,
+                                    expr.Head,
+                                    expr.Comprehension,
+                                    expr.MessageAggregate,
+                                    expr.DeltaMessageAggregate,
+                                    expr.Conversion,
+                                    expr.Opaque,
+                                ),
+                            )
                         )
                     )
                 )
