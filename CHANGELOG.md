@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Modular integer types (#727)
 
+### Fixed
+
+- Exception transition rejected on message assignment (#1144)
+
 ## [0.7.1] - 2022-11-04
 
 ### Fixed
