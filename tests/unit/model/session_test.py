@@ -17,6 +17,7 @@ from rflx.model import (
     Session,
     State,
     Transition,
+    Type,
     declaration as decl,
     statement as stmt,
 )
@@ -2094,9 +2095,10 @@ def test_missing_exception_transition() -> None:
     )
 
 
-def test_unnecessary_exception_transition() -> None:
-    assert_session_model_error(
-        states=[
+@pytest.mark.parametrize(
+    "state, types, parameters",
+    [
+        (
             State(
                 "Start",
                 transitions=[Transition(target=ID("null"))],
@@ -2104,10 +2106,35 @@ def test_unnecessary_exception_transition() -> None:
                 declarations=[],
                 actions=[],
             ),
-        ],
+            [],
+            [],
+        ),
+        (
+            State(
+                "Start",
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null"), location=Location((10, 20))),
+                declarations=[decl.VariableDeclaration("Tag", "TLV::Tag")],
+                actions=[
+                    stmt.VariableAssignment(
+                        "Tag",
+                        expr.Call("SubProg"),
+                    )
+                ],
+            ),
+            [TLV_TAG],
+            [decl.FunctionDeclaration("SubProg", [], "TLV::Tag")],
+        ),
+    ],
+)
+def test_unnecessary_exception_transition(
+    state: State, parameters: abc.Sequence[decl.FormalDeclaration], types: abc.Sequence[Type]
+) -> None:
+    assert_session_model_error(
+        states=[state],
         declarations=[],
-        parameters=[],
-        types=[],
+        parameters=parameters,
+        types=types,
         regex=r'^<stdin>:10:20: model: error: unnecessary exception transition in state "Start"$',
     )
 
@@ -2803,3 +2830,22 @@ def test_state_normalization(
 def test_state_optimization(state: State, optimized_state: State) -> None:
     state.optimize()
     assert state == optimized_state
+
+
+def test_message_assignment_from_function() -> None:
+    Session(
+        "P::S",
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
+                declarations=[decl.VariableDeclaration("Msg", "Null::Message")],
+                actions=[stmt.VariableAssignment("Msg", expr.Call("SubProg"))],
+            )
+        ],
+        declarations=[],
+        parameters=[decl.FunctionDeclaration("SubProg", [], "Null::Message")],
+        types=[NULL_MESSAGE],
+        location=Location((1, 1)),
+    )
