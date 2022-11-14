@@ -140,7 +140,7 @@ def test_potential_name_conflicts_with_enum_literals(tmp_path: Path) -> None:
     spec = f"""\
         package Test is
 
-           type A is ({enum_literals}) with Size => 8;
+           type A is ({enum_literals}, Extra_Literal) with Size => 8;
 
            type B is sequence of A;
 
@@ -424,7 +424,7 @@ def test_refinement_with_self(tmp_path: Path) -> None:
         """\
         package Test is
 
-           type Tag is (T1 => 1) with Size => 8;
+           type Tag is (T1 => 1, T2 => 2) with Size => 8;
 
            type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
 

@@ -2665,6 +2665,27 @@ class Refinement(mty.Type):
                     ],
                 )
 
+        if self.condition != expr.TRUE:
+            proof = expr.TRUE.check(
+                [
+                    *self.pdu.type_constraints(self.condition),
+                    *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
+                    expr.Equal(self.condition, expr.FALSE),
+                ]
+            )
+            if proof.result == expr.ProofResult.UNSAT:
+                self.error.extend(
+                    [
+                        (
+                            f'condition "{self.condition}" in refinement of'
+                            f' "{self.pdu.identifier}" is always true',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.field.identifier.location,
+                        )
+                    ]
+                )
+
     def __str__(self) -> str:
         condition = f"\n   if {self.condition}" if self.condition != expr.TRUE else ""
         return f"for {self.pdu.name} use ({self.field.name} => {self.sdu.name}){condition}"
