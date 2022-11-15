@@ -1,0 +1,54 @@
+package QUIC is
+
+   type Length is (L6, L14, L30, L62) with Size => 2;
+   type U6 is range 0 .. 2 ** 6 - 1 with Size => 6;
+   type U14 is range 0 .. 2 ** 14 - 1 with Size => 14;
+   type U30 is range 0 .. 2 ** 30 - 1 with Size => 30;
+   type U62 is range 0 .. 2 ** 62 - 1 with Size => 62;
+
+   type Variable_Length_Integer is
+      message
+         Length : Length
+            then U6
+               if Length = L6
+            then U14
+               if Length = L14
+            then U30
+               if Length = L30
+            then U62
+               if Length = L62;
+         U6 : U6
+            then null;
+         U14 : U14
+            then null;
+         U30 : U30
+            then null;
+         U62 : U62;
+      end message with
+         Deserialize =>
+            (case Length is
+               L6 => U6,
+               L14 => U14,
+               L30 => U30,
+               L62 => U62),
+         Serialize =>
+            (case Variable_Length_Integer'Value is
+               0 .. 2 ** 6 - 1 =>
+                  (Length => L6,
+                   U6 => Variable_Length_Integer'Value),
+               2 ** 6 .. 2 ** 14 - 1 =>
+                  (Length => L14,
+                   U14 => Variable_Length_Integer'Value),
+               2 ** 14 .. 2 ** 30 - 1 =>
+                  (Length => L30,
+                   U30 => Variable_Length_Integer'Value),
+               2 ** 30 .. 2 ** 62 - 1 =>
+                  (Length => L62,
+                   U62 => Variable_Length_Integer'Value));
+
+
+   type Integer is range 0 .. 2 ** 62 - 1
+   with
+      Structure => Variable_Length_Integer;
+
+end QUIC;
