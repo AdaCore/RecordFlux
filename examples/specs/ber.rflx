@@ -1,0 +1,131 @@
+package BER is
+
+   --
+   -- Identifier
+   --
+
+   type Tag_Class is (TC_Universal, TC_Application, TC_Context_Specific, TC_Private) with
+      Size => 2;
+   type Tag_Type_Short is range 0 .. 31 with
+      Size => 5;
+
+   type Tag_Type_Long_Octet is
+      message
+         More : Boolean;
+         Tag_Type_Part : Tag_Type_Part;
+      end message;
+
+   type Tag_Type_Long_Structure is sequence of Tag_Type_Long_Structure_Octet with
+      Deserialize =>
+        (Initial => 0,
+         Next => Tag_Type_Long_Structure'Current * 128 + Tag_Type_Long_Structure'Element.Tag_Type_Part,
+         Until => (Tag_Type_Long_Structure'Element.More = False)),
+      Serialize =>
+         -- TODO: verify
+         (Size => Tag_Type_Long_Structure'Value'Size,
+          Set => (More => Tag_Type_Long_Structure'Position < Tag_Type_Long_Structure'Last_Element,
+                  Value => Tag_Type_Long_Structure'Current mod 128),
+          Next => Tag_Type_Long_Structure'Current / 128,
+          Reverse => True);
+
+   type Tag_Type_Long is range 0 .. 2 ** 63 - 1 with
+      Structure => Tag_Type_Long_Structure;
+
+   type Identifier is
+      message
+         Tag_Class : Tag_Class;
+         Primitive : Boolean;
+         null : Ignore
+            with Size => 5;
+         Tag_Type : Tag_Type
+            with First => Tag_Class'First;
+      end message;
+
+   type Tag_Type is range 0 .. 2 ** 63  - 1 with
+      Structure => Tag_Type_Structure;
+
+   type Tag_Type_Structure is
+      message
+         null : Ignore
+            with Size => 3;
+         Tag_Type_Short : Tag_Type_Short
+            then null
+               if Tag_Type_Short < 31,
+            then Tag_Type_Long = 31;
+         Tag_Type_Long : Tag_Type_Long;
+      end message with
+         Deserialize =>
+            (if Tag_Type_Short < 31 then Tag_Type_Short else Tag_Type_Long),
+         Serialize =>
+            (if Tag_Type_Structure'Value < 31
+             then (Tag_Type_Short => Tag_Type_Structure'Value)
+             else (Tag_Type_Long => Tag_Type_Structure'Value));
+
+   --
+   -- Length
+   --
+ 
+   type Octet is range 0 .. 2 ** 8 - 1 with
+      Size => 8;
+
+   type Long_Length_Octets is sequence of Octet with
+      Deserialize =>
+        (Initial => 0,
+         Next    => Long_Length_Octets'Current * 256 + Long_Length_Octets'Element);
+      Serialize =>
+        (Value   => Long_Length_Octets'Value mod 256,
+         Next    => Long_Length_Octets'Value / 256,
+         Reverse => True);
+
+   type Long_Length is range 0 .. 2 ** 63 - 1 with
+      Structure => Long_Length_Octets;
+ 
+   type Short_Length is range 0 .. 2 ** 7 - 1 with
+      Size => 7;
+
+   type Length_Octets is
+      message
+         Form : Boolean;
+         Short_Length : Short_Length
+            then null
+               if Form = False or (Form = True and Short_Length = 127)
+            then Long_Length
+               with Size => Short_Length * 8
+               if Form = True;
+         Long_Length : Long_Length;
+      end message with
+         Deserialize =>
+           (if Form = False then Short_Length else Long_Length),
+         Serialize =>
+           (if Length_Octets'Value >= 128
+            then (Form => True,
+                  Short_Length => Length_Octets'Value'Size / 8 + 1,
+                  Long_Length  => Length_Octets'Value)
+            else (Form => False,
+                  Short_Length => Length_Octets'Value);
+
+   type Length is range 0 .. 2 ** 63 - 1 with
+      Structure => Length_Octets;
+
+   --
+   -- TLV
+   --
+
+   type TLV is
+      message
+         Identifier : Identifier:
+         Length : Length:
+         Content : Opaque
+            with Size => Length * 8;
+         -- End-of-Content octets
+      end message;
+
+   type BER_TLV_Integer is
+      message
+         Identifier : Identifier
+            if Identifier.Tag_Class = TC_Universal and Identifier.Tag_Type = 43:
+         Length : Length:
+         Value : BER_Integer;
+      end message;
+
+end BER;

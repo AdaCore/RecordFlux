@@ -1,0 +1,41 @@
+with BER;
+
+package SNMP is
+
+   subtype SNMP_Type is BER::Tag_Type (GET_REQUEST => 0, ...);
+
+   type Var_Bind is
+      message
+         --
+      end message;
+
+   type Var_Binds is sequence of Var_Bind;
+
+   type TLV_Var_Binds is
+      message
+         Identifier : Identifier;
+         Length : Length:
+         Seq : Var_Binds;
+      end message;
+
+   type PDU is
+      message
+         Request_ID : BER::BER_TLV_Integer;
+         Error_Status : BER::BER_TLV_Integer;
+         Error_Index : BER::BER_TLV_Integer;
+         Variable_Bindings : TLV_Var_Binds;
+      end message;
+
+   for BER::TLV use (Content => PDU)
+      if Identifier_Tag_Class = TC_Context_Specific
+         and (Tag_Type = GET_REQUEST or Tag_Type = 1 or [...]);
+
+   type Bulk_PDU is
+      message
+      end message;
+
+   for BER::TLV use (Content => Bulk_PDU)
+      if Identifier_Tag_Class = TC_Context_Specific
+         and (Tag_Type = 5);
+
+end SNMP;

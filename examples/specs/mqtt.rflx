@@ -1,0 +1,28 @@
+package MQTT is
+
+   type Integer is range 0 .. 2 ** 32 - 1 with
+      Structure => Variable_Byte_Integer;
+
+   type U7 is range 0 .. 2 ** 7 -1 with Size => 7;
+
+   type Variable_Byte_Integer_Element is
+      message
+         More : Boolean;
+         Value : U7;
+      end message;
+
+   type Variable_Byte_Integer is sequence of Variable_Byte_Integer_Element
+   with
+      Deserialize =>
+         (Initial => 0,
+          Next => Variable_Byte_Integer'Current + Variable_Byte_Integer'Element.Value * 128 ** (Variable_Byte_Integer'Position - 1),
+          Until => (Variable_Byte_Integer'Element.More = False)),
+      Serialize =>
+         -- TODO: verify
+         (Size => Variable_Byte_Integer'Value'Size,
+          Set => (More => Variable_Byte_Integer'Current >= 128,
+                  Value => Variable_Byte_Integer'Current mod 128),
+          Next => Variable_Byte_Integer'Current / 128,
+          Until => Variable_Byte_Integer'Current = 0);
+
+end MQTT;
