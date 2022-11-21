@@ -95,9 +95,7 @@ class Proof:
 class ProofJob:
     goal: Expr
     facts: Sequence[Expr]
-    expected: ProofResult
-    error: RecordFluxError
-    negate: bool
+    results: Mapping[ProofResult, RecordFluxError]
     add_unsat: bool
 
 
@@ -111,13 +109,34 @@ class ParallelProofs:
         self,
         goal: Expr,
         facts: Sequence[Expr],
-        expected: ProofResult,
-        error: RecordFluxError,
-        negate: bool = False,
+        unsat_error: RecordFluxError = RecordFluxError(),
+        unknown_error: RecordFluxError = RecordFluxError(),
+        sat_error: RecordFluxError = RecordFluxError(),
         add_unsat: bool = False,
     ) -> None:
         # pylint: disable=too-many-arguments
-        self._current.append(ProofJob(goal, facts, expected, error, negate, add_unsat))
+        """
+        Add a proof goal and facts to a parallel proof.
+
+        Errors can be set separately for each possible proof result. When running check_proof
+        the sat_error, unsat_error or unknown_error will be returned when the proof result is
+        ProofResult.SAT, ProofResult.UNSAT or ProofResult.UNKNOWN respectively.
+
+        When add_unsat is set to True, an additional error message will be returned from
+        check_proof when the result of the proof is ProofResult.UNSAT.
+        """
+        self._current.append(
+            ProofJob(
+                goal,
+                facts,
+                {
+                    ProofResult.SAT: sat_error,
+                    ProofResult.UNSAT: unsat_error,
+                    ProofResult.UNKNOWN: unknown_error,
+                },
+                add_unsat,
+            )
+        )
 
     def push(self) -> None:
         if self._current:
@@ -129,10 +148,8 @@ class ParallelProofs:
         result = RecordFluxError()
         for job in jobs:
             proof = job.goal.check(job.facts)
-            if job.negate == (proof.result != job.expected):
-                continue
-            result.extend(job.error)
-            if job.add_unsat:
+            result.extend(job.results[proof.result])
+            if job.add_unsat and proof.result != ProofResult.SAT:
                 result.extend(
                     [
                         (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)

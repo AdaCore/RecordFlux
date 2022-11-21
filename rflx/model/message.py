@@ -1661,9 +1661,8 @@ class Message(AbstractMessage):
                             proofs.add(
                                 conflict,
                                 facts,
-                                expr.ProofResult.SAT,
-                                error,
-                                negate=True,
+                                sat_error=error,
+                                unknown_error=error,
                             )
             proofs.push()
         proofs.check(self.error)
@@ -1847,7 +1846,7 @@ class Message(AbstractMessage):
                     ],
                 ]
             )
-            proofs.add(expr.TRUE, facts, expr.ProofResult.SAT, error, negate=True)
+            proofs.add(expr.TRUE, facts, sat_error=error, unknown_error=error)
         proofs.check(self.error)
 
     def _prove_overlays(self) -> None:
@@ -1871,7 +1870,9 @@ class Message(AbstractMessage):
                             )
                         ],
                     )
-                    proofs.add(overlaid, facts, expr.ProofResult.SAT, error, add_unsat=True)
+                    proofs.add(
+                        overlaid, facts, unsat_error=error, unknown_error=error, add_unsat=True
+                    )
             proofs.push()
         proofs.check(self.error)
 
@@ -1917,7 +1918,7 @@ class Message(AbstractMessage):
                         )
                     ],
                 )
-                proofs.add(negative, facts, expr.ProofResult.UNSAT, error)
+                proofs.add(negative, facts, sat_error=error, unknown_error=error)
 
                 error = RecordFluxError()
                 path_message = " -> ".join([last.target.name for last in path])
@@ -1931,7 +1932,7 @@ class Message(AbstractMessage):
                         )
                     ],
                 )
-                proofs.add(start, facts, expr.ProofResult.SAT, error, add_unsat=True)
+                proofs.add(start, facts, unsat_error=error, unknown_error=error, add_unsat=True)
 
                 if f in self.types:
                     t = self.types[f]
@@ -1965,8 +1966,8 @@ class Message(AbstractMessage):
                                 *self.message_constraints(),
                                 *self.type_constraints(start_aligned),
                             ],
-                            expr.ProofResult.UNSAT,
-                            error,
+                            sat_error=error,
+                            unknown_error=error,
                         )
 
                         is_multiple_of_element_size = expr.Not(
@@ -1997,8 +1998,8 @@ class Message(AbstractMessage):
                                 *self.message_constraints(),
                                 *self.type_constraints(is_multiple_of_element_size),
                             ],
-                            expr.ProofResult.UNSAT,
-                            error,
+                            sat_error=error,
+                            unknown_error=error,
                         )
                 proofs.push()
         proofs.check(self.error)
@@ -2046,9 +2047,8 @@ class Message(AbstractMessage):
             proofs.add(
                 expr.NotEqual(expr.Mod(message_size, expr.Number(8)), expr.Number(0)),
                 facts,
-                expr.ProofResult.SAT,
-                error,
-                negate=True,
+                sat_error=error,
+                unknown_error=error,
             )
         proofs.check(self.error)
 
