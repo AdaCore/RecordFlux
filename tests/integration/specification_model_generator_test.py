@@ -146,13 +146,9 @@ def test_potential_name_conflicts_with_enum_literals(tmp_path: Path) -> None:
 
            type Message is
               message
-                 A : A
-                    then B
-                       if {condition};
+                 A : A;
                  B : B
-                    with Size => 8
-                    then C
-                       if {condition};
+                    with Size => 8;
                  C : Opaque
                     with Size => 8
                     then null
