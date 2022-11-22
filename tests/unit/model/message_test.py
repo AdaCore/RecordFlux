@@ -7,6 +7,7 @@ from collections import abc
 from copy import deepcopy
 
 import pytest
+from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 
 from rflx import typing_ as rty
@@ -37,6 +38,8 @@ from rflx.expression import (
     Opaque,
     Or,
     Pow,
+    Proof,
+    ProofResult,
     Selected,
     Size,
     Sub,
@@ -4481,3 +4484,37 @@ def test_always_true_message_condition(
             rf' on transition "{link_to_final.source.identifier}" -> "Final" is always true$'
         ),
     )
+
+
+def test_possibly_always_true_refinement(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
+) -> None:
+    message = Message(
+        "P::M",
+        [
+            Link(INITIAL, Field("Tag")),
+            Link(Field("Tag"), Field("Value")),
+            Link(Field("Value"), FINAL),
+        ],
+        {
+            Field("Tag"): TLV_TAG,
+            Field("Value"): OPAQUE,
+        },
+    )
+    condition = Or(
+        Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+        Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
+    )
+    monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
+    Refinement(
+        "In_Message",
+        message,
+        Field(ID("Value", location=Location((10, 20)))),
+        MESSAGE,
+        condition,
+    )
+    captured = capsys.readouterr()
+    assert (
+        f'<stdin>:10:20: model: warning: condition "{condition}"'
+        ' in refinement of "P::M" might be always false'
+    ) in captured.out

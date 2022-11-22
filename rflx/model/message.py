@@ -15,7 +15,7 @@ import rflx.typing_ as rty
 from rflx import expression as expr
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.contract import ensure, invariant
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail, warn
 from rflx.identifier import ID, StrID
 
 from . import type_ as mty
@@ -2710,47 +2710,38 @@ class Refinement(mty.Type):
 
         if not self.error.check():
             if self.condition != expr.TRUE:
-                proof = expr.TRUE.check(
-                    [
-                        *self.pdu.type_constraints(self.condition),
-                        *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
-                        self.pdu.path_condition(self.field),
-                        expr.Equal(self.condition, expr.FALSE),
-                    ]
-                )
-                if proof.result == expr.ProofResult.UNSAT:
-                    self.error.extend(
+                for cond, val in [
+                    (expr.Equal(self.condition, expr.FALSE), "true"),
+                    (self.condition, "false"),
+                ]:
+                    proof = expr.TRUE.check(
                         [
-                            (
-                                f'condition "{self.condition}" in refinement of'
-                                f' "{self.pdu.identifier}" is always true',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                self.field.identifier.location,
-                            )
+                            *self.pdu.type_constraints(self.condition),
+                            *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
+                            self.pdu.path_condition(self.field),
+                            cond,
                         ]
                     )
-
-            proof = expr.TRUE.check(
-                [
-                    *self.pdu.type_constraints(self.condition),
-                    *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
-                    self.pdu.path_condition(self.field),
-                    self.condition,
-                ]
-            )
-            if proof.result == expr.ProofResult.UNSAT:
-                self.error.extend(
-                    [
-                        (
+                    if proof.result == expr.ProofResult.UNSAT:
+                        self.error.extend(
+                            [
+                                (
+                                    f'condition "{self.condition}" in refinement of'
+                                    f' "{self.pdu.identifier}" is always {val}',
+                                    Subsystem.MODEL,
+                                    Severity.ERROR,
+                                    self.field.identifier.location,
+                                )
+                            ]
+                        )
+                    if proof.result == expr.ProofResult.UNKNOWN:
+                        warn(
                             f'condition "{self.condition}" in refinement of'
-                            f' "{self.pdu.identifier}" is always false',
+                            f' "{self.pdu.identifier}" might be always {val}',
                             Subsystem.MODEL,
-                            Severity.ERROR,
+                            Severity.WARNING,
                             self.field.identifier.location,
                         )
-                    ]
-                )
 
     def __str__(self) -> str:
         condition = f"\n   if {self.condition}" if self.condition != expr.TRUE else ""
