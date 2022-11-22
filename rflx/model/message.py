@@ -2714,6 +2714,7 @@ class Refinement(mty.Type):
                     [
                         *self.pdu.type_constraints(self.condition),
                         *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
+                        self.pdu.path_condition(self.field),
                         expr.Equal(self.condition, expr.FALSE),
                     ]
                 )
@@ -2734,6 +2735,7 @@ class Refinement(mty.Type):
                 [
                     *self.pdu.type_constraints(self.condition),
                     *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
+                    self.pdu.path_condition(self.field),
                     self.condition,
                 ]
             )
