@@ -6,7 +6,8 @@ generic
 package Generic_Socket with
    SPARK_Mode,
    Abstract_State => Network,
-   Initializes    => Network
+   Initializes    => Network,
+   Annotate       => (GNATprove, Always_Return)
 is
 
    procedure Setup with
