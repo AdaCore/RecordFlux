@@ -181,8 +181,12 @@ is
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
+   pragma Warnings (Off, "unused variable ""*""");
+
    function Always_Valid (Buffer : RFLX_Types.Bytes) return Boolean is
      (True);
+
+   pragma Warnings (On, "unused variable ""*""");
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
@@ -197,8 +201,12 @@ is
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
+   pragma Warnings (Off, "unused variable ""*""");
+
    function Always_Valid (Context_Buffer_Length : RFLX_Types.Length; Offset : RFLX_Types.Length) return Boolean is
      (True);
+
+   pragma Warnings (On, "unused variable ""*""");
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
