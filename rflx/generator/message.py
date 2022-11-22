@@ -1071,6 +1071,10 @@ def create_generic_read_procedure(prefix: str, message: Message) -> UnitPart:
                 "Warnings",
                 [Variable("Off"), String('formal parameter "*" is not referenced')],
             ),
+            Pragma(
+                "Warnings",
+                [Variable("Off"), String('unused variable "*"')],
+            ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "Always_Valid",
@@ -1081,6 +1085,10 @@ def create_generic_read_procedure(prefix: str, message: Message) -> UnitPart:
                 # https://github.com/Componolit/Workarounds/issues/48
                 # Ghost entities are not allowed as formal generic parameters.
                 # aspects=[Ghost()],
+            ),
+            Pragma(
+                "Warnings",
+                [Variable("On"), String('unused variable "*"')],
             ),
             Pragma(
                 "Warnings",
@@ -1162,6 +1170,10 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
                 "Warnings",
                 [Variable("Off"), String('formal parameter "*" is not referenced')],
             ),
+            Pragma(
+                "Warnings",
+                [Variable("Off"), String('unused variable "*"')],
+            ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "Always_Valid",
@@ -1175,6 +1187,10 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
                 # https://github.com/Componolit/Workarounds/issues/48
                 # Ghost entities are not allowed as formal generic parameters.
                 # aspects=[Ghost()],
+            ),
+            Pragma(
+                "Warnings",
+                [Variable("On"), String('unused variable "*"')],
             ),
             Pragma(
                 "Warnings",
