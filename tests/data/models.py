@@ -520,10 +520,7 @@ FIXED_SIZE_SIMPLE_MESSAGE = Message(
         Link(
             Field("Message_Type"),
             Field("Data"),
-            condition=Or(
-                Equal(Variable("Message_Type"), Variable("Universal::OT_Null")),
-                Equal(Variable("Message_Type"), Variable("Universal::OT_Data")),
-            ),
+            condition=Equal(Variable("Message_Type"), Variable("Universal::OT_Data")),
             size=Number(24),
         ),
         Link(

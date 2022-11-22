@@ -4339,3 +4339,28 @@ def test_always_true_refinement() -> None:
         r'^<stdin>:10:20: model: error: condition "Tag = TLV::Msg_Data\n'
         'or Tag = TLV::Msg_Error" in refinement of "P::M" is always true$',
     )
+
+
+def test_always_true_message_condition() -> None:
+    regex = (
+        r'^<stdin>:10:20: model: error: condition "Tag = TLV::Msg_Data\n'
+        'or Tag = TLV::Msg_Error" on transition "Tag" -> "Final" is always true$'
+    )
+    with pytest.raises(RecordFluxError, match=regex):
+        Message(
+            "P::M",
+            [
+                Link(INITIAL, Field("Tag")),
+                Link(
+                    Field(ID("Tag", location=Location((10, 20)))),
+                    FINAL,
+                    condition=Or(
+                        Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+                        Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
+                    ),
+                ),
+            ],
+            {
+                Field("Tag"): TLV_TAG,
+            },
+        )

@@ -1441,7 +1441,7 @@ class ValidChecksum(Attribute):
         return self.prefix.check_type_instance(rty.Any)
 
     def z3expr(self) -> z3.BoolRef:
-        return z3.BoolVal(True)
+        return z3.Bool(self.representation)
 
     @property
     def representation(self) -> str:

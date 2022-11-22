@@ -74,8 +74,7 @@ is
      ((case Fld is
           when F_Message_Type =>
              (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))
-                 or RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
+                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
               then
                  F_Data
               else
@@ -284,8 +283,7 @@ is
                     when F_Message_Type =>
                        Get_Message_Type (Ctx) = To_Actual (Val)
                        and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))
-                               or RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
+                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
                             then
                                Predecessor (Ctx, F_Data) = F_Message_Type
                                and Valid_Next (Ctx, F_Data)),
@@ -340,8 +338,7 @@ is
                when F_Message_Type =>
                   Get_Message_Type (Ctx) = To_Actual (Val)
                   and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))
-                          or RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
+                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
                        then
                           Predecessor (Ctx, F_Data) = F_Message_Type
                           and Valid_Next (Ctx, F_Data)),
@@ -385,8 +382,7 @@ is
        and Get_Message_Type (Ctx) = Val
        and Invalid (Ctx, F_Data)
        and (if
-               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))
-               or RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
+               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
             then
                Predecessor (Ctx, F_Data) = F_Message_Type
                and Valid_Next (Ctx, F_Data))
