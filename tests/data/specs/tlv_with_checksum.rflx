@@ -1,6 +1,6 @@
 package TLV_With_Checksum is
 
-   type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 8;
+   type Tag is (Msg_Undefined => 0, Msg_Data => 1, Msg_Error => 3) with Size => 8;
    type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
    type Checksum is range 0 .. 2 ** 32 - 1 with Size => 32;
 
@@ -9,6 +9,7 @@ package TLV_With_Checksum is
          Tag      : Tag
             then Length
                if Tag = Msg_Data
+                  or Tag = Msg_Undefined
             then null
                if Tag = Msg_Error;
          Length   : Length
