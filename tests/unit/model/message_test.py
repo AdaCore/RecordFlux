@@ -4341,6 +4341,36 @@ def test_always_true_refinement() -> None:
     )
 
 
+def test_always_false_refinement() -> None:
+    message = Message(
+        "P::M",
+        [
+            Link(INITIAL, Field("Tag")),
+            Link(Field("Tag"), Field("Value")),
+            Link(Field("Value"), FINAL),
+        ],
+        {
+            Field("Tag"): TLV_TAG,
+            Field("Value"): OPAQUE,
+        },
+    )
+    refinement = Refinement(
+        "In_Message",
+        message,
+        Field(ID("Value", location=Location((10, 20)))),
+        MESSAGE,
+        And(
+            Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+            Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
+        ),
+    )
+    assert_type_error(
+        refinement,
+        r'^<stdin>:10:20: model: error: condition "Tag = TLV::Msg_Data\n'
+        'and Tag = TLV::Msg_Error" in refinement of "P::M" is always false$',
+    )
+
+
 def test_always_true_message_condition() -> None:
     regex = (
         r'^<stdin>:10:20: model: error: condition "Tag = TLV::Msg_Data\n'

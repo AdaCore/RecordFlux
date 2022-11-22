@@ -2708,12 +2708,33 @@ class Refinement(mty.Type):
                     ],
                 )
 
-        if self.condition != expr.TRUE:
+        if not self.error.check():
+            if self.condition != expr.TRUE:
+                proof = expr.TRUE.check(
+                    [
+                        *self.pdu.type_constraints(self.condition),
+                        *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
+                        expr.Equal(self.condition, expr.FALSE),
+                    ]
+                )
+                if proof.result == expr.ProofResult.UNSAT:
+                    self.error.extend(
+                        [
+                            (
+                                f'condition "{self.condition}" in refinement of'
+                                f' "{self.pdu.identifier}" is always true',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                self.field.identifier.location,
+                            )
+                        ]
+                    )
+
             proof = expr.TRUE.check(
                 [
                     *self.pdu.type_constraints(self.condition),
                     *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
-                    expr.Equal(self.condition, expr.FALSE),
+                    self.condition,
                 ]
             )
             if proof.result == expr.ProofResult.UNSAT:
@@ -2721,7 +2742,7 @@ class Refinement(mty.Type):
                     [
                         (
                             f'condition "{self.condition}" in refinement of'
-                            f' "{self.pdu.identifier}" is always true',
+                            f' "{self.pdu.identifier}" is always false',
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.field.identifier.location,
