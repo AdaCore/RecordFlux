@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Rename `Structural_Valid` to `Well_Formed` (#986)
+- Reject statically true conditions in messages (#662)
+- Reject statically false and true refinement conditions (#662)
 
 ### Removed
 
