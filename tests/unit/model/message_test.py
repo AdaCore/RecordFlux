@@ -4311,74 +4311,128 @@ def test_boolean_variable_as_condition() -> None:
     )
 
 
-def test_always_true_refinement() -> None:
-    message = Message(
-        "P::M",
-        [
-            Link(INITIAL, Field("Tag")),
-            Link(Field("Tag"), Field("Value")),
-            Link(Field("Value"), FINAL),
-        ],
-        {
-            Field("Tag"): TLV_TAG,
-            Field("Value"): OPAQUE,
-        },
-    )
+@pytest.mark.parametrize(
+    "message, condition",
+    [
+        (
+            Message(
+                "P::M",
+                [
+                    Link(INITIAL, Field("Tag")),
+                    Link(Field("Tag"), Field("Value")),
+                    Link(Field("Value"), FINAL),
+                ],
+                {
+                    Field("Tag"): TLV_TAG,
+                    Field("Value"): OPAQUE,
+                },
+            ),
+            Or(
+                Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+                Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
+            ),
+        ),
+        (
+            Message(
+                "P::M",
+                [
+                    Link(INITIAL, Field("Tag")),
+                    Link(
+                        Field("Tag"),
+                        Field("Value"),
+                        condition=Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+                    ),
+                    Link(Field("Value"), FINAL),
+                ],
+                {
+                    Field("Tag"): TLV_TAG,
+                    Field("Value"): OPAQUE,
+                },
+            ),
+            Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+        ),
+    ],
+)
+def test_always_true_refinement(message: Message, condition: Expr) -> None:
     refinement = Refinement(
         "In_Message",
         message,
         Field(ID("Value", location=Location((10, 20)))),
         MESSAGE,
-        Or(
-            Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
-            Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
-        ),
+        condition,
     )
     assert_type_error(
         refinement,
-        r'^<stdin>:10:20: model: error: condition "Tag = TLV::Msg_Data\n'
-        'or Tag = TLV::Msg_Error" in refinement of "P::M" is always true$',
+        (
+            rf'^<stdin>:10:20: model: error: condition "{condition}"'
+            ' in refinement of "P::M" is always true$'
+        ),
     )
 
 
-def test_always_false_refinement() -> None:
-    message = Message(
-        "P::M",
-        [
-            Link(INITIAL, Field("Tag")),
-            Link(Field("Tag"), Field("Value")),
-            Link(Field("Value"), FINAL),
-        ],
-        {
-            Field("Tag"): TLV_TAG,
-            Field("Value"): OPAQUE,
-        },
-    )
+@pytest.mark.parametrize(
+    "message, condition",
+    [
+        (
+            Message(
+                "P::M",
+                [
+                    Link(INITIAL, Field("Tag")),
+                    Link(Field("Tag"), Field("Value")),
+                    Link(Field("Value"), FINAL),
+                ],
+                {
+                    Field("Tag"): TLV_TAG,
+                    Field("Value"): OPAQUE,
+                },
+            ),
+            And(
+                Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+                Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
+            ),
+        ),
+        (
+            Message(
+                "P::M",
+                [
+                    Link(INITIAL, Field("Tag")),
+                    Link(
+                        Field("Tag"),
+                        Field("Value"),
+                        condition=Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+                    ),
+                    Link(Field("Value"), FINAL),
+                ],
+                {
+                    Field("Tag"): TLV_TAG,
+                    Field("Value"): OPAQUE,
+                },
+            ),
+            Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
+        ),
+    ],
+)
+def test_always_false_refinement(message: Message, condition: Expr) -> None:
     refinement = Refinement(
         "In_Message",
         message,
         Field(ID("Value", location=Location((10, 20)))),
         MESSAGE,
-        And(
-            Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
-            Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
-        ),
+        condition,
     )
     assert_type_error(
         refinement,
-        r'^<stdin>:10:20: model: error: condition "Tag = TLV::Msg_Data\n'
-        'and Tag = TLV::Msg_Error" in refinement of "P::M" is always false$',
+        (
+            rf'^<stdin>:10:20: model: error: condition "{condition}"'
+            ' in refinement of "P::M" is always false$'
+        ),
     )
 
 
-def test_always_true_message_condition() -> None:
-    regex = (
-        r'^<stdin>:10:20: model: error: condition "Tag = TLV::Msg_Data\n'
-        'or Tag = TLV::Msg_Error" on transition "Tag" -> "Final" is always true$'
-    )
-    with pytest.raises(RecordFluxError, match=regex):
-        Message(
-            "P::M",
+@pytest.mark.parametrize(
+    "structure, types",
+    [
+        (
             [
                 Link(INITIAL, Field("Tag")),
                 Link(
@@ -4393,4 +4447,37 @@ def test_always_true_message_condition() -> None:
             {
                 Field("Tag"): TLV_TAG,
             },
-        )
+        ),
+        (
+            [
+                Link(INITIAL, Field("Tag_1")),
+                Link(
+                    Field("Tag_1"),
+                    Field("Tag_2"),
+                    condition=Equal(Variable("Tag_1"), Variable("TLV::Msg_Data")),
+                ),
+                Link(
+                    Field(ID("Tag_2", location=Location((10, 20)))),
+                    FINAL,
+                    condition=Equal(Variable("Tag_1"), Variable("TLV::Msg_Data")),
+                ),
+            ],
+            {
+                Field("Tag_1"): TLV_TAG,
+                Field("Tag_2"): TLV_TAG,
+            },
+        ),
+    ],
+)
+def test_always_true_message_condition(
+    structure: abc.Sequence[Link], types: abc.Mapping[Field, Type]
+) -> None:
+    link_to_final = [l for l in structure if l.target == FINAL][0]
+    assert_message_model_error(
+        structure,
+        types,
+        (
+            rf'^<stdin>:10:20: model: error: condition "{link_to_final.condition}"'
+            rf' on transition "{link_to_final.source.identifier}" -> "Final" is always true$'
+        ),
+    )
