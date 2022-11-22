@@ -888,6 +888,7 @@ class Message(AbstractMessage):
 
             self.error.propagate()
 
+            self._prove_static_conditions()
             self._prove_conflicting_conditions()
             self._prove_reachability()
             self._prove_contradictions()
@@ -1618,6 +1619,48 @@ class Message(AbstractMessage):
                     )
                 ],
             )
+
+    def _prove_static_conditions(self) -> None:
+        proofs = expr.ParallelProofs(self._workers)
+        for l in self._structure:
+            if l.condition == expr.TRUE:
+                continue
+            facts = [
+                expr.Equal(l.condition, expr.FALSE),
+                self.path_condition(l.source),
+                *self.type_constraints(l.condition),
+            ]
+            unsat_error = RecordFluxError()
+            unknown_error = RecordFluxError()
+            unsat_error.extend(
+                [
+                    (
+                        f'condition "{l.condition}" on transition "{l.source.identifier}"'
+                        f' -> "{l.target.identifier}" is always true',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        l.source.identifier.location,
+                    )
+                ]
+            )
+            unknown_error.extend(
+                [
+                    (
+                        f'condition "{l.condition}" on transition "{l.source.identifier}"'
+                        f' -> "{l.target.identifier}" might be always true',
+                        Subsystem.MODEL,
+                        Severity.WARNING,
+                        l.source.identifier.location,
+                    )
+                ]
+            )
+            proofs.add(
+                expr.Equal(l.condition, expr.FALSE),
+                facts,
+                unsat_error=unsat_error,
+                unknown_error=unknown_error,
+            )
+        proofs.check(self.error)
 
     def _prove_conflicting_conditions(self) -> None:
         proofs = expr.ParallelProofs(self._workers)
