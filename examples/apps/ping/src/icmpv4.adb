@@ -19,7 +19,7 @@ is
 
    function Image (Addr : RFLX.IPv4.Address) return String with
       Post   => Image'Result'First = 1
-                and then Image'Result'Length <= 83,
+                and then Image'Result'Length <= 87,
       Global => null;
 
    Sequence : RFLX.ICMP.Sequence_Number := 0;
@@ -210,7 +210,9 @@ is
          RFLX.ICMP.Message.Set_Data (ICMP_Context, Data);
          Last := RFLX.RFLX_Types.To_Index (RFLX.ICMP.Message.Message_Last (ICMP_Context));
          RFLX.ICMP.Message.Take_Buffer (ICMP_Context, Buf);
-         Sequence := Sequence + 1;
+         Sequence := (if Sequence < RFLX.ICMP.Sequence_Number'Last
+                      then Sequence + 1
+                      else RFLX.ICMP.Sequence_Number'First);
       else
          Last := RFLX.RFLX_Types.To_Index (RFLX.IPv4.Packet.Message_Last (IP_Context));
          RFLX.IPv4.Packet.Take_Buffer (IP_Context, Buf);
