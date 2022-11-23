@@ -147,7 +147,7 @@ class Integer(Scalar):
                 ],
             )
 
-        if self.error.check():
+        if self.error.errors:
             return
 
         assert isinstance(first_num, expr.Number)

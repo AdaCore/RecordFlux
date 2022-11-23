@@ -15,7 +15,7 @@ import rflx.typing_ as rty
 from rflx import expression as expr
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.contract import ensure, invariant
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail, warn
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail
 from rflx.identifier import ID, StrID
 
 from . import type_ as mty
@@ -869,7 +869,7 @@ class Message(AbstractMessage):
         self._skip_proof = skip_proof
         self._workers = workers
 
-        if not self.error.check() and not skip_proof:
+        if not self.error.errors and not skip_proof:
             self.verify()
 
         self.error.propagate()
@@ -1406,7 +1406,7 @@ class Message(AbstractMessage):
 
                     self.error.extend(error)
 
-                    if error.check():
+                    if error.errors:
                         self.error.extend(
                             [
                                 (
@@ -2708,7 +2708,7 @@ class Refinement(mty.Type):
                     ],
                 )
 
-        if not self.error.check():
+        if not self.error.errors:
             if self.condition != expr.TRUE:
                 for cond, val in [
                     (expr.Equal(self.condition, expr.FALSE), "true"),
@@ -2735,12 +2735,16 @@ class Refinement(mty.Type):
                             ]
                         )
                     if proof.result == expr.ProofResult.UNKNOWN:
-                        warn(
-                            f'condition "{self.condition}" in refinement of'
-                            f' "{self.pdu.identifier}" might be always {val}',
-                            Subsystem.MODEL,
-                            Severity.WARNING,
-                            self.field.identifier.location,
+                        self.error.extend(
+                            [
+                                (
+                                    f'condition "{self.condition}" in refinement of'
+                                    f' "{self.pdu.identifier}" might be always {val}',
+                                    Subsystem.MODEL,
+                                    Severity.WARNING,
+                                    self.field.identifier.location,
+                                )
+                            ]
                         )
 
     def __str__(self) -> str:
