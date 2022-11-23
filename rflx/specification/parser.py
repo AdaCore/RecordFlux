@@ -1275,7 +1275,7 @@ def create_message_structure(
                 continue
             structure.append(model.Link(source_node, *extract_then(then)))
 
-        if error.check():
+        if error.errors:
             continue
 
         merge_field_aspects(error, field_identifier, structure, *extract_aspect(field.f_aspects))
@@ -1654,7 +1654,7 @@ def create_refinement(
 
     refinement_id = model.Field(create_id(error, refinement.f_field, filename))
 
-    if error.check():
+    if error.errors:
         return None
 
     result = model.Refinement(

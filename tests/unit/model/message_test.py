@@ -4512,7 +4512,7 @@ def test_possibly_always_true_refinement(
         Field(ID("Value", location=Location((10, 20)))),
         MESSAGE,
         condition,
-    )
+    ).error.propagate()
     captured = capsys.readouterr()
     assert (
         f'<stdin>:10:20: model: warning: condition "{condition}"'

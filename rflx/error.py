@@ -114,7 +114,7 @@ class BaseError(Exception, Base):
     @abstractmethod
     def __init__(self) -> None:
         super().__init__()
-        self._errors: deque[BaseError.Entry] = deque()
+        self._messages: deque[BaseError.Entry] = deque()
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["errors"])
@@ -125,7 +125,9 @@ class BaseError(Exception, Base):
                 return f"{entry.location}: "
             return ""
 
-        return "\n".join(f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self._errors)
+        return "\n".join(
+            f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self._messages
+        )
 
     def __add__(self: Self, other: object) -> Self:
         if isinstance(other, BaseError):
@@ -143,27 +145,30 @@ class BaseError(Exception, Base):
 
     @property
     def errors(self) -> deque[BaseError.Entry]:
-        return self._errors
+        return deque(e for e in self._messages if e.severity == Severity.ERROR)
+
+    @property
+    def messages(self) -> deque[BaseError.Entry]:
+        return self._messages
 
     def extend(
         self,
         entries: Union[Sequence[tuple[str, Subsystem, Severity, Optional[Location]]], BaseError],
     ) -> None:
         if isinstance(entries, BaseError):
-            self._errors.extend(entries.errors)
+            self._messages.extend(entries.messages)
         else:
             for message, subsystem, severity, location in entries:
-                self._errors.append(BaseError.Entry(message, subsystem, severity, location))
-        num_errors = len(list(e for e in self._errors if e.severity == Severity.ERROR))
+                self._messages.append(BaseError.Entry(message, subsystem, severity, location))
+        num_errors = len(self.errors)
         if 0 < ERROR_CONFIG.fail_after_value <= num_errors:
             raise self
 
-    def check(self) -> bool:
-        return len(self._errors) > 0
-
     def propagate(self) -> None:
-        if self.check():
+        if self.errors:
             raise self
+        if self._messages:
+            print(self)
 
 
 class RecordFluxError(BaseError):
