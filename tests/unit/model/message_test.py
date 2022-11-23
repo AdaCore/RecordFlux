@@ -4518,3 +4518,30 @@ def test_possibly_always_true_refinement(
         f'<stdin>:10:20: model: warning: condition "{condition}"'
         ' in refinement of "P::M" might be always false'
     ) in captured.out
+
+
+def test_possibly_always_true_message_condition(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
+) -> None:
+    message = Message(
+        "P::M",
+        [
+            Link(INITIAL, Field("Tag")),
+            Link(
+                Field(ID("Tag", location=Location((10, 20)))),
+                FINAL,
+                condition=Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+            ),
+        ],
+        {
+            Field("Tag"): TLV_TAG,
+        },
+    )
+    monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
+    # pylint: disable=protected-access
+    message._prove_static_conditions()
+    captured = capsys.readouterr()
+    assert (
+        '<stdin>:10:20: model: warning: condition "Tag = TLV::Msg_Data"'
+        ' on transition "Tag" -> "Final" might be always true'
+    ) in captured.out
