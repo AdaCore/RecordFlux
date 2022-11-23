@@ -6,8 +6,8 @@ BUILD_DIR = build
 PYTHON_PACKAGES = bin doc/conf.py examples/apps rflx tests tools stubs setup.py
 PYTHON_STYLE_HEAD = 6440cc638a85a89d486af16eef5541de83e06b54
 
-SHELL := /bin/bash
-PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv --timeout=3600
+SHELL = /bin/bash
+PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=3600
 
 
 # Switch to a specific revision of the git repository.
@@ -177,6 +177,7 @@ prove: prove_tests prove_python_tests prove_apps
 prove_tests:
 	$(MAKE) -C tests/spark prove
 
+prove_python_tests: TEST_PROCS=1
 prove_python_tests:
 	$(PYTEST) -m "verification and not hypothesis" tests
 
