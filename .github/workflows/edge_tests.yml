@@ -8,7 +8,7 @@ on:
 
 env:
     MEMCACHED: localhost:11211
-    SPARK_VERSION: "23.0w-20220811"
+    SPARK_VERSION: "23.0"
     GNAT_VERSION: "23.0w-20220723"
 
 jobs:

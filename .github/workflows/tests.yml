@@ -12,7 +12,7 @@ concurrency:
 env:
     MEMCACHED: localhost:11211
     ALIRE_VERSION: "1.2.0"
-    SPARK_VERSION: "23.0w-20220811"
+    SPARK_VERSION: "23.0"
     GNAT_VERSION: "23.0w-20220723"
 
 jobs:
