@@ -169,6 +169,7 @@ class BaseError(Exception, Base):
             raise self
         if self._messages:
             print(self)
+            self._messages = deque()
 
 
 class RecordFluxError(BaseError):

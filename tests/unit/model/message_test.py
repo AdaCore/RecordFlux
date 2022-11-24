@@ -4523,7 +4523,14 @@ def test_possibly_always_true_refinement(
 def test_possibly_always_true_message_condition(
     monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
 ) -> None:
-    message = Message(
+    monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
+    monkeypatch.setattr(Message, "_prove_reachability", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_contradictions", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_coverage", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_overlays", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_field_positions", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_message_size", lambda x: None)
+    Message(
         "P::M",
         [
             Link(INITIAL, Field("Tag")),
@@ -4537,11 +4544,8 @@ def test_possibly_always_true_message_condition(
             Field("Tag"): TLV_TAG,
         },
     )
-    monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
-    # pylint: disable=protected-access
-    message._prove_static_conditions()
     captured = capsys.readouterr()
     assert (
         '<stdin>:10:20: model: warning: condition "Tag = TLV::Msg_Data"'
-        ' on transition "Tag" -> "Final" might be always true'
-    ) in captured.out
+        ' on transition "Tag" -> "Final" might be always true\n'
+    ) == captured.out
