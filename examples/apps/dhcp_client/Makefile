@@ -6,7 +6,7 @@ bin-optimized = obj_optimized/dhcp_client
 .PHONY: test build prove generate clean binary_size
 
 test: $(bin)
-	sudo tests/run
+	tests/run
 
 build: $(bin)
 

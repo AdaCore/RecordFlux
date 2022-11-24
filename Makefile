@@ -114,7 +114,7 @@ format:
 	black -l 100 $(PYTHON_PACKAGES) ide/gnatstudio
 	isort $(PYTHON_PACKAGES) ide/gnatstudio
 
-test: test_python_coverage test_python_unit_coverage test_python_property test_apps test_compilation test_binary_size test_specs test_installation
+test: test_python_coverage test_python_unit_coverage test_python_property test_compilation test_binary_size test_specs test_installation test_apps
 
 test_python:
 	$(PYTEST) -m "not hypothesis" tests
