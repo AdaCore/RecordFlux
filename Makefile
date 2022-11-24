@@ -7,7 +7,7 @@ PYTHON_PACKAGES = bin doc/conf.py examples/apps rflx tests tools stubs setup.py
 PYTHON_STYLE_HEAD = 6440cc638a85a89d486af16eef5541de83e06b54
 
 SHELL = /bin/bash
-PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=3600
+PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
 
 
 # Switch to a specific revision of the git repository.
