@@ -49,7 +49,7 @@ is
       GNAT.Sockets.Bind_Socket (Socket  => Socket,
                                 Address => (Family => GNAT.Sockets.Family_Inet,
                                             Addr => GNAT.Sockets.Any_Inet_Addr,
-                                            Port => 68));
+                                            Port => 1068));
    end Initialize;
 
    procedure Send (Socket : in out GNAT.Sockets.Socket_Type;
@@ -64,7 +64,7 @@ is
                                 Last => Unused_Last,
                                 To => GNAT.Sockets.Sock_Addr_Type'(Family => GNAT.Sockets.Family_Inet,
                                                                    Addr => GNAT.Sockets.Inet_Addr ("255.255.255.255"),
-                                                                   Port => 67));
+                                                                   Port => 1067));
    end Send;
 
    procedure Receive (Socket : in out GNAT.Sockets.Socket_Type;
