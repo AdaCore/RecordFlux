@@ -122,8 +122,8 @@ class ParallelProofs:
         the sat_error, unsat_error or unknown_error will be returned when the proof result is
         ProofResult.SAT, ProofResult.UNSAT or ProofResult.UNKNOWN respectively.
 
-        When add_unsat is set to True, an additional error message will be returned from
-        check_proof when the result of the proof is ProofResult.UNSAT.
+        When add_unsat is set to True, unsatisfied facts will added as extra info messages.
+        This option should only be set to True if ProofResult.UNSAT is considered an error.
         """
         self._current.append(
             ProofJob(
