@@ -1,3 +1,5 @@
+GNATPROVE = ../../tools/gnatprove
+
 project := test
 ifdef TEST
 	test_bin := build/test/test_$(TEST)
@@ -27,7 +29,7 @@ build_strict: $(test_files)
 	gprbuild -P$(project) -Xgnat=$(GNAT) -Xmode=strict
 
 prove: $(proof_sessions) $(test_files)
-	gnatprove -P$(project) -Xtest=$(TEST) $(GNATPROVE_ARGS)
+	$(GNATPROVE) -P$(project) -Xtest=$(TEST)
 
 clean:
 	gprclean -P$(project)

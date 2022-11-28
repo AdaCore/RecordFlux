@@ -207,13 +207,18 @@ def assert_provable_code(
     _create_files(tmp_path, model, integration, main, prefix)
 
     def run(command: Sequence[str]) -> None:
-        p = subprocess.run(command, cwd=tmp_path, check=False, stderr=subprocess.PIPE)
+        p = subprocess.run(
+            command,
+            cwd=tmp_path,
+            check=False,
+            stderr=subprocess.PIPE,
+        )
         if p.returncode:
             raise AssertionError(
                 f"non-zero exit status {p.returncode}\n{p.stderr.decode('utf-8')}",
             )
 
-    gnatprove = ["gnatprove", "-Ptest"]
+    gnatprove = [str(pathlib.Path(__file__).parent.parent / "tools/gnatprove"), "-Ptest"]
 
     if units:
         args = [arg for unit in units for arg in ["-u", unit]]

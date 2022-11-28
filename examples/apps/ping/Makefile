@@ -1,3 +1,5 @@
+GNATPROVE = ../../../tools/gnatprove
+
 specs = $(wildcard specs/*.rflx)
 src = generated/rflx.ads
 bin = obj/ping
@@ -15,7 +17,7 @@ test_spark: $(bin)
 build: $(bin)
 
 prove: $(src)
-	gnatprove -Pping
+	$(GNATPROVE) -Pping
 
 generate: $(src)
 

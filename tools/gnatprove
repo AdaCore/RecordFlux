@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -o pipefail
+
+gnatprove $@ |& sed '/CVC4 is deprecated/b; /\<warning\>\|\<error\>\|\<low\>\|\<medium\>\|\<high\>/{:a $q1; n; ba}'
