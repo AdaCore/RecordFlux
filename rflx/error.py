@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import abstractmethod
 from collections import deque
 from collections.abc import Sequence
 from enum import Enum, auto
@@ -115,10 +114,16 @@ class BaseError(Exception, Base):
         def location(self) -> Optional[Location]:
             return self._location
 
-    @abstractmethod
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        entries: Optional[
+            Union[Sequence[tuple[str, Subsystem, Severity, Optional[Location]]], BaseError]
+        ] = None,
+    ) -> None:
         super().__init__()
         self._messages: deque[BaseError.Entry] = deque()
+        if entries:
+            self.extend(entries)
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["errors"])
@@ -179,9 +184,6 @@ class BaseError(Exception, Base):
 class RecordFluxError(BaseError):
     """Error indicating an issue in an input or a known limitation."""
 
-    def __init__(self) -> None:  # pylint: disable = useless-super-delegation
-        super().__init__()
-
 
 class FatalError(BaseError):
     """
@@ -189,9 +191,6 @@ class FatalError(BaseError):
 
     This exception should never be caught outside of RecordFlux.
     """
-
-    def __init__(self) -> None:  # pylint: disable = useless-super-delegation
-        super().__init__()
 
 
 def fail(
