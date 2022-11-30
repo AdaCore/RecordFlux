@@ -224,7 +224,7 @@ doc: check_doc
 	$(MAKE) -C doc html
 
 dist:
-	python3 setup.py sdist
+	python3 -m build --sdist
 
 clean:
 	rm -rf $(BUILD_DIR) .coverage .hypothesis .mypy_cache .pytest_cache

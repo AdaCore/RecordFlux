@@ -52,6 +52,7 @@ setup(
     ],
     extras_require={
         "devel": [
+            "build >= 0.9.0, <1",
             "furo == 2022.4.7",
             "hypothesis >=6.14, <6.24",
             "pyicontract-lint >=2.1.2, <2.2",
