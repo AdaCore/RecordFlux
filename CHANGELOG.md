@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Exception transition rejected on message assignment (#1144)
+- Document where type derivations and sequence types are valid (#1235)
 
 ## [0.7.1] - 2022-11-04
 

@@ -1628,7 +1628,7 @@ A package is used to structure a specification.
    package: package `name` is
           :    { `basic_declaration` }
           : end `name` ;
-   basic_declaration: ( `integer_type` | `enumeration_type` | `message_type` | `type_refinement` | `session` ) ;
+   basic_declaration: ( `integer_type` | `enumeration_type` | `message_type` | `type_refinement` | `type_derivation` | `sequence_type` | `session` ) ;
 
 **Static Semantics**
 
