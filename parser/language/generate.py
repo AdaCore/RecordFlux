@@ -12,8 +12,8 @@ from language.parser import grammar
 
 base_dir = Path(os.path.dirname(os.path.abspath(__file__))) / ".."
 
-build_dir = sys.argv[1]
-version = sys.argv[2]
+BUILD_DIR = sys.argv[1]
+VERSION = sys.argv[2]
 
 
 class Manage(ManageScript):  # type: ignore[misc]
@@ -27,9 +27,9 @@ manage.run(
     [
         "generate",
         "--version",
-        version,
+        VERSION,
         "--build-dir",
-        f"{build_dir}",
+        f"{BUILD_DIR}",
         "--relative-project",
         "--no-pretty-print",
         "--relative-project",
