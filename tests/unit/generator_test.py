@@ -35,7 +35,7 @@ from rflx.model import (
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
 from tests.const import GENERATED_DIR
 from tests.data import models
-from tests.utils import assert_compilable_code, assert_equal, assert_equal_code
+from tests.utils import assert_equal, assert_equal_code
 
 MODELS = [
     models.DERIVATION_MODEL,
@@ -691,7 +691,9 @@ def test_session_evaluate_declarations_error(
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._evaluate_declarations([declaration], is_global=lambda x: False)
+        session_generator._evaluate_declarations(  # pragma: no branch
+            [declaration], is_global=lambda x: False
+        )
 
 
 @dataclass
@@ -996,7 +998,7 @@ def test_session_declare_error(
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._declare(
+        session_generator._declare(  # pragma: no branch
             ID("X", location=Location((10, 20))),
             type_,
             lambda x: False,
@@ -1752,7 +1754,7 @@ def test_session_state_action_error(
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._state_action(
+        session_generator._state_action(  # pragma: no branch
             ID("S"),
             action,
             ExceptionHandler(set(), State("S"), []),
@@ -2295,7 +2297,7 @@ def test_session_read_error(read: stmt.Read, error_type: type[BaseError], error_
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        session_generator._read(
+        session_generator._read(  # pragma: no branch
             read,
             lambda x: False,
         )
@@ -2477,7 +2479,9 @@ def test_session_substitution_error(
     )
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         # pylint: disable = protected-access
-        expression.substituted(session_generator._substitution(lambda x: False))
+        expression.substituted(  # pragma: no branch
+            session_generator._substitution(lambda x: False)
+        )
 
 
 @pytest.mark.parametrize(

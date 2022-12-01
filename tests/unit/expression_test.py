@@ -1326,13 +1326,13 @@ def test_attribute_to_tac_bool(attribute: Expr, tac_name: str) -> None:
 
 
 def test_val_substituted() -> None:
-    assert_equal(
+    assert_equal(  # pragma: no branch
         Val("X", Variable("Y")).substituted(
             lambda x: Number(42) if x == Val("X", Variable("Y")) else x
         ),
         Val("X", Variable("Y")),
     )
-    assert_equal(
+    assert_equal(  # pragma: no branch
         -Val("X", Variable("Y")).substituted(
             lambda x: Number(42) if x == Val("X", Variable("Y")) else x
         ),
@@ -2040,27 +2040,31 @@ def test_expr_variables_duplicates() -> None:
 @pytest.mark.skipif(not __debug__, reason="depends on contract")
 def test_expr_substituted_pre() -> None:
     with pytest.raises(AssertionError):
-        Number(1).substituted()
+        Number(1).substituted()  # pragma: no branch
     with pytest.raises(AssertionError):
-        Add(Number(1), Number(1)).substituted()
+        Add(Number(1), Number(1)).substituted()  # pragma: no branch
     with pytest.raises(AssertionError):
-        Number(1).substituted(lambda x: x, {})
+        Number(1).substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
-        Add(Number(1), Number(1)).substituted(lambda x: x, {})
+        Add(Number(1), Number(1)).substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
-        Selected(Variable("X"), "F").substituted(lambda x: x, {})
+        Selected(Variable("X"), "F").substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
-        Call("Sub").substituted(lambda x: x, {})
+        Call("Sub").substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
-        ForAllOf("X", Variable("Y"), Variable("Z")).substituted(lambda x: x, {})
+        ForAllOf("X", Variable("Y"), Variable("Z")).substituted(  # pragma: no branch
+            lambda x: x, {}
+        )
     with pytest.raises(AssertionError):
-        Conversion("X", Variable("Y")).substituted(lambda x: x, {})
+        Conversion("X", Variable("Y")).substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
-        Comprehension("X", Variable("Y"), Variable("Z"), Variable("A")).substituted(lambda x: x, {})
+        Comprehension(  # pragma: no branch
+            "X", Variable("Y"), Variable("Z"), Variable("A")
+        ).substituted(lambda x: x, {})
     with pytest.raises(AssertionError):
-        MessageAggregate("X", {"A": Number(5)}).substituted(lambda x: x, {})
+        MessageAggregate("X", {"A": Number(5)}).substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
-        Binding(Variable("X"), {"X": Number(5)}).substituted(lambda x: x, {})
+        Binding(Variable("X"), {"X": Number(5)}).substituted(lambda x: x, {})  # pragma: no branch
 
 
 def test_length_variables() -> None:

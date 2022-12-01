@@ -245,14 +245,6 @@ M_PARAM_PARAM_REF = UnprovenMessage(
 )
 
 
-def assert_message(actual: Message, expected: Message, msg: str = None) -> None:
-    msg = f"{expected.full_name} - {msg}" if msg else expected.full_name
-    assert actual.full_name == expected.full_name, msg
-    assert actual.structure == expected.structure, msg
-    assert actual.types == expected.types, msg
-    assert actual.fields == expected.fields, msg
-
-
 def test_link_order() -> None:
     l1 = Link(FINAL, INITIAL, condition=Equal(Variable("X"), FALSE))
     l2 = Link(FINAL, INITIAL, condition=Equal(Variable("X"), TRUE))

@@ -234,7 +234,9 @@ def test_ipv4_parsing_ipv4_option_value(ipv4_option_value: pyrflx.MessageValue) 
 
 
 @pytest.mark.skip(reason="https://github.com/Componolit/RecordFlux/issues/61")
-def test_ipv4_parsing_ipv4_with_options(ipv4_packet_value: pyrflx.MessageValue) -> None:
+def test_ipv4_parsing_ipv4_with_options(
+    ipv4_packet_value: pyrflx.MessageValue,
+) -> None:  # pragma: no cover
     with open(CAPTURED_DIR / "ipv4-options_udp.raw", "rb") as file:
         msg_as_bytes: bytes = file.read()
     ipv4_packet_value.parse(msg_as_bytes)
