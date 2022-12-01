@@ -135,7 +135,7 @@ test_python_optimized:
 	PYTHONOPTIMIZE=1 $(PYTEST) -m "not verification and not hypothesis" tests
 
 test_python_coverage:
-	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not verification and not hypothesis and not compilation" tests/unit tests/integration
+	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered -m "not verification and not hypothesis and not compilation" tests/unit tests/integration
 
 test_python_unit_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov-branch --cov-fail-under=96.11 --cov-report=term-missing:skip-covered -m "not verification and not hypothesis and not compilation" tests/unit
@@ -152,7 +152,7 @@ test_compilation:
 	$(MAKE) -C tests/spark test
 	$(MAKE) -C examples/apps/ping build
 	$(MAKE) -C examples/apps/dhcp_client build
-	$(PYTEST) -m "compilation and not verification" tests
+	$(PYTEST) -m tests/compilation
 	$(MAKE) -C tests/spark test NOPREFIX=1
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C tests/spark test_optimized
@@ -179,7 +179,7 @@ prove_tests:
 
 prove_python_tests: export GNATPROVE_PROCS=1
 prove_python_tests:
-	$(PYTEST) -m "verification and not hypothesis" tests
+	$(PYTEST) -m "verification" tests/property tests/verification
 
 prove_apps:
 	$(MAKE) -C examples/apps/ping prove

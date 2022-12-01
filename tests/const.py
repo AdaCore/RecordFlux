@@ -9,3 +9,4 @@ IDE_DIR = TEST_DIR / "ide"
 GENERATED_DIR = TEST_DIR / "spark" / "generated"
 
 EX_SPEC_DIR = Path("examples/specs")
+MAIN = "main.adb"
