@@ -6,10 +6,15 @@ import shutil
 import subprocess
 import textwrap
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Union
+from dataclasses import dataclass, field as dataclass_field
+from pathlib import Path
+from shutil import copytree
+from typing import Optional, Union
 
 import librflxlang as lang
 import pytest
+from pydantic import BaseModel, validator
+from ruamel.yaml.main import YAML
 
 from rflx import ada
 from rflx.common import STDIN
@@ -174,7 +179,7 @@ def assert_executable_code(
     model: Model,
     integration: Integration,
     tmp_path: pathlib.Path,
-    main: str = "main.adb",
+    main: str = MAIN,
     prefix: str = None,
     debug: Debug = Debug.BUILTIN,
 ) -> str:
@@ -794,7 +799,7 @@ def session_main(
         f"{session_unit.name}.ads": session_unit.ads,
         f"{lib_unit.name}.ads": lib_unit.ads,
         f"{lib_unit.name}.adb": lib_unit.adb,
-        "main.adb": """with Lib;
+        MAIN: """with Lib;
 
 procedure Main with
    SPARK_Mode
@@ -858,3 +863,85 @@ def get_test_model(name: str) -> Model:
     parser = Parser()
     parser.parse(SPEC_DIR / f"{name}.rflx")
     return parser.create_model()
+
+
+MAIN = "main.adb"
+FEATURES = [f for f in Path(__file__).parent.glob("*") if f.is_dir() and f.name != "__pycache__"]
+
+
+class ConfigFile(BaseModel):
+    input: Optional[Mapping[str, Optional[Sequence[str]]]]  # noqa: PEA001
+    output: Optional[Sequence[str]]  # noqa: PEA001
+    sequence: Optional[str]
+    prove: Optional[Sequence[str]]  # noqa: PEA001
+
+    @validator("input")  # pylint: disable-next = no-self-argument
+    def initialize_input_if_present(
+        cls, value: Optional[Mapping[str, Sequence[str]]]  # noqa: PEA001
+    ) -> Mapping[str, Sequence[str]]:  # noqa: PEA001
+        return value if value is not None else {}
+
+    @validator("output")  # pylint: disable-next = no-self-argument
+    def initialize_output_if_present(
+        cls, value: Optional[Sequence[str]]  # noqa: PEA001
+    ) -> Sequence[str]:  # noqa: PEA001
+        return value if value is not None else []
+
+    @validator("prove")  # pylint: disable-next = no-self-argument
+    def initialize_prove_if_present(
+        cls, value: Optional[Sequence[str]]  # noqa: PEA001
+    ) -> Sequence[str]:  # noqa: PEA001
+        return value if value is not None else []
+
+
+@dataclass(frozen=True)
+class Config:
+    inp: dict[str, Sequence[tuple[int, ...]]] = dataclass_field(default_factory=dict)
+    out: Sequence[str] = dataclass_field(default_factory=list)
+    sequence: str = dataclass_field(default="")
+    prove: Optional[Sequence[str]] = dataclass_field(default=None)
+
+
+def get_config(feature: str) -> Config:
+    config_file = Path(__file__).parent / feature / "config.yml"
+
+    if config_file.is_file():
+        yaml = YAML(typ="safe")
+        cfg = ConfigFile.parse_obj(yaml.load(config_file))
+        return Config(
+            {
+                str(c): [tuple(int(e) for e in str(m).split()) for m in i]
+                for c, i in cfg.input.items()
+                if i is not None
+            }
+            if cfg.input is not None
+            else {},
+            cfg.output if cfg.output is not None else [],
+            cfg.sequence if cfg.sequence else "",
+            cfg.prove,
+        )
+
+    return Config()
+
+
+def create_model(feature: str) -> tuple[Model, Integration]:
+    parser = Parser()
+    parser.parse(Path("tests/integration") / feature / "test.rflx")
+    return parser.create_model(), parser.get_integration()
+
+
+def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
+    complement = session_main(
+        config.inp,
+        config.out,
+        session_package="RFLX.Test.Session",
+    )
+
+    assert MAIN in complement
+
+    for filename, content in complement.items():
+        (tmp_path / filename).write_text(content)
+
+    src_dir = Path(__file__).parent / feature / "src"
+    if src_dir.is_dir():
+        copytree(str(src_dir), str(tmp_path), dirs_exist_ok=True)
