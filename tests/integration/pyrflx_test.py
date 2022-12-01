@@ -502,8 +502,4 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
             + "$"
         ),
     ):
-        model = PyRFLX(model=Model([TLV_TAG, TLV_LENGTH, message]))
-        pkg = model.package("TLV")
-        msg = pkg.new_message("Message_With_Not_Operator_Exhausting")
-        test_bytes = b"\x01\x00\x04\x00\x00\x00\x00"
-        msg.parse(test_bytes)
+        PyRFLX(model=Model([TLV_TAG, TLV_LENGTH, message]))

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import textwrap
-from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
@@ -29,16 +28,6 @@ from rflx.model import (
 from rflx.specification import parser
 from tests.const import SPEC_DIR
 from tests.utils import check_regex
-
-
-def assert_error_files(filenames: Sequence[str], regex: str) -> None:
-    assert " model: error: " in regex
-    check_regex(regex)
-    p = parser.Parser()
-    with pytest.raises(RecordFluxError, match=regex):
-        for filename in filenames:
-            p.parse(Path(filename))
-        p.create_model()
 
 
 def assert_error_string(string: str, regex: str) -> None:

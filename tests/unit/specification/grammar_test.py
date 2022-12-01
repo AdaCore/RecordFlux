@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 from pathlib import Path
 
 import librflxlang as lang
@@ -63,18 +65,21 @@ def parse_state(data: str) -> State:
     return state
 
 
-def parse_session(string: str) -> model.Session:
+def check_diagnostics_error(unit: lang.AnalysisUnit, error: RecordFluxError) -> None:
+    if diagnostics_to_error(unit.diagnostics, error, STDIN):
+        error.propagate()
+
+
+def parse_session(string: str) -> None:
     unit = lang.AnalysisContext().get_from_buffer(
         "<stdin>", string, rule=lang.GrammarRule.session_declaration_rule
     )
     error = RecordFluxError()
-    if diagnostics_to_error(unit.diagnostics, error, STDIN):
-        error.propagate()
+    check_diagnostics_error(unit, error)
     assert isinstance(unit.root, lang.SessionDecl)
     result = create_session(error, unit.root, ID("Package"), Path("<stdin>"))
     error.propagate()
     assert isinstance(result, model.Session)
-    return result
 
 
 def parse_unproven_session(string: str) -> model.UnprovenSession:
@@ -82,8 +87,7 @@ def parse_unproven_session(string: str) -> model.UnprovenSession:
         "<stdin>", string, rule=lang.GrammarRule.session_declaration_rule
     )
     error = RecordFluxError()
-    if diagnostics_to_error(unit.diagnostics, error, STDIN):
-        error.propagate()
+    check_diagnostics_error(unit, error)
     assert isinstance(unit.root, lang.SessionDecl)
     result = create_unproven_session(error, unit.root, ID("Package"), Path("<stdin>"))
     error.propagate()
@@ -92,7 +96,6 @@ def parse_unproven_session(string: str) -> model.UnprovenSession:
 
 def parse_id(data: str, rule: str) -> ID:
     unit = lang.AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
-    assert unit.root, "\n".join(str(d) for d in unit.diagnostics)
     assert isinstance(unit.root, lang.AbstractID)
     error = RecordFluxError()
     result = create_id(error, unit.root, Path("<stdin>"))
@@ -901,6 +904,28 @@ def test_session_declaration(string: str, expected: decl.Declaration) -> None:
 
 
 @pytest.mark.parametrize(
+    "string",
+    [
+        (
+            """
+               generic
+               session X is
+               begin
+                  state A is
+                  begin
+                  transition
+                     goto null
+                  end A;
+               end X
+            """
+        )
+    ],
+)
+def test_parse_session(string: str) -> None:
+    parse_session(string)
+
+
+@pytest.mark.parametrize(
     "string,error",
     [
         (
@@ -920,6 +945,30 @@ def test_session_declaration(string: str, expected: decl.Declaration) -> None:
     ],
 )
 def test_session_declaration_error(string: str, error: str) -> None:
+    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
+        parse_session(string)
+
+
+@pytest.mark.parametrize(
+    "string,error",
+    [
+        (
+            """
+               generic
+               session X is
+               begin
+                  state A is
+                  begin
+                  transition
+                     goto null
+                  end A
+               end Y
+         """,
+            "<stdin>:10:16: parser: error: Expected ';', got 'end'",
+        )
+    ],
+)
+def test_syntax_error(string: str, error: str) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         parse_session(string)
 

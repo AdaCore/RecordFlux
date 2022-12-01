@@ -141,7 +141,6 @@ def assert_error_files(filenames: Sequence[str], regex: str) -> None:
     with pytest.raises(RecordFluxError, match=regex):
         for filename in filenames:
             p.parse(Path(filename))
-        p.create_model()
 
 
 def assert_error_string(string: str, regex: str) -> None:
@@ -188,6 +187,12 @@ def assert_refinements_string(string: str, refinements: Sequence[model.Refinemen
 
 def raise_parser_error() -> None:
     fail("TEST", Subsystem.PARSER, Severity.ERROR)
+
+
+# This test must fail to get full coverage of assert_error_files.
+@pytest.mark.xfail
+def test_assert_error_files() -> None:
+    assert_error_files([], "^ parser: error: $")
 
 
 def test_create_model() -> None:

@@ -31,8 +31,7 @@ def test_parsability_and_model_creation(feature: str) -> None:
 def test_equality(feature: str, tmp_path: Path) -> None:
     generated_dir = Path(__file__).parent / feature / "generated"
 
-    if not generated_dir.is_dir():
-        pytest.skip()
+    assert generated_dir.is_dir()
 
     model, integration = create_model(feature)
     assert_equal_code(model, integration, generated_dir, tmp_path)
