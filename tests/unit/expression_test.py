@@ -76,7 +76,7 @@ from rflx.expression import (
 from rflx.identifier import ID, StrID
 from rflx.model import Integer
 from tests.data.models import ENUMERATION
-from tests.utils import assert_equal
+from tests.utils import assert_equal, check_regex
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
 TINY_INT = Integer("P::Tiny", Number(1), Number(3), Number(8), location=Location((1, 2)))
@@ -89,6 +89,7 @@ def assert_type(expr: Expr, type_: rty.Type) -> None:
 
 
 def assert_type_error(expr: Expr, regex: str) -> None:
+    check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
         expr.check_type(rty.Any()).propagate()
 

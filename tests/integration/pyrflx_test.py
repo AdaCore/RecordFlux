@@ -484,17 +484,22 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
 
     with pytest.raises(
         FatalError,
-        match=re.escape(
-            "failed to simplify complex expression `not (not (not (not "
-            "(not (not (not (not (not (not (not (not (not (not (not (not "
-            "(not (not (not (not (not (not (not (not (not (not (not (not "
-            "(not (not (not (not (not (not (not (Tag = TLV::Msg_Data))\n"
-            "                                 "
-            "or not (Tag = TLV::Msg_Error))))))))))))))))))))))))))))))))))` "
-            "after `16` iterations, best effort: "
-            "`not (not (not (not (not (not (not (not (not (not (not (not (not "
-            "(not (not (not (not (Tag = TLV::Msg_Data\n"
-            "                 or Tag /= TLV::Msg_Error)))))))))))))))))`"
+        match=(
+            "^"
+            + re.escape(
+                "pyrflx: error: "
+                "failed to simplify complex expression `not (not (not (not "
+                "(not (not (not (not (not (not (not (not (not (not (not (not "
+                "(not (not (not (not (not (not (not (not (not (not (not (not "
+                "(not (not (not (not (not (not (not (Tag = TLV::Msg_Data))\n"
+                "                                 "
+                "or not (Tag = TLV::Msg_Error))))))))))))))))))))))))))))))))))` "
+                "after `16` iterations, best effort: "
+                "`not (not (not (not (not (not (not (not (not (not (not (not (not "
+                "(not (not (not (not (Tag = TLV::Msg_Data\n"
+                "                 or Tag /= TLV::Msg_Error)))))))))))))))))`"
+            )
+            + "$"
         ),
     ):
         model = PyRFLX(model=Model([TLV_TAG, TLV_LENGTH, message]))

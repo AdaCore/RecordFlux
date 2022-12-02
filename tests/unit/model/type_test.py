@@ -265,11 +265,13 @@ def test_enumeration_invalid_duplicate_elements() -> None:
         Enumeration(
             "P::T",
             [(ID("Foo", Location((3, 27))), Number(1)), (ID("Foo", Location((3, 32))), Number(2))],
-            Number(1),
+            Number(8),
             always_valid=False,
         ),
+        r"^"
         r'<stdin>:3:32: model: error: duplicate literal "Foo"\n'
-        r"<stdin>:3:27: model: info: previous occurrence",
+        r"<stdin>:3:27: model: info: previous occurrence"
+        r"$",
     )
 
 
@@ -283,13 +285,15 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
                 (ID("Foo", Location((3, 37))), Number(3)),
                 (ID("Bar", Location((3, 42))), Number(4)),
             ],
-            Number(2),
+            Number(8),
             always_valid=False,
         ),
+        r"^"
         r'<stdin>:3:37: model: error: duplicate literal "Foo"\n'
         r"<stdin>:3:27: model: info: previous occurrence\n"
         r'<stdin>:3:42: model: error: duplicate literal "Bar"\n'
-        r"<stdin>:3:32: model: info: previous occurrence",
+        r"<stdin>:3:32: model: info: previous occurrence"
+        r"$",
     )
 
 

@@ -193,8 +193,10 @@ def test_load_integration_path(tmp_path: Path) -> None:
     error = RecordFluxError()
     regex = re.compile(
         (
+            r"^"
             r"test.rfi:0:0: parser: error: 1 validation error for IntegrationFile.*"
             r"value is not a valid dict \(type=type_error.dict\)"
+            r"$"
         ),
         re.DOTALL,
     )

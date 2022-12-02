@@ -29,6 +29,13 @@ from rflx.specification.parser import (
 from tests.const import SPEC_DIR
 
 
+def check_regex(regex: str) -> None:
+    if not regex.startswith("^"):
+        raise AssertionError("regex must start with anchor (^)")
+    if not regex.endswith("$"):
+        raise AssertionError("regex must end with anchor ($)")
+
+
 def assert_equal(left: object, right: object) -> None:
     assert left == right
 
@@ -40,6 +47,7 @@ def assert_message_model_error(
     checksums: Mapping[ID, Sequence[Expr]] = None,
     location: Location = None,
 ) -> None:
+    check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
         Message("P::M", structure, types, checksums=checksums, location=location)
 
@@ -52,6 +60,7 @@ def assert_session_model_error(
     regex: str,
     location: Location = Location((1, 1)),
 ) -> None:
+    check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
         Session(
             "P::S",
@@ -64,6 +73,7 @@ def assert_session_model_error(
 
 
 def assert_type_error(instance: Type, regex: str) -> None:
+    check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
         instance.error.propagate()
 
