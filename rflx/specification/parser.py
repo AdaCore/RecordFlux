@@ -1207,6 +1207,13 @@ def create_message_structure(
 
     structure: list[model.Link] = []
 
+    field_identifiers = {
+        # Do not store errors in `error` object as this would result in duplicate error messages
+        # from the invocation of create_message_types
+        i: create_id(RecordFluxError(), field.f_identifier, filename)
+        for i, field in enumerate(fields.f_fields)
+    }
+
     if fields.f_initial_field:
         structure.append(
             model.Link(
@@ -1218,18 +1225,13 @@ def create_message_structure(
         structure.append(
             model.Link(
                 model.INITIAL,
-                model.Field(create_id(error, fields.f_fields[0].f_identifier, filename)),
-                location=node_location(fields.f_fields[0].f_identifier, filename),
+                model.Field(field_identifiers[0]),
+                location=field_identifiers[0].location,
             )
         )
 
     for i, field in enumerate(fields.f_fields):
-        source_node = (
-            model.Field(create_id(error, field.f_identifier, filename))
-            if field.f_identifier
-            else model.INITIAL
-        )
-        field_identifier = create_id(error, field.f_identifier, filename)
+        source_node = model.Field(field_identifiers[i]) if field.f_identifier else model.INITIAL
         if field.f_identifier.text.lower() == "message":
             error.extend(
                 [
@@ -1237,18 +1239,13 @@ def create_message_structure(
                         'reserved word "Message" used as identifier',
                         Subsystem.PARSER,
                         Severity.ERROR,
-                        field_identifier.location,
+                        field_identifiers[i].location,
                     )
                 ],
             )
-            continue
 
         if len(field.f_thens) == 0:
-            target_id = (
-                create_id(error, fields.f_fields[i + 1].f_identifier, filename)
-                if i + 1 < len(fields.f_fields)
-                else None
-            )
+            target_id = field_identifiers[i + 1] if i + 1 < len(fields.f_fields) else None
             target_node = model.Field(target_id) if target_id else model.FINAL
             structure.append(
                 model.Link(
@@ -1278,9 +1275,11 @@ def create_message_structure(
         if error.errors:
             continue
 
-        merge_field_aspects(error, field_identifier, structure, *extract_aspect(field.f_aspects))
+        merge_field_aspects(
+            error, field_identifiers[i], structure, *extract_aspect(field.f_aspects)
+        )
         merge_field_condition(
-            field_identifier,
+            field_identifiers[i],
             structure,
             create_bool_expression(error, field.f_condition, filename)
             if field.f_condition
