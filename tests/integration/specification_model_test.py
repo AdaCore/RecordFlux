@@ -28,10 +28,12 @@ from rflx.model import (
 )
 from rflx.specification import parser
 from tests.const import SPEC_DIR
+from tests.utils import check_regex
 
 
 def assert_error_files(filenames: Sequence[str], regex: str) -> None:
     assert " model: error: " in regex
+    check_regex(regex)
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=regex):
         for filename in filenames:
@@ -41,6 +43,7 @@ def assert_error_files(filenames: Sequence[str], regex: str) -> None:
 
 def assert_error_string(string: str, regex: str) -> None:
     assert " model: error: " in regex
+    check_regex(regex)
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=regex):
         p.parse_string(string)
@@ -137,7 +140,7 @@ def test_illegal_redefinition() -> None:
            type Boolean is range 0 .. 1 with Size => 2;
         end Test;
         """,
-        r'^<stdin>:2:4: model: error: illegal redefinition of built-in type "Boolean"',
+        r'^<stdin>:2:4: model: error: illegal redefinition of built-in type "Boolean"$',
     )
 
 
@@ -148,7 +151,7 @@ def test_invalid_enumeration_type_size() -> None:
            type T is (Foo, Bar, Baz) with Size => 1;
         end Test;
         """,
-        r'<stdin>:2:9: model: error: size of "T" too small',
+        r'^<stdin>:2:9: model: error: size of "T" too small$',
     )
 
 
@@ -159,8 +162,8 @@ def test_invalid_enumeration_type_duplicate_values() -> None:
            type T is (Foo => 0, Bar => 0) with Size => 1;
         end Test;
         """,
-        r'<stdin>:2:32: model: error: duplicate enumeration value "0" in "T"\n'
-        r"<stdin>:2:22: model: info: previous occurrence",
+        r'^<stdin>:2:32: model: error: duplicate enumeration value "0" in "T"\n'
+        r"<stdin>:2:22: model: info: previous occurrence$",
     )
 
 
@@ -171,10 +174,12 @@ def test_invalid_enumeration_type_multiple_duplicate_values() -> None:
            type T is (Foo => 0, Foo_1 => 1, Bar => 0, Bar_1 => 1) with Size => 8;
         end Test;
         """,
+        r"^"
         r'<stdin>:2:44: model: error: duplicate enumeration value "0" in "T"\n'
         r"<stdin>:2:22: model: info: previous occurrence\n"
         r'<stdin>:2:56: model: error: duplicate enumeration value "1" in "T"\n'
-        r"<stdin>:2:34: model: info: previous occurrence",
+        r"<stdin>:2:34: model: info: previous occurrence"
+        r"$",
     )
 
 
@@ -186,8 +191,8 @@ def test_invalid_enumeration_type_identical_literals() -> None:
            type T2 is (Bar, Baz) with Size => 1;
         end Test;
         """,
-        r"<stdin>:3:9: model: error: conflicting literals: Bar\n"
-        r'<stdin>:2:21: model: info: previous occurrence of "Bar"',
+        r"^<stdin>:3:9: model: error: conflicting literals: Bar\n"
+        r'<stdin>:2:21: model: info: previous occurrence of "Bar"$',
     )
 
 
@@ -203,7 +208,7 @@ def test_refinement_invalid_field() -> None:
            for PDU use (Bar => PDU);
         end Test;
         """,
-        r'^<stdin>:7:17: model: error: invalid field "Bar" in refinement',
+        r'^<stdin>:7:17: model: error: invalid field "Bar" in refinement of "Test::PDU"$',
     )
 
 
@@ -266,8 +271,10 @@ def test_model_conflicting_refinements() -> None:
            for PDU use (Foo => PDU);
         end Test;
         """,
+        r"^"
         r'^<stdin>:10:4: model: error: conflicting refinement of "Test::PDU" with "Test::PDU"\n'
-        r"<stdin>:9:4: model: info: previous occurrence of refinement",
+        r"<stdin>:9:4: model: info: previous occurrence of refinement"
+        r"$",
     )
 
 
@@ -285,7 +292,7 @@ def test_model_name_conflict_derivations() -> None:
         end Test;
         """,
         r'^<stdin>:8:9: model: error: name conflict for type "Test::Bar"\n'
-        r'<stdin>:7:9: model: info: previous occurrence of "Test::Bar"',
+        r'<stdin>:7:9: model: info: previous occurrence of "Test::Bar"$',
     )
 
 

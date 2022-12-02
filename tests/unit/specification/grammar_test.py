@@ -953,5 +953,7 @@ def test_session() -> None:
 
 
 def test_expression_aggregate_no_number() -> None:
-    with pytest.raises(RecordFluxError, match=r"^<stdin>:1:5: parser: error: Expected Numeral"):
+    with pytest.raises(
+        RecordFluxError, match=(r"^<stdin>:1:5: parser: error: Expected Numeral, got 'First'$")
+    ):
         parse_expression("[1, Foo]", lang.GrammarRule.expression_rule)

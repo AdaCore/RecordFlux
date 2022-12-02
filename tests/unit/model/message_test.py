@@ -328,7 +328,8 @@ def test_ambiguous_first_field() -> None:
         types,
         '^<stdin>:10:8: model: error: ambiguous first field in "P::M"\n'
         "<stdin>:2:6: model: info: duplicate\n"
-        "<stdin>:3:6: model: info: duplicate",
+        "<stdin>:3:6: model: info: duplicate"
+        r"$",
         location=Location((10, 8)),
     )
 
@@ -346,7 +347,7 @@ def test_illegal_first_aspect_at_initial_link() -> None:
     assert_message_model_error(
         structure,
         types,
-        "^<stdin>:10:20: model: error: illegal first aspect at initial link",
+        "^<stdin>:10:20: model: error: illegal first aspect at initial link$",
     )
 
 
@@ -369,7 +370,7 @@ def test_name_conflict_field_enum() -> None:
         structure,
         types,
         '^<stdin>:5:6: model: error: name conflict for field "X" in "P::M"\n'
-        "<stdin>:3:27: model: info: conflicting enumeration literal",
+        "<stdin>:3:27: model: info: conflicting enumeration literal$",
     )
 
 
@@ -390,7 +391,8 @@ def test_duplicate_link() -> None:
         types,
         f'^<stdin>:1:5: model: error: duplicate link from "X" to "{FINAL.name}"\n'
         f"<stdin>:4:42: model: info: duplicate link\n"
-        f"<stdin>:5:42: model: info: duplicate link",
+        f"<stdin>:5:42: model: info: duplicate link"
+        r"$",
     )
 
 
@@ -418,7 +420,8 @@ def test_multiple_duplicate_links() -> None:
         f"<stdin>:4:18: model: info: duplicate link\n"
         f'<stdin>:2:5: model: error: duplicate link from "Y" to "{FINAL.name}"\n'
         f"<stdin>:5:20: model: info: duplicate link\n"
-        f"<stdin>:6:22: model: info: duplicate link",
+        f"<stdin>:6:22: model: info: duplicate link"
+        r"$",
     )
 
 
@@ -447,7 +450,7 @@ def test_unsupported_expression() -> None:
         structure,
         types,
         '^<stdin>:10:19: model: error: unsupported expression in "P::M"\n'
-        '<stdin>:10:23: model: info: variable "X" in exponent',
+        '<stdin>:10:23: model: info: variable "X" in exponent$',
     )
 
 
@@ -484,7 +487,7 @@ def test_cycle() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle',
+        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle$',
         # https://github.com/Componolit/RecordFlux/issues/256
         # '\n'
         # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
@@ -760,7 +763,7 @@ class NewType(Type):
 
 @pytest.mark.skipif(not __debug__, reason="depends on contract")
 def test_invalid_message_field_type() -> None:
-    with pytest.raises(AssertionError, match=r"rflx/model/message.py"):
+    with pytest.raises(AssertionError):
         Message(
             "P::M",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
@@ -1139,8 +1142,10 @@ def test_sequence_aggregate_invalid_element_type() -> None:
 def test_opaque_not_byte_aligned() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: opaque field "O" not aligned to'
-        r" 8 bit boundary [(]P -> O[)]",
+        match=(
+            r'^<stdin>:44:3: model: error: opaque field "O" not aligned to'
+            r" 8 bit boundary [(]P -> O[)]$"
+        ),
     ):
         o = Field(ID("O", location=Location((44, 3))))
         Message(
@@ -1213,8 +1218,10 @@ def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
 def test_opaque_size_not_multiple_of_8() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: model: error: size of opaque field "O"'
-        " not multiple of 8 bit [(]O[)]",
+        match=(
+            r'^<stdin>:44:3: model: error: size of opaque field "O"'
+            " not multiple of 8 bit [(]O[)]$"
+        ),
     ):
         o = Field(ID("O", location=Location((44, 3))))
         Message(
@@ -1493,7 +1500,24 @@ def test_no_valid_path() -> None:
         r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
         r"model: info: path 1 [(]F1 -> F3 -> Final[)]:\n"
         r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:23:5: model: info: unsatisfied "F1 <= 80"',
+        r'<stdin>:23:5: model: info: unsatisfied "F1 <= 80"\n'
+        r'<stdin>:22:4: model: error: contradicting condition in "P::M"\n'
+        r'<stdin>:10:5: model: info: on path: "F1"\n'
+        r'<stdin>:11:6: model: info: on path: "F2"\n'
+        r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
+        r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
+        r'<stdin>:23:5: model: error: contradicting condition in "P::M"\n'
+        r'<stdin>:10:5: model: info: on path: "F1"\n'
+        r'<stdin>:11:6: model: info: on path: "F2"\n'
+        r'<stdin>:12:7: model: info: on path: "F3"\n'
+        r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
+        r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
+        r'<stdin>:23:5: model: error: contradicting condition in "P::M"\n'
+        r'<stdin>:10:5: model: info: on path: "F1"\n'
+        r'<stdin>:12:7: model: info: on path: "F3"\n'
+        r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
+        r'<stdin>:23:5: model: info: unsatisfied "F1 <= 80"'
+        r"$",
     )
 
 
@@ -1513,7 +1537,8 @@ def test_invalid_path_1(monkeypatch: MonkeyPatch) -> None:
         r"^"
         r'<stdin>:5:10: model: error: contradicting condition in "P::M"\n'
         r'<stdin>:20:10: model: info: on path: "F1"\n'
-        r'<stdin>:5:10: model: info: unsatisfied "1 = 2"',
+        r'<stdin>:5:10: model: info: unsatisfied "1 = 2"'
+        r"$",
     )
 
 
@@ -1534,7 +1559,12 @@ def test_invalid_path_2(monkeypatch: MonkeyPatch) -> None:
         r"^"
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
-        r'model: info: unsatisfied "1 = 2"',
+        r'model: info: unsatisfied "1 = 2"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "1 = 2"'
+        r"$",
     )
 
 
@@ -1556,7 +1586,13 @@ def test_contradiction() -> None:
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 <= 100"\n'
-        r'model: info: unsatisfied "F1 > 1000"',
+        r'model: info: unsatisfied "F1 > 1000"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F1 > 1000"\n'
+        r'model: info: unsatisfied "F1 <= 100"'
+        r"$",
     )
 
 
@@ -1577,7 +1613,13 @@ def test_invalid_type_condition_range_low() -> None:
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 >= 1"\n'
-        r'model: info: unsatisfied "F1 < 1"',
+        r'model: info: unsatisfied "F1 < 1"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F1 >= 1"\n'
+        r'model: info: unsatisfied "F1 < 1"'
+        r"$",
     )
 
 
@@ -1599,7 +1641,13 @@ def test_invalid_type_condition_range_high() -> None:
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 <= 100"\n'
-        r'model: info: unsatisfied "F1 > 200"',
+        r'model: info: unsatisfied "F1 > 200"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F1 > 200"\n'
+        r'model: info: unsatisfied "F1 <= 100"'
+        r"$",
     )
 
 
@@ -2119,7 +2167,17 @@ def test_conditionally_unreachable_field_mod_first() -> None:
         r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"',
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First = Message\'First"'
+        r"$",
     )
 
 
@@ -2146,7 +2204,14 @@ def test_conditionally_unreachable_field_mod_last() -> None:
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"',
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
+        r"$",
     )
 
 
@@ -2175,7 +2240,17 @@ def test_conditionally_unreachable_field_range_first() -> None:
         r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"',
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First = Message\'First"'
+        r"$",
     )
 
 
@@ -2202,7 +2277,14 @@ def test_conditionally_unreachable_field_range_last() -> None:
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"',
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
+        r"$",
     )
 
 
@@ -2231,7 +2313,17 @@ def test_conditionally_unreachable_field_enum_first() -> None:
         r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"',
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"'
+        r"$",
     )
 
 
@@ -2258,7 +2350,14 @@ def test_conditionally_unreachable_field_enum_last() -> None:
         r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"',
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
+        r"$",
     )
 
 
@@ -2280,7 +2379,13 @@ def test_conditionally_unreachable_field_outgoing() -> None:
         r'model: error: unreachable field "F2" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2[)]:\n"
         r'model: info: unsatisfied "F1 <= 32"\n'
-        r'model: info: unsatisfied "F1 > 32"',
+        r'model: info: unsatisfied "F1 > 32"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F1 <= 32"\n'
+        r'model: info: unsatisfied "F1 > 32"'
+        r"$",
     )
 
 
@@ -2314,7 +2419,18 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
         r'<stdin>:90:12: model: error: unreachable field "F2" in "P::M"\n'
         r"<stdin>:90:12: model: info: path 0 [(]F1 -> F2[)]:\n"
         r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
-        r'<stdin>:90:12: model: info: unsatisfied "[(]F1 > 32 and F1 <= 48[)] or F1 > 48"',
+        r'<stdin>:90:12: model: info: unsatisfied "[(]F1 > 32 and F1 <= 48[)] or F1 > 48"\n'
+        r'<stdin>:22:34: model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'<stdin>:90:12: model: info: on path: "F2"\n'
+        r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
+        r'<stdin>:22:34: model: info: unsatisfied "F1 > 32 and F1 <= 48"\n'
+        r'model: error: contradicting condition in "P::M"\n'
+        r'model: info: on path: "F1"\n'
+        r'<stdin>:90:12: model: info: on path: "F2"\n'
+        r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
+        r'model: info: unsatisfied "F1 > 48"'
+        r"$",
     )
 
 
@@ -2370,7 +2486,8 @@ def test_aggregate_equal_invalid_size1() -> None:
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
-        r'model: info: unsatisfied "Magic\'Size = 40"',
+        r'model: info: unsatisfied "Magic\'Size = 40"'
+        r"$",
     )
 
 
@@ -2393,7 +2510,8 @@ def test_aggregate_equal_invalid_size2() -> None:
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
-        r'model: info: unsatisfied "Magic\'Size = 40"',
+        r'model: info: unsatisfied "Magic\'Size = 40"'
+        r"$",
     )
 
 
@@ -2434,7 +2552,8 @@ def test_aggregate_inequal_invalid_size() -> None:
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "Magic"\n'
         r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
-        r'model: info: unsatisfied "Magic\'Size = 40"',
+        r'model: info: unsatisfied "Magic\'Size = 40"'
+        r"$",
     )
 
 
@@ -2481,7 +2600,8 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
         r'<stdin>:17:3: model: info: unsatisfied "2 [*] Integer\'Size = Magic\'Size"\n'
         r'<stdin>:66:3: model: info: unsatisfied "Integer\'Size = 7"\n'
-        r'<stdin>:19:17: model: info: unsatisfied "Magic\'Size = 40"',
+        r'<stdin>:19:17: model: info: unsatisfied "Magic\'Size = 40"'
+        r"$",
     )
 
 
@@ -4233,7 +4353,7 @@ def test_refinement_invalid_field_type() -> None:
     assert_type_error(
         Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
         r'^<stdin>:33:22: model: error: invalid type of field "X" in refinement of "P::M"\n'
-        r"<stdin>:20:10: model: info: expected field of type Opaque",
+        r"<stdin>:20:10: model: info: expected field of type Opaque$",
     )
 
 

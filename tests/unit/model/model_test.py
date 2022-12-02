@@ -14,9 +14,11 @@ from rflx.identifier import ID
 from rflx.model import BUILTIN_TYPES, Enumeration, Integer, Message, Model, Type
 from rflx.model.message import FINAL, INITIAL, Field, Link
 from tests.data import models
+from tests.utils import check_regex
 
 
 def assert_model_error(types: Sequence[Type], regex: str) -> None:
+    check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
         Model([*BUILTIN_TYPES.values(), *types])
 
@@ -80,8 +82,10 @@ def test_conflicting_literal_builtin_type() -> None:
                 always_valid=False,
             ),
         ],
+        r"^"
         r'<stdin>:3:31: model: error: literal "Boolean" conflicts with type declaration\n'
-        r'__BUILTINS__:0:0: model: info: conflicting type "__BUILTINS__::Boolean"',
+        r'__BUILTINS__:0:0: model: info: conflicting type "__BUILTINS__::Boolean"'
+        r"$",
     )
 
 
@@ -100,10 +104,12 @@ def test_name_conflict_between_literal_and_type() -> None:
             Integer("P::Foo", Number(0), Number(255), Number(8), Location((4, 16))),
             Integer("P::Bar", Number(0), Number(255), Number(8), Location((5, 16))),
         ],
+        r"^"
         r'<stdin>:3:27: model: error: literal "FOO" conflicts with type declaration\n'
         r'<stdin>:4:16: model: info: conflicting type "P::Foo"\n'
         r'<stdin>:3:32: model: error: literal "BAR" conflicts with type declaration\n'
-        r'<stdin>:5:16: model: info: conflicting type "P::Bar"',
+        r'<stdin>:5:16: model: info: conflicting type "P::Bar"'
+        r"$",
     )
 
 
@@ -118,9 +124,11 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
                 location=Location((3, 16)),
             ),
         ],
+        r"^"
         r"<stdin>:3:16: model: error: conflicting literals: False, True\n"
         r'__BUILTINS__:0:0: model: info: previous occurrence of "False"\n'
-        r'__BUILTINS__:0:0: model: info: previous occurrence of "True"',
+        r'__BUILTINS__:0:0: model: info: previous occurrence of "True"'
+        r"$",
     )
 
 
@@ -163,8 +171,10 @@ def test_invalid_enumeration_type_identical_literals() -> None:
                 location=Location((4, 16)),
             ),
         ],
+        r"^"
         r"<stdin>:4:16: model: error: conflicting literals: Bar\n"
-        r'<stdin>:3:33: model: info: previous occurrence of "Bar"',
+        r'<stdin>:3:33: model: info: previous occurrence of "Bar"'
+        r"$",
     )
 
 

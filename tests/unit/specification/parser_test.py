@@ -19,6 +19,7 @@ from rflx.model.message import ByteOrder
 from rflx.specification import cache, parser
 from tests.const import SPEC_DIR
 from tests.data import models
+from tests.utils import check_regex
 
 T = Integer("Test::T", expr.Number(0), expr.Number(255), expr.Number(8))
 
@@ -135,6 +136,7 @@ def assert_ast_string(string: str, expected: Mapping[str, Any]) -> None:  # type
 
 def assert_error_files(filenames: Sequence[str], regex: str) -> None:
     assert " parser: error: " in regex
+    check_regex(regex)
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=regex):
         for filename in filenames:
@@ -144,6 +146,7 @@ def assert_error_files(filenames: Sequence[str], regex: str) -> None:
 
 def assert_error_string(string: str, regex: str) -> None:
     assert " parser: error: " in regex
+    check_regex(regex)
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=regex):
         p.parse_string(string)
@@ -1813,7 +1816,7 @@ def test_parse_error_illegal_package_identifiers() -> None:
         package RFLX_Types is
         end RFLX_Types;
         """,
-        r'^<stdin>:1:9: parser: error: illegal prefix "RFLX" in package identifier "RFLX_Types"',
+        r'^<stdin>:1:9: parser: error: illegal prefix "RFLX" in package identifier "RFLX_Types"$',
     )
 
 
@@ -1824,7 +1827,7 @@ def test_parse_error_inconsistent_package_identifiers() -> None:
         end B;
         """,
         r'^<stdin>:2:5: parser: error: inconsistent package identifier "B"\n'
-        r'<stdin>:1:9: parser: info: previous identifier was "A"',
+        r'<stdin>:1:9: parser: info: previous identifier was "A"$',
     )
 
 
@@ -1854,13 +1857,13 @@ def test_parse_error_illegal_redefinition() -> None:
 def test_parse_error_incorrect_specification() -> None:
     assert_error_files(
         [f"{SPEC_DIR}/incorrect_specification.rflx"],
-        f"{SPEC_DIR}/incorrect_specification.rflx:3:10: parser: error: Expected 'is', got ';'",
+        f"^{SPEC_DIR}/incorrect_specification.rflx:3:10: parser: error: Expected 'is', got ';'$",
     )
 
 
 def test_parse_error_unexpected_exception_in_parser(monkeypatch: MonkeyPatch) -> None:
     p = parser.Parser()
-    with pytest.raises(RecordFluxError, match=r"parser: error: TEST"):
+    with pytest.raises(RecordFluxError, match=r"^parser: error: TEST$"):
         monkeypatch.setattr(parser, "check_naming", lambda x, e, o: raise_parser_error())
         p.parse_string(
             """\
@@ -1989,8 +1992,10 @@ def test_parse_error_derivation_unsupported_type() -> None:
            type Bar is new Foo;
         end Test;
         """,
+        r"^"
         r'^<stdin>:3:9: parser: error: illegal derivation "Test::Bar"\n'
-        r'<stdin>:2:9: parser: info: invalid base message type "Test::Foo"',
+        r'<stdin>:2:9: parser: info: invalid base message type "Test::Foo"'
+        r"$",
     )
 
 
@@ -2009,7 +2014,7 @@ def test_parse_error_multiple_initial_node_edges() -> None:
               end message;
         end Test;
         """,
-        r"^<stdin>:6:21: parser: error: Expected ';', got ','",
+        r"^<stdin>:6:21: parser: error: Expected ';', got ','$",
     )
 
 
@@ -2029,7 +2034,7 @@ def test_parse_error_multiple_initial_nodes() -> None:
               end message;
         end Test;
         """,
-        r"^<stdin>:8:13: parser: error: Expected ':', got 'then'",
+        r"^<stdin>:8:13: parser: error: Expected ':', got 'then'$",
     )
 
 
@@ -2041,7 +2046,7 @@ def test_parse_error_reserved_word_in_type_name(keyword: str) -> None:
            type {keyword.title()} is range 0 .. 255 with Size => 8;
         end Test;
         """,
-        rf'^<stdin>:2:9: parser: error: reserved word "{keyword.title()}" used as identifier',
+        rf'^<stdin>:2:9: parser: error: reserved word "{keyword.title()}" used as identifier$',
     )
 
 
@@ -2057,7 +2062,7 @@ def test_parse_error_reserved_word_in_message_field(keyword: str) -> None:
               end message;
         end Test;
         """,
-        rf'^<stdin>:5:10: parser: error: reserved word "{keyword.title()}" used as identifier',
+        rf'^<stdin>:5:10: parser: error: reserved word "{keyword.title()}" used as identifier$',
     )
 
 
@@ -2798,7 +2803,7 @@ def test_parse_error_invalid_range_aspect() -> None:
            type T is range 1 .. 200 with Invalid => 42;
         end Test;
         """,
-        r"^<stdin>:2:14: parser: error: invalid aspect Invalid for range type T",
+        r"^<stdin>:2:14: parser: error: invalid aspect Invalid for range type Test::T$",
     )
 
 
@@ -2811,7 +2816,7 @@ def test_parse_error_invalid_range_aspect() -> None:
            type T is (A, B) with Foo;
         end Test;
         """,
-            r'^<stdin>:2:9: parser: error: no size set for "Test::T"',
+            r'^<stdin>:2:9: parser: error: no size set for "Test::T"$',
         ),
         (
             """\
@@ -3292,8 +3297,8 @@ def test_parse_non_existent_dependencies(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "expression,message",
     [
-        ("A + 1", r"^<stdin>:7:19: parser: error: math expression in boolean context"),
-        ("42", r"^<stdin>:7:19: parser: error: math expression in boolean context"),
+        ("A + 1", r"^<stdin>:7:19: parser: error: math expression in boolean context$"),
+        ("42", r"^<stdin>:7:19: parser: error: math expression in boolean context$"),
     ],
 )
 def test_parse_error_math_expression_in_bool_context(expression: str, message: str) -> None:
@@ -3316,10 +3321,10 @@ def test_parse_error_math_expression_in_bool_context(expression: str, message: s
 @pytest.mark.parametrize(
     "expression,message",
     [
-        ("True", r"^<stdin>:5:26: parser: error: boolean expression in math context"),
-        ("3 < 4", r"^<stdin>:5:26: parser: error: boolean expression in math context"),
-        ("A = B", r"^<stdin>:5:26: parser: error: boolean expression in math context"),
-        ("A /= False", r"^<stdin>:5:26: parser: error: boolean expression in math context"),
+        ("True", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),
+        ("3 < 4", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),
+        ("A = B", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),
+        ("A /= False", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),
     ],
 )
 def test_parse_error_bool_expression_in_math_context(expression: str, message: str) -> None:
