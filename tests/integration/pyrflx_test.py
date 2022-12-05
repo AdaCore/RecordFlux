@@ -235,7 +235,6 @@ end Foo;"""
         r"been met by the assigned value: 00001100$",
     ):
         m.parse(b"\x0C")
-        assert not m.valid_message
 
     with pytest.raises(
         PyRFLXError,
@@ -243,7 +242,6 @@ end Foo;"""
         r"been met by the assigned value: E2$",
     ):
         m.set("A", "E2")
-        assert not m.valid_message
 
     with pytest.raises(
         PyRFLXError,
@@ -251,7 +249,6 @@ end Foo;"""
         r"been met by the assigned value: Foo::E2$",
     ):
         m.set("A", "Foo::E2")
-        assert not m.valid_message
 
 
 def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
