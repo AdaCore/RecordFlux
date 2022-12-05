@@ -47,7 +47,7 @@ jobs:
           - contracts
           - doc
     env:
-      python-version: "3.8"
+      python-version: "3.10"
     steps:
     - uses: actions/checkout@v2
       if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
