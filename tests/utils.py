@@ -5,6 +5,7 @@ import pathlib
 import shutil
 import subprocess
 import textwrap
+import typing as ty
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field as dataclass_field
 from pathlib import Path
@@ -869,28 +870,36 @@ MAIN = "main.adb"
 FEATURES = [f for f in Path(__file__).parent.glob("*") if f.is_dir() and f.name != "__pycache__"]
 
 
+# Sequence and Mapping are imported from collections.abc as importing them
+# from typing is deprecated. However pydantic does not support the imported
+# version from collections.abc. To fix that typing is imported as ty and the
+# typing versions of Sequence and Mapping are used in classes that derive
+# from pydantic.BaseModel.
+# This is only relevant for Python 3.8.
+
+
 class ConfigFile(BaseModel):
-    input: Optional[Mapping[str, Optional[Sequence[str]]]]  # noqa: PEA001
-    output: Optional[Sequence[str]]  # noqa: PEA001
+    input: Optional[ty.Mapping[str, Optional[ty.Sequence[str]]]]  # noqa: PEA001
+    output: Optional[ty.Sequence[str]]  # noqa: PEA001
     sequence: Optional[str]
-    prove: Optional[Sequence[str]]  # noqa: PEA001
+    prove: Optional[ty.Sequence[str]]  # noqa: PEA001
 
     @validator("input")  # pylint: disable-next = no-self-argument
     def initialize_input_if_present(
-        cls, value: Optional[Mapping[str, Sequence[str]]]  # noqa: PEA001
-    ) -> Mapping[str, Sequence[str]]:  # noqa: PEA001
+        cls, value: Optional[ty.Mapping[str, ty.Sequence[str]]]  # noqa: PEA001
+    ) -> ty.Mapping[str, ty.Sequence[str]]:  # noqa: PEA001
         return value if value is not None else {}
 
     @validator("output")  # pylint: disable-next = no-self-argument
     def initialize_output_if_present(
-        cls, value: Optional[Sequence[str]]  # noqa: PEA001
-    ) -> Sequence[str]:  # noqa: PEA001
+        cls, value: Optional[ty.Sequence[str]]  # noqa: PEA001
+    ) -> ty.Sequence[str]:  # noqa: PEA001
         return value if value is not None else []
 
     @validator("prove")  # pylint: disable-next = no-self-argument
     def initialize_prove_if_present(
-        cls, value: Optional[Sequence[str]]  # noqa: PEA001
-    ) -> Sequence[str]:  # noqa: PEA001
+        cls, value: Optional[ty.Sequence[str]]  # noqa: PEA001
+    ) -> ty.Sequence[str]:  # noqa: PEA001
         return value if value is not None else []
 
 
