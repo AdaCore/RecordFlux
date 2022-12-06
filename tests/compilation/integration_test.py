@@ -15,14 +15,12 @@ from tests.utils import (
 )
 
 
-@pytest.mark.compilation
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_compilability(feature: str, tmp_path: Path) -> None:
     model, integration = create_model(feature)
     assert_compilable_code(model, integration, tmp_path)
 
 
-@pytest.mark.compilation
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_executability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
@@ -33,7 +31,6 @@ def test_executability(feature: str, tmp_path: Path) -> None:
     assert assert_executable_code(model, integration, tmp_path, main=MAIN) == config.sequence
 
 
-@pytest.mark.compilation
 def test_session_with_only_null_state(tmp_path: Path) -> None:
     state = State("St", [Transition("null")])
     session = Session("P::S", states=[state], declarations=[], parameters=[], types=[])
