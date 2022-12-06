@@ -13,7 +13,7 @@ from rflx.generator import Generator
 from rflx.integration import Integration
 from rflx.model import Model, Session, Type
 from rflx.specification import Parser
-from tests.const import SPEC_DIR
+from tests.const import FEATURE_DIR, SPEC_DIR
 from tests.unit.generator_test import MODELS
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -29,11 +29,11 @@ SPECIFICATION_FILES = [
     SPEC_DIR / "udp.rflx",
 ]
 
-SHARED_DIRECTORY = Path("tests/integration/shared")
+SHARED_DIRECTORY = FEATURE_DIR / "shared"
 
 FEATURE_TESTS = [
     p
-    for p in Path("tests/integration").iterdir()
+    for p in FEATURE_DIR.iterdir()
     if p.is_dir() and not p.match("__pycache__") and p != SHARED_DIRECTORY
 ]
 

@@ -32,7 +32,7 @@ from rflx.specification.parser import (
     create_math_expression,
     diagnostics_to_error,
 )
-from tests.const import SPEC_DIR
+from tests.const import FEATURE_DIR, MAIN, SPEC_DIR
 
 
 def check_regex(regex: str) -> None:
@@ -866,9 +866,7 @@ def get_test_model(name: str) -> Model:
     return parser.create_model()
 
 
-MAIN = "main.adb"
-FEATURES = [f for f in Path(__file__).parent.glob("*") if f.is_dir() and f.name != "__pycache__"]
-
+FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pycache__"]
 
 # Sequence and Mapping are imported from collections.abc as importing them
 # from typing is deprecated. However pydantic does not support the imported
@@ -912,7 +910,7 @@ class Config:
 
 
 def get_config(feature: str) -> Config:
-    config_file = Path(__file__).parent / feature / "config.yml"
+    config_file = FEATURE_DIR / feature / "config.yml"
 
     if config_file.is_file():
         yaml = YAML(typ="safe")
@@ -935,7 +933,7 @@ def get_config(feature: str) -> Config:
 
 def create_model(feature: str) -> tuple[Model, Integration]:
     parser = Parser()
-    parser.parse(Path("tests/integration") / feature / "test.rflx")
+    parser.parse(FEATURE_DIR / feature / "test.rflx")
     return parser.create_model(), parser.get_integration()
 
 
@@ -951,6 +949,6 @@ def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
     for filename, content in complement.items():
         (tmp_path / filename).write_text(content)
 
-    src_dir = Path(__file__).parent / feature / "src"
+    src_dir = FEATURE_DIR / feature / "src"
     if src_dir.is_dir():
         copytree(str(src_dir), str(tmp_path), dirs_exist_ok=True)
