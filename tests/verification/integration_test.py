@@ -13,7 +13,6 @@ from tests.data.fixtures.integration import (
 from tests.utils import FEATURES, assert_provable_code, create_complement, create_model, get_config
 
 
-@pytest.mark.verification
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_provability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
@@ -29,28 +28,24 @@ def test_provability(feature: str, tmp_path: Path) -> None:
     assert_provable_code(model, integration, tmp_path, main=MAIN, units=[*units, *config.prove])
 
 
-@pytest.mark.verification
 def test_definite_message_with_builtin_type_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(
         DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC, tmp_path, units=["rflx-test-message"]
     )
 
 
-@pytest.mark.verification
 def test_parameterized_message_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(
         PARAMETERIZED_MESSAGE_SPEC, tmp_path, units=["rflx-test-message"]
     )
 
 
-@pytest.mark.verification
 def test_definite_parameterized_message_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(
         DEFINITE_PARAMETERIZED_MESSAGE_SPEC, tmp_path, units=["rflx-test-message"]
     )
 
 
-@pytest.mark.verification
 def test_message_field_conditions_provability(tmp_path: Path) -> None:
     spec = """\
       package Test is
@@ -76,7 +71,6 @@ def test_message_field_conditions_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-repr"])
 
 
-@pytest.mark.verification
 def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
     spec = """\
       package Test is
@@ -105,7 +99,6 @@ def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
     utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-measurements_response"])
 
 
-@pytest.mark.verification
 def test_message_large_number_of_fields(tmp_path: Path) -> None:
     spec = """\
       package Test is
