@@ -177,7 +177,7 @@ prove: prove_tests prove_python_tests prove_apps
 prove_tests:
 	$(MAKE) -C tests/spark prove
 
-prove_python_tests: TEST_PROCS=1
+prove_python_tests: export GNATPROVE_PROCS=1
 prove_python_tests:
 	$(PYTEST) -m "verification and not hypothesis" tests
 
