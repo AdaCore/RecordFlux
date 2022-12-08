@@ -116,8 +116,7 @@ format:
 
 test: test_python_coverage test_python_unit_coverage test_python_property test_compilation test_binary_size test_specs test_installation test_apps
 
-test_python:
-	$(PYTEST) -m "not hypothesis" tests
+test_python: test_python_unit test_python_integration test_python_compilation prove_python_tests test_python_tools test_python_ide
 
 test_python_unit:
 	$(PYTEST) tests/unit
@@ -125,14 +124,23 @@ test_python_unit:
 test_python_integration:
 	$(PYTEST) tests/integration
 
+test_python_compilation:
+	$(PYTEST) tests/compilation
+
 test_python_property:
-	$(PYTEST) -m "not verification" tests/property
+	$(PYTEST) tests/property
+
+test_python_tools:
+	$(PYTEST) tests/tools
+
+test_python_ide:
+	$(PYTEST) tests/ide
 
 test_python_property_verification:
 	$(PYTEST) tests/property_verification
 
 test_python_optimized:
-	PYTHONOPTIMIZE=1 $(PYTEST) -m "not verification and not hypothesis" tests/unit tests/integration tests/compilation tests/property
+	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation
 
 test_python_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered tests/unit tests/integration

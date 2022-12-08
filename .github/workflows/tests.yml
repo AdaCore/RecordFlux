@@ -159,6 +159,10 @@ jobs:
             python-version: "3.8"
           - target: "python_optimized"
             python-version: "3.8"
+          - target: "python_tools"
+            python-version: "3.8"
+          - target: "python_ide"
+            python-version: "3.8"
     env:
       GNAT: "pro23.0w-20220723"
     steps:
