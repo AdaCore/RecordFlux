@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 from pathlib import Path
 
 import librflxlang as lang
@@ -248,8 +246,21 @@ def test_expression_suffix(string: str, expected: expr.Expr) -> None:
         ),
     ],
 )
-def test_expression_mathematical(string: str, expected: expr.Expr) -> None:
+def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
     actual = parse_math_expression(string, extended=False)
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    "string,expected",
+    [
+        ("X + Y", expr.Add(expr.Variable("X"), expr.Variable("Y"))),
+        ("X + Y (Z)", expr.Add(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
+    ],
+)
+def test_extended_mathematical_expression(string: str, expected: expr.Expr) -> None:
+    actual = parse_math_expression(string, extended=True)
     assert actual == expected
     assert actual.location
 
@@ -264,9 +275,12 @@ def test_expression_mathematical(string: str, expected: expr.Expr) -> None:
         ("X > 42", expr.Greater(expr.Variable("X"), expr.Number(42))),
         ("X >= 42", expr.GreaterEqual(expr.Variable("X"), expr.Number(42))),
         ("((X = 42))", expr.Equal(expr.Variable("X"), expr.Number(42))),
+        ("X and Y", expr.And(expr.Variable("X"), expr.Variable("Y"))),
+        ("X or Y", expr.Or(expr.Variable("X"), expr.Variable("Y"))),
+        ("((X or Y))", expr.Or(expr.Variable("X"), expr.Variable("Y"))),
     ],
 )
-def test_expression_relation(string: str, expected: expr.Expr) -> None:
+def test_boolean_expression(string: str, expected: expr.Expr) -> None:
     actual = parse_bool_expression(string, extended=False)
     assert actual == expected
     assert actual.location
@@ -276,25 +290,11 @@ def test_expression_relation(string: str, expected: expr.Expr) -> None:
     "string,expected",
     [
         ("X and Y", expr.And(expr.Variable("X"), expr.Variable("Y"))),
-        ("X or Y", expr.Or(expr.Variable("X"), expr.Variable("Y"))),
-        ("((X or Y))", expr.Or(expr.Variable("X"), expr.Variable("Y"))),
+        ("X and Y (Z)", expr.And(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
     ],
 )
-def test_expression_boolean(string: str, expected: expr.Expr) -> None:
-    actual = parse_bool_expression(string, extended=False)
-    assert actual == expected
-    assert actual.location
-
-
-@pytest.mark.parametrize(
-    "string,expected",
-    [
-        ("X + Y", expr.Add(expr.Variable("X"), expr.Variable("Y"))),
-        ("X + Y (Z)", expr.Add(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
-    ],
-)
-def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
-    actual = parse_math_expression(string, extended=True)
+def test_extended_boolean_expression(string: str, expected: expr.Expr) -> None:
+    actual = parse_bool_expression(string, extended=True)
     assert actual == expected
     assert actual.location
 
@@ -309,19 +309,6 @@ def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
 def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         parse_math_expression(string, extended=False)
-
-
-@pytest.mark.parametrize(
-    "string,expected",
-    [
-        ("X and Y", expr.And(expr.Variable("X"), expr.Variable("Y"))),
-        ("X and Y (Z)", expr.And(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
-    ],
-)
-def test_boolean_expression(string: str, expected: expr.Expr) -> None:
-    actual = parse_bool_expression(string, extended=True)
-    assert actual == expected
-    assert actual.location
 
 
 @pytest.mark.parametrize(
@@ -599,17 +586,6 @@ def test_expression_complex(string: str, expected: expr.Expr) -> None:
             "X : Channel with Readable, Writable",
             decl.ChannelDeclaration("X", readable=True, writable=True),
         ),
-    ],
-)
-def test_channel_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = parse_formal_declaration(string)
-    assert actual == expected
-    assert actual.location
-
-
-@pytest.mark.parametrize(
-    "string,expected",
-    [
         ("with function X return Y", decl.FunctionDeclaration("X", [], "Package::Y")),
         ("with function X return Package::Y", decl.FunctionDeclaration("X", [], "Package::Y")),
         (
@@ -630,7 +606,7 @@ def test_channel_declaration(string: str, expected: decl.Declaration) -> None:
         ),
     ],
 )
-def test_formal_function_declaration(string: str, expected: decl.Declaration) -> None:
+def test_formal_declaration(string: str, expected: decl.Declaration) -> None:
     actual = parse_formal_declaration(string)
     assert actual == expected
     assert actual.location
@@ -650,36 +626,21 @@ def test_variable_declaration(string: str, expected: decl.Declaration) -> None:
     assert actual.location
 
 
+def test_renaming_declaration() -> None:
+    expected = decl.RenamingDeclaration("A", "Package::B", expr.Selected(expr.Variable("C"), "D"))
+    actual = parse_declaration("A : B renames C.D")
+    assert actual == expected
+    assert actual.location
+
+
 @pytest.mark.parametrize(
     "string,expected",
     [
-        (
-            "A : B renames C.D",
-            decl.RenamingDeclaration("A", "Package::B", expr.Selected(expr.Variable("C"), "D")),
-        ),
+        ("A := B", stmt.VariableAssignment("A", expr.Variable("B"))),
+        ("A.B := C", stmt.MessageFieldAssignment("A", "B", expr.Variable("C"))),
     ],
 )
-def test_renaming_declaration(string: str, expected: decl.Declaration) -> None:
-    actual = parse_declaration(string)
-    assert actual == expected
-    assert actual.location
-
-
-@pytest.mark.parametrize(
-    "string,expected",
-    [("A := B", stmt.VariableAssignment("A", expr.Variable("B")))],
-)
 def test_assignment_statement(string: str, expected: stmt.Statement) -> None:
-    actual = parse_statement(string)
-    assert actual == expected
-    assert actual.location
-
-
-@pytest.mark.parametrize(
-    "string,expected",
-    [("A.B := C", stmt.MessageFieldAssignment("A", "B", expr.Variable("C")))],
-)
-def test_message_field_assignment_statement(string: str, expected: stmt.Statement) -> None:
     actual = parse_statement(string)
     assert actual == expected
     assert actual.location
@@ -824,104 +785,81 @@ def test_state(string: str, expected: decl.Declaration) -> None:
     assert actual.location
 
 
-@pytest.mark.parametrize(
-    "string,error",
-    [
-        (
-            """
-               state A is
-               begin
-               transition
-                  goto B
-               end C
-         """,
-            "<stdin>:2:16: parser: error: inconsistent state identifier: A /= C.*",
-        )
-    ],
-    ids=[1],
-)
-def test_state_error(string: str, error: str) -> None:
+def test_state_error() -> None:
+    string = """
+       state A is
+       begin
+       transition
+          goto B
+       end C
+    """
+    error = "<stdin>:2:8: parser: error: inconsistent state identifier: A /= C.*"
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         parse_state(string)
 
 
-@pytest.mark.parametrize(
-    "string,expected",
-    [
-        (
-            """
-               generic
-                  X : Channel with Readable, Writable;
-                  with function F return Boolean;
-               session Session is
-                  Y : Boolean := True;
-               begin
-                  state A is
-                     Z : Boolean := Y;
-                  begin
-                     Z := False;
-                  transition
-                     goto null
-                        if Z = False
-                     goto A
-                  end A;
-               end Session
-         """,
-            model.UnprovenSession(
-                ID("Package::Session"),
-                [
-                    model.State(
-                        "A",
-                        declarations=[
-                            decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y"))
-                        ],
-                        actions=[stmt.VariableAssignment("Z", expr.FALSE)],
-                        transitions=[
-                            model.Transition(
-                                "null",
-                                condition=expr.Equal(expr.Variable("Z"), expr.FALSE),
-                            ),
-                            model.Transition("A"),
-                        ],
-                    ),
-                ],
-                [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.TRUE)],
-                [
-                    decl.ChannelDeclaration("X", readable=True, writable=True),
-                    decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
-                ],
-                [],
-                location=Location((2, 16), None, (23, 27)),
-            ),
-        ),
-    ],
-    ids=[1],
-)
-def test_session_declaration(string: str, expected: decl.Declaration) -> None:
+def test_session_declaration() -> None:
+    string = """
+           generic
+              X : Channel with Readable, Writable;
+              with function F return Boolean;
+           session Session is
+              Y : Boolean := True;
+           begin
+              state A is
+                 Z : Boolean := Y;
+              begin
+                 Z := False;
+              transition
+                 goto null
+                    if Z = False
+                 goto A
+              end A;
+           end Session
+    """
     actual = parse_unproven_session(string)
+    expected = model.UnprovenSession(
+        ID("Package::Session"),
+        [
+            model.State(
+                "A",
+                declarations=[
+                    decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y"))
+                ],
+                actions=[stmt.VariableAssignment("Z", expr.FALSE)],
+                transitions=[
+                    model.Transition(
+                        "null",
+                        condition=expr.Equal(expr.Variable("Z"), expr.FALSE),
+                    ),
+                    model.Transition("A"),
+                ],
+            ),
+        ],
+        [decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.TRUE)],
+        [
+            decl.ChannelDeclaration("X", readable=True, writable=True),
+            decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
+        ],
+        [],
+        location=Location((2, 16), None, (23, 27)),
+    )
     assert actual == expected
     assert actual.location
 
 
-@pytest.mark.parametrize(
-    "string",
-    [
-        (
-            """
-               generic
-               session X is
-               begin
-                  state A is
-                  begin
-                  transition
-                     goto null
-                  end A;
-               end X
-            """
-        )
-    ],
-)
-def test_parse_session(string: str) -> None:
+def test_parse_session() -> None:
+    string = """
+       generic
+       session X is
+       begin
+          state A is
+          begin
+          transition
+             goto null
+          end A;
+       end X
+    """
     parse_session(string)
 
 
@@ -941,17 +879,7 @@ def test_parse_session(string: str) -> None:
                end Y
          """,
             "<stdin>:2:16: parser: error: inconsistent session identifier: X /= Y.*",
-        )
-    ],
-)
-def test_session_declaration_error(string: str, error: str) -> None:
-    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_session(string)
-
-
-@pytest.mark.parametrize(
-    "string,error",
-    [
+        ),
         (
             """
                generic
@@ -965,10 +893,10 @@ def test_session_declaration_error(string: str, error: str) -> None:
                end Y
          """,
             "<stdin>:10:16: parser: error: Expected ';', got 'end'",
-        )
+        ),
     ],
 )
-def test_syntax_error(string: str, error: str) -> None:
+def test_session_error(string: str, error: str) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         parse_session(string)
 
