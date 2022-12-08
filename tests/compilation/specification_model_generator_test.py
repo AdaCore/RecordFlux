@@ -14,8 +14,6 @@ from tests.data.fixtures.integration import (
     PARAMETERIZED_MESSAGE_SPEC,
 )
 
-pytestmark = pytest.mark.compilation
-
 
 @pytest.mark.parametrize(
     "prefix",

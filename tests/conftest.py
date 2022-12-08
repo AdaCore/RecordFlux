@@ -6,7 +6,6 @@ import re
 from collections.abc import Sequence
 
 import hypothesis
-from _pytest.config import Config
 
 from rflx import expression as expr, model
 from tests.const import FIXTURE_DIR
@@ -19,15 +18,6 @@ hypothesis.settings.register_profile(
 )
 
 hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default"))
-
-
-def pytest_configure(config: Config) -> None:
-    config.addinivalue_line(
-        "markers", "compilation: Tests which use GNAT to compile Ada/SPARK code."
-    )
-    config.addinivalue_line(
-        "markers", "verification: Tests which use GNATprove to formally verify SPARK code."
-    )
 
 
 def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[str]:
