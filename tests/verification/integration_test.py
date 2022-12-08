@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from tests import utils
-from tests.data.fixtures.integration import (
+from tests.data.specs import (
     DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC,
     DEFINITE_PARAMETERIZED_MESSAGE_SPEC,
     PARAMETERIZED_MESSAGE_SPEC,
