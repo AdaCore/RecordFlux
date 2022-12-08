@@ -1,31 +1,11 @@
 from pathlib import Path
 
-import pytest
-
-from rflx.identifier import ID
 from tests import utils
-from tests.const import MAIN
 from tests.data.fixtures.integration import (
     DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC,
     DEFINITE_PARAMETERIZED_MESSAGE_SPEC,
     PARAMETERIZED_MESSAGE_SPEC,
 )
-from tests.utils import FEATURES, assert_provable_code, create_complement, create_model, get_config
-
-
-@pytest.mark.parametrize("feature", [f.name for f in FEATURES])
-def test_provability(feature: str, tmp_path: Path) -> None:
-    config = get_config(feature)
-    if config.prove is None:
-        pytest.skip()
-    model, integration = create_model(feature)
-    units = []
-    if model.sessions:
-        assert len(model.sessions) == 1
-        assert model.sessions[0].identifier == ID("Test::Session")
-        units = ["main", "lib", "rflx-test-session"]
-        create_complement(config, feature, tmp_path)
-    assert_provable_code(model, integration, tmp_path, main=MAIN, units=[*units, *config.prove])
 
 
 def test_definite_message_with_builtin_type_provability(tmp_path: Path) -> None:
