@@ -5,7 +5,8 @@ from pathlib import Path
 import pytest
 
 from tests.const import FEATURE_DIR
-from tests.utils import FEATURES, assert_equal_code, create_model
+from tests.feature import FEATURES, create_model
+from tests.utils import assert_equal_code
 
 INCOMPLETE_FEATURE_TESTS = [f for f in FEATURES if not (f / "test.rflx").is_file()]
 
