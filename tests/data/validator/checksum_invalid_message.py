@@ -1,5 +1,5 @@
 def checksum_test() -> int:
-    pass
+    return 0
 
 
 checksum_functions = {
