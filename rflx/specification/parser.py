@@ -82,7 +82,7 @@ def diagnostics_to_error(
     return True
 
 
-def create_description(description: lang.Description = None) -> Optional[str]:
+def create_description(description: Optional[lang.Description] = None) -> Optional[str]:
     if description:
         assert isinstance(description.text, str)
         return description.text.split('"')[1]
@@ -237,7 +237,7 @@ def create_unproven_session(
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
-    types: Sequence[model.Type] = None,
+    types: Optional[Sequence[model.Type]] = None,
 ) -> model.UnprovenSession:
     _check_session_identifier(error, session, filename)
 
@@ -256,7 +256,7 @@ def create_session(
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
-    types: Sequence[model.Type] = None,
+    types: Optional[Sequence[model.Type]] = None,
 ) -> Optional[model.Session]:
     try:
         return create_unproven_session(error, session, package, filename, types).proven()

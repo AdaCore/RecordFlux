@@ -306,7 +306,7 @@ def substitution_facts(
 
 
 def message_structure_invariant(
-    message: model.Message, prefix: str, link: model.Link = None, embedded: bool = False
+    message: model.Message, prefix: str, link: Optional[model.Link] = None, embedded: bool = False
 ) -> Expr:
     """
     Create the invariant that defines a valid message structure.
@@ -744,7 +744,7 @@ def context_cursor_unchanged(
 
 
 def sufficient_space_for_field_condition(
-    message_id: ID, field_name: Name, size: Expr = None
+    message_id: ID, field_name: Name, size: Optional[Expr] = None
 ) -> Expr:
     if size is None:
         size = Call(message_id * "Field_Size", [Variable("Ctx"), field_name])
@@ -847,9 +847,9 @@ def field_condition_call(
     prefix: str,
     message: model.Message,
     field: model.Field,
-    value: Expr = None,
-    aggregate: Expr = None,
-    size: Expr = None,
+    value: Optional[Expr] = None,
+    aggregate: Optional[Expr] = None,
+    size: Optional[Expr] = None,
 ) -> Expr:
     package = prefix * message.identifier
     if value is None:
@@ -911,7 +911,9 @@ def contains_function_name(refinement_package: ID, pdu: ID, sdu: ID, field: ID) 
     return f"{sdu_name.flat}_In_{pdu_name.flat}_{field}"
 
 
-def has_value_dependent_condition(message: model.Message, field: model.Field = None) -> bool:
+def has_value_dependent_condition(
+    message: model.Message, field: Optional[model.Field] = None
+) -> bool:
     links = message.outgoing(field) if field else message.structure
     fields = [field] if field else message.fields
     return any(
@@ -927,7 +929,9 @@ def has_value_dependent_condition(message: model.Message, field: model.Field = N
     )
 
 
-def has_aggregate_dependent_condition(message: model.Message, field: model.Field = None) -> bool:
+def has_aggregate_dependent_condition(
+    message: model.Message, field: Optional[model.Field] = None
+) -> bool:
     links = message.outgoing(field) if field else message.structure
     fields = [field] if field else message.fields
     return any(
@@ -943,7 +947,9 @@ def has_aggregate_dependent_condition(message: model.Message, field: model.Field
     )
 
 
-def has_size_dependent_condition(message: model.Message, field: model.Field = None) -> bool:
+def has_size_dependent_condition(
+    message: model.Message, field: Optional[model.Field] = None
+) -> bool:
     field_sizes = {expr.Size(f.name) for f in message.fields}
     links = message.outgoing(field) if field else message.structure
     return any(

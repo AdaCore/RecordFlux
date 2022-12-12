@@ -18,8 +18,8 @@ class Location(Base):
     def __init__(
         self,
         start: tuple[int, int],
-        source: Path = None,
-        end: tuple[int, int] = None,
+        source: Optional[Path] = None,
+        end: Optional[tuple[int, int]] = None,
         verbose: bool = False,
     ):
         self._source = source
@@ -88,7 +88,11 @@ Self = TypeVar("Self", bound="BaseError")
 class BaseError(Exception, Base):
     class Entry(Base):
         def __init__(
-            self, message: str, subsystem: Subsystem, severity: Severity, location: Location = None
+            self,
+            message: str,
+            subsystem: Subsystem,
+            severity: Severity,
+            location: Optional[Location] = None,
         ):
             self._message = message
             self._subsystem = subsystem
@@ -194,7 +198,7 @@ def fail(
     message: str,
     subsystem: Subsystem,
     severity: Severity = Severity.ERROR,
-    location: Location = None,
+    location: Optional[Location] = None,
 ) -> NoReturn:
     _fail(RecordFluxError(), message, subsystem, severity, location)
 
@@ -203,7 +207,7 @@ def fatal_fail(
     message: str,
     subsystem: Subsystem,
     severity: Severity = Severity.ERROR,
-    location: Location = None,
+    location: Optional[Location] = None,
 ) -> NoReturn:
     _fail(FatalError(), message, subsystem, severity, location)
 
@@ -213,7 +217,7 @@ def _fail(
     message: str,
     subsystem: Subsystem,
     severity: Severity = Severity.ERROR,
-    location: Location = None,
+    location: Optional[Location] = None,
 ) -> NoReturn:
     error.extend([(message, subsystem, severity, location)])
     error.propagate()
@@ -224,7 +228,7 @@ def warn(
     message: str,
     subsystem: Subsystem,
     severity: Severity = Severity.WARNING,
-    location: Location = None,
+    location: Optional[Location] = None,
 ) -> None:
     e = RecordFluxError()
     e.extend([(message, subsystem, severity, location)])

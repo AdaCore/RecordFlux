@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable, Mapping, Sequence
+from typing import Optional
 
 import rflx.typing_ as rty
 from rflx.common import Base
@@ -12,7 +13,10 @@ from rflx.identifier import ID, StrID
 
 class Statement(Base):
     def __init__(
-        self, identifier: StrID, type_: rty.Type = rty.Undefined(), location: Location = None
+        self,
+        identifier: StrID,
+        type_: rty.Type = rty.Undefined(),
+        location: Optional[Location] = None,
     ):
         self.identifier = ID(identifier)
         self.type_ = type_
@@ -37,7 +41,7 @@ class Assignment(Statement):
         identifier: StrID,
         expression: Expr,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, type_, location)
         self.expression = expression
@@ -67,7 +71,7 @@ class MessageFieldAssignment(Assignment):
         field: StrID,
         expression: Expr,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(message, expression, type_, location)
         self.message = ID(message)
@@ -130,7 +134,7 @@ class AttributeStatement(Statement):
         attribute: str,
         parameters: list[Expr],
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, type_, location)
         self.attribute = attribute
@@ -155,7 +159,7 @@ class ListAttributeStatement(AttributeStatement):
         identifier: StrID,
         parameter: Expr,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
 
@@ -217,9 +221,9 @@ class Reset(AttributeStatement):
     def __init__(
         self,
         identifier: StrID,
-        associations: Mapping[ID, Expr] = None,
+        associations: Optional[Mapping[ID, Expr]] = None,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [], type_, location)
         self.associations = associations or {}
@@ -251,7 +255,7 @@ class ChannelAttributeStatement(AttributeStatement):
         identifier: StrID,
         parameter: Expr,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
 

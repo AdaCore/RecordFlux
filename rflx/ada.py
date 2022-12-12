@@ -570,8 +570,8 @@ class Call(Name):
     def __init__(
         self,
         identifier: StrID,
-        arguments: Sequence[Expr] = None,
-        named_arguments: Mapping[ID, Expr] = None,
+        arguments: Optional[Sequence[Expr]] = None,
+        named_arguments: Optional[Mapping[ID, Expr]] = None,
         negative: bool = False,
     ) -> None:
         self.identifier = ID(identifier)
@@ -743,7 +743,9 @@ class NotIn(Relation):
         return " not in "
 
 
-def If(condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Expr = None) -> Expr:
+def If(
+    condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Optional[Expr] = None
+) -> Expr:
     # pylint: disable=invalid-name
     if len(condition_expressions) == 0 and else_expression is not None:
         return else_expression
@@ -754,7 +756,9 @@ def If(condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Expr
 
 class IfExpr(Expr):
     def __init__(
-        self, condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Expr = None
+        self,
+        condition_expressions: Sequence[tuple[Expr, Expr]],
+        else_expression: Optional[Expr] = None,
     ) -> None:
         super().__init__()
         self.condition_expressions = condition_expressions
@@ -901,7 +905,7 @@ class ForSomeIn(QuantifiedExpr):
 
 
 class ValueRange(Expr):
-    def __init__(self, lower: Expr, upper: Expr, type_identifier: StrID = None):
+    def __init__(self, lower: Expr, upper: Expr, type_identifier: Optional[StrID] = None):
         super().__init__()
         self.lower = lower
         self.upper = upper
@@ -961,7 +965,7 @@ class QualifiedExpr(Expr):
 
 
 class Raise(Expr):
-    def __init__(self, identifier: StrID, string: Expr = None) -> None:
+    def __init__(self, identifier: StrID, string: Optional[Expr] = None) -> None:
         super().__init__()
         self.identifier = ID(identifier)
         self.string = string
@@ -1260,7 +1264,9 @@ class FormalDeclaration(Base):
 
 
 class FormalSubprogramDeclaration(FormalDeclaration):
-    def __init__(self, specification: SubprogramSpecification, default: StrID = None) -> None:
+    def __init__(
+        self, specification: SubprogramSpecification, default: Optional[StrID] = None
+    ) -> None:
         self.specification = specification
         self.default = ID(default) if default else None
 
@@ -1277,7 +1283,7 @@ class FormalPackageDeclaration(FormalDeclaration):
         self,
         identifier: StrID,
         generic_identifier: StrID,
-        associations: Sequence[StrID] = None,
+        associations: Optional[Sequence[StrID]] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.generic_identifier = ID(generic_identifier)
@@ -1297,10 +1303,10 @@ class PackageDeclaration(Declaration):
     def __init__(
         self,
         identifier: StrID,
-        declarations: Sequence[Declaration] = None,
-        private_declarations: Sequence[Declaration] = None,
-        formal_parameters: Sequence[FormalDeclaration] = None,
-        aspects: Sequence[Aspect] = None,
+        declarations: Optional[Sequence[Declaration]] = None,
+        private_declarations: Optional[Sequence[Declaration]] = None,
+        formal_parameters: Optional[Sequence[FormalDeclaration]] = None,
+        aspects: Optional[Sequence[Aspect]] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.declarations = declarations or []
@@ -1322,9 +1328,9 @@ class PackageBody(Declaration):
     def __init__(
         self,
         identifier: StrID,
-        declarations: Sequence[Declaration] = None,
-        statements: Sequence[Statement] = None,
-        aspects: Sequence[Aspect] = None,
+        declarations: Optional[Sequence[Declaration]] = None,
+        statements: Optional[Sequence[Statement]] = None,
+        aspects: Optional[Sequence[Aspect]] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.declarations = declarations or []
@@ -1352,7 +1358,7 @@ class GenericPackageInstantiation(Declaration):
         self,
         identifier: StrID,
         generic_package: StrID,
-        associations: Sequence[StrID] = None,
+        associations: Optional[Sequence[StrID]] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.generic_package = ID(generic_package)
@@ -1385,10 +1391,10 @@ class ObjectDeclaration(Declaration):
         self,
         identifiers: Sequence[StrID],
         type_identifier: Union[StrID, Expr],
-        expression: Expr = None,
+        expression: Optional[Expr] = None,
         constant: bool = False,
         aliased: bool = False,
-        aspects: Sequence[Aspect] = None,
+        aspects: Optional[Sequence[Aspect]] = None,
     ) -> None:
         self.identifiers = list(map(ID, identifiers))
         self.type_identifier = (
@@ -1415,7 +1421,7 @@ class ObjectDeclaration(Declaration):
 
 class Discriminant(Base):
     def __init__(
-        self, identifiers: Sequence[StrID], type_identifier: StrID, default: Expr = None
+        self, identifiers: Sequence[StrID], type_identifier: StrID, default: Optional[Expr] = None
     ) -> None:
         self.identifiers = list(map(ID, identifiers))
         self.type_identifier = ID(type_identifier)
@@ -1431,8 +1437,8 @@ class TypeDeclaration(Declaration, FormalDeclaration):
     def __init__(
         self,
         identifier: StrID,
-        discriminants: Sequence[Discriminant] = None,
-        aspects: Sequence[Aspect] = None,
+        discriminants: Optional[Sequence[Discriminant]] = None,
+        aspects: Optional[Sequence[Aspect]] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.discriminants = discriminants
@@ -1462,7 +1468,9 @@ class TypeDeclaration(Declaration, FormalDeclaration):
 
 
 class ModularType(TypeDeclaration):
-    def __init__(self, identifier: StrID, modulus: Expr, aspects: Sequence[Aspect] = None) -> None:
+    def __init__(
+        self, identifier: StrID, modulus: Expr, aspects: Optional[Sequence[Aspect]] = None
+    ) -> None:
         super().__init__(identifier, aspects=aspects or [])
         self.modulus = modulus
 
@@ -1477,7 +1485,7 @@ class RangeType(TypeDeclaration):
         identifier: StrID,
         first: Expr,
         last: Expr,
-        aspects: Sequence[Aspect] = None,
+        aspects: Optional[Sequence[Aspect]] = None,
     ) -> None:
         super().__init__(identifier, aspects=aspects or [])
         self.first = first
@@ -1493,7 +1501,7 @@ class EnumerationType(TypeDeclaration):
         self,
         identifier: StrID,
         literals: Mapping[ID, Optional[Number]],
-        size: Expr = None,
+        size: Optional[Expr] = None,
     ) -> None:
         super().__init__(identifier, aspects=([SizeAspect(size)] if size else []))
         self.literals = (
@@ -1526,7 +1534,7 @@ class EnumerationType(TypeDeclaration):
 
 class Subtype(TypeDeclaration):
     def __init__(
-        self, identifier: StrID, base_identifier: StrID, aspects: Sequence[Aspect] = None
+        self, identifier: StrID, base_identifier: StrID, aspects: Optional[Sequence[Aspect]] = None
     ) -> None:
         super().__init__(identifier, aspects=aspects)
         self.base_identifier = ID(base_identifier)
@@ -1555,7 +1563,7 @@ class DerivedType(TypeDeclaration):
         self,
         identifier: StrID,
         type_identifier: StrID,
-        record_extension: Sequence[Component] = None,
+        record_extension: Optional[Sequence[Component]] = None,
     ) -> None:
         super().__init__(identifier)
         self.type_identifier = ID(type_identifier)
@@ -1623,7 +1631,7 @@ class Component(Base):
         self,
         identifier: StrID,
         type_identifier: Union[StrID, Expr],
-        default: Expr = None,
+        default: Optional[Expr] = None,
         aliased: bool = False,
     ) -> None:
         self.identifier = ID(identifier)
@@ -1673,9 +1681,9 @@ class RecordType(TypeDeclaration):
         self,
         identifier: StrID,
         components: Sequence[Component],
-        discriminants: Sequence[Discriminant] = None,
-        variant_part: VariantPart = None,
-        aspects: Sequence[Aspect] = None,
+        discriminants: Optional[Sequence[Discriminant]] = None,
+        variant_part: Optional[VariantPart] = None,
+        aspects: Optional[Sequence[Aspect]] = None,
         abstract: bool = False,
         tagged: bool = False,
         limited: bool = False,
@@ -1734,8 +1742,8 @@ class CallStatement(Statement):
     def __init__(
         self,
         identifier: StrID,
-        arguments: Sequence[Expr] = None,
-        named_arguments: Mapping[ID, Expr] = None,
+        arguments: Optional[Sequence[Expr]] = None,
+        named_arguments: Optional[Mapping[ID, Expr]] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.arguments = arguments or []
@@ -1768,7 +1776,7 @@ class PragmaStatement(Statement):
 
 
 class ReturnStatement(Statement):
-    def __init__(self, expression: Expr = None) -> None:
+    def __init__(self, expression: Optional[Expr] = None) -> None:
         self.expression = expression
 
     def __str__(self) -> str:
@@ -1780,7 +1788,7 @@ class ReturnStatement(Statement):
 
 
 class ExitStatement(Statement):
-    def __init__(self, expression: Expr = None) -> None:
+    def __init__(self, expression: Optional[Expr] = None) -> None:
         self.expression = expression
 
     def __str__(self) -> str:
@@ -1820,7 +1828,7 @@ class IfStatement(Statement):
     def __init__(
         self,
         condition_statements: Sequence[tuple[Expr, Sequence[Statement]]],
-        else_statements: Sequence[Statement] = None,
+        else_statements: Optional[Sequence[Statement]] = None,
     ) -> None:
         assert condition_statements or else_statements
         self.condition_statements = condition_statements
@@ -1943,7 +1951,7 @@ class ForIn(ForLoop):
 
 
 class RaiseStatement(Statement):
-    def __init__(self, identifier: StrID, string: Expr = None) -> None:
+    def __init__(self, identifier: StrID, string: Optional[Expr] = None) -> None:
         super().__init__()
         self.identifier = ID(identifier)
         self.string = string
@@ -1968,7 +1976,7 @@ class Declare(Statement):
 
 class Parameter(Base):
     def __init__(
-        self, identifiers: Sequence[StrID], type_identifier: StrID, default: Expr = None
+        self, identifiers: Sequence[StrID], type_identifier: StrID, default: Optional[Expr] = None
     ) -> None:
         self.identifiers = list(map(ID, identifiers))
         self.type_identifier = ID(type_identifier)
@@ -2001,7 +2009,7 @@ class AccessParameter(Parameter):
         self,
         identifiers: Sequence[StrID],
         type_identifier: StrID,
-        default: Expr = None,
+        default: Optional[Expr] = None,
         constant: bool = False,
     ) -> None:
         super().__init__(identifiers, type_identifier, default)
@@ -2013,7 +2021,7 @@ class AccessParameter(Parameter):
 
 
 class SubprogramSpecification(Base):
-    def __init__(self, identifier: StrID, parameters: Sequence[Parameter] = None) -> None:
+    def __init__(self, identifier: StrID, parameters: Optional[Sequence[Parameter]] = None) -> None:
         self.identifier = ID(identifier)
         self.parameters = parameters or []
 
@@ -2035,7 +2043,10 @@ class ProcedureSpecification(SubprogramSpecification):
 
 class FunctionSpecification(SubprogramSpecification):
     def __init__(
-        self, identifier: StrID, return_type: StrID, parameters: Sequence[Parameter] = None
+        self,
+        identifier: StrID,
+        return_type: StrID,
+        parameters: Optional[Sequence[Parameter]] = None,
     ) -> None:
         super().__init__(identifier, parameters)
         self.return_type = ID(return_type)
@@ -2063,8 +2074,8 @@ class SubprogramDeclaration(Subprogram):
     def __init__(
         self,
         specification: SubprogramSpecification,
-        aspects: Sequence[Aspect] = None,
-        formal_parameters: Sequence[FormalDeclaration] = None,
+        aspects: Optional[Sequence[Aspect]] = None,
+        formal_parameters: Optional[Sequence[FormalDeclaration]] = None,
         abstract: bool = False,
     ) -> None:
         super().__init__(specification)
@@ -2086,7 +2097,7 @@ class SubprogramBody(Subprogram):
         specification: SubprogramSpecification,
         declarations: Sequence[Declaration],
         statements: Sequence[Statement],
-        aspects: Sequence[Aspect] = None,
+        aspects: Optional[Sequence[Aspect]] = None,
     ) -> None:
         super().__init__(specification)
         self.declarations = declarations or []
@@ -2115,7 +2126,7 @@ class ExpressionFunctionDeclaration(Subprogram):
         self,
         specification: FunctionSpecification,
         expression: Expr,
-        aspects: Sequence[Aspect] = None,
+        aspects: Optional[Sequence[Aspect]] = None,
     ) -> None:
         super().__init__(specification)
         self.expression = expression
@@ -2131,7 +2142,7 @@ class GenericProcedureInstantiation(Subprogram):
         self,
         identifier: StrID,
         specification: ProcedureSpecification,
-        associations: Sequence[StrID] = None,
+        associations: Optional[Sequence[StrID]] = None,
     ) -> None:
         super().__init__(specification)
         self.identifier = ID(identifier)
@@ -2153,7 +2164,7 @@ class GenericFunctionInstantiation(Subprogram):
         self,
         identifier: StrID,
         specification: FunctionSpecification,
-        associations: Sequence[StrID] = None,
+        associations: Optional[Sequence[StrID]] = None,
     ) -> None:
         super().__init__(specification)
         self.identifier = ID(identifier)
@@ -2182,7 +2193,7 @@ class SubprogramRenamingDeclaration(Subprogram):
 
 
 class Pragma(Declaration, ContextItem):
-    def __init__(self, identifier: StrID, parameters: Sequence[Expr] = None) -> None:
+    def __init__(self, identifier: StrID, parameters: Optional[Sequence[Expr]] = None) -> None:
         super().__init__(identifier)
         self.pragma_parameters = parameters or []
 
@@ -2320,7 +2331,7 @@ class SubprogramUnitPart:
     statements: list[Statement] = dataclass_field(default_factory=list)
 
 
-def generic_formal_part(parameters: Sequence[FormalDeclaration] = None) -> str:
+def generic_formal_part(parameters: Optional[Sequence[FormalDeclaration]] = None) -> str:
     if parameters is None:
         return ""
     return (

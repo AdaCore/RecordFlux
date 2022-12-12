@@ -172,7 +172,7 @@ class Expr(DBC, Base):
     def __init__(
         self,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ):
         self.type_ = type_
         self.location = location
@@ -255,7 +255,9 @@ class Expr(DBC, Base):
 
     @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         return func(self)
@@ -286,7 +288,7 @@ class Expr(DBC, Base):
 
 
 class Not(Expr):
-    def __init__(self, expr: Expr, location: Location = None) -> None:
+    def __init__(self, expr: Expr, location: Optional[Location] = None) -> None:
         super().__init__(rty.BOOLEAN, location)
         self.expr = expr
 
@@ -313,7 +315,9 @@ class Not(Expr):
         ]
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -366,7 +370,11 @@ class Not(Expr):
 
 class BinExpr(Expr):
     def __init__(
-        self, left: Expr, right: Expr, type_: rty.Type = rty.Undefined(), location: Location = None
+        self,
+        left: Expr,
+        right: Expr,
+        type_: rty.Type = rty.Undefined(),
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(type_, location)
         self.left = left
@@ -406,7 +414,9 @@ class BinExpr(Expr):
         ]
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -430,7 +440,7 @@ class BinExpr(Expr):
 
 
 class AssExpr(Expr):
-    def __init__(self, *terms: Expr, location: Location = None) -> None:
+    def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
         super().__init__(rty.Undefined(), location)
         self.terms = list(terms)
 
@@ -470,7 +480,9 @@ class AssExpr(Expr):
         ]
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -587,7 +599,7 @@ class AssExpr(Expr):
 
 
 class BoolAssExpr(AssExpr):
-    def __init__(self, *terms: Expr, location: Location = None) -> None:
+    def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
         super().__init__(*terms, location=location)
         self.type_ = rty.BOOLEAN
 
@@ -744,7 +756,7 @@ class OrElse(Or):
 
 
 class Number(Expr):
-    def __init__(self, value: int, base: int = 0, location: Location = None) -> None:
+    def __init__(self, value: int, base: int = 0, location: Optional[Location] = None) -> None:
         super().__init__(rty.UniversalInteger(rty.Bounds(value, value)), location)
         self.value = value
         self.base = base
@@ -862,7 +874,7 @@ class Number(Expr):
 
 
 class MathAssExpr(AssExpr):
-    def __init__(self, *terms: Expr, location: Location = None) -> None:
+    def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
         super().__init__(*terms, location=location)
         common_type = rty.common_type([t.type_ for t in terms])
         self.type_ = common_type if common_type != rty.Undefined() else rty.UndefinedInteger()
@@ -989,7 +1001,7 @@ class Mul(MathAssExpr):
 
 
 class MathBinExpr(BinExpr):
-    def __init__(self, left: Expr, right: Expr, location: Location = None) -> None:
+    def __init__(self, left: Expr, right: Expr, location: Optional[Location] = None) -> None:
         super().__init__(left, right, rty.common_type([left.type_, right.type_]), location)
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -1145,7 +1157,7 @@ class Name(Expr):
         negative: bool = False,
         immutable: bool = False,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(type_, location)
         self.negative = negative
@@ -1165,7 +1177,9 @@ class Name(Expr):
         raise NotImplementedError
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         if self.immutable:
             return self
@@ -1188,7 +1202,7 @@ class Literal(Name):
         self,
         identifier: StrID,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         self.identifier = ID(identifier)
         super().__init__(negative=False, immutable=False, type_=type_, location=location)
@@ -1238,9 +1252,9 @@ class Literal(Name):
 
     def copy(
         self,
-        identifier: StrID = None,
-        type_: rty.Type = None,
-        location: Location = None,
+        identifier: Optional[StrID] = None,
+        type_: Optional[rty.Type] = None,
+        location: Optional[Location] = None,
     ) -> Literal:
         return self.__class__(
             ID(identifier) if identifier is not None else self.identifier,
@@ -1256,7 +1270,7 @@ class Variable(Name):
         negative: bool = False,
         immutable: bool = False,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         assert (
             not isinstance(type_, rty.Enumeration) if negative else True
@@ -1315,11 +1329,11 @@ class Variable(Name):
 
     def copy(
         self,
-        identifier: StrID = None,
-        negative: bool = None,
-        immutable: bool = None,
-        type_: rty.Type = None,
-        location: Location = None,
+        identifier: Optional[StrID] = None,
+        negative: Optional[bool] = None,
+        immutable: Optional[bool] = None,
+        type_: Optional[rty.Type] = None,
+        location: Optional[Location] = None,
     ) -> Variable:
         return self.__class__(
             ID(identifier) if identifier is not None else self.identifier,
@@ -1359,7 +1373,9 @@ class Attribute(Name):
         return [self] if match(self) else self.prefix.findall(match)
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(-self if self.negative else self)
@@ -1559,7 +1575,9 @@ class Val(Attribute):
         raise NotImplementedError
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         return self
 
@@ -1620,7 +1638,7 @@ class Selected(Name):
         negative: bool = False,
         immutable: bool = False,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         assert not prefix.negative if isinstance(prefix, Name) else True
         self.prefix = prefix
@@ -1672,7 +1690,9 @@ class Selected(Name):
         return self.prefix.variables()
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -1715,12 +1735,12 @@ class Selected(Name):
 
     def copy(
         self,
-        prefix: Expr = None,
-        selector: StrID = None,
-        negative: bool = None,
-        immutable: bool = None,
-        type_: rty.Type = None,
-        location: Location = None,
+        prefix: Optional[Expr] = None,
+        selector: Optional[StrID] = None,
+        negative: Optional[bool] = None,
+        immutable: Optional[bool] = None,
+        type_: Optional[rty.Type] = None,
+        location: Optional[Location] = None,
     ) -> Selected:
         return self.__class__(
             prefix if prefix is not None else self.prefix,
@@ -1736,12 +1756,12 @@ class Call(Name):
     def __init__(
         self,
         identifier: StrID,
-        args: Sequence[Expr] = None,
+        args: Optional[Sequence[Expr]] = None,
         negative: bool = False,
         immutable: bool = False,
         type_: rty.Type = rty.Undefined(),
-        argument_types: Sequence[rty.Type] = None,
-        location: Location = None,
+        argument_types: Optional[Sequence[rty.Type]] = None,
+        location: Optional[Location] = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.args = args or []
@@ -1840,7 +1860,9 @@ class Call(Name):
         ]
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -1910,7 +1932,7 @@ UNDEFINED = UndefinedExpr()
 
 
 class Aggregate(Expr):
-    def __init__(self, *elements: Expr, location: Location = None) -> None:
+    def __init__(self, *elements: Expr, location: Optional[Location] = None) -> None:
         super().__init__(rty.Aggregate(rty.common_type([e.type_ for e in elements])), location)
         self.elements = list(elements)
 
@@ -1939,7 +1961,9 @@ class Aggregate(Expr):
         return Precedence.LITERAL
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -1967,7 +1991,7 @@ class Aggregate(Expr):
 
 
 class String(Aggregate):
-    def __init__(self, data: str, location: Location = None) -> None:
+    def __init__(self, data: str, location: Optional[Location] = None) -> None:
         super().__init__(*[Number(ord(d)) for d in data], location=location)
         self.data = data
 
@@ -1982,7 +2006,9 @@ class String(Aggregate):
         return Precedence.LITERAL
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         return func(self)
@@ -2041,7 +2067,7 @@ class NamedAggregate(Expr):
 
 
 class Relation(BinExpr):
-    def __init__(self, left: Expr, right: Expr, location: Location = None) -> None:
+    def __init__(self, left: Expr, right: Expr, location: Optional[Location] = None) -> None:
         super().__init__(left, right, rty.BOOLEAN, location)
 
     @abstractmethod
@@ -2292,7 +2318,9 @@ class NotIn(Relation):
 
 class IfExpr(Expr):
     def __init__(
-        self, condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Expr = None
+        self,
+        condition_expressions: Sequence[tuple[Expr, Expr]],
+        else_expression: Optional[Expr] = None,
     ) -> None:
         super().__init__()
         self.condition_expressions = condition_expressions
@@ -2334,7 +2362,9 @@ class IfExpr(Expr):
         return Precedence.LITERAL
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2428,7 +2458,7 @@ class QuantifiedExpr(Expr):
         parameter_identifier: StrID,
         iterable: Expr,
         predicate: Expr,
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(rty.BOOLEAN, location)
         self.parameter_identifier = ID(parameter_identifier)
@@ -2494,7 +2524,9 @@ class QuantifiedExpr(Expr):
         raise NotImplementedError
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2555,7 +2587,7 @@ class ForSomeIn(QuantifiedExpr):
 
 
 class ValueRange(Expr):
-    def __init__(self, lower: Expr, upper: Expr, location: Location = None):
+    def __init__(self, lower: Expr, upper: Expr, location: Optional[Location] = None):
         super().__init__(rty.Any(), location)
         self.lower = lower
         self.upper = upper
@@ -2577,7 +2609,9 @@ class ValueRange(Expr):
         raise NotImplementedError
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2608,8 +2642,8 @@ class Conversion(Expr):
         identifier: StrID,
         argument: Expr,
         type_: rty.Type = rty.Undefined(),
-        argument_types: Sequence[rty.Type] = None,
-        location: Location = None,
+        argument_types: Optional[Sequence[rty.Type]] = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(type_, location)
         self.identifier = ID(identifier)
@@ -2670,7 +2704,9 @@ class Conversion(Expr):
         return Precedence.LITERAL
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2752,7 +2788,7 @@ class Comprehension(Expr):
         sequence: Expr,
         selector: Expr,
         condition: Expr,
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(rty.Aggregate(selector.type_), location)
         self.iterator = ID(iterator)
@@ -2799,7 +2835,9 @@ class Comprehension(Expr):
         )
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2842,7 +2880,7 @@ class MessageAggregate(Expr):
         identifier: StrID,
         field_values: Mapping[StrID, Expr],
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(type_, location)
         self.identifier = ID(identifier)
@@ -2952,7 +2990,9 @@ class MessageAggregate(Expr):
         )
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2993,7 +3033,7 @@ class DeltaMessageAggregate(Expr):
         identifier: StrID,
         field_values: Mapping[StrID, Expr],
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(type_, location)
         self.identifier = ID(identifier)
@@ -3085,7 +3125,9 @@ class DeltaMessageAggregate(Expr):
         )
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -3119,7 +3161,9 @@ class DeltaMessageAggregate(Expr):
 
 
 class Binding(Expr):
-    def __init__(self, expr: Expr, data: Mapping[StrID, Expr], location: Location = None) -> None:
+    def __init__(
+        self, expr: Expr, data: Mapping[StrID, Expr], location: Optional[Location] = None
+    ) -> None:
         super().__init__(expr.type_, location)
         self.expr = expr
         self.data = {ID(k): v for k, v in data.items()}
@@ -3164,7 +3208,9 @@ class Binding(Expr):
         return self.expr.substituted(mapping=facts).simplified()
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -3194,7 +3240,7 @@ class Binding(Expr):
 
 
 def substitution(
-    mapping: Mapping[Name, Expr], func: Callable[[Expr], Expr] = None
+    mapping: Mapping[Name, Expr], func: Optional[Callable[[Expr], Expr]] = None
 ) -> Callable[[Expr], Expr]:
     if func:
         return func
@@ -3241,7 +3287,7 @@ class CaseExpr(Expr):
         self,
         expr: Expr,
         choices: Sequence[tuple[Sequence[Union[ID, Number]], Expr]],
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(rty.Undefined(), location)
         self.expr = expr
@@ -3474,7 +3520,9 @@ class CaseExpr(Expr):
         )
 
     def substituted(
-        self, func: Callable[[Expr], Expr] = None, mapping: Mapping[Name, Expr] = None
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)

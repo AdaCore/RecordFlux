@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 import rflx.typing_ as rty
 from rflx.common import Base
@@ -16,7 +16,7 @@ from . import type_ as mty
 class Declaration(Base):
     DESCRIPTIVE_NAME: ClassVar[str]
 
-    def __init__(self, identifier: StrID, location: Location = None):
+    def __init__(self, identifier: StrID, location: Optional[Location] = None):
         self.identifier = ID(identifier)
         self.location = location
         self._refcount = 0
@@ -53,7 +53,7 @@ class TypeCheckableDeclaration(Declaration):
         identifier: StrID,
         type_identifier: StrID,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ):
         super().__init__(identifier, location)
         self._type_identifier = ID(type_identifier)
@@ -86,9 +86,9 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         self,
         identifier: StrID,
         type_identifier: StrID,
-        expression: Expr = None,
+        expression: Optional[Expr] = None,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ):
         super().__init__(identifier, type_identifier, type_, location)
         self.expression = expression
@@ -123,7 +123,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         type_identifier: StrID,
         expression: Selected,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ):
         super().__init__(identifier, type_identifier, type_, location)
         self.expression = expression
@@ -208,7 +208,7 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         arguments: Sequence[Argument],
         return_type: StrID,
         type_: rty.Type = rty.Undefined(),
-        location: Location = None,
+        location: Optional[Location] = None,
     ):
         super().__init__(identifier, return_type, type_, location)
         self._arguments = arguments
@@ -243,7 +243,7 @@ class ChannelDeclaration(FormalDeclaration):
         identifier: StrID,
         readable: bool = False,
         writable: bool = False,
-        location: Location = None,
+        location: Optional[Location] = None,
     ):
         assert readable or writable
         super().__init__(identifier, location)

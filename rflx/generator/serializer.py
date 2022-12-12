@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from enum import Enum
+from typing import Optional
 
 from rflx import expression as expr
 from rflx.ada import (
@@ -1777,7 +1778,7 @@ class SerializerGenerator:
         ]
 
     def composite_setter_preconditions(
-        self, message: Message, field: Field, size: Expr = None
+        self, message: Message, field: Field, size: Optional[Expr] = None
     ) -> list[Expr]:
         return [
             common.sufficient_space_for_field_condition(
@@ -1849,7 +1850,9 @@ class SerializerGenerator:
         )
 
     @staticmethod
-    def _update_last(message: Message = None, field: Field = None) -> list[Statement]:
+    def _update_last(
+        message: Optional[Message] = None, field: Optional[Field] = None
+    ) -> list[Statement]:
         assert (message and field) or not (message or field)
         last = (
             Variable("Last")

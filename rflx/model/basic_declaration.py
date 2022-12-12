@@ -1,3 +1,5 @@
+from typing import Optional
+
 from rflx.common import Base
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID
@@ -5,7 +7,10 @@ from rflx.identifier import ID, StrID
 
 class BasicDeclaration(Base):
     def __init__(
-        self, identifier: StrID, location: Location = None, error: RecordFluxError = None
+        self,
+        identifier: StrID,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
     ) -> None:
         identifier = ID(identifier)
         self.error = error or RecordFluxError()

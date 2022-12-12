@@ -11,7 +11,7 @@ Self = TypeVar("Self", bound="ID")
 
 class ID:
     def __init__(
-        self, identifier: Union[str, Sequence[str], ID], location: Location = None
+        self, identifier: Union[str, Sequence[str], ID], location: Optional[Location] = None
     ) -> None:
         self._parts: Sequence[str]
         self.location = location

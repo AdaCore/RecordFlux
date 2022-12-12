@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections import abc
 from pathlib import Path
+from typing import Optional
 
 import rflx.typing_ as rty
 from rflx import const, expression as expr
@@ -58,7 +59,9 @@ class Type(BasicDeclaration):
 
 
 class Scalar(Type):
-    def __init__(self, identifier: StrID, size: expr.Expr, location: Location = None) -> None:
+    def __init__(
+        self, identifier: StrID, size: expr.Expr, location: Optional[Location] = None
+    ) -> None:
         super().__init__(identifier, location)
         self._size = size
 
@@ -91,7 +94,7 @@ class Integer(Scalar):
         first: expr.Expr,
         last: expr.Expr,
         size: expr.Expr,
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, size, location)
 
@@ -268,7 +271,7 @@ class Enumeration(Scalar):
         literals: abc.Sequence[tuple[StrID, expr.Number]],
         size: expr.Expr,
         always_valid: bool,
-        location: Location = None,
+        location: Optional[Location] = None,
     ) -> None:
         # pylint: disable=too-many-branches, too-many-locals
         super().__init__(identifier, size, location)
@@ -468,7 +471,9 @@ class Composite(Type):
 
 
 class Sequence(Composite):
-    def __init__(self, identifier: StrID, element_type: Type, location: Location = None) -> None:
+    def __init__(
+        self, identifier: StrID, element_type: Type, location: Optional[Location] = None
+    ) -> None:
         super().__init__(identifier, location)
         self.element_type = element_type
 
@@ -574,7 +579,7 @@ class Sequence(Composite):
 
 
 class Opaque(Composite):
-    def __init__(self, location: Location = None) -> None:
+    def __init__(self, location: Optional[Location] = None) -> None:
         super().__init__(const.INTERNAL_PACKAGE * "Opaque", location)
 
     def __repr__(self) -> str:
@@ -628,7 +633,7 @@ def is_builtin_type(identifier: StrID) -> bool:
     )
 
 
-def internal_type_identifier(identifier: ID, package: ID = None) -> ID:
+def internal_type_identifier(identifier: ID, package: Optional[ID] = None) -> ID:
     """
     Return the internal identifier of a type.
 

@@ -7,6 +7,7 @@ from collections import abc
 from concurrent.futures import ProcessPoolExecutor
 from datetime import date
 from pathlib import Path
+from typing import Optional
 
 import pkg_resources
 
@@ -294,11 +295,11 @@ class Generator:
     def _create_unit(  # pylint: disable = too-many-arguments
         self,
         identifier: ID,
-        declaration_context: abc.Sequence[ContextItem] = None,
-        body_context: abc.Sequence[ContextItem] = None,
-        formal_parameters: list[FormalDeclaration] = None,
-        configuration_pragmas: abc.Sequence[Pragma] = None,
-        aspects: abc.Sequence[Aspect] = None,
+        declaration_context: Optional[abc.Sequence[ContextItem]] = None,
+        body_context: Optional[abc.Sequence[ContextItem]] = None,
+        formal_parameters: Optional[list[FormalDeclaration]] = None,
+        configuration_pragmas: Optional[abc.Sequence[Pragma]] = None,
+        aspects: Optional[abc.Sequence[Aspect]] = None,
         terminating: bool = True,
     ) -> PackageUnit:
         declaration_context = declaration_context if declaration_context else []
