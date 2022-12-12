@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import textwrap
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Union
+from typing import Optional, Union
 
 import librflxlang as lang
 import pytest
@@ -44,8 +44,8 @@ def assert_message_model_error(
     structure: Sequence[Link],
     types: Mapping[Field, Type],
     regex: str,
-    checksums: Mapping[ID, Sequence[Expr]] = None,
-    location: Location = None,
+    checksums: Optional[Mapping[ID, Sequence[Expr]]] = None,
+    location: Optional[Location] = None,
 ) -> None:
     check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
@@ -128,7 +128,9 @@ def assert_equal_code(
 
 
 def assert_compilable_code_specs(
-    spec_files: Iterable[Union[str, pathlib.Path]], tmp_path: pathlib.Path, prefix: str = None
+    spec_files: Iterable[Union[str, pathlib.Path]],
+    tmp_path: pathlib.Path,
+    prefix: Optional[str] = None,
 ) -> None:
     parser = Parser()
 
@@ -139,7 +141,7 @@ def assert_compilable_code_specs(
 
 
 def assert_compilable_code_string(
-    specification: str, tmp_path: pathlib.Path, prefix: str = None
+    specification: str, tmp_path: pathlib.Path, prefix: Optional[str] = None
 ) -> None:
     parser = Parser()
     parser.parse_string(specification)
@@ -151,8 +153,8 @@ def assert_compilable_code(  # pylint: disable = too-many-arguments
     model: Model,
     integration: Integration,
     tmp_path: pathlib.Path,
-    main: str = None,
-    prefix: str = None,
+    main: Optional[str] = None,
+    prefix: Optional[str] = None,
     debug: Debug = Debug.BUILTIN,
     mode: str = "strict",
 ) -> None:
@@ -175,7 +177,7 @@ def assert_executable_code(
     integration: Integration,
     tmp_path: pathlib.Path,
     main: str = MAIN,
-    prefix: str = None,
+    prefix: Optional[str] = None,
     debug: Debug = Debug.BUILTIN,
 ) -> str:
     assert_compilable_code(
@@ -198,7 +200,10 @@ def assert_executable_code(
 
 
 def assert_provable_code_string(
-    specification: str, tmp_path: pathlib.Path, prefix: str = None, units: Sequence[str] = None
+    specification: str,
+    tmp_path: pathlib.Path,
+    prefix: Optional[str] = None,
+    units: Optional[Sequence[str]] = None,
 ) -> None:
     parser = Parser()
     parser.parse_string(specification)
@@ -210,9 +215,9 @@ def assert_provable_code(
     model: Model,
     integration: Integration,
     tmp_path: pathlib.Path,
-    main: str = None,
-    prefix: str = None,
-    units: Sequence[str] = None,
+    main: Optional[str] = None,
+    prefix: Optional[str] = None,
+    units: Optional[Sequence[str]] = None,
 ) -> None:
     _create_files(tmp_path, model, integration, main, prefix)
 
@@ -241,8 +246,8 @@ def _create_files(
     tmp_path: pathlib.Path,
     model: Model,
     integration: Integration,
-    main: str = None,
-    prefix: str = None,
+    main: Optional[str] = None,
+    prefix: Optional[str] = None,
     debug: Debug = Debug.BUILTIN,
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
@@ -292,10 +297,10 @@ def _create_files(
 
 
 def session_main(
-    input_channels: dict[str, Sequence[tuple[int, ...]]] = None,
-    output_channels: Sequence[str] = None,
-    context: Sequence[ada.ContextItem] = None,
-    subprograms: Sequence[ada.SubprogramBody] = None,
+    input_channels: Optional[dict[str, Sequence[tuple[int, ...]]]] = None,
+    output_channels: Optional[Sequence[str]] = None,
+    context: Optional[Sequence[ada.ContextItem]] = None,
+    subprograms: Optional[Sequence[ada.SubprogramBody]] = None,
     session_package: StrID = "RFLX.Test.Session",
 ) -> Mapping[str, str]:
     input_channels = input_channels or {}

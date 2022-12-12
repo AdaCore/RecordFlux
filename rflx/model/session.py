@@ -21,8 +21,8 @@ class Transition(Base):
         self,
         target: StrID,
         condition: expr.Expr = expr.TRUE,
-        description: str = None,
-        location: Location = None,
+        description: Optional[str] = None,
+        location: Optional[Location] = None,
     ):
         self.target = ID(target)
         self.condition = condition
@@ -45,12 +45,12 @@ class State(Base):
     def __init__(
         self,
         identifier: StrID,
-        transitions: Sequence[Transition] = None,
-        exception_transition: Transition = None,
-        actions: Sequence[stmt.Statement] = None,
-        declarations: Sequence[decl.BasicDeclaration] = None,
-        description: str = None,
-        location: Location = None,
+        transitions: Optional[Sequence[Transition]] = None,
+        exception_transition: Optional[Transition] = None,
+        actions: Optional[Sequence[stmt.Statement]] = None,
+        declarations: Optional[Sequence[decl.BasicDeclaration]] = None,
+        description: Optional[str] = None,
+        location: Optional[Location] = None,
     ):
         # pylint: disable=too-many-arguments
 
@@ -307,7 +307,7 @@ class AbstractSession(BasicDeclaration):
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[mty.Type],
-        location: Location = None,
+        location: Optional[Location] = None,
     ):
         super().__init__(identifier, location)
         self.states = [*states, FINAL_STATE] if FINAL_STATE not in states else states
@@ -432,7 +432,7 @@ class Session(AbstractSession):
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[mty.Type],
-        location: Location = None,
+        location: Optional[Location] = None,
     ):
         super().__init__(
             identifier,
@@ -849,7 +849,7 @@ class UnprovenSession(AbstractSession):
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[mty.Type],
-        location: Location = None,
+        location: Optional[Location] = None,
     ):
         # pylint: disable=useless-super-delegation
         super().__init__(

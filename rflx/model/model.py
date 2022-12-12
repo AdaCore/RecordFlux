@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Optional
 
 from rflx import const
 from rflx.common import Base, unique, verbose_repr
@@ -14,7 +15,9 @@ from .package import Package
 
 class Model(Base):
     def __init__(
-        self, types: Sequence[type_.Type] = None, sessions: Sequence[session.Session] = None
+        self,
+        types: Optional[Sequence[type_.Type]] = None,
+        sessions: Optional[Sequence[session.Session]] = None,
     ) -> None:
         self._types = types or []
         self._sessions = sessions or []

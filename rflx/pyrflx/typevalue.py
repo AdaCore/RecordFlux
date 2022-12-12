@@ -145,7 +145,10 @@ class TypeValue(Base):
 
     @classmethod
     def construct(
-        cls, vtype: Type, imported: bool = False, refinements: abc.Sequence[RefinementValue] = None
+        cls,
+        vtype: Type,
+        imported: bool = False,
+        refinements: Optional[abc.Sequence[RefinementValue]] = None,
     ) -> TypeValue:
         if isinstance(vtype, Integer):
             return IntegerValue(vtype)
@@ -551,10 +554,10 @@ class MessageValue(TypeValue):
     def __init__(
         self,
         model: Message,
-        refinements: abc.Sequence[RefinementValue] = None,
+        refinements: Optional[abc.Sequence[RefinementValue]] = None,
         skip_verification: bool = False,
-        parameters: abc.Mapping[Name, Expr] = None,
-        state: MessageValue.State = None,
+        parameters: Optional[abc.Mapping[Name, Expr]] = None,
+        state: Optional[MessageValue.State] = None,
     ) -> None:
         super().__init__(model)
         self._skip_verification = skip_verification
@@ -919,7 +922,7 @@ class MessageValue(TypeValue):
         self,
         field_name: str,
         value: Union[bytes, int, str, abc.Sequence[TypeValue], Bitstring],
-        message_size: int = None,
+        message_size: Optional[int] = None,
     ) -> None:
         def set_refinement(fld: MessageValue.Field, fld_name: str) -> None:
             if isinstance(fld.typeval, OpaqueValue):
@@ -1292,7 +1295,7 @@ class MessageValue(TypeValue):
         )
 
     def _update_simplified_mapping(
-        self, message_size: int = None, field: Optional[Field] = None
+        self, message_size: Optional[int] = None, field: Optional[Field] = None
     ) -> None:
         if field:
             if isinstance(field.typeval, ScalarValue):
@@ -1412,10 +1415,10 @@ class MessageValue(TypeValue):
             self,
             type_value: TypeValue,
             name: str = "",
-            name_variable: Variable = None,
-            name_first: First = None,
-            name_last: Last = None,
-            name_size: Size = None,
+            name_variable: Optional[Variable] = None,
+            name_first: Optional[First] = None,
+            name_last: Optional[Last] = None,
+            name_size: Optional[Size] = None,
         ):
             # pylint: disable=too-many-arguments
             assert name or (name_variable and name_first and name_last and name_size)

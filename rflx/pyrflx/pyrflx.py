@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from rflx.error import FatalError
 from rflx.identifier import ID, StrID
@@ -21,7 +21,7 @@ class PyRFLX:
     def __init__(
         self,
         model: Model,
-        checksum_functions: Mapping[StrID, Mapping[str, ChecksumFunction]] = None,
+        checksum_functions: Optional[Mapping[StrID, Mapping[str, ChecksumFunction]]] = None,
         skip_message_verification: bool = False,
     ) -> None:
         self._packages: dict[str, Package] = {}

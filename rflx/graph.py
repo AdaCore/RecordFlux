@@ -4,6 +4,7 @@ import logging
 import re
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Optional
 
 from pydotplus import Dot, Edge, Node
 
@@ -82,7 +83,7 @@ def create_message_graph(message: Message) -> Dot:
     return result
 
 
-def create_session_graph(session: AbstractSession, ignore: Sequence[str] = None) -> Dot:
+def create_session_graph(session: AbstractSession, ignore: Optional[Sequence[str]] = None) -> Dot:
     """
     Return pydot graph representation of session.
 

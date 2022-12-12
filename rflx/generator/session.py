@@ -1861,7 +1861,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     def _evaluate_declarations(
         self,
         declarations: Iterable[decl.BasicDeclaration],
-        is_global: Callable[[ID], bool] = None,
+        is_global: Optional[Callable[[ID], bool]] = None,
         session_global: bool = False,
     ) -> EvaluatedDeclaration:
         if session_global:
@@ -1980,7 +1980,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         type_: rty.Type,
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
-        expression: expr.Expr = None,
+        expression: Optional[expr.Expr] = None,
         constant: bool = False,
         session_global: bool = False,
     ) -> EvaluatedDeclaration:
@@ -3419,7 +3419,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
 
         def check(
-            sequence_type: ID, required_space: Expr, precondition: Expr = None
+            sequence_type: ID, required_space: Expr, precondition: Optional[Expr] = None
         ) -> list[Statement]:
             return [
                 *(
@@ -4387,8 +4387,8 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         get_preconditions: Expr,
         get_statements: Sequence[Statement],
         length: Expr,
-        pre_declarations: Sequence[Declaration] = None,
-        post_statements: Sequence[Statement] = None,
+        pre_declarations: Optional[Sequence[Declaration]] = None,
+        post_statements: Optional[Sequence[Statement]] = None,
     ) -> Declare:
         pre_declarations = pre_declarations if pre_declarations else []
         post_statements = post_statements if post_statements else []
@@ -5181,7 +5181,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
     @staticmethod
     def _take_buffer(
-        identifier: ID, type_: ID, is_global: Callable[[ID], bool], buf: ID = None
+        identifier: ID, type_: ID, is_global: Callable[[ID], bool], buf: Optional[ID] = None
     ) -> Sequence[Statement]:
         context = context_id(identifier, is_global)
         buf = buf or buffer_id(identifier)
@@ -5264,10 +5264,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         identifier: ID,
         type_: ID,
         is_global: Callable[[ID], bool],
-        first: Expr = None,
-        last: Expr = None,
-        parameters: Mapping[ID, Expr] = None,
-        written_last: Expr = None,
+        first: Optional[Expr] = None,
+        last: Optional[Expr] = None,
+        parameters: Optional[Mapping[ID, Expr]] = None,
+        written_last: Optional[Expr] = None,
     ) -> CallStatement:
         return CallStatement(
             type_ * "Initialize",
@@ -5348,7 +5348,10 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return copy
 
     def _convert_type(
-        self, expression: expr.Expr, target_type: rty.Type, expression_type: rty.Type = None
+        self,
+        expression: expr.Expr,
+        target_type: rty.Type,
+        expression_type: Optional[rty.Type] = None,
     ) -> expr.Expr:
         if not expression_type:
             expression_type = expression.type_

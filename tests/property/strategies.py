@@ -352,7 +352,7 @@ def models(draw: Draw) -> Model:
 
 
 @st.composite
-def numbers(draw: Draw, min_value: int = 0, max_value: int = None) -> expr.Number:
+def numbers(draw: Draw, min_value: int = 0, max_value: Optional[int] = None) -> expr.Number:
     return expr.Number(draw(st.integers(min_value=min_value, max_value=max_value)))
 
 

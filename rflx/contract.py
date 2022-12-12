@@ -33,7 +33,7 @@ else:
     def require(  # type: ignore[no-redef,misc]
         condition: ty.Callable[..., Any],  # noqa: PEA001
         description: Optional[str] = None,
-        a_repr: reprlib.Repr = None,
+        a_repr: Optional[reprlib.Repr] = None,
         enabled: bool = __debug__,
         error: Optional[Union[ty.Callable[..., Exception], type]] = None,  # noqa: PEA001
     ) -> Callable:  # type: ignore[type-arg]
@@ -49,7 +49,7 @@ else:
     def ensure(  # type: ignore[no-redef,misc]
         condition: ty.Callable[..., Any],  # noqa: PEA001
         description: Optional[str] = None,
-        a_repr: reprlib.Repr = None,
+        a_repr: Optional[reprlib.Repr] = None,
         enabled: bool = __debug__,
         error: Optional[Union[ty.Callable[..., Exception], type]] = None,  # noqa: PEA001
     ) -> Callable:  # type: ignore[type-arg]
@@ -58,7 +58,7 @@ else:
     def invariant(  # type: ignore[no-redef,misc]
         condition: ty.Callable[..., Any],  # noqa: PEA001
         description: Optional[str] = None,
-        a_repr: reprlib.Repr = None,
+        a_repr: Optional[reprlib.Repr] = None,
         enabled: bool = __debug__,
         error: Optional[Union[ty.Callable[..., Exception], type]] = None,  # noqa: PEA001
     ) -> Callable:  # type: ignore[type-arg]

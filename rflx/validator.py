@@ -25,7 +25,7 @@ class Validator:
     def __init__(
         self,
         files: Iterable[Union[str, Path]],
-        checksum_module: str = None,
+        checksum_module: Optional[str] = None,
         skip_model_verification: bool = False,
         skip_message_verification: bool = False,
         split_disjunctions: bool = False,
@@ -63,9 +63,9 @@ class Validator:
     def validate(
         self,
         message_identifier: ID,
-        directory_invalid: Path = None,
-        directory_valid: Path = None,
-        json_output: Path = None,
+        directory_invalid: Optional[Path] = None,
+        directory_valid: Optional[Path] = None,
+        json_output: Optional[Path] = None,
         abort_on_error: bool = False,
         coverage: bool = False,
         target_coverage: float = 0.00,

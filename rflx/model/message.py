@@ -119,11 +119,11 @@ class AbstractMessage(mty.Type):
         identifier: StrID,
         structure: Sequence[Link],
         types: Mapping[Field, mty.Type],
-        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
-        state: MessageState = None,
+        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
+        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
+        state: Optional[MessageState] = None,
     ) -> None:
         super().__init__(identifier, location, error)
 
@@ -244,13 +244,13 @@ class AbstractMessage(mty.Type):
     @abstractmethod
     def copy(
         self,
-        identifier: StrID = None,
-        structure: Sequence[Link] = None,
-        types: Mapping[Field, mty.Type] = None,
-        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
+        identifier: Optional[StrID] = None,
+        structure: Optional[Sequence[Link]] = None,
+        types: Optional[Mapping[Field, mty.Type]] = None,
+        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
+        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
     ) -> AbstractMessage:
         raise NotImplementedError
 
@@ -853,11 +853,11 @@ class Message(AbstractMessage):
         identifier: StrID,
         structure: Sequence[Link],
         types: Mapping[Field, mty.Type],
-        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
-        state: MessageState = None,
+        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
+        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
+        state: Optional[MessageState] = None,
         skip_proof: bool = False,
         workers: int = 1,
     ) -> None:
@@ -901,13 +901,13 @@ class Message(AbstractMessage):
 
     def copy(
         self,
-        identifier: StrID = None,
-        structure: Sequence[Link] = None,
-        types: Mapping[Field, mty.Type] = None,
-        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
+        identifier: Optional[StrID] = None,
+        structure: Optional[Sequence[Link]] = None,
+        types: Optional[Mapping[Field, mty.Type]] = None,
+        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
+        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
     ) -> Message:
         return Message(
             identifier if identifier else self.identifier,
@@ -1000,8 +1000,8 @@ class Message(AbstractMessage):
 
     def size(
         self,
-        field_values: Mapping[Field, expr.Expr] = None,
-        message_instance: ID = None,
+        field_values: Optional[Mapping[Field, expr.Expr]] = None,
+        message_instance: Optional[ID] = None,
         subpath: bool = False,
     ) -> expr.Expr:
         # pylint: disable-next = too-many-locals
@@ -1425,7 +1425,7 @@ class Message(AbstractMessage):
                 self._check_first_expression(l, l.first.location)
                 self._check_size_expression(l)
 
-    def _check_attributes(self, expression: expr.Expr, location: Location = None) -> None:
+    def _check_attributes(self, expression: expr.Expr, location: Optional[Location] = None) -> None:
         for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):
             if isinstance(a, expr.Size) and not (
                 (
@@ -1448,7 +1448,7 @@ class Message(AbstractMessage):
                     ],
                 )
 
-    def _check_first_expression(self, link: Link, location: Location = None) -> None:
+    def _check_first_expression(self, link: Link, location: Optional[Location] = None) -> None:
         if link.first != expr.UNDEFINED and not isinstance(link.first, expr.First):
             self.error.extend(
                 [
@@ -2165,12 +2165,12 @@ class DerivedMessage(Message):
         self,
         identifier: StrID,
         base: Message,
-        structure: Sequence[Link] = None,
-        types: Mapping[Field, mty.Type] = None,
-        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
+        structure: Optional[Sequence[Link]] = None,
+        types: Optional[Mapping[Field, mty.Type]] = None,
+        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
+        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
     ) -> None:
         super().__init__(
             identifier,
@@ -2185,13 +2185,13 @@ class DerivedMessage(Message):
 
     def copy(
         self,
-        identifier: StrID = None,
-        structure: Sequence[Link] = None,
-        types: Mapping[Field, mty.Type] = None,
-        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
+        identifier: Optional[StrID] = None,
+        structure: Optional[Sequence[Link]] = None,
+        types: Optional[Mapping[Field, mty.Type]] = None,
+        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
+        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
     ) -> DerivedMessage:
         return DerivedMessage(
             identifier if identifier else self.identifier,
@@ -2212,13 +2212,13 @@ class UnprovenMessage(AbstractMessage):
     # pylint: disable=too-many-arguments
     def copy(
         self,
-        identifier: StrID = None,
-        structure: Sequence[Link] = None,
-        types: Mapping[Field, mty.Type] = None,
-        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
+        identifier: Optional[StrID] = None,
+        structure: Optional[Sequence[Link]] = None,
+        types: Optional[Mapping[Field, mty.Type]] = None,
+        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
+        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
     ) -> UnprovenMessage:
         return UnprovenMessage(
             identifier if identifier else self.identifier,
@@ -2246,7 +2246,7 @@ class UnprovenMessage(AbstractMessage):
 
     @ensure(lambda result: valid_message_field_types(result))
     def merged(
-        self, message_arguments: Mapping[ID, Mapping[ID, expr.Expr]] = None
+        self, message_arguments: Optional[Mapping[ID, Mapping[ID, expr.Expr]]] = None
     ) -> UnprovenMessage:
         message_arguments = message_arguments or {}
         message = self
@@ -2525,12 +2525,12 @@ class UnprovenDerivedMessage(UnprovenMessage):
         self,
         identifier: StrID,
         base: Union[UnprovenMessage, Message],
-        structure: Sequence[Link] = None,
-        types: Mapping[Field, mty.Type] = None,
-        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
+        structure: Optional[Sequence[Link]] = None,
+        types: Optional[Mapping[Field, mty.Type]] = None,
+        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
+        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
     ) -> None:
         super().__init__(
             identifier,
@@ -2565,13 +2565,13 @@ class UnprovenDerivedMessage(UnprovenMessage):
 
     def copy(
         self,
-        identifier: StrID = None,
-        structure: Sequence[Link] = None,
-        types: Mapping[Field, mty.Type] = None,
-        checksums: Mapping[ID, Sequence[expr.Expr]] = None,
-        byte_order: Union[ByteOrder, Mapping[Field, ByteOrder]] = None,
-        location: Location = None,
-        error: RecordFluxError = None,
+        identifier: Optional[StrID] = None,
+        structure: Optional[Sequence[Link]] = None,
+        types: Optional[Mapping[Field, mty.Type]] = None,
+        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
+        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
     ) -> UnprovenDerivedMessage:
         return UnprovenDerivedMessage(
             identifier if identifier else self.identifier,
@@ -2606,8 +2606,8 @@ class Refinement(mty.Type):
         field: Field,
         sdu: Message,
         condition: expr.Expr = expr.TRUE,
-        location: Location = None,
-        error: RecordFluxError = None,
+        location: Optional[Location] = None,
+        error: Optional[RecordFluxError] = None,
     ) -> None:
         super().__init__(
             ID(package) * "__REFINEMENT__"

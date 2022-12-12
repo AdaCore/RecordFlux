@@ -173,7 +173,7 @@ def check_code(
     block: str,
     code_type: Optional[CodeBlockType],
     indent: int,
-    subtype: str = None,
+    subtype: Optional[str] = None,
 ) -> None:
     assert lineno
     # Remove trailing empty line as this is an error for RecordFlux style checks. It could be
@@ -203,7 +203,7 @@ def parse(data: str, rule: str) -> None:
     error.propagate()
 
 
-def check_rflx_code(block: str, subtype: str = None) -> None:
+def check_rflx_code(block: str, subtype: Optional[str] = None) -> None:
     try:
         if subtype is None:
             parser = rflx.specification.Parser()
@@ -217,7 +217,7 @@ def check_rflx_code(block: str, subtype: str = None) -> None:
         raise CheckDocError(str(rflx_error)) from rflx_error
 
 
-def check_ada_code(block: str, subtype: str = None) -> None:
+def check_ada_code(block: str, subtype: Optional[str] = None) -> None:
     args = []
     unit = "main"
 
