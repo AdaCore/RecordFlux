@@ -998,13 +998,12 @@ class Message(AbstractMessage):
             and not any(isinstance(t, mty.Sequence) for t in self.types.values())
         )
 
-    def size(
+    def size(  # pylint: disable = too-many-locals
         self,
         field_values: Optional[Mapping[Field, expr.Expr]] = None,
         message_instance: Optional[ID] = None,
         subpath: bool = False,
     ) -> expr.Expr:
-        # pylint: disable-next = too-many-locals
         """
         Determine the size of the message based on the given field values.
 
