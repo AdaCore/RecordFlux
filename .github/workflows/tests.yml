@@ -10,9 +10,8 @@ concurrency:
     cancel-in-progress: true
 
 env:
-    MEMCACHED: localhost:11211
     ALIRE_VERSION: "1.2.0"
-    SPARK_VERSION: "23.0"
+    SPARK_VERSION: "24.0w-20221214"
     GNAT_VERSION: "23.0w-20220723"
 
 jobs:
@@ -441,20 +440,14 @@ jobs:
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
-    - name: Connect to Memcached server
-      shell: bash
-      env:
-        SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
-        SERVER: ${{ secrets.MEMCACHED_SERVER }}
-      run: |
-        eval $(ssh-agent -s)
-        echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        ssh-keyscan $SERVER >> ~/.ssh/known_hosts
-        chmod 644 ~/.ssh/known_hosts
-        ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
-        echo "stats" | nc -q 1 localhost 11211
+    - name: Cache SPARK artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          build/gnatprove_cache
+        key: spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}
+        restore-keys: |
+          spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
     - name: Test
       run: |
         make test_${{ matrix.target }}
@@ -548,21 +541,15 @@ jobs:
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
-    - name: Connect to Memcached server
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
-      shell: bash
-      env:
-        SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
-        SERVER: ${{ secrets.MEMCACHED_SERVER }}
-      run: |
-        eval $(ssh-agent -s)
-        echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        ssh-keyscan $SERVER >> ~/.ssh/known_hosts
-        chmod 644 ~/.ssh/known_hosts
-        ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
-        echo "stats" | nc -q 1 localhost 11211
+    - name: Cache SPARK artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          build/gnatprove_cache
+          build/test/gnatprove
+        key: spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}
+        restore-keys: |
+          spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
     - name: Verify
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       env:
@@ -736,21 +723,15 @@ jobs:
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
-    - name: Connect to Memcached server
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
-      shell: bash
-      env:
-        SSH_KEY: ${{ secrets.MEMCACHED_SSH_KEY }}
-        SERVER: ${{ secrets.MEMCACHED_SERVER }}
-      run: |
-        eval $(ssh-agent -s)
-        echo "$SSH_KEY" | tr -d '\r' | ssh-add - &>/dev/null
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        ssh-keyscan $SERVER >> ~/.ssh/known_hosts
-        chmod 644 ~/.ssh/known_hosts
-        ssh -L 11211:localhost:11211 -N -T -f -o ExitOnForwardFailure=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=3 ci@$SERVER &>/dev/null
-        echo "stats" | nc -q 1 localhost 11211
+    - name: Cache SPARK artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          build/gnatprove_cache
+          examples/apps/${{ matrix.app }}/obj/gnatprove
+        key: spark-${{ matrix.app }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}
+        restore-keys: |
+          spark-${{ matrix.app }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
     - name: Verify
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
