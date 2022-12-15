@@ -9,6 +9,14 @@ PYTHON_STYLE_HEAD = 7f2584cd5e72fb6e7a80dcc8cce296f5821dcf8e
 SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
 
+# Use GNATprove's file-based caching by default and ensure the directory exists.
+GNATPROVE_CACHE ?= file:$(PWD)/$(BUILD_DIR)/gnatprove_cache
+
+ifneq (,$(findstring file:,$(GNATPROVE_CACHE)))
+GNATPROVE_CACHE_DIR = $(subst file:,,$(GNATPROVE_CACHE))
+endif
+
+export GNATPROVE_CACHE := $(GNATPROVE_CACHE)
 
 # Switch to a specific revision of the git repository.
 #
@@ -182,16 +190,19 @@ test_installation:
 
 prove: prove_tests prove_python_tests prove_apps
 
-prove_tests:
+prove_tests: $(GNATPROVE_CACHE_DIR)
 	$(MAKE) -C tests/spark prove
 
 prove_python_tests: export GNATPROVE_PROCS=1
-prove_python_tests:
+prove_python_tests: $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/verification
 
-prove_apps:
+prove_apps: $(GNATPROVE_CACHE_DIR)
 	$(MAKE) -C examples/apps/ping prove
 	$(MAKE) -C examples/apps/dhcp_client prove
+
+$(GNATPROVE_CACHE_DIR):
+	mkdir -p $(GNATPROVE_CACHE_DIR)
 
 install_devel:
 	tools/check_pip_version.py

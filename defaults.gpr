@@ -2,7 +2,7 @@ abstract project Defaults is
 
    type Build_Mode is ("strict", "asserts_enabled", "optimized");
    Mode : Build_Mode := external ("mode", "asserts_enabled");
-   Memcached := external ("MEMCACHED", "");
+   Cache := external ("GNATPROVE_CACHE", "");
    Procs := external ("GNATPROVE_PROCS", "");
 
    Compiler_Variant := external ("gnat", "");
@@ -44,12 +44,12 @@ abstract project Defaults is
       when others =>
    end case;
 
-   Memcached_Switch := "";
-   case Memcached is
+   Cache_Switch := "";
+   case Cache is
       when "" =>
          null;
       when others =>
-         Memcached_Switch := "--memcached-server=" & Memcached;
+         Cache_Switch := "--memcached-server=" & Cache;
    end case;
 
    Procs_Switch := "";
@@ -70,10 +70,10 @@ abstract project Defaults is
       "--warnings=error",
       -- https://github.com/Componolit/RecordFlux/issues/670
       -- "--proof-warnings",
-      "--no-axiom-guard",
+      "--function-sandboxing=off",
       "--counterexamples=off",
       Procs_Switch,
-      Memcached_Switch
+      Cache_Switch
    );
 
    Builder_Switches :=
