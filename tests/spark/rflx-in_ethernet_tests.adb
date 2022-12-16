@@ -24,7 +24,9 @@ package body RFLX.In_Ethernet_Tests is
      (others => 0);
 
    function Valid_Data_Length (L : RFLX_Builtin_Types.Length) return Boolean is
-      (L <= Data'Length);
+      (L <= Data'Length)
+   with
+      SPARK_Mode;
 
    procedure Write_Data (Buffer : out RFLX_Builtin_Types.Bytes) with
       SPARK_Mode,
