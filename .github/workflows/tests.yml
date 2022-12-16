@@ -440,17 +440,25 @@ jobs:
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
-    - name: Cache SPARK artifacts
-      uses: actions/cache@v3
+    - name: Restore SPARK cache
+      uses: actions/cache/restore@v3.2.2
       with:
         path: |
           build/gnatprove_cache
-        key: spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}
+        key: spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}-${{ github.run_attempt }}
         restore-keys: |
           spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
     - name: Test
       run: |
         make test_${{ matrix.target }}
+    - name: Save SPARK cache
+      uses: actions/cache/save@v3.2.2
+      if: always()
+      with:
+        path: |
+          build/gnatprove_cache
+        key: spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}-${{ github.run_attempt }}
+
 
   skip_check_spark:
     name: Skip Check SPARK
@@ -541,21 +549,29 @@ jobs:
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
-    - name: Cache SPARK artifacts
-      uses: actions/cache@v3
+    - name: Restore SPARK cache
+      uses: actions/cache/restore@v3.2.2
       with:
         path: |
           build/gnatprove_cache
           build/test/gnatprove
-        key: spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}
+        key: spark-${{ matrix.target }}-${{ matrix.test }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}-${{ github.run_attempt }}
         restore-keys: |
-          spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
+          spark-${{ matrix.target }}-${{ matrix.test }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
     - name: Verify
       if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       env:
         TEST: ${{ matrix.test }}
       run: |
         make prove_${{ matrix.target }}
+    - name: Save SPARK cache
+      uses: actions/cache/save@v3.2.2
+      if: always()
+      with:
+        path: |
+          build/gnatprove_cache
+          build/test/gnatprove
+        key: spark-${{ matrix.target }}-${{ matrix.test }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   skip_check_apps:
     name: Skip Check Apps
@@ -723,19 +739,27 @@ jobs:
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
-    - name: Cache SPARK artifacts
-      uses: actions/cache@v3
+    - name: Restore SPARK cache
+      uses: actions/cache/restore@v3.2.2
       with:
         path: |
           build/gnatprove_cache
           examples/apps/${{ matrix.app }}/obj/gnatprove
-        key: spark-${{ matrix.app }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}
+        key: spark-${{ matrix.app }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}-${{ github.run_attempt }}
         restore-keys: |
           spark-${{ matrix.app }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
     - name: Verify
       if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         make -C examples/apps/${{ matrix.app }} prove
+    - name: Save SPARK cache
+      uses: actions/cache/save@v3.2.2
+      if: always()
+      with:
+        path: |
+          build/gnatprove_cache
+          examples/apps/${{ matrix.app }}/obj/gnatprove
+        key: spark-${{ matrix.app }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   skip_check_specs:
     name: Skip Check Specs
