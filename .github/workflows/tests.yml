@@ -563,6 +563,10 @@ jobs:
       env:
         TEST: ${{ matrix.test }}
       run: |
+        # Reduce the number of parallel test processes to prevent insufficient memory.
+        # Since 24.0w-20221214 there is a gnatwhy3 process that takes an awful lot of memory for one
+        # of the test cases.
+        test "${{ matrix.target}}" = "python_tests" && export TEST_PROCS=1 || true
         make prove_${{ matrix.target }}
     - name: Save SPARK cache
       uses: actions/cache/save@v3.2.2
