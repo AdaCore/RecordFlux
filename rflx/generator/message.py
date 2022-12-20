@@ -330,6 +330,7 @@ def create_valid_context_function(
             ExpressionFunctionDeclaration(
                 specification,
                 common.context_predicate(message, composite_fields, prefix),
+                [Postcondition(TRUE)],
             ),
             Pragma(
                 "Warnings",

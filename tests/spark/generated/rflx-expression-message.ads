@@ -601,7 +601,10 @@ private
                 then
                    Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = 16
                    and then Cursors (F_Payload).Predecessor = F_Initial
-                   and then Cursors (F_Payload).First = First));
+                   and then Cursors (F_Payload).First = First))
+    with
+     Post =>
+       True;
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
 

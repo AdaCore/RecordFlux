@@ -935,7 +935,10 @@ private
                                                        then
                                                           Cursors (F_AV_Enumeration_Vector).Last - Cursors (F_AV_Enumeration_Vector).First + 1 = 16
                                                           and then Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
-                                                          and then Cursors (F_AV_Enumeration_Vector).First = Cursors (F_Enumeration_Vector).Last + 1)))));
+                                                          and then Cursors (F_AV_Enumeration_Vector).First = Cursors (F_Enumeration_Vector).Last + 1)))))
+    with
+     Post =>
+       True;
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
 
