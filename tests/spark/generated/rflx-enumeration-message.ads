@@ -527,7 +527,10 @@ private
                 then
                    Cursors (F_Priority).Last - Cursors (F_Priority).First + 1 = 8
                    and then Cursors (F_Priority).Predecessor = F_Initial
-                   and then Cursors (F_Priority).First = First));
+                   and then Cursors (F_Priority).First = First))
+    with
+     Post =>
+       True;
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
 

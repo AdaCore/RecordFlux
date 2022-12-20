@@ -625,7 +625,10 @@ private
                                           then
                                              Cursors (F_Y).Last - Cursors (F_Y).First + 1 = 32
                                              and then Cursors (F_Y).Predecessor = F_X_B
-                                             and then Cursors (F_Y).First = Cursors (F_X_B).Last + 1))));
+                                             and then Cursors (F_Y).First = Cursors (F_X_B).Last + 1))))
+    with
+     Post =>
+       True;
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
 

@@ -593,7 +593,10 @@ private
                 then
                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last - First + 1)
                    and then Cursors (F_Data).Predecessor = F_Initial
-                   and then Cursors (F_Data).First = First));
+                   and then Cursors (F_Data).First = First))
+    with
+     Post =>
+       True;
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
 

@@ -668,7 +668,10 @@ private
                              then
                                 Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 24
                                 and then Cursors (F_Data).Predecessor = F_Message_Type
-                                and then Cursors (F_Data).First = Cursors (F_Message_Type).Last + 1)));
+                                and then Cursors (F_Data).First = Cursors (F_Message_Type).Last + 1)))
+    with
+     Post =>
+       True;
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
 

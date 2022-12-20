@@ -720,7 +720,10 @@ private
                              then
                                 Cursors (F_Extension).Last - Cursors (F_Extension).First + 1 = RFLX_Types.Bit_Length (Length) * 8
                                 and then Cursors (F_Extension).Predecessor = F_Data
-                                and then Cursors (F_Extension).First = Cursors (F_Data).Last + 1)));
+                                and then Cursors (F_Extension).First = Cursors (F_Data).Last + 1)))
+    with
+     Post =>
+       True;
 
    pragma Warnings (On, """Buffer"" is not modified, could be of access constant type");
 
