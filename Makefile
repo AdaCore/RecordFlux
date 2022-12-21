@@ -154,7 +154,7 @@ test_python_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered tests/unit tests/integration
 
 test_python_unit_coverage:
-	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov-branch --cov-fail-under=97.25 --cov-report=term-missing:skip-covered tests/unit
+	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov-branch --cov-fail-under=97.02 --cov-report=term-missing:skip-covered tests/unit
 
 test_apps:
 	$(MAKE) -C examples/apps/ping test_python
