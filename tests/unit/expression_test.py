@@ -2387,6 +2387,10 @@ def test_conversion_type_error() -> None:
     )
 
 
+def test_conversion_simplified() -> None:
+    assert Conversion("X", Add(Number(1), Number(2))).simplified() == Conversion("X", Number(3))
+
+
 def test_conversion_substituted() -> None:
     assert_equal(
         Conversion("X", Variable("Y")).substituted(
@@ -2466,6 +2470,12 @@ def test_comprehension_type_error() -> None:
         ),
         r'^<stdin>:10:20: model: error: undefined variable "Y"$',
     )
+
+
+def test_comprehension_simplified() -> None:
+    assert Comprehension(
+        "X", Variable("Y"), Add(Number(1), Number(2)), TRUE
+    ).simplified() == Comprehension("X", Variable("Y"), Number(3), TRUE)
 
 
 def test_comprehension_substituted() -> None:
@@ -2674,6 +2684,12 @@ def test_message_aggregate_type_error(
         MessageAggregate("X", field_values, type_=type_, location=Location((10, 20))),
         match,
     )
+
+
+def test_message_aggregate_simplified() -> None:
+    assert MessageAggregate(
+        "X", {"Y": Add(Number(1), Number(2)), "Z": Variable("B")}
+    ).simplified() == MessageAggregate("X", {"Y": Number(3), "Z": Variable("B")})
 
 
 def test_message_aggregate_substituted() -> None:
