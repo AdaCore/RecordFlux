@@ -1,0 +1,43 @@
+with Universal;
+
+package Test is
+
+   generic
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+   session Session is
+      M_R : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      M_S : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+   begin
+      state Start is
+      begin
+         Channel'Read (M_R); -- §S-S-A-RD-V
+      transition
+         goto Process
+            if M_R'Valid = True -- §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
+               and M_R.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+               and M_R.Length = 2 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+         goto null -- §S-S-T-N
+      end Start;
+
+      state Process is
+      begin
+         -- §S-S-A-A-MA, §S-E-A-T-SC, §S-E-A-E-L
+         M_S := Universal::Message'
+            (Message_Type => Universal::MT_Data,
+             Length => M_R'Size / 8,
+             Data => M_R'Opaque);
+      transition
+         goto Reply -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Process;
+
+      state Reply is
+      begin
+         Channel'Write (M_S); -- §S-S-A-WR-V
+      transition
+         goto null -- §S-S-T-N
+      end Reply;
+   end Session;
+
+end Test;
