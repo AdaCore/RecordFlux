@@ -1171,36 +1171,6 @@ def test_renaming_undefined() -> None:
     )
 
 
-def test_binding_as_function_parameter() -> None:
-    Session(
-        identifier="P::S",
-        states=[
-            State(
-                "Start",
-                transitions=[Transition(target=ID("null"))],
-                declarations=[],
-                actions=[
-                    stmt.VariableAssignment(
-                        "Result",
-                        expr.Binding(
-                            expr.Call("SubProg", [expr.Variable("Bound")]),
-                            {"Bound": expr.Variable("Variable")},
-                        ),
-                    )
-                ],
-            ),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Result", "Boolean"),
-            decl.VariableDeclaration("Variable", "Boolean"),
-        ],
-        parameters=[
-            decl.FunctionDeclaration("SubProg", [decl.Argument("P", "Boolean")], "Boolean"),
-        ],
-        types=[BOOLEAN],
-    )
-
-
 def test_for_all() -> None:
     Session(
         identifier="P::S",
@@ -1482,35 +1452,6 @@ def test_assignment_opaque_function_result() -> None:
                         "Data",
                         expr.Opaque(
                             expr.Call("Sub", [expr.Variable("Data")]),
-                        ),
-                    )
-                ],
-            ),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Data", "Opaque"),
-        ],
-        parameters=[
-            decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
-        ],
-        types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
-    )
-
-
-def test_assignment_opaque_function_binding() -> None:
-    Session(
-        identifier="P::S",
-        states=[
-            State(
-                "Start",
-                transitions=[Transition(target=ID("null"))],
-                exception_transition=Transition(target=ID("null")),
-                actions=[
-                    stmt.VariableAssignment(
-                        "Data",
-                        expr.Binding(
-                            expr.Opaque(expr.Call("Sub", [expr.Variable("Bound")])),
-                            {"Bound": expr.Variable("Data")},
                         ),
                     )
                 ],

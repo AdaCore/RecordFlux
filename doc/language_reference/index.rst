@@ -532,7 +532,6 @@ A declared variable must have a type and can be optionally initialized using an 
     * Has_Data Attributes [§S-D-V-E-HDAT]
     * Selected Expressions [§S-D-V-E-S]
     * List Comprehensions [§S-D-V-E-LC]
-    * Bindings [§S-D-V-E-B]
     * Quantified Expressions [§S-D-V-E-Q]
     * Calls [§S-D-V-E-CL]
     * Conversions [§S-D-V-E-CV]
@@ -670,7 +669,6 @@ A local declaration must not hide a global declaration.
     * Has_Data Attributes [§S-S-D-V-E-HDAT]
     * Selected Expressions [§S-S-D-V-E-S]
     * List Comprehensions [§S-S-D-V-E-LC]
-    * Bindings [§S-S-D-V-E-B]
     * Quantified Expressions [§S-S-D-V-E-Q]
     * Calls [§S-S-D-V-E-CL]
     * Conversions [§S-S-D-V-E-CV]
@@ -711,7 +709,6 @@ The transition target must be either a state name or `null`, which represents th
     * Has_Data Attributes [§S-S-T-HDAT]
     * Selected Expressions [§S-S-T-S]
     * List Comprehensions [§S-S-T-LC]
-    * Bindings [§S-S-T-B]
     * Quantified Expressions [§S-S-T-Q]
     * Calls [§S-S-T-CL]
     * Conversions [§S-S-T-CV]
@@ -767,7 +764,6 @@ An assignment sets the value of variable.
     * Has_Data Attributes [§S-S-A-A-HDAT]
     * Selected Expressions [§S-S-A-A-S]
     * List Comprehensions [§S-S-A-A-LC]
-    * Bindings [§S-S-A-A-B]
     * Quantified Expressions [§S-S-A-A-Q]
     * Calls [§S-S-A-A-CL]
     * Conversions [§S-S-A-A-CV]
@@ -812,7 +808,6 @@ A message field assignment sets the value of a message field.
     * Has_Data Attributes [§S-S-A-MFA-HDAT]
     * Selected Expressions [§S-S-A-MFA-S]
     * List Comprehensions [§S-S-A-MFA-LC]
-    * Bindings [§S-S-A-MFA-B]
     * Quantified Expressions [§S-S-A-MFA-Q]
     * Calls [§S-S-A-MFA-CL]
     * Conversions [§S-S-A-MFA-CV]
@@ -857,7 +852,6 @@ An element is added to the end of a sequence using the Append attribute.
     * Has_Data Attributes [§S-S-A-AP-HDAT]
     * Selected Expressions [§S-S-A-AP-S]
     * List Comprehensions [§S-S-A-AP-LC]
-    * Bindings [§S-S-A-AP-B]
     * Quantified Expressions [§S-S-A-AP-Q]
     * Calls [§S-S-A-AP-CL]
     * Conversions [§S-S-A-AP-CV]
@@ -902,7 +896,6 @@ The Extend attributes adds a sequence of elements to the end of a sequence.
     * Has_Data Attributes [§S-S-A-EX-HDAT]
     * Selected Expressions [§S-S-A-EX-S]
     * List Comprehensions [§S-S-A-EX-LC]
-    * Bindings [§S-S-A-EX-B]
     * Quantified Expressions [§S-S-A-EX-Q]
     * Calls [§S-S-A-EX-CL]
     * Conversions [§S-S-A-EX-CV]
@@ -947,7 +940,6 @@ The state of a message or sequence can be cleared using the Reset attribute.
     * Has_Data Attributes [§S-S-A-RS-HDAT]
     * Selected Expressions [§S-S-A-RS-S]
     * List Comprehensions [§S-S-A-RS-LC]
-    * Bindings [§S-S-A-RS-B]
     * Quantified Expressions [§S-S-A-RS-Q]
     * Calls [§S-S-A-RS-CL]
     * Conversions [§S-S-A-RS-CV]
@@ -996,7 +988,6 @@ The read attribute statement is used to retrieve a message from a channel.
     * Has_Data Attributes [§S-S-A-RD-HDAT]
     * Selected Expressions [§S-S-A-RD-S]
     * List Comprehensions [§S-S-A-RD-LC]
-    * Bindings [§S-S-A-RD-B]
     * Quantified Expressions [§S-S-A-RD-Q]
     * Calls [§S-S-A-RD-CL]
     * Conversions [§S-S-A-RD-CV]
@@ -1037,7 +1028,6 @@ A message can be sent through a channel using a write attribute statement.
     * Has_Data Attributes [§S-S-A-WR-HDAT]
     * Selected Expressions [§S-S-A-WR-S]
     * List Comprehensions [§S-S-A-WR-LC]
-    * Bindings [§S-S-A-WR-B]
     * Quantified Expressions [§S-S-A-WR-Q]
     * Calls [§S-S-A-WR-CL]
     * Conversions [§S-S-A-WR-CV]
@@ -1063,7 +1053,7 @@ Expressions
 **Syntax**
 
 .. productionlist::
-   expression: `literal` | `variable` | `mathematical_expression` | `boolean_expression` | `message_aggregate` | `aggregate` | `attribute_reference` | `selected` | `comprehension` | `binding` | `quantified_expression` | `call` | `conversion` | `case_expression`
+   expression: `literal` | `variable` | `mathematical_expression` | `boolean_expression` | `message_aggregate` | `aggregate` | `attribute_reference` | `selected` | `comprehension` | `quantified_expression` | `call` | `conversion` | `case_expression`
 
 Literals
 ^^^^^^^^
@@ -1149,7 +1139,6 @@ An aggregate is a collection of elements.
     * Has_Data Attributes [§S-E-A-E-HDAT]
     * Selected Expressions [§S-E-A-E-S]
     * List Comprehensions [§S-E-A-E-LC]
-    * Bindings [§S-E-A-E-B]
     * Quantified Expressions [§S-E-A-E-Q]
     * Calls [§S-E-A-E-CL]
     * Conversions [§S-E-A-E-CV]
@@ -1200,7 +1189,6 @@ The Valid attribute allows to determine the validity of a message or sequence.
     * Has_Data Attributes [§S-E-AT-V-HDAT]
     * Selected Expressions [§S-E-AT-V-S]
     * List Comprehensions [§S-E-AT-V-LC]
-    * Bindings [§S-E-AT-V-B]
     * Quantified Expressions [§S-E-AT-V-Q]
     * Calls [§S-E-AT-V-CL]
     * Conversions [§S-E-AT-V-CV]
@@ -1224,7 +1212,6 @@ The byte representation of a message can be retrieved using the Opaque attribute
     * Has_Data Attributes [§S-E-AT-O-HDAT]
     * Selected Expressions [§S-E-AT-O-S]
     * List Comprehensions [§S-E-AT-O-LC]
-    * Bindings [§S-E-AT-O-B]
     * Quantified Expressions [§S-E-AT-O-Q]
     * Calls [§S-E-AT-O-CL]
     * Conversions [§S-E-AT-O-CV]
@@ -1254,7 +1241,6 @@ The Head attribute allows to get the first element of a sequence.
     * Has_Data Attributes [§S-E-AT-H-HDAT]
     * Selected Expressions [§S-E-AT-H-S]
     * List Comprehensions [§S-E-AT-H-LC]
-    * Bindings [§S-E-AT-H-B]
     * Quantified Expressions [§S-E-AT-H-Q]
     * Calls [§S-E-AT-H-CL]
     * Conversions [§S-E-AT-H-CV]
@@ -1279,7 +1265,6 @@ Whether a channel contains data can be checked with the Has_Data attribute.
     * Has_Data Attributes [§S-E-AT-HD-HDAT]
     * Selected Expressions [§S-E-AT-HD-S]
     * List Comprehensions [§S-E-AT-HD-LC]
-    * Bindings [§S-E-AT-HD-B]
     * Quantified Expressions [§S-E-AT-HD-Q]
     * Calls [§S-E-AT-HD-CL]
     * Conversions [§S-E-AT-HD-CV]
@@ -1325,7 +1310,6 @@ The Selected expression is used to get a value of a message field.
     * Has_Data Attributes [§S-E-S-HDAT]
     * Selected Expressions [§S-E-S-S]
     * List Comprehensions [§S-E-S-LC]
-    * Bindings [§S-E-S-B]
     * Quantified Expressions [§S-E-S-Q]
     * Calls [§S-E-S-CL]
     * Conversions [§S-E-S-CV]
@@ -1381,55 +1365,6 @@ This behavior will change in the future (cf. `#569 <https://github.com/Componol
 
    [for O in Offer.Options if O.Code = DHCP::DHCP_Message_Type_Option => O.DHCP_Message_Type]
 
-Bindings
-^^^^^^^^
-
-..
-    Bindings [§S-E-B]
-
-A binding can be used to name a subexpression and enables the use of a subexpression multiple times without the need for duplicating the expression or declaring a separate variable.
-
-**Syntax**
-
-.. productionlist::
-         binding: `expression`
-                :    where
-                :       `name` = sub_`expression` { ,
-                :       `name` = sub_`expression` }
-
-..
-    Expressions:
-
-    * Mathematical Expressions [§S-E-B-ME]
-    * Boolean Expressions [§S-E-B-BE]
-    * Literals [§S-E-B-L]
-    * Variables [§S-E-B-V]
-    * Message Aggregates [§S-E-B-MA]
-    * Aggregates [§S-E-B-A]
-    * Valid Attributes [§S-E-B-VAT]
-    * Opaque Attributes [§S-E-B-OAT]
-    * Size Attributes [§S-E-B-SAT]
-    * Head Attributes [§S-E-B-HAT]
-    * Has_Data Attributes [§S-E-B-HDAT]
-    * Selected Expressions [§S-E-B-S]
-    * List Comprehensions [§S-E-B-LC]
-    * Bindings [§S-E-B-B]
-    * Quantified Expressions [§S-E-B-Q]
-    * Calls [§S-E-B-CL]
-    * Conversions [§S-E-B-CV]
-
-    The type of the subexpression is inferred by the subexpression type and the expected type for all references of the name.
-
-**Example**
-
-.. doc-check: rflx,extended_suffix
-.. code:: ada
-
-   TLS_Alert::Alert'(Level => Level, Description => Description)
-      where
-         Level = TLS_Alert::Fatal,
-         Description = GreenTLS_Alert_Message.Description
-
 Quantified Expressions
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1460,7 +1395,6 @@ Quantified expressions enable reasoning about properties of sequences.
     * Has_Data Attributes [§S-E-Q-I-HDAT]
     * Selected Expressions [§S-E-Q-I-S]
     * List Comprehensions [§S-E-Q-I-LC]
-    * Bindings [§S-E-Q-I-B]
     * Quantified Expressions [§S-E-Q-I-Q]
     * Calls [§S-E-Q-I-CL]
     * Conversions [§S-E-Q-I-CV]
@@ -1480,7 +1414,6 @@ Quantified expressions enable reasoning about properties of sequences.
     * Has_Data Attributes [§S-E-Q-P-HDAT]
     * Selected Expressions [§S-E-Q-P-S]
     * List Comprehensions [§S-E-Q-P-LC]
-    * Bindings [§S-E-Q-P-B]
     * Quantified Expressions [§S-E-Q-P-Q]
     * Calls [§S-E-Q-P-CL]
     * Conversions [§S-E-Q-P-CV]
@@ -1522,7 +1455,6 @@ All functions which are declared in the session parameters can be called.
     * Has_Data Attributes [§S-E-CL-HDAT]
     * Selected Expressions [§S-E-CL-S]
     * List Comprehensions [§S-E-CL-LC]
-    * Bindings [§S-E-CL-B]
     * Quantified Expressions [§S-E-CL-Q]
     * Calls [§S-E-CL-CL]
     * Conversions [§S-E-CL-CV]
@@ -1567,7 +1499,6 @@ A conversion is only allowed if a refinement for the message field and the inten
     * Has_Data Attributes [§S-E-CV-HDAT]
     * Selected Expressions [§S-E-CV-S]
     * List Comprehensions [§S-E-CV-LC]
-    * Bindings [§S-E-CV-B]
     * Quantified Expressions [§S-E-CV-Q]
     * Calls [§S-E-CV-CL]
     * Conversions [§S-E-CV-CV]

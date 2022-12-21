@@ -582,17 +582,17 @@ def create_quantified_expression(
 
 def create_binding(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Binding)
-    bindings: Mapping[Union[str, ID], expr.Expr] = {
-        create_id(error, b.f_identifier, filename): create_expression(
-            error, b.f_expression, filename
-        )
-        for b in expression.f_bindings
-    }
-    return expr.Binding(
-        create_expression(error, expression.f_expression, filename),
-        bindings,
-        node_location(expression, filename),
+    error.extend(
+        [
+            (
+                "bindings are not supported",
+                Subsystem.PARSER,
+                Severity.ERROR,
+                node_location(expression, filename),
+            ),
+        ]
     )
+    return create_expression(error, expression.f_expression, filename)
 
 
 def create_variable_decl(
