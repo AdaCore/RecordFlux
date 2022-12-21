@@ -1,1 +1,0 @@
-../../shared/generated/rflx-rflx_scalar_sequence.ads

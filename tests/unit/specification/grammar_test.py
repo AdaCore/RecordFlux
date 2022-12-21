@@ -170,7 +170,6 @@ def test_variable(string: str, expected: decl.Declaration) -> None:
         ("X'Valid", expr.Valid(expr.Variable("X"))),
         ("X'Valid_Checksum", expr.ValidChecksum(expr.Variable("X"))),
         ("X'Has_Data", expr.HasData(expr.Variable("X"))),
-        ("X where X = 42", expr.Binding(expr.Variable("X"), {ID("X"): expr.Number(42)})),
         ("X'Head.Y", expr.Selected(expr.Head(expr.Variable("X")), "Y")),
     ],
 )
@@ -526,37 +525,6 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
                     expr.Equal(expr.Selected(expr.Variable("S"), "G"), expr.Variable("G")),
                 ),
                 expr.Variable("False"),
-            ),
-        ),
-        (
-            "M1'(D => B1) where B1 = M2'(D => B2)",
-            expr.Binding(
-                expr.MessageAggregate("M1", {ID("D"): expr.Variable("B1")}),
-                {ID("B1"): expr.MessageAggregate("M2", {ID("D"): expr.Variable("B2")})},
-            ),
-        ),
-        (
-            "M1'(D1 => B1, D2 => B2) where B1 = M2'(D => B2), B2 = M2'(D => B3)",
-            expr.Binding(
-                expr.MessageAggregate(
-                    "M1", {ID("D1"): expr.Variable("B1"), ID("D2"): expr.Variable("B2")}
-                ),
-                {
-                    ID("B1"): expr.MessageAggregate("M2", {ID("D"): expr.Variable("B2")}),
-                    ID("B2"): expr.MessageAggregate("M2", {ID("D"): expr.Variable("B3")}),
-                },
-            ),
-        ),
-        (
-            "M1'(D => B1) where B1 = M2'(D => B2) where B2 = M3'(D => B3)",
-            expr.Binding(
-                expr.MessageAggregate("M1", {ID("D"): expr.Variable("B1")}),
-                {
-                    ID("B1"): expr.Binding(
-                        expr.MessageAggregate("M2", {ID("D"): expr.Variable("B2")}),
-                        {ID("B2"): expr.MessageAggregate("M3", {ID("D"): expr.Variable("B3")})},
-                    )
-                },
             ),
         ),
         (

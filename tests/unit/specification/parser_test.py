@@ -3041,6 +3041,34 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
     )
 
 
+def test_parse_error_unsupported_binding() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+           type Message is
+              message
+                 A : T;
+              end message;
+           generic
+              C : Channel with Writable;
+           session S is
+              M : Test::Message;
+           begin
+              state I
+              is
+              begin
+                 C'Write (M where M = Test::Message'(A => 1));
+              transition
+                 goto null
+              end I;
+           end S;
+        end Test;
+        """,
+        r"^<stdin>:15:19: parser: error: bindings are not supported$",
+    )
+
+
 def test_parse_error_unsupported_modular_integer_type() -> None:
     assert_error_string(
         """\

@@ -2113,59 +2113,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return result
 
-    def _declare_and_assign(  # pylint: disable = too-many-arguments
-        self,
-        variables: Sequence[tuple[ID, rty.Type, expr.Expr]],
-        statements: Sequence[Statement],
-        exception_handler: ExceptionHandler,
-        is_global: Callable[[ID], bool],
-        state: ID,
-        alloc_id: Optional[Location],
-        constant: bool = False,
-    ) -> Sequence[Statement]:
-        if not variables:
-            return statements
-
-        k, type_, v = variables[0]
-        initialized_in_declaration = isinstance(v, expr.Aggregate) and type_ == rty.OPAQUE
-        evaluated_declaration = self._declare(
-            k,
-            type_,
-            is_global,
-            alloc_id,
-            v if initialized_in_declaration else None,
-            constant=constant,
-        )
-
-        return [
-            Declare(
-                [
-                    *evaluated_declaration.global_declarations,
-                    *evaluated_declaration.initialization_declarations,
-                ],
-                [
-                    *[
-                        *evaluated_declaration.initialization,
-                        *(
-                            self._assign(k, type_, v, exception_handler, is_global, state, alloc_id)
-                            if not initialized_in_declaration
-                            else []
-                        ),
-                    ],
-                    *self._declare_and_assign(
-                        variables[1:],
-                        statements,
-                        exception_handler,
-                        is_global,
-                        state,
-                        alloc_id,
-                        constant,
-                    ),
-                    *evaluated_declaration.finalization,
-                ],
-            ),
-        ]
-
     def _assign(  # pylint: disable = too-many-arguments
         self,
         target: ID,
@@ -2196,11 +2143,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                     Subsystem.GENERATOR,
                     location=v.location,
                 )
-
-        if isinstance(expression, expr.Binding):
-            return self._assign_to_binding(
-                target, expression, exception_handler, is_global, state, alloc_id
-            )
 
         if isinstance(expression, expr.Selected):
             return self._assign_to_selected(target, expression, exception_handler, is_global)
@@ -2262,79 +2204,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             _unsupported_expression(expression, "in assignment")
 
         _unexpected_expression(expression, "in assignment")
-
-    def _assign_to_binding(  # pylint: disable = too-many-branches, too-many-arguments
-        self,
-        target: ID,
-        binding: expr.Binding,
-        exception_handler: ExceptionHandler,
-        is_global: Callable[[ID], bool],
-        state: ID,
-        alloc_id: Optional[Location],
-    ) -> Sequence[Statement]:
-        variables = []
-
-        for k, v in binding.data.items():
-            if isinstance(binding.expr, expr.MessageAggregate):
-                assert isinstance(binding.expr.type_, rty.Message)
-                for f, f_v in binding.expr.field_values.items():
-                    if expr.Variable(k) == f_v:
-                        type_ = binding.expr.type_.types[f]
-                        break
-                    if expr.Opaque(k) == f_v:
-                        type_ = v.type_
-                        break
-                else:
-                    fatal_fail(
-                        f'"{k}" must be value of message aggregate',
-                        Subsystem.GENERATOR,
-                        location=binding.location,
-                    )
-            elif isinstance(binding.expr, expr.Call):
-                for a, t in zip(binding.expr.args, binding.expr.argument_types):
-                    if expr.Variable(k) == a:
-                        type_ = t
-                        break
-                else:
-                    fatal_fail(
-                        f'"{k}" must be argument of call',
-                        Subsystem.GENERATOR,
-                        location=binding.location,
-                    )
-            elif isinstance(binding.expr, expr.Conversion):
-                assert isinstance(binding.expr.argument, expr.Selected)
-                assert isinstance(binding.expr.argument.prefix, expr.Variable)
-                assert binding.expr.argument.prefix.identifier == k
-                type_ = binding.expr.argument.prefix.type_
-            elif isinstance(binding.expr, expr.Selected):
-                assert isinstance(binding.expr.prefix, expr.Variable)
-                assert binding.expr.prefix.identifier == k
-                type_ = binding.expr.prefix.type_
-            else:
-                fail(
-                    f'binding for expression "{type(binding.expr).__name__}" not yet supported',
-                    Subsystem.GENERATOR,
-                    location=binding.expr.location,
-                )
-            variables.append((k, type_, v))
-
-        return self._declare_and_assign(
-            variables,
-            self._assign(
-                target,
-                type_,
-                binding.expr,
-                exception_handler,
-                is_global,
-                state,
-                alloc_id=alloc_id,
-            ),
-            exception_handler,
-            is_global,
-            state,
-            alloc_id=alloc_id,
-            constant=True,
-        )
 
     def _assign_to_selected(
         self,
