@@ -15,21 +15,8 @@ env:
     GNAT_VERSION: "23.0w-20220723"
 
 jobs:
-  skip_check_general:
-    name: Skip Check General
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v3.4.0
-        with:
-          paths_ignore: '["*.gpr", "examples/**", "tests/spark/**"]'
-
   checks:
     name: Checks
-    needs: skip_check_general
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -49,20 +36,16 @@ jobs:
       python-version: "3.10"
     steps:
     - uses: actions/checkout@v2
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ env.python-version }}
     - name: Determine exact Python version
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -71,19 +54,16 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
     - name: Cache GNAT Community
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
     - name: Install GNAT Community
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
     - name: Install dependencies
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -91,14 +71,11 @@ jobs:
         python -m pip install --upgrade pip wheel
         make init install_devel
     - name: Check
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run: |
         make check_${{ matrix.target }}
 
   installation:
     name: Installation
-    needs: skip_check_general
-    if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
@@ -125,22 +102,8 @@ jobs:
       run: |
         make test_installation
 
-  skip_check_python:
-    name: Skip Check Python
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v3.4.0
-        with:
-          paths: '[".github/workflows/**", "rflx/**", "tests/**"]'
-          paths_ignore: '["tests/spark/**"]'
-
   tests_python:
     name: Tests
-    needs: skip_check_python
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -167,20 +130,16 @@ jobs:
       GNAT: "pro23.0w-20220723"
     steps:
     - uses: actions/checkout@v2
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python ${{ matrix.python-version }}
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -190,13 +149,11 @@ jobs:
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.GNAT }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
     - name: Install GNAT Pro
       uses: ./.github/actions/install_gnat_pro
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       with:
         version: ${{ env.GNAT_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -205,27 +162,13 @@ jobs:
         python -m pip install --upgrade pip wheel
         make init install_devel
     - name: Test
-      if: ${{ needs.skip_check_python.outputs.should_skip != 'true' }}
       run: |
         eval `make printenv_gnat`
         gnat --version
         make test_${{ matrix.target }}
 
-  skip_check_compilation:
-    name: Skip Check Compilation
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v3.4.0
-        with:
-          paths: '[".github/workflows/**", "defaults.gpr", "examples/apps/**", "rflx/**", "tests/**"]'
-
   compilation:
     name: Compilation
-    needs: skip_check_compilation
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -253,20 +196,16 @@ jobs:
       GNAT: ${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}
     steps:
       - uses: actions/checkout@v2
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
         with:
           submodules: true
       - name: Set up Python ${{ env.python-version }}
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ env.python-version }}
       - name: Determine exact Python version
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
         run:
           echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
       - name: Cache Python dependencies
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
         uses: actions/cache@v2
         with:
           path: |
@@ -275,27 +214,27 @@ jobs:
             ~/.local/bin
           key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
       - name: Cache GNAT Community
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'community' }}
+        if: ${{ matrix.gnat-distrib == 'community' }}
         uses: actions/cache@v2
         with:
           path: /home/runner/work/gnat
           key: ${{ runner.os }}-gnat-ce${{ matrix.gnat-version }}
       - name: Install GNAT Community
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'community' }}
+        if: ${{ matrix.gnat-distrib == 'community' }}
         uses: ada-actions/toolchain@ce2021
         with:
           distrib: community
           community_year: ${{ matrix.gnat-version }}
           install_dir: /home/runner/work/gnat
       - name: Install GNAT Pro
+        if: ${{ matrix.gnat-distrib == 'pro' }}
         uses: ./.github/actions/install_gnat_pro
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'pro' }}
         with:
           version: ${{ matrix.gnat-version }}
           ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
           server: ${{ secrets.MEMCACHED_SERVER }}
       - name: Cache Alire and FSF GNAT
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+        if: ${{ matrix.gnat-distrib == 'fsf' }}
         uses: actions/cache@v2
         with:
           path: |
@@ -303,13 +242,13 @@ jobs:
             build/alire
           key: ${{ runner.os }}-alire${{ env.ALIRE_VERSION }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
       - name: Install Alire
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+        if: ${{ matrix.gnat-distrib == 'fsf' }}
         uses: alire-project/setup-alire@v1
         with:
           version: ${{ env.ALIRE_VERSION }}
           toolchain: "--disable-assistant"
       - name: Install FSF GNAT
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+        if: ${{ matrix.gnat-distrib == 'fsf' }}
         env:
           FSF_GNAT_VERSION: ${{ matrix.gnat-version }}
         run: |
@@ -320,7 +259,6 @@ jobs:
       # (e.g., libgnatcoll.so) must be cached as well, as they will be only created, if the
       # compilation during the installation of RecordFlux-parser is executed.
       - name: Install dependencies
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -331,7 +269,6 @@ jobs:
           gnat --version
           make init install_devel
       - name: Test
-        if: ${{ needs.skip_check_compilation.outputs.should_skip != 'true' }}
         run: |
           eval `make printenv_gnat`
           gnat --version
@@ -346,20 +283,16 @@ jobs:
       GNAT: "pro23.0w-20220723"
     steps:
       - uses: actions/checkout@v2
-        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
         with:
           submodules: true
       - name: Set up Python ${{ env.python-version }}
-        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ env.python-version }}
       - name: Determine exact Python version
-        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
         run:
           echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
       - name: Cache Python dependencies
-        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
         uses: actions/cache@v2
         with:
           path: |
@@ -369,13 +302,11 @@ jobs:
           key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-gnat${{ env.GNAT }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
       - name: Install GNAT Pro
         uses: ./.github/actions/install_gnat_pro
-        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
         with:
           version: ${{ env.GNAT_VERSION }}
           ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
           server: ${{ secrets.MEMCACHED_SERVER }}
       - name: Install dependencies
-        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -384,7 +315,6 @@ jobs:
           python -m pip install --upgrade pip wheel
           make init install_devel
       - name: Test
-        if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
         run: |
           make test_binary_size
 
@@ -460,21 +390,8 @@ jobs:
         key: spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}-${{ github.run_attempt }}
 
 
-  skip_check_spark:
-    name: Skip Check SPARK
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v3.4.0
-        with:
-          paths: '[".github/workflows/**", "*.gpr", "rflx/**", "tests/**"]'
-
   verification_spark:
     name: Verification
-    needs: skip_check_spark
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -501,20 +418,16 @@ jobs:
       python-version: "3.8"
     steps:
     - uses: actions/checkout@v2
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ env.python-version }}
     - name: Determine exact Python version
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -523,26 +436,22 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
     - name: Cache GNAT Community
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
     - name: Install GNAT Community
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
     - name: Install SPARK Pro
       uses: ./.github/actions/install_spark_pro
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       with:
         version: ${{ env.SPARK_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -559,7 +468,6 @@ jobs:
         restore-keys: |
           spark-${{ matrix.target }}-${{ matrix.test }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
     - name: Verify
-      if: ${{ needs.skip_check_spark.outputs.should_skip != 'true' }}
       env:
         TEST: ${{ matrix.test }}
       run: |
@@ -577,21 +485,8 @@ jobs:
           build/test/gnatprove
         key: spark-${{ matrix.target }}-${{ matrix.test }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}-${{ github.run_attempt }}
 
-  skip_check_apps:
-    name: Skip Check Apps
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v3.4.0
-        with:
-          paths: '[".github/workflows/**", "defaults.gpr", "examples/apps/**", "rflx/**"]'
-
   tests_apps:
     name: App Tests
-    needs: skip_check_apps
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -613,20 +508,16 @@ jobs:
       GNAT: ${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}
     steps:
     - uses: actions/checkout@v2
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python ${{ matrix.python-version }}
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Determine exact Python version
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -635,19 +526,16 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
     - name: Cache GNAT Community
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
     - name: Install GNAT Community
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
     - name: Install dependencies
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -656,23 +544,21 @@ jobs:
         python -m pip install --upgrade pip wheel
         make init install_devel
     - name: Install Alire
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      if: ${{ matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
       with:
         version: ${{ env.ALIRE_VERSION }}
         toolchain: "--disable-assistant"
     - name: Install FSF GNAT
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      if: ${{ matrix.gnat-distrib == 'fsf' }}
       env:
         FSF_GNAT_VERSION: ${{ matrix.gnat-version }}
       run: |
         make install_gnat
     - name: Configure kernel parameters
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         sudo /sbin/sysctl -w net.ipv4.ping_group_range="0 2147483647"
     - name: Test
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         eval `make printenv_gnat`
         gnat --version
@@ -680,7 +566,6 @@ jobs:
 
   verification_apps:
     name: App Verification
-    needs: skip_check_apps
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -695,20 +580,16 @@ jobs:
       GNATPROVE_PROCS: 1
     steps:
     - uses: actions/checkout@v2
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ env.python-version }}
     - name: Determine exact Python version
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -717,26 +598,22 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
     - name: Cache GNAT Community
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
     - name: Install GNAT Community
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
     - name: Install SPARK Pro
       uses: ./.github/actions/install_spark_pro
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       with:
         version: ${{ env.SPARK_VERSION }}
         ssh_key: ${{ secrets.MEMCACHED_SSH_KEY }}
         server: ${{ secrets.MEMCACHED_SERVER }}
     - name: Install dependencies
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -753,7 +630,6 @@ jobs:
         restore-keys: |
           spark-${{ matrix.app }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
     - name: Verify
-      if: ${{ needs.skip_check_apps.outputs.should_skip != 'true' }}
       run: |
         make -C examples/apps/${{ matrix.app }} prove
     - name: Save SPARK cache
@@ -765,21 +641,8 @@ jobs:
           examples/apps/${{ matrix.app }}/obj/gnatprove
         key: spark-${{ matrix.app }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}-${{ github.run_id }}-${{ github.run_attempt }}
 
-  skip_check_specs:
-    name: Skip Check Specs
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v3.4.0
-        with:
-          paths: '[".github/workflows/**", "defaults.gpr", "examples/specs/**", "rflx/**"]'
-
   tests_specs:
     name: Specification Tests
-    needs: skip_check_specs
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -791,20 +654,16 @@ jobs:
       python-version: "3.8"
     steps:
     - uses: actions/checkout@v2
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python ${{ env.python-version }}
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ env.python-version }}
     - name: Determine exact Python version
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -813,19 +672,16 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
     - name: Cache GNAT Community
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
     - name: Install GNAT Community
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
     - name: Install dependencies
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -834,17 +690,16 @@ jobs:
         python -m pip install --upgrade pip wheel
         make init install_devel
     - name: Install Alire
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      if: ${{ matrix.gnat-distrib == 'fsf' }}
       uses: alire-project/setup-alire@v1
       with:
         version: ${{ env.ALIRE_VERSION }}
         toolchain: "--disable-assistant"
     - name: Install FSF GNAT
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' && matrix.gnat-distrib == 'fsf' }}
+      if: ${{ matrix.gnat-distrib == 'fsf' }}
       run: |
         make install_gnat
     - name: Test
-      if: ${{ needs.skip_check_specs.outputs.should_skip != 'true' }}
       run: |
         eval `make printenv_gnat`
         gnat --version
@@ -852,26 +707,21 @@ jobs:
 
   documentation:
     name: Documentation
-    needs: skip_check_general
     runs-on: ubuntu-20.04
     env:
       python-version: "3.8"
     steps:
     - uses: actions/checkout@v2
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       with:
         submodules: true
     - name: Set up Python
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ env.python-version }}
     - name: Determine exact Python version
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run:
         echo "PYTHON_VERSION=$(python -c 'import platform; print(platform.python_version())')" >> $GITHUB_ENV
     - name: Cache Python dependencies
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: |
@@ -880,19 +730,16 @@ jobs:
           ~/.local/bin
         key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
     - name: Cache GNAT Community
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: actions/cache@v2
       with:
         path: /home/runner/work/gnat
         key: ${{ runner.os }}-gnat-ce2021
     - name: Install GNAT Community
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       uses: ada-actions/toolchain@ce2021
       with:
         distrib: community
         install_dir: /home/runner/work/gnat
     - name: Install dependencies
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
@@ -900,6 +747,5 @@ jobs:
         python -m pip install --upgrade pip wheel
         make init install_devel
     - name: Generate
-      if: ${{ needs.skip_check_general.outputs.should_skip != 'true' }}
       run: |
         make doc
