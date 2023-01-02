@@ -184,7 +184,7 @@ jobs:
           - gnat-distrib: "pro"
             gnat-version: "21.2"
           - gnat-distrib: "pro"
-            gnat-version: "22.0"
+            gnat-version: "22.2"
           - gnat-distrib: "pro"
             gnat-version: "23.0w-20220723"
           - gnat-distrib: "fsf"
