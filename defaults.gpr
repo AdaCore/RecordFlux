@@ -23,7 +23,7 @@ abstract project Defaults is
          GNATVO := "";  -- https://github.com/Componolit/Workarounds/issues/23
          GNATEV := "";  -- https://github.com/Componolit/Workarounds/issues/22
          GNATA  := "";  -- https://github.com/Componolit/Workarounds/issues/49
-      when "pro21.2" | "pro22.0" =>
+      when "pro21.2" | "pro22.2" =>
          GNATA  := "";  -- https://github.com/Componolit/Workarounds/issues/49
       when "fsf11.2.4" | "fsf12.1.2" =>
          GNATA  := "";  -- https://github.com/Componolit/Workarounds/issues/49

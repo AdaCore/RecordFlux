@@ -7,12 +7,13 @@ Installation
 
 As a prerequisite, the following dependencies need to be installed:
 
+- `Python <https://www.python.org>`_ 3.8, 3.9, 3.10 or 3.11.
 - For compiling the generated code, one of the following versions of GNAT is required:
    - `GNAT Community <https://www.adacore.com/download>`_ 2020 or 2021
-   - `GNAT Pro <https://www.adacore.com/gnatpro>`_ 20.2, 21.2 or 22.0
-   - `FSF GNAT <https://www.gnu.org/software/gnat/>`_ 11.2 |GNAT Alire Crate|
+   - `GNAT Pro <https://www.adacore.com/gnatpro>`_ 20.2, 21.2 or 22.2
+   - `FSF GNAT <https://www.gnu.org/software/gnat/>`_ 11.2 or 12.1 |GNAT Alire Crate|
 - `GNATcoll iconv binding <https://github.com/AdaCore/gnatcoll-bindings/tree/master/iconv>`_ |GNATcoll iconv binding Alire Crate| must be installed separately if FSF GNAT is used.
-- For the formal verification of the generated code, the SPARK toolset provided by `GNAT Community <https://www.adacore.com/download>`_ 2021 is required.
+- For the formal verification of the generated code, the `SPARK Pro <https://www.adacore.com/sparkpro>`_ 24.0w-20221214 toolset is required.
 - `GMP <https://gmplib.org/>`_ is provided as a package for various distributions, e.g., ``libgmp-dev`` (Debian/Ubuntu), ``gmp-devel`` (Fedora) or ``gmp`` (Arch Linux).
 - Optional: `Graphviz <https://graphviz.org/>`_ is required for plotting graphs. It is provided as package ``graphviz`` for various distributions.
 
