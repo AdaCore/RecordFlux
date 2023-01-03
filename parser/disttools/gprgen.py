@@ -22,7 +22,7 @@ library project Lib{name} is
    for Create_Missing_Dirs use "true";
 
    for Languages use ("Ada", "C");
-   for Source_Dirs use ("src", "langkit/support", "gnatcoll-bindings/gmp", "gnatcoll-bindings/iconv");
+   for Source_Dirs use ("src", "langkit/langkit/support", "gnatcoll-bindings/gmp", "gnatcoll-bindings/iconv");
    for Library_Name use "{name}";
    for Library_Kind use Library_Type;
    for Library_Dir use "python/librflxlang";
