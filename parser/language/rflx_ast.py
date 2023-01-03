@@ -187,10 +187,10 @@ class AttrStmt(RFLXNode):
 
     enum_node = True
     alternatives = [
-        "Append",
-        "Extend",
-        "Read",
-        "Write",
+        "append",
+        "extend",
+        "read",
+        "write",
     ]
 
 
@@ -436,8 +436,8 @@ class ByteOrderType(RFLXNode):
 
     enum_node = True
     alternatives = [
-        "HighOrderFirst",
-        "LowOrderFirst",
+        "highorderfirst",
+        "loworderfirst",
     ]
 
 
@@ -462,15 +462,15 @@ class Attr(RFLXNode):
 
     enum_node = True
     alternatives = [
-        "First",
-        "Size",
-        "Last",
-        "Valid_Checksum",
-        "Has_Data",
-        "Head",
-        "Opaque",
-        "Present",
-        "Valid",
+        "first",
+        "size",
+        "last",
+        "valid_checksum",
+        "has_data",
+        "head",
+        "opaque",
+        "present",
+        "valid",
     ]
 
 
