@@ -1,4 +1,4 @@
-from langkit.parsers import Grammar, List, NoBacktrack, Opt, Or, Pick
+from langkit.parsers import Cut, Grammar, List, Opt, Or, Pick
 
 from language import rflx_ast as ast
 from language.lexer import rflx_lexer as lexer
@@ -76,7 +76,7 @@ grammar.add_rules(
         ast.Concatenation(
             grammar.concatenation,
             "&",
-            NoBacktrack(),
+            Cut(),
             Or(grammar.sequence_aggregate, grammar.string_literal),
         ),
         Or(grammar.sequence_aggregate, grammar.string_literal),
@@ -105,7 +105,7 @@ grammar.add_rules(
     ),
     factor=Or(
         # pylint: disable=no-member
-        ast.BinOp(grammar.primary, ast.Op.alt_pow("**"), NoBacktrack(), grammar.primary),
+        ast.BinOp(grammar.primary, ast.Op.alt_pow("**"), Cut(), grammar.primary),
         grammar.suffix,
     ),
     term=Or(
@@ -117,12 +117,12 @@ grammar.add_rules(
                 ast.Op.alt_div("/"),
                 ast.Op.alt_mod("mod"),
             ),
-            NoBacktrack(),
+            Cut(),
             grammar.factor,
         ),
         grammar.factor,
     ),
-    unop_term=Or(ast.Negation("-", NoBacktrack(), grammar.term), grammar.term),
+    unop_term=Or(ast.Negation("-", Cut(), grammar.term), grammar.term),
     simple_expr=Or(
         ast.BinOp(
             grammar.simple_expr,
@@ -131,7 +131,7 @@ grammar.add_rules(
                 ast.Op.alt_add("+"),
                 ast.Op.alt_sub("-"),
             ),
-            NoBacktrack(),
+            Cut(),
             grammar.unop_term,
         ),
         grammar.unop_term,
@@ -148,7 +148,7 @@ grammar.add_rules(
                 ast.Op.alt_ge(">="),
                 ast.Op.alt_gt(">"),
             ),
-            NoBacktrack(),
+            Cut(),
             grammar.simple_expr,
         ),
         grammar.simple_expr,
@@ -161,7 +161,7 @@ grammar.add_rules(
                 ast.Op.alt_and("and"),
                 ast.Op.alt_or("or"),
             ),
-            NoBacktrack(),
+            Cut(),
             grammar.relation,
         ),
         grammar.relation,
@@ -236,7 +236,7 @@ grammar.add_rules(
         ast.Select(
             grammar.extended_suffix,
             ".",
-            NoBacktrack(),
+            Cut(),
             grammar.unqualified_identifier,
         ),
         ast.Attribute(
@@ -272,7 +272,7 @@ grammar.add_rules(
                 # pylint: disable=no-member
                 ast.Op.alt_pow("**"),
             ),
-            NoBacktrack(),
+            Cut(),
             grammar.extended_suffix,
         ),
         grammar.extended_suffix,
@@ -286,13 +286,13 @@ grammar.add_rules(
                 ast.Op.alt_div("/"),
                 ast.Op.alt_mod("mod"),
             ),
-            NoBacktrack(),
+            Cut(),
             grammar.extended_factor,
         ),
         grammar.extended_factor,
     ),
     extended_unop_term=Or(
-        ast.Negation("-", NoBacktrack(), grammar.extended_term),
+        ast.Negation("-", Cut(), grammar.extended_term),
         grammar.extended_term,
     ),
     extended_simple_expr=Or(
@@ -303,7 +303,7 @@ grammar.add_rules(
                 ast.Op.alt_add("+"),
                 ast.Op.alt_sub("-"),
             ),
-            NoBacktrack(),
+            Cut(),
             grammar.extended_unop_term,
         ),
         grammar.extended_unop_term,
@@ -322,7 +322,7 @@ grammar.add_rules(
                 ast.Op.alt_in("in"),
                 ast.Op.alt_notin("not", "in"),
             ),
-            NoBacktrack(),
+            Cut(),
             grammar.extended_simple_expr,
         ),
         grammar.extended_simple_expr,
@@ -335,7 +335,7 @@ grammar.add_rules(
                 ast.Op.alt_and("and"),
                 ast.Op.alt_or("or"),
             ),
-            NoBacktrack(),
+            Cut(),
             grammar.extended_relation,
         ),
         grammar.extended_relation,
