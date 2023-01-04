@@ -78,8 +78,8 @@ deinit:
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
 	format \
-	test test_python test_python_unit test_python_integration test_python_property test_python_property_verification test_python_optimized test_python_coverage test_apps test_compilation test_binary_size test_specs test_installation \
-	prove prove_tests prove_python_tests prove_apps \
+	test test_python test_python_unit test_python_integration test_python_property test_python_optimized test_python_coverage test_apps test_compilation test_binary_size test_specs test_installation \
+	prove prove_tests prove_python_tests prove_apps prove_property_tests \
 	install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
 	generate \
 	doc \
@@ -144,9 +144,6 @@ test_python_tools:
 test_python_ide:
 	$(PYTEST) tests/ide
 
-test_python_property_verification:
-	$(PYTEST) tests/property_verification
-
 test_python_optimized:
 	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation
 
@@ -200,6 +197,9 @@ prove_python_tests: $(GNATPROVE_CACHE_DIR)
 prove_apps: $(GNATPROVE_CACHE_DIR)
 	$(MAKE) -C examples/apps/ping prove
 	$(MAKE) -C examples/apps/dhcp_client prove
+
+prove_property_tests: $(GNATPROVE_CACHE_DIR)
+	$(PYTEST) tests/property_verification
 
 $(GNATPROVE_CACHE_DIR):
 	mkdir -p $(GNATPROVE_CACHE_DIR)
