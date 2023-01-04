@@ -76,15 +76,7 @@ deinit:
 .config/python-style:
 	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/python-style.git .config/python-style
 
-.PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc \
-	format \
-	test test_python test_python_unit test_python_integration test_python_property test_python_optimized test_python_coverage test_apps test_compilation test_binary_size test_specs test_installation \
-	prove prove_tests prove_python_tests prove_apps prove_property_tests \
-	install_devel install_devel_edge upgrade_devel install_gnat printenv_gnat \
-	generate \
-	doc \
-	dist \
-	clean
+.PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc
 
 check: check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc
 
@@ -118,40 +110,33 @@ check_pydocstyle:
 check_doc:
 	tools/check_doc.py
 
+.PHONY: format
+
 format:
 	black -l 100 $(PYTHON_PACKAGES) ide/gnatstudio
 	isort $(PYTHON_PACKAGES) ide/gnatstudio
 
-test: test_python_coverage test_python_unit_coverage test_python_property test_compilation test_binary_size test_specs test_installation test_apps
+.PHONY: test test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
 
-test_python: test_python_unit test_python_integration test_python_compilation prove_python_tests test_python_tools test_python_ide
+test: test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
 
-test_python_unit:
-	$(PYTEST) tests/unit
-
-test_python_integration:
-	$(PYTEST) tests/integration
-
-test_python_compilation:
-	$(PYTEST) tests/compilation
-
-test_python_property:
-	$(PYTEST) tests/property
-
-test_python_tools:
-	$(PYTEST) tests/tools
-
-test_python_ide:
-	$(PYTEST) tests/ide
-
-test_python_optimized:
-	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation
-
-test_python_coverage:
+test_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered tests/unit tests/integration
 
-test_python_unit_coverage:
+test_unit_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov-branch --cov-fail-under=97.02 --cov-report=term-missing:skip-covered tests/unit
+
+test_property:
+	$(PYTEST) tests/property
+
+test_tools:
+	$(PYTEST) tests/tools
+
+test_ide:
+	$(PYTEST) tests/ide
+
+test_optimized:
+	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation
 
 test_apps:
 	$(MAKE) -C examples/apps/ping test_python
@@ -185,6 +170,8 @@ test_installation:
 	HOME=$(BUILD_DIR)/test_installation $(BUILD_DIR)/venv/bin/rflx setup_ide
 	test -f $(BUILD_DIR)/test_installation/.gnatstudio/plug-ins/recordflux.py
 
+.PHONY: prove prove_tests prove_python_tests prove_apps prove_property_tests
+
 prove: prove_tests prove_python_tests prove_apps
 
 prove_tests: $(GNATPROVE_CACHE_DIR)
@@ -204,19 +191,21 @@ prove_property_tests: $(GNATPROVE_CACHE_DIR)
 $(GNATPROVE_CACHE_DIR):
 	mkdir -p $(GNATPROVE_CACHE_DIR)
 
+.PHONY: install_devel upgrade_devel install_devel_edge install_git_hooks install_gnat printenv_gnat
+
 install_devel:
 	tools/check_pip_version.py
 	$(MAKE) -C .config/python-style install_devel
 	pip3 install -e ".[devel]"
-
-install_git_hooks:
-	install -m 755 tools/pre-{commit,push} .git/hooks/
 
 upgrade_devel:
 	tools/upgrade_dependencies.py
 
 install_devel_edge: install_devel
 	$(MAKE) -C .config/python-style install_devel_edge
+
+install_git_hooks:
+	install -m 755 tools/pre-{commit,push} .git/hooks/
 
 install_gnat: FSF_GNAT_VERSION ?= 11.2.4
 install_gnat: GPRBUILD_VERSION ?= 22.0.1
@@ -236,14 +225,22 @@ printenv_gnat:
 	    alr printenv \
 	) || true
 
+.PHONY: generate
+
 generate:
 	tools/generate_spark_test_code.py
+
+.PHONY: doc
 
 doc: check_doc
 	$(MAKE) -C doc html
 
+.PHONY: dist
+
 dist:
 	python3 -m build --sdist
+
+.PHONY: clean
 
 clean:
 	rm -rf $(BUILD_DIR) .coverage .hypothesis .mypy_cache .pytest_cache
