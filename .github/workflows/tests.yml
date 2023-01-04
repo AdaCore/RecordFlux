@@ -325,7 +325,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["python_property_verification"]
+        target: ["property_tests"]
         python-version: [3.8]
     steps:
     - uses: actions/checkout@v2
@@ -380,7 +380,7 @@ jobs:
           spark-${{ matrix.target }}-${{ runner.os }}-spark${{ env.SPARK_VERSION }}
     - name: Test
       run: |
-        make test_${{ matrix.target }}
+        make prove_${{ matrix.target }}
     - name: Save SPARK cache
       uses: actions/cache/save@v3.2.2
       if: always()
