@@ -109,22 +109,22 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - "python_coverage"
+          - "coverage"
         python-version:
           - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
         include:
-          - target: "python_unit_coverage"
+          - target: "unit_coverage"
             python-version: "3.11"
-          - target: "python_property"
+          - target: "property"
             python-version: "3.8"
-          - target: "python_optimized"
+          - target: "optimized"
             python-version: "3.8"
-          - target: "python_tools"
+          - target: "tools"
             python-version: "3.8"
-          - target: "python_ide"
+          - target: "ide"
             python-version: "3.8"
     env:
       GNAT: "pro23.0w-20220723"
@@ -318,7 +318,7 @@ jobs:
         run: |
           make test_binary_size
 
-  verification_python_scheduled:
+  verification_property_tests:
     name: Verification
     if: github.event.schedule
     runs-on: ubuntu-20.04
