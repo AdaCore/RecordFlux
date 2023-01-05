@@ -12,6 +12,8 @@ LANGKIT_HEAD = 5d83c8b292c222f08c1b4d4c201b4202360a2862
 
 PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv
 
+export PYTHONPATH := $(PWD)
+
 # Switch to a specific revision of the git repository.
 #
 # @param $(1) directory of the git repository

@@ -45,7 +45,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev
         make init install_devel
     - name: Check
@@ -101,7 +100,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev
         eval `make printenv_gnat`
         make init install_devel
