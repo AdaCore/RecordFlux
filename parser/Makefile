@@ -6,7 +6,7 @@ ADACORE_ORIGIN ?= https://github.com/AdaCore
 VERSION = 0.13.0
 BUILDDIR = $(PWD)/build
 PYTHON_PACKAGES = language tests disttools/setup.py disttools/gprgen.py
-PYTHON_STYLE_HEAD = 7f2584cd5e72fb6e7a80dcc8cce296f5821dcf8e
+DEVUTILS_HEAD = 7f2584cd5e72fb6e7a80dcc8cce296f5821dcf8e
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
 LANGKIT_HEAD = 5d83c8b292c222f08c1b4d4c201b4202360a2862
 
@@ -56,7 +56,7 @@ DISTDIR := $(shell mktemp -d --tmpdir=$(BUILDDIR) dist-XXXXXXXX)
 endif
 endif
 
-$(shell $(call reinit_repo,.config/python-style,$(PYTHON_STYLE_HEAD)))
+$(shell $(call reinit_repo,devutils,$(DEVUTILS_HEAD)))
 $(shell $(call reinit_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD)))
 $(shell $(call reinit_repo,contrib/langkit,$(langkit_HEAD)))
 
@@ -68,22 +68,20 @@ all: check test
 
 .PHONY: init deinit
 
-init: .config/python-style contrib/gnatcoll-bindings contrib/langkit
-	$(VERBOSE)$(call checkout_repo,.config/python-style,$(PYTHON_STYLE_HEAD))
+init: devutils contrib/gnatcoll-bindings contrib/langkit
+	$(VERBOSE)$(call checkout_repo,devutils,$(DEVUTILS_HEAD))
 	$(VERBOSE)$(call checkout_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD))
 	$(VERBOSE)$(call checkout_repo,contrib/langkit,$(LANGKIT_HEAD))
-	$(VERBOSE)ln -sf .config/python-style/pyproject.toml
-	$(VERBOSE)git update-index --skip-worktree pyproject.toml
+	$(VERBOSE)ln -sf devutils/pyproject.toml
 
 deinit:
-	$(VERBOSE)$(call remove_repo,.config/python-style)
+	$(VERBOSE)$(call remove_repo,devutils)
 	$(VERBOSE)$(call remove_repo,contrib/gnatcoll-bindings)
 	$(VERBOSE)$(call remove_repo,contrib/langkit)
-	$(VERBOSE)ln -sf .config/pyproject.toml
-	$(VERBOSE)git update-index --no-skip-worktree pyproject.toml
+	$(VERBOSE)rm pyproject.toml
 
-.config/python-style:
-	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/python-style.git .config/python-style
+devutils:
+	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/RecordFlux-devutils.git devutils
 
 contrib/gnatcoll-bindings:
 	$(VERBOSE)mkdir -p contrib
@@ -132,10 +130,10 @@ install: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	pip3 install --force-reinstall $<
 
 install_devel: install
-	$(MAKE) -C .config/python-style install_devel
+	$(MAKE) -C devutils install_devel
 
 install_devel_edge: install
-	$(MAKE) -C .config/python-style install_devel_edge
+	$(MAKE) -C devutils install_devel_edge
 
 dist: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	@echo "============================================================================================================"
