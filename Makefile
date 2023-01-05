@@ -17,6 +17,7 @@ GNATPROVE_CACHE_DIR = $(subst file:,,$(GNATPROVE_CACHE))
 endif
 
 export GNATPROVE_CACHE := $(GNATPROVE_CACHE)
+export PYTHONPATH := $(PWD)
 
 # Switch to a specific revision of the git repository.
 #

@@ -66,7 +66,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
@@ -156,7 +155,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
@@ -261,7 +259,6 @@ jobs:
       - name: Install dependencies
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
           echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
           sudo apt install graphviz libgmp-dev patchelf
           python -m pip install --upgrade pip wheel
@@ -309,7 +306,6 @@ jobs:
       - name: Install dependencies
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
           echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
           sudo apt install graphviz libgmp-dev patchelf
           python -m pip install --upgrade pip wheel
@@ -365,7 +361,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
@@ -454,7 +449,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
@@ -538,7 +532,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf dnsmasq
         python -m pip install --upgrade pip wheel
@@ -616,7 +609,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
@@ -684,7 +676,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         echo "HYPOTHESIS_PROFILE=ci" >> $GITHUB_ENV
         sudo apt install graphviz libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
@@ -742,7 +733,6 @@ jobs:
     - name: Install dependencies
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
         sudo apt install libgmp-dev patchelf
         python -m pip install --upgrade pip wheel
         make init install_devel
