@@ -54,7 +54,6 @@ jobs:
       - name: Install dependencies
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
           sudo apt install libgmp-dev patchelf
           python -m pip install --upgrade pip wheel
           make init install_devel
