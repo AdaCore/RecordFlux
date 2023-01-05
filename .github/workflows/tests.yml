@@ -52,7 +52,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ env.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', 'devutils/setup.cfg') }}
     - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
@@ -146,7 +146,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.GNAT }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ env.GNAT }}-${{ hashFiles('setup.py', 'devutils/setup.cfg', 'Makefile') }}
     - name: Install GNAT Pro
       uses: ./.github/actions/install_gnat_pro
       with:
@@ -212,7 +212,7 @@ jobs:
             ~/.cache/pip
             ~/.local/lib/python${{ env.python-version }}/site-packages
             ~/.local/bin
-          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
+          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', 'devutils/setup.cfg', 'Makefile') }}
       - name: Cache GNAT Community
         if: ${{ matrix.gnat-distrib == 'community' }}
         uses: actions/cache@v2
@@ -240,7 +240,7 @@ jobs:
           path: |
             ~/.config/alire
             build/alire
-          key: ${{ runner.os }}-alire${{ env.ALIRE_VERSION }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg', 'Makefile') }}
+          key: ${{ runner.os }}-alire${{ env.ALIRE_VERSION }}-python${{ env.PYTHON_VERSION }}-${{ matrix.gnat-distrib }}${{ matrix.gnat-version }}-${{ hashFiles('setup.py', 'devutils/setup.cfg', 'Makefile') }}
       - name: Install Alire
         if: ${{ matrix.gnat-distrib == 'fsf' }}
         uses: alire-project/setup-alire@v1
@@ -299,7 +299,7 @@ jobs:
             ~/.cache/pip
             ~/.local/lib/python${{ env.python-version }}/site-packages
             ~/.local/bin
-          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-gnat${{ env.GNAT }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-gnat${{ env.GNAT }}-${{ hashFiles('setup.py', 'devutils/setup.cfg') }}
       - name: Install GNAT Pro
         uses: ./.github/actions/install_gnat_pro
         with:
@@ -345,7 +345,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', 'devutils/setup.cfg') }}
     - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
@@ -434,7 +434,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ env.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', 'devutils/setup.cfg') }}
     - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
@@ -524,7 +524,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ matrix.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', 'devutils/setup.cfg') }}
     - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
@@ -596,7 +596,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ env.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', 'devutils/setup.cfg') }}
     - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
@@ -670,7 +670,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ env.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', 'devutils/setup.cfg') }}
     - name: Cache GNAT Community
       uses: actions/cache@v2
       with:
@@ -728,7 +728,7 @@ jobs:
           ~/.cache/pip
           ~/.local/lib/python${{ env.python-version }}/site-packages
           ~/.local/bin
-        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+        key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', 'devutils/setup.cfg') }}
     - name: Cache GNAT Community
       uses: actions/cache@v2
       with:

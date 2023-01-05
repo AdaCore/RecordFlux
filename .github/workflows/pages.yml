@@ -40,7 +40,7 @@ jobs:
             ~/.cache/pip
             ~/.local/lib/python${{ env.python-version }}/site-packages
             ~/.local/bin
-          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', '.config/python-style/setup.cfg') }}
+          key: ${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('setup.py', 'devutils/setup.cfg') }}
       - name: Cache GNAT Community
         uses: actions/cache@v2
         with:

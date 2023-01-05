@@ -4,7 +4,7 @@ RECORDFLUX_ORIGIN ?= https://github.com/Componolit
 
 BUILD_DIR = build
 PYTHON_PACKAGES = bin doc/conf.py examples/apps rflx tests tools stubs setup.py
-PYTHON_STYLE_HEAD = 7f2584cd5e72fb6e7a80dcc8cce296f5821dcf8e
+DEVUTILS_HEAD = 7f2584cd5e72fb6e7a80dcc8cce296f5821dcf8e
 
 SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
@@ -55,7 +55,7 @@ $(if
 )
 endef
 
-$(shell $(call reinit_repo,.config/python-style,$(PYTHON_STYLE_HEAD)))
+$(shell $(call reinit_repo,devutils,$(DEVUTILS_HEAD)))
 
 .PHONY: all
 
@@ -63,18 +63,16 @@ all: check test prove
 
 .PHONY: init deinit
 
-init: .config/python-style
-	$(VERBOSE)$(call checkout_repo,.config/python-style,$(PYTHON_STYLE_HEAD))
-	$(VERBOSE)ln -sf .config/python-style/pyproject.toml
-	$(VERBOSE)git update-index --skip-worktree pyproject.toml
+init: devutils
+	$(VERBOSE)$(call checkout_repo,devutils,$(DEVUTILS_HEAD))
+	$(VERBOSE)ln -sf devutils/pyproject.toml
 
 deinit:
-	$(VERBOSE)$(call remove_repo,.config/python-style)
-	$(VERBOSE)ln -sf .config/pyproject.toml
-	$(VERBOSE)git update-index --no-skip-worktree pyproject.toml
+	$(VERBOSE)$(call remove_repo,devutils)
+	$(VERBOSE)rm pyproject.toml
 
-.config/python-style:
-	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/python-style.git .config/python-style
+devutils:
+	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/RecordFlux-devutils.git devutils
 
 .PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc
 
@@ -195,14 +193,14 @@ $(GNATPROVE_CACHE_DIR):
 
 install_devel:
 	tools/check_pip_version.py
-	$(MAKE) -C .config/python-style install_devel
+	$(MAKE) -C devutils install_devel
 	pip3 install -e ".[devel]"
 
 upgrade_devel:
 	tools/upgrade_dependencies.py
 
 install_devel_edge: install_devel
-	$(MAKE) -C .config/python-style install_devel_edge
+	$(MAKE) -C devutils install_devel_edge
 
 install_git_hooks:
 	install -m 755 tools/pre-{commit,push} .git/hooks/
