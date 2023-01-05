@@ -91,8 +91,7 @@ contrib/langkit:
 	$(VERBOSE)mkdir -p contrib
 	$(VERBOSE)git clone $(ADACORE_ORIGIN)/langkit.git contrib/langkit
 
-.PHONY: check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle format \
-	test test_python test_python_coverage install install_devel install_devel_edge clean
+.PHONY: check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
 
 check: check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
 
@@ -114,17 +113,20 @@ check_mypy:
 check_pydocstyle:
 	pydocstyle $(PYTHON_PACKAGES)
 
+.PHONY: format
+
 format:
 	black -l 100 $(PYTHON_PACKAGES)
 	isort $(PYTHON_PACKAGES)
 
-test: test_python_coverage
+.PHONY: test test_coverage
 
-test_python:
-	$(PYTEST) tests
+test: test_coverage
 
-test_python_coverage:
+test_coverage:
 	$(PYTEST) --cov=librflxlang --cov-branch --cov-fail-under=75 --cov-report=term-missing:skip-covered tests
+
+.PHONY: install install_devel install_devel_edge
 
 install: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	pip3 install --force-reinstall $<
@@ -134,6 +136,8 @@ install_devel: install
 
 install_devel_edge: install
 	$(MAKE) -C devutils install_devel_edge
+
+.PHONY: dist
 
 dist: $(BUILDDIR)/RecordFlux-parser-$(VERSION).tar.gz
 	@echo "============================================================================================================"
@@ -165,6 +169,8 @@ $(DISTDIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py
 	$(VERBOSE)cp README.md $(DISTDIR)/README.md
 	$(VERBOSE)touch $(DISTDIR)/python/librflxlang/py.typed
 
+.PHONY: install_gnat printenv_gnat
+
 install_gnat:
 	alr toolchain --install gnat_native=11.2.1 && \
 	mkdir -p build && \
@@ -177,6 +183,8 @@ printenv_gnat:
 	@test -d build/alire && \
 	cd build/alire && \
 	alr printenv
+
+.PHONY: clean
 
 clean:
 	rm -rf .mypy_cache .pytest_cache .egg build
