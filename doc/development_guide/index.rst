@@ -131,7 +131,6 @@ Checklist for releasing new versions
 
 .. code:: markdown
 
-    - [ ] Update submodules
     - [ ] Test GNAT Studio plugin
        - Check verification, generation and display of message graph for example apps
     - [ ] Add release to `CHANGELOG`
