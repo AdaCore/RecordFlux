@@ -13,9 +13,9 @@ from tests.utils import parse_bool_expression, parse_expression, parse_math_expr
 @given(
     strategies.mathematical_expressions(
         st.one_of(
-            strategies.numbers()
-            | strategies.variables(strategies.identifiers())
-            | strategies.attributes(strategies.identifiers())
+            strategies.numbers(),
+            strategies.variables(strategies.identifiers()),
+            strategies.attributes(strategies.identifiers()),
         )
     )
 )
@@ -30,9 +30,9 @@ def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
         st.one_of(
             strategies.mathematical_expressions(
                 st.one_of(
-                    strategies.numbers()
-                    | strategies.variables(strategies.identifiers())
-                    | strategies.attributes(strategies.identifiers())
+                    strategies.numbers(),
+                    strategies.variables(strategies.identifiers()),
+                    strategies.attributes(strategies.identifiers()),
                 )
             )
         )
@@ -48,37 +48,37 @@ def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
     st.one_of(
         strategies.mathematical_expressions(
             st.one_of(
-                strategies.numbers()
-                | strategies.variables(strategies.identifiers())
-                | strategies.attributes(strategies.identifiers())
+                strategies.numbers(),
+                strategies.variables(strategies.identifiers()),
+                strategies.attributes(strategies.identifiers()),
             )
         ),
         strategies.boolean_relations(
-            st.one_of(strategies.aggregates(strategies.numbers()) | strategies.strings()),
+            st.one_of(strategies.aggregates(strategies.numbers()), strategies.strings()),
         ),
         strategies.boolean_expressions(
             st.one_of(
                 strategies.mathematical_expressions(
                     st.one_of(
-                        strategies.numbers()
-                        | strategies.variables(strategies.identifiers())
-                        | strategies.attributes(strategies.identifiers())
+                        strategies.numbers(),
+                        strategies.variables(strategies.identifiers()),
+                        strategies.attributes(strategies.identifiers()),
                     )
                 )
             )
         ),
         strategies.calls(
             st.one_of(
-                strategies.numbers()
-                | strategies.variables(strategies.identifiers())
-                | strategies.attributes(strategies.identifiers())
+                strategies.numbers(),
+                strategies.variables(strategies.identifiers()),
+                strategies.attributes(strategies.identifiers()),
             )
         ),
         strategies.quantified_expressions(
             st.one_of(
-                strategies.numbers()
-                | strategies.variables(strategies.identifiers())
-                | strategies.attributes(strategies.identifiers())
+                strategies.numbers(),
+                strategies.variables(strategies.identifiers()),
+                strategies.attributes(strategies.identifiers()),
             )
         ),
         strategies.strings(),
