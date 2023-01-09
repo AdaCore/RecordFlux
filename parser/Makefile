@@ -6,7 +6,7 @@ ADACORE_ORIGIN ?= https://github.com/AdaCore
 VERSION = 0.13.0
 BUILDDIR = $(PWD)/build
 PYTHON_PACKAGES = language tests disttools/setup.py disttools/gprgen.py
-DEVUTILS_HEAD = 7f2584cd5e72fb6e7a80dcc8cce296f5821dcf8e
+DEVUTILS_HEAD = f5c6865bae91fccb1858ef2caded61d31c69605d
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
 LANGKIT_HEAD = 5d83c8b292c222f08c1b4d4c201b4202360a2862
 
