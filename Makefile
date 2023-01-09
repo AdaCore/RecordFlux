@@ -4,7 +4,7 @@ RECORDFLUX_ORIGIN ?= https://github.com/Componolit
 
 BUILD_DIR = build
 PYTHON_PACKAGES = bin doc/conf.py examples/apps rflx tests tools stubs setup.py
-DEVUTILS_HEAD = 7f2584cd5e72fb6e7a80dcc8cce296f5821dcf8e
+DEVUTILS_HEAD = f5c6865bae91fccb1858ef2caded61d31c69605d
 
 SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
