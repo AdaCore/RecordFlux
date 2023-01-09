@@ -8,37 +8,37 @@ from tests.property import strategies
     st.one_of(
         strategies.mathematical_expressions(
             st.one_of(
-                strategies.numbers()
-                | strategies.variables(strategies.identifiers())
-                | strategies.attributes(strategies.identifiers())
+                strategies.numbers(),
+                strategies.variables(strategies.identifiers()),
+                strategies.attributes(strategies.identifiers()),
             )
         ),
         strategies.boolean_relations(
-            st.one_of(strategies.aggregates(strategies.numbers()) | strategies.strings()),
+            st.one_of(strategies.aggregates(strategies.numbers()), strategies.strings()),
         ),
         strategies.boolean_expressions(
             st.one_of(
                 strategies.mathematical_expressions(
                     st.one_of(
-                        strategies.numbers()
-                        | strategies.variables(strategies.identifiers())
-                        | strategies.attributes(strategies.identifiers())
+                        strategies.numbers(),
+                        strategies.variables(strategies.identifiers()),
+                        strategies.attributes(strategies.identifiers()),
                     )
                 )
             )
         ),
         strategies.calls(
             st.one_of(
-                strategies.numbers()
-                | strategies.variables(strategies.identifiers())
-                | strategies.attributes(strategies.identifiers())
+                strategies.numbers(),
+                strategies.variables(strategies.identifiers()),
+                strategies.attributes(strategies.identifiers()),
             )
         ),
         strategies.quantified_expressions(
             st.one_of(
-                strategies.numbers()
-                | strategies.variables(strategies.identifiers())
-                | strategies.attributes(strategies.identifiers())
+                strategies.numbers(),
+                strategies.variables(strategies.identifiers()),
+                strategies.attributes(strategies.identifiers()),
             )
         ),
         strategies.strings(),
