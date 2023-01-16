@@ -61,7 +61,7 @@ project DHCP_Client is
 
    package Prove is
       for Proof_Switches ("Ada") use Defaults.Proof_Switches;
-      for Proof_Switches ("rflx-dhcp_client-session.adb") use ("--timeout=600");
+      for Proof_Switches ("rflx-dhcp_client-session.adb") use ("--timeout=300");
    end Prove;
 
 end DHCP_Client;
