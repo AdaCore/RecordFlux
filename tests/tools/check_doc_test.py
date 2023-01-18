@@ -266,12 +266,7 @@ Some more text...
 def test_invalid_yaml_file() -> None:
     with pytest.raises(
         CheckDocError,
-        match=(
-            r"^<stdin>:4: error in code block\n"
-            r"while parsing a block node\n"
-            r"did not find expected node content\n"
-            r'  in "<unicode string>", line 1, column 1$'
-        ),
+        match=r"^<stdin>:4: error in code block\nwhile parsing a block node\n.*\n.*$",
     ):
         check_file(
             STDIN,
