@@ -5,7 +5,7 @@ package IPv6 is
    --  Types
 
    --  The value [...] MUST be ignored by the receiver
-   --  ISSUE: Componolit/RecordFlux#601
+   --  Eng/RecordFlux/RecordFlux#601
    type Reserved_2  is range 0 .. 0 with Size => 2;
    type Reserved_8  is range 0 .. 0 with Size => 8;
    type Reserved_15 is range 0 .. 0 with Size => 15;
@@ -132,7 +132,7 @@ package IPv6 is
    type Cmpr_Length is range 0 .. 15 with Size => 4;
    type Pad_Length is range 0 .. 15 with Size => 4;
 
-   --  ISSUE: Componolit/RecordFlux#608
+   --  Eng/RecordFlux/RecordFlux#608
    --  As per RFC 6554, section 3, the segments sent in the RPL routing header actually are a
    --  vector of addresses. However, these are not fixed-size IPv6 addresses, but they are
    --  truncated depending on the values of CmprI and CmprE. We cannot specify this as a normal
@@ -222,7 +222,7 @@ package IPv6 is
          Segments : Addresses
             --  Last Entry contains the index (zero based), in the Segment List, of the last
             --  element of the Segment List.
-            --  ISSUE: Componolit/RecordFlux#404
+            --  Eng/RecordFlux/RecordFlux#404
             --  with Size => Address'Size * (Last_Entry + 1);
             with Size => 128 * (Last_Entry + 1);
       end message;

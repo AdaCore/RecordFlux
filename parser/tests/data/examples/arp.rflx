@@ -25,12 +25,12 @@ package ARP is
             then Hln if Pro = Ethernet::ET_IPV4;
          --  Byte length of each hardware address
          Hln : Address_Length
-            --  ISSUE: Componolit/RecordFlux#559
+            --  Eng/RecordFlux/RecordFlux#559
             --  then pln if Hln = Ethernet::Address'Size / 8;
             then Pln if Hln = 6;
          --  Byte length of each protocol address
          Pln : Address_Length
-            --  ISSUE: Componolit/RecordFlux#559
+            --  Eng/RecordFlux/RecordFlux#559
             --  then Op if Pln = IPv4::Address'Size / 8;
             then Op if Pln = 4;
          Op  : Opcode;

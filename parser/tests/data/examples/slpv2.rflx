@@ -212,7 +212,7 @@ package SLPv2 is
       if Function_ID = FI_SA_ADVERTISEMENT;
 
    -- 9.1. Service Location Protocol Extensions
-   -- ISSUE: Componolit/RecordFlux#598
+   -- Eng/RecordFlux/RecordFlux#598
    type Extension_Id is range 16#0000# .. 16#8FFF# with Size => 16;
    type Service_Location_Extension is
       message
