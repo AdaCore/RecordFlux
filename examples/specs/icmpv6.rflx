@@ -61,7 +61,7 @@ package ICMPv6 is
                   or Tag = Echo_Request
                   or Tag = Echo_Reply
             then Data
-               -- Eng/RecordFlux/RecordFlux-specifications#101
+               -- Eng/RecordFlux/RecordFlux#1227
                with Size => Message'Last - Tag'Last
                if Tag = Private_Experimentation_100
                   or Tag = Private_Experimentation_101
@@ -90,20 +90,20 @@ package ICMPv6 is
                   or Tag = Echo_Reply;
          Unused : Reserved_32
             then Data
-               -- Eng/RecordFlux/RecordFlux-specifications#101
+               -- Eng/RecordFlux/RecordFlux#1227
                with Size => Message'Last - Unused'Last;
          MTU : MTU
             then Data
-               -- Eng/RecordFlux/RecordFlux-specifications#101
+               -- Eng/RecordFlux/RecordFlux#1227
                with Size => Message'Last - MTU'Last;
          Pointer : Pointer
             then Data
-               -- Eng/RecordFlux/RecordFlux-specifications#101
+               -- Eng/RecordFlux/RecordFlux#1227
                with Size => Message'Last - Pointer'Last;
          Identifier : Identifier;
          Sequence_Number : Sequence_Number
             then Data
-               -- Eng/RecordFlux/RecordFlux-specifications#101
+               -- Eng/RecordFlux/RecordFlux#1227
                with Size => Message'Last - Sequence_Number'Last;
          Data : Opaque
             if Message'Size >= 64 and Message'Size <= 8 * 1280;

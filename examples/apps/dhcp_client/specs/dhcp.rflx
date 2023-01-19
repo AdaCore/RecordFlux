@@ -6,7 +6,7 @@ package DHCP is
 
    -- DHCP Options and BOOTP Vendor Extensions (RFC 1533)
 
-   -- Eng/RecordFlux/RecordFlux-specifications#70
+   -- Eng/RecordFlux/RecordFlux#1222
    -- The full list of Codes is defined in
    -- https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xml#options.
    type Code is
@@ -74,7 +74,7 @@ package DHCP is
        File_And_Sname_Overload => 3)
    with Size => 8;
 
-   -- Eng/RecordFlux/RecordFlux-specifications#70
+   -- Eng/RecordFlux/RecordFlux#1222
    -- The full list of Codes is defined in
    -- https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xml#message-type-53.
    type DHCP_Message_Type is
@@ -179,7 +179,7 @@ package DHCP is
    -- DHCP Message (RFC 2131, 2)
 
    type Message_Op_Code is (BOOTREQUEST => 1, BOOTREPLY => 2) with Size => 8;
-   -- Eng/RecordFlux/RecordFlux-specifications#70
+   -- Eng/RecordFlux/RecordFlux#1222
    -- The full list of Hardware Types is defined in
    -- https://www.iana.org/assignments/arp-parameters/arp-parameters.xml#arp-parameters-2.
    type Hardware_Address_Type is (HT_Reserved => 0, HT_Ethernet_10 => 1) with Size => 8, Always_Valid;
