@@ -40,6 +40,7 @@ FEATURE_TESTS = [
 
 def main() -> None:
     generate_spark_tests()
+    deduplicate_feature_specs()
     generate_feature_tests()
 
 
@@ -66,6 +67,16 @@ def generate_feature_tests() -> None:
             if f.name in shared_files and filecmp.cmp(f, shared_files[f.name]):
                 f.unlink()
                 f.symlink_to(f"../../shared/generated/{f.name}")
+
+
+def deduplicate_feature_specs() -> None:
+    shared_files = {f.name: f for f in SHARED_DIRECTORY.glob("*.rflx")}
+
+    for feature_test in FEATURE_TESTS:
+        for f in feature_test.glob("*.rflx"):
+            if f.name in shared_files and filecmp.cmp(f, shared_files[f.name]):
+                f.unlink()
+                f.symlink_to(f"../shared/{f.name}")
 
 
 def generate(feature_test: Path) -> None:
