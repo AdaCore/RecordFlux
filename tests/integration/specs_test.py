@@ -233,7 +233,7 @@ def test_ipv4_parsing_ipv4_option_value(ipv4_option_value: pyrflx.MessageValue) 
     assert len(ip_option) == 1
 
 
-@pytest.mark.skip(reason="https://github.com/Componolit/RecordFlux/issues/61")
+@pytest.mark.skip(reason="Eng/RecordFlux/RecordFlux#61")
 def test_ipv4_parsing_ipv4_with_options(
     ipv4_packet_value: pyrflx.MessageValue,
 ) -> None:  # pragma: no cover

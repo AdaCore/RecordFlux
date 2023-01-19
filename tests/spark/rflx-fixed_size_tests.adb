@@ -36,7 +36,7 @@ package body RFLX.Fixed_Size_Tests is
       Assert (Structure.Message_Type.Enum'Img, Universal.OT_Data'Img, "Unexpected Message_Type");
       Assert (Structure.Data, (2, 3, 4), "Unexpected Data");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
@@ -68,7 +68,7 @@ package body RFLX.Fixed_Size_Tests is
 
       Assert (Data, (2, 3, 4), "Unexpected Data");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);

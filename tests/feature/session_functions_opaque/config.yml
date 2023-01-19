@@ -3,5 +3,5 @@ sequence: |
   State: Check_Message
   State: Check_Message_Sequence
   State: Check_Scalar_Sequence
-# https://github.com/Componolit/RecordFlux/issues/691
+# Eng/RecordFlux/RecordFlux#691
 # prove:

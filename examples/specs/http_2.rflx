@@ -164,7 +164,7 @@ package HTTP_2 is
                   or (Frame_Type = PUSH_PROMISE and Flag_Padded = False);
          Settings_Parameters : Settings_Parameters
             then null
-               -- https://github.com/Componolit/RecordFlux/issues/554
+               -- Eng/RecordFlux/RecordFlux#554
                if Message'Size = Payload_Length * 8 + (Stream_Identifier'Last + 1 - Payload_Length'First);
          Pad_Length : Pad_Length
             then Application_Data
@@ -208,7 +208,7 @@ package HTTP_2 is
                   and Flag_Padded = False and Payload_Length >= (Weight'Last - Exclusive_Flag'First + 1) / 8
             then null
                if Frame_Type = PRIORITY
-                  -- https://github.com/Componolit/RecordFlux/issues/554
+                  -- Eng/RecordFlux/RecordFlux#554
                   and Message'Size = Payload_Length * 8 + (Stream_Identifier'Last + 1 - Payload_Length'First);
          Header_Block_Fragment : Opaque
             then Padding
@@ -216,26 +216,26 @@ package HTTP_2 is
             then null
                if (Frame_Type = CONTINUATION
                   or ((Frame_Type = PUSH_PROMISE or Frame_Type = HEADERS) and Flag_Padded = False))
-                  -- https://github.com/Componolit/RecordFlux/issues/554
+                  -- Eng/RecordFlux/RecordFlux#554
                   and Message'Size = Payload_Length * 8 + (Stream_Identifier'Last + 1 - Payload_Length'First);
          Application_Data : Opaque
             then Padding
                if Frame_Type = DATA and Flag_Padded = True
             then null
                if ((Frame_Type = DATA and Flag_Padded = False) or Frame_Type = PING)
-                  -- https://github.com/Componolit/RecordFlux/issues/554
+                  -- Eng/RecordFlux/RecordFlux#554
                   and Message'Size = Payload_Length * 8 + (Stream_Identifier'Last + 1 - Payload_Length'First);
          Padding : Opaque
             with Size => Pad_Length * 8;
          Error_Code : Error_Code
             then null
                if Frame_Type = RST_STREAM
-                  -- https://github.com/Componolit/RecordFlux/issues/554
+                  -- Eng/RecordFlux/RecordFlux#554
                   and Message'Size = Payload_Length * 8 + (Stream_Identifier'Last + 1 - Payload_Length'First)
             then null
                if Frame_Type = GOAWAY
                   and Payload_Length * 8 = (Error_Code'Size + Last_Stream_ID'Size + Reserved_Bit_2'Size)
-                  -- https://github.com/Componolit/RecordFlux/issues/554
+                  -- Eng/RecordFlux/RecordFlux#554
                   and Message'Size = Payload_Length * 8 + (Stream_Identifier'Last + 1 - Payload_Length'First)
             then Additional_Debug_Data
                with Size => (Payload_Length * 8 - (Error_Code'Size + Last_Stream_ID'Size + Reserved_Bit_2'Size))
@@ -243,11 +243,11 @@ package HTTP_2 is
                   and Payload_Length * 8 > (Error_Code'Size + Last_Stream_ID'Size + Reserved_Bit_2'Size);
          Additional_Debug_Data : Opaque
             then null
-               -- https://github.com/Componolit/RecordFlux/issues/554
+               -- Eng/RecordFlux/RecordFlux#554
                if Message'Size = Payload_Length * 8 + (Stream_Identifier'Last + 1 - Payload_Length'First);
          Window_Size_Increment : Window_Size_Increment
             then null
-               -- https://github.com/Componolit/RecordFlux/issues/554
+               -- Eng/RecordFlux/RecordFlux#554
                if Message'Size = Payload_Length * 8 + (Stream_Identifier'Last + 1 - Payload_Length'First);
       end message;
 

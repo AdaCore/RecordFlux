@@ -12,5 +12,5 @@ sequence: |
   State: Process_2
   Read Channel: 1 6 1 0 3 0 1 2
   State: Reply_2
-# https://github.com/Componolit/RecordFlux/issues/691
+# Eng/RecordFlux/RecordFlux#691
 # prove:

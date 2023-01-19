@@ -308,7 +308,7 @@ def check(args: argparse.Namespace) -> None:
 
 
 def generate(args: argparse.Namespace) -> None:
-    # https://github.com/Componolit/Workarounds/issues/28
+    # Eng/RecordFlux/Workarounds#28
     args.prefix = args.prefix if args.prefix != " " else ""
 
     if args.prefix and "" in args.prefix.split("."):

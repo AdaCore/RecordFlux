@@ -224,7 +224,7 @@ package body RFLX.IPv4_Tests is
             Valid := IPv4.Option.Valid (Context, IPv4.Option.F_Option_Number);
             Assert (Valid, "Invalid Option_Number");
             if Valid then
-               -- https://github.com/Componolit/Workarounds/issues/30
+               -- Eng/RecordFlux/Workarounds#30
                pragma Warnings (Off, "unreachable code");
                Option_Number := IPv4.Option.Get_Option_Number (Context);
                pragma Warnings (On, "unreachable code");
@@ -254,7 +254,7 @@ package body RFLX.IPv4_Tests is
       Assert (Context.Last'Image, RFLX_Builtin_Types.Bit_Length (24)'Image, "Invalid Context.Last");
    end Test_Parsing_IPv4_Option;
 
-   -- https://github.com/Componolit/RecordFlux/issues/61
+   -- Eng/RecordFlux/RecordFlux#61
 
    -- procedure Test_Parsing_IPv4_With_Options (T : in out AUnit.Test_Cases.Test_Case'Class) with
    --   SPARK_Mode, Pre => True
@@ -388,7 +388,7 @@ package body RFLX.IPv4_Tests is
    begin
       Register_Routine (T, Test_Parsing_IPv4'Access, "Parsing IPv4");
       Register_Routine (T, Test_Parsing_IPv4_Option'Access, "Parsing IPv4 Option");
-      -- https://github.com/Componolit/RecordFlux/issues/61
+      -- Eng/RecordFlux/RecordFlux#61
       -- Register_Routine (T, Test_Parsing_IPv4_With_Options'Access, "IPv4 with Options (Loop)");
       Register_Routine (T, Test_Generating_IPv4'Access, "Generating IPv4");
       Register_Routine (T, Test_Generating_IPv4_Option'Access, "Generating IPv4 Option");

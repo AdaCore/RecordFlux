@@ -14,19 +14,19 @@ abstract project Defaults is
 
    case Compiler_Variant is
       when "community2020" =>
-         GNATVI := "";  -- https://github.com/Componolit/Workarounds/issues/43
-         GNATA  := "";  -- https://github.com/Componolit/Workarounds/issues/49
+         GNATVI := "";  -- Eng/RecordFlux/Workarounds#43
+         GNATA  := "";  -- Eng/RecordFlux/Workarounds#49
       when "community2021" =>
-         GNATA  := "";  -- https://github.com/Componolit/Workarounds/issues/49
+         GNATA  := "";  -- Eng/RecordFlux/Workarounds#49
       when "pro20.2" =>
-         GNATVI := "";  -- https://github.com/Componolit/Workarounds/issues/43
-         GNATVO := "";  -- https://github.com/Componolit/Workarounds/issues/23
-         GNATEV := "";  -- https://github.com/Componolit/Workarounds/issues/22
-         GNATA  := "";  -- https://github.com/Componolit/Workarounds/issues/49
+         GNATVI := "";  -- Eng/RecordFlux/Workarounds#43
+         GNATVO := "";  -- Eng/RecordFlux/Workarounds#23
+         GNATEV := "";  -- Eng/RecordFlux/Workarounds#22
+         GNATA  := "";  -- Eng/RecordFlux/Workarounds#49
       when "pro21.2" | "pro22.2" =>
-         GNATA  := "";  -- https://github.com/Componolit/Workarounds/issues/49
+         GNATA  := "";  -- Eng/RecordFlux/Workarounds#49
       when "fsf11.2.4" | "fsf12.1.2" =>
-         GNATA  := "";  -- https://github.com/Componolit/Workarounds/issues/49
+         GNATA  := "";  -- Eng/RecordFlux/Workarounds#49
       when others =>
    end case;
 
@@ -68,7 +68,7 @@ abstract project Defaults is
       "--memlimit=1500",
       "--checks-as-errors",
       "--warnings=error",
-      -- https://github.com/Componolit/RecordFlux/issues/670
+      -- Eng/RecordFlux/RecordFlux#670
       -- "--proof-warnings",
       "--function-sandboxing=off",
       "--counterexamples=off",
@@ -111,7 +111,7 @@ abstract project Defaults is
       "-gnatw.d",  -- Activate tagging of warning and info messages.
       "-gnatwe",   -- Treat all run-time exception warnings as errors.
       "-gnatwd",   -- Activate warnings on implicit dereferencing.
-      -- https://github.com/Componolit/Workarounds/issues/27
+      -- Eng/RecordFlux/Workarounds#27
       -- "-gnatwh",   -- Activate warnings on hiding.
       "-gnatwt",   -- Activate warnings for tracking of deleted conditional code.
       "-gnatwQ",   -- Suppress warnings on questionable missing parentheses.

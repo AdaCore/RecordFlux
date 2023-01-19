@@ -43,7 +43,7 @@ def test_iana_specs_synchronized(registry_file: Path) -> None:
 def test_validate_spec(spec: Path) -> None:
     validator = Validator([spec], "examples.specs.checksum", skip_model_verification=True)
 
-    # https://github.com/Componolit/RecordFlux/issues/833
+    # Eng/RecordFlux/RecordFlux#833
     for package in validator._pyrflx:  # pylint: disable = protected-access
         for message_value in package:
             test_data_dir = (

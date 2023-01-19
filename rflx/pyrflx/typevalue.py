@@ -1346,7 +1346,7 @@ class MessageValue(TypeValue):
                     Number(message_size) if message_size else last + Number(1)
                 )
 
-        # https://github.com/Componolit/RecordFlux/issues/422
+        # Eng/RecordFlux/RecordFlux#422
         self._simplified_mapping.update({ValidChecksum(f): TRUE for f in self._checksums})
 
     def _simplified(self, expr: Expr, max_iterations: int = 16) -> Expr:

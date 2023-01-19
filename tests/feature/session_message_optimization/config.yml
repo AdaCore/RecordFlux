@@ -12,5 +12,5 @@ sequence: |
   State: Trigger_Error
   Error: "Get_Option_Data" returned an invalid message
   State: Error
-# https://github.com/Componolit/RecordFlux/issues/691
+# Eng/RecordFlux/RecordFlux#691
 # prove:

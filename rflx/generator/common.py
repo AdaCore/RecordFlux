@@ -300,7 +300,7 @@ def substitution_facts(
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
             for l in t.literals.keys()
         },
-        # https://github.com/Componolit/RecordFlux/issues/276
+        # Eng/RecordFlux/RecordFlux#276
         **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
     }
 
@@ -759,7 +759,7 @@ def initialize_field_statements(
             "Reset_Dependent_Fields",
             [Variable("Ctx"), Variable(field.affixed_name)],
         ),
-        # https://github.com/Componolit/RecordFlux/issues/868
+        # Eng/RecordFlux/RecordFlux#868
         PragmaStatement(
             "Warnings",
             [

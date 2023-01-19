@@ -1285,7 +1285,7 @@ def test_message_size(message_size_value: MessageValue) -> None:
 
     message_size_value.set("A", 2)
     message_size_value.set("B", b"\x01\x02")
-    # https://github.com/Componolit/RecordFlux/issues/422
+    # Eng/RecordFlux/RecordFlux#422
     # Serialization of optional fields dependent of message size not supported.
     # message_size_value.set("C", 3)
 

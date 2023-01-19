@@ -1845,7 +1845,7 @@ def test_parse_error_incorrect_name() -> None:
 
 
 def test_parse_error_illegal_redefinition() -> None:
-    # https://github.com/Componolit/RecordFlux/issues/1208
+    # Eng/RecordFlux/RecordFlux#1208
     error = r'^<stdin>:2:4: model: error: illegal redefinition of built-in type "Boolean"$'
     with pytest.raises(RecordFluxError, match=error):
         parser.Parser().parse_string(

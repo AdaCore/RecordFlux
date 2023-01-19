@@ -2270,7 +2270,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ]
 
         if isinstance(selected.type_, rty.Sequence):
-            # https://github.com/Componolit/RecordFlux/issues/577
+            # Eng/RecordFlux/RecordFlux#577
             # The relevant buffer part has to be copied from the message context into a
             # sequence context. With the current implementation the sequence needs to
             # be parsed after copying. It must be ensured that the sequence is not
@@ -2986,7 +2986,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 type_identifier = self._ada_type(a.prefix.type_.identifier)
                 local_declarations.extend(
                     [
-                        # https://github.com/Componolit/RecordFlux/issues/917
+                        # Eng/RecordFlux/RecordFlux#917
                         # The use of intermediate buffers should be removed.
                         ObjectDeclaration(
                             [argument_name],
@@ -3060,7 +3060,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                 message_context = context_id(a.prefix.identifier, is_global)
                 local_declarations.extend(
                     [
-                        # https://github.com/Componolit/RecordFlux/issues/917
+                        # Eng/RecordFlux/RecordFlux#917
                         # The use of intermediate buffers should be removed.
                         ObjectDeclaration(
                             [argument_name],
@@ -4534,7 +4534,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
     ) -> IfStatement:
-        # https://github.com/Componolit/RecordFlux/issues/577
+        # Eng/RecordFlux/RecordFlux#577
         sequence_context = context_id(sequence_identifier, is_global)
         take_buffer = self._take_buffer(copy_id(sequence_identifier), sequence_type, is_global)
         free_buffer = self._free_buffer(copy_id(sequence_identifier), alloc_id)
@@ -4587,7 +4587,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
     ) -> Declare:
-        # https://github.com/Componolit/RecordFlux/issues/577
+        # Eng/RecordFlux/RecordFlux#577
         take_buffer = self._take_buffer(sequence_identifier, sequence_type, is_global)
         free_buffer = self._free_buffer(sequence_identifier, alloc_id)
         local_exception_handler = exception_handler.copy(free_buffer)
@@ -5055,7 +5055,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         context = context_id(identifier, is_global)
         buf = buf or buffer_id(identifier)
         return [
-            # https://github.com/Componolit/Workarounds/issues/32
+            # Eng/RecordFlux/Workarounds#32
             PragmaStatement(
                 "Warnings",
                 [
@@ -5088,7 +5088,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         sequence_context: ID, element_context: ID, sequence_type: ID
     ) -> Sequence[Statement]:
         return [
-            # https://github.com/Componolit/Workarounds/issues/32
+            # Eng/RecordFlux/Workarounds#32
             PragmaStatement(
                 "Warnings",
                 [

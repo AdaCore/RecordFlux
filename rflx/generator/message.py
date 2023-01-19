@@ -312,7 +312,7 @@ def create_valid_context_function(
         [],
         [],
         [
-            # https://github.com/Componolit/Workarounds/issues/36
+            # Eng/RecordFlux/Workarounds#36
             # An access constant type cannot be used here, because the "implicit conversion
             # between access types with different designated types is not yet supported".
             Pragma(
@@ -322,7 +322,7 @@ def create_valid_context_function(
                     String('"Buffer" is not modified, could be of access constant type'),
                 ],
             ),
-            # https://github.com/Componolit/Workarounds/issues/47
+            # Eng/RecordFlux/Workarounds#47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -690,7 +690,7 @@ def create_initialized_function(prefix: str, message: Message) -> UnitPart:
 
     return UnitPart(
         [
-            # https://github.com/Componolit/Workarounds/issues/47
+            # Eng/RecordFlux/Workarounds#47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1083,7 +1083,7 @@ def create_generic_read_procedure(prefix: str, message: Message) -> UnitPart:
                     [Parameter(["Buffer"], const.TYPES_BYTES)],
                 ),
                 TRUE,
-                # https://github.com/Componolit/Workarounds/issues/48
+                # Eng/RecordFlux/Workarounds#48
                 # Ghost entities are not allowed as formal generic parameters.
                 # aspects=[Ghost()],
             ),
@@ -1185,7 +1185,7 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
                     ],
                 ),
                 TRUE,
-                # https://github.com/Componolit/Workarounds/issues/48
+                # Eng/RecordFlux/Workarounds#48
                 # Ghost entities are not allowed as formal generic parameters.
                 # aspects=[Ghost()],
             ),
@@ -1301,7 +1301,7 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
                             Variable("Offset"),
                         ],
                     ),
-                    # https://github.com/Componolit/Workarounds/issues/39
+                    # Eng/RecordFlux/Workarounds#39
                     # Improve the check message in case of a wrong instantiation of "Write".
                     PragmaStatement(
                         "Assert",
@@ -1359,7 +1359,7 @@ def create_valid_value_function(
 
     return UnitPart(
         [
-            # https://github.com/Componolit/Workarounds/issues/47
+            # Eng/RecordFlux/Workarounds#47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1445,7 +1445,7 @@ def create_path_condition_function(prefix: str, message: Message) -> UnitPart:
 
     return UnitPart(
         [
-            # https://github.com/Componolit/Workarounds/issues/47
+            # Eng/RecordFlux/Workarounds#47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1621,7 +1621,7 @@ def create_field_first_function(prefix: str, message: Message) -> UnitPart:
 
     return UnitPart(
         [
-            # https://github.com/Componolit/Workarounds/issues/47
+            # Eng/RecordFlux/Workarounds#47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1763,7 +1763,7 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
                         )
                     ],
                 ),
-                # https://github.com/Componolit/RecordFlux/issues/276
+                # Eng/RecordFlux/RecordFlux#276
                 **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
             }
         )
@@ -1803,7 +1803,7 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
 
     return UnitPart(
         [
-            # https://github.com/Componolit/Workarounds/issues/47
+            # Eng/RecordFlux/Workarounds#47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1867,7 +1867,7 @@ def create_predecessor_function() -> UnitPart:
 
     return UnitPart(
         [
-            # https://github.com/Componolit/Workarounds/issues/47
+            # Eng/RecordFlux/Workarounds#47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -1911,7 +1911,7 @@ def create_successor_function(prefix: str, message: Message) -> UnitPart:
     return UnitPart(
         [],
         [
-            # https://github.com/Componolit/Workarounds/issues/31
+            # Eng/RecordFlux/Workarounds#31
             Pragma("Warnings", [Variable("Off"), String("precondition is always False")]),
             ExpressionFunctionDeclaration(
                 specification,
@@ -2042,7 +2042,7 @@ def create_valid_predecessor_function(
 
     return UnitPart(
         [
-            # https://github.com/Componolit/Workarounds/issues/47
+            # Eng/RecordFlux/Workarounds#47
             Pragma(
                 "Warnings",
                 [Variable("Off"), String("postcondition does not mention function result")],
@@ -3191,7 +3191,7 @@ def _create_valid_structure_function(prefix: str, message: Message) -> UnitPart:
         for link in path
         for condition in [
             link.condition.substituted(
-                # https://github.com/Componolit/RecordFlux/issues/276
+                # Eng/RecordFlux/RecordFlux#276
                 mapping={expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
             )
             .substituted(_struct_substitution(message))

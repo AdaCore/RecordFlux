@@ -9,5 +9,5 @@ sequence: |
   State: Process
   Read Channel: 1 2 3
   State: Reply
-# https://github.com/Componolit/RecordFlux/issues/691
+# Eng/RecordFlux/RecordFlux#691
 # prove:

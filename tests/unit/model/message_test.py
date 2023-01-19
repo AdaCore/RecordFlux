@@ -480,7 +480,7 @@ def test_cycle() -> None:
         structure,
         types,
         '^<stdin>:10:8: model: error: structure of "P::M" contains cycle$',
-        # https://github.com/Componolit/RecordFlux/issues/256
+        # Eng/RecordFlux/RecordFlux#256
         # '\n'
         # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
         # '<stdin>:4:5: model: info: field "Y" links to "Z"\n'

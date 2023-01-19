@@ -3,7 +3,7 @@
 """
 Intermediate representation in three-address code (TAC) format.
 
-This module is still under development (cf. https://github.com/Componolit/RecordFlux/issues/1204).
+This module is still under development (cf. Eng/RecordFlux/RecordFlux#1204).
 """
 
 from __future__ import annotations

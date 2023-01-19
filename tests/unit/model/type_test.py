@@ -133,7 +133,7 @@ def test_integer_invalid_size_too_small() -> None:
 
 
 def test_integer_invalid_size_exceeds_limit() -> None:
-    # https://github.com/Componolit/RecordFlux/issues/238
+    # Eng/RecordFlux/RecordFlux#238
     assert_type_error(
         Integer("P::T", Number(0), Number(256), Number(128), Location((50, 3))),
         r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*63\)$',

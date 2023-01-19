@@ -56,7 +56,7 @@ package TCP is
                   and Length = (TCP::Kind'Size + TCP::Length'Size + TCP::Max_Seg_Size'Size) / 8
                   -- "This field must only be sent in the initial connection request
                   -- (i.e., in segments with the SYN control bit set)."
-                  -- https://github.com/Componolit/RecordFlux/issues/78
+                  -- Eng/RecordFlux/RecordFlux#78
             then SACK_Blocks
                if Kind = SACK
             then TSval

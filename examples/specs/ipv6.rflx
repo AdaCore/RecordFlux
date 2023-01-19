@@ -5,7 +5,7 @@ package IPv6 is
    -- Types
 
    -- The value [...] MUST be ignored by the receiver
-   -- https://github.com/Componolit/RecordFlux/issues/601
+   -- Eng/RecordFlux/RecordFlux#601
    type Reserved_2 is range 0 .. 0 with Size => 2;
    type Reserved_8 is range 0 .. 0 with Size => 8;
    type Reserved_15 is range 0 .. 0 with Size => 15;
@@ -80,7 +80,7 @@ package IPv6 is
             -- and Next_Header to get the size of the Options.
             with Size => 64 - Hdr_Ext_Len'Size - Next_Header'Size + 64 * Hdr_Ext_Len;
          Data : Opaque
-            -- https://github.com/Componolit/RecordFlux-specifications/issues/101
+            -- Eng/RecordFlux/RecordFlux-specifications#101
             with Size => Message'Last - Options'Last;
       end message;
 
@@ -133,7 +133,7 @@ package IPv6 is
    type Cmpr_Length is range 0 .. 15 with Size => 4;
    type Pad_Length is range 0 .. 15 with Size => 4;
 
-   -- https://github.com/Componolit/RecordFlux/issues/608
+   -- Eng/RecordFlux/RecordFlux#608
    -- As per RFC 6554, section 3, the segments sent in the RPL routing header actually are a
    -- vector of addresses. However, these are not fixed-size IPv6 addresses, but they are
    -- truncated depending on the values of CmprI and CmprE. We cannot specify this as a normal
@@ -208,7 +208,7 @@ package IPv6 is
          Reserved : Reserved_15;
          HMAC_Key_ID : SRH_HMAC_Key_ID;
          HMAC : Opaque
-            -- https://github.com/Componolit/RecordFlux-specifications/issues/101
+            -- Eng/RecordFlux/RecordFlux-specifications#101
             with Size => Message'Last - HMAC_Key_ID'Last;
       end message;
 
@@ -224,7 +224,7 @@ package IPv6 is
          Segments : Addresses
             -- Last Entry contains the index (zero based), in the Segment List, of the last
             -- element of the Segment List.
-            -- https://github.com/Componolit/RecordFlux/issues/404
+            -- Eng/RecordFlux/RecordFlux#404
             -- with Size => Address'Size * (Last_Entry + 1);
             with Size => 128 * (Last_Entry + 1);
       end message;
@@ -237,7 +237,7 @@ package IPv6 is
          Next_Header : Protocol_Numbers::Assigned_Internet_Protocol_Numbers;
          RH : Routing_Base_Header;
          Data : Opaque
-            -- https://github.com/Componolit/RecordFlux-specifications/issues/101
+            -- Eng/RecordFlux/RecordFlux-specifications#101
             with Size => 128;
       end message;
 
@@ -255,7 +255,7 @@ package IPv6 is
          More_Fragments : Boolean;
          Identification : FH_Identification;
          Data : Opaque
-            -- https://github.com/Componolit/RecordFlux-specifications/issues/101
+            -- Eng/RecordFlux/RecordFlux-specifications#101
             with Size => Message'Last - Identification'Last;
       end message;
 

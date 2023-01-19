@@ -209,7 +209,7 @@ is
 
 private
 
-   -- https://github.com/Componolit/Workarounds/issues/24
+   -- Eng/RecordFlux/Workarounds#24
    pragma Warnings (Off, "use clause for package * has no effect");
 
    use {prefix}RFLX_Types;

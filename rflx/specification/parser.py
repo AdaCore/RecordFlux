@@ -1713,7 +1713,7 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
                 ],
             )
     for t in package.f_declarations:
-        # https://github.com/Componolit/RecordFlux/issues/1208
+        # Eng/RecordFlux/RecordFlux#1208
         if isinstance(t, lang.TypeDecl) and model.is_builtin_type(
             create_id(error, t.f_identifier, name).name
         ):

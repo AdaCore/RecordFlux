@@ -175,7 +175,7 @@ is
       ICMP_Context : RFLX.ICMP.Message.Context;
       Data         : constant RFLX.RFLX_Builtin_Types.Bytes (1 .. 56) := (others => 65);
    begin
-      --  https://github.com/Componolit/Workarounds/issues/32
+      --  Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf);
@@ -235,7 +235,7 @@ is
       Source       : RFLX.IPv4.Address;
       Seq          : RFLX.ICMP.Sequence_Number;
    begin
-      --  https://github.com/Componolit/Workarounds/issues/32
+      --  Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
       RFLX.IPv4.Packet.Initialize (IP_Context, Buf, RFLX.RFLX_Types.To_Last_Bit_Index (Buf'Last));

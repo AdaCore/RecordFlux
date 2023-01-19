@@ -192,7 +192,7 @@ class Integer(Scalar):
                 ],
             )
 
-        # https://github.com/Componolit/RecordFlux/issues/1077
+        # Eng/RecordFlux/RecordFlux#1077
         # size of integers is limited to 63bits
 
         if int(size_num) > const.MAX_SCALAR_SIZE:
@@ -354,7 +354,7 @@ class Enumeration(Scalar):
                     ],
                 )
 
-        # https://github.com/Componolit/RecordFlux/issues/1077
+        # Eng/RecordFlux/RecordFlux#1077
         # size of integers is limited to 63bits
 
         if int(size_num) > const.MAX_SCALAR_SIZE:

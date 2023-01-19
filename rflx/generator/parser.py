@@ -349,7 +349,7 @@ class ParserGenerator:
             else set_context_cursor_composite_field("Fld"),
             *(
                 [
-                    # https://github.com/Componolit/RecordFlux/issues/664
+                    # Eng/RecordFlux/RecordFlux#664
                     # The provability of the context predicate is increased by splitting the
                     # assignment into multiple statements.
                     Assignment(
@@ -763,7 +763,7 @@ class ParserGenerator:
 
         return UnitPart(
             [
-                # https://github.com/Componolit/Workarounds/issues/47
+                # Eng/RecordFlux/Workarounds#47
                 Pragma(
                     "Warnings",
                     [Variable("Off"), String("postcondition does not mention function result")],
@@ -810,7 +810,7 @@ class ParserGenerator:
 
         return UnitPart(
             [
-                # https://github.com/Componolit/Workarounds/issues/31
+                # Eng/RecordFlux/Workarounds#31
                 Pragma("Warnings", [Variable("Off"), String("precondition is always False")]),
                 *[
                     SubprogramDeclaration(

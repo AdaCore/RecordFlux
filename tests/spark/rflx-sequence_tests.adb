@@ -91,7 +91,7 @@ package body RFLX.Sequence_Tests is
                  "Valid Integer_Vector before context update");
          Assert (Message.Complete_Integer_Vector (Context, Sequence_Context), "Incomplete Integer_Vector");
 
-         -- https://github.com/Componolit/Workarounds/issues/32
+         -- Eng/RecordFlux/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
          pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Integer_Vector (Context, Sequence_Context);
@@ -135,7 +135,7 @@ package body RFLX.Sequence_Tests is
          Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
                  "Valid Enumeration_Vector before context update");
 
-         -- https://github.com/Componolit/Workarounds/issues/32
+         -- Eng/RecordFlux/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
          pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Enumeration_Vector (Context, Sequence_Context);
@@ -181,7 +181,7 @@ package body RFLX.Sequence_Tests is
          Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
                  "Valid AV_Enumeration_Vector before context update");
 
-         -- https://github.com/Componolit/Workarounds/issues/32
+         -- Eng/RecordFlux/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
          pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
@@ -259,7 +259,7 @@ package body RFLX.Sequence_Tests is
                  "Valid Integer_Vector before context update");
          Assert (Message.Complete_Integer_Vector (Context, Sequence_Context), "Incomplete Integer_Vector");
 
-         -- https://github.com/Componolit/Workarounds/issues/32
+         -- Eng/RecordFlux/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
          pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Integer_Vector (Context, Sequence_Context);
@@ -316,7 +316,7 @@ package body RFLX.Sequence_Tests is
          Assert (Message.Complete_Enumeration_Vector (Context, Sequence_Context),
                  "Incomplete Enumeration_Vector");
 
-         -- https://github.com/Componolit/Workarounds/issues/32
+         -- Eng/RecordFlux/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
          pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_Enumeration_Vector (Context, Sequence_Context);
@@ -376,7 +376,7 @@ package body RFLX.Sequence_Tests is
          Assert (Message.Complete_AV_Enumeration_Vector (Context, Sequence_Context),
                  "Incomplete AV_Enumeration_Vector");
 
-         -- https://github.com/Componolit/Workarounds/issues/32
+         -- Eng/RecordFlux/Workarounds#32
          pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
          pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
          Message.Update_AV_Enumeration_Vector (Context, Sequence_Context);
@@ -389,7 +389,7 @@ package body RFLX.Sequence_Tests is
 
       Assert (Message.Valid_Message (Context), "Invalid Message after complete parsing");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
@@ -433,7 +433,7 @@ package body RFLX.Sequence_Tests is
       Assert (not Message.Valid (Context, Message.F_Integer_Vector),
               "Valid Integer_Vector before context update");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Integer_Vector_Context""");
       pragma Warnings (Off, """Integer_Vector_Context"" is set by ""*"" but not used after the call");
       Message.Update_Integer_Vector (Context, Integer_Vector_Context);
@@ -461,7 +461,7 @@ package body RFLX.Sequence_Tests is
       Assert (not Message.Valid (Context, Message.F_Enumeration_Vector),
               "Valid Enumeration_Vector before context update");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Enumeration_Vector_Context""");
       pragma Warnings (Off, """Enumeration_Vector_Context"" is set by ""*"" but not used after the call");
       Message.Update_Enumeration_Vector (Context, Enumeration_Vector_Context);
@@ -493,11 +493,11 @@ package body RFLX.Sequence_Tests is
       Assert (not Message.Valid (Context, Message.F_AV_Enumeration_Vector),
               "Valid AV_Enumeration_Vector before context update");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""AV_Enumeration_Vector_Context""");
       pragma Warnings (Off, """AV_Enumeration_Vector_Context"" is set by ""*"" but not used after the call");
       Message.Update_AV_Enumeration_Vector (Context, AV_Enumeration_Vector_Context);
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""AV_Enumeration_Vector_Context""");
       pragma Warnings (Off, """AV_Enumeration_Vector_Context"" is set by ""*"" but not used after the call");
 
@@ -505,7 +505,7 @@ package body RFLX.Sequence_Tests is
               "Invalid AV_Enumeration_Vector after context update");
       Assert (Message.Valid_Message (Context), "Invalid Message after complete generating");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
@@ -596,7 +596,7 @@ package body RFLX.Sequence_Tests is
       Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
       Sequence.Integer_Vector.Take_Buffer (Integer_Vector_Context, Integer_Vector_Buffer);
@@ -685,7 +685,7 @@ package body RFLX.Sequence_Tests is
       Assert (Buffer.all (RFLX_Types.To_Index (Context.First) .. RFLX_Types.To_Index (Context.Last)), Expected.all,
               "Invalid binary representation");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""*_Context""");
       pragma Warnings (Off, """*_Context"" is set by ""*"" but not used after the call");
       Sequence.Integer_Vector.Take_Buffer (Integer_Vector_Context, Integer_Vector_Buffer);
@@ -738,7 +738,7 @@ package body RFLX.Sequence_Tests is
       Assert (Length'Image, Sequence.Length'Image (1), "Unexpected Length of element 1");
       Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 1");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
       pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Sequence.Inner_Messages.Update (Sequence_Context, Element_Context);
@@ -760,7 +760,7 @@ package body RFLX.Sequence_Tests is
       Assert (Inner_Message.Well_Formed_Message (Element_Context),
               "Invalid element 2");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
       pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Sequence.Inner_Messages.Update (Sequence_Context, Element_Context);
@@ -774,7 +774,7 @@ package body RFLX.Sequence_Tests is
       Assert (Message.Complete_Messages (Context, Sequence_Context),
               "Invalid Messages_Message");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
       pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Messages (Context, Sequence_Context);
@@ -786,7 +786,7 @@ package body RFLX.Sequence_Tests is
       Assert (Message.Has_Buffer (Context) and then Message.Valid_Message (Context),
               "Invalid Message after complete parsing");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
@@ -854,7 +854,7 @@ package body RFLX.Sequence_Tests is
               "Valid Messages before context update");
       Assert (Message.Complete_Messages (Context, Sequence_Context), "Invalid Messages_Message");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
       pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Messages (Context, Sequence_Context);
@@ -866,7 +866,7 @@ package body RFLX.Sequence_Tests is
 
       Assert (Message.Valid_Message (Context), "Invalid Message after complete parsing");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
@@ -902,7 +902,7 @@ package body RFLX.Sequence_Tests is
 
       Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 1");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
       pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Sequence.Inner_Messages.Update (Sequence_Context, Element_Context);
@@ -918,7 +918,7 @@ package body RFLX.Sequence_Tests is
 
       Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 2");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
       pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Sequence.Inner_Messages.Update (Sequence_Context, Element_Context);
@@ -932,7 +932,7 @@ package body RFLX.Sequence_Tests is
       Assert (Message.Complete_Messages (Context, Sequence_Context),
               "Incomplete Messages");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
       pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Messages (Context, Sequence_Context);
@@ -979,7 +979,7 @@ package body RFLX.Sequence_Tests is
 
       Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 1");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
       pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Sequence.Inner_Messages.Update (Sequence_Context, Element_Context);
@@ -995,7 +995,7 @@ package body RFLX.Sequence_Tests is
 
       Assert (Inner_Message.Well_Formed_Message (Element_Context), "Invalid element 2");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Element_Context""");
       pragma Warnings (Off, """Element_Context"" is set by ""*"" but not used after the call");
       Sequence.Inner_Messages.Update (Sequence_Context, Element_Context);
@@ -1024,7 +1024,7 @@ package body RFLX.Sequence_Tests is
               Expected.all,
               "Invalid binary representation");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
       pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Sequence.Inner_Messages.Take_Buffer (Sequence_Context, Sequence_Buffer);
@@ -1067,7 +1067,7 @@ package body RFLX.Sequence_Tests is
               Expected.all,
               "Invalid binary representation");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
       pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Sequence.Inner_Messages.Take_Buffer (Sequence_Context, Sequence_Buffer);
@@ -1129,7 +1129,7 @@ package body RFLX.Sequence_Tests is
               "Valid Vector before context update");
       Assert (Message.Complete_Vector (Context, Sequence_Context), "Incomplete Vector");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
       pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Vector (Context, Sequence_Context);
@@ -1140,7 +1140,7 @@ package body RFLX.Sequence_Tests is
               "Invalid Vector after context update");
       Assert (Message.Valid_Message (Context), "Invalid Message");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
@@ -1171,7 +1171,7 @@ package body RFLX.Sequence_Tests is
       Assert (not Message.Present (Context, Message.F_Vector), "Present Vector");
       Assert (Message.Well_Formed_Message (Context), "Invalid Message");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Context""");
       pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
       Message.Take_Buffer (Context, Buffer);
@@ -1205,7 +1205,7 @@ package body RFLX.Sequence_Tests is
       Assert (not Message.Valid (Context, Message.F_Vector),
               "Valid Integer_Vector before context update");
 
-      -- https://github.com/Componolit/Workarounds/issues/32
+      -- Eng/RecordFlux/Workarounds#32
       pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
       pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
       Message.Update_Vector (Context, Sequence_Context);

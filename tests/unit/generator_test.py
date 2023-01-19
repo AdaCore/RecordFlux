@@ -1021,7 +1021,7 @@ class UnknownStatement(stmt.Statement):
     "action, expected",
     [
         (
-            # https://github.com/Componolit/RecordFlux/issues/1069
+            # Eng/RecordFlux/RecordFlux#1069
             # Replace this test case by an integration test.
             #
             # X := Universal::Message'(Message_Type => Universal::MT_Data, Length => 0, Data => [])

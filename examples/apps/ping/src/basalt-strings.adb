@@ -54,7 +54,7 @@ is
       Frac := abs (V2 - Duration (Seconds));
       Frac := Frac * 1000000 - 0.5;
       --  FIXME: Calls of Image with explicit default parameters
-      --  https://github.com/Componolit/Workarounds/issues/2
+      --  Eng/RecordFlux/Workarounds#2
       declare
          F_Image : constant String          := Image (Long_Integer (Frac), 10, True);
          Pad     : constant String (1 .. 6) := (others => '0');

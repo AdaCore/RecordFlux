@@ -24,7 +24,7 @@ package DHCP_Client is
                DHCP_Message_Type => DHCP::DHCPDISCOVER
             )
          );
-         -- https://github.com/Componolit/RecordFlux/issues/488
+         -- Eng/RecordFlux/RecordFlux#488
          Parameter_Request_List'Append (DHCP::Subnet_Mask_Option);
          Parameter_Request_List'Append (DHCP::Router_Option);
          Parameter_Request_List'Append (DHCP::Domain_Name_Option);
@@ -54,7 +54,7 @@ package DHCP_Client is
             Yiaddr => 0,
             Siaddr => 0,
             Giaddr => 0,
-            -- https://github.com/Componolit/RecordFlux/issues/485
+            -- Eng/RecordFlux/RecordFlux#485
             Chaddr => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             Sname => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -136,7 +136,7 @@ package DHCP_Client is
             Yiaddr => 0,
             Siaddr => Offer_Siaddr,
             Giaddr => 0,
-            -- https://github.com/Componolit/RecordFlux/issues/485
+            -- Eng/RecordFlux/RecordFlux#485
             Chaddr => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             Sname => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
