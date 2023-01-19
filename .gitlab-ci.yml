@@ -1,0 +1,345 @@
+variables:
+   ANOD_DEFAULT_SANDBOX_DIR: /it/wave
+
+   CI_FRAGMENTS_GIT: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/it/ci-fragments
+   RECORDFLUX_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
+
+   GNATPROVE_CACHE_PACKAGE: gnatprove_cache.tar.gz
+
+   GNAT_BUILD_DATE: "20220723"
+   SPARK_BUILD_DATE: "20221214"
+   PYTHON_VERSION: "3.10"
+
+stages:
+  - initialization
+  - testing
+  - finalization
+
+##################
+# Initialization #
+##################
+
+cache_restoring:
+  services:
+     - image:e3
+  stage: initialization
+  script:
+    - export PATH=/it/e3/bin:$PATH
+    - git clone $CI_FRAGMENTS_GIT
+    - ci-fragments/download_generic_package $CI_PROJECT_PATH $GNATPROVE_CACHE_PACKAGE
+    - if [ -f $GNATPROVE_CACHE_PACKAGE ]; then
+        tar zxf $GNATPROVE_CACHE_PACKAGE;
+      fi
+  artifacts:
+    paths:
+      - build/gnatprove_cache
+      - build/test/gnatprove
+      - examples/apps/dhcp_client/obj/gnatprove
+      - examples/apps/ping/obj/gnatprove
+
+.setup_alire: &setup_alire
+    - curl -Ls https://github.com/alire-project/alire/releases/download/v1.2.2/alr-1.2.2-x86_64.AppImage -o /tmp/alr.AppImage
+    - chmod +x /tmp/alr.AppImage
+    - pushd /tmp
+    - ./alr.AppImage --appimage-extract
+    - cp squashfs-root/usr/bin/alr $CI_PROJECT_DIR
+    - popd
+
+.setup_gnat: &setup_gnat
+    - . ~/.aws_container_credentials
+    - export PATH=/it/e3/bin:$PATH
+    - anod install gnat --build-date $GNAT_BUILD_DATE
+    - eval `anod printenv gnat`
+
+.setup_spark: &setup_spark
+    - . ~/.aws_container_credentials
+    - export PATH=/it/e3/bin:$PATH
+    - anod install spark2014 --build-date $SPARK_BUILD_DATE
+    - eval `anod printenv spark2014`
+
+.setup_python_venv: &setup_python_venv
+    - python$PYTHON_VERSION -m venv .venv$PYTHON_VERSION
+    - . .venv$PYTHON_VERSION/bin/activate
+    - python -m pip install --upgrade pip wheel
+    - make init install_devel
+
+setup:
+  services:
+     - image:recordflux
+     - cpu:2
+     - mem:4
+  stage: initialization
+  artifacts:
+    paths:
+      - .venv3.8
+      - .venv3.9
+      - .venv3.10
+      - .venv3.11
+      - alr
+  script:
+    - *setup_alire
+    - *setup_gnat
+    - export PYTHON_VERSION=3.8
+    - *setup_python_venv
+    - export PYTHON_VERSION=3.9
+    - *setup_python_venv
+    - export PYTHON_VERSION=3.10
+    - *setup_python_venv
+    - export PYTHON_VERSION=3.11
+    - *setup_python_venv
+
+###########
+# Testing #
+###########
+
+.setup_python: &setup_python
+    - export PATH=/it/e3/bin:$PATH
+    - . .venv$PYTHON_VERSION/bin/activate
+    - make init
+
+.test:
+  stage: testing
+  dependencies:
+    - setup
+
+changelog:
+  extends: .test
+  dependencies: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  script:
+    - if [[ "$CI_MERGE_REQUEST_LABELS" != *"No Changelog"* ]]; then
+        git fetch origin main;
+        git diff --name-only origin/main..HEAD | sed -n '/CHANGELOG.md/{:a $q0; n; ba}; ${s/.*/No entry added to CHANGELOG.md/p;q1}';
+      fi
+
+commit_messages:
+  extends: .test
+  dependencies: []
+  script:
+    - git fetch origin main
+    - git log origin/main..HEAD | sed -n "/^.*\b\(fixup\|FIXUP\|wip\|WIP\)\b.*/{p;s/.*/Found fixup commit/p;q1}"
+    - git log origin/main..HEAD | sed -n "/ \#[0-9][0-9]*/{p;s/.*/Found unqualified reference to ticket/p;q1}"
+
+checks:
+  extends: .test
+  services:
+     - image:recordflux
+     - cpu:2
+     - mem:4
+  script:
+    - *setup_gnat
+    - *setup_python
+    - make check
+
+tests:
+  extends: .test
+  services:
+     - image:recordflux
+     - cpu:8
+     - mem:16
+  script:
+    - *setup_gnat
+    - *setup_python
+    - make test
+
+python_compatibility:
+  extends: .test
+  services:
+     - image:recordflux
+     - cpu:2
+     - mem:4
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+        - "3.8"
+        - "3.9"
+        - "3.11"
+  environment: $PYTHON_VERSION
+  script:
+    - *setup_gnat
+    - *setup_python
+    - make test_coverage
+
+gnat_pro_compatibility:
+  extends: .test
+  services:
+     - image:recordflux
+     - cpu:2
+     - mem:4
+  parallel:
+    matrix:
+      - GNAT_VERSION:
+        - "20.2"
+        - "21.2"
+        - "22.2"
+  environment: $GNAT_VERSION
+  script:
+    - . ~/.aws_container_credentials
+    - export PATH=/it/e3/bin:$PATH
+    - e3-cathod components --setup $GNAT_VERSION --build-date all --platform x86_64-linux --component gnat --download
+    - tar -xzf gnatpro-$GNAT_VERSION-x86_64-linux-bin.tar.gz
+    - cd gnatpro-$GNAT_VERSION-x86_64-linux-bin && echo -e "\n$CI_PROJECT_DIR/gnat\nY\nY" | ./doinstall && cd ..
+    - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
+    - gnat --version
+    - *setup_python
+    - pip install --force-reinstall --no-cache-dir RecordFlux-parser
+    - export GNAT=pro$GNAT_VERSION
+    - make test_compilation
+
+gnat_fsf_compatibility:
+  extends: .test
+  services:
+     - image:recordflux
+     - cpu:2
+     - mem:4
+  parallel:
+    matrix:
+      - GNAT_VERSION:
+        - "11.2.4"
+        - "12.1.2"
+  environment: $GNAT_VERSION
+  script:
+    - apt-get install -y libgmp-dev
+    - $CI_PROJECT_DIR/alr -n init --lib alire
+    - pushd alire
+    - $CI_PROJECT_DIR/alr toolchain --select --local gnat_native=$GNAT_VERSION gprbuild=22.0.1
+    - $CI_PROJECT_DIR/alr -n with aunit gnatcoll_iconv gnatcoll_gmp
+    - eval `$CI_PROJECT_DIR/alr printenv`
+    - popd
+    - gnat --version
+    - *setup_python
+    - pip install --force-reinstall --no-cache-dir RecordFlux-parser
+    - export GNAT=fsf$GNAT_VERSION
+    - make test_compilation
+
+gnat_community_compatibility:
+  extends: .test
+  services:
+     - image:recordflux
+     - cpu:2
+     - mem:4
+  parallel:
+    matrix:
+      - GNAT_VERSION:
+        - "2020"
+        - "2021"
+  environment: $GNAT_VERSION
+  script:
+    - apt update
+    - apt-get install -y libgmp-dev libdbus-1-3 libfontconfig1 libx11-6 libx11-xcb1
+    - curl -L "https://raw.githubusercontent.com/AdaCore/gnat_community_install_script/master/install_package.sh" -o install_package.sh
+    - curl -L "https://raw.githubusercontent.com/AdaCore/gnat_community_install_script/master/install_script.qs" -o install_script.qs
+    - if [ $GNAT_VERSION == "2021" ]; then
+        curl -L "https://community.download.adacore.com/v1/f3a99d283f7b3d07293b2e1d07de00e31e332325?filename=gnat-2021-20210519-x86_64-linux-bin" -o gnat-x86_64-linux-bin;
+      else
+        curl -L "https://community.download.adacore.com/v1/a639696a9fd3bdf0be21376cc2dc3129323cbe42?filename=gnat-2020-20200818-x86_64-linux-bin" -o gnat-x86_64-linux-bin;
+      fi
+    - sh ./install_package.sh ./gnat-x86_64-linux-bin $CI_PROJECT_DIR/gnat
+    - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
+    - gnat --version
+    - *setup_python
+    - pip install --force-reinstall --no-cache-dir RecordFlux-parser
+    - export GNAT=community$GNAT_VERSION
+    - make test_compilation
+
+verification_tests:
+  extends: .test
+  dependencies:
+    - cache_restoring
+    - setup
+  services:
+     - image:recordflux
+     - cpu:8
+     - mem:16
+  script:
+    - *setup_spark
+    - *setup_python
+    - make prove_tests
+  artifacts:
+    when: always
+    paths:
+      - build/gnatprove_cache
+      - build/test/gnatprove
+
+verification_python_tests:
+  extends: .test
+  dependencies:
+    - cache_restoring
+    - setup
+  services:
+     - image:recordflux
+     - cpu:8
+     - mem:16
+  script:
+    - *setup_gnat
+    - *setup_spark
+    - *setup_python
+    - make prove_python_tests
+  artifacts:
+    when: always
+    paths:
+      - build/gnatprove_cache
+      - build/test/gnatprove
+
+verification_apps:
+  extends: .test
+  dependencies:
+    - cache_restoring
+    - setup
+  services:
+     - image:recordflux
+     - cpu:4
+     - mem:30
+  parallel:
+    matrix:
+      - APP:
+        - "ping"
+        - "dhcp_client"
+  script:
+    - *setup_gnat
+    - *setup_spark
+    - *setup_python
+    - timeout -k 60 27600 make -C examples/apps/${APP} prove
+  artifacts:
+    when: always
+    paths:
+      - build/gnatprove_cache
+      - examples/apps/${APP}/obj/gnatprove
+
+documentation:
+  extends: .test
+  services:
+     - image:recordflux
+  script:
+    - *setup_gnat
+    - *setup_python
+    - make doc
+
+################
+# Finalization #
+################
+
+cache_saving:
+  when: always
+  services:
+     - image:e3
+  stage: finalization
+  dependencies:
+    - verification_tests
+    - verification_python_tests
+    - verification_apps
+  script:
+    - export PATH=/it/e3/bin:$PATH
+    - mkdir -p
+         build/gnatprove_cache
+         build/test/gnatprove
+         examples/apps/dhcp_client/obj/gnatprove
+         examples/apps/ping/obj/gnatprove
+    - tar czf $GNATPROVE_CACHE_PACKAGE
+         build/gnatprove_cache
+         build/test/gnatprove
+         examples/apps/dhcp_client/obj/gnatprove
+         examples/apps/ping/obj/gnatprove
+    - git clone $CI_FRAGMENTS_GIT
+    - ci-fragments/upload_generic_package $CI_PROJECT_PATH $GNATPROVE_CACHE_PACKAGE
