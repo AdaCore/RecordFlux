@@ -147,7 +147,8 @@ Additional `then clauses <#grammar-token-then_clause>`_ enable the definition of
         :  { `then_clause` } ;
    type_argument: `named_argument`
    null_field: null `then_clause` ;
-   then_clause: then field_`name`
+   target_field: field_`name` | null
+   then_clause: then `target_field`
               :  [ with `aspects` ]
               :  [ if `condition` ]
    aspects: `aspect` { , `aspect` }
