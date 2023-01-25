@@ -29,7 +29,7 @@ By default the following dependencies are installed:
 - `icontract <https://github.com/Parquery/icontract>`_
 - `PyDotPlus <https://github.com/carlos-jenkins/pydotplus>`_
 - `Z3 <https://github.com/Z3Prover/z3>`_
-- `RecordFlux parser <https://github.com/Componolit/RecordFlux-language>`_
+- `RecordFlux parser <https://github.com/AdaCore/RecordFlux-parser>`_
 
 Optionally, the GNAT Studio IDE integration for RecordFlux can be installed.
 It enables syntax highlighting for RecordFlux specifications and allows for running RecordFlux from within GNAT Studio.

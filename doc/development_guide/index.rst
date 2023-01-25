@@ -81,7 +81,7 @@ The following guidelines should be followed for clearity and consistency through
 Pull requests
 =============
 
-We accept pull requests `via GitHub <https://github.com/Componolit/RecordFlux/compare>`_.
+We accept pull requests `via GitHub <https://github.com/AdaCore/RecordFlux/compare>`_.
 To contribute to the project, fork it under your own GitHub user and perform your changes on a topic branch.
 Ideally, create an issue in the upstream repository describing the problem you would like to solve and your intention to work on it.
 This will help us to point you to potential prior work and discuss your idea.
@@ -97,7 +97,7 @@ For Ada code (examples as well as generated code) please follow `our Ada style g
 
 We enforce 100% branch coverage for Python code using `pytest <https://pytest.org>`_.
 Make sure to add relevant test cases to achieve that for your code.
-See the `test documentation <https://github.com/Componolit/RecordFlux/blob/main/tests/README.md>`_ and have a look at the existing test cases in the ``tests`` directory to get an idea of the structure of our test suite.
+See the `test documentation <https://github.com/AdaCore/RecordFlux/blob/main/tests/README.md>`_ and have a look at the existing test cases in the ``tests`` directory to get an idea of the structure of our test suite.
 Our Python code is also statically type-checked using `mypy <http://mypy-lang.org/>`_.
 Make sure to include the required type annotations with your code.
 

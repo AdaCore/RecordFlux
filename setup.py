@@ -18,8 +18,8 @@ setup(
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Tobias Reiher",
-    author_email="reiher@componolit.com",
-    url="https://github.com/Componolit/RecordFlux",
+    author_email="reiher@adacore.com",
+    url="https://github.com/AdaCore/RecordFlux",
     license="AGPL-3.0",
     classifiers=[
         "Development Status :: 5 - Production/Stable",

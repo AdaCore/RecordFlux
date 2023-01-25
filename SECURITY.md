@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-Open an issue on GitHub using [the vulnerability template](https://github.com/Componolit/RecordFlux/issues/new?labels=vulnerability&template=vulnerability.md). In addition to the `vulnerability` tag (which should be added automatically) also add tags for the versions that you know are affected.
+Open an issue on GitHub using [the vulnerability template](https://github.com/AdaCore/RecordFlux/issues/new?labels=vulnerability&template=vulnerability.md). In addition to the `vulnerability` tag (which should be added automatically) also add tags for the versions that you know are affected.
 
 We will get back to you within a working day to discuss the next steps.
 

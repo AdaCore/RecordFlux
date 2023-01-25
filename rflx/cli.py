@@ -280,7 +280,7 @@ Command: {' '.join(argv)}
 
 A bug was detected. Please report this issue on GitHub:
 
-https://github.com/Componolit/RecordFlux/issues/new?labels=bug
+https://github.com/AdaCore/RecordFlux/issues/new?labels=bug
 
 Include the complete content of the bug box shown above and all input files
 in the report."""

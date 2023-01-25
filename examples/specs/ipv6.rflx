@@ -80,7 +80,7 @@ package IPv6 is
             -- and Next_Header to get the size of the Options.
             with Size => 64 - Hdr_Ext_Len'Size - Next_Header'Size + 64 * Hdr_Ext_Len;
          Data : Opaque
-            -- Eng/RecordFlux/RecordFlux-specifications#101
+            -- Eng/RecordFlux/RecordFlux#1227
             with Size => Message'Last - Options'Last;
       end message;
 
@@ -208,7 +208,7 @@ package IPv6 is
          Reserved : Reserved_15;
          HMAC_Key_ID : SRH_HMAC_Key_ID;
          HMAC : Opaque
-            -- Eng/RecordFlux/RecordFlux-specifications#101
+            -- Eng/RecordFlux/RecordFlux#1227
             with Size => Message'Last - HMAC_Key_ID'Last;
       end message;
 
@@ -237,7 +237,7 @@ package IPv6 is
          Next_Header : Protocol_Numbers::Assigned_Internet_Protocol_Numbers;
          RH : Routing_Base_Header;
          Data : Opaque
-            -- Eng/RecordFlux/RecordFlux-specifications#101
+            -- Eng/RecordFlux/RecordFlux#1227
             with Size => 128;
       end message;
 
@@ -255,7 +255,7 @@ package IPv6 is
          More_Fragments : Boolean;
          Identification : FH_Identification;
          Data : Opaque
-            -- Eng/RecordFlux/RecordFlux-specifications#101
+            -- Eng/RecordFlux/RecordFlux#1227
             with Size => Message'Last - Identification'Last;
       end message;
 

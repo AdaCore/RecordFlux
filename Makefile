@@ -1,6 +1,6 @@
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
-RECORDFLUX_ORIGIN ?= https://github.com/Componolit
+RECORDFLUX_ORIGIN ?= https://github.com/AdaCore
 
 BUILD_DIR = build
 PYTHON_PACKAGES = bin doc/conf.py examples/apps rflx tests tools stubs setup.py

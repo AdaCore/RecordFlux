@@ -597,7 +597,7 @@ An exception transition must be defined just in case any action might lead to a 
 - Insufficient memory for appending an element to a sequence or extending a sequence by another sequence
 
 Exception transitions are currently also used for other cases.
-This behavior will change in the future (cf. `#569 <https://github.com/Componolit/RecordFlux/issues/569>`_).
+This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Dynamic Semantics**
 
@@ -1035,7 +1035,7 @@ A message can be sent through a channel using a write attribute statement.
 **Dynamic Semantics**
 
 Writing an invalid message leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/Componolit/RecordFlux/issues/569>`_).
+This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
@@ -1085,7 +1085,7 @@ Message Aggregates
 **Dynamic Semantics**
 
 An invalid condition during message creation leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/Componolit/RecordFlux/issues/569>`_).
+This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 Insufficient memory during the message creation leads to an exception transition.
 
@@ -1272,7 +1272,7 @@ Whether a channel contains data can be checked with the Has_Data attribute.
 **Dynamic Semantics**
 
 The use of the Opaque attribute on an invalid message or the use of the Head attribute on an empty sequence leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/Componolit/RecordFlux/issues/569>`_).
+This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
@@ -1317,7 +1317,7 @@ The Selected expression is used to get a value of a message field.
 **Dynamic Semantics**
 
 Accesses to message fields that were detected as invalid during parsing lead to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/Componolit/RecordFlux/issues/569>`_).
+This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
@@ -1356,7 +1356,7 @@ A list comprehension provides a way to create a new sequence based on an exisiti
 **Dynamic Semantics**
 
 An access to an invalid element in iterable `expression <#grammar-token-expression>`_ leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/Componolit/RecordFlux/issues/569>`_).
+This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
@@ -1506,7 +1506,7 @@ A conversion is only allowed if a refinement for the message field and the inten
 **Dynamic Semantics**
 
 An invalid condition of a refinement leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/Componolit/RecordFlux/issues/569>`_).
+This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
