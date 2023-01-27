@@ -61,7 +61,6 @@ setup(
             "scapy ==2.4.5",
             "setuptools_scm >=6.2, <8",
             "sphinx >=4.5, <5",
-            "sphinx-copybutton >=0.5, <0.6",
             "tqdm >=4.61.1, <4.63",
             "types-pkg_resources >=0.1.3, <0.2",
         ]
