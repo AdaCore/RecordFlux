@@ -29,13 +29,14 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
+    "sphinx_rtd_theme",
 ]
 
 templates_path = ["_templates"]
 
 # -- Options for HTML output -------------------------------------------------
 
-html_theme = "furo"
+html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 html_logo = "img/logo.svg"
