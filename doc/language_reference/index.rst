@@ -6,7 +6,7 @@ The specification language describes protocol message formats based on types.
 For each type of the specification language a description of its syntax and semantics and an example is given.
 A simple variant of Backus-Naur Form is used to describe the syntax.
 Reserved keywords and literals are marked in **bold**.
-References to syntactic categories are `highlighted <#none>`_.
+References to syntactic categories are highlighted.
 To convey some semantic information the name of some syntactic categories are prefixed by a non-highlighted part.
 Syntactic categories with prefixes are equivalent to the category without the prefix.
 The following basic elements are used to describe the syntax of the language:
@@ -24,7 +24,7 @@ The following basic elements are used to describe the syntax of the language:
                            : (addition "+", subtraction "-", multiplication "*",
                            : division "/", exponentiation "**").
    boolean_expression: A boolean expression consists of relations
-                     : ("<", "⇐", "=", "/=", ">=", ">") between names and
+                     : ("<", "<=", "=", "/=", ">=", ">") between names and
                      : numbers combined by boolean operators (conjunction "and",
                      : disjunction "or").
 
@@ -117,7 +117,7 @@ Boolean
 ..
     Booleans [§T-B]
 
-``Boolean`` is a built-in enumeration type with the literals ``False ⇒ 0`` and ``True ⇒ 1`` with a size of 1 bit.
+``Boolean`` is a built-in enumeration type with the literals ``False => 0`` and ``True => 1`` with a size of 1 bit.
 
 Message Types
 =============

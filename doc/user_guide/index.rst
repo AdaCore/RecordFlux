@@ -39,9 +39,9 @@ After installing RecordFlux do:
 
    $ rflx setup_ide
 
-.. |GNAT Alire Crate| image:: https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/gnat_native.json
+.. |GNAT Alire Crate|
    :target: https://alire.ada.dev/crates/gnat_native.html
-.. |GNATcoll iconv binding Alire Crate| image:: https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/gnatcoll_iconv.json
+.. |GNATcoll iconv binding Alire Crate|
    :target: https://alire.ada.dev/crates/gnatcoll_iconv.html
 
 

@@ -10,7 +10,7 @@ Additionally to the dependencies listed in the :ref:`User's Guide` the following
 - `AUnit <https://github.com/AdaCore/aunit>`_ |AUnit Alire Crate| (if FSF GNAT is used)
 - `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_
 
-.. |AUnit Alire Crate| image:: https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/aunit.json
+.. |AUnit Alire Crate|
    :target: https://alire.ada.dev/crates/aunit.html
 
 The FSF GNAT and all Ada dependencies can be installed using Alire.
