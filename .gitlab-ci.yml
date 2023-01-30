@@ -116,6 +116,8 @@ changelog:
 commit_messages:
   extends: .test
   dependencies: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
     - git fetch origin main
     - git log origin/main..HEAD | sed -n "/^.*\b\(fixup\|FIXUP\|wip\|WIP\)\b.*/{p;s/.*/Found fixup commit/p;q1}"
