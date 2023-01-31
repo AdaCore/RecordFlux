@@ -309,14 +309,25 @@ verification_apps:
       - build/gnatprove_cache
       - examples/apps/${APP}/obj/gnatprove
 
-documentation:
+html_documentation:
   extends: .test
   services:
      - image:recordflux
   script:
     - *setup_gnat
     - *setup_python
-    - make doc
+    - make html_doc
+
+pdf_documentation:
+  extends: .test
+  services:
+     - image:recordflux
+  script:
+    - *setup_gnat
+    - *setup_python
+    - apt update
+    - apt-get install -y latexmk texlive-latex-extra tex-gyre
+    - make pdf_doc
 
 ################
 # Finalization #
