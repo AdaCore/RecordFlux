@@ -228,14 +228,60 @@ class Reset(AttributeStatement):
         super().__init__(identifier, self.__class__.__name__, [], type_, location)
         self.associations = associations or {}
 
+    def __str__(self) -> str:
+        associations = ", ".join([f"{k} => {v}" for k, v in self.associations.items()])
+        return f"{self.identifier}'{self.attribute}" + (
+            f" ({associations})" if associations else ""
+        )
+
     def check_type(
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
     ) -> RecordFluxError:
+        error = RecordFluxError()
         self.type_ = statement_type
         self.associations = {
             i: e.substituted(typify_variable) for i, e in self.associations.items()
         }
-        return rty.check_type_instance(
+        if isinstance(statement_type, rty.Sequence):
+            for i, e in self.associations.items():
+                error.extend(
+                    [
+                        (
+                            f'unexpected argument "{i}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            e.location,
+                        ),
+                    ]
+                )
+        elif isinstance(statement_type, rty.Message):
+            for i, e in self.associations.items():
+                if i in statement_type.parameter_types:
+                    error.extend(e.check_type(statement_type.parameter_types[i]))
+                else:
+                    error.extend(
+                        [
+                            (
+                                f'unexpected argument "{i}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                e.location,
+                            ),
+                        ]
+                    )
+            for a in statement_type.parameter_types:
+                if a not in self.associations:
+                    error.extend(
+                        [
+                            (
+                                f'missing argument "{a}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                self.location,
+                            ),
+                        ]
+                    )
+        return error + rty.check_type_instance(
             statement_type,
             (rty.Sequence, rty.Message),
             self.location,
