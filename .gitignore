@@ -20,3 +20,4 @@ htmlcov
 pyproject.toml
 why3session.xml.bak
 why3shapes.gz.bak
+doc/version.json

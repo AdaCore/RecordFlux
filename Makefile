@@ -4,7 +4,7 @@ RECORDFLUX_ORIGIN ?= https://github.com/AdaCore
 
 BUILD_DIR = build
 PYTHON_PACKAGES = bin doc/conf.py examples/apps rflx tests tools stubs setup.py
-DEVUTILS_HEAD = f5c6865bae91fccb1858ef2caded61d31c69605d
+DEVUTILS_HEAD = e7a10ee2dbf10e09dd123cecb42d84807624e617
 
 SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
@@ -233,11 +233,14 @@ generate:
 
 doc: html_doc pdf_doc
 
-html_doc: check_doc
+html_doc: check_doc doc/version.json
 	$(MAKE) -C doc html
 
-pdf_doc: check_doc
+pdf_doc: check_doc doc/version.json
 	$(MAKE) -C doc latexpdf
+
+doc/version.json:
+	tools/write_version.py $@
 
 .PHONY: dist
 
