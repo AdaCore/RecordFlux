@@ -229,14 +229,20 @@ printenv_gnat:
 generate:
 	tools/generate_spark_test_code.py
 
-.PHONY: doc html_doc pdf_doc
+.PHONY: doc html_doc pdf_doc build_html_doc build_pdf_doc build_doc
 
 doc: html_doc pdf_doc
 
-html_doc: check_doc doc/version.json
+build_doc: build_html_doc build_pdf_doc
+
+html_doc: check_doc build_html_doc
+
+build_html_doc: doc/version.json
 	$(MAKE) -C doc html
 
-pdf_doc: check_doc doc/version.json
+pdf_doc: check_doc build_pdf_doc
+
+build_pdf_doc: doc/version.json
 	$(MAKE) -C doc latexpdf
 
 doc/version.json:
