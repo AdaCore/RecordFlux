@@ -18,11 +18,9 @@ from librflxlang import AnalysisContext, GrammarRule
 from ruamel.yaml import YAML
 from ruamel.yaml.parser import ParserError
 
-import rflx.error
-import rflx.specification
 from rflx.common import STDIN
 from rflx.error import RecordFluxError
-from rflx.specification import style
+from rflx.specification import Parser, style
 from rflx.specification.parser import diagnostics_to_error
 from tests.const import GENERATED_DIR
 
@@ -206,7 +204,7 @@ def parse(data: str, rule: str) -> None:
 def check_rflx_code(block: str, subtype: Optional[str] = None) -> None:
     try:
         if subtype is None:
-            parser = rflx.specification.Parser()
+            parser = Parser()
             parser.parse_string(block)
             parser.create_model()
         else:
