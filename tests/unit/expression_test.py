@@ -70,9 +70,8 @@ from rflx.expression import (
     ValueRange,
     Variable,
     Z3TypeError,
-    var_id_gen,
 )
-from rflx.identifier import ID, StrID
+from rflx.identifier import ID, StrID, id_generator
 from rflx.model import Integer
 from tests.data.models import ENUMERATION
 from tests.utils import assert_equal, check_regex
@@ -113,7 +112,7 @@ def test_true_z3expr() -> None:
 
 
 def test_true_to_tac() -> None:
-    assert TRUE.to_tac("R", var_id_gen()) == [
+    assert TRUE.to_tac("R", id_generator()) == [
         tac.Assign("R", tac.BoolVal(True)),
     ]
 
@@ -138,7 +137,7 @@ def test_false_z3expr() -> None:
 
 
 def test_false_to_tac() -> None:
-    assert FALSE.to_tac("R", var_id_gen()) == [
+    assert FALSE.to_tac("R", id_generator()) == [
         tac.Assign("R", tac.BoolVal(False)),
     ]
 
@@ -229,13 +228,13 @@ def test_not_z3expr() -> None:
 
 
 def test_not_to_tac() -> None:
-    assert Not(TRUE).to_tac("R", var_id_gen()) == [tac.Assign("R", tac.Not(tac.BoolVal(True)))]
-    assert Not(Variable("X", type_=rty.BOOLEAN)).to_tac("R", var_id_gen()) == [
+    assert Not(TRUE).to_tac("R", id_generator()) == [tac.Assign("R", tac.Not(tac.BoolVal(True)))]
+    assert Not(Variable("X", type_=rty.BOOLEAN)).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Not(tac.BoolVar("X")))
     ]
     assert Not(
         Less(Variable("X", type_=rty.Integer("I")), Variable("Y", type_=rty.Integer("I")))
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Less(tac.IntVar("X"), tac.IntVar("Y"))),
         tac.Assign("R", tac.Not(tac.BoolVar("T_0"))),
     ]
@@ -488,17 +487,17 @@ def test_and_z3expr() -> None:
 
 
 def test_and_to_tac() -> None:
-    assert And().to_tac("R", var_id_gen()) == [
+    assert And().to_tac("R", id_generator()) == [
         tac.Assign("R", tac.BoolVal(True)),
     ]
-    assert And(Variable("X", type_=rty.BOOLEAN)).to_tac("R", var_id_gen()) == [
+    assert And(Variable("X", type_=rty.BOOLEAN)).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.BoolVar("X")),
     ]
     assert And(
         Variable("X", type_=rty.BOOLEAN),
         Variable("Y", type_=rty.BOOLEAN),
         Variable("Z", type_=rty.BOOLEAN),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.And(tac.BoolVar("Y"), tac.BoolVar("Z"))),
         tac.Assign("R", tac.And(tac.BoolVar("X"), tac.BoolVar("T_0"))),
     ]
@@ -508,7 +507,7 @@ def test_and_to_tac() -> None:
             Variable("Y", type_=rty.BOOLEAN),
         ),
         Variable("Z", type_=rty.BOOLEAN),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.And(tac.BoolVar("X"), tac.BoolVar("Y"))),
         tac.Assign("R", tac.And(tac.BoolVar("T_0"), tac.BoolVar("Z"))),
     ]
@@ -562,17 +561,17 @@ def test_or_z3expr() -> None:
 
 
 def test_or_to_tac() -> None:
-    assert Or().to_tac("R", var_id_gen()) == [
+    assert Or().to_tac("R", id_generator()) == [
         tac.Assign("R", tac.BoolVal(True)),
     ]
-    assert Or(Variable("X", type_=rty.BOOLEAN)).to_tac("R", var_id_gen()) == [
+    assert Or(Variable("X", type_=rty.BOOLEAN)).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.BoolVar("X")),
     ]
     assert Or(
         Variable("X", type_=rty.BOOLEAN),
         Variable("Y", type_=rty.BOOLEAN),
         Variable("Z", type_=rty.BOOLEAN),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Or(tac.BoolVar("Y"), tac.BoolVar("Z"))),
         tac.Assign("R", tac.Or(tac.BoolVar("X"), tac.BoolVar("T_0"))),
     ]
@@ -582,7 +581,7 @@ def test_or_to_tac() -> None:
             Variable("Y", type_=rty.BOOLEAN),
         ),
         Variable("Z", type_=rty.BOOLEAN),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Or(tac.BoolVar("X"), tac.BoolVar("Y"))),
         tac.Assign("R", tac.Or(tac.BoolVar("T_0"), tac.BoolVar("Z"))),
     ]
@@ -802,17 +801,17 @@ def test_add_z3expr() -> None:
 
 
 def test_add_to_tac() -> None:
-    assert Add().to_tac("R", var_id_gen()) == [
+    assert Add().to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntVal(0)),
     ]
-    assert Add(Variable("X", type_=rty.Integer("I"))).to_tac("R", var_id_gen()) == [
+    assert Add(Variable("X", type_=rty.Integer("I"))).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntVar("X")),
     ]
     assert Add(
         Variable("X", type_=rty.Integer("I")),
         Variable("Y", type_=rty.Integer("I")),
         Variable("Z", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Add(tac.IntVar("Y"), tac.IntVar("Z"))),
         tac.Assign("R", tac.Add(tac.IntVar("X"), tac.IntVar("T_0"))),
     ]
@@ -822,7 +821,7 @@ def test_add_to_tac() -> None:
             Variable("Y", type_=rty.Integer("I")),
         ),
         Variable("Z", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Add(tac.IntVar("X"), tac.IntVar("Y"))),
         tac.Assign("R", tac.Add(tac.IntVar("T_0"), tac.IntVar("Z"))),
     ]
@@ -857,17 +856,17 @@ def test_mul_z3expr() -> None:
 
 
 def test_mul_to_tac() -> None:
-    assert Mul().to_tac("R", var_id_gen()) == [
+    assert Mul().to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntVal(0)),
     ]
-    assert Mul(Variable("X", type_=rty.Integer("I"))).to_tac("R", var_id_gen()) == [
+    assert Mul(Variable("X", type_=rty.Integer("I"))).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntVar("X")),
     ]
     assert Mul(
         Variable("X", type_=rty.Integer("I")),
         Variable("Y", type_=rty.Integer("I")),
         Variable("Z", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Mul(tac.IntVar("Y"), tac.IntVar("Z"))),
         tac.Assign("R", tac.Mul(tac.IntVar("X"), tac.IntVar("T_0"))),
     ]
@@ -877,7 +876,7 @@ def test_mul_to_tac() -> None:
             Variable("Y", type_=rty.Integer("I")),
         ),
         Variable("Z", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Mul(tac.IntVar("X"), tac.IntVar("Y"))),
         tac.Assign("R", tac.Mul(tac.IntVar("T_0"), tac.IntVar("Z"))),
     ]
@@ -913,7 +912,7 @@ def test_sub_to_tac() -> None:
     assert Sub(
         Variable("X", type_=rty.Integer("I")),
         Variable("Y", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Sub(tac.IntVar("X"), tac.IntVar("Y"))),
     ]
     assert Sub(
@@ -922,7 +921,7 @@ def test_sub_to_tac() -> None:
             Variable("Y", type_=rty.Integer("I")),
         ),
         Variable("Z", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Sub(tac.IntVar("X"), tac.IntVar("Y"))),
         tac.Assign("R", tac.Sub(tac.IntVar("T_0"), tac.IntVar("Z"))),
     ]
@@ -950,7 +949,7 @@ def test_div_to_tac() -> None:
     assert Div(
         Variable("X", type_=rty.Integer("I")),
         Variable("Y", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Div(tac.IntVar("X"), tac.IntVar("Y"))),
     ]
     assert Div(
@@ -959,7 +958,7 @@ def test_div_to_tac() -> None:
             Variable("Y", type_=rty.Integer("I")),
         ),
         Variable("Z", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Div(tac.IntVar("X"), tac.IntVar("Y"))),
         tac.Assign("R", tac.Div(tac.IntVar("T_0"), tac.IntVar("Z"))),
     ]
@@ -985,7 +984,7 @@ def test_pow_to_tac() -> None:
     assert Pow(
         Variable("X", type_=rty.Integer("I")),
         Variable("Y", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Pow(tac.IntVar("X"), tac.IntVar("Y"))),
     ]
     assert Pow(
@@ -994,7 +993,7 @@ def test_pow_to_tac() -> None:
             Variable("Y", type_=rty.Integer("I")),
         ),
         Variable("Z", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Pow(tac.IntVar("X"), tac.IntVar("Y"))),
         tac.Assign("R", tac.Pow(tac.IntVar("T_0"), tac.IntVar("Z"))),
     ]
@@ -1026,7 +1025,7 @@ def test_mod_to_tac() -> None:
     assert Mod(
         Variable("X", type_=rty.Integer("I")),
         Variable("Y", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Mod(tac.IntVar("X"), tac.IntVar("Y"))),
     ]
     assert Mod(
@@ -1035,7 +1034,7 @@ def test_mod_to_tac() -> None:
             Variable("Y", type_=rty.Integer("I")),
         ),
         Variable("Z", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.Mod(tac.IntVar("X"), tac.IntVar("Y"))),
         tac.Assign("R", tac.Mod(tac.IntVar("T_0"), tac.IntVar("Z"))),
     ]
@@ -1051,7 +1050,7 @@ def test_term_simplified() -> None:
 
 
 def test_literal_to_tac() -> None:
-    assert Literal("X", type_=rty.Integer("I")).to_tac("R", var_id_gen()) == [
+    assert Literal("X", type_=rty.Integer("I")).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntVar("X"))
     ]
 
@@ -1115,20 +1114,20 @@ def test_variable_z3expr() -> None:
 
 
 def test_variable_to_tac() -> None:
-    assert Variable("X", type_=rty.BOOLEAN).to_tac("R", var_id_gen()) == [
+    assert Variable("X", type_=rty.BOOLEAN).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.BoolVar("X")),
     ]
-    assert Variable("X", type_=rty.Integer("I")).to_tac("R", var_id_gen()) == [
+    assert Variable("X", type_=rty.Integer("I")).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntVar("X"))
     ]
-    assert Variable("X", type_=rty.Integer("I"), negative=True).to_tac("R", var_id_gen()) == [
+    assert Variable("X", type_=rty.Integer("I"), negative=True).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntVar("X", negative=True))
     ]
-    assert Variable("X", type_=rty.Message("S")).to_tac("R", var_id_gen()) == [
-        tac.Assign("R", tac.MsgVar("X"))
+    assert Variable("X", type_=rty.Message("S")).to_tac("R", id_generator()) == [
+        tac.Assign("R", tac.ObjVar("X"))
     ]
-    assert Variable("X", type_=rty.Sequence("S", rty.Integer("I"))).to_tac("R", var_id_gen()) == [
-        tac.Assign("R", tac.SeqVar("X"))
+    assert Variable("X", type_=rty.Sequence("S", rty.Integer("I"))).to_tac("R", id_generator()) == [
+        tac.Assign("R", tac.ObjVar("X"))
     ]
 
 
@@ -1305,10 +1304,12 @@ def test_attribute_z3expr_error() -> None:
         (Length("X"), "X'Length"),
         (First("X"), "X'First"),
         (Last("X"), "X'Last"),
+        (Head("X"), "X'Head"),
+        (Opaque("X"), "X'Opaque"),
     ],
 )
 def test_attribute_to_tac_int(attribute: Expr, tac_name: str) -> None:
-    assert attribute.to_tac("R", var_id_gen()) == [tac.Assign("R", tac.IntVar(tac_name))]
+    assert attribute.to_tac("R", id_generator()) == [tac.Assign("R", tac.IntVar(tac_name))]
 
 
 @pytest.mark.parametrize(
@@ -1321,7 +1322,7 @@ def test_attribute_to_tac_int(attribute: Expr, tac_name: str) -> None:
     ],
 )
 def test_attribute_to_tac_bool(attribute: Expr, tac_name: str) -> None:
-    assert attribute.to_tac("R", var_id_gen()) == [tac.Assign("R", tac.BoolVar(tac_name))]
+    assert attribute.to_tac("R", id_generator()) == [tac.Assign("R", tac.BoolVar(tac_name))]
 
 
 def test_val_substituted() -> None:
@@ -1391,6 +1392,14 @@ def test_aggregate_str() -> None:
 
 def test_aggregate_precedence() -> None:
     assert Aggregate(Number(1), Number(2)).precedence == Precedence.LITERAL
+
+
+def test_aggregate_to_tac() -> None:
+    assert Aggregate(Add(First("X"), Number(1)), Number(2)).to_tac("R", id_generator()) == [
+        tac.Assign("T_1", tac.First("X")),
+        tac.Assign("T_0", tac.Add(tac.IntVar("T_1"), tac.IntVal(1))),
+        tac.Assign("R", tac.Agg(tac.IntVar("T_0"), tac.IntVal(2))),
+    ]
 
 
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
@@ -1569,7 +1578,7 @@ def test_less_z3expr() -> None:
 
 
 def test_less_to_tac() -> None:
-    assert Less(Variable("X", type_=rty.Integer("I")), Number(10)).to_tac("R", var_id_gen()) == [
+    assert Less(Variable("X", type_=rty.Integer("I")), Number(10)).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Less(tac.IntVar("X"), tac.IntVal(10))),
     ]
 
@@ -1590,7 +1599,7 @@ def test_less_equal_z3expr() -> None:
 
 def test_less_equal_to_tac() -> None:
     assert LessEqual(Variable("X", type_=rty.Integer("I")), Number(10)).to_tac(
-        "R", var_id_gen()
+        "R", id_generator()
     ) == [
         tac.Assign("R", tac.LessEqual(tac.IntVar("X"), tac.IntVal(10))),
     ]
@@ -1611,7 +1620,7 @@ def test_equal_z3expr() -> None:
 
 
 def test_equal_to_tac() -> None:
-    assert Equal(Variable("X", type_=rty.Integer("I")), Number(10)).to_tac("R", var_id_gen()) == [
+    assert Equal(Variable("X", type_=rty.Integer("I")), Number(10)).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Equal(tac.IntVar("X"), tac.IntVal(10))),
     ]
 
@@ -1632,7 +1641,7 @@ def test_greater_equal_z3expr() -> None:
 
 def test_greater_equal_to_tac() -> None:
     assert GreaterEqual(Variable("X", type_=rty.Integer("I")), Number(10)).to_tac(
-        "R", var_id_gen()
+        "R", id_generator()
     ) == [
         tac.Assign("R", tac.GreaterEqual(tac.IntVar("X"), tac.IntVal(10))),
     ]
@@ -1653,7 +1662,9 @@ def test_greater_z3expr() -> None:
 
 
 def test_greater_to_tac() -> None:
-    assert Greater(Variable("X", type_=rty.Integer("I")), Number(10)).to_tac("R", var_id_gen()) == [
+    assert Greater(Variable("X", type_=rty.Integer("I")), Number(10)).to_tac(
+        "R", id_generator()
+    ) == [
         tac.Assign("R", tac.Greater(tac.IntVar("X"), tac.IntVal(10))),
     ]
 
@@ -1674,7 +1685,7 @@ def test_not_equal_z3expr() -> None:
 
 def test_not_equal_to_tac() -> None:
     assert NotEqual(Variable("X", type_=rty.Integer("I")), Number(10)).to_tac(
-        "R", var_id_gen()
+        "R", id_generator()
     ) == [
         tac.Assign("R", tac.NotEqual(tac.IntVar("X"), tac.IntVal(10))),
     ]
@@ -1777,13 +1788,13 @@ def test_if_expr_to_tac() -> None:
     assert IfExpr(
         [(Variable("X", type_=rty.BOOLEAN), Variable("Y", type_=rty.BOOLEAN))],
         Variable("Z", type_=rty.BOOLEAN),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.BoolIfExpr(tac.BoolVar("X"), tac.BoolVar("Y"), tac.BoolVar("Z"))),
     ]
     assert IfExpr(
         [(Variable("X", type_=rty.BOOLEAN), Variable("Y", type_=rty.Integer("I")))],
         Variable("Z", type_=rty.Integer("I")),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntIfExpr(tac.BoolVar("X"), tac.IntVar("Y"), tac.IntVar("Z"))),
     ]
     assert IfExpr(
@@ -1794,7 +1805,7 @@ def test_if_expr_to_tac() -> None:
             )
         ],
         Sub(Variable("Z", type_=rty.Integer("I")), Number(2)),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.And(tac.BoolVar("X"), tac.BoolVal(True))),
         tac.Assign("T_3", tac.Add(tac.IntVar("Y"), tac.IntVal(1))),
         tac.Assign("T_6", tac.Sub(tac.IntVar("Z"), tac.IntVal(2))),
@@ -2105,7 +2116,7 @@ def test_number_z3expr() -> None:
 
 
 def test_number_to_tac() -> None:
-    assert Number(42).to_tac("R", var_id_gen()) == [tac.Assign("R", tac.IntVal(42))]
+    assert Number(42).to_tac("R", id_generator()) == [tac.Assign("R", tac.IntVal(42))]
 
 
 def test_number_str() -> None:
@@ -2255,19 +2266,24 @@ def test_selected_z3expr() -> None:
 
 def test_selected_to_tac() -> None:
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=rty.BOOLEAN).to_tac(
-        "R", var_id_gen()
+        "R", id_generator()
     ) == [
         tac.Assign("R", tac.BoolFieldAccess("X", "Y")),
     ]
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=rty.Integer("I")).to_tac(
-        "R", var_id_gen()
+        "R", id_generator()
     ) == [
         tac.Assign("R", tac.IntFieldAccess("X", "Y")),
     ]
     assert Selected(
         Variable("X", type_=rty.Message("M")), "Y", negative=True, type_=rty.Integer("I")
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntFieldAccess("X", "Y", negative=True)),
+    ]
+    assert Selected(
+        Variable("X", type_=rty.Message("M")), "Y", type_=rty.Sequence("S", rty.Integer("I"))
+    ).to_tac("R", id_generator()) == [
+        tac.Assign("R", tac.ObjFieldAccess("X", "Y")),
     ]
 
 
@@ -2338,14 +2354,14 @@ def test_call_to_tac() -> None:
         "X",
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=rty.Integer("I"))],
         type_=rty.Integer("I"),
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.IntCall("X", tac.BoolVar("Y"), tac.IntVar("Z"))),
     ]
     assert Call(
         "X",
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=rty.BOOLEAN)],
         type_=rty.BOOLEAN,
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.BoolCall("X", tac.BoolVar("Y"), tac.BoolVar("Z"))),
     ]
     assert Call(
@@ -2355,10 +2371,17 @@ def test_call_to_tac() -> None:
             Add(Variable("Y", type_=rty.Integer("I")), Number(1)),
         ],
         type_=rty.BOOLEAN,
-    ).to_tac("R", var_id_gen()) == [
+    ).to_tac("R", id_generator()) == [
         tac.Assign("T_0", tac.And(tac.BoolVar("X"), tac.BoolVal(True))),
         tac.Assign("T_3", tac.Add(tac.IntVar("Y"), tac.IntVal(1))),
         tac.Assign("R", tac.BoolCall("X", tac.BoolVar("T_0"), tac.IntVar("T_3"))),
+    ]
+    assert Call(
+        "X",
+        [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=rty.Integer("I"))],
+        type_=rty.Message("M"),
+    ).to_tac("R", id_generator()) == [
+        tac.Assign("R", tac.ObjCall("X", tac.BoolVar("Y"), tac.IntVar("Z"))),
     ]
 
 
@@ -2419,6 +2442,14 @@ def test_conversion_variables() -> None:
 
 def test_conversion_ada_expr() -> None:
     assert Conversion("X", Variable("Y")).ada_expr() == ada.Conversion("X", ada.Variable("Y"))
+
+
+def test_conversion_to_tac() -> None:
+    assert Conversion("X", Variable("Y", type_=rty.BOOLEAN), type_=rty.Integer("I")).to_tac(
+        "R", id_generator()
+    ) == [
+        tac.Assign("R", tac.Conversion("X", tac.BoolVar("Y"))),
+    ]
 
 
 def test_qualified_expr_simplified() -> None:
@@ -2519,6 +2550,30 @@ def test_comprehension_str() -> None:
         str(In(Variable("A"), Comprehension("X", Variable("Y"), Variable("Z"), TRUE)))
         == "A in [for X in Y if True => Z]"
     )
+
+
+def test_comprehension_to_tac() -> None:
+    assert Comprehension(
+        "X",
+        Selected(
+            Variable("M", type_=rty.Message("M")), "Y", type_=rty.Sequence("S", rty.Integer("I"))
+        ),
+        Add(Variable("X", type_=rty.Integer("I")), Number(1)),
+        Less(Variable("X", type_=rty.Integer("I")), Number(100)),
+    ).to_tac("R", id_generator()) == [
+        tac.Assign("T_0", tac.ObjFieldAccess("M", ID("Y"))),
+        tac.Assign(
+            "R",
+            tac.Comprehension(
+                "X",
+                tac.ObjVar("T_0"),
+                [tac.Assign("T_2", tac.Add(tac.IntVar("X"), tac.IntVal(1)))],
+                tac.IntVar("T_2"),
+                [tac.Assign("T_5", tac.Less(tac.IntVar("X"), tac.IntVal(100)))],
+                tac.BoolVar("T_5"),
+            ),
+        ),
+    ]
 
 
 @pytest.mark.parametrize(
@@ -2722,6 +2777,27 @@ def test_message_aggregate_variables() -> None:
     assert result == expected
 
 
+def test_message_aggregate_to_tac() -> None:
+    assert MessageAggregate(
+        "X",
+        {
+            "Y": Selected(
+                Variable("M", type_=rty.Message("M")),
+                "Y",
+                type_=rty.Sequence("S", rty.Integer("I")),
+            ),
+            "Z": Add(Variable("X", type_=rty.Integer("I")), Number(1)),
+        },
+    ).to_tac("R", id_generator()) == [
+        tac.Assign("T_0", tac.ObjFieldAccess("M", ID("Y"))),
+        tac.Assign("T_2", tac.Add(tac.IntVar("X"), tac.IntVal(1))),
+        tac.Assign(
+            "R",
+            tac.MsgAgg("X", {ID("Y"): tac.ObjVar("T_0"), ID("Z"): tac.IntVar("T_2")}),
+        ),
+    ]
+
+
 @pytest.mark.parametrize(
     "field_values,type_",
     [
@@ -2888,6 +2964,27 @@ def test_delta_message_aggregate_variables() -> None:
     ).variables()
     expected = [Variable("A"), Variable("B"), Variable("C")]
     assert result == expected
+
+
+def test_delta_message_aggregate_to_tac() -> None:
+    assert DeltaMessageAggregate(
+        "X",
+        {
+            "Y": Selected(
+                Variable("M", type_=rty.Message("M")),
+                "Y",
+                type_=rty.Sequence("S", rty.Integer("I")),
+            ),
+            "Z": Add(Variable("X", type_=rty.Integer("I")), Number(1)),
+        },
+    ).to_tac("R", id_generator()) == [
+        tac.Assign("T_0", tac.ObjFieldAccess("M", ID("Y"))),
+        tac.Assign("T_2", tac.Add(tac.IntVar("X"), tac.IntVal(1))),
+        tac.Assign(
+            "R",
+            tac.DeltaMsgAgg("X", {ID("Y"): tac.ObjVar("T_0"), ID("Z"): tac.IntVar("T_2")}),
+        ),
+    ]
 
 
 def test_indexed_neg() -> None:
@@ -3081,3 +3178,42 @@ def test_case_invalid() -> None:
         "^<stdin>:1:2: model: error: duplicate literals used in case expression\n"
         '<stdin>:1:14: model: info: duplicate literal "2"$',
     )
+
+
+def test_case_to_tac() -> None:
+    assert CaseExpr(
+        Variable("X", type_=rty.Integer("I")),
+        [
+            (
+                [Number(1), Number(3)],
+                Selected(
+                    Variable("M", type_=rty.Message("M")),
+                    "Y",
+                    type_=rty.Integer("I"),
+                ),
+            ),
+            (
+                [Number(2)],
+                Add(Variable("X", type_=rty.Integer("I")), Number(1)),
+            ),
+        ],
+    ).to_tac("R", id_generator()) == [
+        tac.Assign(
+            "R",
+            tac.CaseExpr(
+                tac.IntVar("X"),
+                [
+                    (
+                        [tac.IntVal(1), tac.IntVal(3)],
+                        [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y")))],
+                        tac.IntVar("T_1"),
+                    ),
+                    (
+                        [tac.IntVal(2)],
+                        [tac.Assign("T_3", tac.Add(tac.IntVar("X"), tac.IntVal(1)))],
+                        tac.IntVar("T_3"),
+                    ),
+                ],
+            ),
+        ),
+    ]

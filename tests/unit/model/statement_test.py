@@ -1,9 +1,63 @@
 import pytest
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expression as expr, tac, typing_ as rty
 from rflx.error import Location, RecordFluxError
-from rflx.identifier import ID
+from rflx.identifier import ID, id_generator
 from rflx.model import statement as stmt
+
+
+def test_variable_assignment_to_tac() -> None:
+    assert stmt.VariableAssignment(
+        "X", expr.Add(expr.Variable("Y", type_=rty.Integer("I")), expr.Number(1))
+    ).to_tac(id_generator()) == [
+        tac.Assign("X", tac.Add(tac.IntVar("Y"), tac.IntVal(1))),
+    ]
+    assert stmt.VariableAssignment(
+        "X",
+        expr.Add(
+            expr.Variable("Y", type_=rty.Integer("I")),
+            expr.Sub(expr.Variable("Z", type_=rty.Integer("I")), expr.Number(1)),
+        ),
+    ).to_tac(id_generator()) == [
+        tac.Assign("T_1", tac.Sub(tac.IntVar("Z"), tac.IntVal(1))),
+        tac.Assign("X", tac.Add(tac.IntVar("Y"), tac.IntVar("T_1"))),
+    ]
+
+
+def test_message_field_assignment_to_tac() -> None:
+    assert stmt.MessageFieldAssignment("X", "Y", expr.Number(1)).to_tac(id_generator()) == [
+        tac.FieldAssign("X", "Y", tac.IntVal(1)),
+    ]
+    assert stmt.MessageFieldAssignment(
+        "X", "Y", expr.Add(expr.Variable("Z", type_=rty.Integer("I")), expr.Number(1))
+    ).to_tac(id_generator()) == [
+        tac.Assign("T_0", tac.Add(tac.IntVar("Z"), tac.IntVal(1))),
+        tac.FieldAssign("X", "Y", tac.IntVar("T_0")),
+    ]
+
+
+def test_append_to_tac() -> None:
+    assert stmt.Append("X", expr.Number(1)).to_tac(id_generator()) == [
+        tac.Append("X", tac.IntVal(1)),
+    ]
+    assert stmt.Append(
+        "X", expr.Add(expr.Variable("Z", type_=rty.Integer("I")), expr.Number(1))
+    ).to_tac(id_generator()) == [
+        tac.Assign("T_0", tac.Add(tac.IntVar("Z"), tac.IntVal(1))),
+        tac.Append("X", tac.IntVar("T_0")),
+    ]
+
+
+def test_extend_to_tac() -> None:
+    assert stmt.Extend("X", expr.Number(1)).to_tac(id_generator()) == [
+        tac.Extend("X", tac.IntVal(1)),
+    ]
+    assert stmt.Extend(
+        "X", expr.Add(expr.Variable("Z", type_=rty.Integer("I")), expr.Number(1))
+    ).to_tac(id_generator()) == [
+        tac.Assign("T_0", tac.Add(tac.IntVar("Z"), tac.IntVal(1))),
+        tac.Extend("X", tac.IntVar("T_0")),
+    ]
 
 
 def test_reset_check_type() -> None:
@@ -80,3 +134,38 @@ def test_reset_check_type_error_unexpected_arguments() -> None:
             rty.Sequence("T", rty.Integer("I")),
             typify_variable,
         ).propagate()
+
+
+def test_reset_to_tac() -> None:
+    assert stmt.Reset("X").to_tac(id_generator()) == [
+        tac.Reset("X"),
+    ]
+    assert stmt.Reset("X", {ID("Y"): expr.Number(1)}).to_tac(id_generator()) == [
+        tac.Reset("X", {ID("Y"): tac.IntVal(1)}),
+    ]
+    assert stmt.Reset(
+        "X", {ID("Y"): expr.Add(expr.Variable("Z", type_=rty.Integer("I")), expr.Number(1))}
+    ).to_tac(id_generator()) == [
+        tac.Assign("T_0", tac.Add(tac.IntVar("Z"), tac.IntVal(1))),
+        tac.Reset("X", {ID("Y"): tac.IntVar("T_0")}),
+    ]
+
+
+def test_read_to_tac() -> None:
+    assert stmt.Read("X", expr.Variable("M")).to_tac(id_generator()) == [
+        tac.Read("X", tac.ObjVar("M")),
+    ]
+    assert stmt.Read("X", expr.Call("Y", type_=rty.Message("M"))).to_tac(id_generator()) == [
+        tac.Assign("T_0", tac.ObjCall("Y")),
+        tac.Read("X", tac.ObjVar("T_0")),
+    ]
+
+
+def test_write_to_tac() -> None:
+    assert stmt.Write("X", expr.Variable("M")).to_tac(id_generator()) == [
+        tac.Write("X", tac.ObjVar("M")),
+    ]
+    assert stmt.Write("X", expr.Call("Y", type_=rty.Message("M"))).to_tac(id_generator()) == [
+        tac.Assign("T_0", tac.ObjCall("Y")),
+        tac.Write("X", tac.ObjVar("T_0")),
+    ]

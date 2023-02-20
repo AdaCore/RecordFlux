@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import textwrap
+from collections import abc
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,7 +13,7 @@ import pytest
 from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 
-from rflx import ada, const as constants, expression as expr, typing_ as rty
+from rflx import ada, const as constants, expression as expr, tac, typing_ as rty
 from rflx.common import file_name
 from rflx.error import BaseError, FatalError, Location, RecordFluxError
 from rflx.generator import Generator, common, const
@@ -1014,6 +1015,9 @@ class UnknownStatement(stmt.Statement):
         raise NotImplementedError
 
     def variables(self) -> Sequence[expr.Variable]:
+        raise NotImplementedError
+
+    def to_tac(self, variable_id: abc.Generator[ID, None, None]) -> list[tac.Stmt]:
         raise NotImplementedError
 
 

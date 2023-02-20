@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Generator, Mapping, Sequence
 from typing import Optional
 
-import rflx.typing_ as rty
+from rflx import tac, typing_ as rty
 from rflx.common import Base
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
-from rflx.expression import Expr, Variable
+from rflx.expression import Expr, Variable, _to_tac_basic_expr
 from rflx.identifier import ID, StrID
 
 
@@ -32,6 +32,10 @@ class Statement(Base):
     @abstractmethod
     def variables(self) -> Sequence[Variable]:
         """Return all referenced variables in the statement."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
         raise NotImplementedError
 
 
@@ -62,6 +66,9 @@ class VariableAssignment(Assignment):
         return rty.check_type_instance(
             statement_type, rty.Any, self.location, f'variable "{self.identifier}"'
         ) + self.expression.check_type(statement_type)
+
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        return self.expression.to_tac(self.identifier, variable_id)
 
 
 class MessageFieldAssignment(Assignment):
@@ -126,6 +133,13 @@ class MessageFieldAssignment(Assignment):
             + self.expression.check_type(field_type)
         )
 
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        expression_stmts, expression_expr = _to_tac_basic_expr(self.expression, variable_id)
+        return [
+            *expression_stmts,
+            tac.FieldAssign(self.message, self.field, expression_expr, self),
+        ]
+
 
 class AttributeStatement(Statement):
     def __init__(
@@ -151,6 +165,9 @@ class AttributeStatement(Statement):
 
     def variables(self) -> Sequence[Variable]:
         return [Variable(self.identifier), *[e for p in self.parameters for e in p.variables()]]
+
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        raise NotImplementedError
 
 
 class ListAttributeStatement(AttributeStatement):
@@ -205,16 +222,39 @@ class Append(ListAttributeStatement):
         assert isinstance(self.parameters, list)
         self.parameters[0] = value
 
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        parameter_stmts, parameter_expr = _to_tac_basic_expr(self.parameter, variable_id)
+        return [
+            *parameter_stmts,
+            tac.Append(self.identifier, parameter_expr, self),
+        ]
+
 
 class Extend(ListAttributeStatement):
     def check_type(
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
     ) -> RecordFluxError:
         self.type_ = statement_type
-        self.parameters[0] = self.parameters[0].substituted(typify_variable)
+        self.parameter = self.parameter.substituted(typify_variable)
         return rty.check_type_instance(
             statement_type, rty.Sequence, self.location, f'variable "{self.identifier}"'
-        ) + self.parameters[0].check_type(statement_type)
+        ) + self.parameter.check_type(statement_type)
+
+    @property
+    def parameter(self) -> Expr:
+        return self.parameters[0]
+
+    @parameter.setter
+    def parameter(self, value: Expr) -> None:
+        assert isinstance(self.parameters, list)
+        self.parameters[0] = value
+
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        parameter_stmts, parameter_expr = _to_tac_basic_expr(self.parameter, variable_id)
+        return [
+            *parameter_stmts,
+            tac.Extend(self.identifier, parameter_expr, self),
+        ]
 
 
 class Reset(AttributeStatement):
@@ -294,6 +334,18 @@ class Reset(AttributeStatement):
             *[v for e in self.associations.values() for v in e.variables()],
         ]
 
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        associations = {}
+        stmts = []
+        for i, e in self.associations.items():
+            e_stmts, e_expr = _to_tac_basic_expr(e, variable_id)
+            associations[i] = e_expr
+            stmts.extend(e_stmts)
+        return [
+            *stmts,
+            tac.Reset(self.identifier, associations, self),
+        ]
+
 
 class ChannelAttributeStatement(AttributeStatement):
     def __init__(
@@ -320,6 +372,13 @@ class ChannelAttributeStatement(AttributeStatement):
     @property
     def parameter(self) -> Expr:
         return self.parameters[0]
+
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        parameter_stmts, parameter_expr = _to_tac_basic_expr(self.parameter, variable_id)
+        return [
+            *parameter_stmts,
+            getattr(tac, self.__class__.__name__)(self.identifier, parameter_expr, self.location),
+        ]
 
     @abstractmethod
     def _expected_channel_type(self) -> rty.Channel:

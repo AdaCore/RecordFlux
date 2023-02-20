@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from typing import Optional, TypeVar, Union
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fatal_fail
@@ -120,3 +120,10 @@ class ID:
 
 
 StrID = Union[str, ID]
+
+
+def id_generator() -> Generator[ID, None, None]:
+    i = 0
+    while True:
+        yield ID(f"T_{i}")
+        i += 1

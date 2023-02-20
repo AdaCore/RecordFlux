@@ -7,7 +7,7 @@ from collections.abc import Sequence
 
 import hypothesis
 
-from rflx import expression as expr, model
+from rflx import expression as expr, model, tac
 from tests.const import FIXTURE_DIR
 
 hypothesis.settings.register_profile(
@@ -22,6 +22,26 @@ hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default")
 
 def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[str]:
     if isinstance(left, expr.Expr) and isinstance(right, expr.Expr) and op == "==":
+        return [
+            "Expr instances",
+            "repr:",
+            *[f"    {l}" for l in ("Actual:   " + repr(left)).split("\n")],
+            *[f"    {l}" for l in ("Expected: " + repr(right)).split("\n")],
+            "str:",
+            "    Actual:   " + re.sub(r"\n +", " ", str(left)),
+            "    Expected: " + re.sub(r"\n +", " ", str(right)),
+        ]
+    if isinstance(left, tac.Stmt) and isinstance(right, tac.Stmt) and op == "==":
+        return [
+            "Stmt instances",
+            "repr:",
+            *[f"    {l}" for l in ("Actual:   " + repr(left)).split("\n")],
+            *[f"    {l}" for l in ("Expected: " + repr(right)).split("\n")],
+            "str:",
+            "    Actual:   " + re.sub(r"\n +", " ", str(left)),
+            "    Expected: " + re.sub(r"\n +", " ", str(right)),
+        ]
+    if isinstance(left, tac.Expr) and isinstance(right, tac.Expr) and op == "==":
         return [
             "Expr instances",
             "repr:",
