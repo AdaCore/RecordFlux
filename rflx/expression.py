@@ -3112,16 +3112,33 @@ class MessageAggregate(Expr):
         self._str = intern(f"{self.identifier}'({field_values})")
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        if not isinstance(self.type_, rty.Message):
-            error = RecordFluxError()
+        error = RecordFluxError()
 
+        if not isinstance(self.type_, rty.Message):
             for d in self.field_values.values():
                 error += d.check_type_instance(rty.Any)
 
             return error
 
+        return self._check_for_invalid_fields() + self._check_for_missing_fields()
+
+    def _field_combinations(self) -> set[tuple[str, ...]]:
+        assert isinstance(self.type_, rty.Message)
+
+        return set(self.type_.field_combinations)
+
+    def _matching_field_combinations(self, field_position: int) -> set[tuple[str, ...]]:
+        field = list(self.field_values)[field_position]
+        return {
+            c
+            for c in self._field_combinations()
+            if len(c) > field_position and c[field_position] == str(field)
+        }
+
+    def _check_for_invalid_fields(self) -> RecordFluxError:
+        assert isinstance(self.type_, rty.Message)
+
         error = RecordFluxError()
-        field_combinations = set(self.type_.field_combinations)
 
         for i, (field, expr) in enumerate(self.field_values.items()):
             if field not in self.type_.types:
@@ -3149,11 +3166,7 @@ class MessageAggregate(Expr):
             else:
                 error += expr.check_type(field_type)
 
-            field_combinations = {
-                c for c in field_combinations if len(c) > i and c[i] == str(field)
-            }
-
-            if not field_combinations:
+            if not self._matching_field_combinations(i):
                 error.extend(
                     [
                         (
@@ -3166,7 +3179,14 @@ class MessageAggregate(Expr):
                 )
                 break
 
-        if field_combinations and all(len(c) > len(self.field_values) for c in field_combinations):
+        return error
+
+    def _check_for_missing_fields(self) -> RecordFluxError:
+        error = RecordFluxError()
+
+        if self._field_combinations() and all(
+            len(c) > len(self.field_values) for c in self._field_combinations()
+        ):
             error.extend(
                 [
                     (
@@ -3178,7 +3198,10 @@ class MessageAggregate(Expr):
                     (
                         "possible next fields: "
                         + ", ".join(
-                            unique(c[len(self.field_values)] for c in sorted(field_combinations))
+                            unique(
+                                c[len(self.field_values)]
+                                for c in sorted(self._field_combinations())
+                            )
                         ),
                         Subsystem.MODEL,
                         Severity.INFO,
@@ -3199,7 +3222,7 @@ class MessageAggregate(Expr):
         ]
 
     def simplified(self) -> Expr:
-        return MessageAggregate(
+        return self.__class__(
             self.identifier,
             {k: self.field_values[k].simplified() for k in self.field_values},
             self.type_,
@@ -3213,7 +3236,7 @@ class MessageAggregate(Expr):
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
-        if isinstance(expr, MessageAggregate):
+        if isinstance(expr, self.__class__):
             return expr.__class__(
                 expr.identifier,
                 {k: expr.field_values[k].substituted(func) for k in expr.field_values},
@@ -3243,7 +3266,7 @@ class MessageAggregate(Expr):
             *stmts,
             tac.Assign(
                 target,
-                tac.MsgAgg(self.identifier, field_values, origin=self),
+                self._tac_expr(self.identifier, field_values, self),
                 origin=self,
             ),
         ]
@@ -3254,20 +3277,13 @@ class MessageAggregate(Expr):
             result.extend(v.variables())
         return result
 
+    @property
+    def _tac_expr(self) -> Callable[[ID, dict[ID, tac.BasicExpr], tac.Origin], tac.Expr]:
+        return tac.MsgAgg
 
-class DeltaMessageAggregate(Expr):
+
+class DeltaMessageAggregate(MessageAggregate):
     """For internal use only."""
-
-    def __init__(
-        self,
-        identifier: StrID,
-        field_values: Mapping[StrID, Expr],
-        type_: rty.Type = rty.Undefined(),
-        location: Optional[Location] = None,
-    ) -> None:
-        super().__init__(type_, location)
-        self.identifier = ID(identifier)
-        self.field_values = {ID(k): v for k, v in field_values.items()}
 
     def _update_str(self) -> None:
         field_values = (
@@ -3277,130 +3293,20 @@ class DeltaMessageAggregate(Expr):
         )
         self._str = intern(f"{self.identifier} with delta {field_values}")
 
-    def _check_type_subexpr(self) -> RecordFluxError:
-        error = RecordFluxError()
-
-        if not isinstance(self.type_, rty.Message):
-            for d in self.field_values.values():
-                error += d.check_type_instance(rty.Any)
-
-            return error
-
-        field_combinations = set(self.type_.field_combinations)
-        fields: tuple[str, ...] = ()
-
-        for i, (field, expr) in enumerate(self.field_values.items()):
-            if field not in self.type_.fields:
-                error.extend(
-                    [
-                        (
-                            f'invalid field "{field}" for {self.type_}',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            field.location,
-                        ),
-                        *_similar_field_names(field, self.type_.fields, field.location),
-                    ]
-                )
-                continue
-
-            field_type = self.type_.types[field]
-
-            if field_type == rty.OPAQUE:
-                if not any(
-                    r.field == field and expr.type_.is_compatible(r.sdu)
-                    for r in self.type_.refinements
-                ):
-                    error += expr.check_type(field_type)
-            else:
-                error += expr.check_type(field_type)
-
-            fields = (*fields, str(field))
-            field_combinations = {
-                c
-                for c in field_combinations
-                if any(fields == c[i : len(fields) + i] for i in range(len(c) - len(fields) + 1))
-            }
-
-            if not field_combinations:
-                error.extend(
-                    [
-                        (
-                            f'invalid position for field "{field}" of {self.type_}',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            field.location,
-                        )
-                    ],
-                )
-                break
-
-        return error
-
-    def __neg__(self) -> Expr:
-        raise NotImplementedError
-
-    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
-        return [
-            *([self] if match(self) else []),
-            *[e for v in self.field_values.values() for e in v.findall(match)],
-        ]
-
-    def simplified(self) -> Expr:
-        return DeltaMessageAggregate(
-            self.identifier,
-            {k: self.field_values[k].simplified() for k in self.field_values},
-            self.type_,
-            self.location,
-        )
-
-    def substituted(
-        self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
-    ) -> Expr:
-        func = substitution(mapping or {}, func)
-        expr = func(self)
-        if isinstance(expr, DeltaMessageAggregate):
-            return expr.__class__(
-                expr.identifier,
-                {k: expr.field_values[k].substituted(func) for k in expr.field_values},
-                type_=expr.type_,
-                location=expr.location,
-            )
-        return expr
-
     @property
-    def precedence(self) -> Precedence:
-        raise NotImplementedError
+    def _tac_expr(self) -> Callable[[ID, dict[ID, tac.BasicExpr], tac.Origin], tac.Expr]:
+        return tac.DeltaMsgAgg
 
-    def ada_expr(self) -> ada.Expr:
-        raise NotImplementedError
+    def _matching_field_combinations(self, field_position: int) -> set[tuple[str, ...]]:
+        fields = tuple(str(f) for i, f in enumerate(self.field_values) if i <= field_position)
+        return {
+            c
+            for c in self._field_combinations()
+            if any(fields == c[i : len(fields) + i] for i in range(len(c) - len(fields) + 1))
+        }
 
-    def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
-        field_values = {}
-        stmts = []
-        for i, e in self.field_values.items():
-            e_stmts, e_expr = _to_tac_basic_expr(e, variable_id)
-            field_values[i] = e_expr
-            stmts.extend(e_stmts)
-        return [
-            *stmts,
-            tac.Assign(
-                target,
-                tac.DeltaMsgAgg(self.identifier, field_values, origin=self),
-                origin=self,
-            ),
-        ]
-
-    def variables(self) -> list[Variable]:
-        result = []
-        for v in self.field_values.values():
-            result.extend(v.variables())
-        return result
+    def _check_for_missing_fields(self) -> RecordFluxError:
+        return RecordFluxError()
 
 
 def substitution(

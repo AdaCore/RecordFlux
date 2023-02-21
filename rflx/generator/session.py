@@ -2123,13 +2123,13 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
-        if isinstance(expression, expr.MessageAggregate):
-            return self._assign_to_message_aggregate(
+        if isinstance(expression, expr.DeltaMessageAggregate):
+            return self._assign_to_delta_message_aggregate(
                 target, expression, exception_handler, is_global, state
             )
 
-        if isinstance(expression, expr.DeltaMessageAggregate):
-            return self._assign_to_delta_message_aggregate(
+        if isinstance(expression, expr.MessageAggregate):
+            return self._assign_to_message_aggregate(
                 target, expression, exception_handler, is_global, state
             )
 
