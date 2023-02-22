@@ -237,16 +237,13 @@ build_doc: build_html_doc build_pdf_doc
 
 html_doc: check_doc build_html_doc
 
-build_html_doc: doc/version.json
+build_html_doc:
 	$(MAKE) -C doc html
 
 pdf_doc: check_doc build_pdf_doc
 
-build_pdf_doc: doc/version.json
+build_pdf_doc:
 	$(MAKE) -C doc latexpdf
-
-doc/version.json:
-	tools/write_version.py $@
 
 .PHONY: dist
 

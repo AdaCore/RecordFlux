@@ -6,9 +6,10 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # pylint: disable = redefined-builtin, invalid-name
 
-import json
 import os
 import sys
+
+from rflx import __version__
 
 # -- Path setup --------------------------------------------------------------
 
@@ -19,8 +20,7 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "RecordFlux"
 copyright = "2022, AdaCore"
 author = "AdaCore"
-with open("version.json", "r", encoding="utf-8") as fd:
-    recordflux_version = json.load(fd)["version"]
+recordflux_version = __version__
 version = recordflux_version
 release = recordflux_version
 
