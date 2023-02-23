@@ -19,7 +19,7 @@ export PYTHONPATH := $(PWD)
 # @param $(1) directory of the git repository
 # @param $(2) commit id
 define checkout_repo
-$(shell test -d $(1) && git -C $(1) fetch && git -C $(1) -c advice.detachedHead=false checkout $(2))
+$(shell test -d $(1) && git -C $(1) fetch && git -C $(1) -c advice.detachedHead=false checkout $(2) > /dev/null)
 endef
 
 # Get the HEAD revision of the git repository.
