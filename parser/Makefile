@@ -74,6 +74,7 @@ init: devutils contrib/gnatcoll-bindings contrib/langkit
 	$(VERBOSE)$(call checkout_repo,devutils,$(DEVUTILS_HEAD))
 	$(VERBOSE)$(call checkout_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD))
 	$(VERBOSE)$(call checkout_repo,contrib/langkit,$(LANGKIT_HEAD))
+	$(VERBOSE)rm -f contrib/langkit/langkit/py.typed
 	$(VERBOSE)ln -sf devutils/pyproject.toml
 
 deinit:
