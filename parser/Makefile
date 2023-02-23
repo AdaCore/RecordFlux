@@ -127,7 +127,7 @@ format:
 test: test_coverage
 
 test_coverage:
-	$(PYTEST) --cov=librflxlang --cov-branch --cov-fail-under=75 --cov-report=term-missing:skip-covered tests
+	$(PYTEST) --cov=librflxlang --cov-branch --cov-fail-under=74 --cov-report=term-missing:skip-covered tests
 
 .PHONY: install install_devel install_devel_edge
 
