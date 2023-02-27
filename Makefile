@@ -238,11 +238,15 @@ build_doc: build_html_doc build_pdf_doc
 html_doc: check_doc build_html_doc
 
 build_html_doc:
+	$(MAKE) -C doc/language_reference html
+	$(MAKE) -C doc/user_guide html
 	$(MAKE) -C doc html
 
 pdf_doc: check_doc build_pdf_doc
 
 build_pdf_doc:
+	$(MAKE) -C doc/language_reference latexpdf
+	$(MAKE) -C doc/user_guide latexpdf
 	$(MAKE) -C doc latexpdf
 
 .PHONY: dist
@@ -258,3 +262,5 @@ clean:
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C doc clean
+	$(MAKE) -C doc/language_reference clean
+	$(MAKE) -C doc/user_guide clean
