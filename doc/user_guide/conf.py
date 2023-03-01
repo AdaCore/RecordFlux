@@ -75,7 +75,7 @@ html_baseurl = ""
 # -- Options for PDF output --------------------------------------------------
 
 latex_documents = [
-    ("index", "user_guide.tex", "RecordFlux User's Guide", author, "manual", True)
+    ("index", "user_guide.tex", "RecordFlux User's Guide", author, "howto", True)
 ]
 
 # -- Extension configuration -------------------------------------------------
