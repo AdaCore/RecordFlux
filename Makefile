@@ -233,21 +233,37 @@ generate:
 
 doc: html_doc pdf_doc
 
-build_doc: build_html_doc build_pdf_doc
-
 html_doc: check_doc build_html_doc
-
-build_html_doc:
-	$(MAKE) -C doc/language_reference html
-	$(MAKE) -C doc/user_guide html
-	$(MAKE) -C doc html
 
 pdf_doc: check_doc build_pdf_doc
 
-build_pdf_doc:
-	$(MAKE) -C doc/language_reference latexpdf
-	$(MAKE) -C doc/user_guide latexpdf
+build_doc: build_html_doc build_pdf_doc
+
+build_doc_user_guide: build_html_doc_user_guide build_pdf_doc_user_guide
+
+build_doc_language_reference: build_html_doc_language_reference build_pdf_doc_language_reference
+
+build_html_doc: build_html_doc_all build_html_doc_language_reference build_html_doc_user_guide
+
+build_html_doc_all:
+	$(MAKE) -C doc html
+
+build_html_doc_language_reference:
+	$(MAKE) -C doc/language_reference html
+
+build_html_doc_user_guide:
+	$(MAKE) -C doc/user_guide html
+
+build_pdf_doc: build_pdf_doc_all build_pdf_doc_language_reference build_pdf_doc_user_guide
+
+build_pdf_doc_all:
 	$(MAKE) -C doc latexpdf
+
+build_pdf_doc_language_reference:
+	$(MAKE) -C doc/language_reference latexpdf
+
+build_pdf_doc_user_guide:
+	$(MAKE) -C doc/user_guide latexpdf
 
 .PHONY: dist
 
