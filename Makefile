@@ -3,7 +3,7 @@ TEST_PROCS ?= $(shell nproc)
 RECORDFLUX_ORIGIN ?= https://github.com/AdaCore
 
 BUILD_DIR = build
-PYTHON_PACKAGES = bin doc/conf.py examples/apps rflx tests tools stubs setup.py
+PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps rflx tests tools stubs setup.py
 DEVUTILS_HEAD = e7a10ee2dbf10e09dd123cecb42d84807624e617
 
 SHELL = /bin/bash
