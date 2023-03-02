@@ -243,10 +243,7 @@ build_doc_user_guide: build_html_doc_user_guide build_pdf_doc_user_guide
 
 build_doc_language_reference: build_html_doc_language_reference build_pdf_doc_language_reference
 
-build_html_doc: build_html_doc_all build_html_doc_language_reference build_html_doc_user_guide
-
-build_html_doc_all:
-	$(MAKE) -C doc html
+build_html_doc: build_html_doc_language_reference build_html_doc_user_guide
 
 build_html_doc_language_reference:
 	$(MAKE) -C doc/language_reference html
@@ -254,10 +251,7 @@ build_html_doc_language_reference:
 build_html_doc_user_guide:
 	$(MAKE) -C doc/user_guide html
 
-build_pdf_doc: build_pdf_doc_all build_pdf_doc_language_reference build_pdf_doc_user_guide
-
-build_pdf_doc_all:
-	$(MAKE) -C doc latexpdf
+build_pdf_doc: build_pdf_doc_language_reference build_pdf_doc_user_guide
 
 build_pdf_doc_language_reference:
 	$(MAKE) -C doc/language_reference latexpdf
@@ -277,6 +271,5 @@ clean:
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
-	$(MAKE) -C doc clean
 	$(MAKE) -C doc/language_reference clean
 	$(MAKE) -C doc/user_guide clean
