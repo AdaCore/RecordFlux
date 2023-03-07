@@ -8,7 +8,7 @@ BUILDDIR = $(PWD)/build
 PYTHON_PACKAGES = language tests disttools/setup.py disttools/gprgen.py
 DEVUTILS_HEAD = f5c6865bae91fccb1858ef2caded61d31c69605d
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
-LANGKIT_HEAD = 33127ce82a6731f8f1428dab818523e0419bb4af
+LANGKIT_HEAD = 02c2040c95cf8174f7e98969d751cde9639bd2bd
 
 PYTEST := python3 -m pytest -n$(TEST_PROCS) -vv
 
