@@ -229,7 +229,7 @@ printenv_gnat:
 generate:
 	tools/generate_spark_test_code.py
 
-.PHONY: doc html_doc pdf_doc build_html_doc build_pdf_doc build_doc
+.PHONY: doc html_doc pdf_doc
 
 doc: html_doc pdf_doc
 
@@ -237,11 +237,15 @@ html_doc: check_doc build_html_doc
 
 pdf_doc: check_doc build_pdf_doc
 
+.PHONY: build_doc build_doc_user_guide build_doc_language_reference
+
 build_doc: build_html_doc build_pdf_doc
 
 build_doc_user_guide: build_html_doc_user_guide build_pdf_doc_user_guide
 
 build_doc_language_reference: build_html_doc_language_reference build_pdf_doc_language_reference
+
+.PHONY: build_html_doc build_html_doc_language_reference build_html_doc_user_guide
 
 build_html_doc: build_html_doc_language_reference build_html_doc_user_guide
 
@@ -250,6 +254,8 @@ build_html_doc_language_reference:
 
 build_html_doc_user_guide:
 	$(MAKE) -C doc/user_guide html
+
+.PHONY: build_pdf_doc build_pdf_doc_language_reference build_pdf_doc_user_guide
 
 build_pdf_doc: build_pdf_doc_language_reference build_pdf_doc_user_guide
 
