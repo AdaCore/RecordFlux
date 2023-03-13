@@ -58,9 +58,9 @@ DISTDIR := $(shell mktemp -d --tmpdir=$(BUILDDIR) dist-XXXXXXXX)
 endif
 endif
 
-$(shell $(call reinit_repo,devutils,$(DEVUTILS_HEAD)))
-$(shell $(call reinit_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD)))
-$(shell $(call reinit_repo,contrib/langkit,$(langkit_HEAD)))
+$(call reinit_repo,devutils,$(DEVUTILS_HEAD))
+$(call reinit_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD))
+$(call reinit_repo,contrib/langkit,$(LANGKIT_HEAD))
 
 export MYPYPATH = $(PWD)/stubs
 
