@@ -19,6 +19,7 @@ from typing import Optional, Protocol, TypeVar
 
 import z3
 
+from rflx import typing_ as rty
 from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
@@ -91,16 +92,16 @@ class StmtListProofJob(ProofJob):
     def __init__(
         self,
         facts: Sequence[Stmt],
-        results: Mapping[ProofResult, list[Stmt]],
+        results: Mapping[ProofResult, Sequence[Stmt]],
         logic: str = "QF_NIA",
     ):
         super().__init__(facts, logic)
-        self._results: Mapping[ProofResult, list[Stmt]] = results
+        self._results: Mapping[ProofResult, Sequence[Stmt]] = results
 
-        self._result: list[Stmt]
+        self._result: Sequence[Stmt]
 
     @property
-    def result(self) -> list[Stmt]:
+    def result(self) -> Sequence[Stmt]:
         return self._result
 
 
@@ -143,7 +144,7 @@ class ProofManager(Base):
 
 
 class Cond(Base):
-    def __init__(self, goal: BoolExpr, facts: Optional[list[Stmt]] = None) -> None:
+    def __init__(self, goal: BoolExpr, facts: Optional[Sequence[Stmt]] = None) -> None:
         self._goal = goal
         self._facts = facts or []
 
@@ -152,7 +153,7 @@ class Cond(Base):
         return self._goal
 
     @property
-    def facts(self) -> list[Stmt]:
+    def facts(self) -> Sequence[Stmt]:
         return self._facts
 
 
@@ -207,11 +208,13 @@ class Assign(Stmt):
         self,
         target: StrID,
         expression: Expr,
+        type_: rty.Any,
         origin: Optional[Origin] = None,
     ) -> None:
         super().__init__(origin)
         self._target = ID(target)
         self._expression = expression
+        self._type = type_
 
     @property
     def target(self) -> ID:
@@ -221,10 +224,15 @@ class Assign(Stmt):
     def expression(self) -> Expr:
         return self._expression
 
+    @property
+    def type_(self) -> rty.Any:
+        return self._type
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Assign:
         return Assign(
             mapping[self._target] if self._target in mapping else self._target,
             self._expression.substituted(mapping),
+            self._type,
             self._origin,
         )
 
@@ -235,7 +243,7 @@ class Assign(Stmt):
     def z3expr(self) -> z3.BoolRef:
         target: Var
         if isinstance(self._expression, IntExpr):
-            target = IntVar(self._target)
+            target = IntVar(self._target, self._expression.type_)
         elif isinstance(self._expression, BoolExpr):
             target = BoolVar(self._target)
         else:
@@ -245,11 +253,11 @@ class Assign(Stmt):
     @property
     def target_var(self) -> Var:
         if isinstance(self._expression, IntExpr):
-            return IntVar(self._target)
+            return IntVar(self._target, self._expression.type_)
         if isinstance(self._expression, BoolExpr):
             return BoolVar(self._target)
         assert isinstance(self._expression, ObjVar)
-        return ObjVar(self._target)
+        return ObjVar(self._target, self._expression.type_)
 
     def _update_str(self) -> None:
         self._str = intern(f"{self._target} := {self._expression}")
@@ -261,18 +269,25 @@ class FieldAssign(Stmt):
         message: StrID,
         field: StrID,
         expression: BasicExpr,
+        type_: rty.Message,
         origin: Optional[Origin] = None,
     ) -> None:
         super().__init__(origin)
         self._message = ID(message)
         self._field = ID(field)
         self._expression = expression
+        self._type = type_
+
+    @property
+    def type_(self) -> rty.Message:
+        return self._type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> FieldAssign:
         return FieldAssign(
             mapping[self._message] if self._message in mapping else self._message,
             self._field,
             self._expression.substituted(mapping),
+            self._type,
             self._origin,
         )
 
@@ -467,12 +482,19 @@ class Expr(Base):
             return self._str
 
     @property
+    @abstractmethod
+    def type_(self) -> rty.Type:
+        raise NotImplementedError
+
+    @property
     def origin(self) -> Optional[Origin]:
         return self._origin
 
     @property
     def origin_str(self) -> str:
-        return str(self._origin)
+        if self._origin:
+            return str(self._origin)
+        return str(self)
 
     @property
     def location(self) -> Optional[Location]:
@@ -502,11 +524,20 @@ class BasicExpr(Expr):
 class IntExpr(Expr):
     @property
     @abstractmethod
+    def type_(self) -> rty.AnyInteger:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
     def z3expr(self) -> z3.ArithRef:
         raise NotImplementedError
 
 
 class BoolExpr(Expr):
+    @property
+    def type_(self) -> rty.Enumeration:
+        return rty.BOOLEAN
+
     @property
     @abstractmethod
     def z3expr(self) -> z3.BoolRef:
@@ -514,7 +545,10 @@ class BoolExpr(Expr):
 
 
 class BasicIntExpr(BasicExpr, IntExpr):
-    pass
+    @property
+    @abstractmethod
+    def type_(self) -> rty.AnyInteger:
+        raise NotImplementedError
 
 
 class BasicBoolExpr(BasicExpr, BoolExpr):
@@ -542,16 +576,22 @@ class IntVar(Var, BasicIntExpr):
     def __init__(
         self,
         identifier: StrID,
+        type_: rty.AnyInteger,
         negative: bool = False,
         origin: Optional[Origin] = None,
     ) -> None:
         super().__init__(identifier)
+        self._type = type_
         self._negative = negative
         self._origin = origin
 
+    @property
+    def type_(self) -> rty.AnyInteger:
+        return self._type
+
     def substituted(self, mapping: Mapping[ID, ID]) -> IntVar:
         if self._identifier in mapping:
-            return IntVar(mapping[self._identifier], self._negative, self._origin)
+            return IntVar(mapping[self._identifier], self._type, self._negative, self._origin)
         return self
 
     @property
@@ -561,6 +601,18 @@ class IntVar(Var, BasicIntExpr):
 
 
 class BoolVar(Var, BasicBoolExpr):
+    def __init__(
+        self,
+        identifier: StrID,
+        origin: Optional[Origin] = None,
+    ) -> None:
+        super().__init__(identifier)
+        self._origin = origin
+
+    @property
+    def type_(self) -> rty.Enumeration:
+        return rty.BOOLEAN
+
     def substituted(self, mapping: Mapping[ID, ID]) -> BoolVar:
         if self._identifier in mapping:
             return BoolVar(mapping[self._identifier], self._origin)
@@ -572,9 +624,23 @@ class BoolVar(Var, BasicBoolExpr):
 
 
 class ObjVar(Var):
+    def __init__(
+        self,
+        identifier: StrID,
+        type_: rty.Type,
+        origin: Optional[Origin] = None,
+    ) -> None:
+        super().__init__(identifier)
+        self._type = type_
+        self._origin = origin
+
+    @property
+    def type_(self) -> rty.Type:
+        return self._type
+
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjVar:
         if self._identifier in mapping:
-            return ObjVar(mapping[self._identifier], self._origin)
+            return ObjVar(mapping[self._identifier], self._type, self._origin)
         return self
 
     @property
@@ -582,15 +648,21 @@ class ObjVar(Var):
         raise NotImplementedError
 
 
-class EnumLit(BasicIntExpr):
+class EnumLit(BasicExpr):
     def __init__(
         self,
         identifier: StrID,
+        type_: rty.Enumeration,
         origin: Optional[Origin] = None,
     ) -> None:
         assert str(identifier) not in ("True", "False")
         self._identifier = ID(identifier)
+        self._type = type_
         self._origin = origin
+
+    @property
+    def type_(self) -> rty.Enumeration:
+        return self._type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> EnumLit:
         return self
@@ -607,6 +679,10 @@ class IntVal(BasicIntExpr):
     def __init__(self, value: int, origin: Optional[Origin] = None) -> None:
         self._value = value
         self._origin = origin
+
+    @property
+    def type_(self) -> rty.UniversalInteger:
+        return rty.UniversalInteger(rty.Bounds(self._value, self._value))
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntVal:
         return self
@@ -656,11 +732,19 @@ class Attr(Expr):
 
 class Size(Attr):
     @property
+    def type_(self) -> rty.UniversalInteger:
+        return rty.UniversalInteger()
+
+    @property
     def z3expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
 
 
 class Length(Attr):
+    @property
+    def type_(self) -> rty.UniversalInteger:
+        return rty.UniversalInteger()
+
     @property
     def z3expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
@@ -668,11 +752,19 @@ class Length(Attr):
 
 class First(Attr):
     @property
+    def type_(self) -> rty.UniversalInteger:
+        return rty.UniversalInteger()
+
+    @property
     def z3expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
 
 
 class Last(Attr):
+    @property
+    def type_(self) -> rty.UniversalInteger:
+        return rty.UniversalInteger()
+
     @property
     def z3expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
@@ -680,11 +772,19 @@ class Last(Attr):
 
 class ValidChecksum(Attr):
     @property
+    def type_(self) -> rty.Enumeration:
+        return rty.BOOLEAN
+
+    @property
     def z3expr(self) -> z3.ExprRef:
         return z3.Bool(str(self))
 
 
 class Valid(Attr):
+    @property
+    def type_(self) -> rty.Enumeration:
+        return rty.BOOLEAN
+
     @property
     def z3expr(self) -> z3.ExprRef:
         return z3.Bool(str(self))
@@ -692,23 +792,43 @@ class Valid(Attr):
 
 class Present(Attr):
     @property
+    def type_(self) -> rty.Enumeration:
+        return rty.BOOLEAN
+
+    @property
     def z3expr(self) -> z3.ExprRef:
         return z3.Bool(str(self))
 
 
 class HasData(Attr):
     @property
+    def type_(self) -> rty.Enumeration:
+        return rty.BOOLEAN
+
+    @property
     def z3expr(self) -> z3.ExprRef:
         return z3.Bool(str(self))
 
 
 class Head(Attr):
+    def __init__(self, prefix: StrID, type_: rty.Any, origin: Optional[Origin] = None) -> None:
+        super().__init__(prefix, origin)
+        self._type = type_
+
+    @property
+    def type_(self) -> rty.Any:
+        return self._type
+
     @property
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
 class Opaque(Attr):
+    @property
+    def type_(self) -> rty.Sequence:
+        return rty.OPAQUE
+
     @property
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -788,6 +908,12 @@ class BinaryIntExpr(BinaryExpr, IntExpr):
         self._right: BasicIntExpr
         self._origin = origin
 
+    @property
+    def type_(self) -> rty.AnyInteger:
+        type_ = self._left.type_.common_type(self._right.type_)
+        assert isinstance(type_, rty.AnyInteger)
+        return type_
+
 
 class BinaryBoolExpr(BinaryExpr, BoolExpr):
     def __init__(
@@ -809,16 +935,22 @@ class Add(BinaryIntExpr):
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
+        upper_bound = (
+            self.type_.bounds.upper
+            if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None
+            else INT_MAX
+        )
         return [
-            # Left + Right <= INT_MAX
+            # Left + Right <= Upper_Bound
             Cond(
                 LessEqual(
                     self._left,
                     IntVar(
                         v_id,
+                        self._right.type_,
                         origin=(
                             ConstructedOrigin(
-                                f"{INT_MAX} - {self._right.origin}",
+                                f"{upper_bound} - {self._right.origin}",
                                 self._origin.location,
                             )
                             if self._origin and self._right.origin
@@ -826,7 +958,7 @@ class Add(BinaryIntExpr):
                         ),
                     ),
                 ),
-                [Assign(v_id, Sub(IntVal(INT_MAX), self._right))],
+                [Assign(v_id, Sub(IntVal(INT_MAX), self._right), self._right.type_)],
             )
         ]
 
@@ -843,20 +975,7 @@ class Sub(BinaryIntExpr):
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Left >= Right
-            Cond(
-                GreaterEqual(
-                    self._left,
-                    self._right,
-                    origin=(
-                        ConstructedOrigin(
-                            f"{self._left.origin} >= {self._right.origin}",
-                            self._origin.location,
-                        )
-                        if self._origin and self._left.origin and self._right.origin
-                        else None
-                    ),
-                )
-            ),
+            Cond(GreaterEqual(self._left, self._right)),
         ]
 
     @property
@@ -871,22 +990,30 @@ class Mul(BinaryIntExpr):
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
+        upper_bound = (
+            self.type_.bounds.upper
+            if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None
+            else INT_MAX
+        )
         return [
-            # Left * Right <= INT_MAX
+            # Left * Right <= Upper_Bound
             Cond(
                 LessEqual(
                     self._left,
-                    IntVar(v_id),
-                    origin=(
-                        ConstructedOrigin(
-                            f"{self._left.origin} <= {INT_MAX} / {self._right.origin}",
-                            self._origin.location,
-                        )
-                        if self._origin and self._left.origin and self._right.origin
-                        else None
+                    IntVar(
+                        v_id,
+                        self._right.type_,
+                        origin=(
+                            ConstructedOrigin(
+                                f"{upper_bound} / {self._right.origin}",
+                                self._origin.location,
+                            )
+                            if self._origin and self._right.origin
+                            else None
+                        ),
                     ),
                 ),
-                [Assign(v_id, Div(IntVal(INT_MAX), self._right))],
+                [Assign(v_id, Div(IntVal(INT_MAX), self._right), self._right.type_)],
             ),
         ]
 
@@ -903,20 +1030,7 @@ class Div(BinaryIntExpr):
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Right /= 0
-            Cond(
-                NotEqual(
-                    self._right,
-                    IntVal(0),
-                    origin=(
-                        ConstructedOrigin(
-                            f"{self._right.origin} /= 0",
-                            self._right.origin.location,
-                        )
-                        if self._right.origin
-                        else None
-                    ),
-                )
-            )
+            Cond(NotEqual(self._right, IntVal(0)))
         ]
 
     @property
@@ -931,22 +1045,19 @@ class Pow(BinaryIntExpr):
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
+        upper_bound = (
+            self.type_.bounds.upper
+            if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None
+            else INT_MAX
+        )
         return [
-            # Left ** Right <= INT_MAX
+            # Left ** Right <= Upper_Bound
             Cond(
                 LessEqual(
-                    IntVar(v_id),
-                    IntVal(INT_MAX),
-                    origin=(
-                        ConstructedOrigin(
-                            f"{self._origin} <= {INT_MAX}",
-                            self._origin.location,
-                        )
-                        if self._origin and self._left.origin and self._right.origin
-                        else None
-                    ),
+                    IntVar(v_id, self.type_, origin=self._origin),
+                    IntVal(upper_bound),
                 ),
-                [Assign(v_id, self)],
+                [Assign(v_id, self, self.type_)],
             )
         ]
 
@@ -963,20 +1074,7 @@ class Mod(BinaryIntExpr):
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Right /= 0
-            Cond(
-                NotEqual(
-                    self._right,
-                    IntVal(0),
-                    origin=(
-                        ConstructedOrigin(
-                            f"{self._right.origin} /= 0",
-                            self._right.origin.location,
-                        )
-                        if self._right.origin
-                        else None
-                    ),
-                )
-            )
+            Cond(NotEqual(self._right, IntVal(0)))
         ]
 
     @property
@@ -1098,13 +1196,6 @@ class Call(Expr):
         self._preconditions: list[Cond] = []
         self._origin = origin
 
-    def substituted(self, mapping: Mapping[ID, ID]) -> Call:
-        return self.__class__(
-            self._identifier,
-            *[a.substituted(mapping) for a in self._arguments],
-            origin=self._origin,
-        )
-
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return self._preconditions
 
@@ -1123,18 +1214,24 @@ class IntCall(Call, IntExpr):
         self,
         identifier: StrID,
         *arguments: BasicExpr,
+        type_: rty.AnyInteger,
         negative: bool = False,
         origin: Optional[Origin] = None,
     ) -> None:
-        super().__init__(identifier, *arguments)
+        super().__init__(identifier, *arguments, origin=origin)
+        self._type = type_
         self._negative = negative
-        self._origin = origin
+
+    @property
+    def type_(self) -> rty.AnyInteger:
+        return self._type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntCall:
         return self.__class__(
             self._identifier,
             *[a.substituted(mapping) for a in self._arguments],
             negative=self._negative,
+            type_=self._type,
             origin=self._origin,
         )
 
@@ -1153,6 +1250,13 @@ class IntCall(Call, IntExpr):
 
 
 class BoolCall(Call, BoolExpr):
+    def substituted(self, mapping: Mapping[ID, ID]) -> BoolCall:
+        return self.__class__(
+            self._identifier,
+            *[a.substituted(mapping) for a in self._arguments],
+            origin=self._origin,
+        )
+
     @property
     def z3expr(self) -> z3.BoolRef:
         # TODO: return value need not to be identical for identical arguments
@@ -1160,6 +1264,28 @@ class BoolCall(Call, BoolExpr):
 
 
 class ObjCall(Call):
+    def __init__(
+        self,
+        identifier: StrID,
+        *arguments: BasicExpr,
+        type_: rty.Any,
+        origin: Optional[Origin] = None,
+    ) -> None:
+        super().__init__(identifier, *arguments, origin=origin)
+        self._type = type_
+
+    @property
+    def type_(self) -> rty.Any:
+        return self._type
+
+    def substituted(self, mapping: Mapping[ID, ID]) -> ObjCall:
+        return self.__class__(
+            self._identifier,
+            *[a.substituted(mapping) for a in self._arguments],
+            type_=self._type,
+            origin=self._origin,
+        )
+
     @property
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1192,16 +1318,23 @@ class IntFieldAccess(FieldAccess, IntExpr):
         self,
         message: StrID,
         field: StrID,
+        type_: rty.AnyInteger,
         negative: bool = False,
         origin: Optional[Origin] = None,
     ) -> None:
         super().__init__(message, field, origin)
+        self._type = type_
         self._negative = negative
+
+    @property
+    def type_(self) -> rty.AnyInteger:
+        return self._type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntFieldAccess:
         return self.__class__(
             mapping[self._message] if self._message in mapping else self._message,
             self._field,
+            self._type,
             self._negative,
             self._origin,
         )
@@ -1223,6 +1356,28 @@ class BoolFieldAccess(FieldAccess, BoolExpr):
 
 
 class ObjFieldAccess(FieldAccess):
+    def __init__(
+        self,
+        message: StrID,
+        field: StrID,
+        type_: rty.Any,
+        origin: Optional[Origin] = None,
+    ) -> None:
+        super().__init__(message, field, origin)
+        self._type = type_
+
+    @property
+    def type_(self) -> rty.Any:
+        return self._type
+
+    def substituted(self, mapping: Mapping[ID, ID]) -> ObjFieldAccess:
+        return self.__class__(
+            mapping[self._message] if self._message in mapping else self._message,
+            self._field,
+            self._type,
+            self._origin,
+        )
+
     @property
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1271,9 +1426,15 @@ class IntIfExpr(IfExpr):
         condition: BasicBoolExpr,
         then_expr: BasicIntExpr,
         else_expr: BasicIntExpr,
+        type_: rty.AnyInteger,
         origin: Optional[Origin] = None,
     ) -> None:
         super().__init__(condition, then_expr, else_expr, origin)
+        self._type = type_
+
+    @property
+    def type_(self) -> rty.AnyInteger:
+        return self._type
 
 
 class BoolIfExpr(IfExpr):
@@ -1290,22 +1451,33 @@ class BoolIfExpr(IfExpr):
     ) -> None:
         super().__init__(condition, then_expr, else_expr, origin)
 
+    @property
+    def type_(self) -> rty.Enumeration:
+        return rty.BOOLEAN
+
 
 class Conversion(Expr):
     def __init__(
         self,
         identifier: StrID,
         argument: Expr,
+        type_: rty.Any,
         origin: Optional[Origin] = None,
     ) -> None:
         self._identifier = ID(identifier)
         self._argument = argument
+        self._type = type_
         self._origin = origin
+
+    @property
+    def type_(self) -> rty.Any:
+        return self._type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Conversion:
         return self.__class__(
             self._identifier,
             self._argument.substituted(mapping),
+            self._type,
             self._origin,
         )
 
@@ -1335,6 +1507,10 @@ class Comprehension(Expr):  # pylint: disable = too-many-instance-attributes
         self._condition_stmts = condition_stmts
         self._condition = condition
         self._origin = origin
+
+    @property
+    def type_(self) -> rty.Aggregate:
+        return rty.Aggregate(self._selector.type_)
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Comprehension:
         return self.__class__(
@@ -1375,6 +1551,10 @@ class Agg(Expr):
         self._elements = list(elements)
         self._origin = origin
 
+    @property
+    def type_(self) -> rty.Aggregate:
+        return rty.Aggregate(rty.common_type([e.type_ for e in self._elements]))
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Agg:
         return self.__class__(
             *[e.substituted(mapping) for e in self._elements],
@@ -1397,6 +1577,10 @@ class Str(Expr):
         self._string = string
         self._origin = origin
 
+    @property
+    def type_(self) -> rty.Sequence:
+        return rty.OPAQUE
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Str:
         return self
 
@@ -1416,16 +1600,23 @@ class MsgAgg(Expr):
         self,
         identifier: StrID,
         field_values: Mapping[ID, BasicExpr],
+        type_: rty.Message,
         origin: Optional[Origin] = None,
     ) -> None:
         self._identifier = ID(identifier)
         self._field_values = field_values or {}
+        self._type = type_
         self._origin = origin
+
+    @property
+    def type_(self) -> rty.Message:
+        return self._type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> MsgAgg:
         return self.__class__(
             self._identifier,
             {f: v.substituted(mapping) for f, v in self._field_values.items()},
+            self._type,
             origin=self._origin,
         )
 
@@ -1450,16 +1641,23 @@ class DeltaMsgAgg(Expr):
         self,
         identifier: StrID,
         field_values: Mapping[ID, BasicExpr],
+        type_: rty.Message,
         origin: Optional[Origin] = None,
     ) -> None:
         self._identifier = ID(identifier)
         self._field_values = field_values or {}
+        self._type = type_
         self._origin = origin
+
+    @property
+    def type_(self) -> rty.Message:
+        return self._type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> DeltaMsgAgg:
         return self.__class__(
             self._identifier,
             {f: v.substituted(mapping) for f, v in self._field_values.items()},
+            self._type,
             origin=self._origin,
         )
 
@@ -1483,12 +1681,18 @@ class CaseExpr(Expr):
     def __init__(
         self,
         expression: BasicExpr,
-        choices: Sequence[tuple[Sequence[BasicIntExpr], list[Stmt], BasicExpr]],
+        choices: Sequence[tuple[Sequence[BasicExpr], list[Stmt], BasicExpr]],
+        type_: rty.Any,
         origin: Optional[Origin] = None,
     ) -> None:
         self._expression = expression
         self._choices = choices
+        self._type = type_
         self._origin = origin
+
+    @property
+    def type_(self) -> rty.Any:
+        return self._type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> CaseExpr:
         return self.__class__(
@@ -1501,6 +1705,7 @@ class CaseExpr(Expr):
                 )
                 for vs, s, e in self._choices
             ],
+            self._type,
             origin=self._origin,
         )
 
@@ -1521,7 +1726,7 @@ class CaseExpr(Expr):
 
 
 def add_checks(
-    statements: list[Stmt], manager: ProofManager, variable_id: Generator[ID, None, None]
+    statements: Sequence[Stmt], manager: ProofManager, variable_id: Generator[ID, None, None]
 ) -> list[Stmt]:
     """
     Add assert statements in places where preconditions are not statically true.
@@ -1544,7 +1749,7 @@ def add_checks(
                 StmtListProofJob(
                     [
                         Assert(Not(BoolVar("__GOAL__"))),
-                        Assign("__GOAL__", precondition.goal),
+                        Assign("__GOAL__", precondition.goal, precondition.goal.type_),
                         *precondition.facts,
                         *facts,
                     ],
@@ -1561,7 +1766,7 @@ def add_checks(
         statement_precondition_count.append((statement, len(preconditions)))
 
     proof_results = manager.check()
-    result = []
+    result: list[Stmt] = []
 
     for statement, precondition_count in statement_precondition_count:
         for _ in range(precondition_count):
@@ -1574,7 +1779,7 @@ def add_checks(
 
 
 def check_preconditions(
-    statements: list[Stmt], manager: ProofManager, variable_id: Generator[ID, None, None]
+    statements: Sequence[Stmt], manager: ProofManager, variable_id: Generator[ID, None, None]
 ) -> RecordFluxError:
     assert len({s.target for s in statements if isinstance(s, Assign)}) == len(
         [s.target for s in statements if isinstance(s, Assign)]
@@ -1588,7 +1793,7 @@ def check_preconditions(
                 ErrorProofJob(
                     [
                         Assert(Not(BoolVar("__GOAL__"))),
-                        Assign("__GOAL__", precondition.goal),
+                        Assign("__GOAL__", precondition.goal, precondition.goal.type_),
                         *precondition.facts,
                         *facts,
                     ],
@@ -1634,7 +1839,7 @@ def check_preconditions(
     return error
 
 
-def to_ssa(statements: list[Stmt], assigned: Optional[list[ID]] = None) -> list[Stmt]:
+def to_ssa(statements: Sequence[Stmt], assigned: Optional[list[ID]] = None) -> list[Stmt]:
     """Transform the statements into Static Single-Assignment form."""
     occurrences = dict(Counter([s.target for s in statements if isinstance(s, Assign)]))
     assigned = assigned or []
@@ -1648,7 +1853,7 @@ def to_ssa(statements: list[Stmt], assigned: Optional[list[ID]] = None) -> list[
                 assert newtarget not in assigned
                 assigned.append(s.target)
                 assigned.append(newtarget)
-                result.append(Assign(newtarget, s.expression.substituted(subs), s.origin))
+                result.append(Assign(newtarget, s.expression.substituted(subs), s.type_, s.origin))
                 subs[s.target] = newtarget
             else:
                 assigned.append(s.target)

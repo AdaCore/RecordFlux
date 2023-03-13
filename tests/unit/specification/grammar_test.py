@@ -75,7 +75,7 @@ def parse_session(string: str) -> None:
     error = RecordFluxError()
     check_diagnostics_error(unit, error)
     assert isinstance(unit.root, lang.SessionDecl)
-    result = create_session(error, unit.root, ID("Package"), Path("<stdin>"))
+    result = create_session(error, unit.root, ID("Package"), Path("<stdin>"), 1)
     error.propagate()
     assert isinstance(result, model.Session)
 

@@ -3,13 +3,13 @@ from __future__ import annotations
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from typing import Final, Optional
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expression as expr, tac, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.error import Location, Severity, Subsystem
-from rflx.identifier import ID, StrID
+from rflx.identifier import ID, StrID, id_generator
 
 from . import declaration as decl, statement as stmt, type_ as mty
 from .basic_declaration import BasicDeclaration
@@ -42,6 +42,7 @@ class Transition(Base):
 
 
 class State(Base):
+    # pylint: disable = too-many-instance-attributes
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -68,6 +69,8 @@ class State(Base):
         self.declarations = {d.identifier: d for d in declarations} if declarations else {}
         self.description = description
         self.location = location
+
+        self._actions_ir: list[tac.Stmt] = []
 
         self._normalize()
 
@@ -135,6 +138,13 @@ class State(Base):
             )
             for a in self._actions
         )
+
+    def optimize(self) -> None:
+        self._optimize_structures()
+
+    def create_ir(self, variable_id: Generator[ID, None, None], workers: int) -> None:
+        actions_ir = tac.to_ssa([s for a in self._actions for s in a.to_tac(variable_id)])
+        self._actions_ir = tac.add_checks(actions_ir, tac.ProofManager(workers), variable_id)
 
     def _normalize(self) -> None:
         self._normalize_transitions()
@@ -209,9 +219,6 @@ class State(Base):
                 field_assignments[-1].location.end if field_assignments[-1].location else None,
             ),
         )
-
-    def optimize(self) -> None:
-        self._optimize_structures()
 
     def _optimize_structures(self) -> None:
         """
@@ -436,18 +443,17 @@ class Session(AbstractSession):
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[mty.Type],
         location: Optional[Location] = None,
+        workers: int = 1,
     ):
-        super().__init__(
-            identifier,
-            states,
-            declarations,
-            parameters,
-            types,
-            location,
-        )
+        super().__init__(identifier, states, declarations, parameters, types, location)
+        self._workers = workers
+
         self._validate()
+
         self.error.propagate()
+
         self._optimize()
+        self._create_ir()
 
     def _optimize(self) -> None:
         for state in self.states:
@@ -842,6 +848,10 @@ class Session(AbstractSession):
 
         self._validate_usage()
 
+    def _create_ir(self) -> None:
+        for state in self.states:
+            state.create_ir(id_generator(), self._workers)
+
 
 class UnprovenSession(AbstractSession):
     # pylint: disable=too-many-arguments
@@ -864,7 +874,7 @@ class UnprovenSession(AbstractSession):
             location,
         )
 
-    def proven(self) -> Session:
+    def proven(self, workers: int) -> Session:
         return Session(
             self.identifier,
             self.states,
@@ -872,6 +882,7 @@ class UnprovenSession(AbstractSession):
             list(self.parameters.values()),
             list(self.types.values()),
             self.location,
+            workers,
         )
 
 

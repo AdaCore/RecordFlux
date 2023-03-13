@@ -51,13 +51,13 @@ is
       pragma Assert (Prepare_Invariant);
       -- tests/feature/session_case_expression_numeric/test.rflx:29:10
       if Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Value) then
-         Value := Test.Tiny_Int ((case Test.Message.Get_Value (Ctx.P.Message_Ctx) is
+         Value := (case Test.Message.Get_Value (Ctx.P.Message_Ctx) is
              when 1 | 2 =>
                 4,
              when 3 =>
                 1,
              when 4 =>
-                2));
+                2);
       else
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);

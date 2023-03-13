@@ -2598,7 +2598,6 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
 
 
 def test_aggregate_equal_invalid_size_field() -> None:
-
     length = Field(ID("Length", Location((2, 5))))
     magic = Field(ID("Magic", Location((3, 5))))
 

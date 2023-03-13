@@ -151,7 +151,12 @@ class UndefinedInteger(AnyInteger):
 
 
 @attr.s(frozen=True)
-class UniversalInteger(AnyInteger):
+class BoundedInteger(AnyInteger):
+    bounds: Bounds = attr.ib(Bounds(None, None))
+
+
+@attr.s(frozen=True)
+class UniversalInteger(BoundedInteger):
     DESCRIPTIVE_NAME: ClassVar[str] = "type universal integer"
     bounds: Bounds = attr.ib(Bounds(None, None))
 
@@ -178,7 +183,7 @@ class UniversalInteger(AnyInteger):
 
 
 @attr.s(frozen=True)
-class Integer(AnyInteger):
+class Integer(BoundedInteger):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
     identifier: ID = attr.ib(converter=ID)
     bounds: Bounds = attr.ib(Bounds(None, None))

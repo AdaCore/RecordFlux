@@ -134,10 +134,11 @@ class MessageFieldAssignment(Assignment):
         )
 
     def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        assert isinstance(self.type_, rty.Message)
         expression_stmts, expression_expr = _to_tac_basic_expr(self.expression, variable_id)
         return [
             *expression_stmts,
-            tac.FieldAssign(self.message, self.field, expression_expr, self),
+            tac.FieldAssign(self.message, self.field, expression_expr, self.type_, self),
         ]
 
 

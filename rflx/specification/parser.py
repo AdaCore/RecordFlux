@@ -256,10 +256,11 @@ def create_session(
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
+    workers: int,
     types: Optional[Sequence[model.Type]] = None,
 ) -> Optional[model.Session]:
     try:
-        return create_unproven_session(error, session, package, filename, types).proven()
+        return create_unproven_session(error, session, package, filename, types).proven(workers)
     except RecordFluxError as e:
         error.extend(e)
 
@@ -1995,7 +1996,9 @@ class Parser:
                 if new_refinement is not None:
                     self._types.append(new_refinement)
             elif isinstance(t, lang.SessionDecl):
-                new_session = create_session(error, t, package_id, filename, self._types)
+                new_session = create_session(
+                    error, t, package_id, filename, self._workers, self._types
+                )
                 if new_session is not None:
                     self._sessions.append(new_session)
             else:
