@@ -10,6 +10,15 @@ variables:
    SPARK_BUILD_DATE: "20221214"
    PYTHON_VERSION: "3.10"
 
+workflow:
+  rules:
+    # Switch between branch pipelines and merge request pipelines to ensure that all checks must
+    # pass before merging (see also https://gitlab.com/gitlab-org/gitlab/-/issues/385841)
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
 stages:
   - initialization
   - testing
