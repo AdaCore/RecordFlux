@@ -878,3 +878,38 @@ def test_session_indirect_use_of_enum_type(tmp_path: Path) -> None:
         )
     )
     utils.assert_compilable_code_specs([a], tmp_path)
+
+
+def test_session_message_field_access_in_transition(tmp_path: Path) -> None:
+    utils.assert_compilable_code_string(
+        """\
+            package Test is
+
+               type E is (E_1, E_2) with Size => 8;
+
+               type M is
+                  message
+                     F : E;
+                  end message;
+
+               generic
+                  with function F return M;
+               session S is
+               begin
+                  state S is
+                     M : M;
+                  begin
+                     M := F;
+                  transition
+                     goto S
+                        if M.F = E_1
+                     goto null
+                  exception
+                     goto null
+                  end S;
+               end S;
+
+            end Test;
+            """,
+        tmp_path,
+    )

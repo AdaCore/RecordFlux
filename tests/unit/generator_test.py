@@ -1918,6 +1918,14 @@ def test_session_write_error(
             expr.Opaque(expr.Variable("X", type_=rty.Message("P::M"))),
             expr.Call("P::M::Data", [expr.Variable("X_Ctx")]),
         ),
+        (
+            expr.Selected(expr.Variable("M", type_=rty.Message("P::M")), "F"),
+            expr.Call("P::M::Get_F", [expr.Variable("M_Ctx")]),
+        ),
+        (
+            expr.Selected(expr.Variable("M", type_=rty.Structure("P::M")), "F"),
+            expr.Selected(expr.Variable("M"), "F"),
+        ),
     ],
 )
 def test_session_substitution(expression: expr.Expr, expected: expr.Expr) -> None:

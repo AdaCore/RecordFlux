@@ -3538,10 +3538,15 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
             if isinstance(expression, expr.Selected):
                 if isinstance(expression.prefix, expr.Variable):
-                    assert isinstance(expression.prefix.type_, rty.Message)
+                    assert isinstance(expression.prefix.type_, (rty.Message, rty.Structure))
                     if expression.selector in expression.prefix.type_.parameter_types:
                         return expr.Selected(
                             expr.Variable(context_id(expression.prefix.identifier, is_global)),
+                            expression.selector,
+                        )
+                    if isinstance(expression.prefix.type_, rty.Structure):
+                        return expr.Selected(
+                            expr.Variable(expression.prefix.identifier),
                             expression.selector,
                         )
                     return expr.Call(

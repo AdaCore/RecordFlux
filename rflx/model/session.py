@@ -296,6 +296,9 @@ class State(Base):
                     if isinstance(action, stmt.Assignment):
                         substituted(action.expression, message_decl.type_)
 
+                for transition in self._transitions:
+                    substituted(transition.condition, message_decl.type_)
+
 
 class AbstractSession(BasicDeclaration):
     # pylint: disable=too-many-arguments, too-many-instance-attributes
