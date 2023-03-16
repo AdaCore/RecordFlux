@@ -217,7 +217,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         if any(
             t.parent not in [INTERNAL_PACKAGE, BUILTINS_PACKAGE]
-            for t in [*self._session_context.used_types, *self._session_context.used_types_body]
+            for t in self._session_context.used_types
         ):
             declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
 
@@ -261,6 +261,14 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         body_context.extend(
             [WithClause(self._prefix * p) for p in self._session_context.referenced_packages_body],
         )
+
+        if any(
+            t.parent not in [INTERNAL_PACKAGE, BUILTINS_PACKAGE]
+            for t in (
+                set(self._session_context.used_types_body) - set(self._session_context.used_types)
+            )
+        ):
+            body_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
 
         for type_identifier in self._session_context.used_types_body:
             if type_identifier.parent in [INTERNAL_PACKAGE, BUILTINS_PACKAGE]:
@@ -3518,6 +3526,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         isinstance(e.type_, rty.Enumeration) and not e.type_.always_valid
                     ):
                         self._session_context.used_types_body.append(e.type_.identifier)
+                        self._session_context.referenced_types_body.append(e.type_.identifier)
 
             if isinstance(expression, expr.MathAssExpr):
                 for e in expression.terms:

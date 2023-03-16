@@ -818,3 +818,63 @@ def test_session_boolean_relations(global_rel: str, local_rel: str, tmp_path: Pa
         end Test;
     """
     utils.assert_compilable_code_string(spec, tmp_path)
+
+
+def test_session_indirect_use_of_enum_type(tmp_path: Path) -> None:
+    a = tmp_path / "a.rflx"
+    a.write_text(
+        textwrap.dedent(
+            """\
+            with B;
+            with C;
+
+            package A is
+
+               generic
+               session S is
+               begin
+                  state S is
+                     M : B::M;
+                  begin
+                     M.F := C::E_1;
+                  transition
+                     goto S
+                        if M.F = C::E_1
+                     goto null
+                  exception
+                     goto null
+                  end S;
+               end S;
+
+            end A;
+            """
+        )
+    )
+    b = tmp_path / "b.rflx"
+    b.write_text(
+        textwrap.dedent(
+            """\
+            package B is
+
+               type M is
+                  message
+                     F : C::E;
+                  end message;
+
+            end B;
+            """
+        )
+    )
+    c = tmp_path / "c.rflx"
+    c.write_text(
+        textwrap.dedent(
+            """\
+            package C is
+
+               type E is (E_1, E_2) with Size => 8;
+
+            end C;
+            """
+        )
+    )
+    utils.assert_compilable_code_specs([a], tmp_path)

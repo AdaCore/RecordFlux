@@ -6,6 +6,7 @@ with RFLX.Universal.Message;
 with RFLX.Universal.Options;
 with RFLX.Universal.Option;
 with RFLX.Universal.Values;
+with RFLX.RFLX_Types;
 
 package body RFLX.Test.Session with
   SPARK_Mode
