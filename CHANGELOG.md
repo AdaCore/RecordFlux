@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Missing with clause in session package for indirectly used enumeration types (#1298)
-- Warning about that `with RFLX.RFLX_Types` might be moved to body of session package
+- Warning about that `with RFLX.RFLX_Types` is unreferenced or might be moved to body of session package
 
 ## [0.9.0] - 2023-01-06
 

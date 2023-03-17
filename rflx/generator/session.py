@@ -215,10 +215,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         if self._allocator.required:
             declaration_context.append(WithClause(self._prefix * self._allocator.unit_identifier))
 
-        if any(
-            t.parent not in [INTERNAL_PACKAGE, BUILTINS_PACKAGE]
-            for t in self._session_context.used_types
-        ):
+        if any(t.parent == const.TYPES for t in self._session_context.used_types):
             declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
 
         body_context: list[ContextItem] = [
@@ -263,7 +260,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         )
 
         if any(
-            t.parent not in [INTERNAL_PACKAGE, BUILTINS_PACKAGE]
+            t.parent == const.TYPES
             for t in (
                 set(self._session_context.used_types_body) - set(self._session_context.used_types)
             )
