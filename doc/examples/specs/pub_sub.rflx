@@ -1,0 +1,34 @@
+package Pub_Sub is
+
+   -- Type specifications (basic types, messages) go here
+
+   type Identifier is range 1 .. 16#F_A0# with Size => 12;
+
+   type Command is
+   (
+      SUBSCRIBE => 1,
+      PUBLISH => 3,
+      UNSUBSCRIBE => 4,
+      ERROR => 11,
+      ERROR_NOT_SUBSCRIBED => 12,
+      ERROR_NO_SUBSCRIBERS => 13,
+      ERROR_MESSAGE_TOO_LONG => 14,
+      SUCCESS => 15
+   ) with Size => 4;
+
+   type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Message is
+      message
+         Identifier : Identifier;
+         Command : Command
+            then Length
+               if Command = PUBLISH
+            then null
+               if Command /= PUBLISH;
+         Length : Length;
+         Payload : Opaque
+            with Size => 8 * Length;
+      end message;
+
+end Pub_Sub;
