@@ -149,7 +149,7 @@ def assert_compilable_code_string(
     assert_compilable_code(parser.create_model(), Integration(), tmp_path, prefix=prefix)
 
 
-def assert_compilable_code(  # pylint: disable = too-many-arguments
+def assert_compilable_code(  # pylint: disable = too-many-arguments  # noqa: PLR0913
     model: Model,
     integration: Integration,
     tmp_path: pathlib.Path,

@@ -1387,7 +1387,7 @@ class PackageRenamingDeclaration(Declaration):
 
 
 class ObjectDeclaration(Declaration):
-    def __init__(  # pylint: disable = too-many-arguments
+    def __init__(  # pylint: disable = too-many-arguments  # noqa: PLR0913
         self,
         identifiers: Sequence[StrID],
         type_identifier: Union[StrID, Expr],
@@ -1677,7 +1677,7 @@ class VariantPart(Base):
 
 
 class RecordType(TypeDeclaration):
-    def __init__(  # pylint: disable = too-many-arguments
+    def __init__(  # pylint: disable = too-many-arguments  # noqa: PLR0913
         self,
         identifier: StrID,
         components: Sequence[Component],

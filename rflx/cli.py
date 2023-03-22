@@ -32,7 +32,9 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 DEFAULT_PREFIX = "RFLX"
 
 
-def main(argv: Sequence[str]) -> Union[int, str]:  # pylint: disable = too-many-statements
+def main(  # pylint: disable = too-many-statements  # noqa: PLR0915
+    argv: Sequence[str],
+) -> Union[int, str]:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-q", "--quiet", action="store_true", help="disable logging to standard output"

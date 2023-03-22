@@ -105,7 +105,7 @@ class ParallelProofs:
         self._current: list[ProofJob] = []
         self._workers = workers
 
-    def add(
+    def add(  # noqa: PLR0913
         self,
         goal: Expr,
         facts: Sequence[Expr],
@@ -1741,7 +1741,7 @@ class Indexed(Name):
 
 
 class Selected(Name):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         prefix: Expr,
         selector: StrID,
@@ -1863,7 +1863,7 @@ class Selected(Name):
             ]
         assert False, self.type_
 
-    def copy(
+    def copy(  # noqa: PLR0913
         self,
         prefix: Optional[Expr] = None,
         selector: Optional[StrID] = None,
@@ -1883,7 +1883,7 @@ class Selected(Name):
 
 
 class Call(Name):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         args: Optional[Sequence[Expr]] = None,

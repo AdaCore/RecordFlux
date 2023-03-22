@@ -265,7 +265,7 @@ class Integer(Scalar):
 
 
 class Enumeration(Scalar):
-    def __init__(
+    def __init__(  # noqa: PLR0912
         self,
         identifier: StrID,
         literals: abc.Sequence[tuple[StrID, expr.Number]],

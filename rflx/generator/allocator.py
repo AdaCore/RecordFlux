@@ -356,7 +356,9 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
             return state.identifier.name
         return None
 
-    def _allocate_local_slots(self) -> list[SlotInfo]:  # pylint: disable = too-many-branches
+    def _allocate_local_slots(  # pylint: disable = too-many-branches  # noqa: PLR0912
+        self,
+    ) -> list[SlotInfo]:
         """
         Allocate slots for state variables and state actions.
 

@@ -62,7 +62,7 @@ def parse_code_block_type(type_str: str) -> CodeBlockType:
     return types[normalized]
 
 
-def check_file(filename: Path, content: str) -> bool:
+def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
     # pylint: disable=too-many-branches, too-many-statements
 
     found = False

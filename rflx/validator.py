@@ -60,7 +60,7 @@ class Validator:
         except PyRFLXError as e:
             raise ValidationError(f"invalid checksum definition: {e}") from e
 
-    def validate(
+    def validate(  # noqa: PLR0913
         self,
         message_identifier: ID,
         directory_invalid: Optional[Path] = None,

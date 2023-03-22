@@ -978,7 +978,7 @@ def create_null_message(
     return model.Message(identifier, [], {}, location=type_location(identifier, message))
 
 
-def create_message(
+def create_message(  # noqa: PLR0913
     error: RecordFluxError,
     identifier: ID,
     parameters: lang.Parameters,
@@ -1383,7 +1383,7 @@ def check_duplicate_aspect(
         )
 
 
-def parse_aspects(
+def parse_aspects(  # noqa: PLR0912
     error: RecordFluxError, aspects: lang.MessageAspectList, filename: Path
 ) -> tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
     # pylint: disable=too-many-branches
@@ -1429,7 +1429,7 @@ def parse_aspects(
     return checksum_result, byte_order_result
 
 
-def create_derived_message(
+def create_derived_message(  # noqa: PLR0913
     error: RecordFluxError,
     identifier: ID,
     _parameters: lang.Parameters,

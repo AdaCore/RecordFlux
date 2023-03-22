@@ -77,7 +77,9 @@ def substitution(
     def type_conversion(expression: expr.Expr) -> expr.Expr:
         return expr.Call(target_type, [expression]) if target_type else expression
 
-    def func(expression: expr.Expr) -> expr.Expr:  # pylint: disable = too-many-branches
+    def func(  # pylint: disable = too-many-branches  # noqa: PLR0912
+        expression: expr.Expr,
+    ) -> expr.Expr:
         def byte_aggregate(aggregate: expr.Aggregate) -> expr.Aggregate:
             return expr.Aggregate(*[expr.Val(const.TYPES_BYTE, e) for e in aggregate.elements])
 

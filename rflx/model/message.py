@@ -114,7 +114,7 @@ class MessageState(Base):
 @invariant(lambda self: not self.types if not self.structure else True)
 class AbstractMessage(mty.Type):
     # pylint: disable=too-many-arguments,too-many-public-methods,too-many-instance-attributes
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         structure: Sequence[Link],
@@ -242,7 +242,7 @@ class AbstractMessage(mty.Type):
         return self._byte_order
 
     @abstractmethod
-    def copy(
+    def copy(  # noqa: PLR0913
         self,
         identifier: Optional[StrID] = None,
         structure: Optional[Sequence[Link]] = None,
@@ -848,7 +848,7 @@ class AbstractMessage(mty.Type):
 
 class Message(AbstractMessage):
     # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         structure: Sequence[Link],
@@ -899,7 +899,7 @@ class Message(AbstractMessage):
 
             self.error.propagate()
 
-    def copy(
+    def copy(  # noqa: PLR0913
         self,
         identifier: Optional[StrID] = None,
         structure: Optional[Sequence[Link]] = None,
@@ -2160,7 +2160,7 @@ class Message(AbstractMessage):
 
 class DerivedMessage(Message):
     # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         base: Message,
@@ -2182,7 +2182,7 @@ class DerivedMessage(Message):
         )
         self.base = base
 
-    def copy(
+    def copy(  # noqa: PLR0913
         self,
         identifier: Optional[StrID] = None,
         structure: Optional[Sequence[Link]] = None,
@@ -2209,7 +2209,7 @@ class DerivedMessage(Message):
 
 class UnprovenMessage(AbstractMessage):
     # pylint: disable=too-many-arguments
-    def copy(
+    def copy(  # noqa: PLR0913
         self,
         identifier: Optional[StrID] = None,
         structure: Optional[Sequence[Link]] = None,
@@ -2520,7 +2520,7 @@ class UnprovenMessage(AbstractMessage):
 
 class UnprovenDerivedMessage(UnprovenMessage):
     # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         base: Union[UnprovenMessage, Message],
@@ -2562,7 +2562,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
             )
             self.error.propagate()
 
-    def copy(
+    def copy(  # noqa: PLR0913
         self,
         identifier: Optional[StrID] = None,
         structure: Optional[Sequence[Link]] = None,
@@ -2598,7 +2598,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
 
 class Refinement(mty.Type):
     # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         package: StrID,
         pdu: Message,

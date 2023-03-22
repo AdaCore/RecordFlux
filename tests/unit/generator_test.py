@@ -106,7 +106,7 @@ def test_unexpected_type(tmp_path: Path) -> None:
     ],
 )
 # pylint: disable-next = too-many-arguments
-def test_generate(
+def test_generate(  # noqa: PLR0913
     debug: Debug,
     debug_expected: set[str],
     prefix: str,

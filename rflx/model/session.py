@@ -42,7 +42,7 @@ class Transition(Base):
 
 
 class State(Base):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         transitions: Optional[Sequence[Transition]] = None,
@@ -147,7 +147,7 @@ class State(Base):
         if self._exception_transition and self._exception_transition.target == ID("null"):
             self._exception_transition.target = FINAL_STATE.identifier
 
-    def _normalize_actions(self) -> None:  # pylint: disable = too-many-branches
+    def _normalize_actions(self) -> None:  # pylint: disable = too-many-branches  # noqa: PLR0912
         field_assignments: list[stmt.MessageFieldAssignment] = []
         actions: list[stmt.Statement] = []
 
@@ -303,7 +303,7 @@ class State(Base):
 class AbstractSession(BasicDeclaration):
     # pylint: disable=too-many-arguments, too-many-instance-attributes
     @abstractmethod
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         states: Sequence[State],
@@ -428,7 +428,7 @@ class AbstractSession(BasicDeclaration):
 
 class Session(AbstractSession):
     # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         states: Sequence[State],
@@ -770,7 +770,7 @@ class Session(AbstractSession):
                     ],
                 )
 
-    def _typify_variable(  # pylint: disable = too-many-branches
+    def _typify_variable(  # pylint: disable = too-many-branches  # noqa: PLR0912
         self, expression: expr.Expr, declarations: Mapping[ID, decl.Declaration]
     ) -> expr.Expr:
         if isinstance(
@@ -845,7 +845,7 @@ class Session(AbstractSession):
 
 class UnprovenSession(AbstractSession):
     # pylint: disable=too-many-arguments
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         states: Sequence[State],

@@ -1318,7 +1318,7 @@ class Conversion(Expr):
 
 
 class Comprehension(Expr):  # pylint: disable = too-many-instance-attributes
-    def __init__(  # pylint: disable = too-many-arguments
+    def __init__(  # pylint: disable = too-many-arguments  # noqa: PLR0913
         self,
         iterator: StrID,
         sequence: BasicExpr,

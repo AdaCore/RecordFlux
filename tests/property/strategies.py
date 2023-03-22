@@ -170,7 +170,7 @@ def composites(draw: Draw, unique_identifiers: abc.Generator[ID, None, None]) ->
 
 
 @st.composite
-def messages(
+def messages(  # noqa: PLR0915
     draw: Draw,
     unique_identifiers: abc.Generator[ID, None, None],
     not_null: bool = False,

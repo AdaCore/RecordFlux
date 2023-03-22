@@ -292,7 +292,7 @@ class Generator:
 
         return units
 
-    def _create_unit(  # pylint: disable = too-many-arguments
+    def _create_unit(  # pylint: disable = too-many-arguments  # noqa: PLR0913
         self,
         identifier: ID,
         declaration_context: Optional[abc.Sequence[ContextItem]] = None,
@@ -337,7 +337,7 @@ class Generator:
         return unit
 
     # pylint: disable = too-many-branches, too-many-locals
-    def _create_message(self, message: Message) -> dict[ID, Unit]:
+    def _create_message(self, message: Message) -> dict[ID, Unit]:  # noqa: PLR0912
         units: dict[ID, Unit] = {}
 
         if not message.fields:
