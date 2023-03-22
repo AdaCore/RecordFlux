@@ -549,7 +549,7 @@ def test_main_convert_iana(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
         == 0
     )
 
-    with open(IANA_XML_FILE, "r", encoding="utf-8") as f:
+    with open(IANA_XML_FILE, encoding="utf-8") as f:
         data = f.read()
         assert result == [
             (data, IANA_XML_FILE, False, tmp_path / "1"),

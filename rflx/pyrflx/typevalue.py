@@ -6,9 +6,7 @@ import typing as ty
 from abc import abstractmethod
 from collections import abc
 from dataclasses import dataclass
-from typing import Any, Optional, Union
-
-from typing_extensions import Protocol
+from typing import Any, Optional, Protocol, Union
 
 from rflx.common import Base
 from rflx.const import BUILTINS_PACKAGE
@@ -593,7 +591,7 @@ class MessageValue(TypeValue):
         self._message_first_name = First("Message")
         initial = self._fields[INITIAL.name]
         initial.first = Number(0)
-        initial.typeval.assign(bytes())
+        initial.typeval.assign(b"")
         self._simplified_mapping: dict[Name, Expr] = dict.fromkeys(
             [initial.name_size, initial.name_last, initial.name_first, self._message_first_name],
             Number(0),
@@ -1080,7 +1078,7 @@ class MessageValue(TypeValue):
                         f"has not been defined as a checksum field"
                     )
 
-    def _is_checksum_settable(self, checksum: "MessageValue.Checksum") -> bool:
+    def _is_checksum_settable(self, checksum: MessageValue.Checksum) -> bool:
         def valid_path(value_range: ValueRange) -> bool:
             lower = value_range.lower.substituted(
                 func=lambda e: self._fields[self._next_field(INITIAL.name)].name_first
@@ -1148,7 +1146,7 @@ class MessageValue(TypeValue):
             checksum_value = self._calculate_checksum(checksum)
             self._fields[checksum.field_name].typeval.assign(checksum_value)
 
-    def _calculate_checksum(self, checksum: "MessageValue.Checksum") -> int:
+    def _calculate_checksum(self, checksum: MessageValue.Checksum) -> int:
         if not checksum.function:
             raise PyRFLXError(
                 f"cannot calculate checksum for {checksum.field_name}: "

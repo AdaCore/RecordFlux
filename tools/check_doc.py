@@ -94,7 +94,7 @@ def check_file(filename: Path, content: str) -> bool:
         match = re.match(r"^\s*\.\. code-block::", line)
         if match:
             raise CheckDocError(
-                (f"{filename}:{lineno}: code-block directive forbidden (use 'code::' instead)")
+                f"{filename}:{lineno}: code-block directive forbidden (use 'code::' instead)"
             )
 
         match = re.match(r"^\s*\.\. doc-check: (?P<type>\S+)\s*$", line)
@@ -103,7 +103,7 @@ def check_file(filename: Path, content: str) -> bool:
             check = match.group("type").split(",")
             doc_check_type = parse_code_block_type(check[0])
             if doc_check_type == CodeBlockType.UNKNOWN:
-                raise CheckDocError((f'{filename}:{lineno}: invalid doc-check type "{check[0]}"'))
+                raise CheckDocError(f'{filename}:{lineno}: invalid doc-check type "{check[0]}"')
             if len(check) > 1:
                 subtype = check[1]
 
@@ -157,7 +157,7 @@ def check_files(files: list[Path]) -> None:
     found = False
 
     for filename in files:
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(filename, encoding="utf-8") as f:
             found = check_file(filename, f.read()) or found
 
     if not found:

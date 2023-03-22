@@ -87,7 +87,7 @@ def ping(target: str) -> None:
 
                 time.sleep(1)
                 receiving = False
-            except socket.error as e:
+            except OSError as e:
                 if e.args[0] in [errno.EAGAIN, errno.EWOULDBLOCK]:
                     time.sleep(1)
                     receiving = False

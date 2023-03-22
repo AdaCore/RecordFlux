@@ -65,10 +65,10 @@ class Bitstring:
 
     @staticmethod
     def valid_bitstring(bitstring: str) -> bool:
-        return all((bit in ["0", "1"] for bit in bitstring))
+        return all(bit in ["0", "1"] for bit in bitstring)
 
     @staticmethod
-    def join(iterable: Sequence["Bitstring"]) -> Bitstring:
+    def join(iterable: Sequence[Bitstring]) -> Bitstring:
         joined_bitstring = Bitstring()
         for i in iterable:
             joined_bitstring += i

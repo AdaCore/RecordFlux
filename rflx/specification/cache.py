@@ -69,4 +69,4 @@ class Cache:
     @staticmethod
     def _message_hash(message: AbstractMessage) -> str:
         types = "|".join(str(t) for t in message.types.values())
-        return hashlib.md5(f"{__version__}|{message}|{types}".encode("utf-8")).hexdigest()
+        return hashlib.md5(f"{__version__}|{message}|{types}".encode()).hexdigest()

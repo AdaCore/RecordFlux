@@ -248,7 +248,7 @@ def test_enumeration_invalid_always_valid_aspect() -> None:
 def test_enumeration_invalid_literal() -> None:
     assert_type_error(
         Enumeration(
-            "P::T", [("A B", Number(1))], Number(8), always_valid=False, location=Location(((1, 2)))
+            "P::T", [("A B", Number(1))], Number(8), always_valid=False, location=Location((1, 2))
         ),
         r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$',
     )

@@ -358,7 +358,7 @@ def get_message_name(locations, name, line, column):
 
 
 def display_message_graph(filename):
-    with open(output_dir() + "/locations.json", "r") as f:
+    with open(output_dir() + "/locations.json") as f:
         locations = json.load(f)
     loc = GPS.EditorBuffer.get().current_view().cursor()
     column = loc.column()
