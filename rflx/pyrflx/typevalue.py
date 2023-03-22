@@ -575,7 +575,7 @@ class MessageValue(TypeValue):
                     ),
                     f.name,
                 )
-                for f in (INITIAL,) + self._type.fields
+                for f in (INITIAL, *self._type.fields)
             }
         )
 

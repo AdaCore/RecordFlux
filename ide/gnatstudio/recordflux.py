@@ -1,6 +1,4 @@
-"""
-RecordFlux support for GNAT Studio
-"""
+"""RecordFlux support for GNAT Studio."""
 
 import json
 import os

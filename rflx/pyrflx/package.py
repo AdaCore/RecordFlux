@@ -37,7 +37,7 @@ class Package(Base):
         self, functions: Mapping[StrID, Mapping[str, ChecksumFunction]]
     ) -> None:
         for message_name, field_name_to_function_mapping in functions.items():
-            message_name = str(message_name)
-            if message_name not in self._messages:
-                raise PyRFLXError(f'"{message_name}" is not a message in {self._name}')
-            self._messages[message_name].set_checksum_function(field_name_to_function_mapping)
+            name = str(message_name)
+            if name not in self._messages:
+                raise PyRFLXError(f'"{name}" is not a message in {self._name}')
+            self._messages[name].set_checksum_function(field_name_to_function_mapping)

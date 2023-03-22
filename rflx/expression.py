@@ -1016,7 +1016,7 @@ class Add(MathAssExpr):
 
 class Mul(MathAssExpr):
     def __neg__(self) -> Expr:
-        return Mul(*list(self.terms) + [Number(-1)]).simplified()
+        return Mul(*[*list(self.terms), Number(-1)]).simplified()
 
     @property
     def precedence(self) -> Precedence:

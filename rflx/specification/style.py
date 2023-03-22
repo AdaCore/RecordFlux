@@ -115,7 +115,7 @@ def _determine_enabled_checks(error: RecordFluxError, line: str, spec_file: Path
 def _check_blank_lines(
     error: RecordFluxError, line: str, row: int, spec_file: Path, blank_lines: int, row_count: int
 ) -> int:
-    if line == "":
+    if not line:
         if row == 1:
             _append(error, "leading blank line", row, 1, spec_file, Check.BLANK_LINES)
         if blank_lines > 0 and row == row_count:

@@ -1370,7 +1370,7 @@ def test_aggregate_substituted() -> None:
         Aggregate(Variable("X")).substituted(
             lambda x: Variable(f"P_{x}")
             if isinstance(x, Variable)
-            else (Aggregate(*(x.elements + [Variable("Y")])) if isinstance(x, Aggregate) else x)
+            else (Aggregate(*([*x.elements, Variable("Y")])) if isinstance(x, Aggregate) else x)
         ),
         Aggregate(Variable("P_X"), Variable("P_Y")),
     )

@@ -373,7 +373,7 @@ class AbstractMessage(mty.Type):
         for l in self.incoming(field):
             source = self.paths(l.source)
             for s in source:
-                result.add(s + (l,))
+                result.add((*s, l))
             if not source:
                 result.add((l,))
 

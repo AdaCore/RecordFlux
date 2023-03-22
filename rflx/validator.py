@@ -333,7 +333,7 @@ class CoverageInformation:
 
     def update(self, message_value: MessageValue) -> None:
         if self._coverage:
-            messages = message_value.inner_messages() + [message_value]
+            messages = [*message_value.inner_messages(), message_value]
             for message in messages:
                 for link in message.path:
                     if not self._total_message_coverage[message.identifier][link]:

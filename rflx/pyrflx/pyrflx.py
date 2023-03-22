@@ -61,8 +61,8 @@ class PyRFLX:
     def set_checksum_functions(
         self, functions: Mapping[StrID, Mapping[str, ChecksumFunction]]
     ) -> None:
-        for identifier_str, checksum_field_function in functions.items():
-            identifier_str = str(identifier_str)
+        for identifier, checksum_field_function in functions.items():
+            identifier_str = str(identifier)
             try:
                 message_identifier = ID(identifier_str)
             except FatalError as e:
