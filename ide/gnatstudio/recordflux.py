@@ -1,3 +1,5 @@
+# type: ignore
+
 """RecordFlux support for GNAT Studio."""
 
 import json

@@ -1,10 +1,14 @@
+-include devutils/Makefile.common
+
+.DEFAULT_GOAL := all
+
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
 RECORDFLUX_ORIGIN ?= https://github.com/AdaCore
 
 BUILD_DIR = build
-PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps rflx tests tools stubs setup.py
-DEVUTILS_HEAD = e7a10ee2dbf10e09dd123cecb42d84807624e617
+PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps ide/gnatstudio rflx tests tools stubs setup.py
+DEVUTILS_HEAD = a5fac2d569a54c3f0d8a65b3e07efeebb471f21e
 
 SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
@@ -75,9 +79,9 @@ deinit:
 devutils:
 	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/RecordFlux-devutils.git devutils
 
-.PHONY: check check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc
+.PHONY: check check_packages check_dependencies check_contracts check_doc
 
-check: check_packages check_dependencies check_black check_isort check_flake8 check_pylint check_mypy check_contracts check_pydocstyle check_doc
+check: check_packages check_dependencies common_check check_contracts check_doc
 
 check_packages:
 	tools/check_packages.py $(PYTHON_PACKAGES)
@@ -85,35 +89,11 @@ check_packages:
 check_dependencies:
 	tools/check_dependencies.py
 
-check_black:
-	black --check --diff --line-length 100 $(PYTHON_PACKAGES) ide/gnatstudio
-
-check_isort:
-	isort --check --diff $(PYTHON_PACKAGES) ide/gnatstudio
-
-check_flake8:
-	pflake8 $(PYTHON_PACKAGES) ide/gnatstudio
-
-check_pylint:
-	pylint $(PYTHON_PACKAGES)
-
-check_mypy:
-	mypy --pretty $(PYTHON_PACKAGES)
-
 check_contracts:
 	pyicontract-lint $(PYTHON_PACKAGES)
 
-check_pydocstyle:
-	pydocstyle $(PYTHON_PACKAGES)
-
 check_doc:
 	tools/check_doc.py
-
-.PHONY: format
-
-format:
-	black -l 100 $(PYTHON_PACKAGES) ide/gnatstudio
-	isort $(PYTHON_PACKAGES) ide/gnatstudio
 
 .PHONY: test test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
 
