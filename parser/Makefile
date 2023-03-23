@@ -1,3 +1,7 @@
+-include devutils/Makefile.common
+
+.DEFAULT_GOAL := all
+
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
 RECORDFLUX_ORIGIN ?= https://github.com/Componolit
@@ -6,7 +10,7 @@ ADACORE_ORIGIN ?= https://github.com/AdaCore
 VERSION = 0.13.0
 BUILDDIR = $(PWD)/build
 PYTHON_PACKAGES = language tests disttools/setup.py disttools/gprgen.py
-DEVUTILS_HEAD = f5c6865bae91fccb1858ef2caded61d31c69605d
+DEVUTILS_HEAD = a5fac2d569a54c3f0d8a65b3e07efeebb471f21e
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
 LANGKIT_HEAD = 02c2040c95cf8174f7e98969d751cde9639bd2bd
 
@@ -93,34 +97,6 @@ contrib/gnatcoll-bindings:
 contrib/langkit:
 	$(VERBOSE)mkdir -p contrib
 	$(VERBOSE)git clone $(ADACORE_ORIGIN)/langkit.git contrib/langkit
-
-.PHONY: check check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
-
-check: check_black check_isort check_flake8 check_pylint check_mypy check_pydocstyle
-
-check_black:
-	black --check --diff --line-length 100 $(PYTHON_PACKAGES)
-
-check_isort:
-	isort --check --diff $(PYTHON_PACKAGES)
-
-check_flake8:
-	pflake8 $(PYTHON_PACKAGES)
-
-check_pylint:
-	pylint $(PYTHON_PACKAGES)
-
-check_mypy:
-	mypy --pretty $(PYTHON_PACKAGES)
-
-check_pydocstyle:
-	pydocstyle $(PYTHON_PACKAGES)
-
-.PHONY: format
-
-format:
-	black -l 100 $(PYTHON_PACKAGES)
-	isort $(PYTHON_PACKAGES)
 
 .PHONY: test test_coverage
 

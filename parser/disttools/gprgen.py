@@ -39,7 +39,7 @@ end Lib{name};
 
 
 def extract(source: str) -> list[str]:
-    with open(source, mode="r", encoding="utf-8") as f:
+    with open(source, encoding="utf-8") as f:
         data = f.read()
         search = re.search(r"for\s+Interfaces\s+use\s*\(([^)]*)\)\s*;", data)
         if search is None or len(search.groups()) != 1:
