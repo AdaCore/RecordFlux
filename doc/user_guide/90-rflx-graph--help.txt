@@ -1,0 +1,14 @@
+usage: rflx graph [-h] [-f {dot,jpg,pdf,png,raw,svg}] [-i REGEX]
+                  [-d OUTPUT_DIRECTORY]
+                  SPECIFICATION_FILE [SPECIFICATION_FILE ...]
+
+positional arguments:
+  SPECIFICATION_FILE    specification file
+
+options:
+  -h, --help            show this help message and exit
+  -f {dot,jpg,pdf,png,raw,svg}, --format {dot,jpg,pdf,png,raw,svg}
+                        output format (default: svg)
+  -i REGEX, --ignore REGEX
+                        ignore states with names matching regular expression
+  -d OUTPUT_DIRECTORY   output directory

@@ -26,6 +26,9 @@ release = recordflux_version
 
 # -- General configuration ---------------------------------------------------
 
+# Disable special handling of e.g. --
+smartquotes = False
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",

@@ -3,6 +3,8 @@ User's Guide
 ============
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   user_guide
+   10-introduction
+   20-overview
+   90-appendix

@@ -1,0 +1,7 @@
+usage: rflx check [-h] SPECIFICATION_FILE [SPECIFICATION_FILE ...]
+
+positional arguments:
+  SPECIFICATION_FILE  specification file
+
+options:
+  -h, --help          show this help message and exit

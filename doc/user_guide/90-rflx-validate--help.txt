@@ -1,0 +1,29 @@
+usage: rflx validate [-h] [--split-disjunctions] [-v VALID_SAMPLES_DIRECTORY]
+                     [-i INVALID_SAMPLES_DIRECTORY] [-c CHECKSUM_MODULE]
+                     [-o OUTPUT_FILE] [--abort-on-error] [--coverage]
+                     [--target-coverage PERCENTAGE]
+                     SPECIFICATION_FILE MESSAGE_IDENTIFIER
+
+positional arguments:
+  SPECIFICATION_FILE    specification file
+  MESSAGE_IDENTIFIER    identifier of the top-level message (e.g.,
+                        Package::Message)
+
+options:
+  -h, --help            show this help message and exit
+  --split-disjunctions  split disjunctions before model validation (may have
+                        severe performance impact)
+  -v VALID_SAMPLES_DIRECTORY
+                        path to the directory containing known valid samples
+  -i INVALID_SAMPLES_DIRECTORY
+                        path to the directory containing known valid samples
+  -c CHECKSUM_MODULE    name of the module containing the checksum functions
+  -o OUTPUT_FILE        path to output file for validation report in JSON
+                        format (file must not exist)
+  --abort-on-error      abort with exitcode 1 if a message is classified as a
+                        false positive or false negative
+  --coverage            enable coverage calculation and print the combined
+                        link coverage of all provided messages
+  --target-coverage PERCENTAGE
+                        abort with exitcode 1 if the coverage threshold is not
+                        reached
