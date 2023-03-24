@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- User's Guide (#223)
+
 ### Fixed
 
 - Missing with clause in session package for indirectly used enumeration types (#1298)
