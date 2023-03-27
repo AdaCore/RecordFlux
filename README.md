@@ -1,4 +1,4 @@
-# [![RecordFlux](https://raw.githubusercontent.com/AdaCore/RecordFlux/main/doc/img/logo.svg)](https://github.com/AdaCore/RecordFlux/)
+# [RecordFlux](https://github.com/AdaCore/RecordFlux/)
 
 [![PyPI](https://img.shields.io/pypi/v/RecordFlux?color=blue)](https://pypi.org/project/RecordFlux/)
 [![Python Versions](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10-blue.svg)](https://python.org/)
