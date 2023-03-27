@@ -27,7 +27,7 @@ HELP_FILES = \
 90-rflx--help.txt:
 	@rflx --help > $@
 
-# Regenerate rflx help texsts for the documentation
+# Regenerate rflx help texts for the documentation
 # We do not do this automatically. The results are checked in as we don't
 # have rflx available during documentation creation.
 regenerate_help:: $(HELP_FILES)
