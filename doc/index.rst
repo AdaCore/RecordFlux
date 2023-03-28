@@ -1,6 +1,6 @@
-===========
+==========
 RecordFlux
-===========
+==========
 
 RecordFlux is a toolset for the formal specification and generation of verifiable binary parsers, message generators and protocol state machines.
 

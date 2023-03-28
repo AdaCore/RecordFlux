@@ -819,7 +819,9 @@ A message field assignment sets the value of a message field.
 
 **Dynamic Semantics**
 
-Message fields must be set in order. Trying to set a message field which is not a valid next field leads to an exception transition. All subsequent fields of the set message field are invalidated.
+Message fields must be set in order.
+Trying to set a message field which is not a valid next field leads to an exception transition.
+All subsequent fields of the set message field are invalidated.
 
 **Example**
 
@@ -1676,7 +1678,7 @@ The file name must match the package name in lower case characters.
 
 **Example**
 
-File: ``in_ethernet.rflx``
+File: ``in_ethernet.rflx``.
 
 .. doc-check: rflx,specification,0
 .. code:: ada

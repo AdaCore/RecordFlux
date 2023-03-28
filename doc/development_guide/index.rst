@@ -27,7 +27,8 @@ The configuration of the development tools is managed in a separate repository a
 
    $ make init
 
-``pip`` can be used to install the Python project in editable mode. The use of a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_ is recommended.
+``pip`` can be used to install the Python project in editable mode.
+The use of a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_ is recommended.
 
 .. code:: console
 
