@@ -152,6 +152,9 @@ Checklist for releasing new versions
     - [ ] Check project on TestPyPI
     - [ ] Test installation from TestPyPI
        - `pip3 install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ RecordFlux`
-    - [ ] Publish release on GitHub
+    - [ ] Upload to PyPI
+       - `twine upload dist/RecordFlux-X.Y.Z.tar.gz`
     - [ ] Test installation from PyPI
        - `pip3 install RecordFlux`
+    - [ ] Publish release on GitHub
+    - [ ] Update `release` branch
