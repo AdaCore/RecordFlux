@@ -44,7 +44,7 @@ Reporting Errors
 
 Please report issues on GitHub:
 
-  https://github.com/AdaCore/RecordFlux/issues/new?labels=bug
+https://github.com/AdaCore/RecordFlux/issues/new?labels=bug
 
 If a tool invocation produces a bug box, please include its complete content and all input files in the report.
 

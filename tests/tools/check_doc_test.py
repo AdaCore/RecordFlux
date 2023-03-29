@@ -21,7 +21,7 @@ def test_invalid_no_code_blocks() -> None:
 def test_invalid_missing_empty_line() -> None:
     with pytest.raises(
         CheckDocError,
-        match=r"^<stdin>:3: missing empty line in code block$",
+        match=r"^<stdin>:4: missing empty line in code block$",
     ):
         check_file(
             STDIN,
@@ -36,7 +36,7 @@ def test_invalid_missing_empty_line() -> None:
 def test_invalid_use_of_code_block() -> None:
     with pytest.raises(
         CheckDocError,
-        match=r"^<stdin>:1: code-block directive forbidden [(]use 'code::' instead[)]$",
+        match=r"^<stdin>:2: code-block directive forbidden [(]use 'code::' instead[)]$",
     ):
         check_file(
             STDIN,
@@ -51,7 +51,7 @@ def test_invalid_use_of_code_block() -> None:
 def test_invalid_inconsistent_code_block() -> None:
     with pytest.raises(
         CheckDocError,
-        match=r"^<stdin>:2: inconsistent code block type [(]block: Ada, doc: Python[)]$",
+        match=r"^<stdin>:3: inconsistent code block type [(]block: Ada, doc: Python[)]$",
     ):
         check_file(
             STDIN,
@@ -67,7 +67,7 @@ def test_invalid_inconsistent_code_block() -> None:
 def test_invalid_unknown_doc_check_1() -> None:
     with pytest.raises(
         CheckDocError,
-        match=r'^<stdin>:1: invalid doc-check type "invalid"$',
+        match=r'^<stdin>:2: invalid doc-check type "invalid"$',
     ):
         check_file(
             STDIN,
@@ -83,7 +83,7 @@ def test_invalid_unknown_doc_check_1() -> None:
 def test_invalid_unknown_doc_check_2() -> None:
     with pytest.raises(
         CheckDocError,
-        match=r'^<stdin>:1: invalid doc-check type "invalid"$',
+        match=r'^<stdin>:2: invalid doc-check type "invalid"$',
     ):
         check_file(
             STDIN,
@@ -100,7 +100,7 @@ def test_invalid_ada_code() -> None:
     with pytest.raises(
         CheckDocError,
         match=(
-            r"^<stdin>:2: error in code block\n"
+            r"^<stdin>:3: error in code block\n"
             r"main.adb:1:01: (error: )?compilation unit expected\n"
             r"gprbuild: [*][*][*] compilation phase failed\n$"
         ),
@@ -119,7 +119,7 @@ def test_invalid_ada_api_style() -> None:
     with pytest.raises(
         CheckDocError,
         match=(
-            r"^<stdin>:4: error in code block\n"
+            r"^<stdin>:5: error in code block\n"
             r"main.adb:2:25: \(style\) space required\n"
             r"gprbuild: [*][*][*] compilation phase failed\n$"
         ),
@@ -143,7 +143,7 @@ def test_invalid_rflx_spec() -> None:
     with pytest.raises(
         CheckDocError,
         match=(
-            r"^<stdin>:5: error in code block\n"
+            r"^<stdin>:6: error in code block\n"
             r"<stdin>:2:32: parser: error: Expected 'with', got ';'$"
         ),
     ):
@@ -168,7 +168,7 @@ def test_invalid_python_source() -> None:
     with pytest.raises(
         CheckDocError,
         match=(
-            r"^<stdin>:4: error in code block\n"
+            r"^<stdin>:5: error in code block\n"
             r"Traceback [(]most recent call last[)]:\n"
             r'  File "(.*/)?test.py", line 1, in <module>\n'
             r"    invalid\n"
@@ -193,7 +193,7 @@ def test_invalid_rflx_rule() -> None:
     with pytest.raises(
         CheckDocError,
         match=(
-            r"^<stdin>:5: error in code block\n"
+            r"^<stdin>:6: error in code block\n"
             "<stdin>:1:4: parser: error: Cannot parse <factor>\n"
             r"<stdin>:1:8: parser: error: Expected '[(]', got '[*]'$"
         ),
@@ -217,7 +217,7 @@ def test_invalid_rflx_rule_style() -> None:
     with pytest.raises(
         CheckDocError,
         match=(
-            r"^<stdin>:5: error in code block\n"
+            r"^<stdin>:6: error in code block\n"
             r'<stdin>:1:8: style: error: missing space after "\*\*" \[token-spacing\]$'
         ),
     ):
@@ -240,7 +240,7 @@ def test_invalid_rflx_spec_style() -> None:
     with pytest.raises(
         CheckDocError,
         match=(
-            r"^<stdin>:5: error in code block\n"
+            r"^<stdin>:6: error in code block\n"
             r"<stdin>:3:4: style: error: unexpected keyword indentation \(expected 3 or 6\) "
             r"\[indentation\]$"
         ),
@@ -266,7 +266,7 @@ Some more text...
 def test_invalid_yaml_file() -> None:
     with pytest.raises(
         CheckDocError,
-        match=r"^<stdin>:4: error in code block\nwhile parsing a block node\n.*\n.*$",
+        match=r"^<stdin>:5: error in code block\nwhile parsing a block node\n.*\n.*$",
     ):
         check_file(
             STDIN,
@@ -420,5 +420,124 @@ A Python program looks as follows:
    invalid
 
 Some more text...
+""",
+    )
+
+
+def test_invalid_double_space() -> None:
+    with pytest.raises(
+        CheckDocError,
+        match=r"^<stdin>:2: multiple consecutive whitespace$",
+    ):
+        check_file(
+            STDIN,
+            """
+This is a  sentence with multiple consecutive spaces.
+
+Some more text.
+""",
+        )
+
+
+def test_invalid_heading_marker() -> None:
+    with pytest.raises(
+        CheckDocError,
+        match=r"^<stdin>:2: heading marker length does not match heading length$",
+    ):
+        check_file(
+            STDIN,
+            """
+Too short heading
+====================
+
+Some more text.
+""",
+        )
+
+
+def test_invalid_missing_punctuation() -> None:
+    with pytest.raises(
+        CheckDocError,
+        match=r"^<stdin>:2: no trailing punctuation$",
+    ):
+        check_file(
+            STDIN,
+            """
+This is not a heading, but lacks punctuation
+
+""",
+        )
+
+
+def test_invalid_multiple_sentences() -> None:
+    with pytest.raises(
+        CheckDocError,
+        match=r"^<stdin>:2: multiple sentences on one line$",
+    ):
+        check_file(
+            STDIN,
+            """
+The first sentence. The second sentence should be on a new line.
+""",
+        )
+
+
+def test_invalid_single_line() -> None:
+    with pytest.raises(
+        CheckDocError,
+        match=r"^<stdin>:1: no trailing punctuation$",
+    ):
+        check_file(
+            STDIN,
+            "Detecting this error error requires proper handling of the last line",
+        )
+
+
+def test_valid_special_elements() -> None:
+    check_file(
+        STDIN,
+        """
+
+Template elements should be accepted without punctuation:
+
+{{ item }}
+
+URLs should be accepted without punctuation:
+
+http://example.com/example.html
+
+Some more text.
+""",
+    )
+
+
+def test_valid_heading() -> None:
+    check_file(
+        STDIN,
+        """
+Headings don't require punctuation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some more text.
+""",
+    )
+
+
+def test_valid_empty_document() -> None:
+    check_file(
+        STDIN,
+        "",
+    )
+
+
+def test_valid_title() -> None:
+    check_file(
+        STDIN,
+        """
+==============
+Document title
+==============
+
+Some more text.
 """,
     )

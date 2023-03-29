@@ -93,7 +93,7 @@ check_contracts:
 	pyicontract-lint $(PYTHON_PACKAGES)
 
 check_doc:
-	tools/check_doc.py
+	tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
 
 .PHONY: test test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
 
@@ -103,7 +103,7 @@ test_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered tests/unit tests/integration
 
 test_unit_coverage:
-	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov-branch --cov-fail-under=97.02 --cov-report=term-missing:skip-covered tests/unit
+	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tools --cov-branch --cov-fail-under=94.68 --cov-report=term-missing:skip-covered tests/unit tests/tools
 
 test_property:
 	$(PYTEST) tests/property

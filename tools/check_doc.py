@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 
-"""Check the correctness of code examples in the documentation."""
+"""
+Check the correctness of the documentation.
+
+   - Make sure code examples parse / compile
+   - Enforce one sentence of text per line
+   - Flag mutiple consecutive and trailing whitespace
+"""
 
 from __future__ import annotations
 
+import argparse
 import enum
 import os
 import re
@@ -48,6 +55,77 @@ class State(enum.Enum):
     EMPTY = enum.auto()
 
 
+class StyleChecker:
+    def __init__(self, filname: Path):
+        self._filename = filname
+        self._previous: Optional[tuple[int, str]] = None
+        self._headings_re = re.compile(r"^(=+|-+|~+|\^+|\*+|\"+)$")
+
+    def _skip(self, line: str, lineno: int, previous_line: str, previous_lineno: int) -> bool:
+
+        # Headings
+        if self._headings_re.match(line):
+            if re.match(r"^$", previous_line):
+                return True
+            if len(line) != len(previous_line):
+                raise CheckDocError(
+                    f"{self._filename}:{previous_lineno}: "
+                    "heading marker length does not match heading length"
+                )
+            return True
+
+        # Empty lines
+        if re.match(r"^$", previous_line):
+            return True
+
+        # Lines without spaces
+        if " " not in previous_line:
+            return True
+
+        # Sphinx directives
+        if re.match(r"^(\.\.|- |\s+|\*\*)", previous_line):
+            return True
+
+        # Template elements
+        if re.match(r"{[^}]*}", previous_line):
+            return True
+
+        return False
+
+    def check(self, lineno: int, line: str) -> None:
+
+        if not self._previous:
+            self._previous = lineno, line
+            return
+
+        previous_lineno, previous_line = self._previous
+        self._previous = lineno, line
+
+        if self._skip(line, lineno, previous_line, previous_lineno):
+            return
+
+        # Trailing punctuations
+        if re.match(r"\S.*[.:?]$", previous_line) is None:
+            raise CheckDocError(f"{self._filename}:{previous_lineno}: no trailing punctuation")
+
+        # No multiple consecutive whitespace
+        if "  " in previous_line:
+            raise CheckDocError(
+                f"{self._filename}:{previous_lineno}: multiple consecutive whitespace"
+            )
+
+        # No punctuation inside a line
+        if re.match(r".*[.?!] [A-Z]", previous_line) is not None:
+            raise CheckDocError(
+                f"{self._filename}:{previous_lineno}: multiple sentences on one line"
+            )
+
+    def finish(self) -> None:
+        if self._previous:
+            # Handle final line
+            self.check(*self._previous)
+
+
 def parse_code_block_type(type_str: str) -> CodeBlockType:
     normalized = type_str.lower()
     types = {
@@ -72,8 +150,12 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
     doc_check_type: Optional[CodeBlockType] = None
     indent: int = 0
     subtype: Optional[str] = None
+    checker = StyleChecker(filename)
 
-    for lineno, line in enumerate(content.splitlines()):
+    for lineno, line in enumerate(content.splitlines(), start=1):
+
+        checker.check(lineno, line)
+
         if state == State.INSIDE:
             match = re.match(r"^\S", line)
             if match:
@@ -145,6 +227,8 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
             state = State.INSIDE
             continue
 
+    checker.finish()
+
     if state == State.INSIDE:
         check_code(filename, block_start, block, doc_check_type, indent, subtype)
         found = True
@@ -157,7 +241,8 @@ def check_files(files: list[Path]) -> None:
     found = False
 
     for filename in files:
-        with open(filename, encoding="utf-8") as f:
+        # Avoid inclusion of byte order mark: https://stackoverflow.com/a/49150749
+        with open(filename, encoding="utf-8-sig") as f:
             found = check_file(filename, f.read()) or found
 
     if not found:
@@ -275,8 +360,21 @@ def check_yaml_code(block: str) -> None:
         raise CheckDocError(f"{yaml_error}") from yaml_error
 
 
-if __name__ == "__main__":
+def main() -> None:
+    argument_parser = argparse.ArgumentParser()
+    argument_parser.add_argument(
+        "-d", "--dir", type=Path, required=True, help="Directory to check recursively"
+    )
+    argument_parser.add_argument("-x", "--exclude", type=Path, nargs="*", help="File to exclude")
+    arguments = argument_parser.parse_args()
+
+    exclude = arguments.exclude or []
+
     try:
-        check_files(list(Path("doc").glob("**/*.rst")))
+        check_files(list(doc for doc in Path(arguments.dir).glob("**/*.rst") if doc not in exclude))
     except CheckDocError as e:
-        sys.exit(f"Error checking code blocks: {e}")
+        sys.exit(f"{e}")
+
+
+if __name__ == "__main__":
+    main()
