@@ -122,7 +122,6 @@ tests:
         - "3.8"
         - "3.9"
         - "3.10"
-  environment: $PYTHON_VERSION
   script:
     - *setup_gnat
     - *setup_python
@@ -140,7 +139,6 @@ gnat_pro_compatibility:
         - "20.2"
         - "21.2"
         - "22.2"
-  environment: $GNAT_VERSION
   script:
     - . ~/.aws_container_credentials
     - export PATH=/it/e3/bin:$PATH
@@ -165,7 +163,6 @@ gnat_fsf_compatibility:
       - GNAT_VERSION:
         - "11.2.4"
         - "12.1.2"
-  environment: $GNAT_VERSION
   script:
     - apt-get install -y libgmp-dev
     - $CI_PROJECT_DIR/alr -n init --lib alire
@@ -191,7 +188,6 @@ gnat_community_compatibility:
       - GNAT_VERSION:
         - "2020"
         - "2021"
-  environment: $GNAT_VERSION
   script:
     - apt-get update
     - apt-get install -y libgmp-dev libdbus-1-3 libfontconfig1 libx11-6 libx11-xcb1
