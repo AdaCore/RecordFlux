@@ -1260,6 +1260,43 @@ class Name(Expr):
         raise NotImplementedError
 
 
+class TypeName(Name):
+    def __init__(
+        self,
+        identifier: StrID,
+        type_: rty.Type = rty.Undefined(),
+        location: Optional[Location] = None,
+    ) -> None:
+        self.identifier = ID(identifier)
+        super().__init__(negative=False, immutable=False, type_=type_, location=location)
+
+    def __neg__(self) -> Literal:
+        raise NotImplementedError
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return RecordFluxError()
+
+    @property
+    def name(self) -> str:
+        return str(self.identifier)
+
+    @property
+    def representation(self) -> str:
+        return str(self.name)
+
+    def variables(self) -> list[Variable]:
+        return []
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Literal(self.identifier)
+
+    def z3expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        raise NotImplementedError
+
+
 class Literal(Name):
     def __init__(
         self,
@@ -1490,7 +1527,7 @@ class Attribute(Name):
         return result
 
     def z3expr(self) -> z3.ExprRef:
-        if not isinstance(self.prefix, (Variable, Literal, Selected)):
+        if not isinstance(self.prefix, (Variable, Literal, TypeName, Selected)):
             raise Z3TypeError("illegal prefix of attribute")
         if self.negative:
             return -z3.Int(self.representation)
@@ -1499,7 +1536,7 @@ class Attribute(Name):
     def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
         assert isinstance(self.type_, rty.Any)
 
-        if isinstance(self.prefix, Literal):
+        if isinstance(self.prefix, TypeName):
             return [
                 tac.Assign(
                     target,

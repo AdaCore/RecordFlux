@@ -339,10 +339,8 @@ class AbstractSession(BasicDeclaration):
             **self.parameters,
             **self.declarations,
         }
-        self._literals = {
-            **mty.qualified_type_literals(self.types.values()),
-            **mty.enum_literals(self.types.values(), self.package),
-        }
+        self._enum_literals = mty.enum_literals(self.types.values(), self.package)
+        self._type_names = mty.qualified_type_names(self.types.values())
 
         self._normalize()
 
@@ -377,15 +375,15 @@ class AbstractSession(BasicDeclaration):
 
     @property
     def literals(self) -> Mapping[ID, mty.Type]:
-        return self._literals
+        return self._enum_literals
 
     def _normalize(self) -> None:
         """
         Normalize all expressions of the session.
 
-        Replace variables by literals or function calls where necessary. The distinction between
-        variables and literals or variables and function calls without arguments is not possible in
-        the parser, as both are syntactically identical.
+        Replace variables by type names, literals or function calls without arguments where
+        necessary. The distinction between these different kind of expressions is not possible in
+        the parser, as all of these are syntactically identical.
         """
         functions = [
             p.identifier
@@ -395,7 +393,13 @@ class AbstractSession(BasicDeclaration):
 
         def substitution(expression: expr.Expr) -> expr.Expr:
             if isinstance(expression, expr.Variable):
-                if expression.identifier in self.literals:
+                if expression.identifier in self._type_names:
+                    return expr.TypeName(
+                        expression.identifier,
+                        expression.type_,
+                        location=expression.location,
+                    )
+                if expression.identifier in self._enum_literals:
                     return expr.Literal(
                         expression.identifier,
                         expression.type_,
@@ -784,6 +788,7 @@ class Session(AbstractSession):
             (
                 expr.Variable,
                 expr.Literal,
+                expr.TypeName,
                 expr.Call,
                 expr.Conversion,
                 expr.MessageAggregate,
@@ -793,12 +798,14 @@ class Session(AbstractSession):
             identifier = expression.identifier
 
             if isinstance(expression, expr.Variable):
-                assert identifier not in self._literals
+                assert identifier not in self._enum_literals
                 if identifier in declarations:
                     expression.type_ = declarations[identifier].type_
             if isinstance(expression, expr.Literal):
-                if identifier in self._literals:
-                    expression.type_ = self._literals[identifier].type_
+                if identifier in self._enum_literals:
+                    expression.type_ = self._enum_literals[identifier].type_
+            if isinstance(expression, expr.TypeName):
+                expression.type_ = self._type_names[identifier].type_
             if isinstance(expression, expr.Call):
                 if identifier in declarations:
                     expression.type_ = declarations[identifier].type_

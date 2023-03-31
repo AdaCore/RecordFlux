@@ -3693,7 +3693,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
                         )
 
             if isinstance(expression, expr.Size):
-                if isinstance(expression.prefix, (expr.Variable, expr.Literal)):
+                if isinstance(expression.prefix, (expr.Variable, expr.TypeName)):
                     if (
                         isinstance(expression.prefix.type_, rty.AnyInteger)
                         or (

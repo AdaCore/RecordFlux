@@ -142,7 +142,7 @@ class AbstractMessage(mty.Type):
             self.dependencies, self.package
         )
         self._qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
-        self._type_literals = mty.qualified_type_literals(self.dependencies)
+        self._type_names = mty.qualified_type_names(self.dependencies)
         self._byte_order = {}
 
         try:
@@ -475,7 +475,7 @@ class AbstractMessage(mty.Type):
     def _type_size_constraints(self) -> list[expr.Expr]:
         return [
             expr.Equal(expr.Size(l), t.size)
-            for l, t in self._type_literals.items()
+            for l, t in self._type_names.items()
             if isinstance(t, mty.Scalar)
         ]
 
@@ -733,11 +733,11 @@ class AbstractMessage(mty.Type):
         """
 
         def substitute(expression: expr.Expr) -> expr.Expr:
-            return substitute_enum_literals(
+            return substitute_variables(
                 expression,
                 self._unqualified_enum_literals,
                 self._qualified_enum_literals,
-                self._type_literals,
+                self._type_names,
                 self.package,
             )
 
@@ -832,7 +832,7 @@ class AbstractMessage(mty.Type):
         if isinstance(expression, expr.Variable):
             assert expression.identifier not in {
                 *self._qualified_enum_literals,
-                *self._type_literals,
+                *self._type_names,
             }, f'variable "{expression.identifier}" has the same name as a literal'
             if expression.name.lower() == "message":
                 expression.type_ = rty.OPAQUE
@@ -841,8 +841,8 @@ class AbstractMessage(mty.Type):
         if isinstance(expression, expr.Literal):
             if expression.identifier in self._qualified_enum_literals:
                 expression.type_ = self._qualified_enum_literals[expression.identifier].type_
-            elif expression.identifier in self._type_literals:
-                expression.type_ = self._type_literals[expression.identifier].type_
+        if isinstance(expression, expr.TypeName):
+            expression.type_ = self._type_names[expression.identifier].type_
         return expression
 
 
@@ -878,6 +878,7 @@ class Message(AbstractMessage):
         if not self.is_null:
             self._verify_parameters()
             self._verify_use_of_literals()
+            self._verify_use_of_type_names()
             self._verify_message_types()
 
             self.error.propagate()
@@ -965,7 +966,7 @@ class Message(AbstractMessage):
     def has_fixed_size(self) -> bool:
         return len(self.paths(FINAL)) <= 1 and not (
             {v.identifier for l in self.structure for v in l.size.variables()}
-            - set(self._type_literals.keys())
+            - set(self._type_names.keys())
         )
 
     @property
@@ -1283,21 +1284,6 @@ class Message(AbstractMessage):
     def _verify_use_of_literals(self) -> None:
         for link in self.structure:
             for expression in [link.condition, link.size, link.first]:
-                literals = [
-                    *(
-                        [expression]
-                        if isinstance(expression, expr.Literal) and expression != expr.TRUE
-                        else []
-                    ),
-                    *[
-                        e
-                        for ass_expr in expression.findall(lambda x: isinstance(x, expr.AssExpr))
-                        if isinstance(ass_expr, expr.AssExpr)
-                        for e in ass_expr.terms
-                        if isinstance(e, expr.Literal)
-                    ],
-                ]
-
                 self.error.extend(
                     [
                         (
@@ -1306,31 +1292,57 @@ class Message(AbstractMessage):
                             Severity.ERROR,
                             l.location,
                         )
-                        for l in literals
-                        if l.identifier in self._qualified_enum_literals
+                        for l in [
+                            *(
+                                [expression]
+                                if isinstance(expression, expr.Literal) and expression != expr.TRUE
+                                else []
+                            ),
+                            *[
+                                e
+                                for ass_expr in expression.findall(
+                                    lambda x: isinstance(x, expr.AssExpr)
+                                )
+                                if isinstance(ass_expr, expr.AssExpr)
+                                for e in ass_expr.terms
+                                if isinstance(e, expr.Literal) and e not in [expr.TRUE, expr.FALSE]
+                            ],
+                        ]
                     ]
                 )
 
-                literals.extend(
-                    [
-                        e
-                        for relation in expression.findall(lambda x: isinstance(x, expr.Relation))
-                        if isinstance(relation, expr.Relation)
-                        for e in [relation.left, relation.right]
-                        if isinstance(e, expr.Literal)
-                    ]
-                )
-
+    def _verify_use_of_type_names(self) -> None:
+        for link in self.structure:
+            for expression in [link.condition, link.size, link.first]:
                 self.error.extend(
                     [
                         (
-                            f'invalid use of type literal "{l}" in expression',
+                            f'invalid use of type name "{l}" in expression',
                             Subsystem.MODEL,
                             Severity.ERROR,
                             l.location,
                         )
-                        for l in literals
-                        if l.identifier in self._type_literals
+                        for l in [
+                            *([expression] if isinstance(expression, expr.TypeName) else []),
+                            *[
+                                e
+                                for ass_expr in expression.findall(
+                                    lambda x: isinstance(x, expr.AssExpr)
+                                )
+                                if isinstance(ass_expr, expr.AssExpr)
+                                for e in ass_expr.terms
+                                if isinstance(e, expr.TypeName)
+                            ],
+                            *[
+                                e
+                                for relation in expression.findall(
+                                    lambda x: isinstance(x, expr.Relation)
+                                )
+                                if isinstance(relation, expr.Relation)
+                                for e in [relation.left, relation.right]
+                                if isinstance(e, expr.TypeName)
+                            ],
+                        ]
                     ]
                 )
 
@@ -1432,8 +1444,8 @@ class Message(AbstractMessage):
                     and (a.prefix.name == "Message" or Field(a.prefix.name) in self.fields)
                 )
                 or (
-                    isinstance(a.prefix, expr.Literal)
-                    and (a.prefix.identifier in self._type_literals)
+                    isinstance(a.prefix, expr.TypeName)
+                    and (a.prefix.identifier in self._type_names)
                 )
             ):
                 self.error.extend(
@@ -2634,11 +2646,11 @@ class Refinement(mty.Type):
 
         unqualified_enum_literals = mty.unqualified_enum_literals(self.dependencies, self.package)
         qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
-        type_literals = mty.qualified_type_literals(self.dependencies)
+        type_names = mty.qualified_type_names(self.dependencies)
 
         self.condition = self.condition.substituted(
-            lambda e: substitute_enum_literals(
-                e, unqualified_enum_literals, qualified_enum_literals, type_literals, self.package
+            lambda e: substitute_variables(
+                e, unqualified_enum_literals, qualified_enum_literals, type_names, self.package
             )
         )
 
@@ -2786,20 +2798,28 @@ def to_mapping(facts: Sequence[expr.Expr]) -> dict[expr.Name, expr.Expr]:
     }
 
 
-def substitute_enum_literals(
+def substitute_variables(
     expression: expr.Expr,
     unqualified_enum_literals: Iterable[ID],
     qualified_enum_literals: Iterable[ID],
-    type_literals: Iterable[ID],
+    type_names: Iterable[ID],
     package: ID,
 ) -> expr.Expr:
     if isinstance(expression, expr.Variable):
         if expression.identifier in {
             *unqualified_enum_literals,
             *qualified_enum_literals,
-            *type_literals,
         }:
             return expr.Literal(
+                package * expression.identifier
+                if expression.identifier in unqualified_enum_literals
+                else expression.identifier,
+                expression.type_,
+                location=expression.location,
+            )
+    if isinstance(expression, expr.Variable):
+        if expression.identifier in type_names:
+            return expr.TypeName(
                 package * expression.identifier
                 if expression.identifier in unqualified_enum_literals
                 else expression.identifier,

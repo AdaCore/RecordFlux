@@ -685,7 +685,7 @@ def qualified_enum_literals(types: abc.Iterable[Type]) -> dict[ID, Enumeration]:
     }
 
 
-def qualified_type_literals(types: abc.Iterable[Type]) -> dict[ID, Type]:
+def qualified_type_names(types: abc.Iterable[Type]) -> dict[ID, Type]:
     return {
         t.identifier.name if t.package == const.BUILTINS_PACKAGE else t.identifier: t for t in types
     }

@@ -713,7 +713,7 @@ def test_field_locations() -> None:
         ),
     ],
 )
-def test_invalid_use_of_type_literal(expression: Expr) -> None:
+def test_invalid_use_of_type_name(expression: Expr) -> None:
     structure = [
         Link(INITIAL, Field("X")),
         Link(Field("X"), FINAL, condition=expression),
@@ -723,7 +723,7 @@ def test_invalid_use_of_type_literal(expression: Expr) -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:1:2: model: error: invalid use of type literal "P::Integer" in expression$',
+        r'^<stdin>:1:2: model: error: invalid use of type name "P::Integer" in expression$',
     )
 
 
