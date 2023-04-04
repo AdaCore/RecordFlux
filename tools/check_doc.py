@@ -101,6 +101,10 @@ class StyleChecker:
         previous_lineno, previous_line = self._previous
         self._previous = lineno, line
 
+        # No trailing whitespace
+        if re.match(r".* $", previous_line) is not None:
+            raise CheckDocError(f"{self._filename}:{previous_lineno}: trailing whitespace")
+
         if self._skip(line, lineno, previous_line, previous_lineno):
             return
 

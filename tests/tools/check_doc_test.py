@@ -469,6 +469,17 @@ This is not a heading, but lacks punctuation
         )
 
 
+def test_invalid_trailing_whitespace() -> None:
+    with pytest.raises(
+        CheckDocError,
+        match=r"^<stdin>:1: trailing whitespace$",
+    ):
+        check_file(
+            STDIN,
+            "Sentence with punctuation, but trailing whitespace. ",
+        )
+
+
 def test_invalid_multiple_sentences() -> None:
     with pytest.raises(
         CheckDocError,
