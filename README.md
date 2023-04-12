@@ -1,14 +1,11 @@
 # [RecordFlux](https://github.com/AdaCore/RecordFlux/)
 
 [![PyPI](https://img.shields.io/pypi/v/RecordFlux?color=blue)](https://pypi.org/project/RecordFlux/)
-[![Python Versions](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10-blue.svg)](https://python.org/)
-[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
-[![Tests](https://github.com/AdaCore/RecordFlux/workflows/tests/badge.svg)](https://github.com/AdaCore/RecordFlux/actions)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5052/badge)](https://bestpractices.coreinfrastructure.org/projects/5052)
 
 RecordFlux is a toolset for the formal specification and generation of verifiable binary parsers, message generators and protocol state machines.
 
-See the [documentation](https://adacore.github.io/RecordFlux/) for more information.
+See the [website](https://www.adacore.com/recordflux), the [user's guide](https://docs.adacore.com/live/wave/recordflux/html/recordflux_ug/index.html) and the [language reference](https://docs.adacore.com/live/wave/recordflux/html/recordflux_lr/index.html) for more information.
 
 ## Contribution and Feedback
 
