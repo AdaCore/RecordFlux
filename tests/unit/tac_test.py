@@ -12,7 +12,7 @@ from rflx.identifier import ID, id_generator
 PROOF_MANAGER = tac.ProofManager(2)
 INT_TY = rty.Integer("I", rty.Bounds(10, 100))
 ENUM_TY = rty.Enumeration("E", [ID("E1"), ID("E2")])
-MSG_TY = rty.Message("M")
+MSG_TY = rty.Message("M", {("E", "I")}, {}, {ID("E"): ENUM_TY, ID("I"): INT_TY})
 SEQ_TY = rty.Sequence("S", rty.Message("M"))
 
 
@@ -48,10 +48,14 @@ def test_assign_substituted() -> None:
     ) == tac.Assign("Y", tac.IntVar("Z", INT_TY), INT_TY)
 
 
-def test_assign_z3expr() -> None:
-    assert tac.Assign("X", tac.IntVar("Y", INT_TY), INT_TY).z3expr == (z3.Int("X") == z3.Int("Y"))
-    assert tac.Assign("X", tac.BoolVar("Y"), rty.BOOLEAN).z3expr == (z3.Bool("X") == z3.Bool("Y"))
-    assert tac.Assign("X", tac.ObjVar("Y", MSG_TY), MSG_TY).z3expr == z3.BoolVal(True)
+def test_assign_to_z3_expr() -> None:
+    assert tac.Assign("X", tac.IntVar("Y", INT_TY), INT_TY).to_z3_expr() == (
+        z3.Int("X") == z3.Int("Y")
+    )
+    assert tac.Assign("X", tac.BoolVar("Y"), rty.BOOLEAN).to_z3_expr() == (
+        z3.Bool("X") == z3.Bool("Y")
+    )
+    assert tac.Assign("X", tac.ObjVar("Y", MSG_TY), MSG_TY).to_z3_expr() == z3.BoolVal(True)
 
 
 def test_assign_target_var() -> None:
@@ -84,81 +88,87 @@ def test_field_assign_preconditions() -> None:
     )
 
 
-def test_field_assign_z3expr() -> None:
-    assert tac.FieldAssign("X", "Y", tac.IntVar("Z", INT_TY), MSG_TY).z3expr == (
+def test_field_assign_to_z3_expr() -> None:
+    assert tac.FieldAssign("X", "Y", tac.IntVar("Z", INT_TY), MSG_TY).to_z3_expr() == (
         z3.Int("X.Y") == z3.Int("Z")
     )
-    assert tac.FieldAssign("X", "Y", tac.BoolVar("Z"), MSG_TY).z3expr == (
+    assert tac.FieldAssign("X", "Y", tac.BoolVar("Z"), MSG_TY).to_z3_expr() == (
         z3.Bool("X.Y") == z3.Bool("Z")
     )
-    assert tac.FieldAssign("X", "Y", tac.ObjVar("Z", MSG_TY), MSG_TY).z3expr == z3.BoolVal(True)
+    assert tac.FieldAssign("X", "Y", tac.ObjVar("Z", MSG_TY), MSG_TY).to_z3_expr() == z3.BoolVal(
+        True
+    )
 
 
 def test_append_str() -> None:
-    assert str(tac.Append("X", tac.IntVar("Y", INT_TY))) == "X'Append (Y)"
+    assert str(tac.Append("X", tac.IntVar("Y", INT_TY), SEQ_TY)) == "X'Append (Y)"
 
 
 def test_append_substituted() -> None:
-    assert tac.Append("X", tac.IntVar("Y", INT_TY)).substituted(
+    assert tac.Append("X", tac.IntVar("Y", INT_TY), SEQ_TY).substituted(
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
         }
-    ) == tac.Append("Y", tac.IntVar("Z", INT_TY))
+    ) == tac.Append("Y", tac.IntVar("Z", INT_TY), SEQ_TY)
 
 
 def test_append_preconditions() -> None:
-    assert not tac.Append("X", tac.IntVar("Y", INT_TY)).preconditions(id_generator())
+    assert not tac.Append("X", tac.IntVar("Y", INT_TY), SEQ_TY).preconditions(id_generator())
 
 
-def test_append_z3expr() -> None:
-    assert tac.Append("X", tac.ObjVar("Y", MSG_TY)).z3expr == z3.BoolVal(True)
+def test_append_to_z3_expr() -> None:
+    assert tac.Append("X", tac.ObjVar("Y", MSG_TY), SEQ_TY).to_z3_expr() == z3.BoolVal(True)
 
 
 def test_extend_str() -> None:
-    assert str(tac.Extend("X", tac.IntVar("Y", INT_TY))) == "X'Extend (Y)"
+    assert str(tac.Extend("X", tac.IntVar("Y", INT_TY), SEQ_TY)) == "X'Extend (Y)"
 
 
 def test_extend_substituted() -> None:
-    assert tac.Extend("X", tac.IntVar("Y", INT_TY)).substituted(
+    assert tac.Extend("X", tac.IntVar("Y", INT_TY), SEQ_TY).substituted(
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
         }
-    ) == tac.Extend("Y", tac.IntVar("Z", INT_TY))
+    ) == tac.Extend("Y", tac.IntVar("Z", INT_TY), SEQ_TY)
 
 
 def test_extend_preconditions() -> None:
-    assert not tac.Extend("X", tac.IntVar("Y", INT_TY)).preconditions(id_generator())
+    assert not tac.Extend("X", tac.IntVar("Y", INT_TY), SEQ_TY).preconditions(id_generator())
 
 
-def test_extend_z3expr() -> None:
-    assert tac.Extend("X", tac.ObjVar("Y", SEQ_TY)).z3expr == z3.BoolVal(True)
+def test_extend_to_z3_expr() -> None:
+    assert tac.Extend("X", tac.ObjVar("Y", SEQ_TY), SEQ_TY).to_z3_expr() == z3.BoolVal(True)
 
 
 def test_reset_str() -> None:
-    assert str(tac.Reset("X", {})) == "X'Reset"
-    assert str(tac.Reset("X", {ID("Y"): tac.IntVar("Z", INT_TY)})) == "X'Reset (Y => Z)"
+    assert str(tac.Reset("X", {}, MSG_TY)) == "X'Reset"
+    assert str(tac.Reset("X", {ID("Y"): tac.IntVar("Z", INT_TY)}, MSG_TY)) == "X'Reset (Y => Z)"
 
 
 def test_reset_substituted() -> None:
-    assert tac.Reset("X", {ID("Y"): tac.IntVar("Z", INT_TY)}).substituted(
+    assert tac.Reset("X", {ID("Y"): tac.IntVar("Z", INT_TY)}, MSG_TY).substituted(
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
             ID("Z"): ID("A"),
         }
-    ) == tac.Reset("Y", {ID("Y"): tac.IntVar("A", INT_TY)})
+    ) == tac.Reset("Y", {ID("Y"): tac.IntVar("A", INT_TY)}, MSG_TY)
 
 
 def test_reset_preconditions() -> None:
-    assert not tac.Reset("X", {}).preconditions(id_generator())
-    assert not tac.Reset("X", {ID("Y"): tac.IntVar("Z", INT_TY)}).preconditions(id_generator())
+    assert not tac.Reset("X", {}, MSG_TY).preconditions(id_generator())
+    assert not tac.Reset("X", {ID("Y"): tac.IntVar("Z", INT_TY)}, MSG_TY).preconditions(
+        id_generator()
+    )
 
 
-def test_reset_z3expr() -> None:
-    assert tac.Reset("X", {}).z3expr == z3.BoolVal(True)
-    assert tac.Reset("X", {ID("Y"): tac.IntVar("Z", INT_TY)}).z3expr == z3.BoolVal(True)
+def test_reset_to_z3_expr() -> None:
+    assert tac.Reset("X", {}, MSG_TY).to_z3_expr() == z3.BoolVal(True)
+    assert tac.Reset("X", {ID("Y"): tac.IntVar("Z", INT_TY)}, MSG_TY).to_z3_expr() == z3.BoolVal(
+        True
+    )
 
 
 def test_read_str() -> None:
@@ -178,8 +188,8 @@ def test_read_preconditions() -> None:
     assert not tac.Read("X", tac.IntVar("Y", INT_TY)).preconditions(id_generator())
 
 
-def test_read_z3expr() -> None:
-    assert tac.Read("X", tac.ObjVar("Y", MSG_TY)).z3expr == z3.BoolVal(True)
+def test_read_to_z3_expr() -> None:
+    assert tac.Read("X", tac.ObjVar("Y", MSG_TY)).to_z3_expr() == z3.BoolVal(True)
 
 
 def test_write_str() -> None:
@@ -199,8 +209,8 @@ def test_write_preconditions() -> None:
     assert not tac.Write("X", tac.IntVar("Y", INT_TY)).preconditions(id_generator())
 
 
-def test_write_z3expr() -> None:
-    assert tac.Write("X", tac.ObjVar("Y", MSG_TY)).z3expr == z3.BoolVal(True)
+def test_write_z3_expr() -> None:
+    assert tac.Write("X", tac.ObjVar("Y", MSG_TY)).to_z3_expr() == z3.BoolVal(True)
 
 
 def test_assert_substituted() -> None:
@@ -211,8 +221,8 @@ def test_assert_substituted() -> None:
     ) == tac.Assert(tac.BoolVar("Y"))
 
 
-def test_assert_z3expr() -> None:
-    assert tac.Assert(tac.BoolVar("X")).z3expr == z3.Bool("X")
+def test_assert_to_z3_expr() -> None:
+    assert tac.Assert(tac.BoolVar("X")).to_z3_expr() == z3.Bool("X")
 
 
 def test_assert_preconditions() -> None:
@@ -235,8 +245,8 @@ def test_int_var_type() -> None:
     assert tac.IntVar("X", INT_TY).type_ == INT_TY
 
 
-def test_int_var_z3expr() -> None:
-    assert tac.IntVar("X", INT_TY).z3expr == z3.Int("X")
+def test_int_var_to_z3_expr() -> None:
+    assert tac.IntVar("X", INT_TY).to_z3_expr() == z3.Int("X")
 
 
 def test_int_var_preconditions() -> None:
@@ -251,8 +261,8 @@ def test_bool_var_type() -> None:
     assert tac.BoolVar("X").type_ == rty.BOOLEAN
 
 
-def test_bool_var_z3expr() -> None:
-    assert tac.BoolVar("X").z3expr == z3.Bool("X")
+def test_bool_var_to_z3_expr() -> None:
+    assert tac.BoolVar("X").to_z3_expr() == z3.Bool("X")
 
 
 def test_bool_var_preconditions() -> None:
@@ -276,9 +286,9 @@ def test_obj_var_substituted() -> None:
     ) == tac.ObjVar("Y", ENUM_TY)
 
 
-def test_obj_var_z3expr() -> None:
+def test_obj_var_to_z3_expr() -> None:
     with pytest.raises(NotImplementedError):
-        tac.ObjVar("X", MSG_TY).z3expr
+        tac.ObjVar("X", MSG_TY).to_z3_expr()
 
 
 def test_enum_lit_str() -> None:
@@ -298,16 +308,16 @@ def test_enum_lit_substituted() -> None:
     ) == tac.EnumLit("X", ENUM_TY)
 
 
-def test_enum_lit_z3expr() -> None:
-    assert tac.EnumLit("Lit", ENUM_TY).z3expr == z3.Int("Lit")
+def test_enum_lit_to_z3_expr() -> None:
+    assert tac.EnumLit("Lit", ENUM_TY).to_z3_expr() == z3.Int("Lit")
 
 
 def test_int_val_str() -> None:
     assert str(tac.IntVal(1)) == "1"
 
 
-def test_int_val_z3expr() -> None:
-    assert tac.IntVal(1).z3expr == z3.IntVal(1)
+def test_int_val_to_z3_expr() -> None:
+    assert tac.IntVal(1).to_z3_expr() == z3.IntVal(1)
 
 
 def test_bool_val_str() -> None:
@@ -315,9 +325,9 @@ def test_bool_val_str() -> None:
     assert str(tac.BoolVal(False)) == "False"
 
 
-def test_bool_val_z3expr() -> None:
-    assert tac.BoolVal(True).z3expr == z3.BoolVal(True)
-    assert tac.BoolVal(False).z3expr == z3.BoolVal(False)
+def test_bool_val_to_z3_expr() -> None:
+    assert tac.BoolVal(True).to_z3_expr() == z3.BoolVal(True)
+    assert tac.BoolVal(False).to_z3_expr() == z3.BoolVal(False)
 
 
 @pytest.mark.parametrize(
@@ -398,9 +408,9 @@ def test_attr_substituted(attribute: tac.Attr, expected: tac.Attr) -> None:
         (tac.HasData("X"), z3.Bool("X'Has_Data")),
     ],
 )
-def test_attr_z3expr(attribute: tac.Attr, expected: z3.ExprRef) -> None:
+def test_attr_z3_expr(attribute: tac.Attr, expected: z3.ExprRef) -> None:
     assert attribute.prefix == ID("X")
-    assert attribute.z3expr == expected
+    assert attribute.to_z3_expr() == expected
 
 
 @pytest.mark.parametrize(
@@ -496,8 +506,10 @@ def test_add_str() -> None:
     assert str(tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X + 1"
 
 
-def test_add_z3expr() -> None:
-    assert tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (z3.Int("X") + z3.IntVal(1))
+def test_add_to_z3_expr() -> None:
+    assert tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
+        z3.Int("X") + z3.IntVal(1)
+    )
 
 
 def test_add_preconditions() -> None:
@@ -515,8 +527,10 @@ def test_sub_str() -> None:
     assert str(tac.Sub(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X - 1"
 
 
-def test_sub_z3expr() -> None:
-    assert tac.Sub(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (z3.Int("X") - z3.IntVal(1))
+def test_sub_to_z3_expr() -> None:
+    assert tac.Sub(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
+        z3.Int("X") - z3.IntVal(1)
+    )
 
 
 def test_sub_preconditions() -> None:
@@ -531,8 +545,10 @@ def test_mul_str() -> None:
     assert str(tac.Mul(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X * 1"
 
 
-def test_mul_z3expr() -> None:
-    assert tac.Mul(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (z3.Int("X") * z3.IntVal(1))
+def test_mul_to_z3_expr() -> None:
+    assert tac.Mul(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
+        z3.Int("X") * z3.IntVal(1)
+    )
 
 
 def test_mul_preconditions() -> None:
@@ -548,8 +564,10 @@ def test_div_str() -> None:
     assert str(tac.Div(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X / 1"
 
 
-def test_div_z3expr() -> None:
-    assert tac.Div(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (z3.Int("X") / z3.IntVal(1))
+def test_div_to_z3_expr() -> None:
+    assert tac.Div(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
+        z3.Int("X") / z3.IntVal(1)
+    )
 
 
 def test_div_preconditions() -> None:
@@ -562,8 +580,10 @@ def test_pow_str() -> None:
     assert str(tac.Pow(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X ** 1"
 
 
-def test_pow_z3expr() -> None:
-    assert tac.Pow(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (z3.Int("X") ** z3.IntVal(1))
+def test_pow_to_z3_expr() -> None:
+    assert tac.Pow(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
+        z3.Int("X") ** z3.IntVal(1)
+    )
 
 
 def test_pow_preconditions() -> None:
@@ -579,8 +599,10 @@ def test_mod_str() -> None:
     assert str(tac.Mod(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X mod 1"
 
 
-def test_mod_z3expr() -> None:
-    assert tac.Mod(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (z3.Int("X") % z3.IntVal(1))
+def test_mod_to_z3_expr() -> None:
+    assert tac.Mod(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
+        z3.Int("X") % z3.IntVal(1)
+    )
 
 
 def test_mod_preconditions() -> None:
@@ -609,16 +631,16 @@ def test_not_str() -> None:
     assert str(tac.Not(tac.BoolVar("X"))) == "not X"
 
 
-def test_not_z3expr() -> None:
-    assert tac.Not(tac.BoolVar("X")).z3expr == z3.Not(z3.Bool("X"))
+def test_not_to_z3_expr() -> None:
+    assert tac.Not(tac.BoolVar("X")).to_z3_expr() == z3.Not(z3.Bool("X"))
 
 
 def test_and_str() -> None:
     assert str(tac.And(tac.BoolVar("X"), tac.BoolVal(True))) == "X and True"
 
 
-def test_and_z3expr() -> None:
-    assert tac.And(tac.BoolVar("X"), tac.BoolVal(True)).z3expr == z3.And(
+def test_and_to_z3_expr() -> None:
+    assert tac.And(tac.BoolVar("X"), tac.BoolVal(True)).to_z3_expr() == z3.And(
         z3.Bool("X"), z3.BoolVal(True)
     )
 
@@ -627,8 +649,8 @@ def test_or_str() -> None:
     assert str(tac.Or(tac.BoolVar("X"), tac.BoolVal(True))) == "X or True"
 
 
-def test_or_z3expr() -> None:
-    assert tac.Or(tac.BoolVar("X"), tac.BoolVal(True)).z3expr == z3.Or(
+def test_or_to_z3_expr() -> None:
+    assert tac.Or(tac.BoolVar("X"), tac.BoolVal(True)).to_z3_expr() == z3.Or(
         z3.Bool("X"), z3.BoolVal(True)
     )
 
@@ -637,16 +659,18 @@ def test_less_str() -> None:
     assert str(tac.Less(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X < 1"
 
 
-def test_less_z3expr() -> None:
-    assert tac.Less(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (z3.Int("X") < z3.IntVal(1))
+def test_less_to_z3_expr() -> None:
+    assert tac.Less(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
+        z3.Int("X") < z3.IntVal(1)
+    )
 
 
 def test_less_equal_str() -> None:
     assert str(tac.LessEqual(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X <= 1"
 
 
-def test_less_equal_z3expr() -> None:
-    assert tac.LessEqual(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (
+def test_less_equal_to_z3_expr() -> None:
+    assert tac.LessEqual(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
         z3.Int("X") <= z3.IntVal(1)
     )
 
@@ -655,16 +679,18 @@ def test_equal_str() -> None:
     assert str(tac.Equal(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X = 1"
 
 
-def test_equal_z3expr() -> None:
-    assert tac.Equal(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (z3.Int("X") == z3.IntVal(1))
+def test_equal_to_z3_expr() -> None:
+    assert tac.Equal(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
+        z3.Int("X") == z3.IntVal(1)
+    )
 
 
 def test_greater_equal_str() -> None:
     assert str(tac.GreaterEqual(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X >= 1"
 
 
-def test_greater_equal_z3expr() -> None:
-    assert tac.GreaterEqual(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (
+def test_greater_equal_to_z3_expr() -> None:
+    assert tac.GreaterEqual(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
         z3.Int("X") >= z3.IntVal(1)
     )
 
@@ -673,8 +699,8 @@ def test_greater_str() -> None:
     assert str(tac.Greater(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X > 1"
 
 
-def test_greater_z3expr() -> None:
-    assert tac.Greater(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (
+def test_greater_to_z3_expr() -> None:
+    assert tac.Greater(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
         z3.Int("X") > z3.IntVal(1)
     )
 
@@ -683,70 +709,67 @@ def test_not_equal_str() -> None:
     assert str(tac.NotEqual(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "X /= 1"
 
 
-def test_not_equal_z3expr() -> None:
-    assert tac.NotEqual(tac.IntVar("X", INT_TY), tac.IntVal(1)).z3expr == (
+def test_not_equal_to_z3_expr() -> None:
+    assert tac.NotEqual(tac.IntVar("X", INT_TY), tac.IntVal(1)).to_z3_expr() == (
         z3.Int("X") != z3.IntVal(1)
     )
 
 
 def test_int_call_str() -> None:
     assert (
-        str(tac.IntCall("X", tac.IntVar("Y", INT_TY), tac.BoolVal(True), type_=INT_TY))
-        == "X (Y, True)"
+        str(tac.IntCall("X", [tac.IntVar("Y", INT_TY), tac.BoolVal(True)], INT_TY)) == "X (Y, True)"
     )
 
 
 def test_int_call_substituted() -> None:
-    assert tac.IntCall("X", tac.IntVar("Y", INT_TY), type_=INT_TY).substituted(
+    assert tac.IntCall("X", [tac.IntVar("Y", INT_TY)], INT_TY).substituted(
         {ID("X"): ID("Y"), ID("Y"): ID("Z")}
-    ) == tac.IntCall("X", tac.IntVar("Z", INT_TY), type_=INT_TY)
+    ) == tac.IntCall("X", [tac.IntVar("Z", INT_TY)], INT_TY)
 
 
-def test_int_call_z3expr() -> None:
+def test_int_call_to_z3_expr() -> None:
     assert tac.IntCall(
-        "X", tac.IntVar("Y", INT_TY), tac.BoolVal(True), type_=INT_TY
-    ).z3expr == z3.Int("X")
+        "X", [tac.IntVar("Y", INT_TY), tac.BoolVal(True)], INT_TY
+    ).to_z3_expr() == z3.Int("X")
 
 
 def test_bool_call_str() -> None:
-    assert str(tac.BoolCall("X", tac.BoolVar("Y"), tac.BoolVal(True))) == "X (Y, True)"
+    assert str(tac.BoolCall("X", [tac.BoolVar("Y"), tac.BoolVal(True)])) == "X (Y, True)"
 
 
 def test_bool_call_type() -> None:
-    assert tac.BoolCall("X", tac.BoolVar("Y"), tac.BoolVal(True)).type_ == rty.BOOLEAN
+    assert tac.BoolCall("X", [tac.BoolVar("Y")], tac.BoolVal(True)).type_ == rty.BOOLEAN
 
 
 def test_bool_call_substituted() -> None:
-    assert tac.BoolCall("X", tac.BoolVar("Y")).substituted(
+    assert tac.BoolCall("X", [tac.BoolVar("Y")]).substituted(
         {ID("X"): ID("Y"), ID("Y"): ID("Z")}
-    ) == tac.BoolCall("X", tac.BoolVar("Z"))
+    ) == tac.BoolCall("X", [tac.BoolVar("Z")])
 
 
-def test_bool_call_z3expr() -> None:
-    assert tac.BoolCall("X", tac.BoolVar("Y"), tac.BoolVal(True)).z3expr == z3.Bool("X")
+def test_bool_call_to_z3_expr() -> None:
+    assert tac.BoolCall("X", [tac.BoolVar("Y")], tac.BoolVal(True)).to_z3_expr() == z3.Bool("X")
 
 
 def test_obj_call_str() -> None:
     assert (
-        str(tac.ObjCall("X", tac.ObjVar("Y", MSG_TY), tac.BoolVal(True), type_=ENUM_TY))
+        str(tac.ObjCall("X", [tac.ObjVar("Y", MSG_TY), tac.BoolVal(True)], ENUM_TY))
         == "X (Y, True)"
     )
 
 
 def test_obj_call_type() -> None:
-    assert (
-        tac.ObjCall("X", tac.ObjVar("Y", MSG_TY), tac.BoolVal(True), type_=ENUM_TY).type_ == ENUM_TY
-    )
+    assert tac.ObjCall("X", [tac.ObjVar("Y", MSG_TY), tac.BoolVal(True)], ENUM_TY).type_ == ENUM_TY
 
 
 def test_obj_call_substituted() -> None:
-    assert tac.ObjCall("X", tac.BoolVar("Y"), type_=ENUM_TY).substituted(
+    assert tac.ObjCall("X", [tac.BoolVar("Y")], ENUM_TY).substituted(
         {ID("X"): ID("Y"), ID("Y"): ID("Z")}
-    ) == tac.ObjCall("X", tac.BoolVar("Z"), type_=ENUM_TY)
+    ) == tac.ObjCall("X", [tac.BoolVar("Z")], ENUM_TY)
 
 
 def test_call_preconditions() -> None:
-    call = tac.IntCall("X", tac.IntVar("Y", INT_TY), tac.BoolVal(True), type_=INT_TY)
+    call = tac.IntCall("X", [tac.IntVar("Y", INT_TY), tac.BoolVal(True)], INT_TY)
     assert not call.preconditions(id_generator())
     call.set_preconditions([tac.Cond(tac.Greater(tac.IntVar("Y", INT_TY), tac.IntVal(0)))])
     assert call.preconditions(id_generator()) == [
@@ -755,54 +778,54 @@ def test_call_preconditions() -> None:
 
 
 def test_int_field_access_str() -> None:
-    assert str(tac.IntFieldAccess("M", "F", INT_TY)) == "M.F"
+    assert str(tac.IntFieldAccess("M", "F", MSG_TY)) == "M.F"
 
 
 def test_int_field_access_type() -> None:
-    assert tac.IntFieldAccess("M", "F", INT_TY).type_ == INT_TY
+    assert tac.IntFieldAccess("M", "I", MSG_TY).type_ == INT_TY
 
 
 def test_int_field_access_substituted() -> None:
-    assert tac.IntFieldAccess("M", "F", INT_TY).substituted(
+    assert tac.IntFieldAccess("M", "F", MSG_TY).substituted(
         {ID("M"): ID("X"), ID("F"): ID("Y")}
-    ) == tac.IntFieldAccess("X", "F", INT_TY)
+    ) == tac.IntFieldAccess("X", "F", MSG_TY)
 
 
-def test_int_field_access_z3expr() -> None:
-    assert tac.IntFieldAccess("M", "F", INT_TY).z3expr == z3.Int("M.F")
+def test_int_field_access_to_z3_expr() -> None:
+    assert tac.IntFieldAccess("M", "F", MSG_TY).to_z3_expr() == z3.Int("M.F")
 
 
 def test_bool_field_access_str() -> None:
-    assert str(tac.BoolFieldAccess("M", "F")) == "M.F"
+    assert str(tac.BoolFieldAccess("M", "F", MSG_TY)) == "M.F"
 
 
 def test_bool_field_access_substituted() -> None:
-    assert tac.BoolFieldAccess("M", "F").substituted(
+    assert tac.BoolFieldAccess("M", "F", MSG_TY).substituted(
         {ID("M"): ID("X"), ID("F"): ID("Y")}
-    ) == tac.BoolFieldAccess("X", "F")
+    ) == tac.BoolFieldAccess("X", "F", MSG_TY)
 
 
-def test_bool_field_access_z3expr() -> None:
-    assert tac.BoolFieldAccess("M", "F").z3expr == z3.Bool("M.F")
+def test_bool_field_access_to_z3_expr() -> None:
+    assert tac.BoolFieldAccess("M", "F", MSG_TY).to_z3_expr() == z3.Bool("M.F")
 
 
 def test_obj_field_access_str() -> None:
-    assert str(tac.ObjFieldAccess("M", "F", ENUM_TY)) == "M.F"
+    assert str(tac.ObjFieldAccess("M", "F", MSG_TY)) == "M.F"
 
 
 def test_obj_field_access_type() -> None:
-    assert tac.ObjFieldAccess("M", "F", ENUM_TY).type_ == ENUM_TY
+    assert tac.ObjFieldAccess("M", "E", MSG_TY).type_ == ENUM_TY
 
 
 def test_obj_field_access_substituted() -> None:
-    assert tac.ObjFieldAccess("M", "F", ENUM_TY).substituted(
+    assert tac.ObjFieldAccess("M", "F", MSG_TY).substituted(
         {ID("M"): ID("X"), ID("F"): ID("Y")}
-    ) == tac.ObjFieldAccess("X", "F", ENUM_TY)
+    ) == tac.ObjFieldAccess("X", "F", MSG_TY)
 
 
-def test_obj_field_access_z3expr() -> None:
+def test_obj_field_access_to_z3_expr() -> None:
     with pytest.raises(NotImplementedError):
-        tac.ObjFieldAccess("M", "F", ENUM_TY).z3expr
+        tac.ObjFieldAccess("M", "F", MSG_TY).to_z3_expr()
 
 
 def test_int_if_expr_str() -> None:
@@ -827,10 +850,10 @@ def test_int_if_expr_substituted() -> None:
     )
 
 
-def test_int_if_expr_z3expr() -> None:
+def test_int_if_expr_to_z3_expr() -> None:
     assert tac.IntIfExpr(
         tac.BoolVar("X"), tac.IntVar("Y", INT_TY), tac.IntVal(1), INT_TY
-    ).z3expr == z3.If(z3.Bool("X"), z3.Int("Y"), z3.IntVal(1))
+    ).to_z3_expr() == z3.If(z3.Bool("X"), z3.Int("Y"), z3.IntVal(1))
 
 
 def test_bool_if_expr_str() -> None:
@@ -852,10 +875,10 @@ def test_bool_if_expr_substituted() -> None:
     ) == tac.BoolIfExpr(tac.BoolVar("Y"), tac.BoolVar("Z"), tac.BoolVal(False))
 
 
-def test_bool_if_expr_z3expr() -> None:
-    assert tac.BoolIfExpr(tac.BoolVar("X"), tac.BoolVar("Y"), tac.BoolVal(False)).z3expr == z3.If(
-        z3.Bool("X"), z3.Bool("Y"), z3.BoolVal(False)
-    )
+def test_bool_if_expr_to_z3_expr() -> None:
+    assert tac.BoolIfExpr(
+        tac.BoolVar("X"), tac.BoolVar("Y"), tac.BoolVal(False)
+    ).to_z3_expr() == z3.If(z3.Bool("X"), z3.Bool("Y"), z3.BoolVal(False))
 
 
 def test_conversion_str() -> None:
@@ -872,8 +895,8 @@ def test_conversion_substituted() -> None:
     ) == tac.Conversion("X", tac.IntVar("Z", INT_TY), INT_TY)
 
 
-def test_conversion_z3expr() -> None:
-    assert tac.Conversion("X", tac.IntVar("Y", INT_TY), INT_TY).z3expr == z3.BoolVal(True)
+def test_conversion_to_z3_expr() -> None:
+    assert tac.Conversion("X", tac.IntVar("Y", INT_TY), INT_TY).to_z3_expr() == z3.BoolVal(True)
 
 
 def test_comprehension_str() -> None:
@@ -925,21 +948,21 @@ def test_comprehension_precondition() -> None:
 
 
 def test_agg_str() -> None:
-    assert str(tac.Agg(tac.IntVar("X", INT_TY), tac.IntVal(1))) == "[X, 1]"
+    assert str(tac.Agg([tac.IntVar("X", INT_TY), tac.IntVal(1)])) == "[X, 1]"
 
 
 def test_agg_type() -> None:
-    assert tac.Agg(tac.IntVar("X", INT_TY), tac.IntVal(10)).type_ == rty.Aggregate(INT_TY)
+    assert tac.Agg([tac.IntVar("X", INT_TY), tac.IntVal(10)]).type_ == rty.Aggregate(INT_TY)
 
 
 def test_agg_substituted() -> None:
-    assert tac.Agg(tac.IntVar("X", INT_TY), tac.IntVal(1)).substituted(
+    assert tac.Agg([tac.IntVar("X", INT_TY), tac.IntVal(1)]).substituted(
         {ID("X"): ID("Y")}
-    ) == tac.Agg(tac.IntVar("Y", INT_TY), tac.IntVal(1))
+    ) == tac.Agg([tac.IntVar("Y", INT_TY), tac.IntVal(1)])
 
 
 def test_agg_preconditions() -> None:
-    assert not tac.Agg(tac.IntVar("X", INT_TY), tac.IntVal(1)).preconditions(id_generator())
+    assert not tac.Agg([tac.IntVar("X", INT_TY), tac.IntVal(1)]).preconditions(id_generator())
 
 
 def test_str_str() -> None:
@@ -1003,7 +1026,7 @@ def test_case_expr_str() -> None:
             [
                 (
                     [tac.IntVal(1), tac.IntVal(3)],
-                    [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), INT_TY), INT_TY)],
+                    [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), MSG_TY), INT_TY)],
                     tac.IntVar("T_1", INT_TY),
                 ),
                 (
@@ -1028,7 +1051,7 @@ def test_case_expr_type() -> None:
             [
                 (
                     [tac.IntVal(1), tac.IntVal(3)],
-                    [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), INT_TY), INT_TY)],
+                    [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), MSG_TY), INT_TY)],
                     tac.IntVar("T_1", INT_TY),
                 ),
                 (
@@ -1049,7 +1072,7 @@ def test_case_expr_precondition() -> None:
         [
             (
                 [tac.IntVal(1), tac.IntVal(3)],
-                [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), INT_TY), INT_TY)],
+                [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), MSG_TY), INT_TY)],
                 tac.IntVar("T_1", INT_TY),
             ),
             (
@@ -1174,14 +1197,14 @@ def test_to_ssa() -> None:
             tac.Assign("A", tac.IntVal(0), INT_TY),
             tac.Assign("A", tac.Div(tac.IntVar("Y", INT_TY), tac.IntVar("A", INT_TY)), INT_TY),
             tac.Assign("B", tac.IntVar("A", INT_TY), INT_TY),
-            tac.Append("C", tac.IntVar("B", INT_TY), INT_TY),
+            tac.Append("C", tac.IntVar("B", INT_TY), SEQ_TY),
         ]
     ) == [
         tac.Assign("S_A_0", tac.IntVal(1), INT_TY),
         tac.Assign("S_A_1", tac.IntVal(0), INT_TY),
         tac.Assign("S_A_2", tac.Div(tac.IntVar("Y", INT_TY), tac.IntVar("S_A_1", INT_TY)), INT_TY),
         tac.Assign("B", tac.IntVar("A", INT_TY), INT_TY),
-        tac.Append("C", tac.IntVar("B", INT_TY)),
+        tac.Append("C", tac.IntVar("B", INT_TY), SEQ_TY),
     ]
     assert tac.to_ssa(
         [

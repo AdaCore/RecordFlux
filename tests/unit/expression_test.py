@@ -1402,7 +1402,7 @@ def test_aggregate_to_tac() -> None:
     ) == [
         tac.Assign("T_1", tac.First("X"), INT_TY),
         tac.Assign("T_0", tac.Add(tac.IntVar("T_1", INT_TY), tac.IntVal(1)), INT_TY),
-        tac.Assign("R", tac.Agg(tac.IntVar("T_0", INT_TY), tac.IntVal(2)), SEQ_TY),
+        tac.Assign("R", tac.Agg([tac.IntVar("T_0", INT_TY), tac.IntVal(2)]), SEQ_TY),
     ]
 
 
@@ -2280,22 +2280,22 @@ def test_selected_to_tac() -> None:
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=rty.BOOLEAN).to_tac(
         "R", id_generator()
     ) == [
-        tac.Assign("R", tac.BoolFieldAccess("X", "Y"), rty.BOOLEAN),
+        tac.Assign("R", tac.BoolFieldAccess("X", "Y", MSG_TY), rty.BOOLEAN),
     ]
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY).to_tac(
         "R", id_generator()
     ) == [
-        tac.Assign("R", tac.IntFieldAccess("X", "Y", INT_TY), INT_TY),
+        tac.Assign("R", tac.IntFieldAccess("X", "Y", MSG_TY), INT_TY),
     ]
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", negative=True, type_=INT_TY).to_tac(
         "R", id_generator()
     ) == [
-        tac.Assign("R", tac.IntFieldAccess("X", "Y", INT_TY, negative=True), INT_TY),
+        tac.Assign("R", tac.IntFieldAccess("X", "Y", MSG_TY, negative=True), INT_TY),
     ]
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=SEQ_TY).to_tac(
         "R", id_generator()
     ) == [
-        tac.Assign("R", tac.ObjFieldAccess("X", "Y", SEQ_TY), SEQ_TY),
+        tac.Assign("R", tac.ObjFieldAccess("X", "Y", MSG_TY), SEQ_TY),
     ]
 
 
@@ -2368,7 +2368,7 @@ def test_call_to_tac() -> None:
         type_=INT_TY,
     ).to_tac("R", id_generator()) == [
         tac.Assign(
-            "R", tac.IntCall("X", tac.BoolVar("Y"), tac.IntVar("Z", INT_TY), type_=INT_TY), INT_TY
+            "R", tac.IntCall("X", [tac.BoolVar("Y"), tac.IntVar("Z", INT_TY)], INT_TY), INT_TY
         ),
     ]
     assert Call(
@@ -2376,7 +2376,7 @@ def test_call_to_tac() -> None:
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=rty.BOOLEAN)],
         type_=rty.BOOLEAN,
     ).to_tac("R", id_generator()) == [
-        tac.Assign("R", tac.BoolCall("X", tac.BoolVar("Y"), tac.BoolVar("Z")), rty.BOOLEAN),
+        tac.Assign("R", tac.BoolCall("X", [tac.BoolVar("Y"), tac.BoolVar("Z")]), rty.BOOLEAN),
     ]
     assert Call(
         "X",
@@ -2389,7 +2389,7 @@ def test_call_to_tac() -> None:
         tac.Assign("T_0", tac.And(tac.BoolVar("X"), tac.BoolVal(True)), rty.BOOLEAN),
         tac.Assign("T_3", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVal(1)), INT_TY),
         tac.Assign(
-            "R", tac.BoolCall("X", tac.BoolVar("T_0"), tac.IntVar("T_3", INT_TY)), rty.BOOLEAN
+            "R", tac.BoolCall("X", [tac.BoolVar("T_0"), tac.IntVar("T_3", INT_TY)]), rty.BOOLEAN
         ),
     ]
     assert Call(
@@ -2398,7 +2398,7 @@ def test_call_to_tac() -> None:
         type_=MSG_TY,
     ).to_tac("R", id_generator()) == [
         tac.Assign(
-            "R", tac.ObjCall("X", tac.BoolVar("Y"), tac.IntVar("Z", INT_TY), type_=MSG_TY), MSG_TY
+            "R", tac.ObjCall("X", [tac.BoolVar("Y"), tac.IntVar("Z", INT_TY)], MSG_TY), MSG_TY
         ),
     ]
 
@@ -2811,7 +2811,7 @@ def test_message_aggregate_to_tac() -> None:
         },
         MSG_TY,
     ).to_tac("R", id_generator()) == [
-        tac.Assign("T_0", tac.ObjFieldAccess("M", ID("Y"), ENUM_TY), ENUM_TY),
+        tac.Assign("T_0", tac.ObjFieldAccess("M", ID("Y"), MSG_TY), ENUM_TY),
         tac.Assign("T_2", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY),
         tac.Assign(
             "R",
@@ -3006,7 +3006,7 @@ def test_delta_message_aggregate_to_tac() -> None:
         },
         MSG_TY,
     ).to_tac("R", id_generator()) == [
-        tac.Assign("T_0", tac.ObjFieldAccess("M", ID("Y"), SEQ_TY), SEQ_TY),
+        tac.Assign("T_0", tac.ObjFieldAccess("M", ID("Y"), MSG_TY), SEQ_TY),
         tac.Assign("T_2", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY),
         tac.Assign(
             "R",
@@ -3238,7 +3238,7 @@ def test_case_to_tac() -> None:
                 [
                     (
                         [tac.IntVal(1), tac.IntVal(3)],
-                        [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), INT_TY), INT_TY)],
+                        [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), MSG_TY), INT_TY)],
                         tac.IntVar("T_1", INT_TY),
                     ),
                     (

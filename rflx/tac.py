@@ -16,6 +16,7 @@ from sys import intern
 from typing import Optional, Protocol, TypeVar
 
 import z3
+from attr import define, field
 
 from rflx import typing_ as rty
 from rflx.common import Base
@@ -78,7 +79,7 @@ class ProofJob(Base):
         solver = z3.SolverFor(self._logic)
 
         for f in self._facts:
-            solver.add(f.z3expr)
+            solver.add(f.to_z3_expr())
 
         proof_result = ProofResult(solver.check())
         self._result = self._results[proof_result]
@@ -155,11 +156,10 @@ class Cond(Base):
         return self._facts
 
 
+@define(init=False, eq=False)
 class Stmt(Base):
-    _str: str
-
-    def __init__(self, origin: Optional[Origin] = None) -> None:
-        self._origin = origin
+    origin: Optional[Origin]
+    _str: Optional[str] = field(init=False, default=None)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -167,19 +167,16 @@ class Stmt(Base):
         return NotImplemented
 
     def __str__(self) -> str:
-        try:
+        if self._str is not None:
             return self._str
-        except AttributeError:
+        else:
             self._update_str()
-            return self._str
-
-    @property
-    def origin(self) -> Optional[Origin]:
-        return self._origin
+            assert self._str is not None
+            return self._str  # type: ignore[unreachable]
 
     @property
     def location(self) -> Optional[Location]:
-        return self._origin.location if self._origin else None
+        return self.origin.location if self.origin else None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Stmt:
         raise NotImplementedError
@@ -188,9 +185,8 @@ class Stmt(Base):
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         raise NotImplementedError
 
-    @property
     @abstractmethod
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def precondition_proofs(self, facts: Sequence[Stmt]) -> list[ProofJob]:
@@ -201,271 +197,220 @@ class Stmt(Base):
         raise NotImplementedError
 
 
+@define(eq=False)
 class Assign(Stmt):
-    def __init__(
-        self,
-        target: StrID,
-        expression: Expr,
-        type_: rty.Any,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(origin)
-        self._target = ID(target)
-        self._expression = expression
-        self._type = type_
-
-    @property
-    def target(self) -> ID:
-        return self._target
-
-    @property
-    def expression(self) -> Expr:
-        return self._expression
-
-    @property
-    def type_(self) -> rty.Any:
-        return self._type
+    target: ID = field(converter=ID)
+    expression: Expr
+    type_: rty.Any
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Assign:
         return Assign(
-            mapping[self._target] if self._target in mapping else self._target,
-            self._expression.substituted(mapping),
-            self._type,
-            self._origin,
+            mapping[self.target] if self.target in mapping else self.target,
+            self.expression.substituted(mapping),
+            self.type_,
+            self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self._expression.preconditions(variable_id)
+        return self.expression.preconditions(variable_id)
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.BoolRef:
         target: Var
-        if isinstance(self._expression, IntExpr):
-            target = IntVar(self._target, self._expression.type_)
-        elif isinstance(self._expression, BoolExpr):
-            target = BoolVar(self._target)
+        if isinstance(self.expression, IntExpr):
+            target = IntVar(self.target, self.expression.type_)
+        elif isinstance(self.expression, BoolExpr):
+            target = BoolVar(self.target)
         else:
             return z3.BoolVal(True)
-        return target.z3expr == self._expression.z3expr
+        return target.to_z3_expr() == self.expression.to_z3_expr()
 
     @property
     def target_var(self) -> Var:
-        if isinstance(self._expression, IntExpr):
-            return IntVar(self._target, self._expression.type_)
-        if isinstance(self._expression, BoolExpr):
-            return BoolVar(self._target)
-        assert isinstance(self._expression, ObjVar)
-        return ObjVar(self._target, self._expression.type_)
+        if isinstance(self.expression, IntExpr):
+            return IntVar(self.target, self.expression.type_)
+        if isinstance(self.expression, BoolExpr):
+            return BoolVar(self.target)
+        assert isinstance(self.expression, ObjVar)
+        return ObjVar(self.target, self.expression.type_)
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self._target} := {self._expression}")
+        self._str = intern(f"{self.target} := {self.expression}")
 
 
+@define(eq=False)
 class FieldAssign(Stmt):
-    def __init__(
-        self,
-        message: StrID,
-        field: StrID,
-        expression: BasicExpr,
-        type_: rty.Message,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(origin)
-        self._message = ID(message)
-        self._field = ID(field)
-        self._expression = expression
-        self._type = type_
-
-    @property
-    def type_(self) -> rty.Message:
-        return self._type
+    message: ID = field(converter=ID)
+    field: ID = field(converter=ID)
+    expression: BasicExpr
+    type_: rty.Message
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> FieldAssign:
         return FieldAssign(
-            mapping[self._message] if self._message in mapping else self._message,
-            self._field,
-            self._expression.substituted(mapping),
-            self._type,
-            self._origin,
+            mapping[self.message] if self.message in mapping else self.message,
+            self.field,
+            self.expression.substituted(mapping),
+            self.type_,
+            self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self._expression.preconditions(variable_id)
+        return self.expression.preconditions(variable_id)
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.BoolRef:
         target: z3.ExprRef
-        if isinstance(self._expression, IntExpr):
-            target = z3.Int(f"{self._message}.{self._field}")
-        elif isinstance(self._expression, BoolExpr):
-            target = z3.Bool(f"{self._message}.{self._field}")
+        if isinstance(self.expression, IntExpr):
+            target = z3.Int(f"{self.message}.{self.field}")
+        elif isinstance(self.expression, BoolExpr):
+            target = z3.Bool(f"{self.message}.{self.field}")
         else:
             return z3.BoolVal(True)
-        return target == self._expression.z3expr
+        return target == self.expression.to_z3_expr()
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self._message}.{self._field} := {self._expression}")
+        self._str = intern(f"{self.message}.{self.field} := {self.expression}")
 
 
+@define(eq=False)
 class Append(Stmt):
-    def __init__(
-        self,
-        sequence: StrID,
-        expression: BasicExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(origin)
-        self._sequence = ID(sequence)
-        self._expression = expression
+    sequence: ID = field(converter=ID)
+    expression: BasicExpr
+    type_: rty.Sequence
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Append:
         return Append(
-            mapping[self._sequence] if self._sequence in mapping else self._sequence,
-            self._expression.substituted(mapping),
-            self._origin,
+            mapping[self.sequence] if self.sequence in mapping else self.sequence,
+            self.expression.substituted(mapping),
+            self.type_,
+            self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self._expression.preconditions(variable_id)
+        return self.expression.preconditions(variable_id)
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.BoolRef:
         return z3.BoolVal(True)
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self._sequence}'Append ({self._expression})")
+        self._str = intern(f"{self.sequence}'Append ({self.expression})")
 
 
+@define(eq=False)
 class Extend(Stmt):
-    def __init__(
-        self,
-        sequence: StrID,
-        expression: BasicExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(origin)
-        self._sequence = ID(sequence)
-        self._expression = expression
+    sequence: ID = field(converter=ID)
+    expression: BasicExpr
+    type_: rty.Sequence
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Extend:
         return Extend(
-            mapping[self._sequence] if self._sequence in mapping else self._sequence,
-            self._expression.substituted(mapping),
-            self._origin,
+            mapping[self.sequence] if self.sequence in mapping else self.sequence,
+            self.expression.substituted(mapping),
+            self.type_,
+            self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self._expression.preconditions(variable_id)
+        return self.expression.preconditions(variable_id)
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.BoolRef:
         return z3.BoolVal(True)
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self._sequence}'Extend ({self._expression})")
+        self._str = intern(f"{self.sequence}'Extend ({self.expression})")
 
 
+@define(eq=False)
 class Reset(Stmt):
-    def __init__(
-        self,
-        identifier: StrID,
-        parameter_values: Optional[Mapping[ID, BasicExpr]] = None,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(origin)
-        self._identifier = ID(identifier)
-        self._parameter_values = parameter_values or {}
+    identifier: ID = field(converter=ID)
+    parameter_values: Mapping[ID, BasicExpr]
+    type_: rty.Any
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Reset:
         return Reset(
-            mapping[self._identifier] if self._identifier in mapping else self._identifier,
-            {p: v.substituted(mapping) for p, v in self._parameter_values.items()},
-            self._origin,
+            mapping[self.identifier] if self.identifier in mapping else self.identifier,
+            {p: v.substituted(mapping) for p, v in self.parameter_values.items()},
+            self.type_,
+            self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.BoolRef:
         return z3.BoolVal(True)
 
     def _update_str(self) -> None:
-        parameter_values = " => ".join(f"{i} => {e}" for i, e in self._parameter_values.items())
+        parameter_values = " => ".join(f"{i} => {e}" for i, e in self.parameter_values.items())
         if parameter_values:
             parameter_values = f" ({parameter_values})"
-        self._str = intern(f"{self._identifier}'Reset{parameter_values}")
+        self._str = intern(f"{self.identifier}'Reset{parameter_values}")
 
 
+@define(eq=False)
 class ChannelStmt(Stmt):
-    def __init__(
-        self,
-        channel: StrID,
-        expression: BasicExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(origin)
-        self._channel = ID(channel)
-        self._expression = expression
+    channel: StrID = field(converter=ID)
+    expression: BasicExpr
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ChannelStmt:
         return self.__class__(
-            self._channel,
-            self._expression.substituted(mapping),
-            self._origin,
+            self.channel,
+            self.expression.substituted(mapping),
+            self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self._expression.preconditions(variable_id)
+        return self.expression.preconditions(variable_id)
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.BoolRef:
         return z3.BoolVal(True)
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self._channel}'{self.__class__.__name__} ({self._expression})")
+        self._str = intern(f"{self.channel}'{self.__class__.__name__} ({self.expression})")
 
 
+@define(eq=False)
 class Read(ChannelStmt):
     pass
 
 
+@define(eq=False)
 class Write(ChannelStmt):
     pass
 
 
+@define(eq=False)
 class Assert(Stmt):
-    def __init__(
-        self,
-        expression: BoolExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(origin)
-        self._expression = expression
+    expression: BoolExpr
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Assert:
         return Assert(
-            self._expression.substituted(mapping),
-            self._origin,
+            self.expression.substituted(mapping),
+            self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self._expression.preconditions(variable_id)
+        return self.expression.preconditions(variable_id)
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return self._expression.z3expr
+    def to_z3_expr(self) -> z3.BoolRef:
+        return self.expression.to_z3_expr()
 
     def _update_str(self) -> None:
-        self._str = intern(f"Assert {self._expression}")
+        self._str = intern(f"Assert {self.expression}")
 
 
 Self = TypeVar("Self", bound="Expr")
 
 
+@define(init=False)
 class Expr(Base):
-    _str: str
-    _origin: Optional[Origin]
+    origin: Optional[Origin]
+    _str: Optional[str] = field(init=False, default=None)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -473,37 +418,33 @@ class Expr(Base):
         return NotImplemented
 
     def __str__(self) -> str:
-        try:
+        if self._str is not None:
             return self._str
-        except AttributeError:
+        else:
             self._update_str()
-            return self._str
+            assert self._str is not None
+            return self._str  # type: ignore[unreachable]
 
     @property
     @abstractmethod
-    def type_(self) -> rty.Type:
+    def type_(self) -> rty.Any:
         raise NotImplementedError
 
     @property
-    def origin(self) -> Optional[Origin]:
-        return self._origin
-
-    @property
     def origin_str(self) -> str:
-        if self._origin:
-            return str(self._origin)
+        if self.origin:
+            return str(self.origin)
         return str(self)
 
     @property
     def location(self) -> Optional[Location]:
-        return self._origin.location if self._origin else None
+        return self.origin.location if self.origin else None
 
     def substituted(self: Self, mapping: Mapping[ID, ID]) -> Self:
         raise NotImplementedError
 
-    @property
     @abstractmethod
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
@@ -524,9 +465,8 @@ class IntExpr(Expr):
     def type_(self) -> rty.AnyInteger:
         raise NotImplementedError
 
-    @property
     @abstractmethod
-    def z3expr(self) -> z3.ArithRef:
+    def to_z3_expr(self) -> z3.ArithRef:
         raise NotImplementedError
 
 
@@ -535,9 +475,8 @@ class BoolExpr(Expr):
     def type_(self) -> rty.Enumeration:
         return rty.BOOLEAN
 
-    @property
     @abstractmethod
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.BoolRef:
         raise NotImplementedError
 
 
@@ -552,383 +491,318 @@ class BasicBoolExpr(BasicExpr, BoolExpr):
     pass
 
 
+@define(eq=False)
 class Var(BasicExpr):
-    def __init__(
-        self,
-        identifier: StrID,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._identifier = ID(identifier)
-        self._origin = origin
-
-    @property
-    def identifier(self) -> ID:
-        return self._identifier
+    identifier: ID = field(converter=ID)
+    origin: Optional[Origin] = None
 
     def _update_str(self) -> None:
-        self._str = intern(str(self._identifier))
+        self._str = intern(str(self.identifier))
 
 
+@define(eq=False)
 class IntVar(Var, BasicIntExpr):
-    def __init__(
-        self,
-        identifier: StrID,
-        type_: rty.AnyInteger,
-        negative: bool = False,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(identifier)
-        self._type = type_
-        self._negative = negative
-        self._origin = origin
+    identifier: ID = field(converter=ID)
+    var_type: rty.AnyInteger
+    negative: bool = False
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.AnyInteger:
-        return self._type
+        return self.var_type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntVar:
-        if self._identifier in mapping:
-            return IntVar(mapping[self._identifier], self._type, self._negative, self._origin)
+        if self.identifier in mapping:
+            return IntVar(mapping[self.identifier], self.var_type, self.negative, self.origin)
         return self
 
-    @property
-    def z3expr(self) -> z3.ArithRef:
-        expression = z3.Int(str(self._identifier))
-        return -expression if self._negative else expression
+    def to_z3_expr(self) -> z3.ArithRef:
+        expression = z3.Int(str(self.identifier))
+        return -expression if self.negative else expression
 
 
+@define(eq=False)
 class BoolVar(Var, BasicBoolExpr):
-    def __init__(
-        self,
-        identifier: StrID,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(identifier)
-        self._origin = origin
+    identifier: ID = field(converter=ID)
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Enumeration:
         return rty.BOOLEAN
 
     def substituted(self, mapping: Mapping[ID, ID]) -> BoolVar:
-        if self._identifier in mapping:
-            return BoolVar(mapping[self._identifier], self._origin)
+        if self.identifier in mapping:
+            return BoolVar(mapping[self.identifier], self.origin)
         return self
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return z3.Bool(str(self._identifier))
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.Bool(str(self.identifier))
 
 
+@define(eq=False)
 class ObjVar(Var):
-    def __init__(
-        self,
-        identifier: StrID,
-        type_: rty.Type,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(identifier)
-        self._type = type_
-        self._origin = origin
+    identifier: ID = field(converter=ID)
+    var_type: rty.Any
+    origin: Optional[Origin] = None
 
     @property
-    def type_(self) -> rty.Type:
-        return self._type
+    def type_(self) -> rty.Any:
+        return self.var_type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjVar:
-        if self._identifier in mapping:
-            return ObjVar(mapping[self._identifier], self._type, self._origin)
+        if self.identifier in mapping:
+            return ObjVar(mapping[self.identifier], self.var_type, self.origin)
         return self
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
+@define(eq=False)
 class EnumLit(BasicExpr):
-    def __init__(
-        self,
-        identifier: StrID,
-        type_: rty.Enumeration,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        assert str(identifier) not in ("True", "False")
-        self._identifier = ID(identifier)
-        self._type = type_
-        self._origin = origin
+    identifier: ID = field(converter=ID)
+    enum_type: rty.Enumeration
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Enumeration:
-        return self._type
+        return self.enum_type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> EnumLit:
         return self
 
-    @property
-    def z3expr(self) -> z3.ArithRef:
-        return z3.Int(str(self._identifier))
+    def to_z3_expr(self) -> z3.ArithRef:
+        return z3.Int(str(self.identifier))
 
     def _update_str(self) -> None:
-        self._str = intern(str(self._identifier))
+        self._str = intern(str(self.identifier))
 
 
+@define(eq=False)
 class IntVal(BasicIntExpr):
-    def __init__(self, value: int, origin: Optional[Origin] = None) -> None:
-        self._value = value
-        self._origin = origin
+    value: int
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger(rty.Bounds(self._value, self._value))
+        return rty.UniversalInteger(rty.Bounds(self.value, self.value))
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntVal:
         return self
 
-    @property
-    def z3expr(self) -> z3.ArithRef:
-        return z3.IntVal(self._value)
+    def to_z3_expr(self) -> z3.ArithRef:
+        return z3.IntVal(self.value)
 
     def _update_str(self) -> None:
-        self._str = intern(str(self._value))
+        self._str = intern(str(self.value))
 
 
+@define(eq=False)
 class BoolVal(BasicBoolExpr):
-    def __init__(self, value: bool, origin: Optional[Origin] = None) -> None:
-        self._value = value
-        self._origin = origin
+    value: bool
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> BoolVal:
         return self
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return z3.BoolVal(self._value)
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.BoolVal(self.value)
 
     def _update_str(self) -> None:
-        self._str = intern(str(self._value))
+        self._str = intern(str(self.value))
 
 
+@define(eq=False)
 class Attr(Expr):
-    def __init__(self, prefix: StrID, origin: Optional[Origin] = None) -> None:
-        self._prefix = ID(prefix)
-        self._origin = origin
-
-    @property
-    def prefix(self) -> ID:
-        return self._prefix
+    prefix: ID = field(converter=ID)
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Attr:
         return self.__class__(
-            mapping[self._prefix] if self._prefix in mapping else self._prefix, self._origin
+            mapping[self.prefix] if self.prefix in mapping else self.prefix, self.origin
         )
 
     def _update_str(self) -> None:
         symbol = re.sub(r"([a-z])([A-Z])", r"\1_\2", self.__class__.__name__)
-        self._str = intern(f"{self._prefix}'{symbol}")
+        self._str = intern(f"{self.prefix}'{symbol}")
 
 
+@define(eq=False)
 class Size(Attr):
     @property
     def type_(self) -> rty.UniversalInteger:
         return rty.UniversalInteger()
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
 
 
+@define(eq=False)
 class Length(Attr):
     @property
     def type_(self) -> rty.UniversalInteger:
         return rty.UniversalInteger()
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
 
 
+@define(eq=False)
 class First(Attr):
     @property
     def type_(self) -> rty.UniversalInteger:
         return rty.UniversalInteger()
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
 
 
+@define(eq=False)
 class Last(Attr):
     @property
     def type_(self) -> rty.UniversalInteger:
         return rty.UniversalInteger()
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
 
 
+@define(eq=False)
 class ValidChecksum(Attr):
     @property
     def type_(self) -> rty.Enumeration:
         return rty.BOOLEAN
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         return z3.Bool(str(self))
 
 
+@define(eq=False)
 class Valid(Attr):
     @property
     def type_(self) -> rty.Enumeration:
         return rty.BOOLEAN
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         return z3.Bool(str(self))
 
 
+@define(eq=False)
 class Present(Attr):
     @property
     def type_(self) -> rty.Enumeration:
         return rty.BOOLEAN
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         return z3.Bool(str(self))
 
 
+@define(eq=False)
 class HasData(Attr):
     @property
     def type_(self) -> rty.Enumeration:
         return rty.BOOLEAN
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         return z3.Bool(str(self))
 
 
+@define(eq=False)
 class Head(Attr):
-    def __init__(self, prefix: StrID, type_: rty.Any, origin: Optional[Origin] = None) -> None:
-        super().__init__(prefix, origin)
-        self._type = type_
+    prefix: ID = field(converter=ID)
+    element_type: rty.Any
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Any:
-        return self._type
+        return self.element_type
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
+@define(eq=False)
 class Opaque(Attr):
     @property
     def type_(self) -> rty.Sequence:
         return rty.OPAQUE
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
+@define(eq=False)
 class UnaryExpr(Expr):
-    def __init__(
-        self,
-        expression: BasicExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._expression = expression
-        self._origin = origin
+    expression: BasicExpr
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> UnaryExpr:
-        return self.__class__(self._expression.substituted(mapping), self._origin)
+        return self.__class__(self.expression.substituted(mapping), self.origin)
 
 
+@define(eq=False)
 class UnaryBoolExpr(UnaryExpr, BoolExpr):
-    def __init__(
-        self,
-        expression: BasicBoolExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(expression)
-        self._expression: BasicBoolExpr
-        self._origin = origin
+    expression: BasicBoolExpr
+    origin: Optional[Origin] = None
 
 
+@define(eq=False)
 class BinaryExpr(Expr):
-    def __init__(
-        self,
-        left: BasicExpr,
-        right: BasicExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._left = left
-        self._right = right
-        self._origin = origin
+    left: BasicExpr
+    right: BasicExpr
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> BinaryExpr:
         return self.__class__(
-            self._left.substituted(mapping), self._right.substituted(mapping), self._origin
+            self.left.substituted(mapping), self.right.substituted(mapping), self.origin
         )
 
     @property
     def origin_str(self) -> str:
-        if self._origin is not None:
-            return str(self._origin)
-        return f"{self._left.origin_str}{self._symbol}{self._right.origin_str}"
+        if self.origin is not None:
+            return str(self.origin)
+        return f"{self.left.origin_str}{self._symbol}{self.right.origin_str}"
 
     @property
     def location(self) -> Optional[Location]:
-        if self._origin is not None:
-            return self._origin.location
-        if self._left.origin is not None:
-            return self._left.origin.location
+        if self.origin is not None:
+            return self.origin.location
+        if self.left.origin is not None:
+            return self.left.origin.location
         return None
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self._left}{self._symbol}{self._right}")
+        self._str = intern(f"{self.left}{self._symbol}{self.right}")
 
     @property
     def _symbol(self) -> str:
         raise NotImplementedError
 
 
+@define(eq=False)
 class BinaryIntExpr(BinaryExpr, IntExpr):
-    def __init__(
-        self,
-        left: BasicIntExpr,
-        right: BasicIntExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(left, right)
-        self._left: BasicIntExpr
-        self._right: BasicIntExpr
-        self._origin = origin
+    left: BasicIntExpr
+    right: BasicIntExpr
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.AnyInteger:
-        type_ = self._left.type_.common_type(self._right.type_)
+        type_ = self.left.type_.common_type(self.right.type_)
         assert isinstance(type_, rty.AnyInteger)
         return type_
 
 
+@define(eq=False)
 class BinaryBoolExpr(BinaryExpr, BoolExpr):
-    def __init__(
-        self,
-        left: BasicBoolExpr,
-        right: BasicBoolExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(left, right)
-        self._left: BasicBoolExpr
-        self._right: BasicBoolExpr
-        self._origin = origin
+    left: BasicBoolExpr
+    right: BasicBoolExpr
+    origin: Optional[Origin] = None
 
 
+@define(eq=False)
 class Add(BinaryIntExpr):
-    @property
-    def z3expr(self) -> z3.ArithRef:
-        return self._left.z3expr + self._right.z3expr
+    def to_z3_expr(self) -> z3.ArithRef:
+        return self.left.to_z3_expr() + self.right.to_z3_expr()
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
@@ -941,21 +815,21 @@ class Add(BinaryIntExpr):
             # Left + Right <= Upper_Bound
             Cond(
                 LessEqual(
-                    self._left,
+                    self.left,
                     IntVar(
                         v_id,
-                        self._right.type_,
+                        self.right.type_,
                         origin=(
                             ConstructedOrigin(
-                                f"{upper_bound} - {self._right.origin}",
-                                self._origin.location,
+                                f"{upper_bound} - {self.right.origin}",
+                                self.origin.location,
                             )
-                            if self._origin and self._right.origin
+                            if self.origin and self.right.origin
                             else None
                         ),
                     ),
                 ),
-                [Assign(v_id, Sub(IntVal(INT_MAX), self._right), self._right.type_)],
+                [Assign(v_id, Sub(IntVal(INT_MAX), self.right), self.right.type_)],
             )
         ]
 
@@ -964,15 +838,15 @@ class Add(BinaryIntExpr):
         return " + "
 
 
+@define(eq=False)
 class Sub(BinaryIntExpr):
-    @property
-    def z3expr(self) -> z3.ArithRef:
-        return self._left.z3expr - self._right.z3expr
+    def to_z3_expr(self) -> z3.ArithRef:
+        return self.left.to_z3_expr() - self.right.to_z3_expr()
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Left >= Right
-            Cond(GreaterEqual(self._left, self._right)),
+            Cond(GreaterEqual(self.left, self.right)),
         ]
 
     @property
@@ -980,10 +854,10 @@ class Sub(BinaryIntExpr):
         return " - "
 
 
+@define(eq=False)
 class Mul(BinaryIntExpr):
-    @property
-    def z3expr(self) -> z3.ArithRef:
-        return self._left.z3expr * self._right.z3expr
+    def to_z3_expr(self) -> z3.ArithRef:
+        return self.left.to_z3_expr() * self.right.to_z3_expr()
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
@@ -996,21 +870,21 @@ class Mul(BinaryIntExpr):
             # Left * Right <= Upper_Bound
             Cond(
                 LessEqual(
-                    self._left,
+                    self.left,
                     IntVar(
                         v_id,
-                        self._right.type_,
+                        self.right.type_,
                         origin=(
                             ConstructedOrigin(
-                                f"{upper_bound} / {self._right.origin}",
-                                self._origin.location,
+                                f"{upper_bound} / {self.right.origin}",
+                                self.origin.location,
                             )
-                            if self._origin and self._right.origin
+                            if self.origin and self.right.origin
                             else None
                         ),
                     ),
                 ),
-                [Assign(v_id, Div(IntVal(INT_MAX), self._right), self._right.type_)],
+                [Assign(v_id, Div(IntVal(INT_MAX), self.right), self.right.type_)],
             ),
         ]
 
@@ -1019,15 +893,15 @@ class Mul(BinaryIntExpr):
         return " * "
 
 
+@define(eq=False)
 class Div(BinaryIntExpr):
-    @property
-    def z3expr(self) -> z3.ArithRef:
-        return self._left.z3expr / self._right.z3expr
+    def to_z3_expr(self) -> z3.ArithRef:
+        return self.left.to_z3_expr() / self.right.to_z3_expr()
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Right /= 0
-            Cond(NotEqual(self._right, IntVal(0)))
+            Cond(NotEqual(self.right, IntVal(0)))
         ]
 
     @property
@@ -1035,10 +909,10 @@ class Div(BinaryIntExpr):
         return " / "
 
 
+@define(eq=False)
 class Pow(BinaryIntExpr):
-    @property
-    def z3expr(self) -> z3.ArithRef:
-        return self._left.z3expr**self._right.z3expr
+    def to_z3_expr(self) -> z3.ArithRef:
+        return self.left.to_z3_expr() ** self.right.to_z3_expr()
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
@@ -1051,7 +925,7 @@ class Pow(BinaryIntExpr):
             # Left ** Right <= Upper_Bound
             Cond(
                 LessEqual(
-                    IntVar(v_id, self.type_, origin=self._origin),
+                    IntVar(v_id, self.type_, origin=self.origin),
                     IntVal(upper_bound),
                 ),
                 [Assign(v_id, self, self.type_)],
@@ -1063,15 +937,15 @@ class Pow(BinaryIntExpr):
         return " ** "
 
 
+@define(eq=False)
 class Mod(BinaryIntExpr):
-    @property
-    def z3expr(self) -> z3.ArithRef:
-        return self._left.z3expr % self._right.z3expr
+    def to_z3_expr(self) -> z3.ArithRef:
+        return self.left.to_z3_expr() % self.right.to_z3_expr()
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Right /= 0
-            Cond(NotEqual(self._right, IntVal(0)))
+            Cond(NotEqual(self.right, IntVal(0)))
         ]
 
     @property
@@ -1079,119 +953,108 @@ class Mod(BinaryIntExpr):
         return " mod "
 
 
+@define(eq=False)
 class Not(UnaryBoolExpr):
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return z3.Not(self._expression.z3expr)
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.Not(self.expression.to_z3_expr())
 
     def _update_str(self) -> None:
-        self._str = intern(f"not {self._expression}")
+        self._str = intern(f"not {self.expression}")
 
 
+@define(eq=False)
 class And(BinaryBoolExpr):
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return z3.And(self._left.z3expr, self._right.z3expr)
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.And(self.left.to_z3_expr(), self.right.to_z3_expr())
 
     @property
     def _symbol(self) -> str:
         return " and "
 
 
+@define(eq=False)
 class Or(BinaryBoolExpr):
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return z3.Or(self._left.z3expr, self._right.z3expr)
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.Or(self.left.to_z3_expr(), self.right.to_z3_expr())
 
     @property
     def _symbol(self) -> str:
         return " or "
 
 
+@define(eq=False)
 class Relation(BoolExpr, BinaryExpr):
-    def __init__(
-        self,
-        left: BasicIntExpr,
-        right: BasicIntExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(left, right, origin)
-        self._left: BasicIntExpr = left
-        self._right: BasicIntExpr = right
-        self._origin = origin
+    left: BasicIntExpr
+    right: BasicIntExpr
+    origin: Optional[Origin] = None
 
 
+@define(eq=False)
 class Less(Relation):
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return self._left.z3expr < self._right.z3expr
+    def to_z3_expr(self) -> z3.BoolRef:
+        return self.left.to_z3_expr() < self.right.to_z3_expr()
 
     @property
     def _symbol(self) -> str:
         return " < "
 
 
+@define(eq=False)
 class LessEqual(Relation):
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return self._left.z3expr <= self._right.z3expr
+    def to_z3_expr(self) -> z3.BoolRef:
+        return self.left.to_z3_expr() <= self.right.to_z3_expr()
 
     @property
     def _symbol(self) -> str:
         return " <= "
 
 
+@define(eq=False)
 class Equal(Relation):
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return self._left.z3expr == self._right.z3expr
+    def to_z3_expr(self) -> z3.BoolRef:
+        return self.left.to_z3_expr() == self.right.to_z3_expr()
 
     @property
     def _symbol(self) -> str:
         return " = "
 
 
+@define(eq=False)
 class GreaterEqual(Relation):
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return self._left.z3expr >= self._right.z3expr
+    def to_z3_expr(self) -> z3.BoolRef:
+        return self.left.to_z3_expr() >= self.right.to_z3_expr()
 
     @property
     def _symbol(self) -> str:
         return " >= "
 
 
+@define(eq=False)
 class Greater(Relation):
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return self._left.z3expr > self._right.z3expr
+    def to_z3_expr(self) -> z3.BoolRef:
+        return self.left.to_z3_expr() > self.right.to_z3_expr()
 
     @property
     def _symbol(self) -> str:
         return " > "
 
 
+@define(eq=False)
 class NotEqual(Relation):
-    @property
-    def z3expr(self) -> z3.BoolRef:
-        return self._left.z3expr != self._right.z3expr
+    def to_z3_expr(self) -> z3.BoolRef:
+        return self.left.to_z3_expr() != self.right.to_z3_expr()
 
     @property
     def _symbol(self) -> str:
         return " /= "
 
 
+@define(eq=False)
 class Call(Expr):
-    def __init__(
-        self,
-        identifier: StrID,
-        *arguments: BasicExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._identifier = ID(identifier)
-        self._arguments = list(arguments)
-        self._preconditions: list[Cond] = []
-        self._origin = origin
+    identifier: ID = field(converter=ID)
+    arguments: Sequence[BasicExpr]
+    origin: Optional[Origin] = None
+    _preconditions: list[Cond] = field(init=False, factory=list)
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return self._preconditions
@@ -1201,378 +1064,305 @@ class Call(Expr):
 
     def _update_str(self) -> None:
         self._str = intern(
-            str(self._identifier)
-            + (f" ({', '.join(str(a) for a in self._arguments)})" if self._arguments else "")
+            str(self.identifier)
+            + (f" ({', '.join(str(a) for a in self.arguments)})" if self.arguments else "")
         )
 
 
+@define(eq=False)
 class IntCall(Call, IntExpr):
-    def __init__(
-        self,
-        identifier: StrID,
-        *arguments: BasicExpr,
-        type_: rty.AnyInteger,
-        negative: bool = False,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(identifier, *arguments, origin=origin)
-        self._type = type_
-        self._negative = negative
-
-    @property
-    def type_(self) -> rty.AnyInteger:
-        return self._type
+    identifier: ID = field(converter=ID)
+    arguments: Sequence[BasicExpr]
+    type_: rty.AnyInteger
+    negative: bool = False
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntCall:
         return self.__class__(
-            self._identifier,
-            *[a.substituted(mapping) for a in self._arguments],
-            negative=self._negative,
-            type_=self._type,
-            origin=self._origin,
+            self.identifier,
+            [a.substituted(mapping) for a in self.arguments],
+            self.type_,
+            self.negative,
+            self.origin,
         )
 
-    @property
-    def z3expr(self) -> z3.ArithRef:
+    def to_z3_expr(self) -> z3.ArithRef:
         # TODO: return value need not to be identical for identical arguments
-        expression = z3.Int(str(self._identifier))
-        return -expression if self._negative else expression
+        expression = z3.Int(str(self.identifier))
+        return -expression if self.negative else expression
 
     def _update_str(self) -> None:
         self._str = intern(
-            ("-" if self._negative else "")
-            + str(self._identifier)
-            + (f" ({', '.join(str(a) for a in self._arguments)})" if self._arguments else "")
+            ("-" if self.negative else "")
+            + str(self.identifier)
+            + (f" ({', '.join(str(a) for a in self.arguments)})" if self.arguments else "")
         )
 
 
+@define(eq=False)
 class BoolCall(Call, BoolExpr):
     def substituted(self, mapping: Mapping[ID, ID]) -> BoolCall:
         return self.__class__(
-            self._identifier,
-            *[a.substituted(mapping) for a in self._arguments],
-            origin=self._origin,
+            self.identifier,
+            [a.substituted(mapping) for a in self.arguments],
+            self.origin,
         )
 
-    @property
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.BoolRef:
         # TODO: return value need not to be identical for identical arguments
-        return z3.Bool(str(self._identifier))
+        return z3.Bool(str(self.identifier))
 
 
+@define(eq=False)
 class ObjCall(Call):
-    def __init__(
-        self,
-        identifier: StrID,
-        *arguments: BasicExpr,
-        type_: rty.Any,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(identifier, *arguments, origin=origin)
-        self._type = type_
+    identifier: ID = field(converter=ID)
+    arguments: Sequence[BasicExpr]
+    return_type: rty.Any
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Any:
-        return self._type
+        return self.return_type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjCall:
         return self.__class__(
-            self._identifier,
-            *[a.substituted(mapping) for a in self._arguments],
-            type_=self._type,
-            origin=self._origin,
+            self.identifier,
+            [a.substituted(mapping) for a in self.arguments],
+            self.return_type,
+            self.origin,
         )
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
+@define(eq=False)
 class FieldAccess(Expr):
-    def __init__(
-        self,
-        message: StrID,
-        field: StrID,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._message = ID(message)
-        self._field = ID(field)
-        self._origin = origin
+    message: ID = field(converter=ID)
+    field: ID = field(converter=ID)
+    message_type: rty.Compound
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> FieldAccess:
         return self.__class__(
-            mapping[self._message] if self._message in mapping else self._message,
-            self._field,
-            self._origin,
+            mapping[self.message] if self.message in mapping else self.message,
+            self.field,
+            self.message_type,
+            self.origin,
         )
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self._message}.{self._field}")
+        self._str = intern(f"{self.message}.{self.field}")
 
 
+@define(eq=False)
 class IntFieldAccess(FieldAccess, IntExpr):
-    def __init__(
-        self,
-        message: StrID,
-        field: StrID,
-        type_: rty.AnyInteger,
-        negative: bool = False,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(message, field, origin)
-        self._type = type_
-        self._negative = negative
+    message: ID = field(converter=ID)
+    field: ID = field(converter=ID)
+    message_type: rty.Compound
+    negative: bool = False
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.AnyInteger:
-        return self._type
+        type_ = self.message_type.field_types[self.field]
+        assert isinstance(type_, rty.AnyInteger)
+        return type_
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntFieldAccess:
         return self.__class__(
-            mapping[self._message] if self._message in mapping else self._message,
-            self._field,
-            self._type,
-            self._negative,
-            self._origin,
+            mapping[self.message] if self.message in mapping else self.message,
+            self.field,
+            self.message_type,
+            self.negative,
+            self.origin,
         )
 
-    @property
-    def z3expr(self) -> z3.ArithRef:
+    def to_z3_expr(self) -> z3.ArithRef:
         expression = z3.Int(str(self))
-        return -expression if self._negative else expression
+        return -expression if self.negative else expression
 
     def _update_str(self) -> None:
-        sign = "-" if self._negative else ""
-        self._str = intern(f"{sign}{self._message}.{self._field}")
+        sign = "-" if self.negative else ""
+        self._str = intern(f"{sign}{self.message}.{self.field}")
 
 
+@define(eq=False)
 class BoolFieldAccess(FieldAccess, BoolExpr):
-    @property
-    def z3expr(self) -> z3.BoolRef:
+    def to_z3_expr(self) -> z3.BoolRef:
         return z3.Bool(str(self))
 
 
+@define(eq=False)
 class ObjFieldAccess(FieldAccess):
-    def __init__(
-        self,
-        message: StrID,
-        field: StrID,
-        type_: rty.Any,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(message, field, origin)
-        self._type = type_
+    message: ID = field(converter=ID)
+    field: ID = field(converter=ID)
+    message_type: rty.Compound
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Any:
-        return self._type
+        type_ = self.message_type.field_types[self.field]
+        assert isinstance(type_, rty.Any)
+        return type_
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjFieldAccess:
         return self.__class__(
-            mapping[self._message] if self._message in mapping else self._message,
-            self._field,
-            self._type,
-            self._origin,
+            mapping[self.message] if self.message in mapping else self.message,
+            self.field,
+            self.message_type,
+            self.origin,
         )
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
 
+@define(eq=False)
 class IfExpr(Expr):
-    _condition: BasicBoolExpr
-    _then_expr: BasicExpr
-    _else_expr: BasicExpr
-
-    def __init__(
-        self,
-        condition: BasicBoolExpr,
-        then_expr: BasicExpr,
-        else_expr: BasicExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._condition = condition
-        self._then_expr = then_expr
-        self._else_expr = else_expr
-        self._origin = origin
+    condition: BasicBoolExpr
+    then_expr: BasicExpr
+    else_expr: BasicExpr
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IfExpr:
         return self.__class__(
-            self._condition.substituted(mapping),
-            self._then_expr.substituted(mapping),
-            self._else_expr.substituted(mapping),
-            self._origin,
+            self.condition.substituted(mapping),
+            self.then_expr.substituted(mapping),
+            self.else_expr.substituted(mapping),
+            self.origin,
         )
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
-        return z3.If(self._condition.z3expr, self._then_expr.z3expr, self._else_expr.z3expr)
+    def to_z3_expr(self) -> z3.ExprRef:
+        return z3.If(
+            self.condition.to_z3_expr(), self.then_expr.to_z3_expr(), self.else_expr.to_z3_expr()
+        )
 
     def _update_str(self) -> None:
-        self._str = intern(f"(if {self._condition} then {self._then_expr} else {self._else_expr})")
+        self._str = intern(f"(if {self.condition} then {self.then_expr} else {self.else_expr})")
 
 
+@define(eq=False)
 class IntIfExpr(IfExpr):
-    _condition: BasicBoolExpr
-    _then_expr: BasicIntExpr
-    _else_expr: BasicIntExpr
-
-    def __init__(
-        self,
-        condition: BasicBoolExpr,
-        then_expr: BasicIntExpr,
-        else_expr: BasicIntExpr,
-        type_: rty.AnyInteger,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(condition, then_expr, else_expr, origin)
-        self._type = type_
+    condition: BasicBoolExpr
+    then_expr: BasicIntExpr
+    else_expr: BasicIntExpr
+    return_type: rty.AnyInteger
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.AnyInteger:
-        return self._type
+        return self.return_type
 
 
+@define(eq=False)
 class BoolIfExpr(IfExpr):
-    _condition: BasicBoolExpr
-    _then_expr: BasicBoolExpr
-    _else_expr: BasicBoolExpr
-
-    def __init__(
-        self,
-        condition: BasicBoolExpr,
-        then_expr: BasicBoolExpr,
-        else_expr: BasicBoolExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        super().__init__(condition, then_expr, else_expr, origin)
+    condition: BasicBoolExpr
+    then_expr: BasicBoolExpr
+    else_expr: BasicBoolExpr
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Enumeration:
         return rty.BOOLEAN
 
 
+@define(eq=False)
 class Conversion(Expr):
-    def __init__(
-        self,
-        identifier: StrID,
-        argument: Expr,
-        type_: rty.Any,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._identifier = ID(identifier)
-        self._argument = argument
-        self._type = type_
-        self._origin = origin
+    identifier: ID = field(converter=ID)
+    argument: Expr
+    target_type: rty.Any
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Any:
-        return self._type
+        return self.target_type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Conversion:
         return self.__class__(
-            self._identifier,
-            self._argument.substituted(mapping),
-            self._type,
-            self._origin,
+            self.identifier,
+            self.argument.substituted(mapping),
+            self.target_type,
+            self.origin,
         )
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         return z3.BoolVal(True)
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self._identifier} ({self._argument})")
+        self._str = intern(f"{self.identifier} ({self.argument})")
 
 
+@define(eq=False)
 class Comprehension(Expr):
-    def __init__(  # noqa: PLR0913
-        self,
-        iterator: StrID,
-        sequence: BasicExpr,
-        selector_stmts: list[Stmt],
-        selector: BasicExpr,
-        condition_stmts: list[Stmt],
-        condition: BoolExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._iterator = ID(iterator)
-        self._sequence = sequence
-        self._selector_stmts = selector_stmts
-        self._selector = selector
-        self._condition_stmts = condition_stmts
-        self._condition = condition
-        self._origin = origin
+    iterator: ID = field(converter=ID)
+    sequence: BasicExpr
+    selector_stmts: list[Stmt]
+    selector: BasicExpr
+    condition_stmts: list[Stmt]
+    condition: BoolExpr
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Aggregate:
-        return rty.Aggregate(self._selector.type_)
+        return rty.Aggregate(self.selector.type_)
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Comprehension:
         return self.__class__(
-            self._iterator,
-            self._sequence.substituted(mapping),
-            [s.substituted(mapping) for s in self._selector_stmts],
-            self._selector.substituted(mapping),
-            [s.substituted(mapping) for s in self._condition_stmts],
-            self._condition.substituted(mapping),
-            self._origin,
+            self.iterator,
+            self.sequence.substituted(mapping),
+            [s.substituted(mapping) for s in self.selector_stmts],
+            self.selector.substituted(mapping),
+            [s.substituted(mapping) for s in self.condition_stmts],
+            self.condition.substituted(mapping),
+            self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def _update_str(self) -> None:
-        selector = str(self._selector)
-        if self._selector_stmts:
-            selector = f"{{{'; '.join(str(s) for s in self._selector_stmts)}; {selector}}}"
-        condition = str(self._condition)
-        if self._condition_stmts:
-            condition = f"{{{'; '.join(str(s) for s in self._condition_stmts)}; {condition}}}"
-        self._str = intern(
-            f"[for {self._iterator} in {self._sequence} if {condition} => {selector}]"
-        )
+        selector = str(self.selector)
+        if self.selector_stmts:
+            selector = f"{{{'; '.join(str(s) for s in self.selector_stmts)}; {selector}}}"
+        condition = str(self.condition)
+        if self.condition_stmts:
+            condition = f"{{{'; '.join(str(s) for s in self.condition_stmts)}; {condition}}}"
+        self._str = intern(f"[for {self.iterator} in {self.sequence} if {condition} => {selector}]")
 
 
+@define(eq=False)
 class Agg(Expr):
-    def __init__(
-        self,
-        *elements: BasicExpr,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._elements = list(elements)
-        self._origin = origin
+    elements: Sequence[BasicExpr]
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Aggregate:
-        return rty.Aggregate(rty.common_type([e.type_ for e in self._elements]))
+        return rty.Aggregate(rty.common_type([e.type_ for e in self.elements]))
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Agg:
         return self.__class__(
-            *[e.substituted(mapping) for e in self._elements],
-            origin=self._origin,
+            [e.substituted(mapping) for e in self.elements],
+            origin=self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def _update_str(self) -> None:
-        self._str = intern("[" + ", ".join(map(str, self._elements)) + "]")
+        self._str = intern("[" + ", ".join(map(str, self.elements)) + "]")
 
 
+@define(eq=False)
 class Str(Expr):
-    def __init__(self, string: str, origin: Optional[Origin] = None) -> None:
-        self._string = string
-        self._origin = origin
+    string: str
+    origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Sequence:
@@ -1584,142 +1374,108 @@ class Str(Expr):
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def _update_str(self) -> None:
-        self._str = intern(f'"{self._string}"')
+        self._str = intern(f'"{self.string}"')
 
 
+@define(eq=False)
 class MsgAgg(Expr):
-    def __init__(
-        self,
-        identifier: StrID,
-        field_values: Mapping[ID, BasicExpr],
-        type_: rty.Message,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._identifier = ID(identifier)
-        self._field_values = field_values or {}
-        self._type = type_
-        self._origin = origin
-
-    @property
-    def type_(self) -> rty.Message:
-        return self._type
+    identifier: ID = field(converter=ID)
+    field_values: Mapping[ID, BasicExpr]
+    type_: rty.Message
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> MsgAgg:
         return self.__class__(
-            self._identifier,
-            {f: v.substituted(mapping) for f, v in self._field_values.items()},
-            self._type,
-            origin=self._origin,
+            self.identifier,
+            {f: v.substituted(mapping) for f, v in self.field_values.items()},
+            self.type_,
+            origin=self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def _update_str(self) -> None:
         field_values = (
-            " => ".join(f"{i} => {e}" for i, e in self._field_values.items())
-            if self._field_values
+            " => ".join(f"{i} => {e}" for i, e in self.field_values.items())
+            if self.field_values
             else "null message"
         )
-        self._str = intern(f"{self._identifier}'({field_values})")
+        self._str = intern(f"{self.identifier}'({field_values})")
 
 
+@define(eq=False)
 class DeltaMsgAgg(Expr):
-    def __init__(
-        self,
-        identifier: StrID,
-        field_values: Mapping[ID, BasicExpr],
-        type_: rty.Message,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._identifier = ID(identifier)
-        self._field_values = field_values or {}
-        self._type = type_
-        self._origin = origin
-
-    @property
-    def type_(self) -> rty.Message:
-        return self._type
+    identifier: ID = field(converter=ID)
+    field_values: Mapping[ID, BasicExpr]
+    type_: rty.Message
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> DeltaMsgAgg:
         return self.__class__(
-            self._identifier,
-            {f: v.substituted(mapping) for f, v in self._field_values.items()},
-            self._type,
-            origin=self._origin,
+            self.identifier,
+            {f: v.substituted(mapping) for f, v in self.field_values.items()},
+            self.type_,
+            origin=self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def _update_str(self) -> None:
         field_values = (
-            " => ".join(f"{i} => {e}" for i, e in self._field_values.items())
-            if self._field_values
+            " => ".join(f"{i} => {e}" for i, e in self.field_values.items())
+            if self.field_values
             else "null message"
         )
-        self._str = intern(f"{self._identifier} with delta {field_values}")
+        self._str = intern(f"{self.identifier} with delta {field_values}")
 
 
+@define(eq=False)
 class CaseExpr(Expr):
-    def __init__(
-        self,
-        expression: BasicExpr,
-        choices: Sequence[tuple[Sequence[BasicExpr], list[Stmt], BasicExpr]],
-        type_: rty.Any,
-        origin: Optional[Origin] = None,
-    ) -> None:
-        self._expression = expression
-        self._choices = choices
-        self._type = type_
-        self._origin = origin
-
-    @property
-    def type_(self) -> rty.Any:
-        return self._type
+    expression: BasicExpr
+    choices: Sequence[tuple[Sequence[BasicExpr], list[Stmt], BasicExpr]]
+    type_: rty.Any
+    origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> CaseExpr:
         return self.__class__(
-            self._expression.substituted(mapping),
+            self.expression.substituted(mapping),
             [
                 (
                     [v.substituted(mapping) for v in vs],
                     [s.substituted(mapping) for s in s],
                     e.substituted(mapping),
                 )
-                for vs, s, e in self._choices
+                for vs, s, e in self.choices
             ],
-            self._type,
-            origin=self._origin,
+            self.type_,
+            self.origin,
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
-    @property
-    def z3expr(self) -> z3.ExprRef:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
     def _update_str(self) -> None:
         data = ",\n".join(
             f"      when {' | '.join(map(str, c))} => "
             + (f"{{{'; '.join(str(s) for s in s)};}}; {e}" if s else str(e))
-            for c, s, e in self._choices
+            for c, s, e in self.choices
         )
-        self._str = intern(f"(case {self._expression} is\n{data})")
+        self._str = intern(f"(case {self.expression} is\n{data})")
 
 
 def add_checks(

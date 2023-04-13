@@ -224,10 +224,11 @@ class Append(ListAttributeStatement):
         self.parameters[0] = value
 
     def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        assert isinstance(self.type_, rty.Sequence)
         parameter_stmts, parameter_expr = _to_tac_basic_expr(self.parameter, variable_id)
         return [
             *parameter_stmts,
-            tac.Append(self.identifier, parameter_expr, self),
+            tac.Append(self.identifier, parameter_expr, self.type_, self),
         ]
 
 
@@ -251,10 +252,11 @@ class Extend(ListAttributeStatement):
         self.parameters[0] = value
 
     def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        assert isinstance(self.type_, rty.Sequence)
         parameter_stmts, parameter_expr = _to_tac_basic_expr(self.parameter, variable_id)
         return [
             *parameter_stmts,
-            tac.Extend(self.identifier, parameter_expr, self),
+            tac.Extend(self.identifier, parameter_expr, self.type_, self),
         ]
 
 
@@ -336,6 +338,7 @@ class Reset(AttributeStatement):
         ]
 
     def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        assert isinstance(self.type_, (rty.Sequence, rty.Message))
         associations = {}
         stmts = []
         for i, e in self.associations.items():
@@ -344,7 +347,7 @@ class Reset(AttributeStatement):
             stmts.extend(e_stmts)
         return [
             *stmts,
-            tac.Reset(self.identifier, associations, self),
+            tac.Reset(self.identifier, associations, self.type_, self),
         ]
 
 

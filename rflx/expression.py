@@ -1904,6 +1904,7 @@ class Selected(Name):
 
     def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
         assert isinstance(self.type_, rty.Any)
+        assert isinstance(self.prefix.type_, rty.Compound)
         stmts, msg = _to_tac_basic_expr(self.prefix, variable_id)
         assert isinstance(msg, tac.ObjVar)
         if self.type_ == rty.BOOLEAN:
@@ -1911,7 +1912,9 @@ class Selected(Name):
                 *stmts,
                 tac.Assign(
                     target,
-                    tac.BoolFieldAccess(msg.identifier, self.selector, origin=self),
+                    tac.BoolFieldAccess(
+                        msg.identifier, self.selector, self.prefix.type_, origin=self
+                    ),
                     rty.BOOLEAN,
                     origin=self,
                 ),
@@ -1924,7 +1927,7 @@ class Selected(Name):
                     tac.IntFieldAccess(
                         msg.identifier,
                         self.selector,
-                        self.type_,
+                        self.prefix.type_,
                         self.negative,
                         origin=self,
                     ),
@@ -1937,7 +1940,9 @@ class Selected(Name):
                 *stmts,
                 tac.Assign(
                     target,
-                    tac.ObjFieldAccess(msg.identifier, self.selector, self.type_, origin=self),
+                    tac.ObjFieldAccess(
+                        msg.identifier, self.selector, self.prefix.type_, origin=self
+                    ),
                     self.type_,
                     origin=self,
                 ),
@@ -2053,7 +2058,7 @@ class Call(Name):
                     target,
                     tac.BoolCall(
                         self.identifier,
-                        *arguments_exprs,
+                        arguments_exprs,
                         origin=self,
                     ),
                     rty.BOOLEAN,
@@ -2068,8 +2073,8 @@ class Call(Name):
                     target,
                     tac.IntCall(
                         self.identifier,
-                        *arguments_exprs,
-                        type_=self.type_,
+                        arguments_exprs,
+                        self.type_,
                         origin=self,
                     ),
                     self.type_,
@@ -2082,7 +2087,7 @@ class Call(Name):
             *arguments_stmts,
             tac.Assign(
                 target,
-                tac.ObjCall(self.identifier, *arguments_exprs, type_=self.type_, origin=self),
+                tac.ObjCall(self.identifier, arguments_exprs, self.type_, origin=self),
                 self.type_,
                 origin=self,
             ),
@@ -2242,7 +2247,7 @@ class Aggregate(Expr):
             *stmts,
             tac.Assign(
                 target,
-                tac.Agg(*elements, origin=self),
+                tac.Agg(elements, origin=self),
                 self.type_,
                 origin=self,
             ),
@@ -2753,7 +2758,7 @@ class IfExpr(Expr):
                 ),
             ]
 
-        assert isinstance(self.type_, rty.AnyInteger), self.type_
+        assert isinstance(self.type_, rty.AnyInteger)
         assert isinstance(then_expression.type_, rty.AnyInteger)
         assert isinstance(self.else_expression.type_, rty.AnyInteger)
         then_int_stmts, then_int_expr = _to_tac_basic_int(then_expression, variable_id)
@@ -3895,5 +3900,6 @@ def _to_tac_basic_expr(
             result_expr = tac.IntVar(result_id, expression.type_, origin=expression)
         else:
             assert isinstance(assign.expression, tac.Expr)
+            assert isinstance(expression.type_, rty.Any)
             result_expr = tac.ObjVar(result_id, expression.type_, origin=expression)
     return (result_stmts, result_expr)
