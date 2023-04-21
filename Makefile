@@ -5,6 +5,8 @@
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
 RECORDFLUX_ORIGIN ?= https://github.com/AdaCore
+VERSION ?= $(shell python3 -c "import setuptools_scm; print(setuptools_scm.get_version())")
+SDIST ?= dist/RecordFlux-$(VERSION).tar.gz
 
 BUILD_DIR = build
 PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps rflx rflx_ide tests tools stubs setup.py
@@ -140,11 +142,12 @@ test_binary_size:
 test_specs:
 	$(PYTEST) tests/examples/specs_test.py
 
-test_installation:
+test_installation: export PYTHONPATH=
+test_installation: $(SDIST)
 	rm -rf $(BUILD_DIR)/venv $(BUILD_DIR)/test_installation
 	mkdir -p $(BUILD_DIR)/test_installation
 	python3 -m venv $(BUILD_DIR)/venv
-	$(BUILD_DIR)/venv/bin/pip install .
+	$(BUILD_DIR)/venv/bin/pip install $(SDIST)
 	$(BUILD_DIR)/venv/bin/rflx --version
 	HOME=$(BUILD_DIR)/test_installation $(BUILD_DIR)/venv/bin/rflx setup_ide
 	test -f $(BUILD_DIR)/test_installation/.gnatstudio/plug-ins/recordflux.py
@@ -247,7 +250,9 @@ build_pdf_doc_user_guide:
 
 .PHONY: dist
 
-dist:
+dist: $(SDIST)
+
+$(SDIST): pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
 	python3 -m build --sdist
 
 .PHONY: clean
