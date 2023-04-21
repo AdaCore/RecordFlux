@@ -445,7 +445,7 @@ def validate(args: argparse.Namespace) -> None:
 
 
 def setup(args: argparse.Namespace) -> None:
-    gnatstudio_dir = resource_filename("ide", "gnatstudio/")
+    gnatstudio_dir = resource_filename("rflx_ide", "gnatstudio/")
     plugins_dir = args.gnat_studio_dir / "plug-ins"
     if not plugins_dir.exists():
         plugins_dir.mkdir(parents=True, exist_ok=True)

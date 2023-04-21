@@ -3,4 +3,5 @@ prune *
 exclude .git* defaults* Makefile MANIFEST.in
 graft bin
 graft rflx
+graft rflx_ide
 global-exclude *.py[cod]
