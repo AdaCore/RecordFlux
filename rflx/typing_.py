@@ -95,7 +95,7 @@ class Any(Type):
 
 
 @attr.s(frozen=True)
-class IndependentType(Any):
+class NamedType(Any):
     identifier: ID = attr.ib(converter=ID)
 
     def is_compatible(self, other: Type) -> bool:
@@ -110,7 +110,7 @@ class IndependentType(Any):
 
 
 @attr.s(frozen=True)
-class Enumeration(IndependentType):
+class Enumeration(NamedType):
     DESCRIPTIVE_NAME: ClassVar[str] = "enumeration type"
     literals: abc.Sequence[ID] = attr.ib()
     always_valid: bool = attr.ib(False)
@@ -243,7 +243,7 @@ class Aggregate(Composite):
 
 
 @attr.s(frozen=True)
-class Sequence(Composite):
+class Sequence(Composite, NamedType):
     DESCRIPTIVE_NAME: ClassVar[str] = "sequence type"
     identifier: ID = attr.ib(converter=ID)
     element: Type = attr.ib()
@@ -281,7 +281,7 @@ class Refinement:
 
 
 @attr.s(frozen=True)
-class Compound(IndependentType):
+class Compound(NamedType):
     """Base type for any type consisting of multiple fields of different types."""
 
     DESCRIPTIVE_NAME: ClassVar[str]
