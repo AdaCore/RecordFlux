@@ -11,7 +11,7 @@ from pathlib import Path
 from rflx.common import unique
 from rflx.generator import Generator
 from rflx.integration import Integration
-from rflx.model import Model, Session, Type
+from rflx.model import Model
 from rflx.specification import Parser
 from tests.const import FEATURE_DIR, SPEC_DIR
 from tests.unit.generator_test import MODELS
@@ -101,14 +101,7 @@ def remove_ada_files(directory: Path) -> None:
 
 
 def merge_models(models: list[Model]) -> Model:
-    types: list[Type] = []
-    sessions: list[Session] = []
-
-    for m in models:
-        types.extend(m.types)
-        sessions.extend(m.sessions)
-
-    return Model(list(unique(types)), list(unique(sessions)))
+    return Model(list(unique(d for m in models for d in m.declarations)))
 
 
 if __name__ == "__main__":

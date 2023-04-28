@@ -595,13 +595,18 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
         ],
         [BOOLEAN, OPAQUE, tag, length, message],
     )
-    model = Model(types=[BOOLEAN, OPAQUE, tag, length, message], sessions=[session])
+    t = Integer(
+        "Test::T",
+        expr.Number(0),
+        expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
+        expr.Number(16),
+    )
+    model = Model([BOOLEAN, OPAQUE, tag, length, message, session, t])
     model.write_specification_files(tmp_path)
     p = parser.Parser()
     p.parse(tmp_path / "test.rflx")
     parsed_model = p.create_model()
-    assert parsed_model.types == model.types
-    assert parsed_model.sessions == model.sessions
+    assert parsed_model.declarations == model.declarations
     assert parsed_model == model
 
 

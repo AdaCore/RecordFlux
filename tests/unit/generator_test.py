@@ -2059,7 +2059,7 @@ def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
         )
     ]
     Generator(reproducible=True).generate(
-        Model(types=types), Integration(), tmp_path, library_files=False, top_level_package=False
+        Model(types), Integration(), tmp_path, library_files=False, top_level_package=False
     )
     assert (tmp_path / "p.ads").exists()
     assert (tmp_path / "p.ads").read_text() == textwrap.dedent(
@@ -2217,7 +2217,7 @@ def test_generate_enumeration_base_type_use(
         )
     ]
     Generator(reproducible=True).generate(
-        Model(types=types), Integration(), tmp_path, library_files=False, top_level_package=False
+        Model(types), Integration(), tmp_path, library_files=False, top_level_package=False
     )
     assert (tmp_path / "p.ads").exists()
     assert (tmp_path / "p.ads").read_text() == textwrap.dedent(expected)

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Installation of GNAT Studio plugin (eng/recordflux/RecordFlux#1293)
+- Order of types and sessions after parsing (eng/recordflux/RecordFlux#1076)
 
 ## [0.9.1] - 2023-03-28
 

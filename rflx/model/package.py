@@ -6,15 +6,14 @@ from dataclasses import dataclass, field
 from rflx import const
 from rflx.identifier import ID
 
-from . import session, type_
+from . import top_level_declaration
 
 
 @dataclass
 class Package:
     name: ID
     imports: frozenset[ID] = field(default_factory=frozenset)
-    types: list[type_.Type] = field(default_factory=list)
-    sessions: list[session.Session] = field(default_factory=list)
+    declarations: list[top_level_declaration.TopLevelDeclaration] = field(default_factory=list)
 
     @property
     def imports_str(self) -> str:
@@ -34,15 +33,10 @@ class Package:
         return f"end {self.name};"
 
     @property
-    def types_str(self) -> str:
-        raw = "\n\n".join(f"{t};" for t in self.types)
-        return textwrap.indent(raw, " " * 3)
-
-    @property
-    def sessions_str(self) -> str:
-        raw = "\n\n".join(f"{s};" for s in self.sessions)
+    def declarations_str(self) -> str:
+        raw = "\n\n".join(f"{t};" for t in self.declarations)
         return textwrap.indent(raw, " " * 3)
 
     def __str__(self) -> str:
-        pieces = [self.imports_str, self.begin_str, self.types_str, self.sessions_str, self.end_str]
+        pieces = [self.imports_str, self.begin_str, self.declarations_str, self.end_str]
         return "\n\n".join(filter(None, pieces))

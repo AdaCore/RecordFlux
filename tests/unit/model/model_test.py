@@ -11,8 +11,21 @@ import rflx.model.type_ as mty
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Number
 from rflx.identifier import ID
-from rflx.model import BUILTIN_TYPES, Enumeration, Integer, Message, Model, Type
-from rflx.model.message import FINAL, INITIAL, Field, Link
+from rflx.model import (
+    BUILTIN_TYPES,
+    FINAL,
+    INITIAL,
+    Enumeration,
+    Field,
+    Integer,
+    Link,
+    Message,
+    Model,
+    Session,
+    State,
+    Transition,
+    Type,
+)
 from tests.data import models
 from tests.utils import check_regex
 
@@ -66,7 +79,7 @@ def test_name_conflict_sessions() -> None:
             r"$"
         ),
     ):
-        Model([], [s1, s2])
+        Model([s1, s2])
 
 
 def test_conflicting_literal_builtin_type() -> None:
@@ -181,8 +194,9 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 def test_write_specification_files(tmp_path: Path) -> None:
     t = Integer("P::T", Number(0), Number(255), Number(8))
     v = mty.Sequence("P::V", element_type=t)
+    s = Session("P::S", [State("A", [Transition("null")])], [], [], [])
     m = Message("P::M", [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)], {Field("Foo"): t})
-    Model([t, v, m]).write_specification_files(tmp_path)
+    Model([t, v, s, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
     assert list(tmp_path.glob("*.rflx")) == [expected_path]
     assert expected_path.read_text() == textwrap.dedent(
@@ -192,6 +206,16 @@ def test_write_specification_files(tmp_path: Path) -> None:
            type T is range 0 .. 255 with Size => 8;
 
            type V is sequence of P::T;
+
+           generic
+           session S is
+           begin
+              state A is
+              begin
+              transition
+                 goto null
+              end A;
+           end S;
 
            type M is
               message

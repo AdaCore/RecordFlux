@@ -1,4 +1,3 @@
-from .basic_declaration import BasicDeclaration as BasicDeclaration  # noqa: F401
 from .message import (  # noqa: F401
     FINAL as FINAL,
     INITIAL as INITIAL,
@@ -21,6 +20,7 @@ from .session import (  # noqa: F401
     Transition as Transition,
     UnprovenSession as UnprovenSession,
 )
+from .top_level_declaration import TopLevelDeclaration as TopLevelDeclaration  # noqa: F401
 from .type_ import (  # noqa: F401
     BOOLEAN as BOOLEAN,
     BUILTIN_LITERALS as BUILTIN_LITERALS,

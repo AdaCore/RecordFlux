@@ -14,10 +14,10 @@ from rflx.error import Location, Severity, Subsystem
 from rflx.identifier import ID, StrID
 
 from . import message
-from .basic_declaration import BasicDeclaration
+from .top_level_declaration import TopLevelDeclaration
 
 
-class Type(BasicDeclaration):
+class Type(TopLevelDeclaration):
     @property
     def type_(self) -> rty.Type:
         return rty.Undefined()

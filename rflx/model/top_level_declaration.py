@@ -5,7 +5,7 @@ from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID
 
 
-class BasicDeclaration(Base):
+class TopLevelDeclaration(Base):
     def __init__(
         self,
         identifier: StrID,

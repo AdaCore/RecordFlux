@@ -11,9 +11,13 @@ from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.error import Location, Severity, Subsystem
 from rflx.identifier import ID, StrID, id_generator
 
-from . import declaration as decl, statement as stmt, type_ as mty
-from .basic_declaration import BasicDeclaration
+from . import (
+    declaration as decl,
+    statement as stmt,
+    type_ as mty,
+)
 from .message import Message, Refinement
+from .top_level_declaration import TopLevelDeclaration
 
 
 class Transition(Base):
@@ -307,7 +311,7 @@ class State(Base):
                     substituted(transition.condition, message_decl.type_)
 
 
-class AbstractSession(BasicDeclaration):
+class AbstractSession(TopLevelDeclaration):
     # pylint: disable=too-many-arguments, too-many-instance-attributes
     @abstractmethod
     def __init__(  # noqa: PLR0913
@@ -345,6 +349,9 @@ class AbstractSession(BasicDeclaration):
         self._normalize()
 
         self.error.propagate()
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):

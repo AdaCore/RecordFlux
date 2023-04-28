@@ -1784,11 +1784,10 @@ class Parser:
         self.skip_verification = skip_verification
         self._workers = workers
         self._specifications: OrderedDict[ID, SpecificationFile] = OrderedDict()
-        self._types: list[model.Type] = [
+        self._declarations: list[model.TopLevelDeclaration] = [
             *model.BUILTIN_TYPES.values(),
             *model.INTERNAL_TYPES.values(),
         ]
-        self._sessions: list[model.Session] = []
         self._integration: Integration = Integration(integration_files_dir)
         self._cache = Cache(not skip_verification and cached)
 
@@ -1853,7 +1852,7 @@ class Parser:
         for spec_node in self._specifications.values():
             self._evaluate_specification(error, spec_node.spec, spec_node.filename)
         try:
-            result = model.Model(self._types, self._sessions)
+            result = model.Model(self._declarations)
             self._integration.validate(result, error)
         except RecordFluxError as e:
             error.extend(e)
@@ -1963,6 +1962,7 @@ class Parser:
         package_id = create_id(error, spec.f_package_declaration.f_identifier, filename)
 
         for t in spec.f_package_declaration.f_declarations:
+            types = [d for d in self._declarations if isinstance(d, model.Type)]
             if isinstance(t, lang.TypeDecl):
                 identifier = model.internal_type_identifier(
                     create_id(error, t.f_identifier, filename), package_id
@@ -1983,24 +1983,22 @@ class Parser:
                     identifier,
                     t.f_parameters,
                     t.f_definition,
-                    self._types,
+                    types,
                     self.skip_verification,
                     self._workers,
                     self._cache,
                     filename,
                 )
                 if new_type is not None:
-                    self._types.append(new_type)
+                    self._declarations.append(new_type)
             elif isinstance(t, lang.RefinementDecl):
-                new_refinement = create_refinement(error, t, package_id, self._types, filename)
+                new_refinement = create_refinement(error, t, package_id, types, filename)
                 if new_refinement is not None:
-                    self._types.append(new_refinement)
+                    self._declarations.append(new_refinement)
             elif isinstance(t, lang.SessionDecl):
-                new_session = create_session(
-                    error, t, package_id, filename, self._workers, self._types
-                )
+                new_session = create_session(error, t, package_id, filename, self._workers, types)
                 if new_session is not None:
-                    self._sessions.append(new_session)
+                    self._declarations.append(new_session)
             else:
                 raise NotImplementedError(f"Declaration kind {t.kind_name} unsupported")
 

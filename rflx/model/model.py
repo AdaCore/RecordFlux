@@ -9,18 +9,15 @@ from rflx.common import Base, unique, verbose_repr
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
 
-from . import message, session, type_
+from . import message, session, top_level_declaration, type_
 from .package import Package
 
 
 class Model(Base):
     def __init__(
-        self,
-        types: Optional[Sequence[type_.Type]] = None,
-        sessions: Optional[Sequence[session.Session]] = None,
+        self, declarations: Optional[Sequence[top_level_declaration.TopLevelDeclaration]] = None
     ) -> None:
-        self._types = types or []
-        self._sessions = sessions or []
+        self._declarations = declarations or []
 
         self._add_missing_types_and_validate()
 
@@ -31,32 +28,37 @@ class Model(Base):
         return "\n\n".join(self.create_specifications().values())
 
     @property
-    def types(self) -> Sequence[type_.Type]:
-        return self._types
+    def declarations(self) -> Sequence[top_level_declaration.TopLevelDeclaration]:
+        return self._declarations
 
     @property
-    def messages(self) -> Sequence[message.Message]:
-        return [m for m in self._types if isinstance(m, message.Message)]
+    def types(self) -> list[type_.Type]:
+        return [d for d in self._declarations if isinstance(d, type_.Type)]
 
     @property
-    def refinements(self) -> Sequence[message.Refinement]:
-        return [m for m in self._types if isinstance(m, message.Refinement)]
+    def messages(self) -> list[message.Message]:
+        return [d for d in self._declarations if isinstance(d, message.Message)]
 
     @property
-    def sessions(self) -> Sequence[session.Session]:
-        return self._sessions
+    def refinements(self) -> list[message.Refinement]:
+        return [d for d in self._declarations if isinstance(d, message.Refinement)]
+
+    @property
+    def sessions(self) -> list[session.Session]:
+        return [d for d in self._declarations if isinstance(d, session.Session)]
 
     def create_specifications(self) -> dict[ID, str]:
         pkgs: dict[ID, Package] = {}
-        for ty in self._types:
-            if not type_.is_builtin_type(ty.name) and not type_.is_internal_type(ty.name):
-                pkg_name: ID = ty.package
-                pkg = pkgs.setdefault(pkg_name, Package(pkg_name))
-                pkg.imports |= {dep.package for dep in ty.direct_dependencies}
-                pkg.types.append(ty)
-        for sess in self._sessions:
-            pkg_name = sess.package
-            pkgs.setdefault(pkg_name, Package(pkg_name)).sessions.append(sess)
+        for d in self.declarations:
+            if isinstance(d, type_.Type):
+                if not type_.is_builtin_type(d.name) and not type_.is_internal_type(d.name):
+                    pkg_name: ID = d.package
+                    pkg = pkgs.setdefault(pkg_name, Package(pkg_name))
+                    pkg.imports |= {dep.package for dep in d.direct_dependencies}
+                    pkg.declarations.append(d)
+            else:
+                pkg_name = d.package
+                pkgs.setdefault(pkg_name, Package(pkg_name)).declarations.append(d)
         return {id: str(pkg) for id, pkg in pkgs.items()}
 
     def write_specification_files(self, output_dir: Path) -> None:
@@ -72,9 +74,20 @@ class Model(Base):
     def _add_missing_types_and_validate(self) -> None:
         error = self._check_duplicates()
 
-        types = [t for s in self._sessions for t in s.direct_dependencies.values()] + [*self._types]
-        types = [d for t in types for d in t.dependencies]
-        self._types = list(unique(types))
+        declarations: list[top_level_declaration.TopLevelDeclaration] = []
+
+        for d in self._declarations:
+            if isinstance(d, type_.Type):
+                for t in d.dependencies:
+                    declarations.append(t)
+                declarations.append(d)
+
+            if isinstance(d, session.Session):
+                for t in d.direct_dependencies.values():
+                    declarations.append(t)
+                declarations.append(d)
+
+        self._declarations = list(unique(declarations))
 
         error += self._check_conflicts()
         error.propagate()
@@ -84,7 +97,7 @@ class Model(Base):
         types: dict[ID, type_.Type] = {}
         sessions: dict[ID, session.Session] = {}
 
-        for t in self._types:
+        for t in self.types:
             if t.identifier in types:
                 error.extend(
                     [
@@ -109,7 +122,7 @@ class Model(Base):
                 )
             types[t.identifier] = t
 
-        for s in self._sessions:
+        for s in self.sessions:
             if s.identifier in types or s.identifier in sessions:
                 error.extend(
                     [
@@ -138,8 +151,8 @@ class Model(Base):
 
         for e1, e2 in [
             (e1, e2)
-            for i1, e1 in enumerate(self._types)
-            for i2, e2 in enumerate(self._types)
+            for i1, e1 in enumerate(self.types)
+            for i2, e2 in enumerate(self.types)
             if (
                 isinstance(e1, type_.Enumeration)
                 and isinstance(e2, type_.Enumeration)
@@ -177,14 +190,14 @@ class Model(Base):
 
         literals = [
             ID(t.package * l, location=l.location)
-            for t in self._types
+            for t in self.types
             if isinstance(t, type_.Enumeration)
             for l in t.literals
         ]
         name_conflicts = [
             (l, t)
             for l in literals
-            for t in self._types
+            for t in self.types
             if (l.parent == t.package or type_.is_builtin_type(t.identifier))
             and l.name == t.identifier.name
         ]
