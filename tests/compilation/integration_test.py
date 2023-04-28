@@ -767,10 +767,13 @@ def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Pa
     model = parser.create_model()
     integration = parser.get_integration()
 
-    for filename, content in utils.session_main().items():
-        (tmp_path / filename).write_text(content)
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
 
-    (tmp_path / "rflx-rflx_debug.adb").write_text(
+    for filename, content in utils.session_main().items():
+        (src_dir / filename).write_text(content)
+
+    (src_dir / "rflx-rflx_debug.adb").write_text(
         textwrap.dedent(
             """\
             with Ada.Text_IO;

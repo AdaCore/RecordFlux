@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Allow update of generated files (eng/recordflux/RecordFlux#1275)
+
 ### Fixed
 
 - Installation of GNAT Studio plugin (eng/recordflux/RecordFlux#1293)

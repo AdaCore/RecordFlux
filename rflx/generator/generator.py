@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections import abc
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Optional
@@ -83,7 +84,7 @@ from rflx.ada import (
 )
 from rflx.common import file_name
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE, MAX_SCALAR_SIZE
-from rflx.error import Subsystem, fail, warn
+from rflx.error import RecordFluxError, Severity, Subsystem, fail, warn
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import (
@@ -110,6 +111,12 @@ from .serializer import SerializerGenerator
 from .session import SessionGenerator
 
 log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class File:
+    name: Path
+    content: str
 
 
 class Generator:
@@ -147,13 +154,47 @@ class Generator:
         library_files: bool = True,
         top_level_package: bool = True,
     ) -> None:
-        self._write_units(units, directory)
-        if library_files:
-            self._write_library_files(directory)
-        if top_level_package:
-            self._write_top_level_package(directory)
+        files = self._create_units(units, directory)
 
-    def _write_library_files(self, directory: Path) -> None:
+        if library_files:
+            files.extend(self._create_library_files(directory))
+        if top_level_package:
+            files.extend(self._create_top_level_package(directory))
+
+        non_updated_files = sorted(set(directory.glob("*.ad[sb]")) - {f.name for f in files})
+
+        if non_updated_files:
+            RecordFluxError(
+                [
+                    (
+                        "partial update of generated files",
+                        Subsystem.GENERATOR,
+                        Severity.ERROR,
+                        None,
+                    ),
+                    (
+                        "files not generated in the current run could lead to unexpected behavior: "
+                        + ", ".join(str(f.name) for f in non_updated_files),
+                        Subsystem.GENERATOR,
+                        Severity.INFO,
+                        None,
+                    ),
+                    (
+                        "remove the affected files or choose another directory and retry",
+                        Subsystem.GENERATOR,
+                        Severity.INFO,
+                        None,
+                    ),
+                ],
+            ).propagate()
+        else:
+            for f in files:
+                log.info("Creating %s", f.name)
+                f.name.write_text(f.content)
+
+    def _create_library_files(self, directory: Path) -> list[File]:
+        files = []
+
         for template_filename in const.LIBRARY_FILES:
             self._check_template_file(template_filename)
 
@@ -161,59 +202,79 @@ class Generator:
             filename = Path(f"{file_name(prefix)}{template_filename}")
 
             template_file = (self._template_dir / template_filename).read_text()
-            create_file(
-                directory / filename,
-                self._license_header()
-                + "\n".join(
-                    [
-                        l.format(prefix=prefix)
-                        for l in template_file.split("\n")
-                        if "/Workarounds#" not in l
-                    ]
-                ),
+            files.append(
+                File(
+                    directory / filename,
+                    self._license_header()
+                    + "\n".join(
+                        [
+                            l.format(prefix=prefix)
+                            for l in template_file.split("\n")
+                            if "/Workarounds#" not in l
+                        ]
+                    ),
+                )
             )
 
         if self._debug == common.Debug.EXTERNAL:
             debug_package_id = self._prefix * ID("RFLX_Debug")
-            create_file(
-                directory / f"{file_name(str(debug_package_id))}.ads",
-                self._license_header()
-                + PackageUnit(
-                    [],
-                    PackageDeclaration(
-                        debug_package_id,
-                        [
-                            SubprogramDeclaration(
-                                ProcedureSpecification(
-                                    "Print",
-                                    [
-                                        Parameter(["Message"], "String"),
-                                    ],
+            files.append(
+                File(
+                    directory / f"{file_name(str(debug_package_id))}.ads",
+                    self._license_header()
+                    + PackageUnit(
+                        [],
+                        PackageDeclaration(
+                            debug_package_id,
+                            [
+                                SubprogramDeclaration(
+                                    ProcedureSpecification(
+                                        "Print",
+                                        [
+                                            Parameter(["Message"], "String"),
+                                        ],
+                                    )
                                 )
-                            )
-                        ],
-                        aspects=[
-                            SparkMode(),
-                        ],
-                    ),
-                    [],
-                    PackageBody(debug_package_id),
-                ).ads,
+                            ],
+                            aspects=[
+                                SparkMode(),
+                            ],
+                        ),
+                        [],
+                        PackageBody(debug_package_id),
+                    ).ads,
+                )
             )
 
-    def _write_top_level_package(self, directory: Path) -> None:
+        return files
+
+    def _create_top_level_package(self, directory: Path) -> list[File]:
+        files = []
+
         if self._prefix:
-            create_file(
-                Path(directory) / Path(file_name(self._prefix) + ".ads"),
-                self._license_header() + f"package {self._prefix} is\n\nend {self._prefix};",
+            files.append(
+                File(
+                    Path(directory) / Path(file_name(self._prefix) + ".ads"),
+                    self._license_header() + f"package {self._prefix} is\n\nend {self._prefix};",
+                )
             )
 
-    def _write_units(self, units: dict[ID, Unit], directory: Path) -> None:
+        return files
+
+    def _create_units(self, units: dict[ID, Unit], directory: Path) -> list[File]:
+        files = []
+
         for unit in units.values():
-            create_file(directory / Path(unit.name + ".ads"), self._license_header() + unit.ads)
+            files.append(
+                File(directory / Path(unit.name + ".ads"), self._license_header() + unit.ads)
+            )
 
             if unit.adb:
-                create_file(directory / Path(unit.name + ".adb"), self._license_header() + unit.adb)
+                files.append(
+                    File(directory / Path(unit.name + ".adb"), self._license_header() + unit.adb)
+                )
+
+        return files
 
     def _generate(self, model: Model, integration: Integration) -> dict[ID, Unit]:
         units: dict[ID, Unit] = {}
@@ -1454,14 +1515,6 @@ class Generator:
         )
 
         return conditions
-
-
-def create_file(filename: Path, content: str) -> None:
-    log.info("Creating %s", filename)
-
-    if filename.exists():
-        fail(f"file {filename} already exists", subsystem=Subsystem.GENERATOR)
-    filename.write_text(content)
 
 
 def integer_types(integer: Integer) -> list[Declaration]:

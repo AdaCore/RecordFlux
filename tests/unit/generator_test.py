@@ -144,10 +144,21 @@ def test_generate_missing_template_files(monkeypatch: MonkeyPatch, tmp_path: Pat
         Generator().generate(Model(), Integration(), tmp_path)
 
 
-def test_generate_existing_file(tmp_path: Path) -> None:
+def test_generate_partial_update(tmp_path: Path) -> None:
     Generator().generate(models.TLV_MODEL, Integration(), tmp_path)
-    with pytest.raises(RecordFluxError, match="^generator: error: file [^ ]+ already exists$"):
-        Generator().generate(models.TLV_MODEL, Integration(), tmp_path)
+    Generator().generate(models.TLV_MODEL, Integration(), tmp_path)
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            "generator: error: partial update of generated files\n"
+            "generator: info: files not generated in the current run could lead to unexpected"
+            " behavior: tlv-message.adb, tlv-message.ads, tlv.ads\n"
+            "generator: info: remove the affected files or choose another directory and retry"
+            "$"
+        ),
+    ):
+        Generator().generate(models.ETHERNET_MODEL, Integration(), tmp_path)
 
 
 @pytest.mark.parametrize("model", MODELS)

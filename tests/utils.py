@@ -185,7 +185,7 @@ def assert_executable_code(
     )
 
     p = subprocess.run(
-        ["./" + main.split(".")[0]],
+        ["obj/" + main.split(".")[0]],
         cwd=tmp_path,
         check=False,
         stdout=subprocess.PIPE,
@@ -263,7 +263,9 @@ def _create_files(
                type Build_Mode is ("strict", "asserts_enabled");
                Mode : Build_Mode := external ("mode", "strict");
 
-               for Source_Dirs use (".");
+               for Source_Dirs use ("src", "generated");
+               for Object_Dir use "obj";
+               for Create_Missing_Dirs use "True";
                for Main use ({main});
 
                package Builder is
@@ -289,11 +291,17 @@ def _create_files(
         )
     )
 
+    src_dir = tmp_path / "src"
+    src_dir.mkdir(exist_ok=True)
+
+    generated_dir = tmp_path / "generated"
+    generated_dir.mkdir()
+
     Generator(
         prefix if prefix is not None else "RFLX",
         debug=debug,
         ignore_unsupported_checksum=True,
-    ).generate(model, integration, tmp_path)
+    ).generate(model, integration, generated_dir)
 
 
 def session_main(

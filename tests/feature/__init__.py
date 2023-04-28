@@ -96,9 +96,12 @@ def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
 
     assert MAIN in complement
 
+    target_dir = tmp_path / "src"
+    target_dir.mkdir()
+
     for filename, content in complement.items():
-        (tmp_path / filename).write_text(content)
+        (target_dir / filename).write_text(content)
 
     src_dir = FEATURE_DIR / feature / "src"
     if src_dir.is_dir():
-        copytree(str(src_dir), str(tmp_path), dirs_exist_ok=True)
+        copytree(str(src_dir), str(target_dir), dirs_exist_ok=True)
