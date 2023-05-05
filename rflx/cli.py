@@ -12,7 +12,6 @@ from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Optional, Union
 
-import librflxlang
 from pkg_resources import get_distribution, resource_filename
 
 from rflx import __version__
@@ -299,7 +298,6 @@ def version() -> str:
     return "\n".join(
         [
             f"RecordFlux {__version__}",
-            f"RecordFlux-parser {librflxlang.version}",
             *dependencies,
         ]
     )

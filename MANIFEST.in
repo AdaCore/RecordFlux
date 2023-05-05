@@ -2,6 +2,12 @@
 prune *
 exclude .git* defaults* Makefile MANIFEST.in
 graft bin
+graft ide
 graft rflx
-graft rflx_ide
+include src/librflxlang.gpr
+recursive-include src/src *.ad?
+recursive-include src/gnatcoll-bindings/iconv *.ad? *.gpr *.c
+recursive-include src/gnatcoll-bindings/gmp *.ad? *.gpr *.c
+recursive-include src/python py.typed *.py *.pyi
+recursive-include src/langkit/langkit/support *.gpr *.ad?
 global-exclude *.py[cod]

@@ -1,3 +1,0 @@
-./contrib/langkit
-build
-wheel

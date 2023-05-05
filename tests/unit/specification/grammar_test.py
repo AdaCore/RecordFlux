@@ -1,7 +1,7 @@
 from pathlib import Path
 
-import librflxlang as lang
 import pytest
+import rflx_lang as lang
 
 from rflx import expression as expr, model
 from rflx.common import STDIN

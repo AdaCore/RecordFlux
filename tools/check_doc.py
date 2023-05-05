@@ -21,7 +21,7 @@ import textwrap
 from pathlib import Path
 from typing import Optional
 
-from librflxlang import AnalysisContext, GrammarRule
+from rflx_lang import AnalysisContext, GrammarRule
 from ruamel.yaml import YAML
 from ruamel.yaml.parser import ParserError
 

@@ -1,10 +1,22 @@
 import site
+import subprocess
 
-from setuptools import find_packages, setup
+from setuptools import setup
+from wheel.bdist_wheel import bdist_wheel
 
 # https://github.com/pypa/pip/issues/7953
 # PEP517 workaround
 site.ENABLE_USER_SITE = True
+
+
+class BuildParser(bdist_wheel):  # type: ignore[misc]
+    def run(self) -> None:
+        subprocess.run(
+            ["gprbuild", "-j0", "-Psrc/librflxlang.gpr", "-XLIBRARY_TYPE=static-pic"],
+            check=True,
+        )
+        super().run()
+
 
 with open("README.md", encoding="utf-8") as f:
     readme = f.read()
@@ -39,8 +51,11 @@ setup(
         "Topic :: Software Development :: Code Generators",
         "Topic :: System :: Networking",
     ],
-    packages=find_packages(include=("rflx", "rflx.*", "rflx_ide", "rflx_ide.*")),
+    packages=["rflx", "rflx_ide", "rflx_lang"],
+    package_dir={"rflx_ide": "ide", "rflx_lang": "src/python/librflxlang"},
+    package_data={"rflx_lang": ["librflxlang.so", "py.typed", "*.pyi"]},
     include_package_data=True,
+    cmdclass={"bdist_wheel": BuildParser},
     python_requires=">=3.8",
     install_requires=[
         "attrs >=20, <22",
@@ -49,7 +64,6 @@ setup(
         "pydotplus >=2, <3",
         "ruamel.yaml >=0.17, <0.18",
         "z3-solver >=4, <5",
-        "RecordFlux-parser ==0.13.0",
     ],
     extras_require={
         "devel": [

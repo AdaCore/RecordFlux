@@ -5,12 +5,18 @@
 VERBOSE ?= @
 TEST_PROCS ?= $(shell nproc)
 RECORDFLUX_ORIGIN ?= https://github.com/AdaCore
+GNATCOLL_ORIGIN ?= https://github.com/AdaCore
+LANGKIT_ORIGIN ?= https://github.com/AdaCore
 VERSION ?= $(shell python3 -c "import setuptools_scm; print(setuptools_scm.get_version())")
 SDIST ?= dist/RecordFlux-$(VERSION).tar.gz
 
 BUILD_DIR = build
-PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps rflx rflx_ide tests tools stubs setup.py
+SRC_DIR = src
+BUILD_SRC_DIR := $(PWD)/$(BUILD_DIR)/$(SRC_DIR)
+PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps ide language rflx tests tools stubs setup.py
 DEVUTILS_HEAD = a5fac2d569a54c3f0d8a65b3e07efeebb471f21e
+GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
+LANGKIT_HEAD = 02c2040c95cf8174f7e98969d751cde9639bd2bd
 
 SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
@@ -30,7 +36,7 @@ export PYTHONPATH := $(PWD)
 # @param $(1) directory of the git repository
 # @param $(2) commit id
 define checkout_repo
-$(shell test -d $(1) && git -C $(1) fetch && git -C $(1) -c advice.detachedHead=false checkout $(2))
+$(shell test -d $(1) && git -C $(1) fetch && git -C $(1) -c advice.detachedHead=false checkout $(2) > /dev/null)
 endef
 
 # Get the HEAD revision of the git repository.
@@ -63,6 +69,8 @@ $(if
 endef
 
 $(shell $(call reinit_repo,devutils,$(DEVUTILS_HEAD)))
+$(shell $(call reinit_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD)))
+$(shell $(call reinit_repo,contrib/langkit,$(LANGKIT_HEAD)))
 
 .PHONY: all
 
@@ -70,16 +78,29 @@ all: check test prove
 
 .PHONY: init deinit
 
-init: devutils
+init: devutils contrib/gnatcoll-bindings contrib/langkit
 	$(VERBOSE)$(call checkout_repo,devutils,$(DEVUTILS_HEAD))
+	$(VERBOSE)$(call checkout_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD))
+	$(VERBOSE)$(call checkout_repo,contrib/langkit,$(LANGKIT_HEAD))
+	$(VERBOSE)rm -f contrib/langkit/langkit/py.typed
 	$(VERBOSE)ln -sf devutils/pyproject.toml
 
 deinit:
 	$(VERBOSE)$(call remove_repo,devutils)
-	$(VERBOSE)rm pyproject.toml
+	$(VERBOSE)$(call remove_repo,contrib/gnatcoll-bindings)
+	$(VERBOSE)$(call remove_repo,contrib/langkit)
+	$(VERBOSE)rm -f pyproject.toml
 
 devutils:
 	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/RecordFlux-devutils.git devutils
+
+contrib/gnatcoll-bindings:
+	$(VERBOSE)mkdir -p contrib
+	$(VERBOSE)git clone $(GNATCOLL_ORIGIN)/gnatcoll-bindings.git contrib/gnatcoll-bindings
+
+contrib/langkit:
+	$(VERBOSE)mkdir -p contrib
+	$(VERBOSE)git clone $(LANGKIT_ORIGIN)/langkit.git contrib/langkit
 
 .PHONY: check check_packages check_dependencies check_contracts check_doc
 
@@ -99,13 +120,16 @@ check_doc:
 
 .PHONY: test test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
 
-test: test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
+test: test_coverage test_unit_coverage test_language_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
 
 test_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered tests/unit tests/integration
 
 test_unit_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tools --cov-branch --cov-fail-under=94.68 --cov-report=term-missing:skip-covered tests/unit tests/tools
+
+test_language_coverage:
+	timeout -k 60 7200 $(PYTEST) --cov=rflx_lang --cov-branch --cov-fail-under=74 --cov-report=term-missing:skip-covered tests/language
 
 test_property:
 	$(PYTEST) tests/property
@@ -173,11 +197,21 @@ prove_property_tests: $(GNATPROVE_CACHE_DIR)
 $(GNATPROVE_CACHE_DIR):
 	mkdir -p $(GNATPROVE_CACHE_DIR)
 
-.PHONY: install_devel upgrade_devel install_devel_edge install_git_hooks install_gnat printenv_gnat
+.PHONY: install_build_deps install install_devel upgrade_devel install_devel_edge install_git_hooks install_gnat printenv_gnat
 
-install_devel:
+install_build_deps:
 	tools/check_pip_version.py
+	pip install setuptools_scm wheel build contrib/langkit
+
+install: install_build_deps $(SDIST)
 	$(MAKE) -C devutils install_devel
+	pip3 install --force-reinstall "$(SDIST)[devel]"
+
+install_devel: install_build_deps $(SDIST)
+	$(MAKE) -C devutils install_devel
+	# Force reinstallation to update rflx_lang
+	pip3 install --force-reinstall $(SDIST)
+	# Enable development mode
 	pip3 install -e ".[devel]"
 
 upgrade_devel:
@@ -252,13 +286,24 @@ build_pdf_doc_user_guide:
 
 dist: $(SDIST)
 
-$(SDIST): pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
+$(SDIST): $(SRC_DIR)/gdbinit.py pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
 	python3 -m build --sdist
+
+$(SRC_DIR)/gdbinit.py: export PYTHONPATH=$(PWD)
+$(SRC_DIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py language/rflx_ast.py
+	mkdir -p $(BUILD_SRC_DIR)
+	language/generate.py $(BUILD_SRC_DIR) $(VERSION)
+	cp -a $(PWD)/contrib/langkit $(BUILD_SRC_DIR)/
+	cp -a $(PWD)/contrib/gnatcoll-bindings $(BUILD_SRC_DIR)/
+	mv $(BUILD_SRC_DIR)/librflxlang.gpr $(BUILD_SRC_DIR)/librflxlang.gpr.orig
+	tools/generate_gpr_file.py rflxlang $(BUILD_SRC_DIR) $(BUILD_SRC_DIR)/librflxlang.gpr.orig
+	rm -rf $(SRC_DIR)
+	mv $(BUILD_SRC_DIR) $(SRC_DIR)
 
 .PHONY: clean
 
 clean:
-	rm -rf $(BUILD_DIR) .coverage .hypothesis .mypy_cache .pytest_cache
+	rm -rf $(BUILD_DIR) $(SRC_DIR) .coverage .hypothesis .mypy_cache .pytest_cache
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean

@@ -180,8 +180,6 @@ def test_parse_error_aggregate_non_number() -> None:
     assert_error(
         path,
         [
-            f"{path}:10:26: parser: error: Cannot parse <relation>",
-            f"{path}:10:39: parser: error: Expected Numeral, got 'First'",
             f"{path}:10:39: parser: error: Expected ';', got 'First'",
         ],
     )

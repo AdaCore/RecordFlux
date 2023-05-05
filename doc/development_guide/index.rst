@@ -33,6 +33,8 @@ The use of a `virtual environment <https://docs.python.org/3/tutorial/venv.html>
    $ . .venv/bin/activate
    $ make install_devel
 
+-**Note:** The package must be explicitly reinstalled using `make install` before changes to the `language` module take effect.
+
 The repository contains configuration files for Visual Studio Code which enable most linters available from the Makefile and coverage reports integrated into the IDE.
 To make use of the coverage data, the `Coverage Gutters <https://github.com/ryanluker/vscode-coverage-gutters>` extension needs to be installed.
 The path to GNAT and SPARK has to be configured to allow compilation and proof tests to succeed.

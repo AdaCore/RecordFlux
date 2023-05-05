@@ -1,0 +1,1544 @@
+with GreenTLS;
+with TLS_Alert;
+with TLS_Handshake;
+
+package TLS_Handshake_Session is
+
+   type Hash_Context is
+      message
+         Length : GreenTLS::KM_Length;
+         Data   : Opaque
+            with Size => 8 * Length;
+      end message;
+
+   generic
+      Record_Data_Channel : Channel with Readable, Writable;
+      Record_Control_Channel : Channel with Writable;
+      RNG_Channel : Channel with Readable, Writable;
+      Keystore_Channel : Channel with Readable, Writable;
+      Application_Control_Channel : Channel with Readable, Writable;
+      Configuration_Channel : Channel with Readable;
+      Connection_Channel : Channel with Readable;
+
+      with function Calculate_Binders (PSKs : GreenTLS::PSKs; Transcript_Hash : GreenTLS::Content) return TLS_Handshake::PSK_Binder_Entries;
+      with function Calculate_Binders_Length (PSKs : GreenTLS::PSKs) return TLS_Handshake::Binders_Length;
+      with function Calculate_ECDHE_Key (Client_Share : TLS_Handshake::Key_Share_Entry; Server_Share : TLS_Handshake::Key_Share_SH) return GreenTLS::Content;
+      with function Create_Client_Hello_Extensions (Configuration : GreenTLS::Configuration) return TLS_Handshake::CH_Extensions;
+      with function Derive_Secret (Secret : GreenTLS::Content; Label : Opaque; Transcript_Hash : GreenTLS::Content) return GreenTLS::Content;
+      with function Empty_Hash return Hash_Context;
+      with function Get_Hash (Context : Hash_Context) return GreenTLS::Content;
+      with function Get_Hash_Length (Cipher_Suite : TLS_Handshake::Cipher_Suite) return GreenTLS::KM_Length;
+      with function Get_Zero_Content (Length : GreenTLS::KM_Length) return GreenTLS::Content;
+      with function HKDF_Expand_Label (Secret : GreenTLS::Content; Label : Opaque; Context : GreenTLS::Content; Length : GreenTLS::KM_Length) return GreenTLS::Content;
+      with function HKDF_Extract (Salt : GreenTLS::Content; IKM : GreenTLS::Content) return GreenTLS::Content;
+      with function HMAC (Cipher_Suite : TLS_Handshake::Cipher_Suite; Key : GreenTLS::Content; Hash : GreenTLS::Content) return GreenTLS::Content;
+      with function Select_Supported_Groups (Server_Preferred_Groups : TLS_Handshake::Named_Groups; Supported_Groups : TLS_Handshake::Named_Groups) return TLS_Handshake::Named_Groups;
+      with function Truncate_Client_Hello (Client_Hello : TLS_Handshake::Handshake) return GreenTLS::Content;
+      with function Update_Hash (Context : Hash_Context; Data : Opaque) return Hash_Context;
+      with function Validate_Certificate_Verify_Signature (Certificate_Message : TLS_Handshake::Certificate; Certificate_Verify_Message : TLS_Handshake::Certificate_Verify; Transcript_Hash : GreenTLS::Content) return GreenTLS::Signature_Validation_Result;
+      with function Validate_Server_Certificate (Certificate_Message : TLS_Handshake::Certificate; Configuration : GreenTLS::Configuration; Connection : GreenTLS::Connection) return GreenTLS::Certificate_Validation_Result;
+   session Client is
+      Application_Layer_Protocol_Negotiation_Received : Boolean := False;
+      Binders : TLS_Handshake::PSK_Binder_Entries;
+      Binders_Length : TLS_Handshake::Binders_Length;
+      CCR_Handshake_Message : TLS_Handshake::Handshake;
+      CH_Cookie_Prepared : Boolean := False;
+      CH_Key_Share_Prepared : Boolean := False;
+      CH_PSK_Prepared : Boolean := False;
+      Certificate_Authorities : TLS_Handshake::Certificate_Authorities;
+      Certificate_Authorities_Received : Boolean := False;
+      Certificate_Request : TLS_Handshake::Certificate_Request;
+      Certificate_Request_Received : Boolean := False;
+      Certificate_Verify_Handshake_Message : TLS_Handshake::Handshake;
+      Client_Application_Traffic_Secret : GreenTLS::Content;
+      Client_Handshake_Traffic_Secret : GreenTLS::Content;
+      Client_Hello_1_Hash : Hash_Context;
+      Client_Hello_Handshake_Message : TLS_Handshake::Handshake;
+      Client_Shares : TLS_Handshake::Key_Share_Entries;
+      Configuration : GreenTLS::Configuration;
+      Connection : GreenTLS::Connection;
+      DHE_Accepted : Boolean := False;
+      Derived_Handshake_Secret : GreenTLS::Content;
+      Early_Data_Received : Boolean := False;
+      Early_Secret : GreenTLS::Content;
+      Encrypted_Extensions_Handshake_Message : TLS_Handshake::Handshake;
+      Error : TLS_Alert::Alert_Description;
+      Extensions_List : TLS_Handshake::CH_Extensions;
+      Finished_Key : GreenTLS::Content;
+      Finished_Handshake_Message : TLS_Handshake::Handshake;
+      Hash_Length : GreenTLS::KM_Length;
+      Heartbeat_Received : Boolean := False;
+      Identity_Index : TLS_Handshake::Identity_Index;
+      Keystore_Message : GreenTLS::Keystore_Message;
+      Max_Fragment_Length : TLS_Handshake::Max_Fragment_Length_Value;
+      Max_Fragment_Length_Received : Boolean := False;
+      OID_Filters : TLS_Handshake::OID_Filters;
+      OID_Filters_Received : Boolean := False;
+      PSK_Identities : TLS_Handshake::PSK_Identities;
+      PSKs : GreenTLS::PSKs;
+      Post_Handshake_Handshake_Message : TLS_Handshake::Handshake;
+      Random_Message : GreenTLS::RNG_Message;
+      Pre_Shared_Key_CH : TLS_Handshake::Pre_Shared_Key_CH;
+      Resumption_Master_Secret : GreenTLS::Content;
+      Retry_Request_Received : Boolean := False;
+      Selected_Group : TLS_Handshake::Named_Group;
+      Server_Application_Traffic_Secret : GreenTLS::Content;
+      Server_Handshake_Traffic_Secret : GreenTLS::Content;
+      Server_Hello_Handshake_Message : TLS_Handshake::Handshake;
+      Server_Name_Extension : TLS_Handshake::EE_Extension;
+      Server_Name_Received : Boolean := False;
+      Server_Preferred_Groups : TLS_Handshake::Supported_Groups;
+      Signature_Algorithms : TLS_Handshake::Signature_Algorithms;
+      Signature_Algorithms_Cert : TLS_Handshake::Signature_Algorithms_Cert;
+      Signature_Algorithms_Cert_Received : Boolean := False;
+      Signature_Algorithms_Received : Boolean := False;
+      Success : Boolean;
+      Supported_Groups : TLS_Handshake::Named_Groups;
+      Supported_Groups_Received : Boolean := False;
+      Transcript_Hash : Hash_Context;
+
+      Certificate_Message : TLS_Handshake::Certificate renames CCR_Handshake_Message.Payload;
+      Certificate_Request_Message : TLS_Handshake::Certificate_Request renames CCR_Handshake_Message.Payload;
+      Certificate_Verify_Message : TLS_Handshake::Certificate_Verify renames Certificate_Verify_Handshake_Message.Payload;
+      Client_Hello_Message : TLS_Handshake::Client_Hello renames Client_Hello_Handshake_Message.Payload;
+      Encrypted_Extensions_Message : TLS_Handshake::Encrypted_Extensions renames Encrypted_Extensions_Handshake_Message.Payload;
+      Finished_Message : TLS_Handshake::Finished renames Finished_Handshake_Message.Payload;
+      Key_Update_Message : TLS_Handshake::Key_Update renames Post_Handshake_Handshake_Message.Payload;
+      New_Session_Ticket_Message : TLS_Handshake::New_Session_Ticket renames Post_Handshake_Handshake_Message.Payload;
+      PHA_Certificate_Request_Message : TLS_Handshake::Certificate_Request renames Post_Handshake_Handshake_Message.Payload;
+      Server_Hello_Message : TLS_Handshake::Server_Hello renames Server_Hello_Handshake_Message.Payload;
+   begin
+      state Start is
+      begin
+         Connection_Channel'Read (Connection);
+         Configuration_Channel'Read (Configuration);
+      transition
+         goto Error_Internal_Error
+            if Connection'Valid = False
+         goto Error_Internal_Error
+            if Configuration'Valid = False
+         goto Server_Preferred_Groups
+      end Start;
+
+      state Server_Preferred_Groups is
+      begin
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_Server_Preferred_Groups, Length => 0, Payload => []));
+         Keystore_Channel'Read (Keystore_Message);
+      transition
+         goto Error_Internal_Error
+            if Keystore_Message'Valid = False
+               or Keystore_Message.Tag /= GreenTLS::Keystore_Response
+               or Keystore_Message.Request /= GreenTLS::Keystore_Request_Server_Preferred_Groups
+         goto Server_Preferred_Groups_Configure
+      end Server_Preferred_Groups;
+
+      state Server_Preferred_Groups_Configure is
+      begin
+         Server_Preferred_Groups := TLS_Handshake::Supported_Groups (Keystore_Message.Payload);
+      transition
+         goto Error_Internal_Error
+            if Server_Preferred_Groups'Valid = False
+         goto Server_Preferred_Groups_Select
+      end Server_Preferred_Groups_Configure;
+
+      state Server_Preferred_Groups_Select is
+      begin
+         Supported_Groups := Select_Supported_Groups (Server_Preferred_Groups.Groups, Configuration.Supported_Groups_Groups);
+      transition
+         goto Create_Client_Hello_Extensions
+      end Server_Preferred_Groups_Select;
+
+      state Create_Client_Hello_Extensions is
+         Supported_Version : TLS_Handshake::Supported_Version;
+      begin
+         Supported_Version := TLS_Handshake::Supported_Version'(Version => TLS_Handshake::TLS_1_3);
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Supported_Versions, Data_Length => Supported_Version'Size, Data => Supported_Version'Opaque));
+         Extensions_List'Extend (Create_Client_Hello_Extensions (Configuration));
+      transition
+         goto Error_Internal_Error
+            if Extensions_List'Valid = False
+         goto Start_Post_Handshake_Auth_Extension
+            if Configuration.Post_Handshake_Auth_Enabled = True
+         goto Start_DHE
+            if TLS_Handshake::PSK_DHE_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+         goto Start_PSK
+            if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+         goto Error_Internal_Error
+      exception
+         goto Error_Internal_Error
+      end Create_Client_Hello_Extensions;
+
+      state Start_Post_Handshake_Auth_Extension is
+      begin
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Post_Handshake_Auth, Data_Length => 0, Data => []));
+      transition
+         goto Error_Internal_Error
+            if Extensions_List'Valid = False
+         goto Start_DHE
+            if TLS_Handshake::PSK_DHE_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+         goto Start_PSK
+            if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+         goto Error_Internal_Error
+      exception
+         goto Error_Internal_Error
+      end Start_Post_Handshake_Auth_Extension;
+
+      state Start_DHE is
+      begin
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Supported_Groups, Data_Length => Modes'Size, Data => Modes)
+            where Modes = TLS_Handshake::Supported_Groups'(Length => Configuration.Supported_Groups_Length, Groups => Configuration.Supported_Groups_Groups));
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Key_Share, Data_Length => Modes'Size, Data => Modes)
+            where Modes = TLS_Handshake::Key_Share_CH'(Length => Configuration.Key_Shares_Length, Shares => Configuration.Key_Shares_Shares));
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Signature_Algorithms, Data_Length => Modes'Size, Data => Modes)
+            where Modes = TLS_Handshake::Signature_Algorithms'(Length => Configuration.Signature_Algorithms_Length, Algorithms => Configuration.Signature_Algorithms_Algorithms));
+      transition
+         goto Error_Internal_Error
+            if Extensions_List'Valid = False
+         goto Start_DHE_Signature_Algorithms
+            with Desc => "rfc8446.txt+2259:43-2261:36"
+            if Configuration.Server_Authentication_Enabled = True
+         goto Start_PSK
+            if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+         goto Start_Send
+      exception
+         goto Error_Internal_Error
+      end Start_DHE;
+
+      state Start_DHE_Signature_Algorithms is
+      begin
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Signature_Algorithms_Cert, Data_Length => Modes'Size, Data => Modes)
+            where Modes = TLS_Handshake::Signature_Algorithms_Cert'(Length => Configuration.Signature_Algorithms_Cert_Length, Algorithms => Configuration.Signature_Algorithms_Cert_Algorithms));
+      transition
+         goto Error_Internal_Error
+            if Extensions_List'Valid = False
+         goto Start_PSK
+            if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+         goto Start_Send
+      exception
+         goto Error_Internal_Error
+      end Start_DHE_Signature_Algorithms;
+
+      state Start_PSK is
+      begin
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_PSKs, Length => Connection'Size, Payload => Connection));
+         Keystore_Channel'Read (Keystore_Message);
+      transition
+         goto Error_Internal_Error
+            if Keystore_Message'Valid = False
+               or Keystore_Message.Tag /= GreenTLS::Keystore_Response
+               or Keystore_Message.Request /= GreenTLS::Keystore_Request_PSKs
+               or (Keystore_Message.Length = 0
+                   and TLS_Handshake::PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes_Modes)
+         goto Start_Send
+            if Keystore_Message.Length = 0
+         goto Start_PSK_Extension_Check
+      end Start_PSK;
+
+      state Start_PSK_Extension_Check is
+      begin
+         PSKs := GreenTLS::PSK_Message (Keystore_Message.Payload).PSKs;
+         Binders_Length := Calculate_Binders_Length (PSKs);
+         PSK_Identities := [for K in PSKs => TLS_Handshake::PSK_Identity'(Length => K.Identity_Length, Identity => K.Identity_Identity, Obfuscated_Ticket_Age => K.Identity_Obfuscated_Ticket_Age)];
+         Pre_Shared_Key_CH := TLS_Handshake::Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Size, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => []);
+      transition
+         goto Error_Internal_Error
+            if Pre_Shared_Key_CH'Valid = False
+         goto Start_Get_Random
+      exception
+         goto Error_Internal_Error
+      end Start_PSK_Extension_Check;
+
+      state Start_Get_Random is
+      begin
+         RNG_Channel'Write (GreenTLS::RNG_Message'(Tag => GreenTLS::RNG_Request, Length => 32));
+         RNG_Channel'Read (Random_Message);
+      transition
+         goto Error_Internal_Error
+            if Random_Message'Valid = False
+               or Random_Message.Tag /= GreenTLS::RNG_Response
+               or Random_Message.Length /= 32
+         goto Start_PSK_Extensions
+      end Start_Get_Random;
+
+      state Start_PSK_Extensions is
+         Client_Hello_Hash : Hash_Context;
+      begin
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_PSK_Key_Exchange_Modes, Data_Length => Modes'Size, Data => Modes)
+            where Modes = TLS_Handshake::PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes_Modes));
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Pre_Shared_Key, Data_Length => Pre_Shared_Key_CH'Size, Data => Pre_Shared_Key_CH));
+         Client_Hello_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Client_Hello, Length => CH'Size, Payload => CH)
+            where CH = TLS_Handshake::Client_Hello'(Legacy_Version => TLS_Handshake::TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Legacy_Session_ID => [], Cipher_Suites_Length => Configuration.Cipher_Suites'Size, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Legacy_Compression_Methods => [], Extensions_Length => Extensions_List'Size, Extensions => Extensions_List);
+         Client_Hello_Hash := Empty_Hash;
+         Client_Hello_Hash := Update_Hash (Client_Hello_Hash, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
+         Binders := Calculate_Binders (PSKs, Get_Hash (Client_Hello_Hash));
+         Extensions_List := [for E in Extensions_List if E.Tag /= TLS_Handshake::ET_Pre_Shared_Key => E];
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Pre_Shared_Key, Data_Length => PSK_CH'Size, Data => PSK_CH)
+            where PSK_CH = TLS_Handshake::Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Size, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => Binders));
+      transition
+         goto Error_Internal_Error
+            if Extensions_List'Valid = False
+         goto Start_Send
+      exception
+         goto Error_Internal_Error
+      end Start_PSK_Extensions;
+
+      state Start_Send is
+      begin
+         Record_Data_Channel'Write (Client_Hello_Handshake_Message);
+         Client_Hello_1_Hash := Empty_Hash;
+         Client_Hello_1_Hash := Update_Hash (Client_Hello_1_Hash, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
+         Transcript_Hash := Empty_Hash;
+         Transcript_Hash := Update_Hash (Transcript_Hash, Client_Hello_Handshake_Message'Opaque);
+         Client_Hello_Message := TLS_Handshake::Client_Hello (Client_Hello_Handshake_Message.Payload);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Start_Send_Client_Early_Traffic_Secret
+            if Configuration.Early_Data_Enabled = True
+         goto Wait_SH
+      end Start_Send;
+
+      state Start_Send_Client_Early_Traffic_Secret
+         with Desc => "rfc8446.txt+2938:43-2940:30"
+      is
+         Client_Early_Traffic_Secret : GreenTLS::Content;
+         Client_Key : GreenTLS::Content;
+         Client_IV : GreenTLS::Content;
+      begin
+         Early_Secret := HKDF_Extract (Get_Zero_Content (Get_Hash_Length (PSKs'Head.Cipher_Suite)), GreenTLS::Content'(Data => PSKs'Head.Key));
+         Client_Early_Traffic_Secret := Derive_Secret (Early_Secret, "c e traffic", Get_Hash (Transcript_Hash));
+         -- FIXME: Replace 256 by key length and IV length determined by keystore
+         Client_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Early_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
+         Client_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Early_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
+         Keystore_Message'Reset;
+         Record_Data_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::Key_Update_Client, Length => KU'Size, Data => KU)
+            where KU = GreenTLS::Key_Update_Message'(Key_Length => Client_Key'Size, Key => Client_Key.Data, IV_Length => Client_IV'Size, IV => Client_IV.Data));
+         Client_Early_Traffic_Secret'Reset;
+         Client_Key'Reset;
+         Client_IV'Reset;
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Wait_SH
+      end Start_Send_Client_Early_Traffic_Secret;
+
+      state Wait_SH is
+      begin
+         Record_Data_Channel'Read (Server_Hello_Handshake_Message);
+         Transcript_Hash := Update_Hash (Transcript_Hash, Server_Hello_Handshake_Message'Opaque);
+      transition
+         goto Error_Decode_Error
+            if Server_Hello_Handshake_Message'Valid = False
+         goto Error_Unexpected_Message
+            if Server_Hello_Handshake_Message.Tag /= TLS_Handshake::HT_Server_Hello
+         goto Error_Decode_Error
+            if Server_Hello_Message'Valid = False
+         goto Error_Protocol_Version
+            if Server_Hello_Message.Legacy_Version /= TLS_Handshake::TLS_1_2
+         goto Error_Illegal_Parameter
+            if Server_Hello_Message.Legacy_Session_ID_Length /= 0
+               or Server_Hello_Message.Legacy_Compression_Method /= 0
+         goto Error_Illegal_Parameter
+            if Server_Hello_Message.Cipher_Suite not in Client_Hello_Message.Cipher_Suites
+         goto Error_Missing_Extension
+            if (for all E in Server_Hello_Message.Extensions =>
+                   E.Tag /= TLS_Handshake::ET_Supported_Versions)
+         goto Error_Illegal_Parameter
+            if (for some E in Server_Hello_Message.Extensions =>
+                   E.Tag = TLS_Handshake::ET_Supported_Versions
+                   and TLS_Handshake::TLS_1_3 /= TLS_Handshake::Supported_Version (E.Data).Version)
+         goto Error_Illegal_Parameter
+            if (for some E in Server_Hello_Message.Extensions =>
+                   E.Tag not in [for E in Client_Hello_Message.Extensions => E.Tag])
+         goto Error_Illegal_Parameter
+            with Desc => "rfc8446.txt+2770:46-2771:59"
+            if TLS_Handshake::PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes_Modes
+               and (for some E in Server_Hello_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Key_Share)
+         goto Wait_SH_Parse_HRR
+            if Server_Hello_Message.HRR_Extensions'Present
+               and Retry_Request_Received = False
+         goto Error_Unexpected_Message
+            if Server_Hello_Message.HRR_Extensions'Present = False
+               and Retry_Request_Received = True
+         goto Wait_SH_Extensions_PSK
+            with Desc => "rfc8446.txt+643:57-646:21"
+            if (for some E in Server_Hello_Message.Extensions =>
+                   E.Tag = TLS_Handshake::ET_Pre_Shared_Key)
+         goto Wait_SH_Extensions_DHE
+            with Desc => "rfc8446.txt+640:45-642:47"
+            if (for some E in Server_Hello_Message.Extensions =>
+                   E.Tag = TLS_Handshake::ET_Key_Share)
+         goto Error_Invalid_Configuration
+      end Wait_SH;
+
+      state Wait_SH_Extensions_PSK is
+         Extensions : TLS_Handshake::SH_Extensions := [for E in Server_Hello_Message.Extensions if E.Tag = TLS_Handshake::ET_Pre_Shared_Key => E];
+      begin
+         Identity_Index := TLS_Handshake::Pre_Shared_Key_SH (Extensions'Head.Data).Selected_Identity;
+      transition
+         goto Error_Illegal_Parameter
+            with Desc => "rfc8446.txt+3199:4-3202:29"
+            if Identity_Index /= 0
+               and (for some E in Server_Hello_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Early_Data)
+         goto Error_Illegal_Parameter
+            if (for some E in Client_Hello_Message.Extensions =>
+                   E.Tag = TLS_Handshake::ET_Pre_Shared_Key
+                   and TLS_Handshake::Pre_Shared_Key_CH (E.Data).Identities'Size < Identity_Index)
+         goto Wait_SH_Extensions_PSK_Request
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_Extensions_PSK;
+
+      state Wait_SH_Extensions_PSK_Request is
+      begin
+         --  FIXME: use Identity_Index to determine Selected_Identity
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_PSKs, Length => Selected_Identity'Size, Payload => Selected_Identity)
+            where Selected_Identity = []);
+         Keystore_Channel'Read (Keystore_Message);
+      transition
+         goto Error_Internal_Error
+            if Keystore_Message'Valid = False
+               or Keystore_Message.Tag /= GreenTLS::Keystore_Response
+               or Keystore_Message.Request /= GreenTLS::Keystore_Request_PSKs
+               or GreenTLS::PSK_Message (Keystore_Message.Payload)'Valid = False
+         goto Wait_SH_Extensions_PSK_Validation
+      end Wait_SH_Extensions_PSK_Request;
+
+      state Wait_SH_Extensions_PSK_Validation is
+         Identity_Cipher_Suite : TLS_Handshake::Cipher_Suite;
+      begin
+         Identity_Cipher_Suite := GreenTLS::PSK_Message (Keystore_Message.Payload).PSKs'Head.Cipher_Suite;
+      transition
+         goto Error_Illegal_Parameter
+            if Identity_Cipher_Suite /= Server_Hello_Message.Cipher_Suite
+         goto Wait_SH_Extensions_DHE
+            with Desc => "rfc8446.txt+2765:4-2766:36, rfc8446.txt+646:24-647:60"
+            if (for some E in Server_Hello_Message.Extensions =>
+                   E.Tag = TLS_Handshake::ET_Key_Share)
+         goto Set_Record_Keys
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_Extensions_PSK_Validation;
+
+      state Wait_SH_Extensions_DHE is
+         SH_Key_Share_Extensions : TLS_Handshake::SH_Extensions := [for E in Server_Hello_Message.Extensions if E.Tag = TLS_Handshake::ET_Key_Share => E];
+         CH_Key_Share_Extensions : TLS_Handshake::CH_Extensions := [for E in Client_Hello_Message.Extensions if E.Tag = TLS_Handshake::ET_Key_Share => E];
+      begin
+         Selected_Group := TLS_Handshake::Key_Share_SH (SH_Key_Share_Extensions'Head.Data).Group;
+         DHE_Accepted := True;
+      transition
+         goto Error_Illegal_Parameter
+            with Desc => "rfc8446.txt+2766:39-2768:55"
+            if (for some S in TLS_Handshake::Key_Share_CH (CH_Key_Share_Extensions'Head.Data).Shares =>
+                   S.Group = Selected_Group) = False
+         goto Set_Record_Keys
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_Extensions_DHE;
+
+      state Wait_SH_Parse_HRR is
+         Client_Supported_Groups : TLS_Handshake::Named_Groups;
+         Supported_Groups_Extensions : TLS_Handshake::CH_Extensions := [for E in Client_Hello_Message.Extensions if E.Tag = TLS_Handshake::ET_Supported_Groups => E];
+         Key_Share_Extensions : TLS_Handshake::CH_Extensions := [for E in Client_Hello_Message.Extensions if E.Tag = TLS_Handshake::ET_Key_Share => E];
+      begin
+         Retry_Request_Received := True;
+         Client_Supported_Groups := TLS_Handshake::Supported_Groups (Supported_Groups_Extensions'Head.Data).Groups;
+         Client_Shares := TLS_Handshake::Key_Share_CH (Key_Share_Extensions'Head.Data).Shares;
+      transition
+         goto Error_Illegal_Parameter
+            with Desc => "rfc8446.txt+1825:70-1829:28"
+            if (for some E in Server_Hello_Message.Extensions =>
+                   E.Tag not in [for E in Client_Hello_Message.Extensions => E.Tag]
+                   and E.Tag /= TLS_Handshake::ET_Cookie)
+         goto Error_Illegal_Parameter
+            with Desc => "rfc8446.txt+2736:21-2738:23"
+            if (for some E in Server_Hello_Message.HRR_Extensions =>
+                   E.Tag = TLS_Handshake::ET_Key_Share
+                   and TLS_Handshake::Key_Share_HRR (E.Data).Selected_Group not in Client_Supported_Groups)
+         goto Error_Illegal_Parameter
+            with Desc => "rfc8446.txt+2738:29-2740:31"
+            if (for some E in Server_Hello_Message.HRR_Extensions =>
+                   E.Tag = TLS_Handshake::ET_Key_Share
+                   and (for some S in Client_Shares =>
+                           S.Group = TLS_Handshake::Key_Share_HRR (E.Data).Selected_Group))
+         goto Wait_SH_Prepare_CH
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_Parse_HRR;
+
+      state Wait_SH_Prepare_CH
+         with Desc => "rfc8446.txt+1497:7-1498:70"
+      is
+      begin
+         Extensions_List'Reset;
+         Extensions_List'Extend ([for E in Client_Hello_Message.Extensions
+                                  if E.Tag /= TLS_Handshake::ET_Key_Share
+                                  and E.Tag /= TLS_Handshake::ET_Early_Data
+                                  and E.Tag /= TLS_Handshake::ET_Pre_Shared_Key
+                                  => E]);
+      transition
+         goto Wait_SH_Prepare_CH_Dispatch
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_Prepare_CH;
+
+      state Wait_SH_Prepare_CH_Dispatch is
+      begin
+      transition
+         goto Wait_SH_Prepare_CH_Key_Share
+            if CH_Key_Share_Prepared = False
+               and (for some E in Server_Hello_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Key_Share)
+         goto Wait_SH_Prepare_CH_Cookie
+            if CH_Cookie_Prepared = False
+               and (for some E in Server_Hello_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Cookie)
+         goto Wait_SH_Prepare_CH_PSK
+            if CH_PSK_Prepared = False
+               and (for some E in Server_Hello_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Pre_Shared_Key)
+         goto Wait_SH_Send_CH
+      end Wait_SH_Prepare_CH_Dispatch;
+
+      state Wait_SH_Prepare_CH_Key_Share
+         with Desc => "rfc8446.txt+2742:12-2753:39"
+      is
+      begin
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Key_Share, Data_Length => Key_Share'Size, Data => Key_Share)
+            where Key_Share = TLS_Handshake::Key_Share_CH'(Length => Entries'Size, Shares => Entries)
+                     where Entries = [for E in Client_Shares if E.Group = Selected_Group => E]);
+         CH_Key_Share_Prepared := True;
+      transition
+         goto Wait_SH_Prepare_CH_Dispatch
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_Prepare_CH_Key_Share;
+
+      state Wait_SH_Prepare_CH_Cookie
+         with Desc => "rfc8446.txt+2223:19-2225:47"
+      is
+         Extensions : TLS_Handshake::CH_Extensions := [for E in Server_Hello_Message.Extensions if E.Tag = TLS_Handshake::ET_Cookie => TLS_Handshake::CH_Extension'(Tag => E.Tag, Data_Length => E.Data_Length, Data => E.Data)];
+      begin
+         Extensions_List'Append (Extensions'Head);
+         CH_Cookie_Prepared := True;
+      transition
+         goto Wait_SH_Prepare_CH_Dispatch
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_Prepare_CH_Cookie;
+
+      state Wait_SH_Prepare_CH_PSK
+         with Desc => "rfc8446.txt+1519:7-1520:51"
+      is
+      begin
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_PSKs, Length => Connection'Size, Payload => Connection));
+         Keystore_Channel'Read (Keystore_Message);
+      transition
+         goto Error_Internal_Error
+            if Keystore_Message'Valid = False
+               or Keystore_Message.Tag /= GreenTLS::Keystore_Response
+               or Keystore_Message.Request /= GreenTLS::Keystore_Request_PSKs
+               or (Keystore_Message.Length = 0
+                   and TLS_Handshake::PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes_Modes)
+               or GreenTLS::PSK_Message (Keystore_Message.Payload)'Valid = False
+         goto Wait_SH_No_PSK_Extension
+            if Keystore_Message.Length = 0
+         goto Wait_SH_PSK_Extension_Check
+      end Wait_SH_Prepare_CH_PSK;
+
+      state Wait_SH_PSK_Extension_Check is
+      begin
+         PSKs := [for K in GreenTLS::PSK_Message (Keystore_Message.Payload).PSKs if K.Cipher_Suite = Server_Hello_Message.Cipher_Suite => K];
+         Binders_Length := Calculate_Binders_Length (PSKs);
+         PSK_Identities := [for K in PSKs => TLS_Handshake::PSK_Identity'(Length => K.Identity_Length, Identity => K.Identity_Identity, Obfuscated_Ticket_Age => K.Identity_Obfuscated_Ticket_Age)];
+         Pre_Shared_Key_CH := TLS_Handshake::Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Size, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => []);
+      transition
+         goto Error_Internal_Error
+            if Pre_Shared_Key_CH'Valid = False
+         goto Wait_SH_PSK_Extensions
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_PSK_Extension_Check;
+
+      state Wait_SH_PSK_Extensions is
+         Client_Hello_Hash : Hash_Context;
+      begin
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_PSK_Key_Exchange_Modes, Data_Length => Modes'Size, Data => Modes)
+            where Modes = TLS_Handshake::PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes_Modes));
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Pre_Shared_Key, Data_Length => Pre_Shared_Key_CH'Size, Data => Pre_Shared_Key_CH));
+         Client_Hello_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Client_Hello, Length => CH'Size, Payload => CH)
+            where CH = TLS_Handshake::Client_Hello'(Legacy_Version => TLS_Handshake::TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Legacy_Session_ID => [], Cipher_Suites_Length => Configuration.Cipher_Suites'Size, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Legacy_Compression_Methods => [], Extensions_Length => Extensions_List'Size, Extensions => Extensions_List);
+         Client_Hello_Hash := Empty_Hash;
+         Client_Hello_Hash := Update_Hash (Client_Hello_Hash, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
+         Binders := Calculate_Binders (PSKs, Get_Hash (Client_Hello_Hash));
+         Extensions_List := [for E in Extensions_List if E.Tag /= TLS_Handshake::ET_Pre_Shared_Key => E];
+         Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Pre_Shared_Key, Data_Length => PSK_CH'Size, Data => PSK_CH)
+            where PSK_CH = TLS_Handshake::Pre_Shared_Key_CH'(Identities_Length => PSK_Identities'Size, Identities => PSK_Identities, Binders_Length => Binders_Length, Binders => Binders));
+         CH_PSK_Prepared := True;
+      transition
+         goto Error_Internal_Error
+            if Extensions_List'Valid = False
+         goto Wait_SH_Prepare_CH_Dispatch
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_PSK_Extensions;
+
+      state Wait_SH_No_PSK_Extension is
+      begin
+         CH_PSK_Prepared := True;
+      transition
+         goto Wait_SH_Prepare_CH_Dispatch
+      end Wait_SH_No_PSK_Extension;
+
+      state Wait_SH_Send_CH
+         with Desc => "rfc8446.txt+3264:4-3275:42"
+      is
+         Random : GreenTLS::Content;
+         Transcript_Hash_2 : Hash_Context;
+      begin
+         Transcript_Hash_2 := Empty_Hash;
+         Transcript_Hash_2 := Update_Hash (Transcript_Hash_2, TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Message_Hash, Length => CH1_Hash'Size, Payload => CH1_Hash.Data)'Opaque)
+            where CH1_Hash = Get_Hash (Client_Hello_1_Hash);
+         Transcript_Hash_2 := Update_Hash (Transcript_Hash_2, Server_Hello_Handshake_Message'Opaque);
+         Transcript_Hash_2 := Update_Hash (Transcript_Hash_2, Truncate_Client_Hello (Client_Hello_Handshake_Message)'Opaque);
+         Random := GreenTLS::Content'(Data => Client_Hello_Message.Random);
+         Client_Hello_Handshake_Message'Reset;
+         Client_Hello_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Client_Hello, Length => CH'Size, Payload => CH)
+            where CH = TLS_Handshake::Client_Hello'(Legacy_Version => TLS_Handshake::TLS_1_2, Random => Random.Data, Legacy_Session_ID_Length => 0, Legacy_Session_ID => [], Cipher_Suites_Length => Configuration.Cipher_Suites'Size, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Legacy_Compression_Methods => [], Extensions_Length => Extensions_List'Size, Extensions => Extensions_List);
+         Record_Data_Channel'Write (Client_Hello_Handshake_Message);
+         Transcript_Hash := Update_Hash (Transcript_Hash, Client_Hello_Handshake_Message'Opaque);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Wait_SH
+      exception
+         goto Error_Internal_Error
+      end Wait_SH_Send_CH;
+
+      state Set_Record_Keys is
+         Derived_Early_Secret : GreenTLS::Content;
+         Handshake_Secret : GreenTLS::Content;
+         Server_Key : GreenTLS::Content;
+         Server_IV : GreenTLS::Content;
+         Client_Key : GreenTLS::Content;
+         Client_IV : GreenTLS::Content;
+         Success_Client : Boolean;
+         Success_Server : Boolean;
+         SH_Key_Share_Extensions : TLS_Handshake::SH_Extensions := [for E in Server_Hello_Message.Extensions if E.Tag = TLS_Handshake::ET_Key_Share => E];
+         CH_Key_Share_Extensions : TLS_Handshake::CH_Extensions := [for E in Client_Hello_Message.Extensions if E.Tag = TLS_Handshake::ET_Key_Share => E];
+         CH_Key_Shares : TLS_Handshake::Key_Share_Entries := [for S in TLS_Handshake::Key_Share_CH (CH_Key_Share_Extensions'Head.Data).Shares if S.Group = Selected_Group => S];
+      begin
+         Derived_Early_Secret := Derive_Secret (Early_Secret, "derived", Get_Hash (Empty_Hash));
+         Early_Secret'Reset;
+         Handshake_Secret := HKDF_Extract (Derived_Early_Secret, Key)
+            where Key = Calculate_ECDHE_Key (CH_Key_Shares'Head, TLS_Handshake::Key_Share_SH (SH_Key_Share_Extensions'Head.Data));
+         Derived_Early_Secret'Reset;
+         Client_Handshake_Traffic_Secret := Derive_Secret (Handshake_Secret, "c hs traffic", Get_Hash (Transcript_Hash));
+         Server_Handshake_Traffic_Secret := Derive_Secret (Handshake_Secret, "s hs traffic", Get_Hash (Transcript_Hash));
+         -- FIXME: Replace 256 by key length and IV length determined by keystore
+         Server_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Handshake_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
+         Server_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Handshake_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
+         Client_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Handshake_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
+         Client_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Handshake_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::Key_Update_Client, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Key_Update_Message'(Key_Length => Client_Key'Size, Key => Client_Key.Data, IV_Length => Client_IV'Size, IV => Client_IV.Data));
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::Key_Update_Server, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Key_Update_Message'(Key_Length => Server_Key'Size, Key => Server_Key.Data, IV_Length => Server_IV'Size, IV => Server_IV.Data));
+         Server_Handshake_Traffic_Secret'Reset;
+         Server_Key'Reset;
+         Server_IV'Reset;
+         Client_Key'Reset;
+         Client_IV'Reset;
+         Derived_Handshake_Secret := Derive_Secret (Handshake_Secret, "derived", Get_Hash (Empty_Hash));
+         Handshake_Secret'Reset;
+      transition
+         goto Error_Internal_Error
+            if Success_Client = False
+               or Success_Server = False
+         goto Wait_EE
+      end Set_Record_Keys;
+
+      state Wait_EE is
+      begin
+         Record_Data_Channel'Read (Encrypted_Extensions_Handshake_Message);
+      transition
+         goto Error_Decode_Error
+            if Encrypted_Extensions_Handshake_Message'Valid = False
+         goto Error_Unexpected_Message
+            if Encrypted_Extensions_Handshake_Message.Tag /= TLS_Handshake::HT_Encrypted_Extensions
+         goto Wait_EE_Parse_Extensions
+      end Wait_EE;
+
+      state Wait_EE_Parse_Extensions is
+      begin
+      transition
+         goto Error_Illegal_Parameter
+            if (for some E in Encrypted_Extensions_Message.Extensions =>
+                   E.Tag = TLS_Handshake::ET_Status_Request
+                   or E.Tag = TLS_Handshake::ET_Signature_Algorithms
+                   or E.Tag = TLS_Handshake::ET_Signed_Certificate_Timestamp
+                   or E.Tag = TLS_Handshake::ET_Padding
+                   or E.Tag = TLS_Handshake::ET_Key_Share
+                   or E.Tag = TLS_Handshake::ET_Pre_Shared_Key
+                   or E.Tag = TLS_Handshake::ET_PSK_Key_Exchange_Modes
+                   or E.Tag = TLS_Handshake::ET_Cookie
+                   or E.Tag = TLS_Handshake::ET_Supported_Versions
+                   or E.Tag = TLS_Handshake::ET_Certificate_Authorities
+                   or E.Tag = TLS_Handshake::ET_OID_Filters
+                   or E.Tag = TLS_Handshake::ET_Post_Handshake_Auth
+                   or E.Tag = TLS_Handshake::ET_Signature_Algorithms_Cert)
+         goto Error_Illegal_Parameter
+            with Desc => "rfc6066.txt+376:46-378:16"
+            if Server_Name_Received = False
+               and (for some E in Encrypted_Extensions_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Server_Name)
+               and Configuration.Server_Name_Enabled = False
+         goto Wait_EE_Process_Server_Name
+            if Server_Name_Received = False
+               and (for some E in Encrypted_Extensions_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Server_Name)
+         goto Wait_EE_Process_Max_Fragment_Length
+            if Max_Fragment_Length_Received = False
+               and (for some E in Encrypted_Extensions_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Max_Fragment_Length)
+         goto Wait_EE_Process_Supported_Groups
+            if Supported_Groups_Received = False
+               and (for some E in Encrypted_Extensions_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Supported_Groups)
+         goto Wait_EE_Process_Heartbeat
+            if Heartbeat_Received = False
+               and (for some E in Encrypted_Extensions_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Heartbeat)
+         goto Wait_EE_Process_Application_Layer_Protocol_Negotiation
+            if Application_Layer_Protocol_Negotiation_Received = False
+               and (for some E in Encrypted_Extensions_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Application_Layer_Protocol_Negotiation)
+         goto Wait_EE_Process_Early_Data
+            if Early_Data_Received = False
+               and (for some E in Encrypted_Extensions_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Early_Data)
+         goto Wait_EE_Check_Extensions
+      end Wait_EE_Parse_Extensions;
+
+      state Wait_EE_Process_Server_Name is
+         Extensions : TLS_Handshake::EE_Extensions := [for E in Encrypted_Extensions_Message.Extensions if E.Tag = TLS_Handshake::ET_Server_Name => E];
+      begin
+         Server_Name_Extension := Extensions'Head;
+         Server_Name_Received := True;
+      transition
+         goto Error_Illegal_Parameter
+            with Desc => "rfc6066.txt+378:19-379:9"
+            if Server_Name_Extension.Data_Length > 0
+         goto Wait_EE_Parse_Extensions
+      exception
+         goto Error_Internal_Error
+      end Wait_EE_Process_Server_Name;
+
+      state Wait_EE_Process_Max_Fragment_Length is
+         Extensions : TLS_Handshake::EE_Extensions := [for E in Encrypted_Extensions_Message.Extensions if E.Tag = TLS_Handshake::ET_Max_Fragment_Length => E];
+      begin
+         Max_Fragment_Length := TLS_Handshake::Max_Fragment_Length (Extensions'Head.Data).Max_Fragment_Length;
+         Max_Fragment_Length_Received := True;
+      transition
+         goto Error_Illegal_Parameter
+            with Desc => "rfc6066.txt+435:50-438:32"
+            if Configuration.Max_Fragment_Length /= Max_Fragment_Length
+         goto Wait_EE_Parse_Extensions
+      exception
+         goto Error_Internal_Error
+      end Wait_EE_Process_Max_Fragment_Length;
+
+      state Wait_EE_Process_Supported_Groups
+         with Desc => "rfc8446.txt+2651:4-2661:68"
+      is
+         Extensions : TLS_Handshake::EE_Extensions := [for E in Encrypted_Extensions_Message.Extensions if E.Tag = TLS_Handshake::ET_Supported_Groups => E];
+      begin
+         Server_Preferred_Groups := TLS_Handshake::Supported_Groups (Extensions'Head.Data);
+         Supported_Groups_Received := True;
+      transition
+         goto Wait_EE_Parse_Extensions
+      end Wait_EE_Process_Supported_Groups;
+
+      state Wait_EE_Process_Heartbeat
+         with Desc => "rfc6520.txt+138:4-149:61"
+      is
+         Server_Heartbeat_Mode : TLS_Handshake::Heartbeat_Mode;
+         Extensions : TLS_Handshake::EE_Extensions := [for E in Encrypted_Extensions_Message.Extensions if E.Tag = TLS_Handshake::ET_Heartbeat => E];
+      begin
+         Server_Heartbeat_Mode := TLS_Handshake::Heartbeat (Extensions'Head.Data).Mode;
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::HEARTBEAT, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Heartbeat_Control_Message'(Local => Configuration.Heartbeat_Mode, Remote => Server_Heartbeat_Mode));
+         Heartbeat_Received := True;
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Wait_EE_Parse_Extensions
+      exception
+         goto Error_Internal_Error
+      end Wait_EE_Process_Heartbeat;
+
+      state Wait_EE_Process_Application_Layer_Protocol_Negotiation is
+         Protocols : TLS_Handshake::Protocol_Names;
+         Protocol : TLS_Handshake::Protocol_Name;
+         Extensions : TLS_Handshake::EE_Extensions := [for E in Encrypted_Extensions_Message.Extensions if E.Tag = TLS_Handshake::ET_Application_Layer_Protocol_Negotiation => E];
+      begin
+         Protocols := TLS_Handshake::Protocol_Name_List (Extensions'Head.Data).Protocol_Name_List;
+         Protocol := Protocols'Head;
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::Application_Protocol, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Application_Protocol_Message'(Protocol_Length => Protocol.Length, Protocol_Name => Protocol.Name));
+         Application_Layer_Protocol_Negotiation_Received := True;
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Error_Illegal_Parameter
+            with Desc => "rfc7301.txt+181:53-185:30"
+            if Protocols'Size /= 1
+         goto Error_Illegal_Parameter
+            with Desc => "rfc7301.txt+175:4-177:54"
+            if (for all P in Configuration.Protocols_Protocol_Name_List =>
+                   P.Name /= Protocol.Name)
+         goto Wait_EE_Parse_Extensions
+      exception
+         goto Error_Internal_Error
+      end Wait_EE_Process_Application_Layer_Protocol_Negotiation;
+
+      state Wait_EE_Process_Early_Data
+         with Desc => "rfc8446.txt+2993:7-2998:45"
+      is
+      begin
+         Early_Data_Received := True;
+      transition
+         goto Wait_EE_Parse_Extensions
+      end Wait_EE_Process_Early_Data;
+
+      state Wait_EE_Check_Extensions is
+      begin
+         Transcript_Hash := Update_Hash (Transcript_Hash, Encrypted_Extensions_Handshake_Message'Opaque);
+      transition
+         goto Error_Missing_Extension
+            if Configuration.Server_Name_Enabled = True
+               and Server_Name_Received = False
+         goto Error_Missing_Extension
+            if Configuration.Max_Fragment_Length_Enabled = True
+               and Max_Fragment_Length_Received = False
+         goto Wait_EE_No_Early_Data
+            if Configuration.Early_Data_Enabled = True
+               and Early_Data_Received = False
+         goto Wait_EE_Dispatch
+      end Wait_EE_Check_Extensions;
+
+      state Wait_EE_No_Early_Data is
+      begin
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::Application_No_Early_Data, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Application_No_Early_Data_Message'(null message));
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Wait_EE_Dispatch
+      end Wait_EE_No_Early_Data;
+
+      state Wait_EE_Dispatch is
+      begin
+      transition
+         goto Wait_Cert_CR
+            if DHE_Accepted = True
+         goto Wait_Finished
+      end Wait_EE_Dispatch;
+
+      state Wait_Cert_CR is
+      begin
+         Record_Data_Channel'Read (CCR_Handshake_Message);
+         Certificate_Authorities := TLS_Handshake::Certificate_Authorities'(Length => 0, Authorities => []);
+         OID_Filters := TLS_Handshake::OID_Filters'(Length => 0, Filters => []);
+         Signature_Algorithms := TLS_Handshake::Signature_Algorithms'(Length => 0, Algorithms => []);
+         Signature_Algorithms_Cert := TLS_Handshake::Signature_Algorithms_Cert'(Length => 0, Algorithms => []);
+      transition
+         goto Error_Decode_Error
+            if CCR_Handshake_Message'Valid = False
+         goto Error_Unexpected_Message
+            if CCR_Handshake_Message.Tag /= TLS_Handshake::HT_Certificate
+               and CCR_Handshake_Message.Tag /= TLS_Handshake::HT_Certificate_Request
+         goto Parse_Cert
+            if Certificate_Message'Valid = True
+         goto Parse_CR
+            if Certificate_Request_Message'Valid = True
+         goto Error_Decode_Error
+      exception
+         goto Error_Internal_Error
+      end Wait_Cert_CR;
+
+      state Parse_CR is
+      begin
+         Certificate_Request := TLS_Handshake::Certificate_Request'(Certificate_Request_Context_Length => Certificate_Request_Message.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request_Message.Certificate_Request_Context, Extensions_Length => Certificate_Request_Message.Extensions_Length, Extensions => Certificate_Request_Message.Extensions);
+      transition
+         goto Parse_CR_Extensions
+      exception
+         goto Error_Internal_Error
+      end Parse_CR;
+
+      state Parse_CR_Extensions is
+      begin
+         Certificate_Request_Received := True;
+      transition
+         goto Parse_CR_Parse_Certificate_Authorities
+            if Certificate_Authorities_Received = False
+               and (for some E in Certificate_Request_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Certificate_Authorities)
+         goto Parse_CR_Parse_OID_Filters
+            if OID_Filters_Received = False
+               and (for some E in Certificate_Request_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_OID_Filters)
+         goto Parse_CR_Parse_Signature_Algorithms
+            if Signature_Algorithms_Received = False
+               and (for some E in Certificate_Request_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Signature_Algorithms)
+         goto Parse_CR_Parse_Signature_Algorithms_Cert
+            if Signature_Algorithms_Cert_Received = False
+               and (for some E in Certificate_Request_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Signature_Algorithms_Cert)
+         goto Parse_CR_Check_Extensions
+      end Parse_CR_Extensions;
+
+      state Parse_CR_Parse_Certificate_Authorities is
+         Extensions : TLS_Handshake::CR_Extensions := [for E in Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_Certificate_Authorities => E];
+      begin
+         Certificate_Authorities_Received := True;
+         Certificate_Authorities := TLS_Handshake::Certificate_Authorities (Extensions'Head.Data);
+      transition
+         goto Parse_CR_Extensions
+      end Parse_CR_Parse_Certificate_Authorities;
+
+      state Parse_CR_Parse_OID_Filters is
+         Extensions : TLS_Handshake::CR_Extensions := [for E in Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_OID_Filters => E];
+      begin
+         OID_Filters_Received := True;
+         OID_Filters := TLS_Handshake::OID_Filters (Extensions'Head.Data);
+      transition
+         goto Parse_CR_Extensions
+      end Parse_CR_Parse_OID_Filters;
+
+      state Parse_CR_Parse_Signature_Algorithms is
+         Extensions : TLS_Handshake::CR_Extensions := [for E in Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_Signature_Algorithms => E];
+      begin
+         Signature_Algorithms_Received := True;
+         Signature_Algorithms := TLS_Handshake::Signature_Algorithms (Extensions'Head.Data);
+      transition
+         goto Error_Illegal_Parameter
+            if (for all A in Configuration.Signature_Algorithms_Algorithms =>
+                   A not in Signature_Algorithms.Algorithms)
+         goto Parse_CR_Extensions
+      end Parse_CR_Parse_Signature_Algorithms;
+
+      state Parse_CR_Parse_Signature_Algorithms_Cert is
+         Extensions : TLS_Handshake::CR_Extensions := [for E in Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_Signature_Algorithms_Cert => E];
+      begin
+         Signature_Algorithms_Cert_Received := True;
+         Signature_Algorithms_Cert := TLS_Handshake::Signature_Algorithms_Cert (Extensions'Head.Data);
+      transition
+         goto Error_Illegal_Parameter
+            if (for all A in Configuration.Signature_Algorithms_Cert_Algorithms =>
+                   A not in Signature_Algorithms_Cert.Algorithms)
+         goto Parse_CR_Extensions
+      end Parse_CR_Parse_Signature_Algorithms_Cert;
+
+      state Parse_CR_Check_Extensions is
+      begin
+         Transcript_Hash := Update_Hash (Transcript_Hash, CCR_Handshake_Message'Opaque);
+      transition
+         goto Error_Missing_Extension
+            if Signature_Algorithms_Received = False
+         goto Wait_Cert
+      end Parse_CR_Check_Extensions;
+
+      state Wait_Cert is
+      begin
+         Record_Data_Channel'Read (CCR_Handshake_Message);
+      transition
+         goto Error_Decode_Error
+            if CCR_Handshake_Message'Valid = False
+               or Certificate_Message'Valid = False
+         goto Error_Unexpected_Message
+            if CCR_Handshake_Message.Tag /= TLS_Handshake::HT_Certificate
+         goto Error_Illegal_Parameter
+            with Desc => "rfc8446.txt+3593:22-3594:38"
+            if Certificate_Message.Certificate_Request_Context_Length /= 0
+         goto Error_Illegal_Parameter
+            with Desc => "rfc8446.txt+3649:4-3649:58"
+            if Certificate_Message.Certificate_List_Length = 0
+         goto Parse_Cert
+      end Wait_Cert;
+
+      state Parse_Cert is
+         Validation_Result : GreenTLS::Certificate_Validation_Result;
+      begin
+         Transcript_Hash := Update_Hash (Transcript_Hash, CCR_Handshake_Message'Opaque);
+         Validation_Result := Validate_Server_Certificate (Certificate_Message, Configuration, Connection);
+      transition
+         goto Wait_CV
+            if Validation_Result = GreenTLS::Valid_Certificate
+         goto Error_Bad_Certificate
+            if Validation_Result = GreenTLS::Bad_Certificate
+         goto Error_Unsupported_Certificate
+            if Validation_Result = GreenTLS::Unsupported_Certificate
+         goto Error_Certificate_Revoked
+            if Validation_Result = GreenTLS::Certificate_Revoked
+         goto Error_Certificate_Expired
+            if Validation_Result = GreenTLS::Certificate_Expired
+         goto Error_Certificate_Unknown
+            if Validation_Result = GreenTLS::Certificate_Unknown
+         goto Error_Internal_Error
+      end Parse_Cert;
+
+      state Wait_CV is
+      begin
+         Record_Data_Channel'Read (Certificate_Verify_Handshake_Message);
+         Transcript_Hash := Update_Hash (Transcript_Hash, Certificate_Verify_Handshake_Message'Opaque);
+      transition
+         goto Error_Decode_Error
+            if Certificate_Verify_Handshake_Message'Valid = False
+               or Certificate_Verify_Message'Valid = False
+         goto Error_Illegal_Parameter
+            with Desc => "rfc8446.txt+3902:4-3904:12"
+            if Certificate_Verify_Message.Algorithm not in Configuration.Signature_Algorithms_Algorithms
+         goto Wait_CV_Validate
+      end Wait_CV;
+
+      state Wait_CV_Validate is
+         Validation_Result : GreenTLS::Signature_Validation_Result;
+      begin
+         Validation_Result := Validate_Certificate_Verify_Signature (Certificate_Message, Certificate_Verify_Message, Get_Hash (Transcript_Hash));
+      transition
+         goto Error_Illegal_Parameter
+            if Validation_Result = GreenTLS::Illegal_Parameter
+         goto Error_Decrypt_Error
+            if Validation_Result = GreenTLS::Decrypt_Error
+         goto Wait_Finished
+            if Validation_Result = GreenTLS::Valid_Signature
+         goto Error_Internal_Error
+      end Wait_CV_Validate;
+
+      state Wait_Finished is
+         Verify_Data : GreenTLS::Content;
+         Master_Secret : GreenTLS::Content;
+      begin
+         Hash_Length := Get_Hash_Length (Server_Hello_Message.Cipher_Suite);
+         Record_Data_Channel'Read (Finished_Handshake_Message);
+         Finished_Key := HKDF_Expand_Label (Client_Handshake_Traffic_Secret, "finished", Get_Hash (Empty_Hash), Hash_Length);
+         Client_Handshake_Traffic_Secret'Reset;
+         Verify_Data := HMAC (Server_Hello_Message.Cipher_Suite, Finished_Key, Get_Hash (Transcript_Hash));
+         Transcript_Hash := Update_Hash (Transcript_Hash, Finished_Handshake_Message'Opaque);
+         Master_Secret := HKDF_Extract (Derived_Handshake_Secret, Get_Zero_Content (Hash_Length));
+         Derived_Handshake_Secret'Reset;
+         Client_Application_Traffic_Secret := Derive_Secret (Master_Secret, "c ap traffic", Get_Hash (Transcript_Hash));
+         Server_Application_Traffic_Secret := Derive_Secret (Master_Secret, "s ap traffic", Get_Hash (Transcript_Hash));
+         Resumption_Master_Secret := Derive_Secret (Master_Secret, "res master", Get_Hash (Transcript_Hash));
+         Master_Secret'Reset;
+      transition
+         goto Error_Decrypt_Error
+            with Desc => "rfc8446.txt+3951:4-3953:25"
+            if Finished_Handshake_Message'Valid = False
+               or Finished_Message'Valid = False
+               or Finished_Message.Verify_Data /= Verify_Data.Data
+         goto Send_End_Of_Early_Data
+            with Desc => "rfc8446.txt+4025:4-4027:19"
+            if Early_Data_Received = True
+         goto Check_Certificate_Request
+            with Desc => "rfc8446.txt+4027:22-4029:26"
+      end Wait_Finished;
+
+      state Send_End_Of_Early_Data is
+      begin
+         Record_Data_Channel'Write (TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_End_Of_Early_Data, Length => 0, Payload => []));
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Check_Certificate_Request
+      end Send_End_Of_Early_Data;
+
+      state Check_Certificate_Request is
+      begin
+      transition
+         goto Send_Finished
+            with Desc => "rfc8446.txt+3544:4-3546:19"
+            if Certificate_Request_Received = False
+         goto Query_Certificates
+      end Check_Certificate_Request;
+
+      state Query_Certificates is
+      begin
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_Certificates, Length => Query'Size, Payload => Query)
+            where Query = GreenTLS::Certificate_Query'(Certificate_Authorities_Length => Certificate_Authorities.Length, Certificate_Authorities_Authorities => Certificate_Authorities.Authorities, OID_Filters_Length => OID_Filters.Length, OID_Filters_Filters => OID_Filters.Filters, Signature_Algorithms_Length => Signature_Algorithms.Length, Signature_Algorithms_Algorithms => Signature_Algorithms.Algorithms, Signature_Algorithms_Cert_Length => Signature_Algorithms_Cert.Length, Signature_Algorithms_Cert_Algorithms => Signature_Algorithms_Cert.Algorithms));
+         Keystore_Channel'Read (Keystore_Message);
+      transition
+         goto Error_Internal_Error
+            if Keystore_Message'Valid = False
+               or GreenTLS::Certificate (Keystore_Message.Payload)'Valid = False
+         goto Send_Certificate
+            if GreenTLS::Certificate (Keystore_Message.Payload).Length > 0
+         goto Send_Empty_Certificate
+            with Desc => "rfc8446.txt+3456:22-3549:26"
+      end Query_Certificates;
+
+      state Send_Certificate is
+         Client_Certificate_Handshake_Message : TLS_Handshake::Handshake;
+      begin
+         Client_Certificate_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Certificate, Length => Certificate'Size, Payload => Certificate)
+            where Certificate = TLS_Handshake::Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => C.Length, Certificate_List => C.Certificate_List)
+               where C = GreenTLS::Certificate (Keystore_Message.Payload);
+         Record_Data_Channel'Write (Client_Certificate_Handshake_Message);
+         Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Query_Signature
+            with Desc => "rfc8446.txt+3829:24-3833:11"
+      end Send_Certificate;
+
+      state Send_Empty_Certificate is
+         Client_Certificate_Handshake_Message : TLS_Handshake::Handshake;
+      begin
+         Client_Certificate_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Certificate, Length => Certificate'Size, Payload => Certificate)
+            where Certificate = TLS_Handshake::Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => 0, Certificate_List => []);
+         Record_Data_Channel'Write (Client_Certificate_Handshake_Message);
+         Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Send_Finished
+      end Send_Empty_Certificate;
+
+      state Query_Signature is
+      begin
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_Signature, Length => Query'Size, Payload => Query)
+            where Query = GreenTLS::Signature_Query'(ID => GreenTLS::Certificate (Keystore_Message.Payload).ID, Length => Hash'Size, Data => Hash)
+               where Hash = Get_Hash (Transcript_Hash).Data);
+         Keystore_Channel'Read (Keystore_Message);
+      transition
+         goto Error_Internal_Error
+            if Keystore_Message'Valid = False
+               or TLS_Handshake::Certificate_Verify (Keystore_Message.Payload)'Valid = False
+         goto Send_Certificate_Verify
+      end Query_Signature;
+
+      state Send_Certificate_Verify is
+         Client_Certificate_Verify_Handshake_Message : TLS_Handshake::Handshake;
+      begin
+         Client_Certificate_Verify_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Certificate_Verify, Length => Certificate_Verify'Size, Payload => Certificate_Verify)
+            where Certificate_Verify = TLS_Handshake::Certificate_Verify (Keystore_Message.Payload);
+         Record_Data_Channel'Write (Client_Certificate_Verify_Handshake_Message);
+         Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Verify_Handshake_Message'Opaque);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Send_Finished
+      end Send_Certificate_Verify;
+
+      state Send_Finished is
+         Verify_Data : GreenTLS::Content;
+      begin
+         Verify_Data := HMAC (Server_Hello_Message.Cipher_Suite, Finished_Key, Get_Hash (Transcript_Hash));
+         Finished_Key'Reset;
+         Finished_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Finished, Length => Finished'Size, Payload => Finished)
+            where Finished = TLS_Handshake::Finished'(Verify_Data => Verify_Data.Data);
+         Record_Data_Channel'Write (Finished_Handshake_Message);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Send_Application_Record_Keys
+      end Send_Finished;
+
+      state Send_Application_Record_Keys is
+         Server_Key : GreenTLS::Content;
+         Server_IV : GreenTLS::Content;
+         Client_Key : GreenTLS::Content;
+         Client_IV : GreenTLS::Content;
+         Success_Client : Boolean;
+         Success_Server : Boolean;
+      begin
+         -- FIXME: Replace 256 by key length and IV length determined by keystore
+         Server_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
+         Server_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
+         Client_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
+         Client_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::Key_Update_Client, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Key_Update_Message'(Key_Length => Client_Key'Size, Key => Client_Key.Data, IV_Length => Client_IV'Size, IV => Client_IV.Data));
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::Key_Update_Server, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Key_Update_Message'(Key_Length => Server_Key'Size, Key => Server_Key.Data, IV_Length => Server_IV'Size, IV => Server_IV.Data));
+         Server_Application_Traffic_Secret'Reset;
+      transition
+         goto Error_Internal_Error
+            if Success_Client = False
+               or Success_Server = False
+         goto Connected
+      end Send_Application_Record_Keys;
+
+      state Connected
+         with Desc => "rfc8446.txt+4047:4-4049:43"
+      is
+      begin
+         Record_Data_Channel'Read (Post_Handshake_Handshake_Message);
+      transition
+         goto Error_Decode_Error
+            if Post_Handshake_Handshake_Message'Valid = False
+               or (Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HT_New_Session_Ticket
+                   and New_Session_Ticket_Message'Valid = False)
+               or (Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HT_Certificate_Request
+                   and PHA_Certificate_Request_Message'Valid = False)
+               or (Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HT_Key_Update
+                   and Key_Update_Message'Valid = False)
+         goto Connected_New_Session_Ticket
+            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HT_New_Session_Ticket
+               and New_Session_Ticket_Message'Valid = True
+         goto Connected_Post_Handshake_Auth
+            with Desc => "rfc8446.txt+4193:4-4197:57"
+            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HT_Certificate_Request
+               and Configuration.Post_Handshake_Auth_Enabled = True
+         goto Error_Unexpected_Message
+            with Desc => "rfc8446.txt+4212:4-4214:36"
+            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HT_Certificate_Request
+               and Configuration.Post_Handshake_Auth_Enabled = False
+         goto Connected_Key_Update
+            if Post_Handshake_Handshake_Message.Tag = TLS_Handshake::HT_Key_Update
+         goto Error_Unexpected_Message
+      end Connected;
+
+      state Connected_New_Session_Ticket
+         with Desc => "rfc8446.txt+4053:4-4056:65"
+      is
+         PSK : GreenTLS::Content;
+      begin
+         PSK := HKDF_Expand_Label (GreenTLS::Content'(Data => Resumption_Master_Secret.Data), "resumption", GreenTLS::Content'(Data => New_Session_Ticket_Message.Ticket_Nonce), Hash_Length);
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_New_Session_Ticket, Length => NST'Size, Payload => NST)
+            where NST = GreenTLS::New_Session_Ticket'(Connection_Name_Length => Connection.Name_Length, Connection_Name => Connection.Name, Connection_Port => Connection.Port, Session_Ticket_Lifetime => New_Session_Ticket_Message.Ticket_Lifetime, Session_Ticket_Age_Add => New_Session_Ticket_Message.Ticket_Age_Add, Session_Ticket_Nonce_Length => New_Session_Ticket_Message.Ticket_Nonce_Length, Session_Ticket_Nonce => New_Session_Ticket_Message.Ticket_Nonce, Session_Ticket_Length => New_Session_Ticket_Message.Ticket_Length, Session_Ticket => New_Session_Ticket_Message.Ticket, Session_Extensions_Length => New_Session_Ticket_Message.Extensions_Length, Session_Extensions => New_Session_Ticket_Message.Extensions, PSK_Length => PSK'Size, PSK => PSK.Data));
+         Keystore_Channel'Read (Keystore_Message);
+      transition
+         goto Error_Internal_Error
+            if Keystore_Message'Valid = False
+         goto Connected
+      end Connected_New_Session_Ticket;
+
+      state Connected_Post_Handshake_Auth is
+      begin
+         Certificate_Authorities_Received := False;
+         OID_Filters_Received := False;
+         Signature_Algorithms_Received := False;
+         Signature_Algorithms_Cert_Received := False;
+      transition
+         goto Connected_PHA_Parse_CR
+      end Connected_Post_Handshake_Auth;
+
+      state Connected_PHA_Parse_CR is
+      begin
+         Certificate_Request := TLS_Handshake::Certificate_Request'(Certificate_Request_Context_Length => PHA_Certificate_Request_Message.Certificate_Request_Context_Length, Certificate_Request_Context => PHA_Certificate_Request_Message.Certificate_Request_Context, Extensions_Length => PHA_Certificate_Request_Message.Extensions_Length, Extensions => PHA_Certificate_Request_Message.Extensions);
+      transition
+         goto Connected_PHA_Parse_CR_Extensions
+      exception
+         goto Error_Internal_Error
+      end Connected_PHA_Parse_CR;
+
+      state Connected_PHA_Parse_CR_Extensions is
+      begin
+      transition
+         goto Connected_PHA_Parse_CR_Parse_Certificate_Authorities
+            if Certificate_Authorities_Received = False
+               and (for some E in PHA_Certificate_Request_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Certificate_Authorities)
+         goto Connected_PHA_Parse_CR_Parse_OID_Filters
+            if OID_Filters_Received = False
+               and (for some E in PHA_Certificate_Request_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_OID_Filters)
+         goto Connected_PHA_Parse_CR_Parse_Signature_Algorithms
+            if Signature_Algorithms_Received = False
+               and (for some E in PHA_Certificate_Request_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Signature_Algorithms)
+         goto Connected_PHA_Parse_CR_Parse_Signature_Algorithms_Cert
+            if Signature_Algorithms_Cert_Received = False
+               and (for some E in PHA_Certificate_Request_Message.Extensions =>
+                       E.Tag = TLS_Handshake::ET_Signature_Algorithms_Cert)
+         goto Connected_PHA_Parse_CR_Check_Extensions
+      end Connected_PHA_Parse_CR_Extensions;
+
+      state Connected_PHA_Parse_CR_Parse_Certificate_Authorities is
+         Extensions : TLS_Handshake::CR_Extensions := [for E in PHA_Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_Certificate_Authorities => E];
+      begin
+         Certificate_Authorities_Received := True;
+         Certificate_Authorities := TLS_Handshake::Certificate_Authorities (Extensions'Head.Data);
+      transition
+         goto Connected_PHA_Parse_CR_Extensions
+      end Connected_PHA_Parse_CR_Parse_Certificate_Authorities;
+
+      state Connected_PHA_Parse_CR_Parse_OID_Filters is
+         Extensions : TLS_Handshake::CR_Extensions := [for E in PHA_Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_OID_Filters => E];
+      begin
+         OID_Filters_Received := True;
+         OID_Filters := TLS_Handshake::OID_Filters (Extensions'Head.Data);
+      transition
+         goto Connected_PHA_Parse_CR_Extensions
+      end Connected_PHA_Parse_CR_Parse_OID_Filters;
+
+      state Connected_PHA_Parse_CR_Parse_Signature_Algorithms is
+         Extensions : TLS_Handshake::CR_Extensions := [for E in PHA_Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_Signature_Algorithms => E];
+      begin
+         Signature_Algorithms_Received := True;
+         Signature_Algorithms := TLS_Handshake::Signature_Algorithms (Extensions'Head.Data);
+      transition
+         goto Error_Illegal_Parameter
+            if (for all A in Configuration.Signature_Algorithms_Algorithms =>
+                   A not in Signature_Algorithms.Algorithms)
+         goto Connected_PHA_Parse_CR_Extensions
+      end Connected_PHA_Parse_CR_Parse_Signature_Algorithms;
+
+      state Connected_PHA_Parse_CR_Parse_Signature_Algorithms_Cert is
+         Extensions : TLS_Handshake::CR_Extensions := [for E in PHA_Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_Signature_Algorithms_Cert => E];
+      begin
+         Signature_Algorithms_Cert_Received := True;
+         Signature_Algorithms_Cert := TLS_Handshake::Signature_Algorithms_Cert (Extensions'Head.Data);
+      transition
+         goto Error_Illegal_Parameter
+            if (for all A in Configuration.Signature_Algorithms_Cert_Algorithms =>
+                   A not in Signature_Algorithms_Cert.Algorithms)
+         goto Connected_PHA_Parse_CR_Extensions
+      end Connected_PHA_Parse_CR_Parse_Signature_Algorithms_Cert;
+
+      state Connected_PHA_Parse_CR_Check_Extensions is
+      begin
+         Transcript_Hash := Update_Hash (Transcript_Hash, CCR_Handshake_Message'Opaque);
+      transition
+         goto Error_Missing_Extension
+            if Signature_Algorithms_Received = False
+         goto Connected_PHA_Query_Certificates
+      end Connected_PHA_Parse_CR_Check_Extensions;
+
+      state Connected_PHA_Query_Certificates is
+      begin
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_Certificates, Length => Query'Size, Payload => Query)
+            where Query = GreenTLS::Certificate_Query'(Certificate_Authorities_Length => Certificate_Authorities.Length, Certificate_Authorities_Authorities => Certificate_Authorities.Authorities, OID_Filters_Length => OID_Filters.Length, OID_Filters_Filters => OID_Filters.Filters, Signature_Algorithms_Length => Signature_Algorithms.Length, Signature_Algorithms_Algorithms => Signature_Algorithms.Algorithms, Signature_Algorithms_Cert_Length => Signature_Algorithms_Cert.Length, Signature_Algorithms_Cert_Algorithms => Signature_Algorithms_Cert.Algorithms));
+         Keystore_Channel'Read (Keystore_Message);
+      transition
+         goto Error_Internal_Error
+            if Keystore_Message'Valid = False
+               or GreenTLS::Certificate (Keystore_Message.Payload)'Valid = False
+         goto Connected_PHA_Send_Certificate
+            if GreenTLS::Certificate (Keystore_Message.Payload).Length > 0
+         goto Connected_PHA_Send_Empty_Certificate
+            with Desc => "rfc8446.txt+3456:22-3549:26"
+      end Connected_PHA_Query_Certificates;
+
+      state Connected_PHA_Send_Certificate is
+         Client_Certificate_Handshake_Message : TLS_Handshake::Handshake;
+      begin
+         Client_Certificate_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Certificate, Length => Certificate'Size, Payload => Certificate)
+            where Certificate = TLS_Handshake::Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => C.Length, Certificate_List => C.Certificate_List)
+                     where C = GreenTLS::Certificate (Keystore_Message.Payload);
+         Record_Data_Channel'Write (Client_Certificate_Handshake_Message);
+         Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Connected_PHA_Query_Signature
+            with Desc => "rfc8446.txt+3829:24-3833:11"
+      end Connected_PHA_Send_Certificate;
+
+      state Connected_PHA_Send_Empty_Certificate is
+         Client_Certificate_Handshake_Message : TLS_Handshake::Handshake;
+      begin
+         Client_Certificate_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Certificate, Length => Certificate'Size, Payload => Certificate)
+            where Certificate = TLS_Handshake::Certificate'(Certificate_Request_Context_Length => Certificate_Request.Certificate_Request_Context_Length, Certificate_Request_Context => Certificate_Request.Certificate_Request_Context, Certificate_List_Length => 0, Certificate_List => []);
+         Record_Data_Channel'Write (Client_Certificate_Handshake_Message);
+         Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Handshake_Message'Opaque);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Connected_PHA_Send_Finished
+      end Connected_PHA_Send_Empty_Certificate;
+
+      state Connected_PHA_Query_Signature is
+      begin
+         Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_Signature, Length => Query'Size, Payload => Query)
+            where Query = GreenTLS::Signature_Query'(ID => GreenTLS::Certificate (Keystore_Message.Payload).ID, Length => Hash'Size, Data => Hash)
+                     where Hash = Get_Hash (Transcript_Hash).Data);
+         Keystore_Channel'Read (Keystore_Message);
+      transition
+         goto Error_Internal_Error
+            if Keystore_Message'Valid = False
+               or TLS_Handshake::Certificate_Verify (Keystore_Message.Payload)'Valid = False
+         goto Connected_PHA_Send_Certificate_Verify
+      end Connected_PHA_Query_Signature;
+
+      state Connected_PHA_Send_Certificate_Verify is
+         Client_Certificate_Verify_Handshake_Message : TLS_Handshake::Handshake;
+      begin
+         Client_Certificate_Verify_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Certificate_Verify, Length => Certificate_Verify'Size, Payload => Certificate_Verify)
+            where Certificate_Verify = TLS_Handshake::Certificate_Verify (Keystore_Message.Payload);
+         Record_Data_Channel'Write (Client_Certificate_Verify_Handshake_Message);
+         Transcript_Hash := Update_Hash (Transcript_Hash, Client_Certificate_Verify_Handshake_Message'Opaque);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Connected_PHA_Send_Finished
+      end Connected_PHA_Send_Certificate_Verify;
+
+      state Connected_PHA_Send_Finished is
+         Verify_Data : GreenTLS::Content;
+      begin
+         Verify_Data := HMAC (Server_Hello_Message.Cipher_Suite, Finished_Key, Get_Hash (Transcript_Hash));
+         Finished_Key'Reset;
+         Finished_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Finished, Length => Finished'Size, Payload => Finished)
+            where Finished = TLS_Handshake::Finished'(Verify_Data => Verify_Data.Data);
+         Record_Data_Channel'Write (Finished_Handshake_Message);
+      transition
+         goto Error_Internal_Error
+            if Success = False
+         goto Connected
+      end Connected_PHA_Send_Finished;
+
+      state Connected_Key_Update is
+         Server_Key : GreenTLS::Content;
+         Server_IV : GreenTLS::Content;
+         Success_Server : Boolean;
+      begin
+         Server_Application_Traffic_Secret := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Application_Traffic_Secret.Data), "traffic upd", Get_Hash (Empty_Hash), Hash_Length);
+         -- FIXME: Replace 256 by key length and IV length determined by keystore
+         Server_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
+         Server_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Server_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::Key_Update_Server, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Key_Update_Message'(Key_Length => Server_Key'Size, Key => Server_Key.Data, IV_Length => Server_IV'Size, IV => Server_IV.Data));
+      transition
+         goto Error_Internal_Error
+            if Success_Server = False
+         goto Connected_Send_Key_Update
+            if Key_Update_Message.Request_Update = TLS_Handshake::Update_Requested
+         goto Connected
+      end Connected_Key_Update;
+
+      state Connected_Send_Key_Update is
+         Client_Key : GreenTLS::Content;
+         Client_IV : GreenTLS::Content;
+         Success_Client : Boolean;
+      begin
+         Record_Data_Channel'Write (TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Key_Update, Length => KU'Size, Payload => KU)
+            where KU = TLS_Handshake::Key_Update'(Request_Update => TLS_Handshake::Update_Not_Requested));
+         Client_Application_Traffic_Secret := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "traffic upd", Get_Hash (Empty_Hash), Hash_Length);
+         -- FIXME: Replace 256 by key length and IV length determined by keystore
+         Client_Key := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "key", Get_Hash (Empty_Hash), 256);
+         Client_IV := HKDF_Expand_Label (GreenTLS::Content'(Data => Client_Application_Traffic_Secret.Data), "iv", Get_Hash (Empty_Hash), 256);
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::Key_Update_Client, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Key_Update_Message'(Key_Length => Client_Key'Size, Key => Client_Key.Data, IV_Length => Client_IV'Size, IV => Client_IV.Data));
+      transition
+         goto Error_Internal_Error
+            if Success = False
+               or Success_Client = False
+         goto Connected
+      end Connected_Send_Key_Update;
+
+      state Error_Invalid_Configuration is
+      begin
+         Error := TLS_Alert::Illegal_Parameter;
+      transition
+         goto Error_Send_Local
+      end Error_Invalid_Configuration;
+
+      state Error_Unexpected_Message is
+      begin
+         Error := TLS_Alert::Unexpected_Message;
+      transition
+         goto Error_Send_Remote
+      end Error_Unexpected_Message;
+
+      state Error_Bad_Certificate is
+      begin
+         Error := TLS_Alert::Bad_Certificate;
+      transition
+         goto Error_Send_Remote
+      end Error_Bad_Certificate;
+
+      state Error_Unsupported_Certificate is
+      begin
+         Error := TLS_Alert::Unsupported_Certificate;
+      transition
+         goto Error_Send_Remote
+      end Error_Unsupported_Certificate;
+
+      state Error_Certificate_Revoked is
+      begin
+         Error := TLS_Alert::Certificate_Revoked;
+      transition
+         goto Error_Send_Remote
+      end Error_Certificate_Revoked;
+
+      state Error_Certificate_Expired is
+      begin
+         Error := TLS_Alert::Certificate_Expired;
+      transition
+         goto Error_Send_Remote
+      end Error_Certificate_Expired;
+
+      state Error_Certificate_Unknown is
+      begin
+         Error := TLS_Alert::Certificate_Unknown;
+      transition
+         goto Error_Send_Remote
+      end Error_Certificate_Unknown;
+
+      state Error_Illegal_Parameter is
+      begin
+         Error := TLS_Alert::Illegal_Parameter;
+      transition
+         goto Error_Send_Remote
+      end Error_Illegal_Parameter;
+
+      state Error_Decode_Error is
+      begin
+         Error := TLS_Alert::Decode_Error;
+      transition
+         goto Error_Send_Remote
+      end Error_Decode_Error;
+
+      state Error_Decrypt_Error is
+      begin
+         Error := TLS_Alert::Decrypt_Error;
+      transition
+         goto Error_Send_Remote
+      end Error_Decrypt_Error;
+
+      state Error_Protocol_Version is
+      begin
+         Error := TLS_Alert::Protocol_Version;
+      transition
+         goto Error_Send_Remote
+      end Error_Protocol_Version;
+
+      state Error_Internal_Error is
+      begin
+         Error := TLS_Alert::Internal_Error;
+      transition
+         goto Error_Send_Remote
+      end Error_Internal_Error;
+
+      state Error_Missing_Extension is
+      begin
+         Error := TLS_Alert::Missing_Extension;
+      transition
+         goto Error_Send_Remote
+      end Error_Missing_Extension;
+
+      state Error_Send_Remote is
+      begin
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::Alert, Length => Alert_Message'Size, Data => Alert_Message)
+            where Alert_Message = GreenTLS::Alert_Message'(Description => Error));
+      transition
+         goto Error_Send_Local
+      end Error_Send_Remote;
+
+      state Error_Send_Local is
+      begin
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::Application_Alert, Length => Data'Size, Data => Data)
+            where Data = GreenTLS::Alert_Message'(Description => Error));
+      transition
+         goto Terminated
+      end Error_Send_Local;
+   end Client;
+
+end TLS_Handshake_Session;
