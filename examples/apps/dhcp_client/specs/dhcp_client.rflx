@@ -96,7 +96,7 @@ package DHCP_Client is
       transition
          goto Create_Request
             if Offer'Valid = True and Offer.Op = DHCP::BOOTREPLY and Offer_Message_Type = DHCP::DHCPOFFER
-         goto Verify_Offer
+         goto Receive_Offer
       exception
          goto Failure
       end Verify_Offer;
