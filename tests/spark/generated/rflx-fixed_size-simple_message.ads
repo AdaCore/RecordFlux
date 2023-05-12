@@ -656,19 +656,25 @@ private
                      and then Cursors (F_Data).Predecessor = F_Message_Type
                      and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data)))))
       and then ((if Invalid (Cursors (F_Message_Type)) then Invalid (Cursors (F_Data))))
-      and then (if
-                   Well_Formed (Cursors (F_Message_Type))
-                then
-                   Cursors (F_Message_Type).Last - Cursors (F_Message_Type).First + 1 = 8
-                   and then Cursors (F_Message_Type).Predecessor = F_Initial
-                   and then Cursors (F_Message_Type).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_Data))
-                                and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
-                             then
-                                Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 24
-                                and then Cursors (F_Data).Predecessor = F_Message_Type
-                                and then Cursors (F_Data).First = Cursors (F_Message_Type).Last + 1)))
+      and then ((if
+                    Well_Formed (Cursors (F_Message_Type))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Message_Type).Last - Cursors (F_Message_Type).First + 1 = 8
+                        and then Cursors (F_Message_Type).Predecessor = F_Initial
+                        and then Cursors (F_Message_Type).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_Data))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Message_Type))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
+                              then
+                                 Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 24
+                                 and then Cursors (F_Data).Predecessor = F_Message_Type
+                                 and then Cursors (F_Data).First = Cursors (F_Message_Type).Last + 1))))
     with
      Post =>
        True;

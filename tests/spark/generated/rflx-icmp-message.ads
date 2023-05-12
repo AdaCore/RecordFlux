@@ -1411,443 +1411,223 @@ private
                              Invalid (Cursors (F_Data)))
                 and then (if Invalid (Cursors (F_Originate_Timestamp)) then Invalid (Cursors (F_Receive_Timestamp)))
                 and then (if Invalid (Cursors (F_Receive_Timestamp)) then Invalid (Cursors (F_Transmit_Timestamp))))
-      and then (if
-                   Well_Formed (Cursors (F_Tag))
-                then
-                   Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = 8
-                   and then Cursors (F_Tag).Predecessor = F_Initial
-                   and then Cursors (F_Tag).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_Code_Destination_Unreachable))
-                                and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
-                             then
-                                Cursors (F_Code_Destination_Unreachable).Last - Cursors (F_Code_Destination_Unreachable).First + 1 = 8
-                                and then Cursors (F_Code_Destination_Unreachable).Predecessor = F_Tag
-                                and then Cursors (F_Code_Destination_Unreachable).First = Cursors (F_Tag).Last + 1
-                                and then (if
-                                             Well_Formed (Cursors (F_Checksum))
-                                          then
-                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
-                                             and then Cursors (F_Checksum).Predecessor = F_Code_Destination_Unreachable
-                                             and then Cursors (F_Checksum).First = Cursors (F_Code_Destination_Unreachable).Last + 1
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Gateway_Internet_Address))
-                                                          and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
-                                                       then
-                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = 32
-                                                          and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
-                                                          and then Cursors (F_Gateway_Internet_Address).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Data))
-                                                                    then
-                                                                       Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                       and then Cursors (F_Data).Predecessor = F_Gateway_Internet_Address
-                                                                       and then Cursors (F_Data).First = Cursors (F_Gateway_Internet_Address).Last + 1))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Identifier))
-                                                          and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply)))
-                                                       then
-                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = 16
-                                                          and then Cursors (F_Identifier).Predecessor = F_Checksum
-                                                          and then Cursors (F_Identifier).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Sequence_Number))
-                                                                    then
-                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = 16
-                                                                       and then Cursors (F_Sequence_Number).Predecessor = F_Identifier
-                                                                       and then Cursors (F_Sequence_Number).First = Cursors (F_Identifier).Last + 1
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Data))
-                                                                                    and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-                                                                                              or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
-                                                                                 then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
-                                                                                    and then Cursors (F_Data).Predecessor = F_Sequence_Number
-                                                                                    and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Originate_Timestamp))
-                                                                                    and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                                                                                              or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply)))
-                                                                                 then
-                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = 32
-                                                                                    and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
-                                                                                    and then Cursors (F_Originate_Timestamp).First = Cursors (F_Sequence_Number).Last + 1
-                                                                                    and then (if
-                                                                                                 Well_Formed (Cursors (F_Receive_Timestamp))
-                                                                                              then
-                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = 32
-                                                                                                 and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
-                                                                                                 and then Cursors (F_Receive_Timestamp).First = Cursors (F_Originate_Timestamp).Last + 1
-                                                                                                 and then (if
-                                                                                                              Well_Formed (Cursors (F_Transmit_Timestamp))
-                                                                                                           then
-                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
-                                                                                                              and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
-                                                                                                              and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1)))))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Pointer))
-                                                          and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
-                                                       then
-                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = 8
-                                                          and then Cursors (F_Pointer).Predecessor = F_Checksum
-                                                          and then Cursors (F_Pointer).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Unused_24))
-                                                                    then
-                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = 24
-                                                                       and then Cursors (F_Unused_24).Predecessor = F_Pointer
-                                                                       and then Cursors (F_Unused_24).First = Cursors (F_Pointer).Last + 1
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Data))
-                                                                                 then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                                    and then Cursors (F_Data).Predecessor = F_Unused_24
-                                                                                    and then Cursors (F_Data).First = Cursors (F_Unused_24).Last + 1)))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Unused_32))
-                                                          and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench)))
-                                                       then
-                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = 32
-                                                          and then Cursors (F_Unused_32).Predecessor = F_Checksum
-                                                          and then Cursors (F_Unused_32).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Data))
-                                                                    then
-                                                                       Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                       and then Cursors (F_Data).Predecessor = F_Unused_32
-                                                                       and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))))
-                   and then (if
-                                Well_Formed (Cursors (F_Code_Redirect))
-                                and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
-                             then
-                                Cursors (F_Code_Redirect).Last - Cursors (F_Code_Redirect).First + 1 = 8
-                                and then Cursors (F_Code_Redirect).Predecessor = F_Tag
-                                and then Cursors (F_Code_Redirect).First = Cursors (F_Tag).Last + 1
-                                and then (if
-                                             Well_Formed (Cursors (F_Checksum))
-                                          then
-                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
-                                             and then Cursors (F_Checksum).Predecessor = F_Code_Redirect
-                                             and then Cursors (F_Checksum).First = Cursors (F_Code_Redirect).Last + 1
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Gateway_Internet_Address))
-                                                          and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
-                                                       then
-                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = 32
-                                                          and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
-                                                          and then Cursors (F_Gateway_Internet_Address).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Data))
-                                                                    then
-                                                                       Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                       and then Cursors (F_Data).Predecessor = F_Gateway_Internet_Address
-                                                                       and then Cursors (F_Data).First = Cursors (F_Gateway_Internet_Address).Last + 1))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Identifier))
-                                                          and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply)))
-                                                       then
-                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = 16
-                                                          and then Cursors (F_Identifier).Predecessor = F_Checksum
-                                                          and then Cursors (F_Identifier).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Sequence_Number))
-                                                                    then
-                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = 16
-                                                                       and then Cursors (F_Sequence_Number).Predecessor = F_Identifier
-                                                                       and then Cursors (F_Sequence_Number).First = Cursors (F_Identifier).Last + 1
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Data))
-                                                                                    and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-                                                                                              or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
-                                                                                 then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
-                                                                                    and then Cursors (F_Data).Predecessor = F_Sequence_Number
-                                                                                    and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Originate_Timestamp))
-                                                                                    and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                                                                                              or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply)))
-                                                                                 then
-                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = 32
-                                                                                    and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
-                                                                                    and then Cursors (F_Originate_Timestamp).First = Cursors (F_Sequence_Number).Last + 1
-                                                                                    and then (if
-                                                                                                 Well_Formed (Cursors (F_Receive_Timestamp))
-                                                                                              then
-                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = 32
-                                                                                                 and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
-                                                                                                 and then Cursors (F_Receive_Timestamp).First = Cursors (F_Originate_Timestamp).Last + 1
-                                                                                                 and then (if
-                                                                                                              Well_Formed (Cursors (F_Transmit_Timestamp))
-                                                                                                           then
-                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
-                                                                                                              and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
-                                                                                                              and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1)))))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Pointer))
-                                                          and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
-                                                       then
-                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = 8
-                                                          and then Cursors (F_Pointer).Predecessor = F_Checksum
-                                                          and then Cursors (F_Pointer).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Unused_24))
-                                                                    then
-                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = 24
-                                                                       and then Cursors (F_Unused_24).Predecessor = F_Pointer
-                                                                       and then Cursors (F_Unused_24).First = Cursors (F_Pointer).Last + 1
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Data))
-                                                                                 then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                                    and then Cursors (F_Data).Predecessor = F_Unused_24
-                                                                                    and then Cursors (F_Data).First = Cursors (F_Unused_24).Last + 1)))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Unused_32))
-                                                          and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench)))
-                                                       then
-                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = 32
-                                                          and then Cursors (F_Unused_32).Predecessor = F_Checksum
-                                                          and then Cursors (F_Unused_32).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Data))
-                                                                    then
-                                                                       Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                       and then Cursors (F_Data).Predecessor = F_Unused_32
-                                                                       and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))))
-                   and then (if
-                                Well_Formed (Cursors (F_Code_Time_Exceeded))
-                                and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
-                             then
-                                Cursors (F_Code_Time_Exceeded).Last - Cursors (F_Code_Time_Exceeded).First + 1 = 8
-                                and then Cursors (F_Code_Time_Exceeded).Predecessor = F_Tag
-                                and then Cursors (F_Code_Time_Exceeded).First = Cursors (F_Tag).Last + 1
-                                and then (if
-                                             Well_Formed (Cursors (F_Checksum))
-                                          then
-                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
-                                             and then Cursors (F_Checksum).Predecessor = F_Code_Time_Exceeded
-                                             and then Cursors (F_Checksum).First = Cursors (F_Code_Time_Exceeded).Last + 1
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Gateway_Internet_Address))
-                                                          and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
-                                                       then
-                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = 32
-                                                          and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
-                                                          and then Cursors (F_Gateway_Internet_Address).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Data))
-                                                                    then
-                                                                       Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                       and then Cursors (F_Data).Predecessor = F_Gateway_Internet_Address
-                                                                       and then Cursors (F_Data).First = Cursors (F_Gateway_Internet_Address).Last + 1))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Identifier))
-                                                          and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply)))
-                                                       then
-                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = 16
-                                                          and then Cursors (F_Identifier).Predecessor = F_Checksum
-                                                          and then Cursors (F_Identifier).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Sequence_Number))
-                                                                    then
-                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = 16
-                                                                       and then Cursors (F_Sequence_Number).Predecessor = F_Identifier
-                                                                       and then Cursors (F_Sequence_Number).First = Cursors (F_Identifier).Last + 1
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Data))
-                                                                                    and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-                                                                                              or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
-                                                                                 then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
-                                                                                    and then Cursors (F_Data).Predecessor = F_Sequence_Number
-                                                                                    and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Originate_Timestamp))
-                                                                                    and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                                                                                              or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply)))
-                                                                                 then
-                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = 32
-                                                                                    and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
-                                                                                    and then Cursors (F_Originate_Timestamp).First = Cursors (F_Sequence_Number).Last + 1
-                                                                                    and then (if
-                                                                                                 Well_Formed (Cursors (F_Receive_Timestamp))
-                                                                                              then
-                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = 32
-                                                                                                 and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
-                                                                                                 and then Cursors (F_Receive_Timestamp).First = Cursors (F_Originate_Timestamp).Last + 1
-                                                                                                 and then (if
-                                                                                                              Well_Formed (Cursors (F_Transmit_Timestamp))
-                                                                                                           then
-                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
-                                                                                                              and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
-                                                                                                              and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1)))))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Pointer))
-                                                          and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
-                                                       then
-                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = 8
-                                                          and then Cursors (F_Pointer).Predecessor = F_Checksum
-                                                          and then Cursors (F_Pointer).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Unused_24))
-                                                                    then
-                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = 24
-                                                                       and then Cursors (F_Unused_24).Predecessor = F_Pointer
-                                                                       and then Cursors (F_Unused_24).First = Cursors (F_Pointer).Last + 1
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Data))
-                                                                                 then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                                    and then Cursors (F_Data).Predecessor = F_Unused_24
-                                                                                    and then Cursors (F_Data).First = Cursors (F_Unused_24).Last + 1)))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Unused_32))
-                                                          and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench)))
-                                                       then
-                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = 32
-                                                          and then Cursors (F_Unused_32).Predecessor = F_Checksum
-                                                          and then Cursors (F_Unused_32).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Data))
-                                                                    then
-                                                                       Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                       and then Cursors (F_Data).Predecessor = F_Unused_32
-                                                                       and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))))
-                   and then (if
-                                Well_Formed (Cursors (F_Code_Zero))
-                                and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
-                                          or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
-                                          or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
-                                          or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                                          or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
-                                          or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench))
-                                          or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-                                          or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
-                             then
-                                Cursors (F_Code_Zero).Last - Cursors (F_Code_Zero).First + 1 = 8
-                                and then Cursors (F_Code_Zero).Predecessor = F_Tag
-                                and then Cursors (F_Code_Zero).First = Cursors (F_Tag).Last + 1
-                                and then (if
-                                             Well_Formed (Cursors (F_Checksum))
-                                          then
-                                             Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
-                                             and then Cursors (F_Checksum).Predecessor = F_Code_Zero
-                                             and then Cursors (F_Checksum).First = Cursors (F_Code_Zero).Last + 1
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Gateway_Internet_Address))
-                                                          and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
-                                                       then
-                                                          Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = 32
-                                                          and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
-                                                          and then Cursors (F_Gateway_Internet_Address).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Data))
-                                                                    then
-                                                                       Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                       and then Cursors (F_Data).Predecessor = F_Gateway_Internet_Address
-                                                                       and then Cursors (F_Data).First = Cursors (F_Gateway_Internet_Address).Last + 1))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Identifier))
-                                                          and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply)))
-                                                       then
-                                                          Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = 16
-                                                          and then Cursors (F_Identifier).Predecessor = F_Checksum
-                                                          and then Cursors (F_Identifier).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Sequence_Number))
-                                                                    then
-                                                                       Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = 16
-                                                                       and then Cursors (F_Sequence_Number).Predecessor = F_Identifier
-                                                                       and then Cursors (F_Sequence_Number).First = Cursors (F_Identifier).Last + 1
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Data))
-                                                                                    and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-                                                                                              or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
-                                                                                 then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
-                                                                                    and then Cursors (F_Data).Predecessor = F_Sequence_Number
-                                                                                    and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Originate_Timestamp))
-                                                                                    and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                                                                                              or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply)))
-                                                                                 then
-                                                                                    Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = 32
-                                                                                    and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
-                                                                                    and then Cursors (F_Originate_Timestamp).First = Cursors (F_Sequence_Number).Last + 1
-                                                                                    and then (if
-                                                                                                 Well_Formed (Cursors (F_Receive_Timestamp))
-                                                                                              then
-                                                                                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = 32
-                                                                                                 and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
-                                                                                                 and then Cursors (F_Receive_Timestamp).First = Cursors (F_Originate_Timestamp).Last + 1
-                                                                                                 and then (if
-                                                                                                              Well_Formed (Cursors (F_Transmit_Timestamp))
-                                                                                                           then
-                                                                                                              Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
-                                                                                                              and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
-                                                                                                              and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1)))))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Pointer))
-                                                          and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
-                                                       then
-                                                          Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = 8
-                                                          and then Cursors (F_Pointer).Predecessor = F_Checksum
-                                                          and then Cursors (F_Pointer).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Unused_24))
-                                                                    then
-                                                                       Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = 24
-                                                                       and then Cursors (F_Unused_24).Predecessor = F_Pointer
-                                                                       and then Cursors (F_Unused_24).First = Cursors (F_Pointer).Last + 1
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Data))
-                                                                                 then
-                                                                                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                                    and then Cursors (F_Data).Predecessor = F_Unused_24
-                                                                                    and then Cursors (F_Data).First = Cursors (F_Unused_24).Last + 1)))
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Unused_32))
-                                                          and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
-                                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench)))
-                                                       then
-                                                          Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = 32
-                                                          and then Cursors (F_Unused_32).Predecessor = F_Checksum
-                                                          and then Cursors (F_Unused_32).First = Cursors (F_Checksum).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Data))
-                                                                    then
-                                                                       Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
-                                                                       and then Cursors (F_Data).Predecessor = F_Unused_32
-                                                                       and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))))))
+      and then ((if
+                    Well_Formed (Cursors (F_Tag))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = 8
+                        and then Cursors (F_Tag).Predecessor = F_Initial
+                        and then Cursors (F_Tag).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_Code_Destination_Unreachable))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Tag))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
+                              then
+                                 Cursors (F_Code_Destination_Unreachable).Last - Cursors (F_Code_Destination_Unreachable).First + 1 = 8
+                                 and then Cursors (F_Code_Destination_Unreachable).Predecessor = F_Tag
+                                 and then Cursors (F_Code_Destination_Unreachable).First = Cursors (F_Tag).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Code_Redirect))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Tag))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
+                              then
+                                 Cursors (F_Code_Redirect).Last - Cursors (F_Code_Redirect).First + 1 = 8
+                                 and then Cursors (F_Code_Redirect).Predecessor = F_Tag
+                                 and then Cursors (F_Code_Redirect).First = Cursors (F_Tag).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Code_Time_Exceeded))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Tag))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
+                              then
+                                 Cursors (F_Code_Time_Exceeded).Last - Cursors (F_Code_Time_Exceeded).First + 1 = 8
+                                 and then Cursors (F_Code_Time_Exceeded).Predecessor = F_Tag
+                                 and then Cursors (F_Code_Time_Exceeded).First = Cursors (F_Tag).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Code_Zero))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Tag))
+                                 and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
+                              then
+                                 Cursors (F_Code_Zero).Last - Cursors (F_Code_Zero).First + 1 = 8
+                                 and then Cursors (F_Code_Zero).Predecessor = F_Tag
+                                 and then Cursors (F_Code_Zero).First = Cursors (F_Tag).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Checksum))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Code_Destination_Unreachable))
+                                 and then True
+                              then
+                                 Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
+                                 and then Cursors (F_Checksum).Predecessor = F_Code_Destination_Unreachable
+                                 and then Cursors (F_Checksum).First = Cursors (F_Code_Destination_Unreachable).Last + 1)
+                             and then (if
+                                          Well_Formed (Cursors (F_Code_Redirect))
+                                          and then True
+                                       then
+                                          Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
+                                          and then Cursors (F_Checksum).Predecessor = F_Code_Redirect
+                                          and then Cursors (F_Checksum).First = Cursors (F_Code_Redirect).Last + 1)
+                             and then (if
+                                          Well_Formed (Cursors (F_Code_Time_Exceeded))
+                                          and then True
+                                       then
+                                          Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
+                                          and then Cursors (F_Checksum).Predecessor = F_Code_Time_Exceeded
+                                          and then Cursors (F_Checksum).First = Cursors (F_Code_Time_Exceeded).Last + 1)
+                             and then (if
+                                          Well_Formed (Cursors (F_Code_Zero))
+                                          and then True
+                                       then
+                                          Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
+                                          and then Cursors (F_Checksum).Predecessor = F_Code_Zero
+                                          and then Cursors (F_Checksum).First = Cursors (F_Code_Zero).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Gateway_Internet_Address))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Checksum))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
+                              then
+                                 Cursors (F_Gateway_Internet_Address).Last - Cursors (F_Gateway_Internet_Address).First + 1 = 32
+                                 and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum
+                                 and then Cursors (F_Gateway_Internet_Address).First = Cursors (F_Checksum).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Identifier))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Checksum))
+                                 and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply)))
+                              then
+                                 Cursors (F_Identifier).Last - Cursors (F_Identifier).First + 1 = 16
+                                 and then Cursors (F_Identifier).Predecessor = F_Checksum
+                                 and then Cursors (F_Identifier).First = Cursors (F_Checksum).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Pointer))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Checksum))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
+                              then
+                                 Cursors (F_Pointer).Last - Cursors (F_Pointer).First + 1 = 8
+                                 and then Cursors (F_Pointer).Predecessor = F_Checksum
+                                 and then Cursors (F_Pointer).First = Cursors (F_Checksum).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Unused_32))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Checksum))
+                                 and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench)))
+                              then
+                                 Cursors (F_Unused_32).Last - Cursors (F_Unused_32).First + 1 = 32
+                                 and then Cursors (F_Unused_32).Predecessor = F_Checksum
+                                 and then Cursors (F_Unused_32).First = Cursors (F_Checksum).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Sequence_Number))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Identifier))
+                                 and then True
+                              then
+                                 Cursors (F_Sequence_Number).Last - Cursors (F_Sequence_Number).First + 1 = 16
+                                 and then Cursors (F_Sequence_Number).Predecessor = F_Identifier
+                                 and then Cursors (F_Sequence_Number).First = Cursors (F_Identifier).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Unused_24))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Pointer))
+                                 and then True
+                              then
+                                 Cursors (F_Unused_24).Last - Cursors (F_Unused_24).First + 1 = 24
+                                 and then Cursors (F_Unused_24).Predecessor = F_Pointer
+                                 and then Cursors (F_Unused_24).First = Cursors (F_Pointer).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Originate_Timestamp))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Sequence_Number))
+                                 and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
+                                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply)))
+                              then
+                                 Cursors (F_Originate_Timestamp).Last - Cursors (F_Originate_Timestamp).First + 1 = 32
+                                 and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number
+                                 and then Cursors (F_Originate_Timestamp).First = Cursors (F_Sequence_Number).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Data))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Gateway_Internet_Address))
+                                 and then True
+                              then
+                                 Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
+                                 and then Cursors (F_Data).Predecessor = F_Gateway_Internet_Address
+                                 and then Cursors (F_Data).First = Cursors (F_Gateway_Internet_Address).Last + 1)
+                             and then (if
+                                          Well_Formed (Cursors (F_Sequence_Number))
+                                          and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
+                                                    or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
+                                       then
+                                          Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Sequence_Number).Last)
+                                          and then Cursors (F_Data).Predecessor = F_Sequence_Number
+                                          and then Cursors (F_Data).First = Cursors (F_Sequence_Number).Last + 1)
+                             and then (if
+                                          Well_Formed (Cursors (F_Unused_24))
+                                          and then True
+                                       then
+                                          Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
+                                          and then Cursors (F_Data).Predecessor = F_Unused_24
+                                          and then Cursors (F_Data).First = Cursors (F_Unused_24).Last + 1)
+                             and then (if
+                                          Well_Formed (Cursors (F_Unused_32))
+                                          and then True
+                                       then
+                                          Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 224
+                                          and then Cursors (F_Data).Predecessor = F_Unused_32
+                                          and then Cursors (F_Data).First = Cursors (F_Unused_32).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Receive_Timestamp))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Originate_Timestamp))
+                                 and then True
+                              then
+                                 Cursors (F_Receive_Timestamp).Last - Cursors (F_Receive_Timestamp).First + 1 = 32
+                                 and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp
+                                 and then Cursors (F_Receive_Timestamp).First = Cursors (F_Originate_Timestamp).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Transmit_Timestamp))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Receive_Timestamp))
+                                 and then True
+                              then
+                                 Cursors (F_Transmit_Timestamp).Last - Cursors (F_Transmit_Timestamp).First + 1 = 32
+                                 and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp
+                                 and then Cursors (F_Transmit_Timestamp).First = Cursors (F_Receive_Timestamp).Last + 1))))
     with
      Post =>
        True;

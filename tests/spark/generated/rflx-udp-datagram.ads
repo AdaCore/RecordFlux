@@ -821,36 +821,55 @@ private
                 and then (if Invalid (Cursors (F_Destination_Port)) then Invalid (Cursors (F_Length)))
                 and then (if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Checksum)))
                 and then (if Invalid (Cursors (F_Checksum)) then Invalid (Cursors (F_Payload))))
-      and then (if
-                   Well_Formed (Cursors (F_Source_Port))
-                then
-                   Cursors (F_Source_Port).Last - Cursors (F_Source_Port).First + 1 = 16
-                   and then Cursors (F_Source_Port).Predecessor = F_Initial
-                   and then Cursors (F_Source_Port).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_Destination_Port))
-                             then
-                                Cursors (F_Destination_Port).Last - Cursors (F_Destination_Port).First + 1 = 16
-                                and then Cursors (F_Destination_Port).Predecessor = F_Source_Port
-                                and then Cursors (F_Destination_Port).First = Cursors (F_Source_Port).Last + 1
-                                and then (if
-                                             Well_Formed (Cursors (F_Length))
-                                          then
-                                             Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
-                                             and then Cursors (F_Length).Predecessor = F_Destination_Port
-                                             and then Cursors (F_Length).First = Cursors (F_Destination_Port).Last + 1
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Checksum))
-                                                       then
-                                                          Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
-                                                          and then Cursors (F_Checksum).Predecessor = F_Length
-                                                          and then Cursors (F_Checksum).First = Cursors (F_Length).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Payload))
-                                                                    then
-                                                                       Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Length).Value) - 8) * 8
-                                                                       and then Cursors (F_Payload).Predecessor = F_Checksum
-                                                                       and then Cursors (F_Payload).First = Cursors (F_Checksum).Last + 1))))))
+      and then ((if
+                    Well_Formed (Cursors (F_Source_Port))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Source_Port).Last - Cursors (F_Source_Port).First + 1 = 16
+                        and then Cursors (F_Source_Port).Predecessor = F_Initial
+                        and then Cursors (F_Source_Port).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_Destination_Port))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Source_Port))
+                                 and then True
+                              then
+                                 Cursors (F_Destination_Port).Last - Cursors (F_Destination_Port).First + 1 = 16
+                                 and then Cursors (F_Destination_Port).Predecessor = F_Source_Port
+                                 and then Cursors (F_Destination_Port).First = Cursors (F_Source_Port).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Length))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Destination_Port))
+                                 and then True
+                              then
+                                 Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
+                                 and then Cursors (F_Length).Predecessor = F_Destination_Port
+                                 and then Cursors (F_Length).First = Cursors (F_Destination_Port).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Checksum))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Length))
+                                 and then True
+                              then
+                                 Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
+                                 and then Cursors (F_Checksum).Predecessor = F_Length
+                                 and then Cursors (F_Checksum).First = Cursors (F_Length).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Payload))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Checksum))
+                                 and then True
+                              then
+                                 Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Length).Value) - 8) * 8
+                                 and then Cursors (F_Payload).Predecessor = F_Checksum
+                                 and then Cursors (F_Payload).First = Cursors (F_Checksum).Last + 1))))
     with
      Post =>
        True;

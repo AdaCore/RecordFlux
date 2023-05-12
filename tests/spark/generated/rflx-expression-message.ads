@@ -596,12 +596,15 @@ private
                        and Valid_Value (F, Cursors (F).Value)))
       and then (True)
       and then (True)
-      and then (if
-                   Well_Formed (Cursors (F_Payload))
-                then
-                   Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = 16
-                   and then Cursors (F_Payload).Predecessor = F_Initial
-                   and then Cursors (F_Payload).First = First))
+      and then ((if
+                    Well_Formed (Cursors (F_Payload))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = 16
+                        and then Cursors (F_Payload).Predecessor = F_Initial
+                        and then Cursors (F_Payload).First = First))))
     with
      Post =>
        True;

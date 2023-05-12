@@ -308,7 +308,7 @@ def substitution_facts(
 
 
 def message_structure_invariant(
-    message: model.Message, prefix: str, link: Optional[model.Link] = None, embedded: bool = False
+    message: model.Message, prefix: str, embedded: bool = False
 ) -> Expr:
     """
     Create the invariant that defines a valid message structure.
@@ -324,107 +324,120 @@ def message_structure_invariant(
     def prefixed(name: str) -> expr.Expr:
         return expr.Selected(expr.Variable("Ctx"), name) if not embedded else expr.Variable(name)
 
-    if not link:
-        return message_structure_invariant(
-            message, prefix, message.outgoing(model.INITIAL)[0], embedded
+    def link_property(link: model.Link) -> Expr:
+        field_type = message.types[link.target]
+        condition = link.condition.substituted(substitution(message, prefix, embedded)).simplified()
+        size = (
+            field_type.size
+            if isinstance(field_type, model.Scalar)
+            else link.size.substituted(
+                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_LENGTH)
+            ).simplified()
         )
-
-    source = link.source
-    target = link.target
-
-    if target == model.FINAL:
-        return TRUE
-
-    field_type = message.types[target]
-    condition = link.condition.substituted(substitution(message, prefix, embedded)).simplified()
-    size = (
-        field_type.size
-        if isinstance(field_type, model.Scalar)
-        else link.size.substituted(
-            substitution(message, prefix, embedded, target_type=const.TYPES_BIT_LENGTH)
-        ).simplified()
-    )
-    first = (
-        prefixed("First")
-        if source == model.INITIAL
-        else link.first.substituted(
-            substitution(message, prefix, embedded, target_type=const.TYPES_BIT_INDEX)
-        )
-        .substituted(
-            mapping={
-                expr.UNDEFINED: expr.Add(
-                    expr.Selected(
-                        expr.Indexed(prefixed("Cursors"), expr.Variable(source.affixed_name)),
-                        "Last",
-                    ),
-                    expr.Number(1),
-                )
-            }
-        )
-        .simplified()
-    )
-    invariant = [
-        message_structure_invariant(message, prefix, l, embedded) for l in message.outgoing(target)
-    ]
-
-    return If(
-        [
-            (
-                AndThen(
-                    Call(
-                        "Well_Formed",
-                        [Indexed(prefixed("Cursors").ada_expr(), Variable(target.affixed_name))],
-                    ),
-                    *([condition.ada_expr()] if condition != expr.TRUE else []),
-                ),
-                AndThen(
-                    Equal(
-                        Add(
-                            Sub(
-                                Selected(
-                                    Indexed(
-                                        prefixed("Cursors").ada_expr(),
-                                        Variable(target.affixed_name),
-                                    ),
-                                    "Last",
-                                ),
-                                Selected(
-                                    Indexed(
-                                        prefixed("Cursors").ada_expr(),
-                                        Variable(target.affixed_name),
-                                    ),
-                                    "First",
-                                ),
-                            ),
-                            Number(1),
-                        ),
-                        size.ada_expr(),
-                    ),
-                    Equal(
-                        Selected(
-                            Indexed(
-                                prefixed("Cursors").ada_expr(),
-                                Variable(target.affixed_name),
-                            ),
-                            "Predecessor",
-                        ),
-                        Variable(source.affixed_name),
-                    ),
-                    Equal(
-                        Selected(
-                            Indexed(
-                                prefixed("Cursors").ada_expr(),
-                                Variable(target.affixed_name),
-                            ),
-                            "First",
-                        ),
-                        first.ada_expr(),
-                    ),
-                    *[i for i in invariant if i != TRUE],
-                ),
+        first = (
+            prefixed("First")
+            if link.source == model.INITIAL
+            else link.first.substituted(
+                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_INDEX)
             )
-        ]
-    )
+            .substituted(
+                mapping={
+                    expr.UNDEFINED: expr.Add(
+                        expr.Selected(
+                            expr.Indexed(
+                                prefixed("Cursors"), expr.Variable(link.source.affixed_name)
+                            ),
+                            "Last",
+                        ),
+                        expr.Number(1),
+                    )
+                }
+            )
+            .simplified()
+        )
+        precond = (
+            AndThen(
+                Call(
+                    "Well_Formed",
+                    [Indexed(Variable("Cursors"), Variable(link.source.affixed_name))],
+                ),
+                condition.ada_expr(),
+            )
+            if link.source != model.INITIAL
+            else expr.TRUE
+        )
+
+        return If(
+            [
+                (
+                    precond,
+                    AndThen(
+                        Equal(
+                            Add(
+                                Sub(
+                                    Selected(
+                                        Indexed(
+                                            prefixed("Cursors").ada_expr(),
+                                            Variable(link.target.affixed_name),
+                                        ),
+                                        "Last",
+                                    ),
+                                    Selected(
+                                        Indexed(
+                                            prefixed("Cursors").ada_expr(),
+                                            Variable(link.target.affixed_name),
+                                        ),
+                                        "First",
+                                    ),
+                                ),
+                                Number(1),
+                            ),
+                            size.ada_expr(),
+                        ),
+                        Equal(
+                            Selected(
+                                Indexed(
+                                    prefixed("Cursors").ada_expr(),
+                                    Variable(link.target.affixed_name),
+                                ),
+                                "Predecessor",
+                            ),
+                            Variable(link.source.affixed_name),
+                        ),
+                        Equal(
+                            Selected(
+                                Indexed(
+                                    prefixed("Cursors").ada_expr(),
+                                    Variable(link.target.affixed_name),
+                                ),
+                                "First",
+                            ),
+                            first.ada_expr(),
+                        ),
+                    ),
+                )
+            ]
+        )
+
+    def field_property(fld: model.Field) -> Expr:
+        return AndThen(*[link_property(link) for link in message.incoming(fld)])
+
+    def map_invariant(fld: model.Field) -> Expr:
+        return If(
+            [
+                (
+                    AndThen(
+                        Call(
+                            "Well_Formed",
+                            [Indexed(prefixed("Cursors").ada_expr(), Variable(fld.affixed_name))],
+                        ),
+                    ),
+                    field_property(fld),
+                )
+            ]
+        )
+
+    return AndThen(*[map_invariant(f) for f in message.fields])
 
 
 def context_predicate(

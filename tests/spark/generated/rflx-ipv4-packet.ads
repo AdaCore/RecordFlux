@@ -1628,110 +1628,175 @@ private
                 and then (if Invalid (Cursors (F_Source)) then Invalid (Cursors (F_Destination)))
                 and then (if Invalid (Cursors (F_Destination)) then Invalid (Cursors (F_Options)))
                 and then (if Invalid (Cursors (F_Options)) then Invalid (Cursors (F_Payload))))
-      and then (if
-                   Well_Formed (Cursors (F_Version))
-                then
-                   Cursors (F_Version).Last - Cursors (F_Version).First + 1 = 4
-                   and then Cursors (F_Version).Predecessor = F_Initial
-                   and then Cursors (F_Version).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_IHL))
-                             then
-                                Cursors (F_IHL).Last - Cursors (F_IHL).First + 1 = 4
-                                and then Cursors (F_IHL).Predecessor = F_Version
-                                and then Cursors (F_IHL).First = Cursors (F_Version).Last + 1
-                                and then (if
-                                             Well_Formed (Cursors (F_DSCP))
-                                          then
-                                             Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1 = 6
-                                             and then Cursors (F_DSCP).Predecessor = F_IHL
-                                             and then Cursors (F_DSCP).First = Cursors (F_IHL).Last + 1
-                                             and then (if
-                                                          Well_Formed (Cursors (F_ECN))
-                                                       then
-                                                          Cursors (F_ECN).Last - Cursors (F_ECN).First + 1 = 2
-                                                          and then Cursors (F_ECN).Predecessor = F_DSCP
-                                                          and then Cursors (F_ECN).First = Cursors (F_DSCP).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Total_Length))
-                                                                    then
-                                                                       Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1 = 16
-                                                                       and then Cursors (F_Total_Length).Predecessor = F_ECN
-                                                                       and then Cursors (F_Total_Length).First = Cursors (F_ECN).Last + 1
-                                                                       and then (if
-                                                                                    Well_Formed (Cursors (F_Identification))
-                                                                                    and then RFLX_Types.Base_Integer (Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Cursors (F_IHL).Value) * 4
-                                                                                 then
-                                                                                    Cursors (F_Identification).Last - Cursors (F_Identification).First + 1 = 16
-                                                                                    and then Cursors (F_Identification).Predecessor = F_Total_Length
-                                                                                    and then Cursors (F_Identification).First = Cursors (F_Total_Length).Last + 1
-                                                                                    and then (if
-                                                                                                 Well_Formed (Cursors (F_Flag_R))
-                                                                                              then
-                                                                                                 Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1 = 1
-                                                                                                 and then Cursors (F_Flag_R).Predecessor = F_Identification
-                                                                                                 and then Cursors (F_Flag_R).First = Cursors (F_Identification).Last + 1
-                                                                                                 and then (if
-                                                                                                              Well_Formed (Cursors (F_Flag_DF))
-                                                                                                              and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))
-                                                                                                           then
-                                                                                                              Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1 = 1
-                                                                                                              and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
-                                                                                                              and then Cursors (F_Flag_DF).First = Cursors (F_Flag_R).Last + 1
-                                                                                                              and then (if
-                                                                                                                           Well_Formed (Cursors (F_Flag_MF))
-                                                                                                                        then
-                                                                                                                           Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1 = 1
-                                                                                                                           and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF
-                                                                                                                           and then Cursors (F_Flag_MF).First = Cursors (F_Flag_DF).Last + 1
-                                                                                                                           and then (if
-                                                                                                                                        Well_Formed (Cursors (F_Fragment_Offset))
-                                                                                                                                     then
-                                                                                                                                        Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1 = 13
-                                                                                                                                        and then Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF
-                                                                                                                                        and then Cursors (F_Fragment_Offset).First = Cursors (F_Flag_MF).Last + 1
-                                                                                                                                        and then (if
-                                                                                                                                                     Well_Formed (Cursors (F_TTL))
-                                                                                                                                                  then
-                                                                                                                                                     Cursors (F_TTL).Last - Cursors (F_TTL).First + 1 = 8
-                                                                                                                                                     and then Cursors (F_TTL).Predecessor = F_Fragment_Offset
-                                                                                                                                                     and then Cursors (F_TTL).First = Cursors (F_Fragment_Offset).Last + 1
-                                                                                                                                                     and then (if
-                                                                                                                                                                  Well_Formed (Cursors (F_Protocol))
-                                                                                                                                                               then
-                                                                                                                                                                  Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1 = 8
-                                                                                                                                                                  and then Cursors (F_Protocol).Predecessor = F_TTL
-                                                                                                                                                                  and then Cursors (F_Protocol).First = Cursors (F_TTL).Last + 1
-                                                                                                                                                                  and then (if
-                                                                                                                                                                               Well_Formed (Cursors (F_Header_Checksum))
-                                                                                                                                                                            then
-                                                                                                                                                                               Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1 = 16
-                                                                                                                                                                               and then Cursors (F_Header_Checksum).Predecessor = F_Protocol
-                                                                                                                                                                               and then Cursors (F_Header_Checksum).First = Cursors (F_Protocol).Last + 1
-                                                                                                                                                                               and then (if
-                                                                                                                                                                                            Well_Formed (Cursors (F_Source))
-                                                                                                                                                                                         then
-                                                                                                                                                                                            Cursors (F_Source).Last - Cursors (F_Source).First + 1 = 32
-                                                                                                                                                                                            and then Cursors (F_Source).Predecessor = F_Header_Checksum
-                                                                                                                                                                                            and then Cursors (F_Source).First = Cursors (F_Header_Checksum).Last + 1
-                                                                                                                                                                                            and then (if
-                                                                                                                                                                                                         Well_Formed (Cursors (F_Destination))
-                                                                                                                                                                                                      then
-                                                                                                                                                                                                         Cursors (F_Destination).Last - Cursors (F_Destination).First + 1 = 32
-                                                                                                                                                                                                         and then Cursors (F_Destination).Predecessor = F_Source
-                                                                                                                                                                                                         and then Cursors (F_Destination).First = Cursors (F_Source).Last + 1
-                                                                                                                                                                                                         and then (if
-                                                                                                                                                                                                                      Well_Formed (Cursors (F_Options))
-                                                                                                                                                                                                                   then
-                                                                                                                                                                                                                      Cursors (F_Options).Last - Cursors (F_Options).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_IHL).Value) - 5) * 32
-                                                                                                                                                                                                                      and then Cursors (F_Options).Predecessor = F_Destination
-                                                                                                                                                                                                                      and then Cursors (F_Options).First = Cursors (F_Destination).Last + 1
-                                                                                                                                                                                                                      and then (if
-                                                                                                                                                                                                                                   Well_Formed (Cursors (F_Payload))
-                                                                                                                                                                                                                                then
-                                                                                                                                                                                                                                   Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Total_Length).Value) * 8 + RFLX_Types.Bit_Length (Cursors (F_IHL).Value) * (-32)
-                                                                                                                                                                                                                                   and then Cursors (F_Payload).Predecessor = F_Options
-                                                                                                                                                                                                                                   and then Cursors (F_Payload).First = Cursors (F_Options).Last + 1))))))))))))))))))
+      and then ((if
+                    Well_Formed (Cursors (F_Version))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Version).Last - Cursors (F_Version).First + 1 = 4
+                        and then Cursors (F_Version).Predecessor = F_Initial
+                        and then Cursors (F_Version).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_IHL))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Version))
+                                 and then True
+                              then
+                                 Cursors (F_IHL).Last - Cursors (F_IHL).First + 1 = 4
+                                 and then Cursors (F_IHL).Predecessor = F_Version
+                                 and then Cursors (F_IHL).First = Cursors (F_Version).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_DSCP))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_IHL))
+                                 and then True
+                              then
+                                 Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1 = 6
+                                 and then Cursors (F_DSCP).Predecessor = F_IHL
+                                 and then Cursors (F_DSCP).First = Cursors (F_IHL).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_ECN))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_DSCP))
+                                 and then True
+                              then
+                                 Cursors (F_ECN).Last - Cursors (F_ECN).First + 1 = 2
+                                 and then Cursors (F_ECN).Predecessor = F_DSCP
+                                 and then Cursors (F_ECN).First = Cursors (F_DSCP).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Total_Length))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_ECN))
+                                 and then True
+                              then
+                                 Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1 = 16
+                                 and then Cursors (F_Total_Length).Predecessor = F_ECN
+                                 and then Cursors (F_Total_Length).First = Cursors (F_ECN).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Identification))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Total_Length))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Cursors (F_IHL).Value) * 4
+                              then
+                                 Cursors (F_Identification).Last - Cursors (F_Identification).First + 1 = 16
+                                 and then Cursors (F_Identification).Predecessor = F_Total_Length
+                                 and then Cursors (F_Identification).First = Cursors (F_Total_Length).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Flag_R))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Identification))
+                                 and then True
+                              then
+                                 Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1 = 1
+                                 and then Cursors (F_Flag_R).Predecessor = F_Identification
+                                 and then Cursors (F_Flag_R).First = Cursors (F_Identification).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Flag_DF))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Flag_R))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))
+                              then
+                                 Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1 = 1
+                                 and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
+                                 and then Cursors (F_Flag_DF).First = Cursors (F_Flag_R).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Flag_MF))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Flag_DF))
+                                 and then True
+                              then
+                                 Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1 = 1
+                                 and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF
+                                 and then Cursors (F_Flag_MF).First = Cursors (F_Flag_DF).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Fragment_Offset))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Flag_MF))
+                                 and then True
+                              then
+                                 Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1 = 13
+                                 and then Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF
+                                 and then Cursors (F_Fragment_Offset).First = Cursors (F_Flag_MF).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_TTL))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Fragment_Offset))
+                                 and then True
+                              then
+                                 Cursors (F_TTL).Last - Cursors (F_TTL).First + 1 = 8
+                                 and then Cursors (F_TTL).Predecessor = F_Fragment_Offset
+                                 and then Cursors (F_TTL).First = Cursors (F_Fragment_Offset).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Protocol))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_TTL))
+                                 and then True
+                              then
+                                 Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1 = 8
+                                 and then Cursors (F_Protocol).Predecessor = F_TTL
+                                 and then Cursors (F_Protocol).First = Cursors (F_TTL).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Header_Checksum))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Protocol))
+                                 and then True
+                              then
+                                 Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1 = 16
+                                 and then Cursors (F_Header_Checksum).Predecessor = F_Protocol
+                                 and then Cursors (F_Header_Checksum).First = Cursors (F_Protocol).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Source))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Header_Checksum))
+                                 and then True
+                              then
+                                 Cursors (F_Source).Last - Cursors (F_Source).First + 1 = 32
+                                 and then Cursors (F_Source).Predecessor = F_Header_Checksum
+                                 and then Cursors (F_Source).First = Cursors (F_Header_Checksum).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Destination))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Source))
+                                 and then True
+                              then
+                                 Cursors (F_Destination).Last - Cursors (F_Destination).First + 1 = 32
+                                 and then Cursors (F_Destination).Predecessor = F_Source
+                                 and then Cursors (F_Destination).First = Cursors (F_Source).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Options))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Destination))
+                                 and then True
+                              then
+                                 Cursors (F_Options).Last - Cursors (F_Options).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_IHL).Value) - 5) * 32
+                                 and then Cursors (F_Options).Predecessor = F_Destination
+                                 and then Cursors (F_Options).First = Cursors (F_Destination).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Payload))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Options))
+                                 and then True
+                              then
+                                 Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Total_Length).Value) * 8 + RFLX_Types.Bit_Length (Cursors (F_IHL).Value) * (-32)
+                                 and then Cursors (F_Payload).Predecessor = F_Options
+                                 and then Cursors (F_Payload).First = Cursors (F_Options).Last + 1))))
     with
      Post =>
        True;

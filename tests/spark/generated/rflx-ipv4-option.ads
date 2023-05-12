@@ -804,49 +804,66 @@ private
                 and then (if Invalid (Cursors (F_Option_Class)) then Invalid (Cursors (F_Option_Number)))
                 and then (if Invalid (Cursors (F_Option_Number)) then Invalid (Cursors (F_Option_Length)))
                 and then (if Invalid (Cursors (F_Option_Length)) then Invalid (Cursors (F_Option_Data))))
-      and then (if
-                   Well_Formed (Cursors (F_Copied))
-                then
-                   Cursors (F_Copied).Last - Cursors (F_Copied).First + 1 = 1
-                   and then Cursors (F_Copied).Predecessor = F_Initial
-                   and then Cursors (F_Copied).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_Option_Class))
-                             then
-                                Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1 = 2
-                                and then Cursors (F_Option_Class).Predecessor = F_Copied
-                                and then Cursors (F_Option_Class).First = Cursors (F_Copied).Last + 1
-                                and then (if
-                                             Well_Formed (Cursors (F_Option_Number))
-                                          then
-                                             Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1 = 5
-                                             and then Cursors (F_Option_Number).Predecessor = F_Option_Class
-                                             and then Cursors (F_Option_Number).First = Cursors (F_Option_Class).Last + 1
-                                             and then (if
-                                                          Well_Formed (Cursors (F_Option_Length))
-                                                          and then Cursors (F_Option_Number).Value > 1
-                                                       then
-                                                          Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1 = 8
-                                                          and then Cursors (F_Option_Length).Predecessor = F_Option_Number
-                                                          and then Cursors (F_Option_Length).First = Cursors (F_Option_Number).Last + 1
-                                                          and then (if
-                                                                       Well_Formed (Cursors (F_Option_Data))
-                                                                       and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
-                                                                                  and Cursors (F_Option_Number).Value = 4)
-                                                                                 or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                                                                     and (Cursors (F_Option_Number).Value = 9
-                                                                                          or Cursors (F_Option_Number).Value = 3
-                                                                                          or Cursors (F_Option_Number).Value = 7))
-                                                                                 or (Cursors (F_Option_Length).Value = 11
-                                                                                     and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                                                                     and Cursors (F_Option_Number).Value = 2)
-                                                                                 or (Cursors (F_Option_Length).Value = 4
-                                                                                     and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                                                                     and Cursors (F_Option_Number).Value = 8))
-                                                                    then
-                                                                       Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8
-                                                                       and then Cursors (F_Option_Data).Predecessor = F_Option_Length
-                                                                       and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))))
+      and then ((if
+                    Well_Formed (Cursors (F_Copied))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Copied).Last - Cursors (F_Copied).First + 1 = 1
+                        and then Cursors (F_Copied).Predecessor = F_Initial
+                        and then Cursors (F_Copied).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_Option_Class))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Copied))
+                                 and then True
+                              then
+                                 Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1 = 2
+                                 and then Cursors (F_Option_Class).Predecessor = F_Copied
+                                 and then Cursors (F_Option_Class).First = Cursors (F_Copied).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Option_Number))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Option_Class))
+                                 and then True
+                              then
+                                 Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1 = 5
+                                 and then Cursors (F_Option_Number).Predecessor = F_Option_Class
+                                 and then Cursors (F_Option_Number).First = Cursors (F_Option_Class).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Option_Length))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Option_Number))
+                                 and then Cursors (F_Option_Number).Value > 1
+                              then
+                                 Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1 = 8
+                                 and then Cursors (F_Option_Length).Predecessor = F_Option_Number
+                                 and then Cursors (F_Option_Length).First = Cursors (F_Option_Number).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Option_Data))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Option_Length))
+                                 and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
+                                            and Cursors (F_Option_Number).Value = 4)
+                                           or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
+                                               and (Cursors (F_Option_Number).Value = 9
+                                                    or Cursors (F_Option_Number).Value = 3
+                                                    or Cursors (F_Option_Number).Value = 7))
+                                           or (Cursors (F_Option_Length).Value = 11
+                                               and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
+                                               and Cursors (F_Option_Number).Value = 2)
+                                           or (Cursors (F_Option_Length).Value = 4
+                                               and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
+                                               and Cursors (F_Option_Number).Value = 8))
+                              then
+                                 Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8
+                                 and then Cursors (F_Option_Data).Predecessor = F_Option_Length
+                                 and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))
     with
      Post =>
        True;

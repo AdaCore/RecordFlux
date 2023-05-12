@@ -522,12 +522,15 @@ private
                        and Valid_Value (F, Cursors (F).Value)))
       and then (True)
       and then (True)
-      and then (if
-                   Well_Formed (Cursors (F_Priority))
-                then
-                   Cursors (F_Priority).Last - Cursors (F_Priority).First + 1 = 8
-                   and then Cursors (F_Priority).Predecessor = F_Initial
-                   and then Cursors (F_Priority).First = First))
+      and then ((if
+                    Well_Formed (Cursors (F_Priority))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Priority).Last - Cursors (F_Priority).First + 1 = 8
+                        and then Cursors (F_Priority).Predecessor = F_Initial
+                        and then Cursors (F_Priority).First = First))))
     with
      Post =>
        True;

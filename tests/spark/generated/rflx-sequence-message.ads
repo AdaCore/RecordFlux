@@ -912,30 +912,45 @@ private
       and then ((if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Integer_Vector)))
                 and then (if Invalid (Cursors (F_Integer_Vector)) then Invalid (Cursors (F_Enumeration_Vector)))
                 and then (if Invalid (Cursors (F_Enumeration_Vector)) then Invalid (Cursors (F_AV_Enumeration_Vector))))
-      and then (if
-                   Well_Formed (Cursors (F_Length))
-                then
-                   Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
-                   and then Cursors (F_Length).Predecessor = F_Initial
-                   and then Cursors (F_Length).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_Integer_Vector))
-                             then
-                                Cursors (F_Integer_Vector).Last - Cursors (F_Integer_Vector).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                                and then Cursors (F_Integer_Vector).Predecessor = F_Length
-                                and then Cursors (F_Integer_Vector).First = Cursors (F_Length).Last + 1
-                                and then (if
-                                             Well_Formed (Cursors (F_Enumeration_Vector))
-                                          then
-                                             Cursors (F_Enumeration_Vector).Last - Cursors (F_Enumeration_Vector).First + 1 = 16
-                                             and then Cursors (F_Enumeration_Vector).Predecessor = F_Integer_Vector
-                                             and then Cursors (F_Enumeration_Vector).First = Cursors (F_Integer_Vector).Last + 1
-                                             and then (if
-                                                          Well_Formed (Cursors (F_AV_Enumeration_Vector))
-                                                       then
-                                                          Cursors (F_AV_Enumeration_Vector).Last - Cursors (F_AV_Enumeration_Vector).First + 1 = 16
-                                                          and then Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
-                                                          and then Cursors (F_AV_Enumeration_Vector).First = Cursors (F_Enumeration_Vector).Last + 1)))))
+      and then ((if
+                    Well_Formed (Cursors (F_Length))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
+                        and then Cursors (F_Length).Predecessor = F_Initial
+                        and then Cursors (F_Length).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_Integer_Vector))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Length))
+                                 and then True
+                              then
+                                 Cursors (F_Integer_Vector).Last - Cursors (F_Integer_Vector).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                                 and then Cursors (F_Integer_Vector).Predecessor = F_Length
+                                 and then Cursors (F_Integer_Vector).First = Cursors (F_Length).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Enumeration_Vector))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Integer_Vector))
+                                 and then True
+                              then
+                                 Cursors (F_Enumeration_Vector).Last - Cursors (F_Enumeration_Vector).First + 1 = 16
+                                 and then Cursors (F_Enumeration_Vector).Predecessor = F_Integer_Vector
+                                 and then Cursors (F_Enumeration_Vector).First = Cursors (F_Integer_Vector).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_AV_Enumeration_Vector))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Enumeration_Vector))
+                                 and then True
+                              then
+                                 Cursors (F_AV_Enumeration_Vector).Last - Cursors (F_AV_Enumeration_Vector).First + 1 = 16
+                                 and then Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
+                                 and then Cursors (F_AV_Enumeration_Vector).First = Cursors (F_Enumeration_Vector).Last + 1))))
     with
      Post =>
        True;

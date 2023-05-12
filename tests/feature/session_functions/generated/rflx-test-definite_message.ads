@@ -721,24 +721,35 @@ private
                               and then Cursors (F_Data).Predecessor = F_Length)))
       and then ((if Invalid (Cursors (F_Message_Type)) then Invalid (Cursors (F_Length)))
                 and then (if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Data))))
-      and then (if
-                   Well_Formed (Cursors (F_Message_Type))
-                then
-                   Cursors (F_Message_Type).Last - Cursors (F_Message_Type).First + 1 = 8
-                   and then Cursors (F_Message_Type).Predecessor = F_Initial
-                   and then Cursors (F_Message_Type).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_Length))
-                             then
-                                Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
-                                and then Cursors (F_Length).Predecessor = F_Message_Type
-                                and then Cursors (F_Length).First = Cursors (F_Message_Type).Last + 1
-                                and then (if
-                                             Well_Formed (Cursors (F_Data))
-                                          then
-                                             Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                                             and then Cursors (F_Data).Predecessor = F_Length
-                                             and then Cursors (F_Data).First = Cursors (F_Length).Last + 1))))
+      and then ((if
+                    Well_Formed (Cursors (F_Message_Type))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Message_Type).Last - Cursors (F_Message_Type).First + 1 = 8
+                        and then Cursors (F_Message_Type).Predecessor = F_Initial
+                        and then Cursors (F_Message_Type).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_Length))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Message_Type))
+                                 and then True
+                              then
+                                 Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
+                                 and then Cursors (F_Length).Predecessor = F_Message_Type
+                                 and then Cursors (F_Length).First = Cursors (F_Message_Type).Last + 1))
+                and then (if
+                             Well_Formed (Cursors (F_Data))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Length))
+                                 and then True
+                              then
+                                 Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                                 and then Cursors (F_Data).Predecessor = F_Length
+                                 and then Cursors (F_Data).First = Cursors (F_Length).Last + 1))))
     with
      Post =>
        True;

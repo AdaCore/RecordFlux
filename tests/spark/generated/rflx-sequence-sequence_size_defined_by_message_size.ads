@@ -652,18 +652,25 @@ private
                     (Valid (Cursors (F_Header))
                      and then Cursors (F_Vector).Predecessor = F_Header)))
       and then ((if Invalid (Cursors (F_Header)) then Invalid (Cursors (F_Vector))))
-      and then (if
-                   Well_Formed (Cursors (F_Header))
-                then
-                   Cursors (F_Header).Last - Cursors (F_Header).First + 1 = 8
-                   and then Cursors (F_Header).Predecessor = F_Initial
-                   and then Cursors (F_Header).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_Vector))
-                             then
-                                Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Header).Last)
-                                and then Cursors (F_Vector).Predecessor = F_Header
-                                and then Cursors (F_Vector).First = Cursors (F_Header).Last + 1)))
+      and then ((if
+                    Well_Formed (Cursors (F_Header))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Header).Last - Cursors (F_Header).First + 1 = 8
+                        and then Cursors (F_Header).Predecessor = F_Initial
+                        and then Cursors (F_Header).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_Vector))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Header))
+                                 and then True
+                              then
+                                 Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Header).Last)
+                                 and then Cursors (F_Vector).Predecessor = F_Header
+                                 and then Cursors (F_Vector).First = Cursors (F_Header).Last + 1))))
     with
      Post =>
        True;

@@ -671,18 +671,25 @@ private
                     (Valid (Cursors (F_Length))
                      and then Cursors (F_Payload).Predecessor = F_Length)))
       and then ((if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Payload))))
-      and then (if
-                   Well_Formed (Cursors (F_Length))
-                then
-                   Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
-                   and then Cursors (F_Length).Predecessor = F_Initial
-                   and then Cursors (F_Length).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_Payload))
-                             then
-                                Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                                and then Cursors (F_Payload).Predecessor = F_Length
-                                and then Cursors (F_Payload).First = Cursors (F_Length).Last + 1)))
+      and then ((if
+                    Well_Formed (Cursors (F_Length))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
+                        and then Cursors (F_Length).Predecessor = F_Initial
+                        and then Cursors (F_Length).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_Payload))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_Length))
+                                 and then True
+                              then
+                                 Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                                 and then Cursors (F_Payload).Predecessor = F_Length
+                                 and then Cursors (F_Payload).First = Cursors (F_Length).Last + 1))))
     with
      Post =>
        True;

@@ -559,18 +559,25 @@ private
                        and Valid_Value (F, Cursors (F).Value)))
       and then ((if Well_Formed (Cursors (F_B)) then (Valid (Cursors (F_A)) and then Cursors (F_B).Predecessor = F_A)))
       and then ((if Invalid (Cursors (F_A)) then Invalid (Cursors (F_B))))
-      and then (if
-                   Well_Formed (Cursors (F_A))
-                then
-                   Cursors (F_A).Last - Cursors (F_A).First + 1 = 32
-                   and then Cursors (F_A).Predecessor = F_Initial
-                   and then Cursors (F_A).First = First
-                   and then (if
-                                Well_Formed (Cursors (F_B))
-                             then
-                                Cursors (F_B).Last - Cursors (F_B).First + 1 = 32
-                                and then Cursors (F_B).Predecessor = F_A
-                                and then Cursors (F_B).First = Cursors (F_A).Last + 1)))
+      and then ((if
+                    Well_Formed (Cursors (F_A))
+                 then
+                    (if
+                        True
+                     then
+                        Cursors (F_A).Last - Cursors (F_A).First + 1 = 32
+                        and then Cursors (F_A).Predecessor = F_Initial
+                        and then Cursors (F_A).First = First))
+                and then (if
+                             Well_Formed (Cursors (F_B))
+                          then
+                             (if
+                                 Well_Formed (Cursors (F_A))
+                                 and then True
+                              then
+                                 Cursors (F_B).Last - Cursors (F_B).First + 1 = 32
+                                 and then Cursors (F_B).Predecessor = F_A
+                                 and then Cursors (F_B).First = Cursors (F_A).Last + 1))))
     with
      Post =>
        True;
