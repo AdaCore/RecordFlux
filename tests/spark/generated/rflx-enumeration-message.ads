@@ -525,12 +525,9 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Priority))
                  then
-                    (if
-                        True
-                     then
-                        Cursors (F_Priority).Last - Cursors (F_Priority).First + 1 = 8
-                        and then Cursors (F_Priority).Predecessor = F_Initial
-                        and then Cursors (F_Priority).First = First))))
+                    (Cursors (F_Priority).Last - Cursors (F_Priority).First + 1 = 8
+                     and then Cursors (F_Priority).Predecessor = F_Initial
+                     and then Cursors (F_Priority).First = First))))
     with
      Post =>
        True;

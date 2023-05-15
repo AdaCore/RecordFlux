@@ -315,16 +315,15 @@ def message_structure_invariant(
 
     This invariant ensures the properties of message fields that can depend on the concrete message
     path: the field size, the location of the field and the predecessor of the field. This is
-    realized by nested if-expressions. Each if-expression represents a link in the message and
-    checks the validity of the message field and the link condition. The if-expressions form a
-    tree-like structure with the link to the first field as the root and the links to the final
-    field as the leafs.
+    realized by a list of if-expressions. Each if-expression states the properties of a given field,
+    based on the incoming links. Simplifications are applied (e.g. when there is only one
+    incoming link).
     """
 
     def prefixed(name: str) -> expr.Expr:
         return expr.Selected(expr.Variable("Ctx"), name) if not embedded else expr.Variable(name)
 
-    def link_property(link: model.Link) -> Expr:
+    def link_property(link: model.Link, unique: bool) -> Expr:
         field_type = message.types[link.target]
         condition = link.condition.substituted(substitution(message, prefix, embedded)).simplified()
         size = (
@@ -363,8 +362,8 @@ def message_structure_invariant(
                 ),
                 condition.ada_expr(),
             )
-            if link.source != model.INITIAL
-            else expr.TRUE
+            if link.source != model.INITIAL and not unique
+            else TRUE
         )
 
         return If(
@@ -420,17 +419,17 @@ def message_structure_invariant(
         )
 
     def field_property(fld: model.Field) -> Expr:
-        return AndThen(*[link_property(link) for link in message.incoming(fld)])
+        incoming = message.incoming(fld)
+        unique = len(incoming) == 1
+        return AndThen(*[link_property(link, unique) for link in incoming])
 
     def map_invariant(fld: model.Field) -> Expr:
         return If(
             [
                 (
-                    AndThen(
-                        Call(
-                            "Well_Formed",
-                            [Indexed(prefixed("Cursors").ada_expr(), Variable(fld.affixed_name))],
-                        ),
+                    Call(
+                        "Well_Formed",
+                        [Indexed(prefixed("Cursors").ada_expr(), Variable(fld.affixed_name))],
                     ),
                     field_property(fld),
                 )

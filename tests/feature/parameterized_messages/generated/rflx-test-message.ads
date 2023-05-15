@@ -711,22 +711,15 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Data))
                  then
-                    (if
-                        True
-                     then
-                        Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Length) * 8
-                        and then Cursors (F_Data).Predecessor = F_Initial
-                        and then Cursors (F_Data).First = First))
+                    (Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Length) * 8
+                     and then Cursors (F_Data).Predecessor = F_Initial
+                     and then Cursors (F_Data).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Extension))
                           then
-                             (if
-                                 Well_Formed (Cursors (F_Data))
-                                 and then RFLX_Types.Base_Integer (To_Base_Integer (Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
-                              then
-                                 Cursors (F_Extension).Last - Cursors (F_Extension).First + 1 = RFLX_Types.Bit_Length (Length) * 8
-                                 and then Cursors (F_Extension).Predecessor = F_Data
-                                 and then Cursors (F_Extension).First = Cursors (F_Data).Last + 1))))
+                             (Cursors (F_Extension).Last - Cursors (F_Extension).First + 1 = RFLX_Types.Bit_Length (Length) * 8
+                              and then Cursors (F_Extension).Predecessor = F_Data
+                              and then Cursors (F_Extension).First = Cursors (F_Data).Last + 1))))
     with
      Post =>
        True;

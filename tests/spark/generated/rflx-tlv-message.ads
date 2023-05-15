@@ -686,32 +686,21 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Tag))
                  then
-                    (if
-                        True
-                     then
-                        Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = 8
-                        and then Cursors (F_Tag).Predecessor = F_Initial
-                        and then Cursors (F_Tag).First = First))
+                    (Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = 8
+                     and then Cursors (F_Tag).Predecessor = F_Initial
+                     and then Cursors (F_Tag).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Length))
                           then
-                             (if
-                                 Well_Formed (Cursors (F_Tag))
-                                 and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Data))
-                              then
-                                 Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
-                                 and then Cursors (F_Length).Predecessor = F_Tag
-                                 and then Cursors (F_Length).First = Cursors (F_Tag).Last + 1))
+                             (Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
+                              and then Cursors (F_Length).Predecessor = F_Tag
+                              and then Cursors (F_Length).First = Cursors (F_Tag).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Value))
                           then
-                             (if
-                                 Well_Formed (Cursors (F_Length))
-                                 and then True
-                              then
-                                 Cursors (F_Value).Last - Cursors (F_Value).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                                 and then Cursors (F_Value).Predecessor = F_Length
-                                 and then Cursors (F_Value).First = Cursors (F_Length).Last + 1))))
+                             (Cursors (F_Value).Last - Cursors (F_Value).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                              and then Cursors (F_Value).Predecessor = F_Length
+                              and then Cursors (F_Value).First = Cursors (F_Length).Last + 1))))
     with
      Post =>
        True;

@@ -611,32 +611,21 @@ private
       and then ((if
                     Well_Formed (Cursors (F_X_A))
                  then
-                    (if
-                        True
-                     then
-                        Cursors (F_X_A).Last - Cursors (F_X_A).First + 1 = 32
-                        and then Cursors (F_X_A).Predecessor = F_Initial
-                        and then Cursors (F_X_A).First = First))
+                    (Cursors (F_X_A).Last - Cursors (F_X_A).First + 1 = 32
+                     and then Cursors (F_X_A).Predecessor = F_Initial
+                     and then Cursors (F_X_A).First = First))
                 and then (if
                              Well_Formed (Cursors (F_X_B))
                           then
-                             (if
-                                 Well_Formed (Cursors (F_X_A))
-                                 and then True
-                              then
-                                 Cursors (F_X_B).Last - Cursors (F_X_B).First + 1 = 32
-                                 and then Cursors (F_X_B).Predecessor = F_X_A
-                                 and then Cursors (F_X_B).First = Cursors (F_X_A).Last + 1))
+                             (Cursors (F_X_B).Last - Cursors (F_X_B).First + 1 = 32
+                              and then Cursors (F_X_B).Predecessor = F_X_A
+                              and then Cursors (F_X_B).First = Cursors (F_X_A).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Y))
                           then
-                             (if
-                                 Well_Formed (Cursors (F_X_B))
-                                 and then True
-                              then
-                                 Cursors (F_Y).Last - Cursors (F_Y).First + 1 = 32
-                                 and then Cursors (F_Y).Predecessor = F_X_B
-                                 and then Cursors (F_Y).First = Cursors (F_X_B).Last + 1))))
+                             (Cursors (F_Y).Last - Cursors (F_Y).First + 1 = 32
+                              and then Cursors (F_Y).Predecessor = F_X_B
+                              and then Cursors (F_Y).First = Cursors (F_X_B).Last + 1))))
     with
      Post =>
        True;
