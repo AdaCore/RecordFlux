@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
-import os
+import site
 import sys
 from pathlib import Path
 
 from langkit.compile_context import CompileCtx
 from langkit.libmanage import ManageScript
 
-from language.lexer import rflx_lexer as lexer
-from language.parser import grammar
+site.addsitedir(str(Path(__file__).absolute().parent.parent))
 
-base_dir = Path(os.path.dirname(os.path.abspath(__file__))) / ".."
+from language.lexer import rflx_lexer as lexer  # noqa: E402
+from language.parser import grammar  # noqa: E402
 
 BUILD_DIR = sys.argv[1]
 VERSION = sys.argv[2]

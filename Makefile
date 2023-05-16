@@ -12,7 +12,8 @@ SDIST ?= dist/RecordFlux-$(VERSION).tar.gz
 
 BUILD_DIR = build
 SRC_DIR = src
-BUILD_SRC_DIR := $(PWD)/$(BUILD_DIR)/$(SRC_DIR)
+MAKEFILE_DIR := $(dir $(abspath Makefile))
+BUILD_SRC_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/$(SRC_DIR)
 PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps ide language rflx tests tools stubs setup.py
 DEVUTILS_HEAD = a5fac2d569a54c3f0d8a65b3e07efeebb471f21e
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
@@ -22,14 +23,14 @@ SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
 
 # Use GNATprove's file-based caching by default and ensure the directory exists.
-GNATPROVE_CACHE ?= file:$(PWD)/$(BUILD_DIR)/gnatprove_cache
+GNATPROVE_CACHE ?= file:$(MAKEFILE_DIR)/$(BUILD_DIR)/gnatprove_cache
 
 ifneq (,$(findstring file:,$(GNATPROVE_CACHE)))
 GNATPROVE_CACHE_DIR = $(subst file:,,$(GNATPROVE_CACHE))
 endif
 
 export GNATPROVE_CACHE := $(GNATPROVE_CACHE)
-export PYTHONPATH := $(PWD)
+export PYTHONPATH := $(MAKEFILE_DIR)
 
 # Switch to a specific revision of the git repository.
 #
@@ -289,12 +290,12 @@ dist: $(SDIST)
 $(SDIST): $(SRC_DIR)/gdbinit.py pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
 	python3 -m build --sdist
 
-$(SRC_DIR)/gdbinit.py: export PYTHONPATH=$(PWD)
+$(SRC_DIR)/gdbinit.py: export PYTHONPATH=$(MAKEFILE_DIR)
 $(SRC_DIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py language/rflx_ast.py
 	mkdir -p $(BUILD_SRC_DIR)
 	language/generate.py $(BUILD_SRC_DIR) $(VERSION)
-	cp -a $(PWD)/contrib/langkit $(BUILD_SRC_DIR)/
-	cp -a $(PWD)/contrib/gnatcoll-bindings $(BUILD_SRC_DIR)/
+	cp -a $(MAKEFILE_DIR)/contrib/langkit $(BUILD_SRC_DIR)/
+	cp -a $(MAKEFILE_DIR)/contrib/gnatcoll-bindings $(BUILD_SRC_DIR)/
 	mv $(BUILD_SRC_DIR)/librflxlang.gpr $(BUILD_SRC_DIR)/librflxlang.gpr.orig
 	tools/generate_gpr_file.py rflxlang $(BUILD_SRC_DIR) $(BUILD_SRC_DIR)/librflxlang.gpr.orig
 	rm -rf $(SRC_DIR)
