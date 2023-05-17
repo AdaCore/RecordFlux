@@ -230,6 +230,20 @@ def test_create_proven_message_error(tmp_path: Path) -> None:
     assert not c.is_verified(models.INVALID_MESSAGE)
 
 
+def test_parse_string_error() -> None:
+    p = parser.Parser()
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'a/b.rflx:1:9: parser: error: file name does not match unit name "A",'
+            r' should be "a.rflx"'
+            r"$"
+        ),
+    ):
+        p.parse_string("package A is end A;", filename=Path("a/b.rflx"))
+
+
 @pytest.mark.parametrize("spec", ["empty_file", "comment_only"])
 def test_parse_empty_specfication(spec: str) -> None:
     assert_ast_files([f"{SPEC_DIR}/{spec}.rflx"], {})

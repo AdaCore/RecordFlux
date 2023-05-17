@@ -1826,17 +1826,18 @@ class Parser:
     def parse_string(
         self,
         string: str,
+        filename: Path = STDIN,
         rule: str = lang.GrammarRule.main_rule_rule,
     ) -> None:
         error = RecordFluxError()
         specifications = []
         string = textwrap.dedent(string)
-        unit = lang.AnalysisContext().get_from_buffer("<stdin>", string, rule=rule)
+        unit = lang.AnalysisContext().get_from_buffer(str(filename), string, rule=rule)
 
-        if not diagnostics_to_error(unit.diagnostics, error, STDIN):
+        if not diagnostics_to_error(unit.diagnostics, error, filename):
             error.extend(style.check_string(string))
             assert isinstance(unit.root, lang.Specification)
-            specifications.append(SpecificationFile.create(error, unit.root, STDIN))
+            specifications.append(SpecificationFile.create(error, unit.root, filename))
 
         _check_for_duplicate_specifications(
             error, [*self._specifications.values(), *specifications]
