@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import string
-import typing as ty
 from collections import abc
 from dataclasses import dataclass
-from typing import Optional, TypeVar
+from typing import Optional, Protocol, TypeVar, Union
 
 from hypothesis import assume, strategies as st
 
@@ -32,7 +31,11 @@ from rflx.model import (
 from rflx.specification import const
 
 T = TypeVar("T")
-Draw = TypeVar("Draw", bound=ty.Callable[[st.SearchStrategy[T]], T])  # noqa: PEA001
+
+
+class Draw(Protocol):
+    def __call__(self, val: st.SearchStrategy[T], /) -> T:
+        ...
 
 
 def unique_qualified_identifiers() -> abc.Generator[ID, None, None]:
@@ -363,8 +366,11 @@ def variables(draw: Draw, elements: st.SearchStrategy[str]) -> expr.Variable:
 
 @st.composite
 def attributes(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
-    attribute = draw(st.sampled_from([expr.Size, expr.First, expr.Last]))
-    return attribute(draw(elements))  # type: ignore[abstract]
+    sample: st.SearchStrategy[
+        Union[type[expr.Size], type[expr.First], type[expr.Last]]
+    ] = st.sampled_from([expr.Size, expr.First, expr.Last])
+    attribute = draw(sample)
+    return attribute(draw(elements))
 
 
 @st.composite
@@ -398,21 +404,31 @@ def mathematical_expressions(draw: Draw, elements: st.SearchStrategy[expr.Expr])
 
 @st.composite
 def relations(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Relation:
-    relation = draw(
-        st.sampled_from(
-            [
-                expr.Less,
-                expr.LessEqual,
-                expr.Equal,
-                expr.GreaterEqual,
-                expr.Greater,
-                expr.NotEqual,
-                expr.In,
-                expr.NotIn,
-            ]
-        )
+    sample: st.SearchStrategy[
+        Union[
+            type[expr.Less],
+            type[expr.LessEqual],
+            type[expr.Equal],
+            type[expr.GreaterEqual],
+            type[expr.Greater],
+            type[expr.NotEqual],
+            type[expr.In],
+            type[expr.NotIn],
+        ]
+    ] = st.sampled_from(
+        [
+            expr.Less,
+            expr.LessEqual,
+            expr.Equal,
+            expr.GreaterEqual,
+            expr.Greater,
+            expr.NotEqual,
+            expr.In,
+            expr.NotIn,
+        ]
     )
-    return relation(draw(elements), draw(elements))  # type: ignore[abstract]
+    relation = draw(sample)
+    return relation(draw(elements), draw(elements))
 
 
 @st.composite

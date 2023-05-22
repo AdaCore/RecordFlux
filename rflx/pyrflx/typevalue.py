@@ -69,7 +69,6 @@ ValueType = Union[
 
 
 class TypeValue(Base):
-
     _value: Optional[ValueType] = None
 
     def __init__(self, vtype: Type) -> None:
@@ -162,7 +161,6 @@ class TypeValue(Base):
 
 
 class ScalarValue(TypeValue):
-
     _type: Scalar
 
     def __init__(self, vtype: Scalar) -> None:
@@ -179,7 +177,6 @@ class ScalarValue(TypeValue):
 
 
 class IntegerValue(ScalarValue):
-
     _value: int
     _type: Integer
 
@@ -235,7 +232,6 @@ class IntegerValue(ScalarValue):
 
 
 class EnumValue(ScalarValue):
-
     _value: tuple[str, Number]
     _type: Enumeration
 
@@ -364,7 +360,6 @@ class CompositeValue(TypeValue):
 
 
 class OpaqueValue(CompositeValue):
-
     _value: Optional[bytes]
     _nested_message: Optional[MessageValue] = None
 
@@ -432,7 +427,6 @@ class OpaqueValue(CompositeValue):
 
 
 class SequenceValue(CompositeValue):
-
     _value: list[TypeValue]
 
     def __init__(self, vtype: Sequence) -> None:
@@ -477,7 +471,6 @@ class SequenceValue(CompositeValue):
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         if self._is_message_sequence:
-
             while len(value) != 0:
                 nested_message = TypeValue.construct(self._element_type)
                 assert isinstance(nested_message, MessageValue)

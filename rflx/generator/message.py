@@ -2033,7 +2033,6 @@ def create_buffer_length_function(prefix: str, message: Message) -> UnitPart:
 def create_valid_predecessor_function(
     message: Message, composite_fields: abc.Sequence[Field]
 ) -> UnitPart:
-
     specification = FunctionSpecification(
         "Valid_Predecessor",
         "Boolean",

@@ -15,7 +15,7 @@ SRC_DIR = src
 MAKEFILE_DIR := $(dir $(abspath Makefile))
 BUILD_SRC_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/$(SRC_DIR)
 PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps ide language rflx tests tools stubs setup.py
-DEVUTILS_HEAD = a5fac2d569a54c3f0d8a65b3e07efeebb471f21e
+DEVUTILS_HEAD = b196fbb5b791f6b80a91a5f78d6ef99e895a1e8c
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
 LANGKIT_HEAD = 02c2040c95cf8174f7e98969d751cde9639bd2bd
 

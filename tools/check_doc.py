@@ -62,7 +62,6 @@ class StyleChecker:
         self._headings_re = re.compile(r"^(=+|-+|~+|\^+|\*+|\"+)$")
 
     def _skip(self, line: str, lineno: int, previous_line: str, previous_lineno: int) -> bool:
-
         # Headings
         if self._headings_re.match(line):
             if re.match(r"^$", previous_line):
@@ -93,7 +92,6 @@ class StyleChecker:
         return False
 
     def check(self, lineno: int, line: str) -> None:
-
         if not self._previous:
             self._previous = lineno, line
             return
@@ -157,7 +155,6 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
     checker = StyleChecker(filename)
 
     for lineno, line in enumerate(content.splitlines(), start=1):
-
         checker.check(lineno, line)
 
         if state == State.INSIDE:
@@ -241,7 +238,6 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
 
 
 def check_files(files: list[Path]) -> None:
-
     found = False
 
     for filename in files:
@@ -320,7 +316,6 @@ def check_ada_code(block: str, subtype: Optional[str] = None) -> None:
         raise CheckDocError(f"invalid Ada subtype '{subtype}'")
 
     with tempfile.TemporaryDirectory() as tmpdirname:
-
         tmpdir = Path(tmpdirname).resolve()
 
         (tmpdir / f"{unit}.adb").write_text(data, encoding="utf-8")
@@ -340,9 +335,7 @@ def check_ada_code(block: str, subtype: Optional[str] = None) -> None:
 
 
 def check_python_code(block: str) -> None:
-
     with tempfile.TemporaryDirectory() as tmpdirname:
-
         tmpdir = Path(tmpdirname)
         filename = tmpdir / "test.py"
         filename.write_text(block, encoding="utf-8")

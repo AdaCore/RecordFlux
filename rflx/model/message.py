@@ -1347,7 +1347,6 @@ class Message(AbstractMessage):
                 )
 
     def _verify_message_types(self) -> None:
-
         for l in self.structure:
             for expression in [l.condition, l.size, l.first]:
                 if expression == expr.UNDEFINED:
@@ -1849,7 +1848,6 @@ class Message(AbstractMessage):
         """
         proofs = expr.ParallelProofs(self._workers)
         for path in [p[:-1] for p in self.paths(FINAL) if p]:
-
             facts: Sequence[expr.Expr]
 
             # Calculate (1)

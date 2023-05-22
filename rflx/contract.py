@@ -1,5 +1,4 @@
 if __debug__:  # pragma: no cover
-
     # pylint: disable=unused-import
     from icontract import (
         DBC as DBC,
@@ -12,7 +11,6 @@ if __debug__:  # pragma: no cover
     )
 
 else:
-
     import abc
     import reprlib
     import typing as ty

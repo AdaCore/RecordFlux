@@ -103,7 +103,6 @@ def create_session_graph(session: AbstractSession, ignore: Optional[Sequence[str
 
     result = _graph_with_defaults(str(session.identifier))
     for state in session.states:
-
         if _is_ignored(state.identifier):
             continue
 

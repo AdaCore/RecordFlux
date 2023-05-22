@@ -1160,7 +1160,6 @@ def create_message_structure(
     error: RecordFluxError, fields: lang.MessageFields, filename: Path
 ) -> list[model.Link]:
     def extract_aspect(aspects: lang.AspectList) -> tuple[expr.Expr, expr.Expr]:
-
         size: expr.Expr = expr.UNDEFINED
         first: expr.Expr = expr.UNDEFINED
 

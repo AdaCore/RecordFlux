@@ -916,9 +916,10 @@ def test_sub_z3expr() -> None:
 
 
 def test_sub_to_tac() -> None:
-    assert Sub(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY),).to_tac(
-        "R", id_generator()
-    ) == [
+    assert Sub(
+        Variable("X", type_=INT_TY),
+        Variable("Y", type_=INT_TY),
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Sub(tac.IntVar("X", INT_TY), tac.IntVar("Y", INT_TY)), INT_TY),
     ]
     assert Sub(
@@ -952,9 +953,10 @@ def test_div_z3expr() -> None:
 
 
 def test_div_to_tac() -> None:
-    assert Div(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY),).to_tac(
-        "R", id_generator()
-    ) == [
+    assert Div(
+        Variable("X", type_=INT_TY),
+        Variable("Y", type_=INT_TY),
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Div(tac.IntVar("X", INT_TY), tac.IntVar("Y", INT_TY)), INT_TY),
     ]
     assert Div(
@@ -986,9 +988,10 @@ def test_pow_z3expr() -> None:
 
 
 def test_pow_to_tac() -> None:
-    assert Pow(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY),).to_tac(
-        "R", id_generator()
-    ) == [
+    assert Pow(
+        Variable("X", type_=INT_TY),
+        Variable("Y", type_=INT_TY),
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Pow(tac.IntVar("X", INT_TY), tac.IntVar("Y", INT_TY)), INT_TY),
     ]
     assert Pow(
@@ -1026,9 +1029,10 @@ def test_mod_z3expr_error() -> None:
 
 
 def test_mod_to_tac() -> None:
-    assert Mod(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY),).to_tac(
-        "R", id_generator()
-    ) == [
+    assert Mod(
+        Variable("X", type_=INT_TY),
+        Variable("Y", type_=INT_TY),
+    ).to_tac("R", id_generator()) == [
         tac.Assign("R", tac.Mod(tac.IntVar("X", INT_TY), tac.IntVar("Y", INT_TY)), INT_TY),
     ]
     assert Mod(

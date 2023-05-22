@@ -25,13 +25,11 @@ class ID(AbstractID):
 
 
 class Parameter(RFLXNode):
-
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
 
 
 class Parameters(RFLXNode):
-
     parameters = Field(type=Parameter.list)
 
 
@@ -83,7 +81,6 @@ class Op(RFLXNode):
 
 
 class Negation(Expr):
-
     data = Field(type=Expr)
 
 
@@ -102,7 +99,6 @@ class ParenExpression(Expr):
 
 
 class MessageAggregateAssociation(RFLXNode):
-
     identifier = Field(type=UnqualifiedID)
     expression = Field(type=Expr)
 
@@ -117,12 +113,10 @@ class NullMessageAggregate(BaseAggregate):
 
 
 class MessageAggregateAssociations(BaseAggregate):
-
     associations = Field(type=MessageAggregateAssociation.list)
 
 
 class MessageAggregate(Expr):
-
     identifier = Field(type=ID)
     values = Field(type=BaseAggregate)
 
@@ -221,7 +215,6 @@ class StringLiteral(SequenceLiteral):
 
 
 class NumericLiteral(Expr):
-
     token_node = True
 
 
@@ -277,7 +270,6 @@ class State(RFLXNode):
 
 
 class SessionDecl(Declaration):
-
     parameters = Field(type=FormalDecl.list)
     identifier = Field(type=UnqualifiedID)
     declarations = Field(type=LocalDecl.list)
@@ -286,7 +278,6 @@ class SessionDecl(Declaration):
 
 
 class Package(RFLXNode):
-
     identifier = Field(type=UnqualifiedID)
     declarations = Field(type=Declaration.list)
     end_identifier = Field(type=UnqualifiedID)
@@ -298,20 +289,17 @@ class IntegerTypeDef(TypeDef):
 
 
 class Aspect(RFLXNode):
-
     identifier = Field(type=UnqualifiedID)
     value = Field(type=Expr)
 
 
 class RangeTypeDef(IntegerTypeDef):
-
     first = Field(type=Expr)
     last = Field(type=Expr)
     size = Field(type=Aspect)
 
 
 class ModularTypeDef(IntegerTypeDef):
-
     mod = Field(type=Expr)
 
 
@@ -325,12 +313,10 @@ class NullMessageTypeDef(AbstractMessageTypeDef):
 
 
 class TypeDerivationDef(TypeDef):
-
     base = Field(type=ID)
 
 
 class SequenceTypeDef(TypeDef):
-
     element_type = Field(type=ID)
 
 
@@ -340,7 +326,6 @@ class EnumerationDef(TypeDef):
 
 
 class PositionalEnumerationDef(EnumerationDef):
-
     elements = Field(type=UnqualifiedID.list)
 
 
@@ -352,12 +337,10 @@ class ElementValueAssoc(RFLXNode):
 
 
 class NamedEnumerationDef(EnumerationDef):
-
     elements = Field(type=ElementValueAssoc.list)
 
 
 class EnumerationTypeDef(TypeDef):
-
     elements = Field(type=EnumerationDef)
     aspects = Field(type=Aspect.list)
 
@@ -371,18 +354,15 @@ class Then(RFLXNode):
 
 
 class TypeArgument(RFLXNode):
-
     identifier = Field(type=UnqualifiedID)
     expression = Field(type=Expr)
 
 
 class NullMessageField(RFLXNode):
-
     then = Field(type=Then)
 
 
 class MessageField(RFLXNode):
-
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
     type_arguments = Field(type=TypeArgument.list)
@@ -392,7 +372,6 @@ class MessageField(RFLXNode):
 
 
 class MessageFields(RFLXNode):
-
     initial_field = Field(type=NullMessageField)
     fields = Field(type=MessageField.list)
 
@@ -428,12 +407,10 @@ class MessageAspect(RFLXNode):
 
 
 class ChecksumAspect(MessageAspect):
-
     associations = Field(type=ChecksumAssoc.list)
 
 
 class ByteOrderType(RFLXNode):
-
     enum_node = True
     alternatives = [
         "highorderfirst",
@@ -442,18 +419,15 @@ class ByteOrderType(RFLXNode):
 
 
 class ByteOrderAspect(MessageAspect):
-
     byte_order = Field(type=ByteOrderType)
 
 
 class MessageTypeDef(AbstractMessageTypeDef):
-
     message_fields = Field(type=MessageFields)
     aspects = Field(type=MessageAspect.list)
 
 
 class Variable(Expr):
-
     identifier = Field(type=ID)
 
 
@@ -475,7 +449,6 @@ class Attr(RFLXNode):
 
 
 class Attribute(Expr):
-
     expression = Field(type=Expr)
     kind = Field(type=Attr)
 
@@ -494,7 +467,6 @@ class Specification(RFLXNode):
 
 
 class FormalFunctionDecl(FormalDecl):
-
     identifier = Field(type=UnqualifiedID)
     parameters = Field(type=Parameters)
     return_type_identifier = Field(type=ID)
@@ -514,7 +486,6 @@ class Writable(ChannelAttribute):
 
 
 class FormalChannelDecl(FormalDecl):
-
     identifier = Field(type=UnqualifiedID)
     parameters = Field(type=ChannelAttribute.list)
 
@@ -530,7 +501,6 @@ class Quantifier(RFLXNode):
 
 
 class QuantifiedExpression(Expr):
-
     operation = Field(type=Quantifier)
     parameter_identifier = Field(type=UnqualifiedID)
     iterable = Field(type=Expr)
@@ -538,7 +508,6 @@ class QuantifiedExpression(Expr):
 
 
 class Comprehension(Expr):
-
     iterator = Field(type=UnqualifiedID)
     sequence = Field(type=Expr)
     condition = Field(type=Expr)
@@ -546,42 +515,35 @@ class Comprehension(Expr):
 
 
 class Call(Expr):
-
     identifier = Field(type=UnqualifiedID)
     arguments = Field(type=Expr.list)
 
 
 class Conversion(Expr):
-
     target_identifier = Field(type=ID)
     argument = Field(type=Expr)
 
 
 class TermAssoc(RFLXNode):
-
     identifier = Field(type=UnqualifiedID)
     expression = Field(type=Expr)
 
 
 class Binding(Expr):
-
     expression = Field(type=Expr)
     bindings = Field(type=TermAssoc.list)
 
 
 class Select(Expr):
-
     expression = Field(type=Expr)
     selector = Field(type=UnqualifiedID)
 
 
 class Choice(Expr):
-
     selectors = Field(type=RFLXNode.list)
     expression = Field(type=Expr)
 
 
 class CaseExpression(Expr):
-
     expression = Field(type=Expr)
     choices = Field(type=Choice.list)
