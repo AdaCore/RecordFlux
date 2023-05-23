@@ -379,23 +379,24 @@ def graph(args: argparse.Namespace) -> None:
 
     model, _ = parse(args.files, args.no_verification)
 
-    for m in model.messages:
-        filename = args.output_directory.joinpath(m.identifier.flat).with_suffix(f".{args.format}")
-        write_graph(create_message_graph(m), filename, fmt=args.format)
-
-    for s in model.sessions:
-        filename = args.output_directory.joinpath(s.identifier.flat).with_suffix(f".{args.format}")
-        write_graph(create_session_graph(s, args.ignore), filename, fmt=args.format)
+    for d in model.declarations:
+        filename = args.output_directory.joinpath(d.identifier.flat).with_suffix(f".{args.format}")
+        if isinstance(d, Message):
+            write_graph(create_message_graph(d), filename, fmt=args.format)
+        if isinstance(d, Session):
+            write_graph(create_session_graph(d, args.ignore), filename, fmt=args.format)
 
     locations: dict[str, dict[str, dict[str, dict[str, int]]]] = {
-        str(m.location.source): {
-            m.identifier.flat: {
-                "start": {"line": m.location.start[0], "column": m.location.start[1]},
-                "end": {"line": m.location.end[0], "column": m.location.end[1]},
+        str(package.location.source): {
+            d.identifier.flat: {
+                "start": {"line": d.location.start[0], "column": d.location.start[1]},
+                "end": {"line": d.location.end[0], "column": d.location.end[1]},
             }
+            for d in declarations
+            if isinstance(d, (Message, Session)) and d.location and d.location.end
         }
-        for m in [*model.messages, *model.sessions]
-        if isinstance(m, (Message, Session)) and m.location and m.location.start and m.location.end
+        for package, declarations in model.packages.items()
+        if package.location
     }
 
     filename = args.output_directory.joinpath("locations.json")

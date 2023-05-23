@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional
@@ -46,6 +47,10 @@ class Model(Base):
     @property
     def sessions(self) -> list[session.Session]:
         return [d for d in self._declarations if isinstance(d, session.Session)]
+
+    @property
+    def packages(self) -> dict[ID, list[top_level_declaration.TopLevelDeclaration]]:
+        return {p: list(d) for p, d in itertools.groupby(self._declarations, lambda x: x.package)}
 
     def create_specifications(self) -> dict[ID, str]:
         pkgs: dict[ID, Package] = {}
