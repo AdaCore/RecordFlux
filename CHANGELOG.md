@@ -5,20 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.10.0] - 2023-05-24
 
 ### Changed
 
-- Allow update of generated files (eng/recordflux/RecordFlux#1275)
+- Allow update of generated files (AdaCore/RecordFlux#1275, eng/recordflux/RecordFlux#1275)
 - Integrate parser into RecordFlux package (eng/recordflux/RecordFlux#1316)
-- Simplify shape of the `Valid_Context` predicate (eng/recordflux/sparkflux#11)
+- Simplify shape of the `Valid_Context` predicate (eng/recordflux/SparkFlux#11)
 
 ### Fixed
 
 - Installation of GNAT Studio plugin (eng/recordflux/RecordFlux#1293)
-- Order of types and sessions after parsing (eng/recordflux/RecordFlux#1076)
+- Order of types and sessions after parsing (AdaCore/RecordFlux#1076, eng/recordflux/RecordFlux#1076)
 - Strict dependency on specific versions of shared libraries (eng/recordflux/RecordFlux#1316)
-- Displaying of graphs in GNAT Studio (eng/recordflux/RecordFlux#1169)
+- Displaying of graphs in GNAT Studio (AdaCore/RecordFlux#1169, eng/recordflux/RecordFlux#1169)
 
 ## [0.9.1] - 2023-03-28
 
@@ -312,7 +312,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2019-05-14
 
-[Unreleased]: https://github.com/AdaCore/RecordFlux/compare/v0.9.1...main
+[0.10.0]: https://github.com/AdaCore/RecordFlux/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/AdaCore/RecordFlux/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/AdaCore/RecordFlux/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/AdaCore/RecordFlux/compare/v0.7.1...v0.8.0
