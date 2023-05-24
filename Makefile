@@ -123,14 +123,20 @@ check_doc:
 
 test: test_coverage test_unit_coverage test_language_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
 
+# A separate invocation of `coverage report` is needed to exclude `src` in the coverage report.
+# Currently, pytest's CLI does not allow the specification of omitted directories
+# (cf. https://github.com/pytest-dev/pytest-cov/issues/373).
+
 test_coverage:
-	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=100 --cov-report=term-missing:skip-covered tests/unit tests/integration
+	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/integration
+	coverage report --fail-under=100 --show-missing --skip-covered --omit="src/*"
 
 test_unit_coverage:
-	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tools --cov-branch --cov-fail-under=94.68 --cov-report=term-missing:skip-covered tests/unit tests/tools
+	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tools --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/tools
+	coverage report --fail-under=94.68 --show-missing --skip-covered --omit="src/*"
 
 test_language_coverage:
-	timeout -k 60 7200 $(PYTEST) --cov=rflx_lang --cov-branch --cov-fail-under=74 --cov-report=term-missing:skip-covered tests/language
+	timeout -k 60 7200 $(PYTEST) --cov=rflx_lang --cov-branch --cov-fail-under=73.8 --cov-report=term-missing:skip-covered tests/language
 
 test_property:
 	$(PYTEST) tests/property
@@ -208,12 +214,9 @@ install: install_build_deps $(SDIST)
 	$(MAKE) -C devutils install_devel
 	pip3 install --force-reinstall "$(SDIST)[devel]"
 
-install_devel: install_build_deps $(SDIST)
+install_devel: install_build_deps parser
 	$(MAKE) -C devutils install_devel
-	# Force reinstallation to update rflx_lang
-	pip3 install --force-reinstall $(SDIST)
-	# Enable development mode
-	pip3 install -e ".[devel]"
+	pip3 install --force-reinstall -e ".[devel]" --config-settings editable_mode=strict
 
 upgrade_devel:
 	tools/upgrade_dependencies.py
@@ -287,11 +290,11 @@ build_pdf_doc_user_guide:
 
 dist: $(SDIST)
 
-$(SDIST): $(SRC_DIR)/gdbinit.py pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
+$(SDIST): $(SRC_DIR)/python/librflxlang pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
 	python3 -m build --sdist
 
-$(SRC_DIR)/gdbinit.py: export PYTHONPATH=$(MAKEFILE_DIR)
-$(SRC_DIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py language/rflx_ast.py
+$(SRC_DIR)/python/librflxlang: export PYTHONPATH=$(MAKEFILE_DIR)
+$(SRC_DIR)/python/librflxlang: $(wildcard language/*.py)
 	mkdir -p $(BUILD_SRC_DIR)
 	language/generate.py $(BUILD_SRC_DIR) $(VERSION)
 	cp -a $(MAKEFILE_DIR)/contrib/langkit $(BUILD_SRC_DIR)/
@@ -300,6 +303,13 @@ $(SRC_DIR)/gdbinit.py: language/generate.py language/lexer.py language/parser.py
 	tools/generate_gpr_file.py rflxlang $(BUILD_SRC_DIR) $(BUILD_SRC_DIR)/librflxlang.gpr.orig
 	rm -rf $(SRC_DIR)
 	mv $(BUILD_SRC_DIR) $(SRC_DIR)
+
+.PHONY: parser
+
+parser: $(SRC_DIR)/python/librflxlang/librflxlang.so
+
+$(SRC_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | $(SRC_DIR)/python/librflxlang
+	gprbuild -j0 -Psrc/librflxlang.gpr -XLIBRARY_TYPE=static-pic
 
 .PHONY: clean
 

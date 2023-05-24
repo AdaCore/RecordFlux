@@ -33,7 +33,10 @@ The use of a `virtual environment <https://docs.python.org/3/tutorial/venv.html>
    $ . .venv/bin/activate
    $ make install_devel
 
--**Note:** The package must be explicitly reinstalled using `make install` before changes to the `language` module take effect.
+**Note:**
+An editable installation is used, so all changes to the Python source code take effect immediately and no reinstallation is required.
+An exception is the `language` module, which contains the specification of the langkit-based specification parser.
+The parser must be regenerated and recompiled using `make parser` before changes take effect.
 
 The repository contains configuration files for Visual Studio Code which enable most linters available from the Makefile and coverage reports integrated into the IDE.
 To make use of the coverage data, the `Coverage Gutters <https://github.com/ryanluker/vscode-coverage-gutters>` extension needs to be installed.
@@ -62,6 +65,7 @@ Make targets for common development tasks are:
 - ``upgrade_devel`` Upgrade all development dependencies (note: ``install_devel`` must be executed before changes in ``setup.py`` take effect)
 - ``doc`` Generate HTML documentation
 - ``dist`` Create Python package
+- ``clean`` Remove all generated files (note: this will also remove the editable installation, so the project must be reinstalled using ``install_devel`` afterwards)
 
 Additional tools can be found in ``tools/``.
 
