@@ -1,0 +1,112 @@
+with "../../../defaults.gpr";
+
+project Build_Lib is
+
+   type Target_Type is ("arm", "riscv32", "riscv64");
+   Target_Arch : Target_Type := external ("TARGET");
+
+   type Boolean is ("True", "False");
+   Check_Stack : Boolean := external ("CHECK_STACK", "False");
+   Debug : Boolean := external ("DEBUG", "False");
+
+   Stack_Check_Path := "";
+   case Check_Stack is
+      when "True" =>
+         Stack_Check_Path := "/gnatstack";
+      when "False" =>
+         null;
+   end case;
+
+   for Library_Name use "responder";
+   for Library_Kind use "static";
+   Build_Dir := "../build/" & Target_Arch & Stack_Check_Path;
+   for Object_Dir use Build_Dir & "/example";
+   for Library_Dir use Build_Dir & "/examplelib";
+   for Library_Standalone use "standard";
+   for Library_Interface use ("responder");
+
+   for Languages use ("Ada", "C");
+   for Source_Dirs use ("src/lib", "build/generated");
+
+   for Create_Missing_Dirs use "True";
+   for Target use Target_Arch & "-elf";
+   Target_Optimization_Switches := ();
+   case Target_Arch is
+      when "arm" =>
+         for Runtime ("Ada") use "light-stm32f4";
+      when "riscv32" =>
+         for Runtime ("Ada") use "light-hifive1";
+         Target_Optimization_Switches := ("-msave-restore");
+      when "riscv64" =>
+         for Runtime ("Ada") use "light-spike";
+         Target_Optimization_Switches := ("-msave-restore");
+      when others =>
+         null;
+   end case;
+
+   Switches_C := ("-W",
+                  "-Wall",
+                  "-Wextra",
+                  "-Werror",
+                  "-Wstrict-prototypes",
+                  "-Wmissing-prototypes");
+   Switches_Ada := ("-gnatp", "-gnatd.8");
+   Optimization_Switches := ("-Os",
+                             "-ffunction-sections",
+                             "-fdata-sections",
+                             "-flto",
+
+                             "--param", "case-values-threshold=6",
+                             "--param", "gcse-unrestricted-cost=0",
+                             "--param", "ipa-cp-value-list-size=0",
+                             "--param", "ipa-max-aa-steps=0",
+                             "--param", "ipa-max-switch-predicate-bounds=0",
+                             "--param", "jump-table-max-growth-ratio-for-size=1000",
+                             "--param", "large-stack-frame=530",
+                             "--param", "large-stack-frame-growth=16",
+                             "--param", "max-crossjump-edges=1000",
+                             "--param", "max-cse-path-length=40",
+                             "--param", "max-tail-merge-comparisons=0",
+                             "--param", "switch-conversion-max-branch-ratio=25",
+                             "--param", "uninlined-function-insns=1",
+
+                             "-fira-loop-pressure",
+                             "-fno-caller-saves",
+                             "-fno-expensive-optimizations",
+                             "-fno-guess-branch-probability",
+                             "-fno-lra-remat",
+                             "-fno-ssa-phiopt",
+                             "-fno-tree-dominator-opts",
+                             "-fno-tree-loop-ivcanon",
+                             "-fno-tree-sra");
+   Optimizations_Switches_Linker := ("-Os",
+                                     "-Wl,-gc-sections",
+                                     "-fuse-linker-plugin",
+                                     "-flto=auto",
+                                     "-flto-partition=none");
+
+   Default_Switches_C := Switches_C & Optimization_Switches & Target_Optimization_Switches;
+   Default_Switches_Ada := Switches_Ada & Optimization_Switches & Target_Optimization_Switches;
+   case Debug is
+      when "True" =>
+         Default_Switches_C := Default_Switches_C & ("-g");
+         Default_Switches_Ada := Default_Switches_Ada & ("-g");
+      when others =>
+         null;
+   end case;
+
+   package Compiler is
+      for Default_Switches ("C") use Default_Switches_C;
+      for Default_Switches ("Ada") use Default_Switches_Ada;
+   end Compiler;
+
+   package Builder is
+      for Global_Configuration_Pragmas use "pragmas.adc";
+   end Builder;
+
+   package Prove is
+      for Proof_Switches ("Ada") use Defaults.Proof_Switches;
+      for Proof_Switches ("responder.adb") use ("--prover=z3,cvc4", "--steps=64000", "--memlimit=6000", "--timeout=600");
+   end Prove;
+
+end Build_Lib;

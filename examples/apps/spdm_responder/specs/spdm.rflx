@@ -1,0 +1,1131 @@
+package SPDM is
+
+   -- Security Protocol and Data Model (SPDM) Specification
+   -- Document Identifier: DSP0274
+   -- Version: 1.1.0
+
+   -- Base types
+
+   type Length_16 is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Length_24 is range 0 .. 2 ** 24 - 1 with Size => 24;
+   type Index is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   -- Eng/RecordFlux/RecordFlux#1058
+   -- Signature_Length should be 64 .. 512
+   type Signature_Length is range 0 .. 512 with Size => 16;
+   type Exchange_Data_Length is range 0 .. 512 with Size => 10;
+   type Hash_Length is range 0 .. 64 with Size => 8;
+
+   -- Eng/RecordFlux/RecordFlux#601
+   -- [33] Unless otherwise specified, reserved numeric and bit fields shall be written as
+   --      zero (0) and ignored when read.
+
+   type Reserved_1 is range 0 .. 0 with Size => 1;
+   type Reserved_2 is range 0 .. 0 with Size => 2;
+   type Reserved_3 is range 0 .. 0 with Size => 3;
+   type Reserved_4 is range 0 .. 0 with Size => 4;
+   type Reserved_5 is range 0 .. 0 with Size => 5;
+   type Reserved_6 is range 0 .. 0 with Size => 6;
+   type Reserved_7 is range 0 .. 0 with Size => 7;
+   type Reserved_8 is range 0 .. 0 with Size => 8;
+   type Reserved_15 is range 0 .. 0 with Size => 15;
+   type Reserved_16 is range 0 .. 0 with Size => 16;
+   type Reserved_24 is range 0 .. 0 with Size => 24;
+   type Reserved_32 is range 0 .. 0 with Size => 32;
+
+   -- 2.5.1 Version encoding
+
+   type Major_Version is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type Minor_Version is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type Update_Version_Number is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type Alpha is range 0 .. 2 ** 4 - 1 with Size => 4;
+
+   -- 8.3 SPDM request codes
+
+   type Request_Code is
+      (Get_Digests                   => 16#81#,
+       Get_Certificate               => 16#82#,
+       Challenge                     => 16#83#,
+       Get_Version                   => 16#84#,
+       Get_Measurements              => 16#E0#,
+       Get_Capabilities              => 16#E1#,
+       Negotiate_Algorithms          => 16#E3#,
+       Key_Exchange                  => 16#E4#,
+       Finish                        => 16#E5#,
+       PSK_Exchange                  => 16#E6#,
+       PSK_Finish                    => 16#E7#,
+       Heartbeat                     => 16#E8#,
+       Key_Update                    => 16#E9#,
+       Get_Encapsulated_Request      => 16#EA#,
+       Deliver_Encapsulated_Response => 16#EB#,
+       End_Session                   => 16#EC#,
+       Respond_If_Ready              => 16#FF#,
+       Vendor_Defined_Request        => 16#FE#)
+   with Size => 8;
+
+   -- 8.4 SPDM response codes
+
+   type Response_Code is
+      (Digests                   => 16#01#,
+       Certificate               => 16#02#,
+       Challenge_Auth            => 16#03#,
+       Version                   => 16#04#,
+       Measurements              => 16#60#,
+       Capabilities              => 16#61#,
+       Algorithms                => 16#63#,
+       Key_Exchange_RSP          => 16#64#,
+       Finish_RSP                => 16#65#,
+       PSK_Exchange_RSP          => 16#66#,
+       PSK_Finish_RSP            => 16#67#,
+       Heartbeat_ACK             => 16#68#,
+       Key_Update_ACK            => 16#69#,
+       Encapsulated_Request      => 16#6A#,
+       Encapsulated_Response_ACK => 16#6B#,
+       End_Session_ACK           => 16#6C#,
+       Vendor_Defined_Response   => 16#7E#,
+       Error                     => 16#7F#)
+   with Size => 8;
+
+   --  Common types
+
+   type Slot_Present is range 0 .. 1 with Size => 1;
+
+   type Slot_Mask is
+      message
+         Slot_7_Present : Slot_Present;
+         Slot_6_Present : Slot_Present;
+         Slot_5_Present : Slot_Present;
+         Slot_4_Present : Slot_Present;
+         Slot_3_Present : Slot_Present;
+         Slot_2_Present : Slot_Present;
+         Slot_1_Present : Slot_Present;
+         Slot_0_Present : Slot_Present;
+      end message;
+
+   -- 10.2 GET_VERSION request and VERSION response messages
+
+   type Get_Version_Request is
+      message
+         Param_1 : Reserved_8;
+         Param_2 : Reserved_8;
+      end message;
+
+   type Version_Number_Entry is
+      message
+         Alpha : Alpha
+            --  [167] Released versions shall have an Alpha value of zero ( 0 )
+            then Update_Version_Number
+               if Alpha = 0;
+         Update_Version_Number : Update_Version_Number;
+         Minor_Version : Minor_Version;
+         Major_Version : Major_Version;
+      end message;
+
+   type Version_Number_Entries is sequence of Version_Number_Entry;
+
+   type Version_Number_Entry_Count is range 1 .. 2 ** 8 - 1 with Size => 8;
+
+   type Version_Response is
+      message
+         Param_1 : Reserved_8;
+         Param_2 : Reserved_8;
+         Reserved : Reserved_8;
+         Version_Number_Entry_Count : Version_Number_Entry_Count;
+         Version_Number_Entries : Version_Number_Entries
+            --  Eng/RecordFlux/RecordFlux#404
+            --  with Size => Version_Number_Entry_Count * Version_Number_Entry'Size;
+            with Size => Version_Number_Entry_Count * 16;
+      end message;
+
+   -- 10.3 GET_CAPABILITIES request and CAPABILITIES response messages
+
+   type CT_Exponent is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type PSK_Request_Cap is
+      (PSK_Req_Unsupported => 0,
+       PSK_Req_Supported   => 1)
+   with Size => 2;
+
+   type Get_Capabilities_Request is
+      message
+         Param_1 : Reserved_8;
+         Param_2 : Reserved_8;
+         Reserved_1 : Reserved_8;
+         CT_Exponent : CT_Exponent;
+         Reserved_2 : Reserved_16;
+         MAC_Cap : Boolean;
+         Encrypt_Cap : Boolean;
+         Meas_Fresh_Cap : Reserved_1;
+         Meas_Cap : Reserved_2;
+         Chal_Cap : Boolean;
+         Cert_Cap : Boolean;
+         Reserved_3 : Reserved_1;
+         Handshake_In_The_Clear_Cap : Boolean;
+         Key_Upd_Cap : Boolean;
+         Hbeat_Cap : Boolean;
+         Encap_Cap : Boolean;
+         PSK_Cap : PSK_Request_Cap;
+         Key_Ex_Cap : Boolean;
+         Mut_Auth_Cap : Boolean;
+         Reserved_4 : Reserved_7;
+         Pub_Key_ID_Cap : Boolean;
+         Reserved_5 : Reserved_8
+            then null
+               if --  Encrypt_Cap:
+                  --  [177] If set, one or more of PSK_CAP or KEY_EX_CAP fields shall be specified
+                  --  accordingly to indicate support.
+                  (Encrypt_Cap = False or PSK_Cap = PSK_Req_Supported or Key_Ex_Cap = True)
+                  --  MAC_Cap:
+                  --  [177] If set, Requester supports message authentication. If set, one or more of
+                  --  PSK_CAP or KEY_EX_CAP fields shall be specified accordingly to indicate
+                  --  support.
+                  and (MAC_Cap = False or PSK_Cap = PSK_Req_Supported or Key_Ex_Cap = True)
+                  --  Key_Ex_Cap:
+                  --  [177] If set, Requester supports KEY_EXCHANGE messages. If set, one or more of
+                  --  ENCRYPT_CAP and MAC_CAP shall be set.
+                  and (Key_Ex_Cap = False or (Encrypt_Cap = True or MAC_Cap = True))
+                  --  PSK_Cap:
+                  --  [177] If supported, one or more of ENCRYPT_CAP and MAC_CAP shall be set.
+                  and (PSK_Cap /= PSK_Req_Supported or (Encrypt_Cap = True or MAC_Cap = True))
+                  --  Encap_Cap:
+                  --  [177] If mutual authentication is supported, this field shall be set.
+                  and (Mut_Auth_Cap = False or Encap_Cap = True)
+                  --  Handshake_In_The_Clear_Cap:
+                  --  [177] If set, KEY_EX_CAP shall also be set.
+                  and (Handshake_In_The_Clear_Cap = False or Key_Ex_Cap = True)
+                  --  Handshake_In_The_Clear_Cap:
+                  --  [177] If the Requester does not support encryption and message authentication, then
+                  --  this bit shall be zero.
+                  and ((Encrypt_Cap = True and MAC_Cap = True) or Handshake_In_The_Clear_Cap = False)
+                  --  Pub_Key_ID_Cap:
+                  --  [177] If set, the public key of the Requester was provisioned to the Responder.
+                  --  The transport layer is responsible for identifying the Responder. In this case,
+                  --  CERT_CAP of the Requester shall be 0.
+                  and (Pub_Key_ID_Cap = False or Cert_Cap = False);
+      end message;
+
+   type Meas_Cap is
+      (Meas_Unsupported => 0,
+       Meas_Plain       => 1,
+       Meas_Signed      => 2)
+   with Size => 2;
+
+   type PSK_Resp_Cap is
+      (PSK_Resp_Unsupported     => 0,
+       PSK_Resp_Without_Context => 1,
+       PSK_Resp_With_Context    => 2)
+   with Size => 2;
+
+   type Capabilities_Response is
+      message
+         Param_1 : Reserved_8;
+         Param_2 : Reserved_8;
+         Reserved_1 : Reserved_8;
+         CT_Exponent : CT_Exponent;
+         Reserved_2 : Reserved_16;
+         MAC_Cap : Boolean;
+         Encrypt_Cap : Boolean;
+         Meas_Fresh_Cap : Boolean;
+         Meas_Cap : Meas_Cap;
+         Chal_Cap : Boolean;
+         Cert_Cap : Boolean;
+         Cache_Cap : Boolean;
+         Handshake_In_The_Clear_Cap : Boolean;
+         Key_Upd_Cap : Boolean;
+         Hbeat_Cap : Boolean;
+         Encap_Cap : Boolean;
+         PSK_Cap : PSK_Resp_Cap;
+         Key_Ex_Cap : Boolean;
+         Mut_Auth_Cap : Boolean;
+         Reserved_4 : Reserved_7;
+         Pub_Key_ID_Cap : Boolean;
+         Reserved_5 : Reserved_8
+            then null
+               if --  Encrypt_Cap:
+                  --  [178] If set, one or more of PSK_CAP or KEY_EX_CAP fields shall be specified
+                  --  accordingly to indicate support.
+                  (Encrypt_Cap = False or PSK_Cap /= PSK_Resp_Unsupported or Key_Ex_Cap = True)
+                  --  MAC_Cap:
+                  --  [178] If set, one or more of PSK_CAP or KEY_EX_CAP fields shall be specified
+                  --  accordingly to indicate support.
+                  and (MAC_Cap = False or PSK_Cap /= PSK_Resp_Unsupported or Key_Ex_Cap = True)
+                  --  Key_Ex_Cap:
+                  --  [178] If set, one or more of ENCRYPT_CAP and MAC_CAP shall be set.
+                  and (Key_Ex_Cap = False or (Encrypt_Cap = True or MAC_Cap = True))
+                  --  PSK_Cap:
+                  --  [178] If supported, one or more of ENCRYPT_CAP and MAC_CAP shall be set.
+                  and (PSK_Cap = PSK_Resp_Unsupported or (Encrypt_Cap = True or MAC_Cap = True))
+                  --  Encap_Cap:
+                  --  [178] If mutual authentication is supported, this field shall be set.
+                  and (Mut_Auth_Cap = False or Encap_Cap = True)
+                  --  Handshake_In_The_Clear_Cap:
+                  --  [178] If set, KEY_EX_CAP shall also be set.
+                  and (Handshake_In_The_Clear_Cap = False or Key_Ex_Cap = True)
+                  --  Handshake_In_The_Clear_Cap:
+                  --  [178] If the Responder does not support encryption and message authentication,
+                  --  then this bit shall be zero.
+                  and ((Encrypt_Cap = True and MAC_Cap = True) or Handshake_In_The_Clear_Cap = False)
+                  --  Pub_Key_ID_Cap:
+                  --  [178] If set, the public key of the Responder was provisioned to the Requester.
+                  --  The transport layer is responsible for identifying the Requester. In this case,
+                  --  CERT_CAP of the Responder shall be 0.
+                  and (Pub_Key_ID_Cap = False or Cert_Cap = False);
+      end message;
+
+   -- 10.11 GET_MEASUREMENTS request and MEASUREMENTS response message
+
+   type Narrow_Slot is
+      (NS_0                   => 16#0#,
+       NS_1                   => 16#1#,
+       NS_2                   => 16#2#,
+       NS_3                   => 16#3#,
+       NS_4                   => 16#4#,
+       NS_5                   => 16#5#,
+       NS_6                   => 16#6#,
+       NS_7                   => 16#7#,
+       NS_Trusted_Environment => 16#F#)
+   with Size => 4;
+
+   type Nonce is
+      message
+         Data : Opaque
+            with Size => 32 * 8;
+      end message;
+
+   type Get_Measurements_Request is
+      message
+         Reserved_1 : Reserved_7;
+         Generate_Signature : Boolean;
+         Measurement_Operation : Index
+         --  The value 0 queries the responder for the total number of measurements
+         --  available. The value 255 requests all measurements. The values 1 to 254
+         --  request the measurement at the index corresponding to that value.
+            then Nonce
+               if Generate_Signature = True
+            then null
+               if Generate_Signature = False;
+         Nonce : Nonce;
+         Reserved_2 : Reserved_4;
+         Slot_ID_Param : Narrow_Slot;
+      end message;
+
+   type Measurement_Specification is
+      (DMTF => 1)
+   with Size => 8;
+
+   type DMTF_Spec_Measurement_Value_Representation is
+      (Digest         => 0,
+       Raw_Bit_Stream => 1)
+   with Size => 1;
+
+   type DMTF_Spec_Measurement_Value_Type is
+      (Immutable_ROM          => 0,
+       Mutable_Firmware       => 1,
+       Hardware_Configuration => 2,
+       Firmware_Configuration => 3,
+       Measured_Manifest      => 4) --  SPDM 1.1 only
+   with Size => 7;
+
+   type DMTF_Measurement_Field is
+      message
+         Measurement_Value_Representation : DMTF_Spec_Measurement_Value_Representation;
+         Measurement_Value_Type : DMTF_Spec_Measurement_Value_Type;
+         --  [335] When DMTFSpecMeasurementValueType[7]=0b, the DMTFSpecMeasurementValueSize shall
+         --  be derived from the measurement hash algorithm that the ALGORITHM response message
+         --  returns.
+         --  FIXME: What does "shall be derived" mean - equals the hash length?
+         Measurement_Value_Length : Length_16;
+         Measurement_Value : Opaque
+            with Size => 8 * Measurement_Value_Length;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Measurement_Block is
+      message
+         Index : Index;
+         Measurement_Specification : Measurement_Specification;
+         Measurement_Length : Length_16;
+         --  Eng/RecordFlux/RecordFlux#1276
+         --   then DMTF_Measurement
+         --      if Measurement_Specification = DMTF;
+         DMTF_Measurement : DMTF_Measurement_Field
+            then null
+               if 8 * Measurement_Length = DMTF_Measurement_Measurement_Value'Last - Measurement_Length'Last;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Measurement_Record is sequence of Measurement_Block;
+
+   type Measurement_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Block_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Measurements_Response (Signature_Length : Signature_Length;
+                               Has_Signature    : Boolean) is
+      message
+         Number_Of_Indices : Measurement_Count;
+         Reserved_1 : Reserved_4;
+         Slot_ID : Narrow_Slot;
+         Number_Of_Blocks : Block_Count;
+         Measurement_Record_Length : Length_24;
+         Measurement_Record : Measurement_Record
+            with Size => 8 * Measurement_Record_Length;
+         Nonce : Nonce;
+         Opaque_Length : Length_16;
+         Opaque_Data : Opaque
+            with Size => 8 * Opaque_Length
+            then Signature
+               if Has_Signature = True
+            then null
+               if Has_Signature = False;
+         Signature : Opaque
+            with Size => 8 * Signature_Length;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   -- [201] Extended Algorithm field format
+
+   type Registry_ID is
+      (Reg_DMTF      => 0,
+       Reg_TCG       => 1,
+       Reg_USB       => 2,
+       Reg_PCI_SIG   => 3,
+       Reg_IANA      => 4,
+       Reg_HD_Base_T => 5,
+       Reg_MIPI      => 6,
+       Reg_CXL       => 7,
+       Reg_JEDEC     => 8)
+   with Size => 8;
+
+   type Algorithm_ID_16 is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Algorithm_ID_32 is range 0 .. 2 ** 32 - 1 with Size => 32;
+
+   type Ext_Alg is
+      message
+         Registry_ID : Registry_ID;
+         Reserved : Reserved_8
+            then null
+               if Registry_ID = Reg_DMTF
+            then Algorithm_ID_16
+               if Registry_ID = Reg_TCG
+                  or Registry_ID = Reg_USB
+                  or Registry_ID = Reg_PCI_SIG
+                  or Registry_ID = Reg_MIPI
+                  or Registry_ID = Reg_CXL
+                  or Registry_ID = Reg_JEDEC
+            then Algorithm_ID_32
+               if Registry_ID = Reg_IANA
+                  or Registry_ID = Reg_HD_Base_T;
+         Algorithm_ID_16 : Algorithm_ID_16
+            then null;
+         Algorithm_ID_32 : Algorithm_ID_32;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Ext_Algs is sequence of Ext_Alg;
+
+   -- [187] Algorithm request structure
+
+   type Alg_Type is
+      (DHE               => 2,
+       AEAD_Cipher_Suite => 3,
+       Req_Base_Asym_Alg => 4,
+       Key_Schedule      => 5)
+   with Size => 8;
+
+   type Alg_Count is range 0 .. 2 ** 4 - 1 with Size => 4;
+
+   type Alg_Struct is
+      message
+         Alg_Type : Alg_Type;
+         Fixed_Alg_Count : Alg_Count
+            then Ext_Alg_Count
+               if Fixed_Alg_Count = 2;
+         Ext_Alg_Count : Alg_Count
+            then DHE_Reserved_1
+               if Alg_Type = DHE
+            then AEAD_Reserved_1
+               if Alg_Type = AEAD_Cipher_Suite
+            then RBAA_TPM_ALG_ECDSA_ECC_NIST_P384
+               if Alg_Type = Req_Base_Asym_Alg
+            then KS_Reserved_1
+               if Alg_Type = Key_Schedule;
+         DHE_Reserved_1 : Reserved_2;
+         DHE_SecP521r1 : Boolean;
+         DHE_SecP384r1 : Boolean;
+         DHE_SecP256r1 : Boolean;
+         DHE_FFDHE4096 : Boolean;
+         DHE_FFDHE3072 : Boolean;
+         DHE_FFDHE2048 : Boolean;
+         DHE_Reserved_2 : Reserved_8
+            then Alg_External;
+         AEAD_Reserved_1 : Reserved_5;
+         AEAD_ChaCha20_Poly1305 : Boolean;
+         AEAD_AES_256_GCM : Boolean;
+         AEAD_AES_128_GCM : Boolean;
+         AEAD_Reserved_2 : Reserved_8
+            then Alg_External;
+         RBAA_TPM_ALG_ECDSA_ECC_NIST_P384 : Boolean;
+         RBAA_TPM_ALG_RSAPSS_4096 : Boolean;
+         RBAA_TPM_ALG_RSASSA_4096 : Boolean;
+         RBAA_TPM_ALG_ECDSA_ECC_NIST_P256 : Boolean;
+         RBAA_TPM_ALG_RSAPSS_3072 : Boolean;
+         RBAA_TPM_ALG_RSASSA_3072 : Boolean;
+         RBAA_TPM_ALG_RSAPSS_2048 : Boolean;
+         RBAA_TPM_ALG_RSASSA_2048 : Boolean;
+         RBAA_Reserved_1 : Reserved_7;
+         RBAA_TPM_ALG_ECDSA_ECC_NIST_P521 : Boolean
+            then Alg_External;
+         KS_Reserved_1 : Reserved_7;
+         KS_SPDM : Boolean;
+         KS_Reserved_2 : Reserved_8
+            then Alg_External;
+         Alg_External : Ext_Algs
+            with Size => 32 * Ext_Alg_Count;
+      end message;
+
+   type Req_Alg_Structs is sequence of Alg_Struct;
+
+   -- 10.4 NEGOTIATE_ALGORITHMS request and ALGORITHMS response messages
+
+   type Alg_Struct_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Ext_Asym_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Ext_Hash_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Negotiate_Algorithms_Request is
+      message
+         Req_Alg_Struct_Count : Alg_Struct_Count;
+         Param_2 : Reserved_8;
+         Length : Length_16
+            then Measurement_Specification_Reserved
+               if Length <= 128;
+         Measurement_Specification_Reserved : Reserved_7;
+         Measurement_Specification_DMTF : Boolean;
+         Reserved_1 : Reserved_8;
+         Base_Asym_Algo_TPM_ALG_ECDSA_ECC_NIST_P384 : Boolean;
+         Base_Asym_Algo_TPM_ALG_RSAPSS_4096 : Boolean;
+         Base_Asym_Algo_TPM_ALG_RSASSA_4096 : Boolean;
+         Base_Asym_Algo_TPM_ALG_ECDSA_ECC_NIST_P256 : Boolean;
+         Base_Asym_Algo_TPM_ALG_RSAPSS_3072 : Boolean;
+         Base_Asym_Algo_TPM_ALG_RSASSA_3072 : Boolean;
+         Base_Asym_Algo_TPM_ALG_RSAPSS_2048 : Boolean;
+         Base_Asym_Algo_TPM_ALG_RSASSA_2048 : Boolean;
+         Base_Asym_Algo_Reserved_1 : Reserved_7;
+         Base_Asym_Algo_TPM_ALG_ECDSA_ECC_NIST_P521 : Boolean;
+         Base_Asym_Algo_Reserved_2 : Reserved_16;
+         Base_Hash_Algo_Reserved_1 : Reserved_2;
+         Base_Hash_Algo_TPM_ALG_SHA3_512 : Boolean;
+         Base_Hash_Algo_TPM_ALG_SHA3_384 : Boolean;
+         Base_Hash_Algo_TPM_ALG_SHA3_256 : Boolean;
+         Base_Hash_Algo_TPM_ALG_SHA_512 : Boolean;
+         Base_Hash_Algo_TPM_ALG_SHA_384 : Boolean;
+         Base_Hash_Algo_TPM_ALG_SHA_256 : Boolean;
+         Base_Hash_Algo_Reserved_2 : Reserved_24;
+         Reserved_2 : Reserved_32;
+         Reserved_3 : Reserved_32;
+         Reserved_4 : Reserved_32;
+         -- FIXME:
+         -- [185]
+         -- ExtAsymCount
+         -- Number of Requester-supported extended asymmetric key signature algorithms (=A).
+         -- A + E + ExtAlgCount2 + ExtAlgCount3 + ExtAlgCount4 + ExtAlgCount5 shall be less than or equal to 20.
+         -- If the capabilities do not support this algorithm, this value is not used and shall be set to zero.
+         Ext_Asym_Count : Ext_Asym_Count;
+         -- FIXME:
+         -- [185]
+         -- ExtHashCount
+         -- Number of Requester-supported extended hashing algorithms (=E).
+         -- A + E + ExtAlgCount2 + ExtAlgCount3 + ExtAlgCount4 + ExtAlgCount5 shall be less than or equal to 20.
+         -- If the capabilities do not support this algorithm, this value is not used and shall be set to zero.
+         Ext_Hash_Count : Ext_Hash_Count;
+         Reserved_5 : Reserved_16;
+         Ext_Asym : Ext_Algs
+            with Size => 32 * Ext_Asym_Count;
+         Ext_Hash : Ext_Algs
+            with Size => 32 * Ext_Hash_Count
+            then Req_Alg_Structs
+               --  Length is the total length of the message, we have to subtract the common header
+               --  consisting of the Version and the Request/Response code of the Request/Response.
+               with Size => 8 * Length - 16 - (Ext_Hash'Last - Req_Alg_Struct_Count'First + 1)
+               if 8 * Length >= 16 + (Ext_Hash'Last - Req_Alg_Struct_Count'First + 1);
+         Req_Alg_Structs : Req_Alg_Structs;
+         -- Eng/RecordFlux/RecordFlux#51
+         -- The number of elements should also match Req_Alg_Struct_Count
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Resp_Alg_Structs is sequence of Alg_Struct;
+
+   type Measurement_Hash_Algo is
+      (MH_Unsupported          =>  0,
+       MH_Raw_Bit_Streams_Only =>  1,
+       MH_TPM_ALG_SHA_256      =>  2,
+       MH_TPM_ALG_SHA_384      =>  4,
+       MH_TPM_ALG_SHA_512      =>  8,
+       MH_TPM_ALG_SHA3_256     => 16,
+       MH_TPM_ALG_SHA3_384     => 32,
+       MH_TPM_ALG_SHA3_512     => 64)
+   with Size => 32;
+
+   type Base_Asym_Algo is
+      (BA_Unsupported                 =>   0,
+       BA_TPM_ALG_RSASSA_2048         =>   1,
+       BA_TPM_ALG_RSAPSS_2048         =>   2,
+       BA_TPM_ALG_RSASSA_3072         =>   4,
+       BA_TPM_ALG_RSAPSS_3072         =>   8,
+       BA_TPM_ALG_ECDSA_ECC_NIST_P256 =>  16,
+       BA_TPM_ALG_RSASSA_4096         =>  32,
+       BA_TPM_ALG_RSAPSS_4096         =>  64,
+       BA_TPM_ALG_ECDSA_ECC_NIST_P384 => 128,
+       BA_TPM_ALG_ECDSA_ECC_NIST_P521 => 256)
+   with Size => 32;
+
+   type Base_Hash_Algo is
+      (BH_Unsupported      =>  0,
+       BH_TPM_ALG_SHA_256  =>  1,
+       BH_TPM_ALG_SHA_384  =>  2,
+       BH_TPM_ALG_SHA_512  =>  4,
+       BH_TPM_ALG_SHA3_256 =>  8,
+       BH_TPM_ALG_SHA3_384 => 16,
+       BH_TPM_ALG_SHA3_512 => 32)
+
+   with Size => 32;
+
+   type Algorithms_Response is
+      message
+         Resp_Alg_Struct_Count : Alg_Struct_Count;
+         Param_2 : Reserved_8;
+         Length : Length_16;
+         Measurement_Specification_Sel : Measurement_Specification;
+         Reserved_1 : Reserved_8;
+         Measurement_Hash_Algo : Measurement_Hash_Algo;
+         Base_Asym_Sel : Base_Asym_Algo;
+         Base_Hash_Sel : Base_Hash_Algo;
+         Reserved_2 : Reserved_32;
+         Reserved_3 : Reserved_32;
+         Reserved_4 : Reserved_32;
+         Ext_Asym_Sel_Count : Ext_Asym_Count
+            if Ext_Asym_Sel_Count <= 1;
+         Ext_Hash_Sel_Count : Ext_Hash_Count
+            if Ext_Hash_Sel_Count <= 1;
+         Reserved_5 : Reserved_16;
+         Ext_Asym : Ext_Algs
+            with Size => 32 * Ext_Asym_Sel_Count;
+         Ext_Hash : Ext_Algs
+            with Size => 32 * Ext_Hash_Sel_Count
+            then Resp_Alg_Structs
+               --  Length is the total length of the message, we have to subtract the common header
+               --  consisting of the Version and the Request/Response code of the Request/Response.
+               with Size => 8 * Length - 16 - (Ext_Hash'Last - Resp_Alg_Struct_Count'First + 1)
+               if 8 * Length >= 16 + (Ext_Hash'Last - Resp_Alg_Struct_Count'First + 1);
+         Resp_Alg_Structs : Resp_Alg_Structs;
+         -- Eng/RecordFlux/RecordFlux#51
+         -- The number of elements should also match Resp_Alg_Struct_Count
+      end message
+         with Byte_Order => Low_Order_First;
+
+   -- 10.7 GET_DIGESTS request and DIGESTS response messages
+
+   type Get_Digests_Request is
+      message
+         Param_1 : Reserved_8;
+         Param_2 : Reserved_8;
+      end message;
+
+   type Digests_Response (Hash_Length : Hash_Length) is
+      message
+         Param_1 : Reserved_8;
+         Slot_Mask : Slot_Mask;
+         Digests_Data : Opaque
+            with Size => 8 * Hash_Length * (Slot_Mask_Slot_0_Present
+                                            + Slot_Mask_Slot_1_Present
+                                            + Slot_Mask_Slot_2_Present
+                                            + Slot_Mask_Slot_3_Present
+                                            + Slot_Mask_Slot_4_Present
+                                            + Slot_Mask_Slot_5_Present
+                                            + Slot_Mask_Slot_6_Present
+                                            + Slot_Mask_Slot_7_Present);
+      end message;
+
+   -- 10.8 GET_CERTIFICATE request and CERTIFICATE response messages
+
+   type Slot is
+      (Slot_0              => 16#00#,
+       Slot_1              => 16#01#,
+       Slot_2              => 16#02#,
+       Slot_3              => 16#03#,
+       Slot_4              => 16#04#,
+       Slot_5              => 16#05#,
+       Slot_6              => 16#06#,
+       Slot_7              => 16#07#,
+       Trusted_Environment => 16#FF#)
+   with Size => 8;
+
+   type Offset is range 0 .. 2 ** 16 - 1 with Size => 16;
+
+   type Get_Certificate_Request is
+      message
+         Slot : Slot;
+         Param_2 : Reserved_8;
+         --  FIXME:
+         --  This property must be expressed in the session:
+         --     For the first GET_CERTIFICATE request, the Requester shall set this field to 0.
+         --     For non-first requests, Offset is the sum of PortionLength values in all previous
+         --     GET_CERTIFICATE responses.
+         Offset : Offset;
+         Length : Length_16;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Portion_Length_16 is range 0 .. 1024 with
+      Size => 16;
+
+   type Certificate_Response is
+      message
+         Slot : Slot;
+         Param_2 : Reserved_8;
+         Portion_Length : Portion_Length_16;
+         Remainder_Length : Length_16;
+         Cert_Chain : Opaque
+            with Size => 8 * Portion_Length;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Measurement_Summary_Hash_Type is
+      (No_Measurement   => 16#00#,
+       TCB_Measurement  => 16#01#,
+       All_Measurements => 16#FF#)
+   with Size => 8;
+
+   -- 10.9 CHALLENGE request and CHALLENGE_AUTH response messages
+
+   type Challenge_Request is
+      message
+         Slot : Slot;
+         Hash_Type : Measurement_Summary_Hash_Type;
+         Nonce : Nonce;
+      end message;
+
+   type Challenge_Auth_Response (Meas_Cap         : Meas_Cap;
+                                 Hash_Type        : Measurement_Summary_Hash_Type;
+                                 Hash_Length      : Hash_Length;
+                                 Signature_Length : Signature_Length) is
+      message
+         Basic_Mut_Auth_Req : Boolean;
+         Reserved           : Reserved_3;
+         Slot               : Narrow_Slot;
+         Slot_Mask          : Slot_Mask;
+         Cert_Chain_Hash    : Opaque
+            with Size => 8 * Hash_Length;
+         Nonce : Nonce
+            --  [256] MeasurementSummaryHash:
+            --  When the Responder does not support measurement or requested Param2=0
+            --  (i.e. Hash_Type = No_Measurment), the field shall be absent.
+            then Opaque_Length
+               if Meas_Cap = Meas_Unsupported or Hash_Type = No_Measurement
+            then Measurement_Summary_Hash
+               if Meas_Cap /= Meas_Unsupported and Hash_Type /= No_Measurement;
+         Measurement_Summary_Hash : Opaque
+            with Size => 8 * Hash_Length;
+         Opaque_Length : Length_16
+            then Opaque_Data
+               if Opaque_Length <= 1024;
+         Opaque_Data : Opaque
+            with Size => 8 * Opaque_Length;
+         Signature : Opaque
+            with Size => 8 * Signature_Length;
+      end message
+         with Byte_Order => Low_Order_First;
+   -- 10.12 ERROR response message
+
+   type Error_Code is
+      (Invalid_Request        => 16#01#,
+       Invalid_Session        => 16#02#,
+       Busy                   => 16#03#,
+       Unexpected_Request     => 16#04#,
+       Unspecified            => 16#05#,
+       Decrypt_Error          => 16#06#,
+       Unsupported_Request    => 16#07#,
+       Request_In_Flight      => 16#08#,
+       Invalid_Response_Code  => 16#09#,
+       Session_Limit_Exceeded => 16#0A#,
+       Major_Version_Mismatch => 16#41#,
+       Response_Not_Ready     => 16#42#,
+       Request_Resynch        => 16#43#,
+       Vendor                 => 16#FF#)
+   with Size => 8;
+
+   type Error_Session_ID is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type RDT_Exponent is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Token is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type RDTM is range 1 .. 2 ** 8 - 1 with Size => 8;
+
+   type Response_Not_Ready_Data is
+      message
+         RDT_Exponent : RDT_Exponent;
+         Request_Code : Request_Code;
+         Token        : Token;
+         RDTM         : RDTM;
+      end message;
+
+   type Zero_Error_Data is range 0 .. 0 with Size => 8;
+
+   type Vendor_ID_Len is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Vendor_ID_Double is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Vendor_ID_Quad is range 0 .. 2 ** 32 - 1 with Size => 32;
+
+   type Error_Response is
+      message
+         Error_Code : Error_Code
+            then Invalid_Session_ID
+               if Error_Code = Invalid_Session
+            then Zero_Error_Data
+               if Error_Code = Invalid_Request
+                  or Error_Code = Busy
+                  or Error_Code = Unexpected_Request
+                  or Error_Code = Unspecified
+                  or Error_Code = Major_Version_Mismatch
+                  or Error_Code = Response_Not_Ready
+                  or Error_Code = Request_Resynch
+            then Reserved_Error_Data
+               if Error_Code = Decrypt_Error
+                  or Error_Code = Request_In_Flight
+                  or Error_Code = Invalid_Response_Code
+                  or Error_Code = Session_Limit_Exceeded
+            then Request_Response_Code
+               if Error_Code = Unsupported_Request
+            then Registry_ID
+               if Error_Code = Vendor;
+         Invalid_Session_ID : Error_Session_ID
+            then null;
+         Zero_Error_Data : Zero_Error_Data
+            then Response_Not_Ready_Data
+               if Error_Code = Response_Not_Ready
+            then null
+               if Error_Code /= Response_Not_Ready;
+         Reserved_Error_Data : Reserved_8
+            then null;
+         Response_Not_Ready_Data : Response_Not_Ready_Data
+            then null;
+         Request_Response_Code : Request_Code
+            then null;
+         Registry_ID : Registry_ID;
+         Vendor_ID_Len : Vendor_ID_Len
+            then Opaque_Error_Data
+               with Size => Message'Last - Vendor_ID_Len'Last
+               if Vendor_ID_Len = 0
+                  and Registry_ID = Reg_DMTF
+            then Vendor_ID_Double
+               if Vendor_ID_Len = 2
+                  and (Registry_ID = Reg_TCG
+                       or Registry_ID = Reg_USB
+                       or Registry_ID = Reg_PCI_SIG
+                       or Registry_ID = Reg_MIPI
+                       or Registry_ID = Reg_CXL
+                       or Registry_ID = Reg_JEDEC)
+            then Vendor_ID_Quad
+               if Vendor_ID_Len = 4
+                  and (Registry_ID = Reg_IANA
+                       or Registry_ID = Reg_HD_Base_T);
+         Vendor_ID_Double : Vendor_ID_Double
+            then Opaque_Error_Data;
+         Vendor_ID_Quad : Vendor_ID_Quad
+            then Opaque_Error_Data;
+         Opaque_Error_Data : Opaque;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   -- 10.13 RESPOND_IF_READY request message format
+
+   type Respond_If_Ready_Request is
+      message
+         Original_Request_Code : Request_Code;
+         Token : Token;
+      end message;
+   -- 10.16 KEY_EXCHANGE request and KEY_EXCHANGE_RSP response messages
+
+   type Session_ID is range 0 .. 2 ** 16 - 1 with Size => 16;
+
+   type Key_Exchange_Request (Exchange_Data_Length : Exchange_Data_Length) is
+      message
+         Measurement_Summary_Hash_Type : Measurement_Summary_Hash_Type;
+         Slot : Slot;
+         Req_Session_ID : Session_ID;
+         Reserved : Reserved_16;
+         Random_Data : Opaque
+            with Size => 8 * 32;
+         Exchange_Data : Opaque
+            with Size => 8 * Exchange_Data_Length;
+         Opaque_Data_Length : Length_16;
+         Opaque_Data : Opaque
+            with Size => 8 * Opaque_Data_Length;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Heartbeat_Period is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Key_Exchange_Response (Exchange_Data_Length   : Exchange_Data_Length;
+                               Hash_Length            : Hash_Length;
+                               Signature_Length       : Signature_Length;
+                               Handshake_In_The_Clear : Boolean;
+                               Has_Measurement_Hash   : Boolean)
+   is
+      message
+         Heartbeat_Period : Heartbeat_Period;
+         Param_2 : Reserved_8;
+         Resp_Session_ID : Session_ID;
+         Reserved_1 : Reserved_5;
+         Mutual_Auth_Implicit : Boolean;     -- Bit 2
+         Mutual_Auth_Encapsulated : Boolean; -- Bit 1
+         Mutual_Auth : Boolean               -- Bit 0
+            then Reserved_2
+               if --  [422] Bit 1 and Bit 2 shall only be set if Bit 0 is set
+                  (Mutual_Auth = False
+                   or (Mutual_Auth_Implicit = True
+                       or Mutual_Auth_Encapsulated = True))
+                  --  [422] Bit 1 and Bit 2 shall not be set at the same time
+                  and (Mutual_Auth_Implicit = False
+                       or Mutual_Auth_Encapsulated = False);
+         Reserved_2 : Reserved_4;
+         Slot_ID_Param : Narrow_Slot
+            then Random_Data
+               --  [422] If MutAuthRequested = 0x00 this field shall be set to 0 and ignored by the Requester.
+               if Mutual_Auth = True or Slot_ID_Param = NS_0;
+         Random_Data : Opaque
+            with Size => 8 * 32;
+         Exchange_Data : Opaque
+            with Size => 8 * Exchange_Data_Length
+            then Measurement_Summary_Hash
+               with Size => 8 * Hash_Length
+               if Has_Measurement_Hash = True
+            then Measurement_Summary_Hash
+               with Size => 0
+               if Has_Measurement_Hash = False;
+         Measurement_Summary_Hash : Opaque;
+         Opaque_Data_Length : Length_16;
+         Opaque_Data : Opaque
+            with Size => 8 * Opaque_Data_Length;
+         Signature : Opaque
+            with Size => 8 * Signature_Length
+            then Responder_Verify_Data
+               if Handshake_In_The_Clear = False
+            then null
+               if Handshake_In_The_Clear = True;
+         -- [422] If both the Requester and Responder set HANDSHAKE_IN_THE_CLEAR_CAP to 1, then this
+         --       field shall be absent.
+         Responder_Verify_Data : Opaque
+            with Size => 8 * Hash_Length;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   --  10.17 FINISH request and FINISH_RSP response messages
+
+   type Finish_Request (Signature_Length : Signature_Length;
+                        Hash_Length      : Hash_Length)
+   is
+      message
+         Reserved : Reserved_7;
+         Signature_Included : Boolean;
+         Slot : Slot
+            then Signature
+               if Signature_Included = True
+            then Requester_Verify_Data
+               if Signature_Included = False;
+         Signature : Opaque
+            with Size => 8 * Signature_Length;
+         Requester_Verify_Data : Opaque
+            with Size => 8 * Hash_Length;
+      end message;
+
+   type Finish_Response (Hash_Length            : Hash_Length;
+                         Handshake_In_The_Clear : Boolean)
+   is
+      message
+         Param_1 : Reserved_8;
+         Param_2 : Reserved_8
+            -- [433] If both the Requester and Responder support HANDSHAKE_IN_THE_CLEAR_CAP field,
+            --       this field shall be of length H [...].
+            then Responder_Verify_Data
+               if Handshake_In_The_Clear = True
+            then null
+               if Handshake_In_The_Clear = False;
+         Responder_Verify_Data : Opaque
+            with Size => 8 * Hash_Length;
+      end message;
+
+   --  10.21 KEY_UPDATE request and KEY_UPDATE_ACK response messages
+
+   type Key_Operation is (Update_Key => 1, Update_All_Keys => 2, Verify_New_Key => 3) with Size => 8;
+
+   type Key_Update_Tag is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Key_Update_Request is
+      message
+         Key_Operation : Key_Operation;
+         Tag : Key_Update_Tag;
+      end message;
+
+   type Key_Update_ACK_Response is
+      message
+         Key_Operation : Key_Operation;
+         Tag : Key_Update_Tag;
+      end message;
+
+   --  10.24 END_SESSION request and END_SESSION_ACK response messages
+
+   type End_Session_Request is
+      message
+         Reserved_1 : Reserved_7;
+         Clear_Negotiated_State : Boolean;
+         Reserved_2 : Reserved_8;
+      end message;
+
+   type End_Session_Response is
+      message
+         Reserved_1 : Reserved_8;
+         Reserved_2 : Reserved_8;
+      end message;
+   -- 8.2 Generic SPDM message format
+
+   type Request
+      (Hash_Length          : Hash_Length;
+       Signature_Length     : Signature_Length;
+       Exchange_Data_Length : Exchange_Data_Length)
+   is
+      message
+         Major_Version : Major_Version
+            then Minor_Version
+               if Major_Version = 1;
+         Minor_Version : Minor_Version
+            then Code
+               if Minor_Version <= 1;
+         Code : Request_Code
+            then Get_Version_Request
+               if Code = Get_Version and Minor_Version = 0
+            then Get_Capabilities_Request
+               if Code = Get_Capabilities and Minor_Version = 1
+            then Negotiate_Algorithms_Request
+               if Code = Negotiate_Algorithms and Minor_Version = 1
+            then Get_Digests_Request
+               if Code = Get_Digests
+            then Get_Certificate_Request
+               if Code = Get_Certificate
+            then Challenge_Request
+               if Code = Challenge
+            then Respond_If_Ready_Request
+               if Code = Respond_If_Ready
+            then Key_Exchange_Request
+               if Code = Key_Exchange and Minor_Version = 1
+            then Finish_Request
+               if Code = Finish and Minor_Version = 1
+            then Key_Update_Request
+               if Code = Key_Update and Minor_Version = 1
+            then End_Session_Request
+               if Code = End_Session and Minor_Version = 1
+            then Get_Measurements_Request
+               if Code = Get_Measurements and Minor_Version = 1;
+         Get_Version_Request : Get_Version_Request
+            then null;
+         Get_Capabilities_Request : Get_Capabilities_Request
+            then null;
+         Negotiate_Algorithms_Request : Negotiate_Algorithms_Request
+            then null;
+         Get_Digests_Request : Get_Digests_Request
+            then null;
+         Get_Certificate_Request : Get_Certificate_Request
+            then null;
+         Challenge_Request : Challenge_Request
+            then null;
+         Get_Measurements_Request : Get_Measurements_Request
+            then null;
+         Respond_If_Ready_Request : Respond_If_Ready_Request
+            then null;
+         Key_Exchange_Request : Key_Exchange_Request (Exchange_Data_Length => Exchange_Data_Length)
+            then null;
+         Finish_Request : Finish_Request (Signature_Length => Signature_Length,
+                                          Hash_Length      => Hash_Length)
+            then null;
+         Key_Update_Request : Key_Update_Request
+            then null;
+         End_Session_Request : End_Session_Request;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Response (
+      Meas_Cap               : Meas_Cap;
+      Hash_Type              : Measurement_Summary_Hash_Type;
+      Hash_Length            : Hash_Length;
+      Signature_Length       : Signature_Length;
+      Exchange_Data_Length   : Exchange_Data_Length;
+      Handshake_In_The_Clear : Boolean;
+      Has_Signature          : Boolean;
+      Has_Measurement_Hash   : Boolean)
+   is
+      message
+         Major_Version : Major_Version
+            then Minor_Version
+               if Major_Version = 1;
+         Minor_Version : Minor_Version
+            then Code
+               if Minor_Version <= 1;
+         Code : Response_Code
+            then Version_Response
+               if Code = Version and Minor_Version = 0
+            then Capabilities_Response
+               if Code = Capabilities and Minor_Version = 1
+            then Algorithms_Response
+               if Code = Algorithms
+            then Digests_Response
+               if Code = Digests
+            then Certificate_Response
+               if Code = Certificate and Minor_Version = 1
+            then Challenge_Auth_Response
+               if Code = Challenge_Auth and Minor_Version = 1
+            then Measurements_Response
+               if Code = Measurements and Minor_Version = 1
+            then Key_Exchange_Response
+               if Code = Key_Exchange_RSP and Minor_Version = 1
+            then Finish_Response
+               if Code = Finish_RSP and Minor_Version = 1
+            then Key_Update_ACK_Response
+               if Code = Key_Update_ACK and Minor_Version = 1
+            then End_Session_Response
+               if Code = End_Session_ACK and Minor_Version = 1
+            then Error_Response
+               if Code = Error and Minor_Version = 1;
+         Version_Response : Version_Response
+            then null;
+         Capabilities_Response : Capabilities_Response
+            then null;
+         Algorithms_Response : Algorithms_Response
+            then null;
+         Digests_Response : Digests_Response (Hash_Length => Hash_Length)
+            then null;
+         Certificate_Response : Certificate_Response
+            then null;
+         Challenge_Auth_Response : Challenge_Auth_Response (Meas_Cap         => Meas_Cap,
+                                                            Hash_Type        => Hash_Type,
+                                                            Hash_Length      => Hash_Length,
+                                                            Signature_Length => Signature_Length)
+            then null;
+         Measurements_Response : Measurements_Response (Signature_Length => Signature_Length,
+                                                        Has_Signature    => Has_Signature)
+            then null;
+         Error_Response : Error_Response
+            then null;
+         Key_Exchange_Response : Key_Exchange_Response (Exchange_Data_Length   => Exchange_Data_Length,
+                                                        Hash_Length            => Hash_Length,
+                                                        Signature_Length       => Signature_Length,
+                                                        Handshake_In_The_Clear => Handshake_In_The_Clear,
+                                                        Has_Measurement_Hash   => Has_Measurement_Hash)
+            then null;
+         Finish_Response : Finish_Response (Hash_Length            => Hash_Length,
+                                            Handshake_In_The_Clear => Handshake_In_The_Clear)
+            then null;
+         Key_Update_ACK_Response : Key_Update_Ack_Response
+            then null;
+         End_Session_Response : End_Session_Response;
+      end message
+         with Byte_Order => Low_Order_First;
+
+end SPDM;

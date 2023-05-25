@@ -6,6 +6,7 @@ variables:
 
    GNAT_VERSION: "23.2"
    GNAT_BUILD_DATE: "all"
+   GNAT_PLATFORM: "x86_64-linux"
    SPARK_BUILD_DATE: "20221214"
    PYTHON_VERSION: "3.10"
    NODE_VERSION: "20.5.1"
@@ -50,11 +51,17 @@ stages:
     - popd
 
 .setup_gnat: &setup_gnat
-    - e3-cathod components --setup $GNAT_VERSION --build-date $GNAT_BUILD_DATE --platform x86_64-linux --component gnat --download
-    - tar -xzf gnatpro-$GNAT_VERSION-x86_64-linux-bin.tar.gz
-    - cd gnatpro-$GNAT_VERSION-x86_64-linux-bin && echo -e "\n$CI_PROJECT_DIR/gnat\nY\nY" | ./doinstall && cd ..
-    - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
+    - e3-cathod components --setup $GNAT_VERSION --build-date $GNAT_BUILD_DATE --platform $GNAT_PLATFORM --component gnat --download
+    - tar -xzf gnatpro-$GNAT_VERSION-$GNAT_PLATFORM-bin.tar.gz
+    - cd gnatpro-$GNAT_VERSION-$GNAT_PLATFORM-bin && echo -e "\n$CI_PROJECT_DIR/gnatpro-$GNAT_VERSION-$GNAT_PLATFORM\nY\nY" | ./doinstall && cd ..
+    - export PATH=$CI_PROJECT_DIR/gnatpro-$GNAT_VERSION-$GNAT_PLATFORM/bin:$PATH
     - gnat --version
+
+.setup_gnat_cross: &setup_gnat_cross
+    - export GNAT_PLATFORM="arm-elf-linux64"
+    - *setup_gnat
+    - export GNAT_PLATFORM="riscv64-elf-linux64"
+    - *setup_gnat
 
 .setup_spark: &setup_spark
     - anod install spark2014 --build-date $SPARK_BUILD_DATE
@@ -167,6 +174,7 @@ tests:
   script:
     - git fetch --unshallow
     - *setup_gnat
+    - *setup_gnat_cross
     - *setup_python
     - *activate_nvm
     - make test

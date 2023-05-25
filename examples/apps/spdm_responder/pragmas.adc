@@ -1,0 +1,3 @@
+pragma Restrictions(No_Secondary_Stack);
+pragma Restrictions(No_IO);
+--  pragma Restrictions(No_Tagged_Type_Registration); -- V330-034

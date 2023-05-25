@@ -1,0 +1,53 @@
+with "build_lib.gpr";
+with "../../../defaults.gpr";
+
+project Build is
+
+   type Target_Type is ("arm", "riscv32", "riscv64");
+   Target_Arch : Target_Type := external ("TARGET");
+
+   type Boolean is ("True", "False");
+   Check_Stack : Boolean := external ("CHECK_STACK", "False");
+
+   Stack_Check_Path := "";
+   Stack_Check_Switches := ();
+   case Check_Stack is
+      when "True" =>
+         Stack_Check_Path := "/gnatstack";
+         Stack_Check_Switches := ("-fcallgraph-info=su,da");
+      when "False" =>
+         null;
+   end case;
+
+   for Languages use ("Ada");
+   for Source_Dirs use ("src/main");
+   for Object_Dir use "build/" & Target_Arch & Stack_Check_Path & "/example";
+
+   for Create_Missing_Dirs use "True";
+   for Target use Target_Arch & "-elf";
+   case Target_Arch is
+      when "arm" =>
+         for Runtime ("Ada") use "light-stm32f4";
+      when "riscv32" =>
+         for Runtime ("Ada") use "light-hifive1";
+      when "riscv64" =>
+         for Runtime ("Ada") use "light-spike";
+      when others =>
+         null;
+   end case;
+   for Main use ("main.adb");
+
+   package Builder is
+      for Global_Compilation_Switches ("Ada") use Build_Lib.Default_Switches_Ada & Stack_Check_Switches;
+      for Global_Configuration_Pragmas use "pragmas.adc";
+   end Builder;
+
+   package Linker is
+      for Default_Switches ("Ada") use Build_Lib.Optimizations_Switches_Linker;
+   end Linker;
+
+   package Prove is
+      for Proof_Switches ("Ada") use Defaults.Proof_Switches;
+   end Prove;
+
+end Build;

@@ -1,0 +1,1727 @@
+with SPDM;
+
+package SPDM_Responder is
+
+   --  FIXME: Update transcript hash
+
+   type DHE_Algo is
+      (DA_Unsupported => 0,
+       DA_FFDHE2048   =>  1,
+       DA_FFDHE3072   =>  2,
+       DA_FFDHE4096   =>  4,
+       DA_SecP256r1   =>  8,
+       DA_SecP384r1   => 16,
+       DA_SecP521r1   => 32)
+   with Size => 8;
+
+   type AEAD_Algo is
+      (AA_Unsupported       => 0,
+       AA_AES_128_GCM       => 1,
+       AA_AES_256_GCM       => 2,
+       AA_ChaCha20_Poly1305 => 4)
+   with Size => 8;
+
+   type Digests_Length is range 0 .. 512 with Size => 16;
+
+   type Digests_Data is
+      message
+         Slot_0_Present : SPDM::Slot_Present;
+         Slot_1_Present : SPDM::Slot_Present;
+         Slot_2_Present : SPDM::Slot_Present;
+         Slot_3_Present : SPDM::Slot_Present;
+         Slot_4_Present : SPDM::Slot_Present;
+         Slot_5_Present : SPDM::Slot_Present;
+         Slot_6_Present : SPDM::Slot_Present;
+         Slot_7_Present : SPDM::Slot_Present;
+         Length : Digests_Length;
+         Value : Opaque
+            with Size => 8 * Length;
+      end message;
+
+   type Signature is
+      message
+         Length : SPDM::Signature_Length
+            then Data
+               with Size => Length * 8
+               if Length = 64
+                  or Length = 96
+                  or Length = 132
+                  or Length = 256
+                  or Length = 384
+                  or Length = 512;
+         Data : Opaque;
+      end message;
+
+   type Opaque_Data is
+      message
+         Length : SPDM::Length_16;
+         Data   : Opaque
+            with Size => Length * 8;
+      end message;
+
+   type Transcript_ID is range 0 .. 2 ** 32 - 1 with Size => 32;
+
+   type Transcript_Kind is
+      (Session_Transcript     => 0,
+       Measurement_Transcript => 1)
+   with Size => 8;
+
+   type Hash is
+      message
+         Length : SPDM::Hash_Length
+            then Data
+               with Size => Length * 8
+               if Length = 32
+                  or Length = 48
+                  or Length = 64;
+         Data : Opaque;
+      end message;
+
+   type Exchange_Data is
+      message
+         Length : SPDM::Exchange_Data_Length;
+         Pad : SPDM::Reserved_6;
+         Data : Opaque
+            with Size => Length * 8;
+      end message;
+
+   type Measurement_Summary is
+      message
+         Data : SPDM::Measurement_Record;
+      end message;
+
+   type Session_Phase is
+      (Session_Error     => 0,
+       No_Session        => 1,
+       Session_Handshake => 2,
+       Secure_Session    => 3)
+   with Size => 8;
+   generic
+      Transport : Channel with Readable, Writable;
+      with function Plat_Cfg_CT_Exponent return SPDM::CT_Exponent;
+      with function Plat_Cfg_Cap_Meas_Fresh return Boolean;
+      with function Plat_Cfg_Cap_Meas return SPDM::Meas_Cap;
+      with function Plat_Cfg_Cap_Chal return Boolean;
+      with function Plat_Cfg_Cap_Cert return Boolean;
+      with function Plat_Cfg_Cap_Cache return Boolean;
+      with function Plat_Cfg_Cap_Key_Upd return Boolean;
+      with function Plat_Cfg_Cap_Hbeat return Boolean;
+      with function Plat_Cfg_Cap_Encap return Boolean;
+      with function Plat_Cfg_Cap_Mut_Auth return Boolean;
+      with function Plat_Cfg_Cap_Pub_Key_ID return Boolean;
+      with function Plat_Cfg_Cap_MAC return Boolean;
+      with function Plat_Cfg_Cap_Encrypt return Boolean;
+      with function Plat_Cfg_Cap_PSK return SPDM::PSK_Resp_Cap;
+      with function Plat_Cfg_Cap_Key_Ex return Boolean;
+      with function Plat_Cfg_Cap_Handshake_In_The_Clear return Boolean;
+      with function Plat_Cfg_Sel_Measurement_Hash_Algo
+         (TPM_ALG_SHA_256     : Boolean;
+          TPM_ALG_SHA_384     : Boolean;
+          TPM_ALG_SHA_512     : Boolean;
+          TPM_ALG_SHA3_256    : Boolean;
+          TPM_ALG_SHA3_384    : Boolean;
+          TPM_ALG_SHA3_512    : Boolean;
+          Raw_Bit_Streams_Only : Boolean) return SPDM::Measurement_Hash_Algo;
+      with function Plat_Cfg_Sel_Base_Asym_Algo (TPM_ALG_ECDSA_ECC_NIST_P384 : Boolean;
+                                                 TPM_ALG_RSAPSS_4096         : Boolean;
+                                                 TPM_ALG_RSASSA_4096         : Boolean;
+                                                 TPM_ALG_ECDSA_ECC_NIST_P256 : Boolean;
+                                                 TPM_ALG_RSAPSS_3072         : Boolean;
+                                                 TPM_ALG_RSASSA_3072         : Boolean;
+                                                 TPM_ALG_RSAPSS_2048         : Boolean;
+                                                 TPM_ALG_RSASSA_2048         : Boolean;
+                                                 TPM_ALG_ECDSA_ECC_NIST_P521 : Boolean) return SPDM::Base_Asym_Algo;
+      with function Plat_Cfg_Sel_Base_Hash_Algo (TPM_ALG_SHA_256  : Boolean;
+                                                 TPM_ALG_SHA_384  : Boolean;
+                                                 TPM_ALG_SHA_512  : Boolean;
+                                                 TPM_ALG_SHA3_256 : Boolean;
+                                                 TPM_ALG_SHA3_384 : Boolean;
+                                                 TPM_ALG_SHA3_512 : Boolean) return SPDM::Base_Hash_Algo;
+      with function Plat_Cfg_Sel_DHE
+         (Req_SecP521r1 : Boolean;
+          Req_SecP384r1 : Boolean;
+          Req_SecP256r1 : Boolean;
+          Req_FFDHE4096 : Boolean;
+          Req_FFDHE3072 : Boolean;
+          Req_FFDHE2048 : Boolean) return SPDM_Responder::DHE_Algo;
+
+      with function Plat_Cfg_Sel_AEAD
+         (Req_ChaCha20_Poly1305 : Boolean;
+          Req_AES_256_GCM       : Boolean;
+          Req_AES_128_GCM       : Boolean) return SPDM_Responder::AEAD_Algo;
+      with function Plat_Cfg_Sel_RBAA
+         (Req_TPM_ALG_ECDSA_ECC_NIST_P384 : Boolean;
+          Req_TPM_ALG_RSAPSS_4096         : Boolean;
+          Req_TPM_ALG_RSASSA_4096         : Boolean;
+          Req_TPM_ALG_ECDSA_ECC_NIST_P256 : Boolean;
+          Req_TPM_ALG_RSAPSS_3072         : Boolean;
+          Req_TPM_ALG_RSASSA_3072         : Boolean;
+          Req_TPM_ALG_RSAPSS_2048         : Boolean;
+          Req_TPM_ALG_RSASSA_2048         : Boolean;
+          Req_TPM_ALG_ECDSA_ECC_NIST_P521 : Boolean) return SPDM::Base_Asym_Algo;
+
+      with function Plat_Get_Digests_Data return Digests_Data;
+
+      with function Plat_Valid_Certificate_Request
+         (Slot   : SPDM::Slot;
+          Offset : SPDM::Offset;
+          Length : SPDM::Length_16) return Boolean;
+
+      with function Plat_Get_Certificate_Response
+         (Slot   : SPDM::Slot;
+          Offset : SPDM::Offset;
+          Length : SPDM::Length_16) return SPDM::Certificate_Response;
+
+      with function Plat_Get_Number_Of_Indices return SPDM::Measurement_Count;
+      with function Plat_Get_Number_Of_Indices_TCB return SPDM::Measurement_Count;
+      with function Plat_Get_Nonce return SPDM::Nonce;
+
+      with function Plat_Get_DMTF_Measurement_Field (Index : SPDM::Index) return SPDM::DMTF_Measurement_Field;
+
+      with function Plat_Get_Meas_Opaque_Data return Opaque_Data;
+
+      with function Plat_Get_New_Transcript (Kind : Transcript_Kind) return Transcript_ID;
+
+      with function Plat_Valid_Transcript_ID (Transcript : Transcript_ID) return Boolean;
+
+      with function Plat_Reset_Transcript (Transcript : Transcript_ID;
+                                           Kind       : Transcript_Kind) return Transcript_ID;
+
+      with function Plat_Update_Transcript (Transcript   : Transcript_ID;
+                                            Data         : Opaque;
+                                            Offset       : SPDM::Length_16;
+                                            Length       : SPDM::Length_16) return Boolean;
+
+      with function Plat_Update_Transcript_Nonce (Transcript : Transcript_ID) return Boolean;
+
+      with function Plat_Get_Signature (Transcript : Transcript_ID;
+                                        Slot       : SPDM::Slot) return Signature;
+      with function Plat_Get_Exchange_Data (Exchange_Data : Opaque) return Exchange_Data;
+
+      with function Plat_Get_Heartbeat_Period return SPDM::Heartbeat_Period;
+
+      with function Plat_Valid_Session_ID (Req_Session_ID : SPDM::Session_ID) return Boolean;
+
+      with function Plat_Get_Session_ID (Req_Session_ID : SPDM::Session_ID) return SPDM::Session_ID;
+
+      with function Plat_Use_Mutual_Auth return Boolean;
+
+      with function Plat_Get_Summary_Hash (Data : Opaque) return Hash;
+
+      with function Plat_Update_Transcript_Cert (Transcript : Transcript_ID;
+                                                 Slot       : SPDM::Slot) return Boolean;
+
+      with function Plat_Get_Key_Ex_Opaque_Data (Request_Data : Opaque) return Opaque_Data;
+
+      with function Plat_Get_Key_Ex_Verify_Data (Transcript : Transcript_ID;
+                                                 Slot       : SPDM::Slot) return Hash;
+
+      with function Plat_Validate_Finish_Signature (Transcript : Transcript_ID;
+                                                    Signature  : Opaque;
+                                                    Slot       : SPDM::Slot) return Boolean;
+
+      with function Plat_Validate_Finish_HMAC (Transript : Transcript_ID;
+                                               HMAC      : Opaque;
+                                               Slot      : SPDM::Slot) return Boolean;
+
+      with function Plat_Get_Finish_Verify_Data (Transcript : Transcript_ID;
+                                                 Slot       : SPDM::Slot) return Hash;
+
+      with function Plat_Set_Session_Phase (Phase      : Session_Phase;
+                                            Transcript : Transcript_ID;
+                                            Slot       : SPDM::Slot) return Session_Phase;
+
+      with function Plat_Reset_Session_Phase return Session_Phase;
+
+      with function Plat_Key_Update (Operation : SPDM::Key_Operation;
+                                     Tag       : SPDM::Key_Update_Tag) return Boolean;
+
+      with function Null_Hash (Length : SPDM::Hash_Length) return Hash;
+      with function Null_Signature (Length : SPDM::Signature_Length) return Signature;
+   session Session is
+      Request                : SPDM::Request;
+      Response               : SPDM::Response;
+      Supp_Versions          : SPDM::Version_Number_Entries;
+      Measurement_Hash_Algo  : SPDM::Measurement_Hash_Algo;
+      Hash_Length            : SPDM::Hash_Length := 32;
+      Signature_Length       : SPDM::Signature_Length := 0;
+      Slot                   : SPDM::Slot;
+      Offset                 : SPDM::Offset;
+      Length                 : SPDM::Length_16;
+      Resp_Alg_Structs       : SPDM::Resp_Alg_Structs;
+      Resp_Alg_Struct        : SPDM::Alg_Struct;
+      Resp_Alg_Struct_Count  : SPDM::Alg_Struct_Count;
+      Reset_Measurement_Sig  : Boolean := True;
+      Measurement_Slot       : SPDM::Narrow_Slot;
+      Measurement_Record     : SPDM::Measurement_Record;
+      Transcript_Meas        : Transcript_ID;
+      Current_Measurement    : SPDM::Index;
+      Last_Measurement       : SPDM::Index;
+      Number_Of_Indices      : SPDM::Measurement_Count;
+      Number_Of_Blocks       : SPDM::Block_Count;
+      Error_Code             : SPDM::Error_Code;
+      Transcript_Session     : Transcript_ID;
+      Exchange_Data_Length   : SPDM::Exchange_Data_Length := 0;
+      Measurement_Summary    : Boolean;
+      Use_Mutual_Auth        : Boolean;
+      Current_Phase          : Session_Phase;
+      Request_Slot           : SPDM::Slot;
+
+      --  Capabilities
+      CT_Exponent                : SPDM::CT_Exponent  := 0;
+      Cap_MAC                    : Boolean            := False;
+      Cap_Encrypt                : Boolean            := False;
+      Cap_Meas_Fresh             : Boolean            := False;
+      Cap_Meas                   : SPDM::Meas_Cap     := SPDM::Meas_Unsupported;
+      Cap_Chal                   : Boolean            := False;
+      Cap_Cert                   : Boolean            := False;
+      Cap_Cache                  : Boolean            := False;
+      Cap_Handshake_In_The_Clear : Boolean            := False;
+      Cap_Key_Upd                : Boolean            := False;
+      Cap_Hbeat                  : Boolean            := False;
+      Cap_Encap                  : Boolean            := False;
+      Cap_PSK                    : SPDM::PSK_Resp_Cap := SPDM::PSK_Resp_Unsupported;
+      Cap_Key_Ex                 : Boolean            := False;
+      Cap_Mut_Auth               : Boolean            := False;
+      Cap_Pub_Key_ID             : Boolean            := False;
+   begin
+      state Init
+      is
+         Valid : Boolean;
+         Next_Valid : Boolean;
+      begin
+         Transcript_Meas    := Plat_Get_New_Transcript (Measurement_Transcript);
+         Valid              := Plat_Valid_Transcript_ID (Transcript_Meas);
+         Transcript_Session := Plat_Get_New_Transcript (Session_Transcript);
+         Next_Valid         := Plat_Valid_Transcript_ID (Transcript_Session);
+         Valid              := Valid and Next_Valid;
+         Request_Slot       := SPDM::Slot_0;
+      transition
+         goto Receive_Get_Version
+            if Valid
+         goto Error_Unspecified
+      end Init;
+
+      state Receive_Get_Version
+      is
+      begin
+         Transport'Read (Request);
+      transition
+         goto Prepare_Version
+            --  FIXME: [161] After receiving a GET_VERSION request, the Responder shall cancel all previous requests
+            --  from the same Requester. All active sessions between the Requester and the Responder are terminated,
+            --  i.e., information (such as session keys, session IDs) for those sessions should not be used anymore.
+            --  Additionally, this message shall clear or reset the previously Negotiated State, if any,
+            --  in both the Requester and its corresponding Responder.
+            if Request'Valid and Request.Code = SPDM::Get_Version
+         goto Error_Unsupported_Request
+            if Request'Valid
+         goto Error_Invalid_Request
+      exception
+         goto null
+      end Receive_Get_Version;
+
+      state Prepare_Version
+      is
+         Req_Size         : SPDM::Length_16;
+         Resp_Size        : SPDM::Length_16;
+         Success_Next     : Boolean;
+         Success          : Boolean;
+         Local_Transcript : Transcript_ID;
+      begin
+         Local_Transcript   := Plat_Reset_Transcript (Transcript_Session, Session_Transcript);
+         Transcript_Session := Local_Transcript;
+         Success            := Plat_Valid_Transcript_ID (Transcript_Session);
+         Supp_Versions'Reset;
+         Supp_Versions'Append
+            (SPDM::Version_Number_Entry'(Alpha                 => 0,
+                                         Update_Version_Number => 0,
+                                         Minor_Version         => 1,
+                                         Major_Version         => 1));
+         Resp_Alg_Structs'Reset;
+         Resp_Alg_Struct_Count := 0;
+         Reset_Measurement_Sig := True;
+         Current_Phase := Plat_Reset_Session_Phase;
+         Response := SPDM::Response'(
+            Meas_Cap                                    => Cap_Meas,
+            Hash_Type                                   => SPDM::No_Measurement,
+            Hash_Length                                 => Hash_Length,
+            Signature_Length                            => Signature_Length,
+            Exchange_Data_Length                        => Exchange_Data_Length,
+            Handshake_In_The_Clear                      => Cap_Handshake_In_The_Clear,
+            Has_Signature                               => False,
+            Has_Measurement_Hash                        => False,
+            Major_Version                               => 1,
+            Minor_Version                               => 0,
+            Code                                        => SPDM::Version,
+            Version_Response_Param_1                    => 0,
+            Version_Response_Param_2                    => 0,
+            Version_Response_Reserved                   => 0,
+            Version_Response_Version_Number_Entry_Count => 1,
+            Version_Response_Version_Number_Entries     => Supp_Versions);
+         Req_Size     := Request'Size / 8;
+         Resp_Size    := Response'Size / 8;
+         --  TH1/2 Key_Exchange transcript hash: [GET_VERSION].*
+         Success_Next := Plat_Update_Transcript (Transcript_Session, Request'Opaque, 0, Req_Size);
+         Success      := Success and Success_Next;
+         --  TH1/2 Key_Exchange transcript hash: [VERSION].*
+         Success_Next := Plat_Update_Transcript (Transcript_Session, Response'Opaque, 0, Resp_Size);
+         Success      := Success and Success_Next;
+      transition
+         goto Send_Version
+            if Success and Current_Phase = No_Session
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Prepare_Version;
+
+      state Send_Version
+      is
+      begin
+         Transport'Write (Response);
+      transition
+         goto Receive_Get_Capabilities
+      end Send_Version;
+
+      state Receive_Get_Capabilities
+      is
+      begin
+         Transport'Read (Request);
+      transition
+         goto Prepare_Version
+            if Request'Valid and Request.Code = SPDM::Get_Version
+         goto Prepare_Capabilities
+            if Request'Valid and Request.Code = SPDM::Get_Capabilities
+         goto Error_Unsupported_Request
+            if Request'Valid
+         goto Error_Invalid_Request
+      exception
+         goto null
+      end Receive_Get_Capabilities;
+
+      state Prepare_Capabilities
+      is
+         Req_Size     : SPDM::Length_16;
+         Resp_Size    : SPDM::Length_16;
+         Success      : Boolean;
+         Success_Next : Boolean;
+      begin
+         CT_Exponent                := Plat_Cfg_CT_Exponent;
+         Cap_Meas_Fresh             := Plat_Cfg_Cap_Meas_Fresh;
+         Cap_Meas                   := Plat_Cfg_Cap_Meas;
+         Cap_Chal                   := Plat_Cfg_Cap_Chal;
+         Cap_Cert                   := Plat_Cfg_Cap_Cert;
+         Cap_Cache                  := Plat_Cfg_Cap_Cache;
+         Cap_Key_Upd                := Plat_Cfg_Cap_Key_Upd;
+         Cap_Hbeat                  := Plat_Cfg_Cap_Hbeat;
+         Cap_Encap                  := Plat_Cfg_Cap_Encap;
+         Cap_Mut_Auth               := Plat_Cfg_Cap_Mut_Auth;
+         Cap_Pub_Key_ID             := Plat_Cfg_Cap_Pub_Key_ID;
+         Cap_MAC                    := Plat_Cfg_Cap_MAC;
+         Cap_Encrypt                := Plat_Cfg_Cap_Encrypt;
+         Cap_PSK                    := Plat_Cfg_Cap_PSK;
+         Cap_Key_Ex                 := Plat_Cfg_Cap_Key_Ex;
+         Cap_Handshake_In_The_Clear := Plat_Cfg_Cap_Handshake_In_The_Clear;
+
+         --  The spec only specifies that the responder sends the capabilities it supports
+         --  without taking into account what the requester supports.
+         Response :=
+            SPDM::Response'(
+               Meas_Cap                                         => Cap_Meas,
+               Hash_Type                                        => SPDM::No_Measurement,
+               Hash_Length                                      => Hash_Length,
+               Signature_Length                                 => Signature_Length,
+               Exchange_Data_Length                             => Exchange_Data_Length,
+               Handshake_In_The_Clear                           => Cap_Handshake_In_The_Clear,
+               Has_Signature                                    => False,
+               Has_Measurement_Hash                             => False,
+               Major_Version                                    => 1,
+               Minor_Version                                    => 1,
+               Code                                             => SPDM::Capabilities,
+               Capabilities_Response_Param_1                    => 0,
+               Capabilities_Response_Param_2                    => 0,
+               Capabilities_Response_Reserved_1                 => 0,
+               Capabilities_Response_CT_Exponent                => CT_Exponent,
+               Capabilities_Response_Reserved_2                 => 0,
+               Capabilities_Response_MAC_Cap                    => Cap_MAC,
+               Capabilities_Response_Encrypt_Cap                => Cap_Encrypt,
+               Capabilities_Response_Meas_Fresh_Cap             => Cap_Meas_Fresh,
+               Capabilities_Response_Meas_Cap                   => Cap_Meas,
+               Capabilities_Response_Chal_Cap                   => Cap_Chal,
+               Capabilities_Response_Cert_Cap                   => Cap_Cert,
+               Capabilities_Response_Cache_Cap                  => Cap_Cache,
+               Capabilities_Response_Handshake_In_The_Clear_Cap => Cap_Handshake_In_The_Clear,
+               Capabilities_Response_Key_Upd_Cap                => Cap_Key_Upd,
+               Capabilities_Response_Hbeat_Cap                  => Cap_Hbeat,
+               Capabilities_Response_Encap_Cap                  => Cap_Encap,
+               Capabilities_Response_PSK_Cap                    => Cap_PSK,
+               Capabilities_Response_Key_Ex_Cap                 => Cap_Key_Ex,
+               Capabilities_Response_Mut_Auth_Cap               => Cap_Mut_Auth,
+               Capabilities_Response_Reserved_4                 => 0,
+               Capabilities_Response_Pub_Key_ID_Cap             => Cap_Pub_Key_ID,
+               Capabilities_Response_Reserved_5                 => 0);
+
+         --  For the behaviour when responding the responder has to take the
+         --  capabilities supported by the requester into account.
+         -- FIXME CT_Exponent                := CT_Exponent;  --  Min(Resp.CT_Exp, Req.CT_Exp)?
+         Cap_MAC                    := Cap_MAC and Request.Get_Capabilities_Request_MAC_Cap;
+         Cap_Encrypt                := Cap_Encrypt and Request.Get_Capabilities_Request_Encrypt_Cap;
+         Cap_Chal                   := Cap_Chal and Request.Get_Capabilities_Request_Chal_Cap;
+         Cap_Cert                   := Cap_Cert and Request.Get_Capabilities_Request_Cert_Cap;
+         Cap_Handshake_In_The_Clear :=
+            Cap_Handshake_In_The_Clear and Request.Get_Capabilities_Request_Handshake_In_The_Clear_Cap;
+         Cap_Key_Upd                := Cap_Key_Upd and Request.Get_Capabilities_Request_Key_Upd_Cap;
+         Cap_Hbeat                  := Cap_Hbeat and Request.Get_Capabilities_Request_Hbeat_Cap;
+         Cap_Encap                  := Cap_Encap and Request.Get_Capabilities_Request_Encap_Cap;
+         --  FIXME Cap_PSK                    := Cap_PSK and Request.Get_Capabilities_Request_PSK_Cap; ?
+         Cap_Key_Ex                 := Cap_Key_Ex and Request.Get_Capabilities_Request_Key_Ex_Cap;
+         Cap_Mut_Auth               := Cap_Mut_Auth and Request.Get_Capabilities_Request_Mut_Auth_Cap;
+         Cap_Pub_Key_ID             := Cap_Pub_Key_ID and Request.Get_Capabilities_Request_Pub_Key_ID_Cap;
+         Req_Size     := Request'Size / 8;
+         Resp_Size    := Response'Size / 8;
+         --  TH1/2 Key_Exchange transcript hash: [GET_CAPABILITIES].*
+         Success      := Plat_Update_Transcript (Transcript_Session, Request'Opaque, 0, Req_Size);
+         --  TH1/2 Key_Exchange transcript hash: [CAPABILITIES].*
+         Success_Next := Plat_Update_Transcript (Transcript_Session, Response'Opaque, 0, Resp_Size);
+         Success      := Success and Success_Next;
+      transition
+         goto Send_Capabilities
+            if Success
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Prepare_Capabilities;
+
+      state Send_Capabilities
+      is
+      begin
+         Transport'Write (Response);
+      transition
+         goto Receive_Negotiate_Algorithms
+      end Send_Capabilities;
+
+      state Receive_Negotiate_Algorithms
+      is
+      begin
+         Transport'Read (Request);
+      transition
+         goto Prepare_Version
+            if Request'Valid and Request.Code = SPDM::Get_Version
+         goto Check_Algorithms_DHE
+            if Request'Valid and Request.Code = SPDM::Negotiate_Algorithms and Cap_Key_Ex
+         goto Check_Algorithms_Req_Base_Asym_Alg
+            if Request'Valid and Request.Code = SPDM::Negotiate_Algorithms
+         goto Error_Unsupported_Request
+            if Request'Valid
+         goto Error_Invalid_Request
+      exception
+         goto null
+      end Receive_Negotiate_Algorithms;
+      state Check_Algorithms_DHE
+      is
+      begin
+         Resp_Alg_Structs'Reset;
+         Resp_Alg_Struct := [for A in Request.Negotiate_Algorithms_Request_Req_Alg_Structs
+                             if A.Alg_Type = SPDM::DHE => A]'Head;
+      transition
+         goto Prepare_Algorithms_DHE
+      exception
+         goto Check_Algorithms_AEAD_Cipher_Suite
+      end Check_Algorithms_DHE;
+
+      state Prepare_Algorithms_DHE
+      is
+         Sel_SecP521r1 : Boolean;
+         Sel_SecP384r1 : Boolean;
+         Sel_SecP256r1 : Boolean;
+         Sel_FFDHE4096 : Boolean;
+         Sel_FFDHE3072 : Boolean;
+         Sel_FFDHE2048 : Boolean;
+         DHE_Algo      : DHE_Algo;
+      begin
+         DHE_Algo := Plat_Cfg_Sel_DHE
+            (Resp_Alg_Struct.DHE_SecP521r1,
+             Resp_Alg_Struct.DHE_SecP384r1,
+             Resp_Alg_Struct.DHE_SecP256r1,
+             Resp_Alg_Struct.DHE_FFDHE4096,
+             Resp_Alg_Struct.DHE_FFDHE3072,
+             Resp_Alg_Struct.DHE_FFDHE2048);
+
+         Sel_SecP521r1 := DHE_Algo = DA_SecP521r1;
+         Sel_SecP384r1 := DHE_Algo = DA_SecP384r1;
+         Sel_SecP256r1 := DHE_Algo = DA_SecP256r1;
+         Sel_FFDHE4096 := DHE_Algo = DA_FFDHE4096;
+         Sel_FFDHE3072 := DHE_Algo = DA_FFDHE3072;
+         Sel_FFDHE2048 := DHE_Algo = DA_FFDHE2048;
+
+         Resp_Alg_Structs'Append (
+            SPDM::Alg_Struct'(
+               Alg_Type        => SPDM::DHE,
+               Fixed_Alg_Count => 2,
+               Ext_Alg_Count   => 0,
+               DHE_Reserved_1  => 0,
+               DHE_SecP521r1   => Sel_SecP521r1,
+               DHE_SecP384r1   => Sel_SecP384r1,
+               DHE_SecP256r1   => Sel_SecP256r1,
+               DHE_FFDHE4096   => Sel_FFDHE4096,
+               DHE_FFDHE3072   => Sel_FFDHE3072,
+               DHE_FFDHE2048   => Sel_FFDHE2048,
+               DHE_Reserved_2  => 0,
+               Alg_External    => [])
+         );
+         Resp_Alg_Struct_Count := Resp_Alg_Struct_Count + 1;
+         Exchange_Data_Length := (case DHE_Algo is
+                                    when DA_Unsupported => 0,
+                                    when DA_SecP256r1   => 64,
+                                    when DA_SecP384r1   => 96,
+                                    when DA_SecP521r1   => 132,
+                                    when DA_FFDHE2048   => 256,
+                                    when DA_FFDHE3072   => 384,
+                                    when DA_FFDHE4096   => 512);
+      transition
+         goto Check_Algorithms_AEAD_Cipher_Suite
+      exception
+         goto Error_Unspecified
+      end Prepare_Algorithms_DHE;
+
+      state Check_Algorithms_AEAD_Cipher_Suite
+      is
+      begin
+         Resp_Alg_Struct := [for A in Request.Negotiate_Algorithms_Request_Req_Alg_Structs
+                             if A.Alg_Type = SPDM::AEAD_Cipher_Suite => A]'Head;
+      transition
+         goto Prepare_Algorithms_AEAD_Cipher_Suite
+      exception
+         goto Check_Algorithms_Req_Base_Asym_Alg
+      end Check_Algorithms_AEAD_Cipher_Suite;
+
+      state Prepare_Algorithms_AEAD_Cipher_Suite
+      is
+         AEAD_Algo             : SPDM_Responder::AEAD_Algo;
+         Sel_ChaCha20_Poly1305 : Boolean;
+         Sel_AES_256_GCM       : Boolean;
+         Sel_AES_128_GCM       : Boolean;
+      begin
+         AEAD_Algo := Plat_Cfg_Sel_AEAD
+            (Resp_Alg_Struct.AEAD_ChaCha20_Poly1305,
+             Resp_Alg_Struct.AEAD_AES_256_GCM,
+             Resp_Alg_Struct.AEAD_AES_128_GCM);
+
+         Sel_ChaCha20_Poly1305 := AEAD_Algo = AA_ChaCha20_Poly1305;
+         Sel_AES_256_GCM       := AEAD_Algo = AA_AES_256_GCM;
+         Sel_AES_128_GCM       := AEAD_Algo = AA_AES_128_GCM;
+
+         Resp_Alg_Structs'Append (
+            SPDM::Alg_Struct'(
+               Alg_Type               => SPDM::AEAD_Cipher_Suite,
+               Fixed_Alg_Count        => 2,
+               Ext_Alg_Count          => 0,
+               AEAD_Reserved_1        => 0,
+               AEAD_ChaCha20_Poly1305 => Sel_ChaCha20_Poly1305,
+               AEAD_AES_256_GCM       => Sel_AES_256_GCM,
+               AEAD_AES_128_GCM       => Sel_AES_128_GCM,
+               AEAD_Reserved_2        => 0,
+               Alg_External           => [])
+         );
+         Resp_Alg_Struct_Count := Resp_Alg_Struct_Count + 1;
+      transition
+         goto Check_Algorithms_Req_Base_Asym_Alg
+      exception
+         goto Error_Unspecified
+      end Prepare_Algorithms_AEAD_Cipher_Suite;
+      state Check_Algorithms_Req_Base_Asym_Alg
+      is
+      begin
+         Resp_Alg_Struct := [for A in Request.Negotiate_Algorithms_Request_Req_Alg_Structs
+                             if A.Alg_Type = SPDM::Req_Base_Asym_Alg => A]'Head;
+      transition
+         goto Prepare_Algorithms_Req_Base_Asym_Alg
+      exception
+         goto Check_Algorithms_Key_Schedule
+      end Check_Algorithms_Req_Base_Asym_Alg;
+
+      state Prepare_Algorithms_Req_Base_Asym_Alg
+      is
+         Sel_TPM_ALG_ECDSA_ECC_NIST_P384 : Boolean;
+         Sel_TPM_ALG_RSAPSS_4096         : Boolean;
+         Sel_TPM_ALG_RSASSA_4096         : Boolean;
+         Sel_TPM_ALG_ECDSA_ECC_NIST_P256 : Boolean;
+         Sel_TPM_ALG_RSAPSS_3072         : Boolean;
+         Sel_TPM_ALG_RSASSA_3072         : Boolean;
+         Sel_TPM_ALG_RSAPSS_2048         : Boolean;
+         Sel_TPM_ALG_RSASSA_2048         : Boolean;
+         Sel_TPM_ALG_ECDSA_ECC_NIST_P521 : Boolean;
+         RBAA_Algo                       : SPDM::Base_Asym_Algo;
+      begin
+         RBAA_Algo := Plat_Cfg_Sel_RBAA
+            (Resp_Alg_Struct.RBAA_TPM_ALG_ECDSA_ECC_NIST_P384,
+             Resp_Alg_Struct.RBAA_TPM_ALG_RSAPSS_4096,
+             Resp_Alg_Struct.RBAA_TPM_ALG_RSASSA_4096,
+             Resp_Alg_Struct.RBAA_TPM_ALG_ECDSA_ECC_NIST_P256,
+             Resp_Alg_Struct.RBAA_TPM_ALG_RSAPSS_3072,
+             Resp_Alg_Struct.RBAA_TPM_ALG_RSASSA_3072,
+             Resp_Alg_Struct.RBAA_TPM_ALG_RSAPSS_2048,
+             Resp_Alg_Struct.RBAA_TPM_ALG_RSASSA_2048,
+             Resp_Alg_Struct.RBAA_TPM_ALG_ECDSA_ECC_NIST_P521);
+
+         Sel_TPM_ALG_ECDSA_ECC_NIST_P384 := RBAA_Algo = SPDM::BA_TPM_ALG_ECDSA_ECC_NIST_P384;
+         Sel_TPM_ALG_RSAPSS_4096         := RBAA_Algo = SPDM::BA_TPM_ALG_RSAPSS_4096;
+         Sel_TPM_ALG_RSASSA_4096         := RBAA_Algo = SPDM::BA_TPM_ALG_RSASSA_4096;
+         Sel_TPM_ALG_ECDSA_ECC_NIST_P256 := RBAA_Algo = SPDM::BA_TPM_ALG_ECDSA_ECC_NIST_P256;
+         Sel_TPM_ALG_RSAPSS_3072         := RBAA_Algo = SPDM::BA_TPM_ALG_RSAPSS_3072;
+         Sel_TPM_ALG_RSASSA_3072         := RBAA_Algo = SPDM::BA_TPM_ALG_RSASSA_3072;
+         Sel_TPM_ALG_RSAPSS_2048         := RBAA_Algo = SPDM::BA_TPM_ALG_RSAPSS_2048;
+         Sel_TPM_ALG_RSASSA_2048         := RBAA_Algo = SPDM::BA_TPM_ALG_RSASSA_2048;
+         Sel_TPM_ALG_ECDSA_ECC_NIST_P521 := RBAA_Algo = SPDM::BA_TPM_ALG_ECDSA_ECC_NIST_P521;
+
+         Resp_Alg_Structs'Append (
+            SPDM::Alg_Struct'(
+               Alg_Type                         => SPDM::Req_Base_Asym_Alg,
+               Fixed_Alg_Count                  => 2,
+               Ext_Alg_Count                    => 0,
+               RBAA_TPM_ALG_ECDSA_ECC_NIST_P384 => Sel_TPM_ALG_ECDSA_ECC_NIST_P384,
+               RBAA_TPM_ALG_RSAPSS_4096         => Sel_TPM_ALG_RSAPSS_4096,
+               RBAA_TPM_ALG_RSASSA_4096         => Sel_TPM_ALG_RSASSA_4096,
+               RBAA_TPM_ALG_ECDSA_ECC_NIST_P256 => Sel_TPM_ALG_ECDSA_ECC_NIST_P256,
+               RBAA_TPM_ALG_RSAPSS_3072         => Sel_TPM_ALG_RSAPSS_3072,
+               RBAA_TPM_ALG_RSASSA_3072         => Sel_TPM_ALG_RSASSA_3072,
+               RBAA_TPM_ALG_RSAPSS_2048         => Sel_TPM_ALG_RSAPSS_2048,
+               RBAA_TPM_ALG_RSASSA_2048         => Sel_TPM_ALG_RSASSA_2048,
+               RBAA_Reserved_1                  => 0,
+               RBAA_TPM_ALG_ECDSA_ECC_NIST_P521 => Sel_TPM_ALG_ECDSA_ECC_NIST_P521,
+               Alg_External                     => [])
+         );
+         Resp_Alg_Struct_Count := Resp_Alg_Struct_Count + 1;
+      transition
+         goto Check_Algorithms_Key_Schedule
+            if Cap_Key_Ex
+         goto Prepare_Algorithms
+      exception
+         goto Error_Unspecified
+      end Prepare_Algorithms_Req_Base_Asym_Alg;
+
+      state Check_Algorithms_Key_Schedule
+      is
+      begin
+         Resp_Alg_Struct := [for A in Request.Negotiate_Algorithms_Request_Req_Alg_Structs
+                             if A.Alg_Type = SPDM::Key_Schedule => A]'Head;
+      transition
+         goto Prepare_Algorithms_Key_Schedule
+      exception
+         goto Prepare_Algorithms
+      end Check_Algorithms_Key_Schedule;
+
+      state Prepare_Algorithms_Key_Schedule
+      is
+      begin
+         Resp_Alg_Structs'Append (
+            SPDM::Alg_Struct'(
+               Alg_Type        => SPDM::Key_Schedule,
+               Fixed_Alg_Count => 2,
+               Ext_Alg_Count   => 0,
+               KS_Reserved_1   => 0,
+               KS_SPDM         => Resp_Alg_Struct.KS_SPDM,
+               KS_Reserved_2   => 0,
+               Alg_External    => [])
+         );
+         Resp_Alg_Struct_Count := Resp_Alg_Struct_Count + 1;
+      transition
+         goto Prepare_Algorithms
+      exception
+         goto Error_Unspecified
+      end Prepare_Algorithms_Key_Schedule;
+      state Prepare_Algorithms
+      is
+         Base_Asym_Sel : SPDM::Base_Asym_Algo;
+         Base_Hash_Sel : SPDM::Base_Hash_Algo;
+         Ext_Asym      : SPDM::Ext_Algs;
+         Ext_Hash      : SPDM::Ext_Algs;
+         Req_Size      : SPDM::Length_16;
+         Resp_Size     : SPDM::Length_16;
+         Success       : Boolean;
+         Success_Next  : Boolean;
+      begin
+         Measurement_Hash_Algo := Plat_Cfg_Sel_Measurement_Hash_Algo
+                                     (Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA_256,
+                                      Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA_384,
+                                      Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA_512,
+                                      Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA3_256,
+                                      Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA3_384,
+                                      Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA3_512,
+                                      False);
+
+         Base_Asym_Sel := Plat_Cfg_Sel_Base_Asym_Algo
+                             (Request.Negotiate_Algorithms_Request_Base_Asym_Algo_TPM_ALG_ECDSA_ECC_NIST_P384,
+                              Request.Negotiate_Algorithms_Request_Base_Asym_Algo_TPM_ALG_RSAPSS_4096,
+                              Request.Negotiate_Algorithms_Request_Base_Asym_Algo_TPM_ALG_RSASSA_4096,
+                              Request.Negotiate_Algorithms_Request_Base_Asym_Algo_TPM_ALG_ECDSA_ECC_NIST_P256,
+                              Request.Negotiate_Algorithms_Request_Base_Asym_Algo_TPM_ALG_RSAPSS_3072,
+                              Request.Negotiate_Algorithms_Request_Base_Asym_Algo_TPM_ALG_RSASSA_3072,
+                              Request.Negotiate_Algorithms_Request_Base_Asym_Algo_TPM_ALG_RSAPSS_2048,
+                              Request.Negotiate_Algorithms_Request_Base_Asym_Algo_TPM_ALG_RSASSA_2048,
+                              Request.Negotiate_Algorithms_Request_Base_Asym_Algo_TPM_ALG_ECDSA_ECC_NIST_P521);
+
+         Base_Hash_Sel := Plat_Cfg_Sel_Base_Hash_Algo
+                             (Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA_256,
+                              Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA_384,
+                              Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA_512,
+                              Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA3_256,
+                              Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA3_384,
+                              Request.Negotiate_Algorithms_Request_Base_Hash_Algo_TPM_ALG_SHA3_512);
+
+         Response :=
+            SPDM::Response'(
+               Meas_Cap                                          => Cap_Meas,
+               Hash_Type                                         => SPDM::No_Measurement,
+               Hash_Length                                       => Hash_Length,
+               Signature_Length                                  => Signature_Length,
+               Exchange_Data_Length                              => Exchange_Data_Length,
+               Handshake_In_The_Clear                            => Cap_Handshake_In_The_Clear,
+               Has_Signature                                     => False,
+               Has_Measurement_Hash                              => False,
+               Major_Version                                     => 1,
+               Minor_Version                                     => 1,
+               Code                                              => SPDM::Algorithms,
+               Algorithms_Response_Resp_Alg_Struct_Count         => Resp_Alg_Struct_Count,
+               Algorithms_Response_Param_2                       => 0,
+               Algorithms_Response_Length                        => 36 + Resp_Alg_Structs'Size / 8,
+               Algorithms_Response_Measurement_Specification_Sel => SPDM::DMTF,
+               Algorithms_Response_Reserved_1                    => 0,
+               Algorithms_Response_Measurement_Hash_Algo         => Measurement_Hash_Algo,
+               Algorithms_Response_Base_Asym_Sel                 => Base_Asym_Sel,
+               Algorithms_Response_Base_Hash_Sel                 => Base_Hash_Sel,
+               Algorithms_Response_Reserved_2                    => 0,
+               Algorithms_Response_Reserved_3                    => 0,
+               Algorithms_Response_Reserved_4                    => 0,
+               Algorithms_Response_Ext_Asym_Sel_Count            => 0,
+               Algorithms_Response_Ext_Hash_Sel_Count            => 0,
+               Algorithms_Response_Reserved_5                    => 0,
+               Algorithms_Response_Ext_Asym                      => Ext_Asym,
+               Algorithms_Response_Ext_Hash                      => Ext_Hash,
+               Algorithms_Response_Resp_Alg_Structs              => Resp_Alg_Structs);
+         Req_Size     := Request'Size / 8;
+         Resp_Size    := Response'Size / 8;
+         --  TH1/2 Key_Exchange transcript hash: [NEGOTIATE_ALGORITHMS].*
+         Success      := Plat_Update_Transcript (Transcript_Session, Request'Opaque, 0, Req_Size);
+         --  TH1/2 Key_Exchange transcript hash: [ALGORITHMS].*
+         Success_Next := Plat_Update_Transcript (Transcript_Session, Response'Opaque, 0, Resp_Size);
+         Success      := Success and Success_Next;
+         Hash_Length := (case Base_Hash_Sel is
+                           when SPDM::BH_TPM_ALG_SHA_256 | SPDM::BH_TPM_ALG_SHA3_256 => 32,
+                           when SPDM::BH_TPM_ALG_SHA_384 | SPDM::BH_TPM_ALG_SHA3_384 => 48,
+                           when SPDM::BH_TPM_ALG_SHA_512 | SPDM::BH_TPM_ALG_SHA3_512 => 64,
+                           when SPDM::BH_Unsupported => 0);
+         Signature_Length := (case Base_Asym_Sel is
+                                 when SPDM::BA_TPM_ALG_ECDSA_ECC_NIST_P256 => 64,
+                                 when SPDM::BA_TPM_ALG_ECDSA_ECC_NIST_P384 => 96,
+                                 when SPDM::BA_TPM_ALG_ECDSA_ECC_NIST_P521 => 132,
+                                 when SPDM::BA_TPM_ALG_RSAPSS_2048 | SPDM::BA_TPM_ALG_RSASSA_2048 => 256,
+                                 when SPDM::BA_TPM_ALG_RSAPSS_3072 | SPDM::BA_TPM_ALG_RSASSA_3072 => 384,
+                                 when SPDM::BA_TPM_ALG_RSAPSS_4096 | SPDM::BA_TPM_ALG_RSASSA_4096 => 512,
+                                 when SPDM::BA_Unsupported => 0);
+      transition
+         goto Error_Unspecified
+            if Success = False
+         goto Error_Invalid_Request
+            if Base_Hash_Sel = SPDM::BH_Unsupported
+               or Base_Asym_Sel = SPDM::BA_Unsupported
+         goto Send_Idle
+      exception
+         goto Error_Unspecified
+      end Prepare_Algorithms;
+
+      state Send_Idle
+      is
+      begin
+         Transport'Write (Response);
+      transition
+         goto Reset_Idle
+      end Send_Idle;
+
+      state Reset_Idle
+      is
+      begin
+         Request'Reset
+            (Hash_Length          => Hash_Length,
+             Signature_Length     => Signature_Length,
+             Exchange_Data_Length => Exchange_Data_Length);
+      transition
+         goto Receive_Idle
+      end Reset_Idle;
+
+      state Receive_Idle
+      is
+      begin
+         Transport'Read (Request);
+      transition
+         goto Prepare_Version
+            if Request'Valid and Request.Code = SPDM::Get_Version
+         goto Prepare_Digests
+            if Request'Valid and Request.Code = SPDM::Get_Digests
+         goto Check_Certificate
+            if Request'Valid and Request.Code = SPDM::Get_Certificate
+         goto Reset_Measurements_Hash
+            if Request'Valid and Request.Code = SPDM::Get_Measurements
+               and Reset_Measurement_Sig
+         goto Prepare_Measurements
+            if Request'Valid and Request.Code = SPDM::Get_Measurements
+         goto Prepare_Key_Exchange
+            if Request'Valid and Request.Code = SPDM::Key_Exchange and Cap_Key_Ex
+               and Current_Phase = No_Session
+         goto Prepare_Key_Update
+            if Request'Valid and Request.Code = SPDM::Key_Update
+               and Current_Phase = Secure_Session
+         goto Prepare_End_Session
+            if Request'Valid and Request.Code = SPDM::End_Session
+               and Current_Phase = Secure_Session
+         goto Error_Unexpected_Request
+            if Request'Valid
+               and (Request.Code = SPDM::Key_Exchange
+                    or Request.Code = SPDM::End_Session
+                    or Request.Code = SPDM::Key_Update)
+         goto Error_Unsupported_Request
+            if Request'Valid
+         goto Error_Invalid_Request
+      exception
+         goto null
+      end Receive_Idle;
+
+      state Prepare_Digests
+      is
+         Digests_Data   : Digests_Data;
+         Slot_0_Present : SPDM::Slot_Present;
+         Slot_1_Present : SPDM::Slot_Present;
+         Slot_2_Present : SPDM::Slot_Present;
+         Slot_3_Present : SPDM::Slot_Present;
+         Slot_4_Present : SPDM::Slot_Present;
+         Slot_5_Present : SPDM::Slot_Present;
+         Slot_6_Present : SPDM::Slot_Present;
+         Slot_7_Present : SPDM::Slot_Present;
+      begin
+         Reset_Measurement_Sig := True;
+         Digests_Data := Plat_Get_Digests_Data;
+         Slot_0_Present := Digests_Data.Slot_0_Present;
+         Slot_1_Present := Digests_Data.Slot_1_Present;
+         Slot_2_Present := Digests_Data.Slot_2_Present;
+         Slot_3_Present := Digests_Data.Slot_3_Present;
+         Slot_4_Present := Digests_Data.Slot_4_Present;
+         Slot_5_Present := Digests_Data.Slot_5_Present;
+         Slot_6_Present := Digests_Data.Slot_6_Present;
+         Slot_7_Present := Digests_Data.Slot_7_Present;
+
+         Response := SPDM::Response'(
+            Meas_Cap                                    => Cap_Meas,
+            Hash_Type                                   => SPDM::No_Measurement,
+            Hash_Length                                 => Hash_Length,
+            Signature_Length                            => Signature_Length,
+            Exchange_Data_Length                        => Exchange_Data_Length,
+            Handshake_In_The_Clear                      => Cap_Handshake_In_The_Clear,
+            Has_Signature                               => False,
+            Has_Measurement_Hash                        => False,
+            Major_Version                               => 1,
+            Minor_Version                               => 1,
+            Code                                        => SPDM::Digests,
+            Digests_Response_Param_1                    => 0,
+            Digests_Response_Slot_Mask_Slot_7_Present   => Slot_7_Present,
+            Digests_Response_Slot_Mask_Slot_6_Present   => Slot_6_Present,
+            Digests_Response_Slot_Mask_Slot_5_Present   => Slot_5_Present,
+            Digests_Response_Slot_Mask_Slot_4_Present   => Slot_4_Present,
+            Digests_Response_Slot_Mask_Slot_3_Present   => Slot_3_Present,
+            Digests_Response_Slot_Mask_Slot_2_Present   => Slot_2_Present,
+            Digests_Response_Slot_Mask_Slot_1_Present   => Slot_1_Present,
+            Digests_Response_Slot_Mask_Slot_0_Present   => Slot_0_Present,
+            Digests_Response_Digests_Data               => Digests_Data.Value);
+      transition
+         goto Send_Idle
+      exception
+         goto Error_Unspecified
+      end Prepare_Digests;
+
+      state Check_Certificate
+      is
+         Valid : Boolean;
+      begin
+         Reset_Measurement_Sig := True;
+         Slot   := Request.Get_Certificate_Request_Slot;
+         Offset := Request.Get_Certificate_Request_Offset;
+         Length := Request.Get_Certificate_Request_Length;
+         Valid  := Plat_Valid_Certificate_Request (Slot, Offset, Length);
+      transition
+         goto Prepare_Certificate
+            if Valid
+         goto Error_Invalid_Request
+      exception
+         goto Error_Unspecified
+      end Check_Certificate;
+
+      state Prepare_Certificate
+      is
+         Cert                  : SPDM::Certificate_Response;
+         Cert_Slot             : SPDM::Slot;
+         Cert_Portion_Length   : SPDM::Portion_Length_16;
+         Cert_Remainder_Length : SPDM::Length_16;
+      begin
+         Cert                  := Plat_Get_Certificate_Response (Slot, Offset, Length);
+         Cert_Slot             := Cert.Slot;
+         Cert_Portion_Length   := Cert.Portion_Length;
+         Cert_Remainder_Length := Cert.Remainder_Length;
+
+         Response := SPDM::Response'(
+            Meas_Cap                              => Cap_Meas,
+            Hash_Type                             => SPDM::No_Measurement,
+            Hash_Length                           => Hash_Length,
+            Signature_Length                      => Signature_Length,
+            Exchange_Data_Length                  => Exchange_Data_Length,
+            Handshake_In_The_Clear                => Cap_Handshake_In_The_Clear,
+            Has_Signature                         => False,
+            Has_Measurement_Hash                  => False,
+            Major_Version                         => 1,
+            Minor_Version                         => 1,
+            Code                                  => SPDM::Certificate,
+            Certificate_Response_Slot             => Cert_Slot,
+            Certificate_Response_Param_2          => 0,
+            Certificate_Response_Portion_Length   => Cert_Portion_Length,
+            Certificate_Response_Remainder_Length => Cert_Remainder_Length,
+            Certificate_Response_Cert_Chain       => Cert.Cert_Chain);
+      transition
+         goto Send_Idle
+      exception
+         goto Error_Unspecified
+      end Prepare_Certificate;
+
+      state Reset_Measurements_Hash
+      is
+         Valid    : Boolean;
+      begin
+         Transcript_Meas       := Plat_Reset_Transcript (Transcript_Meas, Measurement_Transcript);
+         Valid                 := Plat_Valid_Transcript_ID (Transcript_Meas);
+         Reset_Measurement_Sig := False;
+      transition
+         goto Prepare_Measurements
+            if Valid
+         goto Error_Unspecified
+      end Reset_Measurements_Hash;
+
+      state Prepare_Measurements
+      is
+         Success  : Boolean;
+         Req_Size : SPDM::Length_16;
+      begin
+         Req_Size := Request'Size / 8;
+         Success  := Plat_Update_Transcript (Transcript_Meas, Request'Opaque, 0, Req_Size);
+         Measurement_Record'Reset;
+         Current_Measurement := Request.Get_Measurements_Request_Measurement_Operation;
+         Last_Measurement    := Request.Get_Measurements_Request_Measurement_Operation;
+         Number_Of_Indices   := 0;
+         Number_Of_Blocks    := 0;
+         Measurement_Summary := False;
+      transition
+         goto Prepare_Measurements_Number_Of_Indices
+            if Request.Get_Measurements_Request_Measurement_Operation = 0 and Success
+         goto Prepare_Measurements_All
+            if Request.Get_Measurements_Request_Measurement_Operation = 255 and Success
+         goto Prepare_Measurements_Records
+            if Success
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Prepare_Measurements;
+
+      state Prepare_Measurements_Number_Of_Indices
+      is
+      begin
+         Number_Of_Indices := Plat_Get_Number_Of_Indices;
+      transition
+         goto Prepare_Measurements_Slot
+            if Request.Get_Measurements_Request_Generate_Signature
+         goto Prepare_Measurements_Response
+      exception
+         goto null
+      end Prepare_Measurements_Number_Of_Indices;
+
+      state Prepare_Measurements_All
+      is
+         Local_Number_Of_Indices : SPDM::Measurement_Count;
+      begin
+         Current_Measurement := 1;
+         --  Eng/RecordFlux/RecordFlux#1055
+         --  Use a local variable to prevent a type error in the generated code.
+         Local_Number_Of_Indices := Plat_Get_Number_Of_Indices;
+         Last_Measurement        := Local_Number_Of_Indices;
+      transition
+         goto Prepare_Measurements_Records
+      end Prepare_Measurements_All;
+
+      state Prepare_Measurements_Records
+      is
+         Measurement_Field : SPDM::DMTF_Measurement_Field;
+      begin
+         Measurement_Field := Plat_Get_DMTF_Measurement_Field (Current_Measurement);
+         Measurement_Record'Append (SPDM::Measurement_Block'
+            (Index                                             => Current_Measurement,
+             Measurement_Specification                         => SPDM::DMTF,
+             Measurement_Length                                => Measurement_Field'Size / 8,
+             DMTF_Measurement_Measurement_Value_Representation => Measurement_Field.Measurement_Value_Representation,
+             DMTF_Measurement_Measurement_Value_Type           => Measurement_Field.Measurement_Value_Type,
+             DMTF_Measurement_Measurement_Value_Length         => Measurement_Field.Measurement_Value_Length,
+             DMTF_Measurement_Measurement_Value                => Measurement_Field.Measurement_Value));
+         Current_Measurement := Current_Measurement + 1;
+         Number_Of_Blocks    := Number_Of_Blocks + 1;
+         Measurement_Slot    := SPDM::NS_0;
+      transition
+         goto Prepare_Measurements_Records
+            if Current_Measurement <= Last_Measurement
+         goto Prepare_Key_Exchange_Hash
+            if Measurement_Summary
+         goto Prepare_Measurements_Slot
+            if Request.Get_Measurements_Request_Generate_Signature
+         goto Prepare_Measurements_Response
+      exception
+         goto Error_Unspecified
+      end Prepare_Measurements_Records;
+
+      state Prepare_Measurements_Slot
+      is
+      begin
+         Measurement_Slot := Request.Get_Measurements_Request_Slot_ID_Param;
+      transition
+         goto Prepare_Measurements_Response
+      exception
+         goto Error_Unspecified
+      end Prepare_Measurements_Slot;
+
+      state Prepare_Measurements_Response
+      is
+         Nonce         : SPDM::Nonce;
+         Opaque_Data   : Opaque_Data;
+         Has_Signature : Boolean;
+      begin
+         Nonce         := Plat_Get_Nonce;
+         Opaque_Data   := Plat_Get_Meas_Opaque_Data;
+         Has_Signature := Request.Get_Measurements_Request_Generate_Signature;
+         Response'Reset (
+            Meas_Cap               => Cap_Meas,
+            Hash_Type              => SPDM::No_Measurement,
+            Hash_Length            => Hash_Length,
+            Signature_Length       => Signature_Length,
+            Exchange_Data_Length   => Exchange_Data_Length,
+            Handshake_In_The_Clear => Cap_Handshake_In_The_Clear,
+            Has_Signature          => Has_Signature,
+            Has_Measurement_Hash   => False);
+            Response.Major_Version                                   := 1;
+            Response.Minor_Version                                   := 1;
+            Response.Code                                            := SPDM::Measurements;
+            Response.Measurements_Response_Number_Of_Indices         := Number_Of_Indices;
+            Response.Measurements_Response_Reserved_1                := 0;
+            Response.Measurements_Response_Slot_ID                   := Measurement_Slot;
+            Response.Measurements_Response_Number_Of_Blocks          := Number_Of_Blocks;
+            Response.Measurements_Response_Measurement_Record_Length := Measurement_Record'Size / 8;
+            Response.Measurements_Response_Measurement_Record        := Measurement_Record;
+            Response.Measurements_Response_Nonce_Data                := Nonce.Data;
+            Response.Measurements_Response_Opaque_Length             := Opaque_Data.Length;
+            Response.Measurements_Response_Opaque_Data               := Opaque_Data.Data;
+      transition
+         goto Prepare_Measurements_Sign
+            if Has_Signature
+         goto Update_Measurement_Signature
+      exception
+         goto Error_Unspecified
+      end Prepare_Measurements_Response;
+
+      state Prepare_Measurements_Sign
+      is
+         Narrow_Slot_ID   : SPDM::Narrow_Slot;
+         Slot_ID          : SPDM::Slot;
+         Nonce_Offset     : SPDM::Length_16;
+         Signature        : Signature;
+         Resp_Size        : SPDM::Length_16;
+         Record_Length_16 : SPDM::Length_16;
+         Record_Length_24 : SPDM::Length_24;
+         Success          : Boolean;
+         Next_Success     : Boolean;
+      begin
+         Signature                                := Null_Signature (Signature_Length);
+         Response.Measurements_Response_Signature := Signature.Data;
+         Record_Length_24                         := Response.Measurements_Response_Measurement_Record_Length;
+         Record_Length_16                         := Record_Length_24;
+         Resp_Size                                := Record_Length_16 + 8;
+         --  Hash message part before nonce
+         Success                                  :=
+            Plat_Update_Transcript (Transcript_Meas, Response'Opaque, 0, Resp_Size);
+         --  Hash last generated nonce
+         Next_Success                             := Plat_Update_Transcript_Nonce (Transcript_Meas);
+         Success                                  := Success and Next_Success;
+         Nonce_Offset                             := Resp_Size + 32;
+         Resp_Size                                := Response.Measurements_Response_Opaque_Length + 2;
+         --  Hash message part after nonce
+         Next_Success                             :=
+            Plat_Update_Transcript (Transcript_Meas, Response'Opaque, Nonce_Offset, Resp_Size);
+         Success                                  := Success and Next_Success;
+         Narrow_Slot_ID                           := Response.Measurements_Response_Slot_ID;
+         Slot_ID                                  :=
+            (case Narrow_Slot_ID is
+               when SPDM::NS_0 => SPDM::Slot_0,
+               when SPDM::NS_1 => SPDM::Slot_1,
+               when SPDM::NS_2 => SPDM::Slot_2,
+               when SPDM::NS_3 => SPDM::Slot_3,
+               when SPDM::NS_4 => SPDM::Slot_4,
+               when SPDM::NS_5 => SPDM::Slot_5,
+               when SPDM::NS_6 => SPDM::Slot_6,
+               when SPDM::NS_7 => SPDM::Slot_7,
+               when SPDM::NS_Trusted_Environment => SPDM::Trusted_Environment);
+         Signature                                := Plat_Get_Signature (Transcript_Meas, Slot_ID);
+         Response.Measurements_Response_Signature := Signature.Data;
+         Reset_Measurement_Sig                    := True;
+      transition
+         goto Send_Idle
+      exception
+         goto Error_Unspecified
+      end Prepare_Measurements_Sign;
+
+      state Update_Measurement_Signature
+      is
+         Success   : Boolean;
+         Resp_Size : SPDM::Length_16;
+      begin
+         Resp_Size := Response'Size / 8;
+         Success   := Plat_Update_Transcript (Transcript_Meas, Response'Opaque, 0, Resp_Size);
+      transition
+         goto Send_Idle
+            if Success
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Update_Measurement_Signature;
+      state Prepare_Key_Exchange
+      is
+         Valid_ID             : Boolean;
+         Session_ID           : SPDM::Session_ID;
+         Heartbeat_Period     : SPDM::Heartbeat_Period;
+         Narrow_Slot          : SPDM::Narrow_Slot;
+         Nonce                : SPDM::Nonce;
+         Exchange_Data        : Exchange_Data;
+         Has_Measurement_Hash : Boolean;
+         Cert_Hash_Success    : Boolean;
+         Req_Size             : SPDM::Length_16;
+         Success              : Boolean;
+      begin
+         Measurement_Record'Reset;
+         Session_ID          := Request.Key_Exchange_Request_Req_Session_ID;
+         Valid_ID            := Plat_Valid_Session_ID (Session_ID);
+         Measurement_Summary := True;
+         Current_Measurement := 1;
+         Heartbeat_Period    := Plat_Get_Heartbeat_Period;
+         Session_ID          := Plat_Get_Session_ID (Session_ID);
+         Use_Mutual_Auth     := Plat_Use_Mutual_Auth;
+         Request_Slot        := Request.Key_Exchange_Request_Slot;
+         Narrow_Slot         :=
+            (case Request_Slot is
+               when SPDM::Slot_0 => SPDM::NS_0,
+               when SPDM::Slot_1 => SPDM::NS_1,
+               when SPDM::Slot_2 => SPDM::NS_2,
+               when SPDM::Slot_3 => SPDM::NS_3,
+               when SPDM::Slot_4 => SPDM::NS_4,
+               when SPDM::Slot_5 => SPDM::NS_5,
+               when SPDM::Slot_6 => SPDM::NS_6,
+               when SPDM::Slot_7 => SPDM::NS_7,
+               when SPDM::Trusted_Environment => SPDM::NS_Trusted_Environment);
+         Nonce               := Plat_Get_Nonce;
+         Exchange_Data       := Plat_Get_Exchange_Data (Request.Key_Exchange_Request_Exchange_Data);
+         Has_Measurement_Hash :=
+            Request.Key_Exchange_Request_Measurement_Summary_Hash_Type = SPDM::TCB_Measurement
+            or Request.Key_Exchange_Request_Measurement_Summary_Hash_Type = SPDM::All_Measurements;
+         Response'Reset (
+            Meas_Cap               => Cap_Meas,
+            Hash_Type              => SPDM::No_Measurement,
+            Hash_Length            => Hash_Length,
+            Signature_Length       => Signature_Length,
+            Exchange_Data_Length   => Exchange_Data_Length,
+            Handshake_In_The_Clear => Cap_Handshake_In_The_Clear,
+            Has_Signature          => True,
+            Has_Measurement_Hash   => Has_Measurement_Hash);
+         Response.Major_Version                                  := 1;
+         Response.Minor_Version                                  := 1;
+         Response.Code                                           := SPDM::Key_Exchange_RSP;
+         Response.Key_Exchange_Response_Heartbeat_Period         := Heartbeat_Period;
+         Response.Key_Exchange_Response_Param_2                  := 0;
+         Response.Key_Exchange_Response_Resp_Session_ID          := Session_ID;
+         Response.Key_Exchange_Response_Reserved_1               := 0;
+         --  Both Mutual_Auth_Implicit and Mutual_Auth_Encapsulated
+         --  require Encapsulated requests that are not supported.
+         Response.Key_Exchange_Response_Mutual_Auth_Implicit     := False;
+         Response.Key_Exchange_Response_Mutual_Auth_Encapsulated := False;
+         Response.Key_Exchange_Response_Mutual_Auth              := Use_Mutual_Auth;
+         Response.Key_Exchange_Response_Reserved_2               := 0;
+         Response.Key_Exchange_Response_Slot_ID_Param            := Narrow_Slot;
+         Response.Key_Exchange_Response_Random_Data              := Nonce.Data;
+         Response.Key_Exchange_Response_Exchange_Data            := Exchange_Data.Data;
+         --  TH1/2 Key_Exchange transcript hash: Hash of the specified certificate chain in DER format
+         Cert_Hash_Success := Plat_Update_Transcript_Cert (Transcript_Session, Request_Slot);
+         Req_Size := Request'Size / 8;
+         --  TH1/2 Key_Exchange transcript hash: [KEY_EXCHANGE].*
+         Success := Plat_Update_Transcript (Transcript_Session, Request'Opaque, 0, Req_Size);
+         Success := Success and Cert_Hash_Success;
+      transition
+         goto Error_Unspecified
+            if Success = False
+         goto Prepare_Key_Exchange_No_Hash
+            if Request.Key_Exchange_Request_Measurement_Summary_Hash_Type = SPDM::No_Measurement
+               and Valid_ID
+         goto Prepare_Key_Exchange_TCB_Hash
+            if Request.Key_Exchange_Request_Measurement_Summary_Hash_Type = SPDM::TCB_Measurement
+               and Valid_ID
+         goto Prepare_Measurements_All
+            if Request.Key_Exchange_Request_Measurement_Summary_Hash_Type = SPDM::All_Measurements
+               and Valid_ID
+         goto Error_Invalid_Request
+      exception
+         goto Error_Unspecified
+      end Prepare_Key_Exchange;
+
+      state Prepare_Key_Exchange_TCB_Hash
+      is
+      begin
+         Number_Of_Indices := Plat_Get_Number_Of_Indices_TCB;
+         Last_Measurement  := Number_Of_Indices;
+      transition
+         goto Prepare_Measurements_Records
+      end Prepare_Key_Exchange_TCB_Hash;
+
+      state Prepare_Key_Exchange_Hash
+      is
+         Summary_Hash : Hash;
+      begin
+         Summary_Hash := Plat_Get_Summary_Hash (Measurement_Record'Opaque);
+         Response.Key_Exchange_Response_Measurement_Summary_Hash := Summary_Hash.Data;
+      transition
+         goto Prepare_Key_Exchange_Opaque_Data
+      exception
+         goto Error_Unspecified
+      end Prepare_Key_Exchange_Hash;
+
+      state Prepare_Key_Exchange_No_Hash
+      is
+      begin
+         Response.Key_Exchange_Response_Measurement_Summary_Hash := [];
+      transition
+         goto Prepare_Key_Exchange_Opaque_Data
+      exception
+         goto Error_Unspecified
+      end Prepare_Key_Exchange_No_Hash;
+
+      state Prepare_Key_Exchange_Opaque_Data
+      is
+         Opaque_Data : Opaque_Data;
+         Signature   : Signature;
+      begin
+         Signature   := Null_Signature (Signature_Length);
+         Opaque_Data := Plat_Get_Key_Ex_Opaque_Data (Request.Key_Exchange_Request_Opaque_Data);
+         Response.Key_Exchange_Response_Opaque_Data_Length := Opaque_Data.Length;
+         Response.Key_Exchange_Response_Opaque_Data        := Opaque_Data.Data;
+         Response.Key_Exchange_Response_Signature          := Signature.Data;
+      transition
+         goto Prepare_Key_Exchange_Sign
+            if Cap_Handshake_In_The_Clear
+         goto Prepare_Key_Exchange_Verify_Data
+      exception
+         goto Error_Unspecified
+      end Prepare_Key_Exchange_Opaque_Data;
+
+      state Prepare_Key_Exchange_Verify_Data
+      is
+         Verify_Data : Hash;
+      begin
+         Verify_Data := Null_Hash (Hash_Length);
+         Response.Key_Exchange_Response_Responder_Verify_Data := Verify_Data.Data;
+      transition
+         goto Prepare_Key_Exchange_Sign
+      exception
+         goto Error_Unspecified
+      end Prepare_Key_Exchange_Verify_Data;
+
+      state Prepare_Key_Exchange_Sign
+      is
+         Signature      : Signature;
+         Exch_Data_Len  : SPDM::Length_16;
+         Hash_Len       : SPDM::Length_16;
+         Transcript_Len : SPDM::Length_16;
+         Success        : Boolean;
+         Success_Sig    : Boolean;
+      begin
+         Exch_Data_Len                            := Exchange_Data_Length;
+         Hash_Len                                 := Hash_Length;
+         Transcript_Len                           :=
+            42 + Response.Key_Exchange_Response_Opaque_Data_Length + Exch_Data_Len + Hash_Len;
+         Success                                  :=
+         --  TH1/2 Key_Exchange transcript hash:
+         --  [KEY_EXCHANGE_RSP].* except the `Signature` and `ResponderVerifyData` fields
+            Plat_Update_Transcript (Transcript_Session, Response'Opaque, 0, Transcript_Len);
+         Signature                                :=
+            Plat_Get_Signature (Transcript_Session, Request_Slot);
+         Response.Key_Exchange_Response_Signature := Signature.Data;
+         Transcript_Len                           := Signature_Length;
+         Success_Sig                              :=
+         --  TH1/2 Key_Exchange transcript hash: [KEY_EXCHANGE_RSP].* except the `ResponderVerifyData` field
+         --  The transcript hash from the signature generation is kept, so only the signature has to be added.
+            Plat_Update_Transcript (Transcript_Session, Response.Key_Exchange_Response_Signature, 0, Transcript_Len);
+         Current_Phase                            :=
+            Plat_Set_Session_Phase (Session_Handshake, Transcript_Session, Request_Slot);
+      transition
+         goto Error_Unspecified
+            if Success = False
+               or Success_Sig = False
+               or Current_Phase /= Session_Handshake
+         goto Send_Key_Exchange
+            if Cap_Handshake_In_The_Clear
+         goto Set_Key_Exchange_Verify_Data
+      exception
+         goto Error_Unspecified
+      end Prepare_Key_Exchange_Sign;
+
+      state Set_Key_Exchange_Verify_Data
+      is
+         Verify_Data    : Hash;
+         Transcript_Len : SPDM::Length_16;
+         Success        : Boolean;
+      begin
+         --  Transcript hash for KEY_EXCHANGE_RSP HMAC [438] / TH1 [593]
+         Verify_Data                                          :=
+            Plat_Get_Key_Ex_Verify_Data (Transcript_Session,
+                                         Request_Slot);
+         Response.Key_Exchange_Response_Responder_Verify_Data := Verify_Data.Data;
+         Transcript_Len                                       := Hash_Length;
+         Success :=
+         --  TH1/2 Key_Exchange transcript hash: [KEY_EXCHANGE_RSP].*
+         --  The transcript hash from the HMAC generation is kept, so only the HMAC has to be added.
+         Plat_Update_Transcript (Transcript_Session,
+                                 Response.Key_Exchange_Response_Responder_Verify_Data,
+                                 0, Transcript_Len);
+      transition
+         goto Send_Key_Exchange
+            if Success
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Set_Key_Exchange_Verify_Data;
+
+      state Send_Key_Exchange
+      is
+      begin
+         Transport'Write (Response);
+      transition
+         goto Receive_Finish
+      end Send_Key_Exchange;
+
+      state Receive_Finish
+      is
+      begin
+         Transport'Read (Request);
+      transition
+         goto Prepare_Version
+            if Request'Valid and Request.Code = SPDM::Get_Version
+         goto Hash_Mut_Auth_Cert
+            if Request'Valid and Request.Code = SPDM::Finish and Use_Mutual_Auth
+         goto Hash_Finish_Header
+            if Request'Valid and Request.Code = SPDM::Finish
+         goto Error_Invalid_Request
+      exception
+         goto null
+      end Receive_Finish;
+
+      state Hash_Mut_Auth_Cert
+      is
+         Success : Boolean;
+      begin
+         Request_Slot := Request.Finish_Request_Slot;
+         --  TH1/2 Finish transcript hash: Hash of the specified certificate chain in DER format
+         Success    := Plat_Update_Transcript_Cert (Transcript_Session, Request_Slot);
+      transition
+         goto Hash_Finish_Header
+            if Success
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Hash_Mut_Auth_Cert;
+
+      state Hash_Finish_Header
+      is
+         Success : Boolean;
+      begin
+         Request_Slot := Request.Finish_Request_Slot;
+         --  TH1/2 Finish transcript hash: [FINISH].SPDM Header Fields
+         Success := Plat_Update_Transcript (Transcript_Session, Request'Opaque, 0, 4);
+      transition
+         goto Validate_Finish_Signature
+            if Success and Use_Mutual_Auth and Request.Finish_Request_Signature_Included
+         goto Validate_Finish_HMAC
+            if Success
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Hash_Finish_Header;
+
+      state Validate_Finish_Signature
+      is
+         Valid   : Boolean;
+         Success : Boolean;
+      begin
+         Valid := Plat_Validate_Finish_Signature (Transcript_Session,
+                                                  Request.Finish_Request_Signature,
+                                                  Request_Slot);
+         --  TH1/2 Finish transcript hash: [FINISH].Signature
+         Success := Plat_Update_Transcript (Transcript_Session,
+                                            Request.Finish_Request_Signature,
+                                            0, Signature_Length);
+      transition
+         goto Validate_Finish_HMAC
+            if Valid and Success
+         goto Error_Invalid_Request
+      exception
+         goto Error_Unspecified
+      end Validate_Finish_Signature;
+
+      state Validate_Finish_HMAC
+      is
+         Valid   : Boolean;
+         Success : Boolean;
+      begin
+         Valid := Plat_Validate_Finish_HMAC (Transcript_Session,
+                                             Request.Finish_Request_Requester_Verify_Data,
+                                             Request_Slot);
+         --  TH1/2 Finish transcript hash: [FINISH].*
+         --  Complete Finish request hash, only Responder_Verify_Data is missing
+         Success := Plat_Update_Transcript (Transcript_Session,
+                                            Request.Finish_Request_Requester_Verify_Data,
+                                            0, Hash_Length);
+      transition
+         goto Prepare_Finish_Response
+            if Valid
+         goto Error_Invalid_Request
+      exception
+         goto Error_Unspecified
+      end Validate_Finish_HMAC;
+
+      state Prepare_Finish_Response
+      is
+      begin
+         Response'Reset (
+            Meas_Cap                => Cap_Meas,
+            Hash_Type               => SPDM::No_Measurement,
+            Hash_Length             => Hash_Length,
+            Signature_Length        => Signature_Length,
+            Exchange_Data_Length    => 0,
+            Handshake_In_The_Clear  => Cap_Handshake_In_The_Clear,
+            Has_Signature           => False,
+            Has_Measurement_Hash    => False);
+         Response.Major_Version           := 1;
+         Response.Minor_Version           := 1;
+         Response.Code                    := SPDM::Finish_RSP;
+         Response.Finish_Response_Param_1 := 0;
+         Response.Finish_Response_Param_2 := 0;
+      transition
+         goto Prepare_Finish_Response_Verify
+            if Cap_Handshake_In_The_Clear
+         goto Prepare_Finish_Response_Hash
+      exception
+         goto Error_Unspecified
+      end Prepare_Finish_Response;
+
+      state Prepare_Finish_Response_Verify
+      is
+         Verify_Data : Hash;
+      begin
+         Verify_Data := Null_Hash (Hash_Length);
+         Response.Finish_Response_Responder_Verify_Data := Verify_Data.Data;
+      transition
+         goto Prepare_Finish_Response_Hash
+      exception
+         goto Error_Unspecified
+      end Prepare_Finish_Response_Verify;
+
+      state Prepare_Finish_Response_Hash
+      is
+         Valid : Boolean;
+      begin
+         --  TH1/2 Finish transcript hash: [FINISH_RSP].SPDM header fields
+         Valid := Plat_Update_Transcript (Transcript_Session, Response'Opaque, 0, 4);
+      transition
+         goto Set_Finish_Response_Verify
+            if Valid and Cap_Handshake_In_The_Clear
+         goto Finish_Session_Handshake
+            if Valid
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Prepare_Finish_Response_Hash;
+
+      state Set_Finish_Response_Verify
+      is
+         Verify_Data : Hash;
+         Success     : Boolean;
+      begin
+         Verify_Data := Plat_Get_Finish_Verify_Data (Transcript_Session, Request_Slot);
+         Response.Finish_Response_Responder_Verify_Data := Verify_Data.Data;
+         --  TH1/2 Finish transcript hash: [FINISH_RSP]
+         --  Only Responder_Verify_Data is missing.
+         Success := Plat_Update_Transcript (Transcript_Session,
+                                            Response.Finish_Response_Responder_Verify_Data,
+                                            0, Hash_Length);
+      transition
+         goto Finish_Session_Handshake
+            if Success
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Set_Finish_Response_Verify;
+
+      state Finish_Session_Handshake
+      is
+      begin
+         Current_Phase := Plat_Set_Session_Phase (Secure_Session, Transcript_Session, Request_Slot);
+      transition
+         goto Send_Idle
+            if Current_Phase = Secure_Session
+         goto Error_Unspecified
+      end Finish_Session_Handshake;
+
+      state Prepare_Key_Update
+      is
+         Success : Boolean;
+      begin
+         Success := Plat_Key_Update (Request.Key_Update_Request_Key_Operation, Request.Key_Update_Request_Tag);
+         Response :=
+            SPDM::Response'(
+               Meas_Cap                              => Cap_Meas,
+               Hash_Type                             => SPDM::No_Measurement,
+               Hash_Length                           => Hash_Length,
+               Signature_Length                      => Signature_Length,
+               Exchange_Data_Length                  => 0,
+               Handshake_In_The_Clear                => True,
+               Has_Signature                         => False,
+               Has_Measurement_Hash                  => False,
+               Major_Version                         => 1,
+               Minor_Version                         => 1,
+               Code                                  => SPDM::Key_Update_ACK,
+               Key_Update_ACK_Response_Key_Operation => Request.Key_Update_Request_Key_Operation,
+               Key_Update_ACK_Response_Tag           => Request.Key_Update_Request_Tag);
+      transition
+         goto Send_Idle
+            if Success
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Prepare_Key_Update;
+
+      state Prepare_End_Session
+      is
+      begin
+         Response :=
+            SPDM::Response'(
+               Meas_Cap                              => Cap_Meas,
+               Hash_Type                             => SPDM::No_Measurement,
+               Hash_Length                           => Hash_Length,
+               Signature_Length                      => Signature_Length,
+               Exchange_Data_Length                  => 0,
+               Handshake_In_The_Clear                => True,
+               Has_Signature                         => False,
+               Has_Measurement_Hash                  => False,
+               Major_Version                         => 1,
+               Minor_Version                         => 1,
+               Code                                  => SPDM::End_Session_ACK,
+               End_Session_Response_Reserved_1       => 0,
+               End_Session_Response_Reserved_2       => 0);
+         Current_Phase := Plat_Reset_Session_Phase;
+      transition
+         goto Send_Idle
+            if Current_Phase = No_Session
+         goto Error_Unspecified
+      exception
+         goto Error_Unspecified
+      end Prepare_End_Session;
+      state Error_Unsupported_Request
+      is
+      begin
+         Error_Code := SPDM::Unsupported_Request;
+      transition
+         goto Prepare_Error
+      end Error_Unsupported_Request;
+
+      state Error_Invalid_Request
+      is
+      begin
+         Error_Code := SPDM::Invalid_Request;
+      transition
+         goto Prepare_Error
+      end Error_Invalid_Request;
+      --  This state doesn't depend on key exchange
+      --  but is currently only used by key exchange
+      --  features.
+      state Error_Unexpected_Request
+      is
+      begin
+         Error_Code := SPDM::Unexpected_Request;
+      transition
+         goto Prepare_Error
+      end Error_Unexpected_Request;
+      state Error_Unspecified
+      is
+      begin
+         Error_Code := SPDM::Unspecified;
+      transition
+         goto Prepare_Error
+      end Error_Unspecified;
+
+      state Prepare_Error
+      is
+      begin
+         Response'Reset (
+            Meas_Cap               => Cap_Meas,
+            Hash_Type              => SPDM::No_Measurement,
+            Hash_Length            => Hash_Length,
+            Signature_Length       => Signature_Length,
+            Exchange_Data_Length   => 0,
+            Handshake_In_The_Clear => Cap_Handshake_In_The_Clear,
+            Has_Signature          => False,
+            Has_Measurement_Hash   => False);
+         Response.Major_Version             := 1;
+         Response.Minor_Version             := 1;
+         Response.Code                      := SPDM::Error;
+         Response.Error_Response_Error_Code := Error_Code;
+      transition
+         goto Prepare_Unexpected_Request_Error
+            if Error_Code = SPDM::Unsupported_Request
+         goto Prepare_Zero_Data_Error
+      exception
+         goto null
+      end Prepare_Error;
+
+      state Prepare_Zero_Data_Error
+      is
+      begin
+         Response.Error_Response_Zero_Error_Data := 0;
+      transition
+         goto Send_Error
+      exception
+         goto null
+      end Prepare_Zero_Data_Error;
+
+      state Prepare_Unexpected_Request_Error
+      is
+      begin
+         Response.Error_Response_Request_Response_Code := Request.Code;
+      transition
+         goto Send_Error
+      exception
+         goto null
+      end Prepare_Unexpected_Request_Error;
+
+      state Send_Error
+      is
+      begin
+         Transport'Write (Response);
+      transition
+         goto Receive_Get_Version
+      end Send_Error;
+   end Session;
+
+end SPDM_Responder;

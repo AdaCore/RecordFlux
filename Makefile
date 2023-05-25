@@ -154,6 +154,7 @@ test_apps:
 	$(MAKE) -C examples/apps/ping test_python
 	$(MAKE) -C examples/apps/ping test_spark
 	$(MAKE) -C examples/apps/dhcp_client test
+	$(MAKE) -C examples/apps/spdm_responder test
 
 test_compilation:
 	# Skip test for FSF GNAT to prevent violations of restriction "No_Secondary_Stack" in AUnit units
@@ -162,6 +163,7 @@ test_compilation:
 	$(MAKE) -C tests/spark test
 	$(MAKE) -C examples/apps/ping build
 	$(MAKE) -C examples/apps/dhcp_client build
+	$(MAKE) -C examples/apps/spdm_responder lib
 	$(PYTEST) tests/compilation
 	$(MAKE) -C tests/spark test NOPREFIX=1
 	$(MAKE) -C tests/spark clean
@@ -169,6 +171,7 @@ test_compilation:
 
 test_binary_size:
 	$(MAKE) -C examples/apps/dhcp_client binary_size
+	$(MAKE) -C examples/apps/spdm_responder test_size
 
 test_specs:
 	$(PYTEST) tests/examples/specs_test.py
@@ -197,6 +200,7 @@ prove_python_tests: $(GNATPROVE_CACHE_DIR)
 prove_apps: $(GNATPROVE_CACHE_DIR)
 	$(MAKE) -C examples/apps/ping prove
 	$(MAKE) -C examples/apps/dhcp_client prove
+	$(MAKE) -C examples/apps/spdm_responder prove
 
 prove_property_tests: $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/property_verification
@@ -324,6 +328,7 @@ clean:
 	rm -rf $(BUILD_DIR)/[^_]* $(GENERATED_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
+	$(MAKE) -C examples/apps/spdm_responder clean
 	$(MAKE) -C doc/language_reference clean
 	$(MAKE) -C doc/user_guide clean
 	$(MAKE) -C ide/vscode clean

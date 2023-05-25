@@ -1,0 +1,21 @@
+Session:
+    Session:
+        Buffer_Size:
+            Default: 100
+            Global:
+                Request: 512
+                Response: 1280
+                Supp_Versions: 2
+                Resp_Alg_Struct: 16
+                Resp_Alg_Structs: 100
+                Measurement_Record: 512
+            Local:
+                Prepare_Digests:
+                    Digests_Data: 515
+                Prepare_Algorithms:
+                    Ext_Asym: 100
+                    Ext_Hash: 100
+                Prepare_Measurements_Records:
+                    Measurement_Field: 256
+                Prepare_Certificate:
+                    Cert: 515
