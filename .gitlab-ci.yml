@@ -24,14 +24,23 @@ stages:
   - testing
   - finalization
 
+.ci_job:
+  rules:
+    - if: $SCHEDULE && $SCHEDULE != "nightly"
+      when: never
+
 ##################
 # Initialization #
 ##################
 
+.initialization:
+  extends: .ci_job
+  stage: initialization
+
 cache_restoring:
+  extends: .initialization
   services:
      - image:e3
-  stage: initialization
   script:
     - export PATH=/it/e3/bin:$PATH
     - git clone $CI_FRAGMENTS_GIT
@@ -73,11 +82,11 @@ cache_restoring:
     - make init install
 
 setup:
+  extends: .initialization
   services:
      - image:recordflux
      - cpu:2
      - mem:4
-  stage: initialization
   artifacts:
     paths:
       - .venv3.8
@@ -101,18 +110,19 @@ setup:
 # Testing #
 ###########
 
+.testing:
+  extends: .ci_job
+  stage: testing
+  dependencies:
+    - setup
+
 .setup_python: &setup_python
     - export PATH=/it/e3/bin:$PATH
     - . .venv$PYTHON_VERSION/bin/activate
     - make init
 
-.test:
-  stage: testing
-  dependencies:
-    - setup
-
 changelog:
-  extends: .test
+  stage: testing
   dependencies: []
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
@@ -123,7 +133,7 @@ changelog:
       fi
 
 commit_messages:
-  extends: .test
+  stage: testing
   dependencies: []
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
@@ -133,7 +143,7 @@ commit_messages:
     - git log origin/main..HEAD | sed -n "/ \#[0-9][0-9]*/{p;s/.*/Found unqualified reference to ticket/p;q1}"
 
 checks:
-  extends: .test
+  extends: .testing
   services:
      - image:recordflux
      - cpu:2
@@ -144,7 +154,7 @@ checks:
     - make check
 
 tests:
-  extends: .test
+  extends: .testing
   services:
      - image:recordflux
      - cpu:8
@@ -155,7 +165,7 @@ tests:
     - make test
 
 python_compatibility:
-  extends: .test
+  extends: .testing
   services:
      - image:recordflux
      - cpu:2
@@ -172,7 +182,7 @@ python_compatibility:
     - make test_coverage
 
 gnat_pro_compatibility:
-  extends: .test
+  extends: .testing
   services:
      - image:recordflux
      - cpu:2
@@ -197,7 +207,7 @@ gnat_pro_compatibility:
     - make test_compilation
 
 gnat_fsf_compatibility:
-  extends: .test
+  extends: .testing
   services:
      - image:recordflux
      - cpu:2
@@ -222,7 +232,7 @@ gnat_fsf_compatibility:
     - make test_compilation
 
 gnat_community_compatibility:
-  extends: .test
+  extends: .testing
   services:
      - image:recordflux
      - cpu:2
@@ -251,7 +261,7 @@ gnat_community_compatibility:
     - make test_compilation
 
 verification_tests:
-  extends: .test
+  extends: .testing
   dependencies:
     - cache_restoring
     - setup
@@ -270,7 +280,7 @@ verification_tests:
       - build/test/gnatprove
 
 verification_python_tests:
-  extends: .test
+  extends: .testing
   dependencies:
     - cache_restoring
     - setup
@@ -290,7 +300,7 @@ verification_python_tests:
       - build/test/gnatprove
 
 verification_apps:
-  extends: .test
+  extends: .testing
   dependencies:
     - cache_restoring
     - setup
@@ -315,7 +325,7 @@ verification_apps:
       - examples/apps/${APP}/obj/gnatprove
 
 html_documentation:
-  extends: .test
+  extends: .testing
   services:
      - image:recordflux
   script:
@@ -324,7 +334,7 @@ html_documentation:
     - make html_doc
 
 pdf_documentation:
-  extends: .test
+  extends: .testing
   services:
      - image:recordflux
   script:
@@ -338,11 +348,15 @@ pdf_documentation:
 # Finalization #
 ################
 
+.finalization:
+  extends: .ci_job
+  stage: finalization
+
 cache_saving:
+  extends: .finalization
   when: always
   services:
      - image:e3
-  stage: finalization
   dependencies:
     - verification_tests
     - verification_python_tests
@@ -361,3 +375,30 @@ cache_saving:
          examples/apps/ping/obj/gnatprove
     - git clone $CI_FRAGMENTS_GIT
     - ci-fragments/upload_generic_package $CI_PROJECT_PATH $GNATPROVE_CACHE_PACKAGE
+
+##################
+# Scheduled jobs #
+##################
+
+.scheduled_job:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedules" && $SCHEDULE == "gnat-wave"
+    - if: $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+  stage: testing
+
+gnat_wave_compatibility:
+  extends: .scheduled_job
+  services:
+     - image:recordflux
+     - cpu:2
+     - mem:4
+  script:
+    - . ~/.aws_container_credentials
+    - export PATH=/it/e3/bin:$PATH
+    - anod install gnat
+    - eval `anod printenv gnat`
+    - gnat --version
+    - *setup_python_venv
+    - *setup_python
+    - make test_compilation
