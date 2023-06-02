@@ -26,8 +26,7 @@ stages:
 
 .ci_job:
   rules:
-    - if: $SCHEDULE && $SCHEDULE != "nightly"
-      when: never
+    - if: $SCHEDULE == null || $SCHEDULE == "nightly"
 
 ##################
 # Initialization #
@@ -381,14 +380,12 @@ cache_saving:
 ##################
 
 .scheduled_job:
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedules" && $SCHEDULE == "gnat-wave"
-    - if: $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
   stage: testing
 
 gnat_wave_compatibility:
   extends: .scheduled_job
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE == "gnat-wave"
   services:
      - image:recordflux
      - cpu:2
