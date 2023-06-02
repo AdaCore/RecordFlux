@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -11,7 +12,52 @@ from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
 
 from . import message, session, top_level_declaration, type_
+from .cache import Cache
 from .package import Package
+
+
+@dataclass
+class UncheckedModel(Base):
+    declarations: Sequence[top_level_declaration.UncheckedTopLevelDeclaration]
+    error: RecordFluxError
+
+    def checked(
+        self, skip_verification: bool = False, workers: int = 1, cache: Optional[Cache] = None
+    ) -> Model:
+        if not cache:
+            cache = Cache(enabled=False)
+
+        error = RecordFluxError(self.error)
+        declarations: list[top_level_declaration.TopLevelDeclaration] = []
+
+        for d in self.declarations:
+            try:
+                checked_declaration = d.checked(declarations)
+                if isinstance(checked_declaration, message.UnprovenMessage):
+                    try:
+                        proven_message = checked_declaration.proven(
+                            skip_verification or cache.is_verified(checked_declaration), workers
+                        )
+                        declarations.append(proven_message)
+                    except RecordFluxError as e:
+                        error.extend(e)
+                    cache.add_verified(checked_declaration)
+                elif isinstance(checked_declaration, session.UnprovenSession):
+                    try:
+                        proven_session = checked_declaration.proven(workers)
+                        declarations.append(proven_session)
+                    except RecordFluxError as e:
+                        error.extend(e)
+                else:
+                    declarations.append(checked_declaration)
+            except RecordFluxError as e:
+                error.extend(e)
+
+        error += _check_duplicates(declarations)
+        error += _check_conflicts(declarations)
+        error.propagate()
+
+        return Model(declarations)
 
 
 class Model(Base):
@@ -20,7 +66,10 @@ class Model(Base):
     ) -> None:
         self._declarations = declarations or []
 
-        self._add_missing_types_and_validate()
+        error = _check_duplicates(self._declarations)
+        self._declarations = self._add_type_dependencies(self._declarations)
+        error += _check_conflicts(self._declarations)
+        error.propagate()
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["types", "sessions"])
@@ -76,152 +125,136 @@ class Model(Base):
             )
             (output_dir / f"{package.flat.lower()}.rflx").write_text(f"{header}{specification}")
 
-    def _add_missing_types_and_validate(self) -> None:
-        error = self._check_duplicates()
+    @staticmethod
+    def _add_type_dependencies(
+        declarations: Sequence[top_level_declaration.TopLevelDeclaration],
+    ) -> list[top_level_declaration.TopLevelDeclaration]:
+        """Add missing type dependencies to list of declarations."""
+        result: list[top_level_declaration.TopLevelDeclaration] = []
 
-        declarations: list[top_level_declaration.TopLevelDeclaration] = []
-
-        for d in self._declarations:
+        for d in declarations:
             if isinstance(d, type_.Type):
                 for t in d.dependencies:
-                    declarations.append(t)
-                declarations.append(d)
+                    result.append(t)
+                result.append(d)
 
             if isinstance(d, session.Session):
                 for t in d.direct_dependencies.values():
-                    declarations.append(t)
-                declarations.append(d)
+                    result.append(t)
+                result.append(d)
 
-        self._declarations = list(unique(declarations))
+        return list(unique(result))
 
-        error += self._check_conflicts()
-        error.propagate()
 
-    def _check_duplicates(self) -> RecordFluxError:
-        error = RecordFluxError()
-        types: dict[ID, type_.Type] = {}
-        sessions: dict[ID, session.Session] = {}
+def _check_duplicates(
+    declarations: Sequence[top_level_declaration.TopLevelDeclaration],
+) -> RecordFluxError:
+    error = RecordFluxError()
+    seen: dict[ID, top_level_declaration.TopLevelDeclaration] = {}
 
-        for t in self.types:
-            if t.identifier in types:
-                error.extend(
-                    [
-                        (
-                            f'conflicting refinement of "{t.pdu.identifier}" with'
-                            f' "{t.sdu.identifier}"'
-                            if isinstance(t, message.Refinement)
-                            else f'name conflict for type "{t.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            t.location,
-                        ),
-                        (
-                            "previous occurrence of refinement"
-                            if isinstance(t, message.Refinement)
-                            else f'previous occurrence of "{t.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            types[t.identifier].location,
-                        ),
-                    ],
-                )
-            types[t.identifier] = t
-
-        for s in self.sessions:
-            if s.identifier in types or s.identifier in sessions:
-                error.extend(
-                    [
-                        (
-                            f'name conflict for session "{s.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            s.location,
-                        ),
-                        (
-                            f'previous occurrence of "{s.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            types[s.identifier].location
-                            if s.identifier in types
-                            else sessions[s.identifier].location,
-                        ),
-                    ],
-                )
-            sessions[s.identifier] = s
-
-        return error
-
-    def _check_conflicts(self) -> RecordFluxError:
-        error = RecordFluxError()
-
-        for e1, e2 in [
-            (e1, e2)
-            for i1, e1 in enumerate(self.types)
-            for i2, e2 in enumerate(self.types)
-            if (
-                isinstance(e1, type_.Enumeration)
-                and isinstance(e2, type_.Enumeration)
-                and i1 < i2
-                and (
-                    e1.package == e2.package
-                    or e1.package == const.BUILTINS_PACKAGE
-                    or e2.package == const.BUILTINS_PACKAGE
-                )
-            )
-        ]:
-            identical_literals = set(e2.literals) & set(e1.literals)
-
-            if identical_literals:
-                literals_message = ", ".join([f"{l}" for l in sorted(identical_literals)])
-                error.extend(
-                    [
-                        (
-                            f"conflicting literals: {literals_message}",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            e2.location,
-                        ),
-                        *[
-                            (
-                                f'previous occurrence of "{l}"',
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                l.location,
-                            )
-                            for l in sorted(identical_literals)
-                        ],
-                    ],
-                )
-
-        literals = [
-            ID(t.package * l, location=l.location)
-            for t in self.types
-            if isinstance(t, type_.Enumeration)
-            for l in t.literals
-        ]
-        name_conflicts = [
-            (l, t)
-            for l in literals
-            for t in self.types
-            if (l.parent == t.package or type_.is_builtin_type(t.identifier))
-            and l.name == t.identifier.name
-        ]
-        for literal, conflicting_type in name_conflicts:
+    for d in declarations:
+        if d.identifier in seen:
             error.extend(
                 [
                     (
-                        f'literal "{literal.name}" conflicts with type declaration',
+                        f'conflicting refinement of "{d.pdu.identifier}" with'
+                        f' "{d.sdu.identifier}"'
+                        if isinstance(d, message.Refinement)
+                        else f'name conflict for type "{d.identifier}"'
+                        if isinstance(d, type_.Type)
+                        else f'name conflict for session "{d.identifier}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
-                        literal.location,
+                        d.location,
                     ),
                     (
-                        f'conflicting type "{conflicting_type.identifier}"',
+                        "previous occurrence of refinement"
+                        if isinstance(d, message.Refinement)
+                        else f'previous occurrence of "{d.identifier}"',
                         Subsystem.MODEL,
                         Severity.INFO,
-                        conflicting_type.location,
+                        seen[d.identifier].location,
                     ),
                 ],
             )
+        seen[d.identifier] = d
 
-        return error
+    return error
+
+
+def _check_conflicts(
+    declarations: Sequence[top_level_declaration.TopLevelDeclaration],
+) -> RecordFluxError:
+    error = RecordFluxError()
+
+    for e1, e2 in [
+        (e1, e2)
+        for i1, e1 in enumerate(declarations)
+        for i2, e2 in enumerate(declarations)
+        if (
+            isinstance(e1, type_.Enumeration)
+            and isinstance(e2, type_.Enumeration)
+            and i1 < i2
+            and (
+                e1.package == e2.package
+                or e1.package == const.BUILTINS_PACKAGE
+                or e2.package == const.BUILTINS_PACKAGE
+            )
+        )
+    ]:
+        identical_literals = set(e2.literals) & set(e1.literals)
+
+        if identical_literals:
+            literals_message = ", ".join([f"{l}" for l in sorted(identical_literals)])
+            error.extend(
+                [
+                    (
+                        f"conflicting literals: {literals_message}",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        e2.location,
+                    ),
+                    *[
+                        (
+                            f'previous occurrence of "{l}"',
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            l.location,
+                        )
+                        for l in sorted(identical_literals)
+                    ],
+                ],
+            )
+
+    literals = [
+        ID(d.package * l, location=l.location)
+        for d in declarations
+        if isinstance(d, type_.Enumeration)
+        for l in d.literals
+    ]
+    name_conflicts = [
+        (l, d)
+        for l in literals
+        for d in declarations
+        if (l.parent == d.package or type_.is_builtin_type(d.identifier))
+        and l.name == d.identifier.name
+    ]
+    for literal, conflicting_type in name_conflicts:
+        error.extend(
+            [
+                (
+                    f'literal "{literal.name}" conflicts with type declaration',
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    literal.location,
+                ),
+                (
+                    f'conflicting type "{conflicting_type.identifier}"',
+                    Subsystem.MODEL,
+                    Severity.INFO,
+                    conflicting_type.location,
+                ),
+            ],
+        )
+
+    return error

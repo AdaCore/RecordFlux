@@ -502,10 +502,9 @@ class SequenceValue(CompositeValue):
                 value_str = value_str[type_size_int:]
 
             self._value = new_value
+
         else:
-            raise PyRFLXError(
-                f"sequences of {self._element_type.identifier} currently not supported"
-            )
+            assert False
 
     @property
     def size(self) -> Expr:

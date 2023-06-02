@@ -16,7 +16,6 @@ from rflx.specification.parser import (
     create_session,
     create_state,
     create_statement,
-    create_unproven_session,
     diagnostics_to_error,
 )
 from rflx.typing_ import BOOLEAN
@@ -68,26 +67,26 @@ def check_diagnostics_error(unit: lang.AnalysisUnit, error: RecordFluxError) -> 
         error.propagate()
 
 
-def parse_session(string: str) -> None:
+def parse_session_error(string: str) -> None:
     unit = lang.AnalysisContext().get_from_buffer(
         "<stdin>", string, rule=lang.GrammarRule.session_declaration_rule
     )
     error = RecordFluxError()
     check_diagnostics_error(unit, error)
     assert isinstance(unit.root, lang.SessionDecl)
-    result = create_session(error, unit.root, ID("Package"), Path("<stdin>"), 1)
+    result = create_session(error, unit.root, ID("Package"), Path("<stdin>"))
     error.propagate()
-    assert isinstance(result, model.Session)
+    assert isinstance(result, model.UncheckedSession)
 
 
-def parse_unproven_session(string: str) -> model.UnprovenSession:
+def parse_session(string: str) -> model.UncheckedSession:
     unit = lang.AnalysisContext().get_from_buffer(
         "<stdin>", string, rule=lang.GrammarRule.session_declaration_rule
     )
     error = RecordFluxError()
     check_diagnostics_error(unit, error)
     assert isinstance(unit.root, lang.SessionDecl)
-    result = create_unproven_session(error, unit.root, ID("Package"), Path("<stdin>"))
+    result = create_session(error, unit.root, ID("Package"), Path("<stdin>"))
     error.propagate()
     return result
 
@@ -785,8 +784,8 @@ def test_session_declaration() -> None:
               end A;
            end Session
     """
-    actual = parse_unproven_session(string)
-    expected = model.UnprovenSession(
+    actual = parse_session(string)
+    expected = model.UncheckedSession(
         ID("Package::Session"),
         [
             model.State(
@@ -809,8 +808,7 @@ def test_session_declaration() -> None:
             decl.ChannelDeclaration("X", readable=True, writable=True),
             decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
         ],
-        [],
-        location=Location((2, 16), None, (23, 27)),
+        location=Location((2, 12), STDIN, (17, 23)),
     )
     assert actual == expected
     assert actual.location
@@ -828,7 +826,7 @@ def test_parse_session() -> None:
           end A;
        end X
     """
-    parse_session(string)
+    parse_session_error(string)
 
 
 @pytest.mark.parametrize(
@@ -866,7 +864,7 @@ def test_parse_session() -> None:
 )
 def test_session_error(string: str, error: str) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_session(string)
+        parse_session_error(string)
 
 
 def test_session() -> None:

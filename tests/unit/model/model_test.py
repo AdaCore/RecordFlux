@@ -9,12 +9,13 @@ import pytest
 
 import rflx.model.type_ as mty
 from rflx.error import Location, RecordFluxError
-from rflx.expression import Number
+from rflx.expression import Equal, Number
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,
     FINAL,
     INITIAL,
+    UNCHECKED_OPAQUE,
     Enumeration,
     Field,
     Integer,
@@ -25,28 +26,29 @@ from rflx.model import (
     State,
     Transition,
     Type,
+    UncheckedMessage,
+    UncheckedModel,
 )
+from rflx.model.top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
 from tests.data import models
-from tests.utils import check_regex
-
-
-def assert_model_error(types: Sequence[Type], regex: str) -> None:
-    check_regex(regex)
-    with pytest.raises(RecordFluxError, match=regex):
-        Model([*BUILTIN_TYPES.values(), *types])
 
 
 def test_name_conflict_types() -> None:
-    assert_model_error(
-        [
-            Integer(ID("P::T"), Number(0), Number(255), Number(8), location=Location((10, 20))),
-            Integer(ID("P::T"), Number(1), Number(100), Number(8), location=Location((11, 30))),
-        ],
-        r"^"
-        r'<stdin>:11:30: model: error: name conflict for type "P::T"\n'
-        r'<stdin>:10:20: model: info: previous occurrence of "P::T"'
-        r"$",
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:11:30: model: error: name conflict for type "P::T"\n'
+            r'<stdin>:10:20: model: info: previous occurrence of "P::T"'
+            r"$"
+        ),
+    ):
+        Model(
+            [
+                Integer(ID("P::T"), Number(0), Number(255), Number(8), location=Location((10, 20))),
+                Integer(ID("P::T"), Number(1), Number(100), Number(8), location=Location((11, 30))),
+            ]
+        )
 
 
 def test_conflicting_refinements() -> None:
@@ -55,13 +57,16 @@ def test_conflicting_refinements() -> None:
     r2 = copy(models.REFINEMENT)
     r2.location = Location((10, 30))
 
-    assert_model_error(
-        [models.MESSAGE, r1, r2],
-        r"^"
-        r'<stdin>:10:30: model: error: conflicting refinement of "P::M" with "P::M"\n'
-        r"<stdin>:10:20: model: info: previous occurrence of refinement"
-        r"$",
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:10:30: model: error: conflicting refinement of "P::M" with "P::M"\n'
+            r"<stdin>:10:20: model: info: previous occurrence of refinement"
+            r"$"
+        ),
+    ):
+        Model([models.MESSAGE, r1, r2]),
 
 
 def test_name_conflict_sessions() -> None:
@@ -83,66 +88,83 @@ def test_name_conflict_sessions() -> None:
 
 
 def test_conflicting_literal_builtin_type() -> None:
-    assert_model_error(
-        [
-            Enumeration(
-                "P::T",
-                [
-                    (ID("E1", Location((3, 27))), Number(1)),
-                    (ID("Boolean", Location((3, 31))), Number(2)),
-                ],
-                Number(8),
-                always_valid=False,
-            ),
-        ],
-        r"^"
-        r'<stdin>:3:31: model: error: literal "Boolean" conflicts with type declaration\n'
-        r'__BUILTINS__:0:0: model: info: conflicting type "__BUILTINS__::Boolean"'
-        r"$",
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:3:31: model: error: literal "Boolean" conflicts with type declaration\n'
+            r'__BUILTINS__:0:0: model: info: conflicting type "__BUILTINS__::Boolean"'
+            r"$"
+        ),
+    ):
+        Model(
+            [
+                *BUILTIN_TYPES.values(),
+                Enumeration(
+                    "P::T",
+                    [
+                        (ID("E1", Location((3, 27))), Number(1)),
+                        (ID("Boolean", Location((3, 31))), Number(2)),
+                    ],
+                    Number(8),
+                    always_valid=False,
+                ),
+            ]
+        )
 
 
 def test_name_conflict_between_literal_and_type() -> None:
-    assert_model_error(
-        [
-            Enumeration(
-                "P::T",
-                [
-                    (ID("FOO", Location((3, 27))), Number(1)),
-                    (ID("BAR", Location((3, 32))), Number(2)),
-                ],
-                Number(1),
-                always_valid=False,
-            ),
-            Integer("P::Foo", Number(0), Number(255), Number(8), Location((4, 16))),
-            Integer("P::Bar", Number(0), Number(255), Number(8), Location((5, 16))),
-        ],
-        r"^"
-        r'<stdin>:3:27: model: error: literal "FOO" conflicts with type declaration\n'
-        r'<stdin>:4:16: model: info: conflicting type "P::Foo"\n'
-        r'<stdin>:3:32: model: error: literal "BAR" conflicts with type declaration\n'
-        r'<stdin>:5:16: model: info: conflicting type "P::Bar"'
-        r"$",
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:3:27: model: error: literal "FOO" conflicts with type declaration\n'
+            r'<stdin>:4:16: model: info: conflicting type "P::Foo"\n'
+            r'<stdin>:3:32: model: error: literal "BAR" conflicts with type declaration\n'
+            r'<stdin>:5:16: model: info: conflicting type "P::Bar"'
+            r"$"
+        ),
+    ):
+        Model(
+            [
+                Enumeration(
+                    "P::T",
+                    [
+                        (ID("FOO", Location((3, 27))), Number(1)),
+                        (ID("BAR", Location((3, 32))), Number(2)),
+                    ],
+                    Number(8),
+                    always_valid=False,
+                ),
+                Integer("P::Foo", Number(0), Number(255), Number(8), Location((4, 16))),
+                Integer("P::Bar", Number(0), Number(255), Number(8), Location((5, 16))),
+            ]
+        )
 
 
 def test_invalid_enumeration_type_builtin_literals() -> None:
-    assert_model_error(
-        [
-            Enumeration(
-                "P::T",
-                [("True", Number(1)), ("False", Number(2))],
-                Number(1),
-                always_valid=False,
-                location=Location((3, 16)),
-            ),
-        ],
-        r"^"
-        r"<stdin>:3:16: model: error: conflicting literals: False, True\n"
-        r'__BUILTINS__:0:0: model: info: previous occurrence of "False"\n'
-        r'__BUILTINS__:0:0: model: info: previous occurrence of "True"'
-        r"$",
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r"<stdin>:3:16: model: error: conflicting literals: False, True\n"
+            r'__BUILTINS__:0:0: model: info: previous occurrence of "False"\n'
+            r'__BUILTINS__:0:0: model: info: previous occurrence of "True"'
+            r"$"
+        ),
+    ):
+        Model(
+            [
+                *BUILTIN_TYPES.values(),
+                Enumeration(
+                    "P::T",
+                    [("True", Number(1)), ("False", Number(2))],
+                    Number(8),
+                    always_valid=False,
+                    location=Location((3, 16)),
+                ),
+            ]
+        )
 
 
 @pytest.mark.parametrize(
@@ -168,27 +190,32 @@ def test_init_introduce_type_dependencies(types: Sequence[Type], model: Model) -
 
 
 def test_invalid_enumeration_type_identical_literals() -> None:
-    assert_model_error(
-        [
-            Enumeration(
-                "P::T1",
-                [("Foo", Number(1)), (ID("Bar", Location((3, 33))), Number(2))],
-                Number(1),
-                always_valid=False,
-            ),
-            Enumeration(
-                "P::T2",
-                [("Bar", Number(1)), ("Baz", Number(2))],
-                Number(1),
-                always_valid=False,
-                location=Location((4, 16)),
-            ),
-        ],
-        r"^"
-        r"<stdin>:4:16: model: error: conflicting literals: Bar\n"
-        r'<stdin>:3:33: model: info: previous occurrence of "Bar"'
-        r"$",
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r"<stdin>:4:16: model: error: conflicting literals: Bar\n"
+            r'<stdin>:3:33: model: info: previous occurrence of "Bar"'
+            r"$"
+        ),
+    ):
+        Model(
+            [
+                Enumeration(
+                    "P::T1",
+                    [("Foo", Number(1)), (ID("Bar", Location((3, 33))), Number(2))],
+                    Number(8),
+                    always_valid=False,
+                ),
+                Enumeration(
+                    "P::T2",
+                    [("Bar", Number(1)), ("Baz", Number(2))],
+                    Number(8),
+                    always_valid=False,
+                    location=Location((4, 16)),
+                ),
+            ]
+        )
 
 
 def test_write_specification_files(tmp_path: Path) -> None:
@@ -369,3 +396,112 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
     expected_path = tmp_path / Path("p.rflx")
     assert list(tmp_path.glob("*.rflx")) == [expected_path]
     assert expected_path.read_text().startswith("-- style: disable = line-length\n\npackage P is")
+
+
+@pytest.mark.parametrize(
+    ["unchecked", "expected"],
+    [
+        ([], []),
+        (
+            [mty.UncheckedInteger(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))],
+            [mty.Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))],
+        ),
+        (
+            [
+                mty.UncheckedInteger(
+                    ID("P::I"),
+                    Number(0),
+                    Number(128),
+                    Number(8),
+                    Location((1, 2)),
+                ),
+                mty.UncheckedEnumeration(
+                    ID("P::E"),
+                    [(ID("A"), Number(0)), (ID("B"), Number(1))],
+                    Number(8),
+                    always_valid=False,
+                    location=Location((1, 2)),
+                ),
+            ],
+            [
+                mty.Integer(
+                    ID("P::I"),
+                    Number(0),
+                    Number(128),
+                    Number(8),
+                    Location((1, 2)),
+                ),
+                mty.Enumeration(
+                    ID("P::E"),
+                    [(ID("A"), Number(0)), (ID("B"), Number(1))],
+                    Number(8),
+                    always_valid=False,
+                    location=Location((1, 2)),
+                ),
+            ],
+        ),
+    ],
+)
+def test_unchecked_model_checked(
+    unchecked: list[UncheckedTopLevelDeclaration], expected: list[TopLevelDeclaration]
+) -> None:
+    assert UncheckedModel(unchecked, RecordFluxError()).checked() == Model(expected)
+
+
+@pytest.mark.parametrize(
+    ["unchecked", "expected"],
+    [
+        (
+            [mty.UncheckedInteger(ID("P::T"), Number(0), Number(128), Number(2), Location((1, 2)))],
+            r'^<stdin>:1:2: model: error: size of "T" too small$',
+        ),
+        (
+            [
+                UNCHECKED_OPAQUE,
+                mty.UncheckedInteger(
+                    ID("P::I"), Number(0), Number(128), Number(2), Location((1, 2))
+                ),
+                mty.UncheckedEnumeration(
+                    ID("E", Location((3, 4))),
+                    [(ID("A"), Number(0)), (ID("B"), Number(1))],
+                    Number(8),
+                    always_valid=False,
+                    location=Location((2, 3)),
+                ),
+                UncheckedMessage(
+                    ID("P::M"),
+                    [
+                        Link(
+                            INITIAL,
+                            Field("F1"),
+                            size=Number(16),
+                        ),
+                        Link(
+                            Field(ID("F1", Location((5, 6)))),
+                            FINAL,
+                            condition=Equal(Number(1), Number(1)),
+                        ),
+                    ],
+                    [],
+                    [
+                        (Field("F1"), UNCHECKED_OPAQUE.identifier, []),
+                    ],
+                    None,
+                    None,
+                    None,
+                ),
+            ],
+            r"^"
+            r'<stdin>:1:2: model: error: size of "I" too small\n'
+            r'<stdin>:3:4: model: error: invalid format for identifier "E"\n'
+            r'<stdin>:5:6: model: error: condition "1 = 1" on transition "F1" -> "Final"'
+            r" is always true"
+            r"$",
+        ),
+    ],
+)
+def test_unchecked_model_checked_error(
+    unchecked: list[UncheckedTopLevelDeclaration], expected: str
+) -> None:
+    with pytest.raises(RecordFluxError, match=expected):
+        UncheckedModel(unchecked, RecordFluxError()).checked()

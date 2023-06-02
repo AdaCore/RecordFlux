@@ -9,6 +9,7 @@ from rflx.model import (
     FINAL,
     INITIAL,
     OPAQUE,
+    UNCHECKED_OPAQUE,
     Enumeration,
     Field,
     Integer,
@@ -16,23 +17,28 @@ from rflx.model import (
     Message,
     Sequence,
     Type,
+    UncheckedEnumeration,
+    UncheckedInteger,
+    UncheckedSequence,
+    UncheckedType,
 )
 from tests.data import models
-from tests.utils import assert_equal, assert_type_error
+from tests.utils import assert_equal
 
 
 def test_type_name() -> None:
     t = Integer("Package::Type_Name", Number(0), Number(255), Number(8))
     assert t.name == "Type_Name"
     assert t.package == ID("Package")
-    assert_type_error(
-        Integer(ID("X", Location((10, 20))), Number(0), Number(255), Number(8)),
-        r'^<stdin>:10:20: model: error: invalid format for identifier "X"$',
-    )
-    assert_type_error(
-        Integer(ID("X::Y::Z", Location((10, 20))), Number(0), Number(255), Number(8)),
-        '^<stdin>:10:20: model: error: invalid format for identifier "X::Y::Z"$',
-    )
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:10:20: model: error: invalid format for identifier "X"$'
+    ):
+        Integer(ID("X", Location((10, 20))), Number(0), Number(255), Number(8))
+    with pytest.raises(
+        RecordFluxError,
+        match='^<stdin>:10:20: model: error: invalid format for identifier "X::Y::Z"$',
+    ):
+        Integer(ID("X::Y::Z", Location((10, 20))), Number(0), Number(255), Number(8))
 
 
 def test_type_type() -> None:
@@ -84,60 +90,61 @@ def test_integer_last() -> None:
 
 
 def test_integer_invalid_first_variable() -> None:
-    assert_type_error(
-        Integer("P::T", Add(Number(1), Variable("X")), Number(15), Number(4), Location((5, 3))),
-        r'^<stdin>:5:3: model: error: first of "T" contains variable$',
-    )
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:5:3: model: error: first of "T" contains variable$'
+    ):
+        Integer("P::T", Add(Number(1), Variable("X")), Number(15), Number(4), Location((5, 3)))
 
 
 def test_integer_invalid_last_variable() -> None:
-    assert_type_error(
-        Integer("P::T", Number(1), Add(Number(1), Variable("X")), Number(4), Location((80, 6))),
-        r'^<stdin>:80:6: model: error: last of "T" contains variable$',
-    )
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:80:6: model: error: last of "T" contains variable$'
+    ):
+        Integer("P::T", Number(1), Add(Number(1), Variable("X")), Number(4), Location((80, 6)))
 
 
 def test_integer_invalid_last_exceeds_limit() -> None:
-    assert_type_error(
-        Integer("P::T", Number(1), Pow(Number(2), Number(63)), Number(64)),
-        r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$',
-    )
+    with pytest.raises(
+        RecordFluxError, match=r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$'
+    ):
+        Integer("P::T", Number(1), Pow(Number(2), Number(63)), Number(64))
 
 
 def test_integer_invalid_first_negative() -> None:
-    assert_type_error(
-        Integer("P::T", Number(-1), Number(0), Number(1), Location((6, 4))),
-        r'^<stdin>:6:4: model: error: first of "T" negative$',
-    )
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:6:4: model: error: first of "T" negative$'
+    ):
+        Integer("P::T", Number(-1), Number(0), Number(1), Location((6, 4)))
 
 
 def test_integer_invalid_range() -> None:
-    assert_type_error(
-        Integer("P::T", Number(1), Number(0), Number(1), Location((10, 5))),
-        r'^<stdin>:10:5: model: error: range of "T" negative$',
-    )
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:10:5: model: error: range of "T" negative$'
+    ):
+        Integer("P::T", Number(1), Number(0), Number(1), Location((10, 5)))
 
 
 def test_integer_invalid_size_variable() -> None:
-    assert_type_error(
-        Integer("P::T", Number(0), Number(256), Add(Number(8), Variable("X")), Location((22, 4))),
-        r'^<stdin>:22:4: model: error: size of "T" contains variable$',
-    )
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:22:4: model: error: size of "T" contains variable$'
+    ):
+        Integer("P::T", Number(0), Number(256), Add(Number(8), Variable("X")), Location((22, 4)))
 
 
 def test_integer_invalid_size_too_small() -> None:
-    assert_type_error(
-        Integer("P::T", Number(0), Number(256), Number(8), Location((10, 4))),
-        r'^<stdin>:10:4: model: error: size of "T" too small$',
-    )
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:10:4: model: error: size of "T" too small$'
+    ):
+        Integer("P::T", Number(0), Number(256), Number(8), Location((10, 4)))
 
 
 def test_integer_invalid_size_exceeds_limit() -> None:
     # Eng/RecordFlux/RecordFlux#238
-    assert_type_error(
-        Integer("P::T", Number(0), Number(256), Number(128), Location((50, 3))),
-        r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*63\)$',
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*63\)$',
+    ):
+        Integer("P::T", Number(0), Number(256), Number(128), Location((50, 3)))
 
 
 def test_enumeration_size() -> None:
@@ -187,53 +194,59 @@ def test_enumeration_value_count() -> None:
 
 
 def test_enumeration_invalid_size_variable() -> None:
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:34:3: model: error: size of "T" contains variable$',
+    ):
         Enumeration(
             "P::T",
             [("A", Number(1))],
             Add(Number(8), Variable("X")),
             always_valid=False,
             location=Location((34, 3)),
-        ),
-        r'^<stdin>:34:3: model: error: size of "T" contains variable$',
-    )
+        )
 
 
 def test_enumeration_invalid_literal_value() -> None:
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r'^<stdin>:10:5: model: error: enumeration value of "T"'
+            r" outside of permitted range \(0 .. 2\*\*63 - 1\)\n"
+            r'<stdin>:10:5: model: error: size of "T" exceeds limit \(2\*\*63\)$'
+        ),
+    ):
         Enumeration(
             "P::T",
             [("A", Number(2**63))],
             Number(64),
             always_valid=False,
             location=Location((10, 5)),
-        ),
-        r'^<stdin>:10:5: model: error: enumeration value of "T"'
-        r" outside of permitted range \(0 .. 2\*\*63 - 1\)\n"
-        r'<stdin>:10:5: model: error: size of "T" exceeds limit \(2\*\*63\)$',
-    )
+        )
 
 
 def test_enumeration_invalid_size_too_small() -> None:
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:10:5: model: error: size of "T" too small$',
+    ):
         Enumeration(
             "P::T", [("A", Number(256))], Number(8), always_valid=False, location=Location((10, 5))
-        ),
-        r'^<stdin>:10:5: model: error: size of "T" too small$',
-    )
+        )
 
 
 def test_enumeration_invalid_size_exceeds_limit() -> None:
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*63\)$',
+    ):
         Enumeration(
             "P::T",
             [("A", Number(256))],
             Number(128),
             always_valid=False,
             location=Location((8, 20)),
-        ),
-        r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*63\)$',
-    )
+        )
 
 
 def test_enumeration_invalid_always_valid_aspect() -> None:
@@ -246,37 +259,50 @@ def test_enumeration_invalid_always_valid_aspect() -> None:
 
 
 def test_enumeration_invalid_literal() -> None:
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$'
+    ):
         Enumeration(
             "P::T", [("A B", Number(1))], Number(8), always_valid=False, location=Location((1, 2))
-        ),
-        r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$',
-    )
-    assert_type_error(
+        )
+    with pytest.raises(
+        RecordFluxError, match=r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$'
+    ):
         Enumeration(
             "P::T", [("A.B", Number(1))], Number(8), always_valid=False, location=Location((6, 4))
-        ),
-        r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$',
-    )
+        )
 
 
 def test_enumeration_invalid_duplicate_elements() -> None:
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:3:32: model: error: duplicate literal "Foo"\n'
+            r"<stdin>:3:27: model: info: previous occurrence"
+            r"$"
+        ),
+    ):
         Enumeration(
             "P::T",
             [(ID("Foo", Location((3, 27))), Number(1)), (ID("Foo", Location((3, 32))), Number(2))],
             Number(8),
             always_valid=False,
-        ),
-        r"^"
-        r'<stdin>:3:32: model: error: duplicate literal "Foo"\n'
-        r"<stdin>:3:27: model: info: previous occurrence"
-        r"$",
-    )
+        )
 
 
 def test_enumeration_invalid_multiple_duplicate_elements() -> None:
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:3:37: model: error: duplicate literal "Foo"\n'
+            r"<stdin>:3:27: model: info: previous occurrence\n"
+            r'<stdin>:3:42: model: error: duplicate literal "Bar"\n'
+            r"<stdin>:3:32: model: info: previous occurrence"
+            r"$"
+        ),
+    ):
         Enumeration(
             "P::T",
             [
@@ -287,14 +313,7 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
             ],
             Number(8),
             always_valid=False,
-        ),
-        r"^"
-        r'<stdin>:3:37: model: error: duplicate literal "Foo"\n'
-        r"<stdin>:3:27: model: info: previous occurrence\n"
-        r'<stdin>:3:42: model: error: duplicate literal "Bar"\n'
-        r"<stdin>:3:32: model: info: previous occurrence"
-        r"$",
-    )
+        )
 
 
 def test_enumeration_str() -> None:
@@ -320,7 +339,7 @@ def test_enumeration_str() -> None:
                 ("E", Number(2**6)),
                 ("F", Number(2**7)),
             ],
-            Pow(Number(2), Number(8)),
+            Pow(Number(2), Number(4)),
             always_valid=True,
         )
     ) == (
@@ -331,7 +350,7 @@ def test_enumeration_str() -> None:
         "    D => 32,\n"
         "    E => 64,\n"
         "    F => 128)\n"
-        "with Size => 2 ** 8, Always_Valid => True"
+        "with Size => 2 ** 4, Always_Valid => True"
     )
 
 
@@ -394,11 +413,18 @@ def test_sequence_dependencies() -> None:
     ],
 )
 def test_sequence_invalid_element_type(element_type: Type, error: str) -> None:
-    assert_type_error(Sequence("P::A", element_type, Location((1, 2))), f"^{error}$")
+    with pytest.raises(RecordFluxError, match=f"^{error}$"):
+        Sequence("P::A", element_type, Location((1, 2)))
 
 
 def test_sequence_unsupported_element_type() -> None:
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r'^<stdin>:5:4: model: error: unsupported element type size of sequence "A"\n'
+            r'<stdin>:3:4: model: info: type "B" has size 4, must be multiple of 8$'
+        ),
+    ):
         Sequence(
             "P::A",
             Integer(
@@ -409,12 +435,93 @@ def test_sequence_unsupported_element_type() -> None:
                 Location((3, 4)),
             ),
             Location((5, 4)),
+        )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r'^<stdin>:5:4: model: error: unsupported element type size of sequence "A"\n'
+            r'__BUILTINS__:0:0: model: info: type "Boolean" has size 1, must be multiple of 8$'
         ),
-        r'^<stdin>:5:4: model: error: unsupported element type size of sequence "A"\n'
-        r'<stdin>:3:4: model: info: type "B" has size 4, must be multiple of 8$',
+    ):
+        Sequence("P::A", BOOLEAN, Location((5, 4)))
+
+
+@pytest.mark.parametrize(
+    ["unchecked", "expected"],
+    [
+        (
+            UncheckedInteger(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2))),
+            Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2))),
+        ),
+        (
+            UncheckedEnumeration(
+                ID("P::T"),
+                [(ID("A"), Number(0)), (ID("B"), Number(1))],
+                Number(8),
+                always_valid=False,
+                location=Location((1, 2)),
+            ),
+            Enumeration(
+                ID("P::T"),
+                [(ID("A"), Number(0)), (ID("B"), Number(1))],
+                Number(8),
+                always_valid=False,
+                location=Location((1, 2)),
+            ),
+        ),
+        (
+            UncheckedSequence(
+                ID("P::S"),
+                ID("P::T"),
+                Location((2, 3)),
+            ),
+            Sequence(
+                ID("P::S"),
+                Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2))),
+                Location((2, 3)),
+            ),
+        ),
+        (UNCHECKED_OPAQUE, OPAQUE),
+    ],
+)
+def test_unchecked_type_checked(unchecked: UncheckedType, expected: Type) -> None:
+    assert (
+        unchecked.checked(
+            [Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))]
+        )
+        == expected
     )
-    assert_type_error(
-        Sequence("P::A", BOOLEAN, Location((5, 4))),
-        r'^<stdin>:5:4: model: error: unsupported element type size of sequence "A"\n'
-        r'__BUILTINS__:0:0: model: info: type "Boolean" has size 1, must be multiple of 8$',
-    )
+
+
+@pytest.mark.parametrize(
+    ["unchecked", "expected"],
+    [
+        (
+            UncheckedInteger(
+                ID("T", Location((2, 3))), Number(0), Number(128), Number(8), Location((1, 2))
+            ),
+            r'^<stdin>:2:3: model: error: invalid format for identifier "T"$',
+        ),
+        (
+            UncheckedEnumeration(
+                ID("T", Location((2, 3))),
+                [(ID("A"), Number(0)), (ID("B"), Number(1))],
+                Number(8),
+                always_valid=False,
+                location=Location((1, 2)),
+            ),
+            r'^<stdin>:2:3: model: error: invalid format for identifier "T"$',
+        ),
+        (
+            UncheckedSequence(
+                ID("S", Location((4, 5))),
+                ID("T", Location((2, 3))),
+                Location((3, 4)),
+            ),
+            r'^<stdin>:2:3: model: error: undefined element type "T"$',
+        ),
+    ],
+)
+def test_unchecked_type_checked_error(unchecked: UncheckedType, expected: str) -> None:
+    with pytest.raises(RecordFluxError, match=expected):
+        unchecked.checked([])

@@ -17,6 +17,7 @@ from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.contract import ensure, invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail
 from rflx.identifier import ID, StrID
+from rflx.model.top_level_declaration import TopLevelDeclaration
 
 from . import type_ as mty
 
@@ -122,12 +123,11 @@ class AbstractMessage(mty.Type):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
         state: Optional[MessageState] = None,
     ) -> None:
-        super().__init__(identifier, location, error)
+        super().__init__(identifier, location)
 
-        assert len(self.identifier.parts) > 1, "type identifier must contain package"
+        self.error.propagate()
 
         if not structure:
             structure = [Link(INITIAL, FINAL)]
@@ -170,6 +170,8 @@ class AbstractMessage(mty.Type):
                 self._byte_order = byte_order
         except RecordFluxError:
             pass
+
+        self.error.propagate()
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -250,7 +252,6 @@ class AbstractMessage(mty.Type):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
     ) -> AbstractMessage:
         raise NotImplementedError
 
@@ -856,14 +857,11 @@ class Message(AbstractMessage):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
         state: Optional[MessageState] = None,
         skip_proof: bool = False,
         workers: int = 1,
     ) -> None:
-        super().__init__(
-            identifier, structure, types, checksums, byte_order, location, error, state
-        )
+        super().__init__(identifier, structure, types, checksums, byte_order, location, state)
 
         self._refinements: list[Refinement] = []
         self._skip_proof = skip_proof
@@ -908,7 +906,6 @@ class Message(AbstractMessage):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
     ) -> Message:
         return Message(
             identifier if identifier else self.identifier,
@@ -917,7 +914,6 @@ class Message(AbstractMessage):
             checksums if checksums else copy(self.checksums),
             byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
-            error if error else self.error,
             skip_proof=self._skip_proof,
         )
 
@@ -2179,7 +2175,6 @@ class DerivedMessage(Message):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
     ) -> None:
         super().__init__(
             identifier,
@@ -2188,7 +2183,6 @@ class DerivedMessage(Message):
             checksums if checksums else copy(base.checksums),
             byte_order if byte_order else copy(base.byte_order),
             location if location else base.location,
-            error if error else base.error,
         )
         self.base = base
 
@@ -2200,7 +2194,6 @@ class DerivedMessage(Message):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
     ) -> DerivedMessage:
         return DerivedMessage(
             identifier if identifier else self.identifier,
@@ -2210,7 +2203,6 @@ class DerivedMessage(Message):
             checksums if checksums else copy(self.checksums),
             byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
-            error if error else self.error,
         )
 
     def proven(self, skip_proof: bool = False, workers: int = 1) -> DerivedMessage:
@@ -2227,7 +2219,6 @@ class UnprovenMessage(AbstractMessage):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
     ) -> UnprovenMessage:
         return UnprovenMessage(
             identifier if identifier else self.identifier,
@@ -2236,7 +2227,6 @@ class UnprovenMessage(AbstractMessage):
             checksums if checksums else copy(self.checksums),
             byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
-            error if error else self.error,
         )
 
     def proven(self, skip_proof: bool = False, workers: int = 1) -> Message:
@@ -2247,7 +2237,6 @@ class UnprovenMessage(AbstractMessage):
             checksums=self.checksums,
             byte_order=self.byte_order,
             location=self.location,
-            error=self.error,
             state=self._state,
             skip_proof=skip_proof,
             workers=workers,
@@ -2383,12 +2372,17 @@ class UnprovenMessage(AbstractMessage):
 
         structure, types, byte_order = self._prune_dangling_fields(structure, types, byte_order)
         if not structure or not types:
-            fail(
-                f'empty message type when merging field "{field.identifier}"',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                field.identifier.location,
+            message.error.extend(
+                [
+                    (
+                        f'empty message type when merging field "{field.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        field.identifier.location,
+                    )
+                ]
             )
+        message.error.propagate()
         return message.copy(structure=structure, types=types, byte_order=byte_order)
 
     @staticmethod
@@ -2431,7 +2425,6 @@ class UnprovenMessage(AbstractMessage):
             message.checksums,
             message.byte_order,
             message.location,
-            message.error,
         )
 
     @staticmethod
@@ -2539,7 +2532,6 @@ class UnprovenDerivedMessage(UnprovenMessage):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
     ) -> None:
         super().__init__(
             identifier,
@@ -2548,7 +2540,6 @@ class UnprovenDerivedMessage(UnprovenMessage):
             checksums if checksums else copy(base.checksums),
             byte_order if byte_order else copy(base.byte_order),
             location if location else base.location,
-            error if error else base.error,
         )
         self.error.extend(base.error)
         self.base = base
@@ -2580,7 +2571,6 @@ class UnprovenDerivedMessage(UnprovenMessage):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
     ) -> UnprovenDerivedMessage:
         return UnprovenDerivedMessage(
             identifier if identifier else self.identifier,
@@ -2590,7 +2580,6 @@ class UnprovenDerivedMessage(UnprovenMessage):
             checksums if checksums else copy(self.checksums),
             byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
-            error if error else self.error,
         )
 
     def proven(self, skip_proof: bool = False, workers: int = 1) -> DerivedMessage:
@@ -2602,7 +2591,6 @@ class UnprovenDerivedMessage(UnprovenMessage):
             self.checksums,
             self.byte_order,
             self.location,
-            self.error,
         )
 
 
@@ -2616,23 +2604,22 @@ class Refinement(mty.Type):
         sdu: Message,
         condition: expr.Expr = expr.TRUE,
         location: Optional[Location] = None,
-        error: Optional[RecordFluxError] = None,
     ) -> None:
         super().__init__(
             ID(package) * "__REFINEMENT__"
             f"{sdu.identifier.flat}__{pdu.identifier.flat}__{field.name}__",
             location,
-            error,
         )
 
         self.pdu = pdu
         self.field = field
         self.sdu = sdu
         self.condition = condition
-        self.error = error or RecordFluxError()
 
         self._normalize()
         self._verify()
+
+        self.error.propagate()
 
     def _normalize(self) -> None:
         """
@@ -2652,7 +2639,7 @@ class Refinement(mty.Type):
             )
         )
 
-    def _verify(self) -> None:
+    def _check_identifier(self) -> None:
         if len(self.package.parts) != 1:
             self.error.extend(
                 [
@@ -2665,6 +2652,7 @@ class Refinement(mty.Type):
                 ],
             )
 
+    def _verify(self) -> None:
         for f, t in self.pdu.types.items():
             if f == self.field:
                 if not isinstance(t, mty.Opaque):
@@ -2780,6 +2768,244 @@ class Refinement(mty.Type):
     @property
     def dependencies(self) -> list[mty.Type]:
         return list(unique([*self.pdu.dependencies, *self.sdu.dependencies, self]))
+
+
+@dataclass
+class UncheckedMessage(mty.UncheckedType):
+    identifier: ID
+    structure: Sequence[Link]
+    parameter_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
+    field_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
+    checksums: Optional[Mapping[ID, Sequence[expr.Expr]]]
+    byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]]
+    location: Optional[Location]
+
+    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> UnprovenMessage:
+        error = RecordFluxError()
+        arguments = {}
+        message_types: dict[Field, mty.Type] = {}
+        for field, type_identifier, type_arguments in (*self.parameter_types, *self.field_types):
+            field_type = next(
+                (
+                    t
+                    for t in declarations
+                    if isinstance(t, mty.Type) and t.identifier == type_identifier
+                ),
+                None,
+            )
+            if field_type:
+                if isinstance(field_type, AbstractMessage):
+                    self._check_message_arguments(
+                        error,
+                        field_type,
+                        type_arguments,
+                        type_identifier.location,
+                    )
+                    arguments[type_identifier] = dict(type_arguments)
+                if field in message_types:
+                    error.extend(
+                        [
+                            (
+                                f'name conflict for "{field.identifier}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                field.identifier.location,
+                            ),
+                            (
+                                "conflicting name",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                [f.identifier for f in message_types if f == field][0].location,
+                            ),
+                        ]
+                    )
+                message_types[field] = field_type
+            else:
+                error.extend(
+                    [
+                        (
+                            f'undefined type "{type_identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            type_identifier.location,
+                        )
+                    ]
+                )
+
+        try:
+            result = UnprovenMessage(
+                self.identifier,
+                self.structure,
+                message_types,
+                self.checksums,
+                self.byte_order,
+                self.location,
+            ).merged(arguments)
+        except RecordFluxError as e:
+            error.extend(e)
+
+        error.propagate()
+
+        return result
+
+    def _check_message_arguments(
+        self,
+        argument_errors: RecordFluxError,
+        message: AbstractMessage,
+        type_arguments: Sequence[tuple[ID, expr.Expr]],
+        field_type_location: Optional[Location],
+    ) -> None:
+        for param, arg in itertools.zip_longest(message.parameter_types, type_arguments):
+            if arg:
+                arg_id, arg_expression = arg
+                if not param or (arg_id != param.identifier):
+                    argument_errors.extend(
+                        [
+                            (
+                                f'unexpected argument "{arg_id}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                arg_id.location,
+                            ),
+                            (
+                                "expected no argument"
+                                if not param
+                                else f'expected argument for parameter "{param.identifier}"',
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                arg_id.location,
+                            ),
+                        ]
+                    )
+            else:
+                argument_errors.extend(
+                    [
+                        (
+                            "missing argument",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            field_type_location,
+                        ),
+                        (
+                            f'expected argument for parameter "{param.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            param.identifier.location,
+                        ),
+                    ]
+                )
+
+
+@dataclass
+class UncheckedDerivedMessage(mty.UncheckedType):
+    identifier: ID
+    base_identifier: ID
+    location: Optional[Location]
+
+    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> UnprovenMessage:
+        base_types = [
+            t
+            for t in declarations
+            if isinstance(t, mty.Type) and t.identifier == self.base_identifier
+        ]
+
+        if not base_types:
+            fail(
+                f'undefined base message "{self.base_identifier}" in derived message',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.base_identifier.location,
+            )
+
+        error = RecordFluxError()
+        base_messages = [t for t in base_types if isinstance(t, (UnprovenMessage, Message))]
+
+        if not base_messages:
+            error.extend(
+                [
+                    (
+                        f'illegal derivation "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.identifier.location,
+                    ),
+                    (
+                        f'invalid base message type "{self.base_identifier}"',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        base_types[0].identifier.location,
+                    ),
+                ],
+            )
+
+        error.propagate()
+
+        try:
+            result = UnprovenDerivedMessage(
+                self.identifier, base_messages[0], location=self.location
+            ).merged()
+        except RecordFluxError as e:
+            error.extend(e)
+
+        error.propagate()
+
+        return result
+
+
+@dataclass
+class UncheckedRefinement(mty.UncheckedType):
+    identifier: ID
+    pdu: ID
+    field: Field
+    sdu: ID
+    condition: expr.Expr
+    location: Optional[Location]
+
+    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> Refinement:
+        error = RecordFluxError()
+        messages = {t.identifier: t for t in declarations if isinstance(t, Message)}
+
+        if self.pdu not in messages:
+            error.extend(
+                [
+                    (
+                        f'undefined type "{self.pdu}" in refinement',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.pdu.location,
+                    )
+                ]
+            )
+
+        if self.sdu not in messages:
+            error.extend(
+                [
+                    (
+                        f'undefined type "{self.sdu}" in refinement of "{self.pdu}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.sdu.location,
+                    )
+                ]
+            )
+
+        error.propagate()
+
+        try:
+            result = Refinement(
+                self.identifier,
+                messages[self.pdu],
+                self.field,
+                messages[self.sdu],
+                self.condition,
+                self.location,
+            )
+        except RecordFluxError as e:
+            error.extend(e)
+
+        error.propagate()
+
+        return result
 
 
 def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:

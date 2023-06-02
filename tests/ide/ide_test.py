@@ -51,12 +51,13 @@ def test_multiple_errors() -> None:
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid", should'
             ' be "rflx_invalid.rflx"',
             f'{path}:31:4: model: error: illegal redefinition of built-in type "Boolean"',
+            f'{path}:72:18: parser: error: undefined field "X"',
             f'{path}:13:9: model: error: first of "Range2" contains variable',
             f'{path}:13:9: model: error: last of "Range2" contains variable',
             f'{path}:16:9: model: error: range of "Range3" negative',
             f'{path}:19:9: model: error: size of "Range4" contains variable',
             f'{path}:22:9: model: error: size of "Range5" too small',
-            f'{path}:25:27: parser: error: undefined element type "RFLX_Invalid::Undef"',
+            f'{path}:25:27: model: error: undefined element type "RFLX_Invalid::Undef"',
             f'{path}:38:28: model: error: duplicate literal "E2_2"',
             f"{path}:38:22: model: info: previous occurrence",
             f'{path}:38:9: model: error: size of "E2" too small',
@@ -66,8 +67,7 @@ def test_multiple_errors() -> None:
             f'{path}:64:10: model: error: duplicate link from "Z" to "Final"',
             f"{path}:64:16: model: info: duplicate link",
             f"{path}:64:26: model: info: duplicate link",
-            f'{path}:70:14: parser: error: undefined type "RFLX_Invalid::Undef_Type"',
-            f'{path}:72:18: parser: error: undefined field "X"',
+            f'{path}:70:14: model: error: undefined type "RFLX_Invalid::Undef_Type"',
             f'{path}:70:10: model: error: missing type for field "Z" in "RFLX_Invalid::M2"',
             f'{path}:77:9: model: error: unsupported element type size of sequence "A3"',
             f'{path}:76:9: model: info: type "E6" has size 4, must be multiple of 8',
@@ -76,30 +76,30 @@ def test_multiple_errors() -> None:
             f"{path}:87:9: model: info: on path Field",
             f'{path}:94:26: model: error: size of opaque field "Data" not multiple of 8 bit'
             " (Length -> Data)",
-            f'{path}:97:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
-            f'{path}:97:40: parser: error: undefined type "RFLX_Invalid::SDU2" in refinement '
+            f'{path}:97:8: model: error: undefined type "RFLX_Invalid::PDU1" in refinement',
+            f'{path}:97:40: model: error: undefined type "RFLX_Invalid::SDU2" in refinement '
             'of "RFLX_Invalid::PDU1"',
-            f'{path}:100:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
-            f'{path}:100:26: parser: error: undefined type "RFLX_Invalid::SDU2" in refinement '
+            f'{path}:100:8: model: error: undefined type "RFLX_Invalid::PDU1" in refinement',
+            f'{path}:100:26: model: error: undefined type "RFLX_Invalid::SDU2" in refinement '
             'of "RFLX_Invalid::PDU1"',
-            f'{path}:103:4: parser: error: undefined type "RFLX_Invalid::Undef_PDU" in refinement',
-            f'{path}:103:31: parser: error: undefined type "RFLX_Invalid::R" in refinement '
+            f'{path}:103:8: model: error: undefined type "RFLX_Invalid::Undef_PDU" in refinement',
+            f'{path}:103:31: model: error: undefined type "RFLX_Invalid::R" in refinement '
             'of "RFLX_Invalid::Undef_PDU"',
-            f'{path}:106:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
-            f'{path}:106:26: parser: error: undefined type "RFLX_Invalid::Undef_Type" in '
+            f'{path}:106:8: model: error: undefined type "RFLX_Invalid::PDU1" in refinement',
+            f'{path}:106:26: model: error: undefined type "RFLX_Invalid::Undef_Type" in '
             'refinement of "RFLX_Invalid::PDU1"',
-            f'{path}:109:4: parser: error: undefined type "RFLX_Invalid::PDU1" in refinement',
-            f'{path}:109:33: parser: error: undefined type "RFLX_Invalid::R" in refinement '
+            f'{path}:109:8: model: error: undefined type "RFLX_Invalid::PDU1" in refinement',
+            f'{path}:109:33: model: error: undefined type "RFLX_Invalid::R" in refinement '
             'of "RFLX_Invalid::PDU1"',
-            f'{path}:115:21: parser: error: undefined base message "RFLX_Invalid::PDU1"'
+            f'{path}:115:21: model: error: undefined base message "RFLX_Invalid::PDU1"'
             " in derived message",
-            f'{path}:116:21: parser: error: undefined base message "RFLX_Invalid::PDU1"'
+            f'{path}:116:21: model: error: undefined base message "RFLX_Invalid::PDU1"'
             " in derived message",
-            f'{path}:119:21: parser: error: undefined base message "RFLX_Invalid::Undef_Type"'
+            f'{path}:119:21: model: error: undefined base message "RFLX_Invalid::Undef_Type"'
             " in derived message",
-            f'{path}:122:9: parser: error: illegal derivation "RFLX_Invalid::Ref3"',
-            f'{path}:8:9: parser: info: invalid base message type "RFLX_Invalid::R"',
-            f'{path}:125:21: parser: error: undefined base message "RFLX_Invalid::Ref1"'
+            f'{path}:122:9: model: error: illegal derivation "RFLX_Invalid::Ref3"',
+            f'{path}:8:9: model: info: invalid base message type "RFLX_Invalid::R"',
+            f'{path}:125:21: model: error: undefined base message "RFLX_Invalid::Ref1"'
             " in derived message",
             f'{path}:132:19: model: error: undefined variable "F1"',
             f"{path}:132:19: model: info: on path Length -> Data",
@@ -126,8 +126,8 @@ def test_multiple_errors() -> None:
             f"{path}:172:27: model: info: found aggregate with element type universal integer"
             " (1 .. 1000)",
             f"{path}:172:19: model: info: on path Length -> Data1 -> Data2 -> Final",
-            f'{path}:175:36: parser: error: undefined element type "RFLX_Invalid::M5"',
-            f'{path}:181:17: parser: error: undefined type "RFLX_Invalid::M5_Sequence"',
+            f'{path}:175:36: model: error: undefined element type "RFLX_Invalid::M5"',
+            f'{path}:181:17: model: error: undefined type "RFLX_Invalid::M5_Sequence"',
             f'{path}:181:10: model: error: missing type for field "Data" in "RFLX_Invalid::M7"',
             f'{path}:192:10: model: error: conflicting conditions for field "F1"',
             f"{path}:196:19: model: info: condition 0 (F1 -> F2): F1 < 80",

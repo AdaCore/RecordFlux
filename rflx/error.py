@@ -180,6 +180,25 @@ class BaseError(Exception, Base):
             print(self)
             self._messages = deque()
 
+    def fail(
+        self,
+        message: str,
+        subsystem: Subsystem,
+        severity: Severity = Severity.ERROR,
+        location: Optional[Location] = None,
+    ) -> NoReturn:
+        self.extend(
+            [
+                (
+                    message,
+                    subsystem,
+                    severity,
+                    location,
+                )
+            ]
+        )
+        raise self
+
 
 class RecordFluxError(BaseError):
     """Error indicating an issue in an input or a known limitation."""
@@ -199,7 +218,7 @@ def fail(
     severity: Severity = Severity.ERROR,
     location: Optional[Location] = None,
 ) -> NoReturn:
-    _fail(RecordFluxError(), message, subsystem, severity, location)
+    RecordFluxError().fail(message, subsystem, severity, location)
 
 
 def fatal_fail(
@@ -208,19 +227,7 @@ def fatal_fail(
     severity: Severity = Severity.ERROR,
     location: Optional[Location] = None,
 ) -> NoReturn:
-    _fail(FatalError(), message, subsystem, severity, location)
-
-
-def _fail(
-    error: BaseError,
-    message: str,
-    subsystem: Subsystem,
-    severity: Severity = Severity.ERROR,
-    location: Optional[Location] = None,
-) -> NoReturn:
-    error.extend([(message, subsystem, severity, location)])
-    error.propagate()
-    assert False
+    FatalError().fail(message, subsystem, severity, location)
 
 
 def warn(
@@ -229,6 +236,4 @@ def warn(
     severity: Severity = Severity.WARNING,
     location: Optional[Location] = None,
 ) -> None:
-    e = RecordFluxError()
-    e.extend([(message, subsystem, severity, location)])
-    print(e)
+    print(RecordFluxError([(message, subsystem, severity, location)]))

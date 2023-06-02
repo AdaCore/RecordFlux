@@ -62,6 +62,7 @@ from rflx.model import (
     Refinement,
     Sequence,
     Type,
+    UncheckedMessage,
     UnprovenDerivedMessage,
     UnprovenMessage,
 )
@@ -96,7 +97,7 @@ from tests.data.models import (
     UNIVERSAL_VALUE,
     UNIVERSAL_VALUES,
 )
-from tests.utils import assert_equal, assert_message_model_error, assert_type_error
+from tests.utils import assert_equal, assert_message_model_error
 
 M_NO_REF = UnprovenMessage(
     "P::No_Ref",
@@ -1083,7 +1084,7 @@ def test_sequence_aggregate_out_of_range() -> None:
     ]
 
     types = {
-        Field("F"): Sequence("P::Sequence", Integer("P::Element", Number(0), Number(63), Number(6)))
+        Field("F"): Sequence("P::Sequence", Integer("P::Element", Number(0), Number(63), Number(8)))
     }
 
     assert_message_model_error(
@@ -2551,7 +2552,7 @@ def test_aggregate_inequal_invalid_size() -> None:
 
 def test_aggregate_equal_sequence_valid_size() -> None:
     structure = [
-        Link(INITIAL, Field("Magic"), size=Number(14)),
+        Link(INITIAL, Field("Magic"), size=Number(16)),
         Link(
             Field("Magic"),
             FINAL,
@@ -2560,7 +2561,7 @@ def test_aggregate_equal_sequence_valid_size() -> None:
     ]
     types = {
         Field("Magic"): Sequence(
-            "P::Arr", Integer("P::Integer", Number(0), Number(127), Number(7))
+            "P::Arr", Integer("P::Integer", Number(0), Number(127), Number(8))
         ),
     }
     Message("P::M", structure, types)
@@ -2581,7 +2582,7 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
     types = {
         Field("Magic"): Sequence(
             "P::Arr",
-            Integer("P::Integer", Number(0), Number(127), Number(7), location=Location((66, 3))),
+            Integer("P::Integer", Number(0), Number(127), Number(8), location=Location((66, 3))),
         ),
     }
     assert_message_model_error(
@@ -2591,7 +2592,7 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
         r'<stdin>:17:3: model: error: contradicting condition in "P::M"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
         r'<stdin>:17:3: model: info: unsatisfied "2 [*] Integer\'Size = Magic\'Size"\n'
-        r'<stdin>:66:3: model: info: unsatisfied "Integer\'Size = 7"\n'
+        r'<stdin>:66:3: model: info: unsatisfied "Integer\'Size = 8"\n'
         r'<stdin>:19:17: model: info: unsatisfied "Magic\'Size = 40"'
         r"$",
     )
@@ -3921,13 +3922,16 @@ def test_merge_message_error_name_conflict() -> None:
         location=Location((2, 9)),
     )
 
-    assert_type_error(
-        m1.merged(),
-        r"^"
-        r'<stdin>:30:5: model: error: name conflict for "F1_F2" in "P::M1"\n'
-        r'<stdin>:15:3: model: info: when merging message "P::M2"\n'
-        r'<stdin>:20:8: model: info: into field "F1"$',
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:30:5: model: error: name conflict for "F1_F2" in "P::M1"\n'
+            r'<stdin>:15:3: model: info: when merging message "P::M2"\n'
+            r'<stdin>:20:8: model: info: into field "F1"$'
+        ),
+    ):
+        m1.merged()
 
 
 def test_merge_message_parameterized() -> None:
@@ -4245,7 +4249,7 @@ def test_set_refinements_error() -> None:
         FatalError, match=r"^model: error: setting refinements for different message$"
     ):
         message.set_refinements(
-            [REFINEMENT, Refinement("In_Message", TLV_MESSAGE, Field("F"), MESSAGE)]
+            [REFINEMENT, Refinement("In_Message", TLV_MESSAGE, Field("Value"), MESSAGE)]
         )
 
 
@@ -4328,12 +4332,11 @@ def test_refinement_dependencies() -> None:
 
 
 def test_refinement_invalid_package() -> None:
-    assert_type_error(
-        Refinement(
-            ID("A::B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME
-        ),
-        r'^<stdin>:22:10: model: error: unexpected format of package name "A::B"$',
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^<stdin>:22:10: model: error: unexpected format of package name "A::B"$',
+    ):
+        Refinement(ID("A::B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
 
 
 def test_refinement_invalid_field_type() -> None:
@@ -4341,20 +4344,24 @@ def test_refinement_invalid_field_type() -> None:
 
     message = Message("P::M", [Link(INITIAL, x), Link(x, FINAL)], {x: INTEGER})
 
-    assert_type_error(
-        Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
-        r'^<stdin>:33:22: model: error: invalid type of field "X" in refinement of "P::M"\n'
-        r"<stdin>:20:10: model: info: expected field of type Opaque$",
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r'^<stdin>:33:22: model: error: invalid type of field "X" in refinement of "P::M"\n'
+            r"<stdin>:20:10: model: info: expected field of type Opaque$"
+        ),
+    ):
+        Refinement("P", message, Field(ID("X", Location((33, 22)))), message)
 
 
 def test_refinement_invalid_field() -> None:
     message = Message("P::M", [], {})
 
-    assert_type_error(
-        Refinement("P", message, Field(ID("X", Location((33, 22)))), message),
-        r'^<stdin>:33:22: model: error: invalid field "X" in refinement of "P::M"$',
-    )
+    with pytest.raises(
+        RecordFluxError,
+        match=(r'^<stdin>:33:22: model: error: invalid field "X" in refinement of "P::M"$'),
+    ):
+        Refinement("P", message, Field(ID("X", Location((33, 22)))), message)
 
 
 def test_refinement_invalid_condition() -> None:
@@ -4362,19 +4369,22 @@ def test_refinement_invalid_condition() -> None:
 
     message = Message("P::M", [Link(INITIAL, x, size=Number(8)), Link(x, FINAL)], {x: OPAQUE})
 
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:10:20: model: error: unknown field or literal "Y" in refinement condition'
+            r' of "P::M"'
+            r"$"
+        ),
+    ):
         Refinement(
             "P",
             message,
             Field("X"),
             message,
             Equal(Variable("Y", location=Location((10, 20))), Number(1)),
-        ),
-        r"^"
-        r'<stdin>:10:20: model: error: unknown field or literal "Y" in refinement condition'
-        r' of "P::M"'
-        r"$",
-    )
+        )
 
 
 def test_refinement_invalid_condition_unqualified_literal() -> None:
@@ -4394,19 +4404,22 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
         {x: e, y: OPAQUE},
     )
 
-    assert_type_error(
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:10:20: model: error: unknown field or literal "E1" in refinement condition'
+            r' of "P::M"'
+            r"$"
+        ),
+    ):
         Refinement(
             "P",
             message,
             y,
             message,
             Equal(Variable("X"), Variable("E1", location=Location((10, 20)))),
-        ),
-        r"^"
-        r'<stdin>:10:20: model: error: unknown field or literal "E1" in refinement condition'
-        r' of "P::M"'
-        r"$",
-    )
+        )
 
 
 def test_boolean_variable_as_condition() -> None:
@@ -4468,20 +4481,20 @@ def test_boolean_variable_as_condition() -> None:
     ],
 )
 def test_always_true_refinement(message: Message, condition: Expr) -> None:
-    refinement = Refinement(
-        "In_Message",
-        message,
-        Field(ID("Value", location=Location((10, 20)))),
-        MESSAGE,
-        condition,
-    )
-    assert_type_error(
-        refinement,
-        (
+    with pytest.raises(
+        RecordFluxError,
+        match=(
             rf'^<stdin>:10:20: model: error: condition "{condition}"'
             ' in refinement of "P::M" is always true$'
         ),
-    )
+    ):
+        Refinement(
+            "In_Message",
+            message,
+            Field(ID("Value", location=Location((10, 20)))),
+            MESSAGE,
+            condition,
+        )
 
 
 @pytest.mark.parametrize(
@@ -4527,20 +4540,20 @@ def test_always_true_refinement(message: Message, condition: Expr) -> None:
     ],
 )
 def test_always_false_refinement(message: Message, condition: Expr) -> None:
-    refinement = Refinement(
-        "In_Message",
-        message,
-        Field(ID("Value", location=Location((10, 20)))),
-        MESSAGE,
-        condition,
-    )
-    assert_type_error(
-        refinement,
-        (
+    with pytest.raises(
+        RecordFluxError,
+        match=(
             rf'^<stdin>:10:20: model: error: condition "{condition}"'
             ' in refinement of "P::M" is always false$'
         ),
-    )
+    ):
+        Refinement(
+            "In_Message",
+            message,
+            Field(ID("Value", location=Location((10, 20)))),
+            MESSAGE,
+            condition,
+        )
 
 
 @pytest.mark.parametrize(
@@ -4660,3 +4673,116 @@ def test_possibly_always_true_message_condition(
         '<stdin>:10:20: model: warning: condition "Tag = TLV::Msg_Data"'
         ' on transition "Tag" -> "Final" might be always true\n'
     ) == captured.out
+
+
+@pytest.mark.parametrize(
+    ["unchecked", "expected"],
+    [
+        (
+            UncheckedMessage(
+                ID("P::No_Ref"),
+                [
+                    Link(INITIAL, Field("F1"), size=Number(16)),
+                    Link(Field("F1"), Field("F2")),
+                    Link(
+                        Field("F2"),
+                        Field("F3"),
+                        LessEqual(Variable("F2"), Number(100)),
+                        first=First("F2"),
+                    ),
+                    Link(
+                        Field("F2"),
+                        Field("F4"),
+                        GreaterEqual(Variable("F2"), Number(200)),
+                        first=First("F2"),
+                    ),
+                    Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
+                    Link(Field("F4"), FINAL),
+                ],
+                [],
+                [
+                    (Field("F1"), OPAQUE.identifier, []),
+                    (Field("F2"), INTEGER.identifier, []),
+                    (Field("F3"), ENUMERATION.identifier, []),
+                    (Field("F4"), INTEGER.identifier, []),
+                ],
+                None,
+                None,
+                None,
+            ),
+            UnprovenMessage(
+                "P::No_Ref",
+                [
+                    Link(INITIAL, Field("F1"), size=Number(16)),
+                    Link(Field("F1"), Field("F2")),
+                    Link(
+                        Field("F2"),
+                        Field("F3"),
+                        LessEqual(Variable("F2"), Number(100)),
+                        first=First("F2"),
+                    ),
+                    Link(
+                        Field("F2"),
+                        Field("F4"),
+                        GreaterEqual(Variable("F2"), Number(200)),
+                        first=First("F2"),
+                    ),
+                    Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
+                    Link(Field("F4"), FINAL),
+                ],
+                {
+                    Field("F1"): OPAQUE,
+                    Field("F2"): INTEGER,
+                    Field("F3"): ENUMERATION,
+                    Field("F4"): INTEGER,
+                },
+            ),
+        ),
+    ],
+)
+def test_unchecked_message_checked(unchecked: UncheckedMessage, expected: Message) -> None:
+    assert unchecked.checked([OPAQUE, ENUMERATION, INTEGER]) == expected
+
+
+@pytest.mark.parametrize(
+    ["unchecked", "expected"],
+    [
+        (
+            UncheckedMessage(
+                ID("T", Location((2, 3))),
+                [
+                    Link(INITIAL, Field("F1"), size=Number(16)),
+                    Link(Field("F1"), Field("F2")),
+                    Link(
+                        Field("F2"),
+                        Field("F3"),
+                        LessEqual(Variable("F2"), Number(100)),
+                        first=First("F2"),
+                    ),
+                    Link(
+                        Field("F2"),
+                        Field("F4"),
+                        GreaterEqual(Variable("F2"), Number(200)),
+                        first=First("F2"),
+                    ),
+                    Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
+                    Link(Field("F4"), FINAL),
+                ],
+                [],
+                [
+                    (Field("F1"), OPAQUE.identifier, []),
+                    (Field("F2"), INTEGER.identifier, []),
+                    (Field("F3"), ENUMERATION.identifier, []),
+                    (Field("F4"), INTEGER.identifier, []),
+                ],
+                None,
+                None,
+                None,
+            ),
+            r'^<stdin>:2:3: model: error: invalid format for identifier "T"$',
+        ),
+    ],
+)
+def test_unchecked_message_checked_error(unchecked: UncheckedMessage, expected: str) -> None:
+    with pytest.raises(RecordFluxError, match=expected):
+        unchecked.checked([OPAQUE, ENUMERATION, INTEGER])

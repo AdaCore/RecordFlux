@@ -1,4 +1,5 @@
-from .message import (  # noqa: F401
+from .cache import Cache as Cache
+from .message import (
     FINAL as FINAL,
     INITIAL as INITIAL,
     AbstractMessage as AbstractMessage,
@@ -8,25 +9,34 @@ from .message import (  # noqa: F401
     Link as Link,
     Message as Message,
     Refinement as Refinement,
+    UncheckedDerivedMessage as UncheckedDerivedMessage,
+    UncheckedMessage as UncheckedMessage,
+    UncheckedRefinement as UncheckedRefinement,
     UnprovenDerivedMessage as UnprovenDerivedMessage,
     UnprovenMessage as UnprovenMessage,
 )
-from .model import Model as Model  # noqa: F401
-from .session import (  # noqa: F401
+from .model import Model as Model, UncheckedModel as UncheckedModel
+from .session import (
     FINAL_STATE as FINAL_STATE,
     AbstractSession as AbstractSession,
     Session as Session,
     State as State,
     Transition as Transition,
+    UncheckedSession as UncheckedSession,
     UnprovenSession as UnprovenSession,
 )
-from .top_level_declaration import TopLevelDeclaration as TopLevelDeclaration  # noqa: F401
-from .type_ import (  # noqa: F401
+from .top_level_declaration import (
+    TopLevelDeclaration as TopLevelDeclaration,
+    UncheckedTopLevelDeclaration as UncheckedTopLevelDeclaration,
+)
+from .type_ import (
     BOOLEAN as BOOLEAN,
     BUILTIN_LITERALS as BUILTIN_LITERALS,
     BUILTIN_TYPES as BUILTIN_TYPES,
     INTERNAL_TYPES as INTERNAL_TYPES,
     OPAQUE as OPAQUE,
+    UNCHECKED_BOOLEAN as UNCHECKED_BOOLEAN,
+    UNCHECKED_OPAQUE as UNCHECKED_OPAQUE,
     Composite as Composite,
     Enumeration as Enumeration,
     Integer as Integer,
@@ -34,6 +44,11 @@ from .type_ import (  # noqa: F401
     Scalar as Scalar,
     Sequence as Sequence,
     Type as Type,
+    UncheckedEnumeration as UncheckedEnumeration,
+    UncheckedInteger as UncheckedInteger,
+    UncheckedOpaque as UncheckedOpaque,
+    UncheckedSequence as UncheckedSequence,
+    UncheckedType as UncheckedType,
     internal_type_identifier as internal_type_identifier,
     is_builtin_type as is_builtin_type,
     is_internal_type as is_internal_type,

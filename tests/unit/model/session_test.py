@@ -18,6 +18,8 @@ from rflx.model import (
     State,
     Transition,
     Type,
+    UncheckedSession,
+    UnprovenSession,
     declaration as decl,
     statement as stmt,
 )
@@ -2790,3 +2792,128 @@ def test_message_assignment_from_function() -> None:
         types=[NULL_MESSAGE],
         location=Location((1, 1)),
     )
+
+
+@pytest.mark.parametrize(
+    ["unchecked", "expected"],
+    [
+        (
+            UncheckedSession(
+                ID("P::S"),
+                [
+                    State(
+                        "A",
+                        declarations=[],
+                        actions=[stmt.Read("X", expr.Variable("M"))],
+                        transitions=[
+                            Transition("B"),
+                        ],
+                    ),
+                    State(
+                        "B",
+                        declarations=[
+                            decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
+                        ],
+                        actions=[],
+                        transitions=[
+                            Transition(
+                                "null",
+                                condition=expr.And(
+                                    expr.Equal(expr.Variable("Z"), expr.TRUE),
+                                    expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                                ),
+                                description="rfc1149.txt+45:4-47:8",
+                            ),
+                            Transition("A"),
+                        ],
+                        description="rfc1149.txt+51:4-52:9",
+                    ),
+                ],
+                [
+                    decl.VariableDeclaration("M", "TLV::Message"),
+                    decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
+                ],
+                [
+                    decl.ChannelDeclaration("X", readable=True, writable=True),
+                    decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
+                    decl.FunctionDeclaration(
+                        "G", [decl.Argument("P", BOOLEAN.identifier)], BOOLEAN.identifier
+                    ),
+                ],
+                Location((1, 2)),
+            ),
+            UnprovenSession(
+                "P::S",
+                [
+                    State(
+                        "A",
+                        declarations=[],
+                        actions=[stmt.Read("X", expr.Variable("M"))],
+                        transitions=[
+                            Transition("B"),
+                        ],
+                    ),
+                    State(
+                        "B",
+                        declarations=[
+                            decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
+                        ],
+                        actions=[],
+                        transitions=[
+                            Transition(
+                                "null",
+                                condition=expr.And(
+                                    expr.Equal(expr.Variable("Z"), expr.TRUE),
+                                    expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                                ),
+                                description="rfc1149.txt+45:4-47:8",
+                            ),
+                            Transition("A"),
+                        ],
+                        description="rfc1149.txt+51:4-52:9",
+                    ),
+                ],
+                [
+                    decl.VariableDeclaration("M", "TLV::Message"),
+                    decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
+                ],
+                [
+                    decl.ChannelDeclaration("X", readable=True, writable=True),
+                    decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
+                    decl.FunctionDeclaration(
+                        "G", [decl.Argument("P", BOOLEAN.identifier)], BOOLEAN.identifier
+                    ),
+                ],
+                [BOOLEAN, TLV_MESSAGE],
+                Location((1, 2)),
+            ),
+        ),
+    ],
+)
+def test_unchecked_session_checked(unchecked: UncheckedSession, expected: Session) -> None:
+    assert (
+        unchecked.checked(
+            [BOOLEAN, TLV_MESSAGE],
+        )
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
+    ["unchecked", "expected"],
+    [
+        (
+            UncheckedSession(
+                ID("T", Location((2, 3))),
+                [State("Start", [Transition(target=ID("null"))])],
+                [],
+                [],
+                Location((1, 2)),
+            ),
+            r'^<stdin>:2:3: model: error: invalid format for identifier "T"$',
+        ),
+    ],
+)
+def test_unchecked_session_checked_error(unchecked: UncheckedSession, expected: str) -> None:
+    with pytest.raises(RecordFluxError, match=expected):
+        unchecked.checked([])

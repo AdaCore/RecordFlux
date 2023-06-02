@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import itertools
 import logging
 import textwrap
 from collections import OrderedDict, defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 import rflx_lang as lang
 
@@ -19,11 +18,10 @@ from rflx.common import STDIN, unique
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, warn
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
-from rflx.model import declaration as decl, statement as stmt
+from rflx.model import Cache, declaration as decl, statement as stmt
 from rflx.specification.const import RESERVED_WORDS
 
 from . import style
-from .cache import Cache
 
 log = logging.getLogger(__name__)
 
@@ -233,39 +231,21 @@ def _check_session_identifier(
         )
 
 
-def create_unproven_session(
-    error: RecordFluxError,
-    session: lang.SessionDecl,
-    package: ID,
-    filename: Path,
-    types: Optional[Sequence[model.Type]] = None,
-) -> model.UnprovenSession:
-    _check_session_identifier(error, session, filename)
-
-    return model.UnprovenSession(
-        package * create_id(error, session.f_identifier, filename),
-        [create_state(error, s, package, filename) for s in session.f_states],
-        [create_declaration(error, d, package, filename) for d in session.f_declarations],
-        [create_formal_declaration(error, p, package, filename) for p in session.f_parameters],
-        types or [],
-        node_location(session, filename),
-    )
-
-
 def create_session(
     error: RecordFluxError,
     session: lang.SessionDecl,
     package: ID,
     filename: Path,
-    workers: int,
-    types: Optional[Sequence[model.Type]] = None,
-) -> Optional[model.Session]:
-    try:
-        return create_unproven_session(error, session, package, filename, types).proven(workers)
-    except RecordFluxError as e:
-        error.extend(e)
+) -> model.UncheckedSession:
+    _check_session_identifier(error, session, filename)
 
-    return None
+    return model.UncheckedSession(
+        package * create_id(error, session.f_identifier, filename),
+        [create_state(error, s, package, filename) for s in session.f_states],
+        [create_declaration(error, d, package, filename) for d in session.f_declarations],
+        [create_formal_declaration(error, p, package, filename) for p in session.f_parameters],
+        node_location(session, filename),
+    )
 
 
 def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Path) -> ID:
@@ -308,35 +288,15 @@ def create_sequence(
     identifier: ID,
     _parameters: lang.Parameters,
     sequence: lang.TypeDef,
-    types: Sequence[model.Type],
-    _skip_verification: bool,
-    _workers: int,
-    _cache: Cache,
     filename: Path,
-) -> Optional[model.Type]:
+) -> Optional[model.UncheckedSequence]:
     assert isinstance(sequence, lang.SequenceTypeDef)
     element_identifier = model.internal_type_identifier(
         create_id(error, sequence.f_element_type, filename), identifier.parent
     )
-
-    try:
-        element_type = next(t for t in types if element_identifier == t.identifier)
-    except StopIteration:
-        error.extend(
-            [
-                (
-                    f'undefined element type "{element_identifier}"',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    element_identifier.location,
-                )
-            ]
-        )
-        return None
-
-    result = model.Sequence(identifier, element_type, type_location(identifier, sequence))
-    error.extend(result.error)
-    return result
+    return model.UncheckedSequence(
+        identifier, element_identifier, type_location(identifier, sequence)
+    )
 
 
 def create_numeric_literal(
@@ -900,10 +860,6 @@ def create_modular(
     identifier: ID,
     _parameters: lang.Parameters,
     modular: lang.TypeDef,
-    _types: Sequence[model.Type],
-    _skip_verification: bool,
-    _workers: int,
-    _cache: Cache,
     filename: Path,
 ) -> None:
     assert isinstance(modular, lang.ModularTypeDef)
@@ -934,12 +890,8 @@ def create_range(
     identifier: ID,
     _parameters: lang.Parameters,
     rangetype: lang.TypeDef,
-    _types: Sequence[model.Type],
-    _skip_verification: bool,
-    _workers: int,
-    _cache: Cache,
     filename: Path,
-) -> Optional[model.Type]:
+) -> Optional[model.UncheckedInteger]:
     assert isinstance(rangetype, lang.RangeTypeDef)
     if rangetype.f_size.f_identifier.text != "Size":
         error.extend(
@@ -954,14 +906,13 @@ def create_range(
             ]
         )
     size = create_math_expression(error, rangetype.f_size.f_value, filename)
-    result = model.Integer(
+    result = model.UncheckedInteger(
         identifier,
         create_math_expression(error, rangetype.f_first, filename),
         create_math_expression(error, rangetype.f_last, filename),
         size,
         type_location(identifier, rangetype),
     )
-    error.extend(result.error)
     return result
 
 
@@ -970,14 +921,12 @@ def create_null_message(
     identifier: ID,
     _parameters: lang.Parameters,
     message: lang.TypeDef,
-    _types: Sequence[model.Type],
-    _skip_verification: bool,
-    _workers: int,
-    _cache: Cache,
     _filename: Path,
-) -> Optional[model.Type]:
+) -> Optional[model.UncheckedMessage]:
     assert isinstance(message, lang.NullMessageTypeDef)
-    return model.Message(identifier, [], {}, location=type_location(identifier, message))
+    return model.UncheckedMessage(
+        identifier, [], [], [], None, None, location=type_location(identifier, message)
+    )
 
 
 def create_message(  # noqa: PLR0913
@@ -985,175 +934,85 @@ def create_message(  # noqa: PLR0913
     identifier: ID,
     parameters: lang.Parameters,
     message: lang.TypeDef,
-    types: Sequence[model.Type],
-    skip_verification: bool,
-    workers: int,
-    cache: Cache,
     filename: Path,
-) -> Optional[model.Type]:
+) -> Optional[model.UncheckedMessage]:
     # pylint: disable = too-many-arguments, too-many-locals
 
     assert isinstance(message, lang.MessageTypeDef)
     fields = message.f_message_fields
 
-    field_types, message_arguments = create_message_types(
-        error, identifier, parameters, fields, types, filename
-    )
-    structure = create_message_structure(error, fields, filename)
-    checksum_aspects, byte_order_aspect = parse_aspects(error, message.f_aspects, filename)
-
-    unproven_message = model.UnprovenMessage(
-        identifier,
-        structure,
-        field_types,
-        checksum_aspects,
-        byte_order_aspect,
-        type_location(identifier, message),
-    ).merged(message_arguments)
-
-    return create_proven_message(
-        error,
-        unproven_message,
-        skip_verification,
-        workers,
-        cache,
-    )
-
-
-def create_message_types(
-    error: RecordFluxError,
-    identifier: ID,
-    parameters: lang.Parameters,
-    fields: lang.MessageFields,
-    types: Sequence[model.Type],
-    filename: Path,
-) -> tuple[Mapping[model.Field, model.Type], Mapping[ID, Mapping[ID, expr.Expr]]]:
     def get_parameters(param: lang.Parameters) -> Optional[lang.ParameterList]:
         if not param:
             return None
         assert isinstance(param.f_parameters, lang.ParameterList)
         return param.f_parameters
 
-    field_types: dict[model.Field, model.Type] = {}
-    message_arguments: dict[ID, dict[ID, expr.Expr]] = defaultdict(dict)
-
-    for field_identifier, type_identifier, type_arguments in itertools.chain(
+    parameter_types = create_message_field_types(
+        error,
+        identifier,
         (
             (parameter.f_identifier, parameter.f_type_identifier, [])
             for parameter in get_parameters(parameters) or []
         ),
+        filename,
+    )
+    field_types = create_message_field_types(
+        error,
+        identifier,
         (
             (field.f_identifier, field.f_type_identifier, field.f_type_arguments)
             for field in fields.f_fields
         ),
-    ):
+        filename,
+    )
+    structure = create_message_structure(error, fields, filename)
+    checksum_aspects, byte_order_aspect = parse_aspects(error, message.f_aspects, filename)
+
+    return model.UncheckedMessage(
+        identifier,
+        structure,
+        parameter_types,
+        field_types,
+        checksum_aspects,
+        byte_order_aspect,
+        type_location(identifier, message),
+    )
+
+
+def create_message_field_types(
+    error: RecordFluxError,
+    identifier: ID,
+    fields: Iterable[tuple[lang.AbstractID, lang.AbstractID, object]],
+    filename: Path,
+) -> list[tuple[model.Field, ID, list[tuple[ID, expr.Expr]]]]:
+    result: list[tuple[model.Field, ID, list[tuple[ID, expr.Expr]]]] = []
+    for field_identifier, type_identifier, type_arguments in fields:
         qualified_type_identifier = model.internal_type_identifier(
             create_id(error, type_identifier, filename), identifier.parent
         )
-        field_type = next((t for t in types if t.identifier == qualified_type_identifier), None)
-        if field_type:
-            field = model.Field(create_id(error, field_identifier, filename))
-            if field not in field_types:
-                if isinstance(field_type, model.Message):
-                    assert isinstance(type_arguments, lang.TypeArgumentList)
-                    message_arguments[qualified_type_identifier] = create_message_arguments(
-                        error,
-                        field_type,
-                        type_arguments,
-                        qualified_type_identifier.location,
-                        filename,
-                    )
-                field_types[field] = field_type
-            else:
-                error.extend(
-                    [
-                        (
-                            f'name conflict for "{field.identifier}"',
-                            Subsystem.PARSER,
-                            Severity.ERROR,
-                            node_location(field_identifier, filename),
-                        ),
-                        (
-                            "conflicting name",
-                            Subsystem.PARSER,
-                            Severity.INFO,
-                            [f.identifier for f in field_types if f == field][0].location,
-                        ),
-                    ]
-                )
-        else:
-            error.extend(
-                [
-                    (
-                        f'undefined type "{qualified_type_identifier}"',
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        qualified_type_identifier.location,
-                    )
-                ]
+        field = model.Field(create_id(error, field_identifier, filename))
+        result.append(
+            (
+                field,
+                qualified_type_identifier,
+                create_message_arguments(error, type_arguments, filename)
+                if isinstance(type_arguments, lang.TypeArgumentList)
+                else [],
             )
-
-    return (field_types, message_arguments)
+        )
+    return result
 
 
 def create_message_arguments(
-    error: RecordFluxError,
-    message: model.Message,
-    type_arguments: lang.TypeArgumentList,
-    field_type_location: Optional[Location],
-    filename: Path,
-) -> dict[ID, expr.Expr]:
-    result = {}
-    argument_errors = RecordFluxError()
-
-    for param, arg in itertools.zip_longest(message.parameters, type_arguments):
-        if param:
-            param_id = param.identifier
-        if arg:
-            arg_id = create_id(error, arg.f_identifier, filename)
-            arg_expression = create_expression(error, arg.f_expression, filename)
-        if arg and param and arg_id == param_id:
-            result[arg_id] = arg_expression
-        if not param or (arg and arg_id != param_id):
-            argument_errors.extend(
-                [
-                    (
-                        f'unexpected argument "{arg_id}"',
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        node_location(arg, filename),
-                    ),
-                    (
-                        "expected no argument"
-                        if not param
-                        else f'expected argument for parameter "{param_id}"',
-                        Subsystem.PARSER,
-                        Severity.INFO,
-                        node_location(arg, filename),
-                    ),
-                ]
-            )
-        if not arg:
-            argument_errors.extend(
-                [
-                    (
-                        "missing argument",
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        field_type_location,
-                    ),
-                    (
-                        f'expected argument for parameter "{param_id}"',
-                        Subsystem.PARSER,
-                        Severity.INFO,
-                        param_id.location,
-                    ),
-                ]
-            )
-
-    error.extend(argument_errors)
-
-    return result
+    error: RecordFluxError, type_arguments: lang.TypeArgumentList, filename: Path
+) -> list[tuple[ID, expr.Expr]]:
+    return [
+        (
+            create_id(error, arg.f_identifier, filename),
+            create_expression(error, arg.f_expression, filename),
+        )
+        for arg in type_arguments
+    ]
 
 
 def create_message_structure(
@@ -1435,67 +1294,14 @@ def create_derived_message(  # noqa: PLR0913
     identifier: ID,
     _parameters: lang.Parameters,
     derivation: lang.TypeDef,
-    types: Sequence[model.Type],
-    skip_verification: bool,
-    workers: int,
-    cache: Cache,
     filename: Path,
-) -> Optional[model.Type]:
+) -> Optional[model.UncheckedDerivedMessage]:
     # pylint: disable=too-many-arguments
     assert isinstance(derivation, lang.TypeDerivationDef)
     base_id = create_id(error, derivation.f_base, filename)
     base_name = model.internal_type_identifier(base_id, identifier.parent)
-
-    base_types: Sequence[model.Type] = [t for t in types if t.identifier == base_name]
-
-    if not base_types:
-        error.extend(
-            [
-                (
-                    f'undefined base message "{base_name}" in derived message',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    base_name.location,
-                )
-            ]
-        )
-        return None
-
-    base_messages: Sequence[model.Message] = [t for t in base_types if isinstance(t, model.Message)]
-
-    if not base_messages:
-        error.extend(
-            [
-                (
-                    f'illegal derivation "{identifier}"',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    identifier.location,
-                ),
-                (
-                    f'invalid base message type "{base_name}"',
-                    Subsystem.PARSER,
-                    Severity.INFO,
-                    base_types[0].identifier.location,
-                ),
-            ],
-        )
-        return None
-
-    try:
-        unproven_message = model.UnprovenDerivedMessage(
-            identifier, base_messages[0], location=type_location(identifier, derivation)
-        ).merged()
-    except RecordFluxError as e:
-        error.extend(e)
-        return None
-
-    return create_proven_message(
-        error,
-        unproven_message,
-        skip_verification,
-        workers,
-        cache,
+    return model.UncheckedDerivedMessage(
+        identifier, base_name, location=type_location(identifier, derivation)
     )
 
 
@@ -1504,14 +1310,10 @@ def create_enumeration(
     identifier: ID,
     _parameters: lang.Parameters,
     enumeration: lang.TypeDef,
-    _types: Sequence[model.Type],
-    _skip_verification: bool,
-    _workers: int,
-    _cache: Cache,
     filename: Path,
-) -> Optional[model.Type]:
+) -> Optional[model.UncheckedEnumeration]:
     assert isinstance(enumeration, lang.EnumerationTypeDef)
-    literals: list[tuple[StrID, expr.Number]] = []
+    literals: list[tuple[ID, expr.Number]] = []
 
     def create_aspects(aspects: lang.AspectList) -> Optional[tuple[expr.Expr, bool]]:
         always_valid = False
@@ -1585,67 +1387,19 @@ def create_enumeration(
 
     size, always_valid = aspects
 
-    result = model.Enumeration(
+    return model.UncheckedEnumeration(
         identifier, literals, size, always_valid, location=type_location(identifier, enumeration)
     )
-    error.extend(result.error)
-    return result
-
-
-def create_proven_message(
-    error: RecordFluxError,
-    unproven_message: model.UnprovenMessage,
-    skip_verification: bool,
-    workers: int,
-    cache: Cache,
-) -> Optional[model.Message]:
-    try:
-        proven_message = unproven_message.proven(
-            skip_verification or cache.is_verified(unproven_message), workers
-        )
-    except RecordFluxError as e:
-        error.extend(e)
-        return None
-
-    cache.add_verified(unproven_message)
-
-    return proven_message
 
 
 def create_refinement(
     error: RecordFluxError,
     refinement: lang.RefinementDecl,
     package: ID,
-    types: Sequence[model.Type],
     filename: Path,
-) -> Optional[model.Refinement]:
-    messages = {t.identifier: t for t in types if isinstance(t, model.Message)}
-
+) -> model.UncheckedRefinement:
     pdu = model.internal_type_identifier(create_id(error, refinement.f_pdu, filename), package)
-    if pdu not in messages:
-        error.extend(
-            [
-                (
-                    f'undefined type "{pdu}" in refinement',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    node_location(refinement, filename),
-                )
-            ]
-        )
-
     sdu = model.internal_type_identifier(create_id(error, refinement.f_sdu, filename), package)
-    if sdu not in messages:
-        error.extend(
-            [
-                (
-                    f'undefined type "{sdu}" in refinement of "{pdu}"',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    sdu.location,
-                )
-            ]
-        )
 
     if refinement.f_condition:
         condition = create_bool_expression(error, refinement.f_condition, filename)
@@ -1654,19 +1408,14 @@ def create_refinement(
 
     refinement_id = model.Field(create_id(error, refinement.f_field, filename))
 
-    if error.errors:
-        return None
-
-    result = model.Refinement(
+    return model.UncheckedRefinement(
         package,
-        messages[pdu],
+        pdu,
         refinement_id,
-        messages[sdu],
+        sdu,
         condition,
         node_location(refinement, filename),
     )
-    error.extend(result.error)
-    return result
 
 
 def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) -> None:
@@ -1784,10 +1533,6 @@ class Parser:
         self.skip_verification = skip_verification
         self._workers = workers
         self._specifications: OrderedDict[ID, SpecificationFile] = OrderedDict()
-        self._declarations: list[model.TopLevelDeclaration] = [
-            *model.BUILTIN_TYPES.values(),
-            *model.INTERNAL_TYPES.values(),
-        ]
         self._integration: Integration = Integration(integration_files_dir)
         self._cache = Cache(not skip_verification and cached)
 
@@ -1848,18 +1593,25 @@ class Parser:
             {**self._specifications, **{s.package: s for s in specifications}}
         )
 
-    def create_model(self) -> model.Model:
+    def create_unchecked_model(self) -> model.UncheckedModel:
         error = RecordFluxError()
-        for spec_node in self._specifications.values():
-            self._evaluate_specification(error, spec_node.spec, spec_node.filename)
-        try:
-            result = model.Model(self._declarations)
-            self._integration.validate(result, error)
-        except RecordFluxError as e:
-            error.extend(e)
+        declarations: list[model.UncheckedTopLevelDeclaration] = [
+            model.UNCHECKED_BOOLEAN,
+            model.UNCHECKED_OPAQUE,
+        ]
 
+        for spec_node in self._specifications.values():
+            self._evaluate_specification(error, declarations, spec_node.spec, spec_node.filename)
+
+        return model.UncheckedModel(declarations, error)
+
+    def create_model(self) -> model.Model:
+        unchecked_model = self.create_unchecked_model()
+        error = unchecked_model.error
+        checked_model = unchecked_model.checked(self.skip_verification, self._workers, self._cache)
+        self._integration.validate(checked_model, error)
         error.propagate()
-        return result
+        return checked_model
 
     def get_integration(self) -> Integration:
         return self._integration
@@ -1932,7 +1684,11 @@ class Parser:
         self._parse_withed_files(error, nested_context_clauses, include_paths)
 
     def _evaluate_specification(
-        self, error: RecordFluxError, spec: lang.Specification, filename: Path
+        self,
+        error: RecordFluxError,
+        declarations: list[model.UncheckedTopLevelDeclaration],
+        spec: lang.Specification,
+        filename: Path,
     ) -> None:
         handlers: Mapping[
             str,
@@ -1942,13 +1698,9 @@ class Parser:
                     ID,
                     lang.Parameters,
                     lang.TypeDef,
-                    Sequence[model.Type],
-                    bool,
-                    int,
-                    Cache,
                     Path,
                 ],
-                Optional[model.Type],
+                Optional[model.UncheckedType],
             ],
         ] = {
             "SequenceTypeDef": create_sequence,
@@ -1963,7 +1715,6 @@ class Parser:
         package_id = create_id(error, spec.f_package_declaration.f_identifier, filename)
 
         for t in spec.f_package_declaration.f_declarations:
-            types = [d for d in self._declarations if isinstance(d, model.Type)]
             if isinstance(t, lang.TypeDecl):
                 identifier = model.internal_type_identifier(
                     create_id(error, t.f_identifier, filename), package_id
@@ -1984,22 +1735,14 @@ class Parser:
                     identifier,
                     t.f_parameters,
                     t.f_definition,
-                    types,
-                    self.skip_verification,
-                    self._workers,
-                    self._cache,
                     filename,
                 )
                 if new_type is not None:
-                    self._declarations.append(new_type)
+                    declarations.append(new_type)
             elif isinstance(t, lang.RefinementDecl):
-                new_refinement = create_refinement(error, t, package_id, types, filename)
-                if new_refinement is not None:
-                    self._declarations.append(new_refinement)
+                declarations.append(create_refinement(error, t, package_id, filename))
             elif isinstance(t, lang.SessionDecl):
-                new_session = create_session(error, t, package_id, filename, self._workers, types)
-                if new_session is not None:
-                    self._declarations.append(new_session)
+                declarations.append(create_session(error, t, package_id, filename))
             else:
                 raise NotImplementedError(f"Declaration kind {t.kind_name} unsupported")
 

@@ -72,12 +72,6 @@ def assert_session_model_error(
         )
 
 
-def assert_type_error(instance: Type, regex: str) -> None:
-    check_regex(regex)
-    with pytest.raises(RecordFluxError, match=regex):
-        instance.error.propagate()
-
-
 def assert_equal_code_specs(
     spec_files: Iterable[Union[str, pathlib.Path]],
     expected_dir: pathlib.Path,

@@ -16,7 +16,7 @@ from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID
 from rflx.model import BOOLEAN, FINAL, INITIAL, OPAQUE, Enumeration, Field, Integer, Link, Message
 from rflx.model.message import ByteOrder
-from rflx.specification import cache, parser
+from rflx.specification import parser
 from tests.const import SPEC_DIR
 from tests.data import models
 from tests.utils import check_regex
@@ -135,7 +135,6 @@ def assert_ast_string(string: str, expected: Mapping[str, Any]) -> None:  # type
 
 
 def assert_error_files(filenames: Sequence[str], regex: str) -> None:
-    assert " parser: error: " in regex
     check_regex(regex)
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=regex):
@@ -144,7 +143,6 @@ def assert_error_files(filenames: Sequence[str], regex: str) -> None:
 
 
 def assert_error_string(string: str, regex: str) -> None:
-    assert " parser: error: " in regex
     check_regex(regex)
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=regex):
@@ -205,29 +203,6 @@ def test_create_model_cached() -> None:
     p = parser.Parser(cached=True)
     p.parse(SPEC_DIR / "tlv.rflx")
     p.create_model()
-
-
-def test_create_proven_message(tmp_path: Path) -> None:
-    cache.CACHE_DIR = tmp_path
-    c = cache.Cache()
-    error = RecordFluxError()
-    assert parser.create_proven_message(
-        error, models.VALID_MESSAGE, skip_verification=False, workers=1, cache=c
-    )
-    error.propagate()
-    assert c.is_verified(models.VALID_MESSAGE)
-
-
-def test_create_proven_message_error(tmp_path: Path) -> None:
-    cache.CACHE_DIR = tmp_path
-    c = cache.Cache()
-    error = RecordFluxError()
-    parser.create_proven_message(
-        error, models.INVALID_MESSAGE, skip_verification=False, workers=1, cache=c
-    )
-    with pytest.raises(RecordFluxError):
-        error.propagate()
-    assert not c.is_verified(models.INVALID_MESSAGE)
 
 
 def test_parse_string_error() -> None:
@@ -1960,7 +1935,7 @@ def test_parse_error_sequence_undefined_type() -> None:
            type T is sequence of Foo;
         end Test;
         """,
-        r'^<stdin>:2:26: parser: error: undefined element type "Test::Foo"$',
+        r'^<stdin>:2:26: model: error: undefined element type "Test::Foo"$',
     )
 
 
@@ -1971,8 +1946,8 @@ def test_parse_error_refinement_undefined_message() -> None:
            for PDU use (Foo => Bar);
         end Test;
         """,
-        r'^<stdin>:2:4: parser: error: undefined type "Test::PDU" in refinement\n'
-        r'<stdin>:2:24: parser: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
+        r'^<stdin>:2:8: model: error: undefined type "Test::PDU" in refinement\n'
+        r'<stdin>:2:24: model: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
     )
 
 
@@ -1988,7 +1963,7 @@ def test_parse_error_refinement_undefined_sdu() -> None:
            for PDU use (Foo => Bar);
         end Test;
         """,
-        r'^<stdin>:7:24: parser: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
+        r'^<stdin>:7:24: model: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
     )
 
 
@@ -1999,7 +1974,7 @@ def test_parse_error_derivation_undefined_type() -> None:
            type Bar is new Foo;
         end Test;
         """,
-        r'^<stdin>:2:20: parser: error: undefined base message "Test::Foo" in derived message$',
+        r'^<stdin>:2:20: model: error: undefined base message "Test::Foo" in derived message$',
     )
 
 
@@ -2012,8 +1987,8 @@ def test_parse_error_derivation_unsupported_type() -> None:
         end Test;
         """,
         r"^"
-        r'^<stdin>:3:9: parser: error: illegal derivation "Test::Bar"\n'
-        r'<stdin>:2:9: parser: info: invalid base message type "Test::Foo"'
+        r'^<stdin>:3:9: model: error: illegal derivation "Test::Bar"\n'
+        r'<stdin>:2:9: model: info: invalid base message type "Test::Foo"'
         r"$",
     )
 
@@ -2082,6 +2057,44 @@ def test_parse_error_reserved_word_in_message_field(keyword: str) -> None:
         end Test;
         """,
         rf'^<stdin>:5:10: parser: error: reserved word "{keyword.title()}" used as identifier$',
+    )
+
+
+def test_parse_error_reserved_word_in_refinement_field() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type PDU is
+              message
+                 End : Opaque;
+              end message;
+           for PDU use (End => PDU);
+        end Test;
+        """,
+        r"^"
+        r'<stdin>:4:10: parser: error: reserved word "End" used as identifier\n'
+        r'<stdin>:6:17: parser: error: reserved word "End" used as identifier'
+        r"$",
+    )
+
+
+def test_parse_error_reserved_word_in_session_identifier() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           generic
+           session End is
+           begin
+              state S
+              is
+              begin
+              transition
+                 goto null
+              end S;
+           end End;
+        end Test;
+        """,
+        r'^<stdin>:3:12: parser: error: reserved word "End" used as identifier$',
     )
 
 
@@ -2752,38 +2765,38 @@ def test_parameterized_messages() -> None:
         (
             "",
             r"^"
-            r"<stdin>:14:14: parser: error: missing argument\n"
-            r'<stdin>:5:14: parser: info: expected argument for parameter "P"'
+            r"<stdin>:14:14: model: error: missing argument\n"
+            r'<stdin>:5:14: model: info: expected argument for parameter "P"'
             r"$",
         ),
         (
             " (Q => 16)",
             r"^"
-            r'<stdin>:14:19: parser: error: unexpected argument "Q"\n'
-            r'<stdin>:14:19: parser: info: expected argument for parameter "P"'
+            r'<stdin>:14:19: model: error: unexpected argument "Q"\n'
+            r'<stdin>:14:19: model: info: expected argument for parameter "P"'
             r"$",
         ),
         (
             " (P => 16, Q => 16)",
             r"^"
-            r'<stdin>:14:28: parser: error: unexpected argument "Q"\n'
-            r"<stdin>:14:28: parser: info: expected no argument"
+            r'<stdin>:14:28: model: error: unexpected argument "Q"\n'
+            r"<stdin>:14:28: model: info: expected no argument"
             r"$",
         ),
         (
             " (Q => 16, P => 16)",
             r"^"
-            r'<stdin>:14:19: parser: error: unexpected argument "Q"\n'
-            r'<stdin>:14:19: parser: info: expected argument for parameter "P"\n'
-            r'<stdin>:14:28: parser: error: unexpected argument "P"\n'
-            r"<stdin>:14:28: parser: info: expected no argument"
+            r'<stdin>:14:19: model: error: unexpected argument "Q"\n'
+            r'<stdin>:14:19: model: info: expected argument for parameter "P"\n'
+            r'<stdin>:14:28: model: error: unexpected argument "P"\n'
+            r"<stdin>:14:28: model: info: expected no argument"
             r"$",
         ),
         (
             " (P => 16, P => 16)",
             r"^"
-            r'<stdin>:14:28: parser: error: unexpected argument "P"\n'
-            r"<stdin>:14:28: parser: info: expected no argument"
+            r'<stdin>:14:28: model: error: unexpected argument "P"\n'
+            r"<stdin>:14:28: model: info: expected no argument"
             r"$",
         ),
     ],
@@ -2891,7 +2904,7 @@ def test_parse_error_undefined_parameter() -> None:
               end message;
         end Test;
         """,
-        r'^<stdin>:3:16: parser: error: undefined type "Test::X"$',
+        r'^<stdin>:3:16: model: error: undefined type "Test::X"$',
     )
 
 
@@ -2909,8 +2922,8 @@ def test_parse_error_name_conflict_between_parameters() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:3:19: parser: error: name conflict for "P"\n'
-        r"<stdin>:3:12: parser: info: conflicting name"
+        r'<stdin>:3:19: model: error: name conflict for "P"\n'
+        r"<stdin>:3:12: model: info: conflicting name"
         r"$",
     )
 
@@ -2927,8 +2940,8 @@ def test_parse_error_name_conflict_between_field_and_parameter() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:5:10: parser: error: name conflict for "P"\n'
-        r"<stdin>:3:12: parser: info: conflicting name"
+        r'<stdin>:5:10: model: error: name conflict for "P"\n'
+        r"<stdin>:3:12: model: info: conflicting name"
         r"$",
     )
 

@@ -4,7 +4,7 @@ import pytest
 from pytest import CaptureFixture
 
 from rflx import expression as expr, model
-from rflx.specification import cache
+from rflx.model import cache
 from tests.data.models import TLV_MESSAGE
 
 

@@ -294,15 +294,6 @@ VALID_MESSAGE = UnprovenMessage(
     {Field("F"): OPAQUE},
 )
 
-INVALID_MESSAGE = UnprovenMessage(
-    "P::M",
-    [
-        Link(INITIAL, Field("F")),
-        Link(Field("X"), FINAL),
-    ],
-    {Field("F"): OPAQUE},
-)
-
 INTEGER = Integer("P::Integer", Number(1), Number(220), Number(8))
 ENUMERATION = Enumeration(
     "P::Enumeration",
@@ -458,7 +449,6 @@ UNIVERSAL_MESSAGE = Message(
         Field("Options"): UNIVERSAL_OPTIONS,
     },
 )
-UNIVERSAL_MESSAGES = Sequence("Universal::Messages", UNIVERSAL_MESSAGE)
 UNIVERSAL_REFINEMENT = Refinement("Universal", UNIVERSAL_MESSAGE, Field("Data"), UNIVERSAL_OPTION)
 UNIVERSAL_MODEL = Model(
     [

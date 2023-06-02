@@ -756,15 +756,6 @@ def test_sequence_parse_from_bytes(
     assert sequence_message_value.bytestring == b"\x02\x05\x06"
 
 
-def test_sequence_parse_unsupported_member_type() -> None:
-    opaque_sequence = SequenceValue(Sequence("Test::Sequence", Opaque()))
-    with pytest.raises(
-        PyRFLXError,
-        match="^pyrflx: error: sequences of __INTERNAL__::Opaque currently not supported$",
-    ):
-        opaque_sequence.parse(b"\x00")
-
-
 def test_sequence_assign_invalid(
     tlv_message_value: MessageValue,
     ethernet_frame_value: MessageValue,

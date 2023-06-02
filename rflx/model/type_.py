@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
+import typing as ty
 from abc import abstractmethod
 from collections import abc
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 import rflx.typing_ as rty
 from rflx import const, expression as expr
 from rflx.common import indent_next, verbose_repr
-from rflx.error import Location, Severity, Subsystem
+from rflx.error import Location, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
 
 from . import message
-from .top_level_declaration import TopLevelDeclaration
+from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
 
 
 class Type(TopLevelDeclaration):
@@ -60,9 +62,15 @@ class Type(TopLevelDeclaration):
 
 class Scalar(Type):
     def __init__(
-        self, identifier: StrID, size: expr.Expr, location: Optional[Location] = None
+        self,
+        identifier: StrID,
+        size: expr.Expr,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, location)
+
+        self.error.propagate()
+
         self._size = size
 
     @property
@@ -88,7 +96,7 @@ class Scalar(Type):
 
 
 class Integer(Scalar):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         first: expr.Expr,
@@ -115,17 +123,13 @@ class Integer(Scalar):
             )
 
         if not isinstance(last_num, expr.Number):
-            self.error.extend(
-                [
-                    (
-                        f'last of "{self.name}" contains variable',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    )
-                ],
+            self.error.fail(
+                f'last of "{self.name}" contains variable',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
             )
-            return
+
         if int(last_num) >= 2**const.MAX_SCALAR_SIZE:
             self.error.extend(
                 [
@@ -150,8 +154,7 @@ class Integer(Scalar):
                 ],
             )
 
-        if self.error.errors:
-            return
+        self.error.propagate()
 
         assert isinstance(first_num, expr.Number)
         assert isinstance(last_num, expr.Number)
@@ -206,6 +209,8 @@ class Integer(Scalar):
                     )
                 ],
             )
+
+        self.error.propagate()
 
         self._first_expr = first
         self._first = first_num
@@ -265,7 +270,7 @@ class Integer(Scalar):
 
 
 class Enumeration(Scalar):
-    def __init__(  # noqa: PLR0912
+    def __init__(  # noqa: PLR0912, PLR0913
         self,
         identifier: StrID,
         literals: abc.Sequence[tuple[StrID, expr.Number]],
@@ -315,17 +320,12 @@ class Enumeration(Scalar):
         size_num = size.simplified()
 
         if not isinstance(size_num, expr.Number):
-            self.error.extend(
-                [
-                    (
-                        f'size of "{self.name}" contains variable',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    )
-                ],
+            self.error.fail(
+                f'size of "{self.name}" contains variable',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.location,
             )
-            return
 
         if self.literals.values():
             min_literal_value = min(map(int, self.literals.values()))
@@ -394,6 +394,8 @@ class Enumeration(Scalar):
                     )
                 ],
             )
+
+        self.error.propagate()
 
         self.always_valid = always_valid
 
@@ -472,7 +474,10 @@ class Composite(Type):
 
 class Sequence(Composite):
     def __init__(
-        self, identifier: StrID, element_type: Type, location: Optional[Location] = None
+        self,
+        identifier: StrID,
+        element_type: Type,
+        location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, location)
         self.element_type = element_type
@@ -517,7 +522,7 @@ class Sequence(Composite):
                 )
 
         if isinstance(element_type, message.Message):
-            error = (
+            error_entry = (
                 f'invalid element type of sequence "{self.name}"',
                 Subsystem.MODEL,
                 Severity.ERROR,
@@ -527,7 +532,7 @@ class Sequence(Composite):
             if element_type.is_null:
                 self.error.extend(
                     [
-                        error,
+                        error_entry,
                         (
                             "null messages must not be used as sequence element",
                             Subsystem.MODEL,
@@ -544,7 +549,7 @@ class Sequence(Composite):
             ):
                 self.error.extend(
                     [
-                        error,
+                        error_entry,
                         (
                             "messages used as sequence element must not depend"
                             ' on "Message\'Size" or "Message\'Last"',
@@ -554,6 +559,8 @@ class Sequence(Composite):
                         ),
                     ],
                 )
+
+        self.error.propagate()
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["identifier", "element_type"])
@@ -597,13 +604,85 @@ class Opaque(Composite):
         return expr.Number(8)
 
 
-OPAQUE = Opaque(location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)))
+@dataclass
+class UncheckedType(UncheckedTopLevelDeclaration):
+    identifier: ID
+
+    @abstractmethod
+    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Type:
+        raise NotImplementedError
+
+
+@dataclass
+class UncheckedInteger(UncheckedType):
+    identifier: ID
+    first: expr.Expr
+    last: expr.Expr
+    size: expr.Expr
+    location: Optional[Location]
+
+    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Integer:
+        return Integer(self.identifier, self.first, self.last, self.size, self.location)
+
+
+@dataclass
+class UncheckedEnumeration(UncheckedType):
+    identifier: ID
+    literals: abc.Sequence[tuple[ID, expr.Number]]
+    size: expr.Expr
+    always_valid: bool
+    location: Optional[Location]
+
+    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Enumeration:
+        return Enumeration(
+            self.identifier, self.literals, self.size, self.always_valid, self.location
+        )
+
+
+@dataclass
+class UncheckedSequence(UncheckedType):
+    identifier: ID
+    element_identifier: ID
+    location: Optional[Location]
+
+    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Sequence:
+        element_type = next(
+            (
+                t
+                for t in declarations
+                if isinstance(t, Type) and t.identifier == self.element_identifier
+            ),
+            None,
+        )
+        if not element_type:
+            fail(
+                f'undefined element type "{self.element_identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                self.element_identifier.location,
+            )
+        return Sequence(self.identifier, element_type, self.location)
+
+
+@dataclass
+class UncheckedOpaque(UncheckedType):
+    identifier: ID
+    location: Optional[Location]
+
+    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Opaque:
+        return Opaque(location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)))
+
+
+UNCHECKED_OPAQUE = UncheckedOpaque(
+    const.INTERNAL_PACKAGE * "Opaque", Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0))
+)
+OPAQUE = UNCHECKED_OPAQUE.checked([])
 
 INTERNAL_TYPES = {
     OPAQUE.identifier: OPAQUE,
 }
 
-BOOLEAN = Enumeration(
+UNCHECKED_BOOLEAN = UncheckedEnumeration(
     const.BUILTINS_PACKAGE * "Boolean",
     [
         (ID("False", Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0))), expr.Number(0)),
@@ -613,6 +692,7 @@ BOOLEAN = Enumeration(
     always_valid=False,
     location=rty.BOOLEAN.location,
 )
+BOOLEAN = UNCHECKED_BOOLEAN.checked([])
 
 BUILTIN_TYPES = {
     BOOLEAN.identifier: BOOLEAN,

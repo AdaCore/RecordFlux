@@ -4,6 +4,7 @@ import itertools
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Generator, Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Final, Optional
 
 from rflx import expression as expr, tac, typing_ as rty
@@ -17,7 +18,7 @@ from . import (
     type_ as mty,
 )
 from .message import Message, Refinement
-from .top_level_declaration import TopLevelDeclaration
+from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
 
 
 class Transition(Base):
@@ -324,6 +325,9 @@ class AbstractSession(TopLevelDeclaration):
         location: Optional[Location] = None,
     ):
         super().__init__(identifier, location)
+
+        self.error.propagate()
+
         self.states = [*states, FINAL_STATE] if FINAL_STATE not in states else states
         self.declarations = {d.identifier: d for d in declarations}
         self.parameters = {p.identifier: p for p in parameters}
@@ -897,6 +901,25 @@ class UnprovenSession(AbstractSession):
             list(self.types.values()),
             self.location,
             workers,
+        )
+
+
+@dataclass
+class UncheckedSession(UncheckedTopLevelDeclaration):
+    identifier: ID
+    states: Sequence[State]
+    declarations: Sequence[decl.BasicDeclaration]
+    parameters: Sequence[decl.FormalDeclaration]
+    location: Optional[Location]
+
+    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> UnprovenSession:
+        return UnprovenSession(
+            self.identifier,
+            self.states,
+            self.declarations,
+            self.parameters,
+            [d for d in declarations if isinstance(d, mty.Type)],
+            self.location,
         )
 
 
