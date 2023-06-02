@@ -107,6 +107,7 @@ setup(
             "sphinx >=4.5, <5",
             "sphinx-rtd-theme >= 1.1.1, <1.2",
             "tqdm >=4.61.1, <4.63",
+            "types-Pygments >=2.15.0, <2.16",
         ],
     },
     scripts=["bin/rflx"],

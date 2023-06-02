@@ -8,7 +8,12 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 import sys
 from pathlib import Path
 
+from sphinx.highlighting import lexers
+
 from rflx import __version__
+from tools.rflxlexer import RFLXLexer
+
+lexers["rflx"] = RFLXLexer(startinline=True)
 
 # -- Path setup --------------------------------------------------------------
 

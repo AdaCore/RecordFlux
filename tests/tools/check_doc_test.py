@@ -153,7 +153,7 @@ def test_invalid_rflx_spec() -> None:
 Enumeration with missing size:
 
 .. doc-check: rflx
-.. code:: ada
+.. code:: rflx
 
     package Protocol is
         type Values is (E1, E2, E3);
@@ -204,7 +204,7 @@ def test_invalid_rflx_rule() -> None:
 An invalid RecordFlux expression:
 
 .. doc-check: rflx,expression
-.. code:: ada
+.. code:: rflx
 
    2 *** 32 - 1
 
@@ -227,7 +227,7 @@ def test_invalid_rflx_rule_style() -> None:
 A RecordFlux expression with invalid style:
 
 .. doc-check: rflx,expression
-.. code:: ada
+.. code:: rflx
 
     2 **32 - 1
 
@@ -251,7 +251,7 @@ def test_invalid_rflx_spec_style() -> None:
 A RecordFlux specification looks as follows:
 
 .. doc-check: rflx
-.. code:: ada
+.. code:: rflx
 
     package Protocol is
        -- Invalid indentation
@@ -347,7 +347,7 @@ def test_valid_rflx_spec() -> None:
 A RecordFlux specification looks as follows:
 
 .. doc-check: rflx
-.. code:: ada
+.. code:: rflx
 
     package Protocol is
        type Len is range 0 .. 2 ** 8 - 1 with Size => 8;
@@ -366,7 +366,7 @@ def test_valid_rflx_rule() -> None:
 A RecordFlux expression looks as follows:
 
 .. doc-check: rflx,expression
-.. code:: ada
+.. code:: rflx
 
     2 ** 32 - 1
 

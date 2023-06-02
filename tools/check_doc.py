@@ -198,11 +198,7 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
         if match:
             code_type = parse_code_block_type(match.group("tag"))
             if doc_check_type:
-                if (
-                    (doc_check_type != CodeBlockType.RFLX or code_type != CodeBlockType.ADA)
-                    and doc_check_type != CodeBlockType.IGNORE
-                    and doc_check_type != code_type
-                ):
+                if doc_check_type not in (CodeBlockType.IGNORE, code_type):
                     raise CheckDocError(
                         f"{filename}:{lineno}: "
                         "inconsistent code block type "

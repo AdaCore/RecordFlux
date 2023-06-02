@@ -194,7 +194,7 @@ There is exactly one package per file; the file name has to be the same as the p
 We will use the name “Pub Sub” for our example protocol and create a file named `pub_sub.rflx` for the specification:
 
 .. doc-check: rflx
-.. code:: ada
+.. code:: rflx
 
    package Pub_Sub is
       -- Type specifications (basic types, messages) go here
@@ -215,7 +215,7 @@ To limit the size and allowed values of a numeric field in a message, we need to
 For the `Identifier` field we define a type that can represent values from 1 to 4000, inclusive, and whose instances occupy 12 bits:
 
 .. doc-check: rflx,basic_declaration
-.. code:: ada
+.. code:: rflx
 
    type Identifier is range 1 .. 16#F_A0# with Size => 12
 
@@ -241,7 +241,7 @@ While we could even express the fact that the type field must not be zero by cho
 An enumeration type is much better suited to represent discrete choices as in the Command field:
 
 .. doc-check: rflx,basic_declaration
-.. code:: ada
+.. code:: rflx
 
    type Command is
    (
@@ -283,13 +283,13 @@ Just like scalars, messages are also types.
 The specification for our pub-sub message is as follows:
 
 .. doc-check: rflx,basic_declaration
-.. code:: ada
+.. code:: rflx
 
    type Length is range 0 .. 2 ** 8 - 1 with Size => 8
 
 
 .. doc-check: rflx,basic_declaration
-.. code:: ada
+.. code:: rflx
 
    type Message is
       message
@@ -331,7 +331,7 @@ Among other things, the RecordFlux Verifier ensures that `then`-clauses are mutu
 If we changed the above example to contain two `then`-clauses for Command which are not mutually exclusive, our specification would get rejected:
 
 .. doc-check: ignore
-.. code:: ada
+.. code:: rflx
 
          Command : Command
             then Length
@@ -367,8 +367,7 @@ The RecordFlux Modeller can also be used to create and check specifications.
 A simple project file named `pub_sub.gpr` located in the root directory of our example project configures directories for hand-written code (`src`), generated code (`generated`) and specifications (`specs`).
 It also enables support for the RecordFlux specification language and sets the output directory for generated code:
 
-.. doc-check: ignore
-.. code:: ada
+.. code::
 
    project Pub_Sub is
 
