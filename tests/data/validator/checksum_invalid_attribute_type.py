@@ -1,1 +1,1 @@
-checksum_functions = "not a dict"  # pylint: disable = invalid-name
+checksum_functions = "not a dict"

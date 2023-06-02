@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 from __future__ import annotations
 
 import textwrap
@@ -163,7 +161,6 @@ def test_not_type_error() -> None:
 
 
 def test_not_neg() -> None:
-    # pylint: disable=comparison-with-itself
     assert -Not(Variable("X")) == Variable("X")
     assert -Variable("X") != Variable("X")
     y = Variable("Y")
@@ -450,7 +447,7 @@ def test_bool_expr_z3expr_error(expression: Callable[[Expr, Expr], Expr]) -> Non
 
 def test_and_neg() -> None:
     with pytest.raises(NotImplementedError):
-        -And(Variable("X"), TRUE)  # pylint: disable=expression-not-assigned
+        -And(Variable("X"), TRUE)
 
 
 def test_and_variables() -> None:
@@ -527,7 +524,7 @@ def test_and_str() -> None:
 
 def test_or_neg() -> None:
     with pytest.raises(NotImplementedError):
-        -Or(Variable("X"), TRUE)  # pylint: disable=expression-not-assigned
+        -Or(Variable("X"), TRUE)
 
 
 def test_or_variables() -> None:
@@ -643,7 +640,6 @@ def test_number_pow() -> None:
 
 
 def test_number_eq() -> None:
-    # pylint: disable=unneeded-not
     assert Number(1) == Number(1)
     assert Number(1, 10) == Number(1, 16)
     assert Number(42, 16) == Number(42, 10)
@@ -652,7 +648,6 @@ def test_number_eq() -> None:
 
 
 def test_number_ne() -> None:
-    # pylint: disable=unneeded-not
     assert not Number(1) != Number(1)
     assert not Number(1, 10) != Number(1, 16)
     assert not Number(42, 16) != Number(42, 10)
@@ -661,7 +656,6 @@ def test_number_ne() -> None:
 
 
 def test_number_lt() -> None:
-    # pylint: disable=unneeded-not
     assert Number(1) < Number(2)
     assert not Number(2) < Number(2)
     assert not Number(3) < Number(2)
@@ -670,7 +664,6 @@ def test_number_lt() -> None:
 
 
 def test_number_le() -> None:
-    # pylint: disable=unneeded-not
     assert Number(1) <= Number(2)
     assert Number(2) <= Number(2)
     assert not Number(3) <= Number(2)
@@ -679,7 +672,6 @@ def test_number_le() -> None:
 
 
 def test_number_gt() -> None:
-    # pylint: disable=unneeded-not
     assert not Number(1) > Number(2)
     assert not Number(2) > Number(2)
     assert Number(3) > Number(2)
@@ -688,7 +680,6 @@ def test_number_gt() -> None:
 
 
 def test_number_ge() -> None:
-    # pylint: disable=unneeded-not
     assert not Number(1) >= Number(2)
     assert Number(2) >= Number(2)
     assert Number(3) >= Number(2)
@@ -760,7 +751,6 @@ def test_add_simplified() -> None:
 
 
 def test_add_lt() -> None:
-    # pylint: disable=unneeded-not
     assert Add(Variable("X"), Number(1)) < Add(Variable("X"), Number(2))
     assert not Add(Variable("X"), Number(2)) < Add(Variable("X"), Number(2))
     assert not Add(Variable("X"), Number(3)) < Add(Variable("X"), Number(2))
@@ -770,7 +760,6 @@ def test_add_lt() -> None:
 
 
 def test_add_le() -> None:
-    # pylint: disable=unneeded-not
     assert Add(Variable("X"), Number(1)) <= Add(Variable("X"), Number(2))
     assert Add(Variable("X"), Number(2)) <= Add(Variable("X"), Number(2))
     assert not Add(Variable("X"), Number(3)) <= Add(Variable("X"), Number(2))
@@ -780,7 +769,6 @@ def test_add_le() -> None:
 
 
 def test_add_gt() -> None:
-    # pylint: disable=unneeded-not
     assert not Add(Variable("X"), Number(1)) > Add(Variable("X"), Number(2))
     assert not Add(Variable("X"), Number(2)) > Add(Variable("X"), Number(2))
     assert Add(Variable("X"), Number(3)) > Add(Variable("X"), Number(2))
@@ -790,7 +778,6 @@ def test_add_gt() -> None:
 
 
 def test_add_ge() -> None:
-    # pylint: disable=unneeded-not
     assert not Add(Variable("X"), Number(1)) >= Add(Variable("X"), Number(2))
     assert Add(Variable("X"), Number(2)) >= Add(Variable("X"), Number(2))
     assert Add(Variable("X"), Number(3)) >= Add(Variable("X"), Number(2))

@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines,too-many-ancestors,too-many-arguments
-
 from __future__ import annotations
 
 import difflib
@@ -114,7 +112,6 @@ class ParallelProofs:
         sat_error: RecordFluxError = RecordFluxError(),
         add_unsat: bool = False,
     ) -> None:
-        # pylint: disable=too-many-arguments
         """
         Add a proof goal and facts to a parallel proof.
 
@@ -2367,7 +2364,6 @@ class Relation(BinExpr):
             *right_stmts,
             tac.Assign(
                 target,
-                # pylint: disable-next = abstract-class-instantiated
                 getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
                 rty.BOOLEAN,
                 origin=self,
@@ -2806,7 +2802,6 @@ class QuantifiedExpr(Expr):
         )
 
     def ada_expr(self) -> ada.Expr:
-        # pylint: disable-next = abstract-class-instantiated
         result = getattr(ada, self.__class__.__name__)(
             self.parameter_identifier, self.iterable.ada_expr(), self.predicate.ada_expr()
         )

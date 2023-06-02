@@ -1,5 +1,3 @@
-# pylint: disable = too-many-lines
-
 from __future__ import annotations
 
 import textwrap
@@ -105,7 +103,6 @@ def test_unexpected_type(tmp_path: Path) -> None:
         ("", False, False, set()),
     ],
 )
-# pylint: disable-next = too-many-arguments
 def test_generate(  # noqa: PLR0913
     debug: Debug,
     debug_expected: set[str],
@@ -371,7 +368,7 @@ def test_session_create_abstract_function(
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
-    # pylint: disable = protected-access
+
     assert session_generator._create_abstract_function(parameter) == expected
 
 
@@ -450,7 +447,6 @@ def test_session_create_abstract_functions_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        # pylint: disable = protected-access
         session_generator._create_abstract_functions([parameter])
 
 
@@ -663,7 +659,7 @@ def test_session_evaluate_declarations(
     declaration: decl.BasicDeclaration, session_global: bool, expected: EvaluatedDeclaration
 ) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
-    # pylint: disable = protected-access
+
     allocator._allocation_slots[Location(start=(1, 1))] = 1
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
     assert (
@@ -702,7 +698,6 @@ def test_session_evaluate_declarations_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        # pylint: disable = protected-access
         session_generator._evaluate_declarations(  # pragma: no branch
             [declaration], is_global=lambda x: False
         )
@@ -962,10 +957,10 @@ def test_session_declare(
 ) -> None:
     loc: Location = Location(start=(1, 1))
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
-    # pylint: disable=protected-access
+
     allocator._allocation_slots[loc] = 1
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
-    # pylint: disable = protected-access
+
     result = session_generator._declare(
         ID("X"), type_, lambda x: False, loc, expression, constant, session_global
     )
@@ -1009,7 +1004,6 @@ def test_session_declare_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        # pylint: disable = protected-access
         session_generator._declare(  # pragma: no branch
             ID("X", location=Location((10, 20))),
             type_,
@@ -1206,7 +1200,7 @@ end;\
 def test_session_state_action(action: stmt.Statement, expected: str) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
-    # pylint: disable = protected-access
+
     allocator._allocation_slots[Location(start=(1, 1))] = 1
     assert (
         "\n".join(
@@ -1281,7 +1275,6 @@ def test_session_state_action_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        # pylint: disable = protected-access
         session_generator._state_action(  # pragma: no branch
             ID("S"),
             action,
@@ -1704,11 +1697,10 @@ def test_session_assign_error(
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
     alloc_id = Location(start=(1, 1))
-    # pylint: disable = protected-access
+
     allocator._allocation_slots[alloc_id] = 1
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        # pylint: disable = protected-access
         session_generator._assign(
             ID("X", location=Location((10, 20))),
             type_,
@@ -1760,7 +1752,6 @@ def test_session_append_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        # pylint: disable = protected-access
         session_generator._append(
             append,
             ExceptionHandler(set(), State("S", exception_transition=Transition("E")), []),
@@ -1789,7 +1780,6 @@ def test_session_read_error(read: stmt.Read, error_type: type[BaseError], error_
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        # pylint: disable = protected-access
         session_generator._read(  # pragma: no branch
             read,
             lambda x: False,
@@ -1818,7 +1808,6 @@ def test_session_write_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        # pylint: disable = protected-access
         session_generator._write(write)
 
 
@@ -1943,7 +1932,7 @@ def test_session_substitution(expression: expr.Expr, expected: expr.Expr) -> Non
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
-    # pylint: disable = protected-access
+
     assert expression.substituted(session_generator._substitution(lambda x: False)) == expected
 
 
@@ -1979,7 +1968,6 @@ def test_session_substitution_error(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        # pylint: disable = protected-access
         expression.substituted(  # pragma: no branch
             session_generator._substitution(lambda x: False)
         )
@@ -2036,7 +2024,6 @@ def test_session_substitution_equality(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
 
-    # pylint: disable = protected-access
     assert (
         relation(left, right).substituted(session_generator._substitution(lambda x: False))
         == expected

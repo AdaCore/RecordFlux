@@ -93,7 +93,6 @@ def _convert_registry_to_enum_type(
     registry: Element,
     always_valid: bool,
 ) -> Optional[EnumType]:
-    # pylint: disable=too-many-locals
     records = registry.findall("iana:record", NAMESPACE)
     title = registry.find("iana:title", NAMESPACE)
     if len(records) == 0 or title is None or title.text is None:

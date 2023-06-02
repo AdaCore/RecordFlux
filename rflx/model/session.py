@@ -47,7 +47,6 @@ class Transition(Base):
 
 
 class State(Base):
-    # pylint: disable = too-many-instance-attributes
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -58,8 +57,6 @@ class State(Base):
         description: Optional[str] = None,
         location: Optional[Location] = None,
     ):
-        # pylint: disable=too-many-arguments
-
         if transitions:
             assert transitions[-1].condition == expr.TRUE, "missing default transition"
         else:
@@ -162,7 +159,7 @@ class State(Base):
         if self._exception_transition and self._exception_transition.target == ID("null"):
             self._exception_transition.target = FINAL_STATE.identifier
 
-    def _normalize_actions(self) -> None:  # pylint: disable = too-many-branches  # noqa: PLR0912
+    def _normalize_actions(self) -> None:  # noqa: PLR0912
         field_assignments: list[stmt.MessageFieldAssignment] = []
         actions: list[stmt.Statement] = []
 
@@ -313,7 +310,6 @@ class State(Base):
 
 
 class AbstractSession(TopLevelDeclaration):
-    # pylint: disable=too-many-arguments, too-many-instance-attributes
     @abstractmethod
     def __init__(  # noqa: PLR0913
         self,
@@ -449,7 +445,6 @@ class AbstractSession(TopLevelDeclaration):
 
 
 class Session(AbstractSession):
-    # pylint: disable=too-many-arguments
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -791,7 +786,7 @@ class Session(AbstractSession):
                     ],
                 )
 
-    def _typify_variable(  # pylint: disable = too-many-branches  # noqa: PLR0912
+    def _typify_variable(  # noqa: PLR0912
         self, expression: expr.Expr, declarations: Mapping[ID, decl.Declaration]
     ) -> expr.Expr:
         if isinstance(
@@ -872,7 +867,6 @@ class Session(AbstractSession):
 
 
 class UnprovenSession(AbstractSession):
-    # pylint: disable=too-many-arguments
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -882,7 +876,6 @@ class UnprovenSession(AbstractSession):
         types: Sequence[mty.Type],
         location: Optional[Location] = None,
     ):
-        # pylint: disable=useless-super-delegation
         super().__init__(
             identifier,
             states,

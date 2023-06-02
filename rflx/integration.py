@@ -21,10 +21,8 @@ class IntSize(ConstrainedInt):
 
 class SessionSize(BaseModel, extra=Extra.forbid):
     default: Optional[IntSize] = Field(alias="Default")
-    global_: Optional[ty.Mapping[str, IntSize]] = Field(alias="Global")  # noqa: PEA001
-    local_: Optional[ty.Mapping[str, ty.Mapping[str, IntSize]]] = Field(  # noqa: PEA001
-        alias="Local"
-    )
+    global_: Optional[ty.Mapping[str, IntSize]] = Field(alias="Global")
+    local_: Optional[ty.Mapping[str, ty.Mapping[str, IntSize]]] = Field(alias="Local")
 
 
 class SessionIntegration(BaseModel, extra=Extra.forbid):
@@ -32,7 +30,7 @@ class SessionIntegration(BaseModel, extra=Extra.forbid):
 
 
 class IntegrationFile(BaseModel, extra=Extra.forbid):
-    session: ty.Mapping[str, SessionIntegration] = Field(alias="Session")  # noqa: PEA001
+    session: ty.Mapping[str, SessionIntegration] = Field(alias="Session")
 
 
 class Integration:

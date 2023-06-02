@@ -1,5 +1,3 @@
-# pylint: disable = too-many-lines
-
 from __future__ import annotations
 
 import itertools
@@ -114,7 +112,6 @@ class MessageState(Base):
 @invariant(lambda self: valid_message_field_types(self))
 @invariant(lambda self: not self.types if not self.structure else True)
 class AbstractMessage(mty.Type):
-    # pylint: disable=too-many-arguments,too-many-public-methods,too-many-instance-attributes
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -848,7 +845,6 @@ class AbstractMessage(mty.Type):
 
 
 class Message(AbstractMessage):
-    # pylint: disable=too-many-arguments
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -995,7 +991,7 @@ class Message(AbstractMessage):
             and not any(isinstance(t, mty.Sequence) for t in self.types.values())
         )
 
-    def size(  # pylint: disable = too-many-locals
+    def size(
         self,
         field_values: Optional[Mapping[Field, expr.Expr]] = None,
         message_instance: Optional[ID] = None,
@@ -1521,7 +1517,7 @@ class Message(AbstractMessage):
                 and expression.right == expr.Number(1)
             )
 
-        for name, expressions in self.checksums.items():  # pylint: disable=too-many-nested-blocks
+        for name, expressions in self.checksums.items():
             if Field(name) not in self.fields:
                 self.error.extend(
                     [
@@ -1925,7 +1921,6 @@ class Message(AbstractMessage):
         proofs.check(self.error)
 
     def _prove_field_positions(self) -> None:
-        # pylint: disable=too-many-locals
         proofs = expr.ParallelProofs(self._workers)
         for f in (*self.fields, FINAL):
             for path in self.paths(f):
@@ -2165,7 +2160,6 @@ class Message(AbstractMessage):
 
 
 class DerivedMessage(Message):
-    # pylint: disable=too-many-arguments
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -2210,7 +2204,6 @@ class DerivedMessage(Message):
 
 
 class UnprovenMessage(AbstractMessage):
-    # pylint: disable=too-many-arguments
     def copy(  # noqa: PLR0913
         self,
         identifier: Optional[StrID] = None,
@@ -2260,7 +2253,7 @@ class UnprovenMessage(AbstractMessage):
 
             message = self._merge_inner_message(message, *inner_message, message_arguments)
 
-    def _merge_inner_message(  # pylint: disable=too-many-locals
+    def _merge_inner_message(
         self,
         message: UnprovenMessage,
         field: Field,
@@ -2522,7 +2515,6 @@ class UnprovenMessage(AbstractMessage):
 
 
 class UnprovenDerivedMessage(UnprovenMessage):
-    # pylint: disable=too-many-arguments
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -2595,7 +2587,6 @@ class UnprovenDerivedMessage(UnprovenMessage):
 
 
 class Refinement(mty.Type):
-    # pylint: disable=too-many-arguments
     def __init__(  # noqa: PLR0913
         self,
         package: StrID,

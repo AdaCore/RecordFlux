@@ -1,5 +1,3 @@
-# pylint: disable = too-many-lines, fixme
-
 """
 Intermediate representation in three-address code (TAC) format.
 
@@ -509,7 +507,6 @@ class Expr(Base):
         raise NotImplementedError
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        # pylint: disable = unused-argument
         return []
 
     @abstractmethod
@@ -1489,8 +1486,8 @@ class Conversion(Expr):
         self._str = intern(f"{self._identifier} ({self._argument})")
 
 
-class Comprehension(Expr):  # pylint: disable = too-many-instance-attributes
-    def __init__(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+class Comprehension(Expr):
+    def __init__(  # noqa: PLR0913
         self,
         iterator: StrID,
         sequence: BasicExpr,

@@ -1,5 +1,3 @@
-# pylint: disable = too-many-lines
-
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -157,7 +155,7 @@ class ChannelAccess:
     message_type: ID
 
 
-class SessionGenerator:  # pylint: disable = too-many-instance-attributes
+class SessionGenerator:
     def __init__(
         self,
         session: model.Session,
@@ -1979,7 +1977,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return [CommentStatement(str(action.location)), *result]
 
-    def _declare(  # pylint: disable = too-many-arguments, too-many-branches  # noqa: PLR0913, PLR0912
+    def _declare(  # noqa: PLR0913, PLR0912
         self,
         identifier: ID,
         type_: rty.Type,
@@ -2118,7 +2116,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
 
         return result
 
-    def _assign(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _assign(  # noqa: PLR0913
         self,
         target: ID,
         target_type: rty.Type,
@@ -2414,7 +2412,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         ]
 
-    def _assign_to_head(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _assign_to_head(  # noqa: PLR0913
         self,
         target: ID,
         head: expr.Head,
@@ -2441,7 +2439,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             target, head, exception_handler, is_global, state, alloc_id
         )
 
-    def _assign_to_head_comprehension(  # pylint: disable = too-many-arguments, too-many-locals  # noqa: PLR0913
+    def _assign_to_head_comprehension(  # noqa: PLR0913
         self,
         target: ID,
         head: expr.Head,
@@ -2564,7 +2562,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             location=comprehension.sequence.location,
         )
 
-    def _assign_to_head_sequence(  # pylint: disable = too-many-arguments, too-many-locals  # noqa: PLR0913
+    def _assign_to_head_sequence(  # noqa: PLR0913
         self,
         target: ID,
         head: expr.Head,
@@ -2741,7 +2739,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ),
         ]
 
-    def _assign_to_comprehension(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _assign_to_comprehension(  # noqa: PLR0913
         self,
         target: ID,
         target_type: rty.Sequence,
@@ -2751,8 +2749,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
-        # pylint: disable = too-many-locals
-
         assert isinstance(comprehension.type_, (rty.Sequence, rty.Aggregate))
         assert isinstance(comprehension.sequence.type_, rty.Sequence)
 
@@ -2868,7 +2864,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             location=comprehension.sequence.location,
         )
 
-    def _assign_to_call(  # pylint: disable = too-many-locals
+    def _assign_to_call(
         self,
         target: ID,
         call_expr: expr.Call,
@@ -3229,7 +3225,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             )
         ]
 
-    def _assign_message_field(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _assign_message_field(  # noqa: PLR0913
         self,
         target: ID,
         target_field: ID,
@@ -3515,10 +3511,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     def _substitution(  # noqa: PLR0915
         self, is_global: Callable[[ID], bool]
     ) -> Callable[[expr.Expr], expr.Expr]:
-        # pylint: disable = too-many-statements
-
         def func(expression: expr.Expr) -> expr.Expr:  # noqa: PLR0911, PLR0912, PLR0915
-            # pylint: disable = too-many-branches, too-many-return-statements
             if isinstance(expression, (expr.Relation, expr.MathBinExpr)):
                 for e in [expression.left, expression.right]:
                     if isinstance(e.type_, rty.Integer) or (
@@ -3937,7 +3930,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ]
         )
 
-    def _set_message_fields(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _set_message_fields(  # noqa: PLR0913
         self,
         target_context: ID,
         message_aggregate: expr.MessageAggregate,
@@ -4010,8 +4003,6 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        # pylint: disable = too-many-arguments, too-many-statements, too-many-branches, too-many-locals
-
         message_type_id = message_type.identifier
         field_type = message_type.field_types[field]
         statements: list[Statement] = []
@@ -4262,7 +4253,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         return result
 
     @staticmethod
-    def _set_opaque_field(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _set_opaque_field(  # noqa: PLR0913
         target_type: ID,
         target_context: ID,
         field: ID,
@@ -4312,7 +4303,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-    def _set_opaque_field_to_message_field(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _set_opaque_field_to_message_field(  # noqa: PLR0913
         self,
         target_type: ID,
         target_context: ID,
@@ -4400,7 +4391,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             post_statements=[Assignment(message_context, Variable(temporary_message_context))],
         )
 
-    def _set_opaque_field_to_message_field_from_structure(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _set_opaque_field_to_message_field_from_structure(  # noqa: PLR0913
         self,
         target_type: ID,
         target_context: ID,
@@ -4538,7 +4529,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
     def _declare_buffer(identifier: ID) -> Declaration:
         return ObjectDeclaration([buffer_id(identifier)], const.TYPES_BYTES_PTR)
 
-    def _declare_sequence_copy(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _declare_sequence_copy(  # noqa: PLR0913
         self,
         sequence_identifier: ID,
         sequence_type: ID,
@@ -4587,7 +4578,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             exception_handler,
         )
 
-    def _declare_message_field_sequence_copy(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _declare_message_field_sequence_copy(  # noqa: PLR0913
         self,
         message_identifier: ID,
         message_type: ID,
@@ -4652,7 +4643,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-    def _comprehension(  # pylint: disable = too-many-arguments, too-many-locals  # noqa: PLR0913
+    def _comprehension(  # noqa: PLR0913
         self,
         sequence_identifier: ID,
         sequence_type: ID,
@@ -4859,7 +4850,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
             ],
         )
 
-    def _comprehension_assign_element(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _comprehension_assign_element(  # noqa: PLR0913
         self,
         target_identifier: ID,
         target_type: Union[rty.Integer, rty.Enumeration, rty.Message],
@@ -5142,7 +5133,7 @@ class SessionGenerator:  # pylint: disable = too-many-instance-attributes
         ]
 
     @staticmethod
-    def _initialize_context(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _initialize_context(  # noqa: PLR0913
         identifier: ID,
         type_: ID,
         is_global: Callable[[ID], bool],

@@ -104,7 +104,7 @@ def test_id_parent() -> None:
 
 def test_id_parent_error() -> None:
     with pytest.raises(FatalError, match=r"^id: error: empty identifier$"):
-        ID("A").parent  # pylint: disable=expression-not-assigned
+        ID("A").parent
 
 
 def test_id_flat() -> None:

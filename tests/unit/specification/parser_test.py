@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 from __future__ import annotations
 
 import textwrap
@@ -1275,7 +1273,7 @@ def test_parse_type_derivation_spec() -> None:
 
 def test_parse_ethernet_spec() -> None:
     # black does not manage to honor the line limit here
-    # pylint: disable=line-too-long
+
     spec = {
         "Ethernet": {
             "_kind": "Specification",

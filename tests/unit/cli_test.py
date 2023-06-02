@@ -196,7 +196,7 @@ def test_main_generate_debug(
 ) -> None:
     result = []
 
-    def generator_mock(  # pylint: disable = unused-argument
+    def generator_mock(
         self: object,
         prefix: str,
         workers: int,

@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 from __future__ import annotations
 
 import typing as ty
@@ -60,8 +58,8 @@ class ChecksumFunction(Protocol):
 
 ValueType = Union[
     "MessageValue",
-    ty.Sequence["TypeValue"],  # noqa: PEA001
-    ty.Tuple[str, Number],  # noqa: PEA001
+    ty.Sequence["TypeValue"],
+    ty.Tuple[str, Number],
     int,
     str,
     bytes,
@@ -536,9 +534,6 @@ class SequenceValue(CompositeValue):
 
 
 class MessageValue(TypeValue):
-    # pylint: disable=too-many-instance-attributes
-    # pylint: disable=too-many-public-methods
-
     _type: Message
 
     def __init__(
@@ -1410,7 +1405,6 @@ class MessageValue(TypeValue):
             name_last: Optional[Last] = None,
             name_size: Optional[Size] = None,
         ):
-            # pylint: disable=too-many-arguments
             assert name or (name_variable and name_first and name_last and name_size)
             self.typeval = type_value
             self.name_variable = name_variable if name_variable else Variable(name)

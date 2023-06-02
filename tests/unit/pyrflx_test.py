@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 from collections import abc
 from pathlib import Path
 
@@ -40,7 +38,6 @@ def assert_bytestring_error(msg: MessageValue, msg_name: ID) -> None:
         PyRFLXError,
         match=f"^pyrflx: error: cannot create bytestring of invalid message: {msg_name}$",
     ):
-        # pylint: disable=pointless-statement
         msg.bytestring
 
 
@@ -329,7 +326,6 @@ def test_message_value_invalid_value(tlv_message_value: MessageValue) -> None:
 
 
 def test_message_value_next(tlv_message_value: MessageValue) -> None:
-    # pylint: disable=protected-access
     tlv_message_value.set("Tag", "Msg_Data")
     assert tlv_message_value._next_field(INITIAL.name) == "Tag"
     assert tlv_message_value._next_field("Tag") == "Length"
@@ -337,7 +333,6 @@ def test_message_value_next(tlv_message_value: MessageValue) -> None:
 
 
 def test_message_value_prev(tlv_message_value: MessageValue) -> None:
-    # pylint: disable=protected-access
     tlv_message_value.set("Tag", "Msg_Data")
     assert tlv_message_value._prev_field("Tag") == INITIAL.name
     assert tlv_message_value._prev_field(INITIAL.name) == ""
@@ -383,7 +378,6 @@ def test_message_value_field_set() -> None:
 def test_message_value_is_valid_opaque_field(
     tlv_message_value: MessageValue, ethernet_frame_value: MessageValue
 ) -> None:
-    # pylint: disable=protected-access
     assert not tlv_message_value._is_valid_composite_field("Value")
     tlv_message_value.set("Tag", "Msg_Data")
     tlv_message_value.set("Length", 1000)
@@ -437,7 +431,6 @@ def test_message_value_parse_incorrect_nested_message(ethernet_frame_value: Mess
 def test_message_value_parse_from_bitstring(
     tlv_message_value: MessageValue, enum_value: EnumValue
 ) -> None:
-    # pylint: disable=protected-access
     intval = IntegerValue(Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)))
     intval.parse(b"\x02")
     assert intval.value == 2
@@ -489,7 +482,6 @@ def test_message_value_set_invalid(ethernet_frame_value: MessageValue) -> None:
 
 
 def test_integer_value() -> None:
-    # pylint: disable=pointless-statement
     rangetype = Integer("Test::Int", expr.Number(8), expr.Number(16), expr.Number(8))
     rangevalue = IntegerValue(rangetype)
     assert not rangevalue.initialized
@@ -532,9 +524,9 @@ def test_enum_value_literals(enum_value: EnumValue) -> None:
 
 def test_enum_value_assign(enum_value: EnumValue) -> None:
     with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Enum not initialized$"):
-        enum_value.value  # pylint: disable=pointless-statement
+        enum_value.value
     with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Enum not initialized$"):
-        enum_value.expr  # pylint: disable=pointless-statement
+        enum_value.expr
 
     enum_value.assign("One")
     assert enum_value.initialized
@@ -614,8 +606,6 @@ def test_enum_value_builtin_parse(enum_value_builtin: EnumValue) -> None:
 
 
 def test_opaque_value() -> None:
-    # pylint: disable=pointless-statement
-    # pylint: disable=protected-access
     opaquevalue = OpaqueValue(Opaque())
     assert not opaquevalue.initialized
     with pytest.raises(
@@ -635,7 +625,6 @@ def test_opaque_value() -> None:
 
 
 def test_opaque_value_eq(enum_value: EnumValue) -> None:
-    # pylint: disable=comparison-with-itself
     ov = OpaqueValue(Opaque())
     ev = enum_value
     rangetype = Integer("Test::Int", expr.Number(8), expr.Number(16), expr.Number(8))
@@ -762,7 +751,6 @@ def test_sequence_assign_invalid(
     sequence_type_foo_value: MessageValue,
     enum_value: EnumValue,
 ) -> None:
-    # pylint: disable=protected-access
     type_sequence = SequenceValue(
         Sequence(
             "Test::Sequence",
@@ -1030,7 +1018,6 @@ def test_checksum_message_first(icmp_checksum_message_first: MessageValue) -> No
 
 
 def test_checksum_no_verification() -> None:
-    # pylint: disable = protected-access
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "icmp.rflx"], skip_model_verification=True, skip_message_verification=True
     )
@@ -1085,11 +1072,10 @@ def fixture_tlv_checksum_package(pyrflx_: PyRFLX) -> Package:
 
 @pytest.fixture(name="tlv_checksum_message")
 def fixture_tlv_checksum_message(tlv_checksum_package: Package) -> Message:
-    return tlv_checksum_package.new_message("Message")._type  # pylint: disable=protected-access
+    return tlv_checksum_package.new_message("Message")._type
 
 
 def test_checksum_is_checksum_settable(tlv_checksum_message: Message) -> None:
-    # pylint: disable=protected-access
     tlv_msg = MessageValue(tlv_checksum_message)
     tlv_msg.set_checksum_function({"Checksum": lambda message, **kwargs: 0})
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
@@ -1110,12 +1096,10 @@ def fixture_no_conditionals_package(pyrflx_: PyRFLX) -> Package:
 
 @pytest.fixture(name="no_conditionals_message")
 def fixture_no_conditionals_message(no_conditionals_package: Package) -> Message:
-    # pylint: disable = protected-access
     return no_conditionals_package.new_message("Message")._type
 
 
 def test_checksum_value_range(no_conditionals_message: Message) -> None:
-    # pylint: disable=protected-access
     message = no_conditionals_message.copy(
         structure=[
             Link(l.source, l.target, condition=expr.ValidChecksum("Checksum"))
@@ -1132,12 +1116,10 @@ def test_checksum_value_range(no_conditionals_message: Message) -> None:
 
 
 def checksum_function_zero(message: bytes, **_kwargs: object) -> int:
-    # pylint: disable=unused-argument
     return 0
 
 
 def checksum_function_255(message: bytes, **_kwargs: object) -> int:
-    # pylint: disable=unused-argument
     return 0xFF
 
 
@@ -1168,7 +1150,6 @@ def test_refinement_with_checksum(
 def test_set_checksum_to_pyrflx(
     pyrflx_checksum: PyRFLX,
 ) -> None:
-    # pylint: disable=protected-access
     pyrflx_checksum.set_checksum_functions(
         {
             "Refinement_With_Checksum::Message": {"Checksum": checksum_function_255},
@@ -1309,7 +1290,7 @@ def test_message_type_size_condition(message_type_size_value: MessageValue) -> N
     assert message_type_size_value.get("F2") == 2
 
 
-def test_always_valid_aspect(  # pylint: disable=invalid-name
+def test_always_valid_aspect(
     message_always_valid_aspect_value: MessageValue,
 ) -> None:
     message_always_valid_aspect_value.parse(b"\x04\x25\xAB")
@@ -1319,7 +1300,7 @@ def test_always_valid_aspect(  # pylint: disable=invalid-name
     assert message_always_valid_aspect_value.get("F3") == 171
 
 
-def test_get_inner_messages(  # pylint: disable=invalid-name
+def test_get_inner_messages(
     sequence_message_package: Package, message_sequence_refinement_value: MessageValue
 ) -> None:
     sequence_element_one = sequence_message_package.new_message("Sequence_Element")

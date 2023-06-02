@@ -62,7 +62,7 @@ class NumberedSlotInfo(SlotInfo):
     global_: bool
 
 
-class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
+class AllocatorGenerator:
     def __init__(self, session: Session, integration: Integration, prefix: str = "") -> None:
         self._session = session
         self._prefix = prefix
@@ -356,7 +356,7 @@ class AllocatorGenerator:  # pylint: disable = too-many-instance-attributes
             return state.identifier.name
         return None
 
-    def _allocate_local_slots(  # pylint: disable = too-many-branches  # noqa: PLR0912
+    def _allocate_local_slots(  # noqa: PLR0912
         self,
     ) -> list[SlotInfo]:
         """

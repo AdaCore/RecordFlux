@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 from __future__ import annotations
 
 import logging
@@ -929,15 +927,13 @@ def create_null_message(
     )
 
 
-def create_message(  # noqa: PLR0913
+def create_message(
     error: RecordFluxError,
     identifier: ID,
     parameters: lang.Parameters,
     message: lang.TypeDef,
     filename: Path,
 ) -> Optional[model.UncheckedMessage]:
-    # pylint: disable = too-many-arguments, too-many-locals
-
     assert isinstance(message, lang.MessageTypeDef)
     fields = message.f_message_fields
 
@@ -1246,7 +1242,6 @@ def check_duplicate_aspect(
 def parse_aspects(  # noqa: PLR0912
     error: RecordFluxError, aspects: lang.MessageAspectList, filename: Path
 ) -> tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
-    # pylint: disable=too-many-branches
     checksum_result = {}
     byte_order_result = None
 
@@ -1289,14 +1284,13 @@ def parse_aspects(  # noqa: PLR0912
     return checksum_result, byte_order_result
 
 
-def create_derived_message(  # noqa: PLR0913
+def create_derived_message(
     error: RecordFluxError,
     identifier: ID,
     _parameters: lang.Parameters,
     derivation: lang.TypeDef,
     filename: Path,
 ) -> Optional[model.UncheckedDerivedMessage]:
-    # pylint: disable=too-many-arguments
     assert isinstance(derivation, lang.TypeDerivationDef)
     base_id = create_id(error, derivation.f_base, filename)
     base_name = model.internal_type_identifier(base_id, identifier.parent)

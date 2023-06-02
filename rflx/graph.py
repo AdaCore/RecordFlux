@@ -48,7 +48,7 @@ def create_message_graph(message: Message) -> Dot:
     """Return pydot graph representation of message."""
 
     def _edge_label(link: Link) -> str:
-        return "({cond},{sep1}{size},{sep2}{first})".format(  # pylint: disable = consider-using-f-string
+        return "({cond},{sep1}{size},{sep2}{first})".format(
             cond=str(link.condition) if link.condition != TRUE else "⊤",
             sep1=" " if link.condition == TRUE or link.size == UNDEFINED else "\n",
             size=str(link.size) if link.size != UNDEFINED else message.field_size(link.target),

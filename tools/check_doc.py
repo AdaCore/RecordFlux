@@ -143,8 +143,6 @@ def parse_code_block_type(type_str: str) -> CodeBlockType:
 
 
 def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
-    # pylint: disable=too-many-branches, too-many-statements
-
     found = False
     state = State.OUTSIDE
     block = ""

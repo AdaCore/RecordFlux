@@ -1,5 +1,4 @@
 if __debug__:  # pragma: no cover
-    # pylint: disable=unused-import
     from icontract import (
         DBC as DBC,
         DBCMeta as DBCMeta,
@@ -26,38 +25,36 @@ else:
     class ViolationError(AssertionError):  # type: ignore
         pass
 
-    # pylint: disable=unused-argument
-
     def require(  # type: ignore[no-redef,misc]
-        condition: ty.Callable[..., Any],  # noqa: PEA001
+        condition: ty.Callable[..., Any],
         description: Optional[str] = None,
         a_repr: Optional[reprlib.Repr] = None,
         enabled: bool = __debug__,
-        error: Optional[Union[ty.Callable[..., Exception], type]] = None,  # noqa: PEA001
+        error: Optional[Union[ty.Callable[..., Exception], type]] = None,
     ) -> Callable:  # type: ignore[type-arg]
         return lambda x: x
 
     def snapshot(  # type: ignore[no-redef,misc]
-        capture: ty.Callable[..., Any],  # noqa: PEA001
+        capture: ty.Callable[..., Any],
         name: Optional[str] = None,
         enabled: bool = __debug__,
     ) -> Callable:  # type: ignore[type-arg]
         return lambda x: x
 
     def ensure(  # type: ignore[no-redef,misc]
-        condition: ty.Callable[..., Any],  # noqa: PEA001
+        condition: ty.Callable[..., Any],
         description: Optional[str] = None,
         a_repr: Optional[reprlib.Repr] = None,
         enabled: bool = __debug__,
-        error: Optional[Union[ty.Callable[..., Exception], type]] = None,  # noqa: PEA001
+        error: Optional[Union[ty.Callable[..., Exception], type]] = None,
     ) -> Callable:  # type: ignore[type-arg]
         return lambda x: x
 
     def invariant(  # type: ignore[no-redef,misc]
-        condition: ty.Callable[..., Any],  # noqa: PEA001
+        condition: ty.Callable[..., Any],
         description: Optional[str] = None,
         a_repr: Optional[reprlib.Repr] = None,
         enabled: bool = __debug__,
-        error: Optional[Union[ty.Callable[..., Exception], type]] = None,  # noqa: PEA001
+        error: Optional[Union[ty.Callable[..., Exception], type]] = None,
     ) -> Callable:  # type: ignore[type-arg]
         return lambda x: x

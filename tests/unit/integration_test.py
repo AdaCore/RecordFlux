@@ -113,7 +113,6 @@ def test_rfi_add_integration(rfi_content: str, match_error: str) -> None:
     error = RecordFluxError()
     integration = Integration()
     with pytest.raises(RecordFluxError, match=regex):
-        # pylint: disable = protected-access
         integration._add_integration_object(Path("test.rfi"), content, error)
         error.propagate()
 
@@ -139,7 +138,7 @@ def test_rfi_get_size() -> None:
         }
     }
     error = RecordFluxError()
-    # pylint: disable = protected-access
+
     integration._add_integration_object(Path("p.rfi"), session_object, error)
     error.propagate()
     assert integration.get_size(ID("P::S"), None, None) == 1024

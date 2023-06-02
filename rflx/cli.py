@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 DEFAULT_PREFIX = "RFLX"
 
 
-def main(  # pylint: disable = too-many-statements  # noqa: PLR0915
+def main(  # noqa: PLR0915
     argv: Sequence[str],
 ) -> Union[int, str]:
     parser = argparse.ArgumentParser()
@@ -260,7 +260,7 @@ def main(  # pylint: disable = too-many-statements  # noqa: PLR0915
         args.func(args)
     except RecordFluxError as e:
         return f"{e}"
-    except Exception:  # pylint: disable = broad-except
+    except Exception:
         if args.unsafe:
             return f"""
 ----------------------------------------------------------------------------

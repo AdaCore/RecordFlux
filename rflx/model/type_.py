@@ -1,5 +1,3 @@
-# pylint: disable = cyclic-import
-
 from __future__ import annotations
 
 import typing as ty
@@ -96,7 +94,7 @@ class Scalar(Type):
 
 
 class Integer(Scalar):
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         identifier: StrID,
         first: expr.Expr,
@@ -270,7 +268,7 @@ class Integer(Scalar):
 
 
 class Enumeration(Scalar):
-    def __init__(  # noqa: PLR0912, PLR0913
+    def __init__(  # noqa: PLR0912
         self,
         identifier: StrID,
         literals: abc.Sequence[tuple[StrID, expr.Number]],
@@ -278,7 +276,6 @@ class Enumeration(Scalar):
         always_valid: bool,
         location: Optional[Location] = None,
     ) -> None:
-        # pylint: disable=too-many-branches, too-many-locals
         super().__init__(identifier, size, location)
 
         for i1, e1 in enumerate(literals):

@@ -94,7 +94,6 @@ grammar.add_rules(
             grammar.suffix,
             "'",
             Or(
-                # pylint: disable=no-member
                 ast.Attr.alt_first(lexer.First),
                 ast.Attr.alt_size(lexer.Size),
                 ast.Attr.alt_last(lexer.Last),
@@ -104,7 +103,6 @@ grammar.add_rules(
         grammar.primary,
     ),
     factor=Or(
-        # pylint: disable=no-member
         ast.BinOp(grammar.primary, ast.Op.alt_pow("**"), Cut(), grammar.primary),
         grammar.suffix,
     ),
@@ -112,7 +110,6 @@ grammar.add_rules(
         ast.BinOp(
             grammar.term,
             Or(
-                # pylint: disable=no-member
                 ast.Op.alt_mul("*"),
                 ast.Op.alt_div("/"),
                 ast.Op.alt_mod("mod"),
@@ -127,7 +124,6 @@ grammar.add_rules(
         ast.BinOp(
             grammar.simple_expr,
             Or(
-                # pylint: disable=no-member
                 ast.Op.alt_add("+"),
                 ast.Op.alt_sub("-"),
             ),
@@ -140,7 +136,6 @@ grammar.add_rules(
         ast.BinOp(
             grammar.relation,
             Or(
-                # pylint: disable=no-member
                 ast.Op.alt_eq("="),
                 ast.Op.alt_neq("/="),
                 ast.Op.alt_le("<="),
@@ -157,7 +152,6 @@ grammar.add_rules(
         ast.BinOp(
             grammar.expression,
             Or(
-                # pylint: disable=no-member
                 ast.Op.alt_and("and"),
                 ast.Op.alt_or("or"),
             ),
@@ -169,7 +163,6 @@ grammar.add_rules(
     quantified_expression=ast.QuantifiedExpression(
         "for",
         Or(
-            # pylint: disable=no-member
             ast.Quantifier.alt_all("all"),
             ast.Quantifier.alt_some("some"),
         ),
@@ -243,7 +236,6 @@ grammar.add_rules(
             grammar.extended_suffix,
             "'",
             Or(
-                # pylint: disable=no-member
                 ast.Attr.alt_first(lexer.First),
                 ast.Attr.alt_size(lexer.Size),
                 ast.Attr.alt_last(lexer.Last),
@@ -269,7 +261,6 @@ grammar.add_rules(
         ast.BinOp(
             grammar.extended_factor,
             Or(
-                # pylint: disable=no-member
                 ast.Op.alt_pow("**"),
             ),
             Cut(),
@@ -281,7 +272,6 @@ grammar.add_rules(
         ast.BinOp(
             grammar.extended_term,
             Or(
-                # pylint: disable=no-member
                 ast.Op.alt_mul("*"),
                 ast.Op.alt_div("/"),
                 ast.Op.alt_mod("mod"),
@@ -299,7 +289,6 @@ grammar.add_rules(
         ast.BinOp(
             grammar.extended_simple_expr,
             Or(
-                # pylint: disable=no-member
                 ast.Op.alt_add("+"),
                 ast.Op.alt_sub("-"),
             ),
@@ -312,7 +301,6 @@ grammar.add_rules(
         ast.BinOp(
             grammar.extended_relation,
             Or(
-                # pylint: disable=no-member
                 ast.Op.alt_eq("="),
                 ast.Op.alt_neq("/="),
                 ast.Op.alt_le("<="),
@@ -331,7 +319,6 @@ grammar.add_rules(
         ast.BinOp(
             grammar.extended_expression,
             Or(
-                # pylint: disable=no-member
                 ast.Op.alt_and("and"),
                 ast.Op.alt_or("or"),
             ),
@@ -389,7 +376,6 @@ grammar.add_rules(
         "Byte_Order",
         "=>",
         Or(
-            # pylint: disable=no-member
             ast.ByteOrderType.alt_highorderfirst("High_Order_First"),
             ast.ByteOrderType.alt_loworderfirst("Low_Order_First"),
         ),
@@ -503,7 +489,6 @@ grammar.add_rules(
         grammar.unqualified_identifier,
         "'",
         Or(
-            # pylint: disable=no-member
             ast.AttrStmt.alt_append("Append"),
             ast.AttrStmt.alt_extend("Extend"),
             ast.AttrStmt.alt_read("Read"),

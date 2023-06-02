@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 from __future__ import annotations
 
 import logging
@@ -353,7 +351,7 @@ class Generator:
 
         return units
 
-    def _create_unit(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def _create_unit(  # noqa: PLR0913
         self,
         identifier: ID,
         declaration_context: Optional[abc.Sequence[ContextItem]] = None,
@@ -397,7 +395,6 @@ class Generator:
 
         return unit
 
-    # pylint: disable = too-many-branches, too-many-locals
     def _create_message(self, message: Message) -> dict[ID, Unit]:  # noqa: PLR0912
         units: dict[ID, Unit] = {}
 

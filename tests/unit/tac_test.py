@@ -1,5 +1,3 @@
-# pylint: disable = too-many-lines
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -280,7 +278,7 @@ def test_obj_var_substituted() -> None:
 
 def test_obj_var_z3expr() -> None:
     with pytest.raises(NotImplementedError):
-        tac.ObjVar("X", MSG_TY).z3expr  # pylint: disable = expression-not-assigned
+        tac.ObjVar("X", MSG_TY).z3expr
 
 
 def test_enum_lit_str() -> None:
@@ -804,7 +802,7 @@ def test_obj_field_access_substituted() -> None:
 
 def test_obj_field_access_z3expr() -> None:
     with pytest.raises(NotImplementedError):
-        tac.ObjFieldAccess("M", "F", ENUM_TY).z3expr  # pylint: disable = expression-not-assigned
+        tac.ObjFieldAccess("M", "F", ENUM_TY).z3expr
 
 
 def test_int_if_expr_str() -> None:

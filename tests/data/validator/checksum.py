@@ -48,9 +48,7 @@ def internet_checksum(checksum_bytes: bytes) -> int:
     return intermediary_result ^ 0xFFFF
 
 
-def checksum_message_checksum(
-    message: bytes, **kwargs: object  # pylint: disable = unused-argument
-) -> int:
+def checksum_message_checksum(message: bytes, **kwargs: object) -> int:
     a = kwargs.get("A")
     b = kwargs.get("B")
     assert isinstance(a, int)

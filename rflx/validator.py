@@ -70,8 +70,6 @@ class Validator:
         coverage: bool = False,
         target_coverage: float = 0.00,
     ) -> None:
-        # pylint: disable = too-many-arguments, too-many-locals
-
         if target_coverage < 0 or target_coverage > 100:
             raise ValidationError(
                 f"target coverage must be between 0 and 100, got {target_coverage}"
@@ -451,7 +449,7 @@ class OutputWriter:
     def __init__(self, file: Optional[Path]) -> None:
         if file is not None:
             try:
-                self.file = open(file, "w", encoding="utf-8")  # pylint: disable=consider-using-with
+                self.file = open(file, "w", encoding="utf-8")
             except OSError as e:
                 raise ValidationError(f"cannot open output file {file}: {e}") from e
             self.file.write("[\n")

@@ -1,5 +1,3 @@
-# pylint: disable = cyclic-import, too-many-lines
-
 from __future__ import annotations
 
 import itertools
@@ -746,7 +744,6 @@ class NotIn(Relation):
 def If(
     condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Optional[Expr] = None
 ) -> Expr:
-    # pylint: disable=invalid-name
     if len(condition_expressions) == 0 and else_expression is not None:
         return else_expression
     if len(condition_expressions) == 1 and condition_expressions[0][0] == TRUE:
@@ -801,7 +798,6 @@ class IfExpr(Expr):
 
 
 def Case(control_expression: Expr, case_expressions: Sequence[tuple[Expr, Expr]]) -> Expr:
-    # pylint: disable=invalid-name
     if len(case_expressions) == 1 and case_expressions[0][0] == Variable("others"):
         return case_expressions[0][1]
     return CaseExpr(control_expression, case_expressions)
@@ -1387,7 +1383,7 @@ class PackageRenamingDeclaration(Declaration):
 
 
 class ObjectDeclaration(Declaration):
-    def __init__(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913
         self,
         identifiers: Sequence[StrID],
         type_identifier: Union[StrID, Expr],
@@ -1677,7 +1673,7 @@ class VariantPart(Base):
 
 
 class RecordType(TypeDeclaration):
-    def __init__(  # pylint: disable = too-many-arguments  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         components: Sequence[Component],

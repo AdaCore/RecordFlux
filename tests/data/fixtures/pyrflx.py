@@ -57,7 +57,6 @@ def fixture_icmp_message_value(icmp_package: pyrflx.Package) -> pyrflx.MessageVa
 
 @pytest.fixture(name="icmp_message")
 def fixture_icmp_message(icmp_package: pyrflx.Package) -> model.Message:
-    # pylint: disable = protected-access
     return icmp_package.new_message("Message")._type
 
 

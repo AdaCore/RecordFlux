@@ -178,8 +178,6 @@ def messages(  # noqa: PLR0915
     unique_identifiers: abc.Generator[ID, None, None],
     not_null: bool = False,
 ) -> Message:
-    # pylint: disable=too-many-locals, too-many-statements
-
     @dataclass
     class FieldPair:
         source: Field

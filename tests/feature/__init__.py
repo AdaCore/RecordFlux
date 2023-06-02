@@ -27,27 +27,23 @@ FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pyca
 
 
 class ConfigFile(BaseModel):
-    input: Optional[ty.Mapping[str, Optional[ty.Sequence[str]]]]  # noqa: PEA001
-    output: Optional[ty.Sequence[str]]  # noqa: PEA001
+    input: Optional[ty.Mapping[str, Optional[ty.Sequence[str]]]]
+    output: Optional[ty.Sequence[str]]
     sequence: Optional[str]
-    prove: Optional[ty.Sequence[str]]  # noqa: PEA001
+    prove: Optional[ty.Sequence[str]]
 
-    @validator("input")  # pylint: disable-next = no-self-argument
+    @validator("input")
     def initialize_input_if_present(
-        cls, value: Optional[ty.Mapping[str, ty.Sequence[str]]]  # noqa: PEA001
-    ) -> ty.Mapping[str, ty.Sequence[str]]:  # noqa: PEA001
+        cls, value: Optional[ty.Mapping[str, ty.Sequence[str]]]
+    ) -> ty.Mapping[str, ty.Sequence[str]]:
         return value if value is not None else {}
 
-    @validator("output")  # pylint: disable-next = no-self-argument
-    def initialize_output_if_present(
-        cls, value: Optional[ty.Sequence[str]]  # noqa: PEA001
-    ) -> ty.Sequence[str]:  # noqa: PEA001
+    @validator("output")
+    def initialize_output_if_present(cls, value: Optional[ty.Sequence[str]]) -> ty.Sequence[str]:
         return value if value is not None else []
 
-    @validator("prove")  # pylint: disable-next = no-self-argument
-    def initialize_prove_if_present(
-        cls, value: Optional[ty.Sequence[str]]  # noqa: PEA001
-    ) -> ty.Sequence[str]:  # noqa: PEA001
+    @validator("prove")
+    def initialize_prove_if_present(cls, value: Optional[ty.Sequence[str]]) -> ty.Sequence[str]:
         return value if value is not None else []
 
 

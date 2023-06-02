@@ -1,5 +1,3 @@
-# pylint: disable = too-many-lines
-
 from __future__ import annotations
 
 import enum
@@ -77,7 +75,7 @@ def substitution(
     def type_conversion(expression: expr.Expr) -> expr.Expr:
         return expr.Call(target_type, [expression]) if target_type else expression
 
-    def func(  # pylint: disable = too-many-branches  # noqa: PLR0912
+    def func(  # noqa: PLR0912
         expression: expr.Expr,
     ) -> expr.Expr:
         def byte_aggregate(aggregate: expr.Aggregate) -> expr.Aggregate:
