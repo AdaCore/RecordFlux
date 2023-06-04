@@ -431,7 +431,6 @@ is
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
-       and Field_Last (Ctx, F_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Data)) + Field_Size (Ctx, F_Data)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

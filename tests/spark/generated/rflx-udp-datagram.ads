@@ -501,7 +501,6 @@ is
        and Valid_Next (Ctx, F_Destination_Port) = Valid_Next (Ctx, F_Destination_Port)'Old
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Field_First (Ctx, F_Destination_Port) = Field_First (Ctx, F_Destination_Port)'Old
-       and Field_Last (Ctx, F_Destination_Port) = Field_Last (Ctx, Predecessor (Ctx, F_Destination_Port)) + Field_Size (Ctx, F_Destination_Port)
        and (for all F in Field range F_Source_Port .. F_Source_Port =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -531,7 +530,6 @@ is
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
        and Field_First (Ctx, F_Length) = Field_First (Ctx, F_Length)'Old
-       and Field_Last (Ctx, F_Length) = Field_Last (Ctx, Predecessor (Ctx, F_Length)) + Field_Size (Ctx, F_Length)
        and (for all F in Field range F_Source_Port .. F_Destination_Port =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -561,7 +559,6 @@ is
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_Checksum) = Field_First (Ctx, F_Checksum)'Old
-       and Field_Last (Ctx, F_Checksum) = Field_Last (Ctx, Predecessor (Ctx, F_Checksum)) + Field_Size (Ctx, F_Checksum)
        and (for all F in Field range F_Source_Port .. F_Length =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -589,8 +586,7 @@ is
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
-       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
-       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
    procedure Initialize_Payload (Ctx : in out Context) with
      Pre =>
@@ -612,8 +608,7 @@ is
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
-       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
-       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -639,7 +634,6 @@ is
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
        and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
-       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload)
        and Equal (Ctx, F_Payload, Data);
 
    generic
@@ -668,8 +662,7 @@ is
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
-       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
-       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
    function Context_Cursor (Ctx : Context; Fld : Field) return Field_Cursor with
      Annotate =>

@@ -419,7 +419,6 @@ is
        and Valid_Next (Ctx, F_Integer_Vector) = Valid_Next (Ctx, F_Integer_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_Integer_Vector) = Field_First (Ctx, F_Integer_Vector)'Old
-       and Field_Last (Ctx, F_Integer_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Integer_Vector)) + Field_Size (Ctx, F_Integer_Vector)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Integer_Vector);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Integer_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
@@ -462,7 +461,6 @@ is
        and Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
-       and Field_Last (Ctx, F_Enumeration_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Enumeration_Vector)) + Field_Size (Ctx, F_Enumeration_Vector)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Enumeration_Vector);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Enumeration_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
@@ -502,7 +500,6 @@ is
        and Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old
-       and Field_Last (Ctx, F_AV_Enumeration_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_AV_Enumeration_Vector)) + Field_Size (Ctx, F_AV_Enumeration_Vector)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_AV_Enumeration_Vector);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_AV_Enumeration_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

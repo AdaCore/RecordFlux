@@ -447,7 +447,6 @@ is
        and Valid_Next (Ctx, F_X_B) = Valid_Next (Ctx, F_X_B)'Old
        and Get_X_A (Ctx) = Get_X_A (Ctx)'Old
        and Field_First (Ctx, F_X_B) = Field_First (Ctx, F_X_B)'Old
-       and Field_Last (Ctx, F_X_B) = Field_Last (Ctx, Predecessor (Ctx, F_X_B)) + Field_Size (Ctx, F_X_B)
        and (for all F in Field range F_X_A .. F_X_A =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -474,7 +473,6 @@ is
        and Get_X_A (Ctx) = Get_X_A (Ctx)'Old
        and Get_X_B (Ctx) = Get_X_B (Ctx)'Old
        and Field_First (Ctx, F_Y) = Field_First (Ctx, F_Y)'Old
-       and Field_Last (Ctx, F_Y) = Field_Last (Ctx, Predecessor (Ctx, F_Y)) + Field_Size (Ctx, F_Y)
        and (for all F in Field range F_X_A .. F_X_B =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 

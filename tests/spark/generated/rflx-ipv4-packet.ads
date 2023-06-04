@@ -572,7 +572,6 @@ is
        and Predecessor (Ctx, F_IHL) = Predecessor (Ctx, F_IHL)'Old
        and Valid_Next (Ctx, F_IHL) = Valid_Next (Ctx, F_IHL)'Old
        and Field_First (Ctx, F_IHL) = Field_First (Ctx, F_IHL)'Old
-       and Field_Last (Ctx, F_IHL) = Field_Last (Ctx, Predecessor (Ctx, F_IHL)) + Field_Size (Ctx, F_IHL)
        and (for all F in Field range F_Version .. F_Version =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -613,7 +612,6 @@ is
        and Valid_Next (Ctx, F_DSCP) = Valid_Next (Ctx, F_DSCP)'Old
        and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
        and Field_First (Ctx, F_DSCP) = Field_First (Ctx, F_DSCP)'Old
-       and Field_Last (Ctx, F_DSCP) = Field_Last (Ctx, Predecessor (Ctx, F_DSCP)) + Field_Size (Ctx, F_DSCP)
        and (for all F in Field range F_Version .. F_IHL =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -654,7 +652,6 @@ is
        and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
        and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
        and Field_First (Ctx, F_ECN) = Field_First (Ctx, F_ECN)'Old
-       and Field_Last (Ctx, F_ECN) = Field_Last (Ctx, Predecessor (Ctx, F_ECN)) + Field_Size (Ctx, F_ECN)
        and (for all F in Field range F_Version .. F_DSCP =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -698,7 +695,6 @@ is
        and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
        and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
        and Field_First (Ctx, F_Total_Length) = Field_First (Ctx, F_Total_Length)'Old
-       and Field_Last (Ctx, F_Total_Length) = Field_Last (Ctx, Predecessor (Ctx, F_Total_Length)) + Field_Size (Ctx, F_Total_Length)
        and (for all F in Field range F_Version .. F_ECN =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -739,7 +735,6 @@ is
        and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
        and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
        and Field_First (Ctx, F_Identification) = Field_First (Ctx, F_Identification)'Old
-       and Field_Last (Ctx, F_Identification) = Field_Last (Ctx, Predecessor (Ctx, F_Identification)) + Field_Size (Ctx, F_Identification)
        and (for all F in Field range F_Version .. F_Total_Length =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -783,7 +778,6 @@ is
        and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
        and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
        and Field_First (Ctx, F_Flag_R) = Field_First (Ctx, F_Flag_R)'Old
-       and Field_Last (Ctx, F_Flag_R) = Field_Last (Ctx, Predecessor (Ctx, F_Flag_R)) + Field_Size (Ctx, F_Flag_R)
        and (for all F in Field range F_Version .. F_Identification =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -824,7 +818,6 @@ is
        and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
        and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
        and Field_First (Ctx, F_Flag_DF) = Field_First (Ctx, F_Flag_DF)'Old
-       and Field_Last (Ctx, F_Flag_DF) = Field_Last (Ctx, Predecessor (Ctx, F_Flag_DF)) + Field_Size (Ctx, F_Flag_DF)
        and (for all F in Field range F_Version .. F_Flag_R =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -865,7 +858,6 @@ is
        and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
        and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
        and Field_First (Ctx, F_Flag_MF) = Field_First (Ctx, F_Flag_MF)'Old
-       and Field_Last (Ctx, F_Flag_MF) = Field_Last (Ctx, Predecessor (Ctx, F_Flag_MF)) + Field_Size (Ctx, F_Flag_MF)
        and (for all F in Field range F_Version .. F_Flag_DF =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -906,7 +898,6 @@ is
        and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
        and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
        and Field_First (Ctx, F_Fragment_Offset) = Field_First (Ctx, F_Fragment_Offset)'Old
-       and Field_Last (Ctx, F_Fragment_Offset) = Field_Last (Ctx, Predecessor (Ctx, F_Fragment_Offset)) + Field_Size (Ctx, F_Fragment_Offset)
        and (for all F in Field range F_Version .. F_Flag_MF =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -947,7 +938,6 @@ is
        and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
        and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
        and Field_First (Ctx, F_TTL) = Field_First (Ctx, F_TTL)'Old
-       and Field_Last (Ctx, F_TTL) = Field_Last (Ctx, Predecessor (Ctx, F_TTL)) + Field_Size (Ctx, F_TTL)
        and (for all F in Field range F_Version .. F_Fragment_Offset =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -988,7 +978,6 @@ is
        and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
        and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
        and Field_First (Ctx, F_Protocol) = Field_First (Ctx, F_Protocol)'Old
-       and Field_Last (Ctx, F_Protocol) = Field_Last (Ctx, Predecessor (Ctx, F_Protocol)) + Field_Size (Ctx, F_Protocol)
        and (for all F in Field range F_Version .. F_TTL =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -1029,7 +1018,6 @@ is
        and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
        and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
        and Field_First (Ctx, F_Header_Checksum) = Field_First (Ctx, F_Header_Checksum)'Old
-       and Field_Last (Ctx, F_Header_Checksum) = Field_Last (Ctx, Predecessor (Ctx, F_Header_Checksum)) + Field_Size (Ctx, F_Header_Checksum)
        and (for all F in Field range F_Version .. F_Protocol =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -1070,7 +1058,6 @@ is
        and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Field_First (Ctx, F_Source) = Field_First (Ctx, F_Source)'Old
-       and Field_Last (Ctx, F_Source) = Field_Last (Ctx, Predecessor (Ctx, F_Source)) + Field_Size (Ctx, F_Source)
        and (for all F in Field range F_Version .. F_Header_Checksum =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -1111,7 +1098,6 @@ is
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Field_First (Ctx, F_Destination) = Field_First (Ctx, F_Destination)'Old
-       and Field_Last (Ctx, F_Destination) = Field_Last (Ctx, Predecessor (Ctx, F_Destination)) + Field_Size (Ctx, F_Destination)
        and (for all F in Field range F_Version .. F_Source =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F));
 
@@ -1151,8 +1137,7 @@ is
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
-       and Field_Last (Ctx, F_Options) = Field_Last (Ctx, Predecessor (Ctx, F_Options)) + Field_Size (Ctx, F_Options);
+       and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old;
 
    procedure Set_Payload_Empty (Ctx : in out Context) with
      Pre =>
@@ -1186,8 +1171,7 @@ is
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
-       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
    procedure Set_Options (Ctx : in out Context; Seq_Ctx : RFLX.IPv4.Options.Context) with
      Pre =>
@@ -1226,7 +1210,6 @@ is
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
-       and Field_Last (Ctx, F_Options) = Field_Last (Ctx, Predecessor (Ctx, F_Options)) + Field_Size (Ctx, F_Options)
        and (if Field_Size (Ctx, F_Options) > 0 then Present (Ctx, F_Options));
 
    procedure Initialize_Options (Ctx : in out Context) with
@@ -1261,8 +1244,7 @@ is
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
-       and Field_Last (Ctx, F_Options) = Field_Last (Ctx, Predecessor (Ctx, F_Options)) + Field_Size (Ctx, F_Options);
+       and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old;
 
    procedure Initialize_Payload (Ctx : in out Context) with
      Pre =>
@@ -1294,8 +1276,7 @@ is
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
-       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -1331,7 +1312,6 @@ is
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
-       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload)
        and Equal (Ctx, F_Payload, Data);
 
    generic
@@ -1370,8 +1350,7 @@ is
        and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
-       and Field_Last (Ctx, F_Payload) = Field_Last (Ctx, Predecessor (Ctx, F_Payload)) + Field_Size (Ctx, F_Payload);
+       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
    procedure Switch_To_Options (Ctx : in out Context; Seq_Ctx : out RFLX.IPv4.Options.Context) with
      Pre =>

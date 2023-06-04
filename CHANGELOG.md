@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow update of generated files (AdaCore/RecordFlux#1275, eng/recordflux/RecordFlux#1275)
 - Integrate parser into RecordFlux package (eng/recordflux/RecordFlux#1316)
 - Simplify shape of the `Valid_Context` predicate (eng/recordflux/SparkFlux#11)
+- Remove unneeded postcondition of setters (eng/recordflux/RecordFlux#1330)
 
 ### Fixed
 

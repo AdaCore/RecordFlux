@@ -512,7 +512,6 @@ is
        and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
        and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
        and Field_First (Ctx, F_Option_Data) = Field_First (Ctx, F_Option_Data)'Old
-       and Field_Last (Ctx, F_Option_Data) = Field_Last (Ctx, Predecessor (Ctx, F_Option_Data)) + Field_Size (Ctx, F_Option_Data)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Option_Data);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Option_Data) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

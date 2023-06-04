@@ -313,7 +313,6 @@ is
        and Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
        and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
        and Field_First (Ctx, F_Extension) = Field_First (Ctx, F_Extension)'Old
-       and Field_Last (Ctx, F_Extension) = Field_Last (Ctx, Predecessor (Ctx, F_Extension)) + Field_Size (Ctx, F_Extension)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Extension);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Extension) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

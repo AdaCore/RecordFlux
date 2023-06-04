@@ -373,7 +373,6 @@ is
        and Valid_Next (Ctx, F_Vector) = Valid_Next (Ctx, F_Vector)'Old
        and Get_Header (Ctx) = Get_Header (Ctx)'Old
        and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
-       and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Vector)) + Field_Size (Ctx, F_Vector)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Vector);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

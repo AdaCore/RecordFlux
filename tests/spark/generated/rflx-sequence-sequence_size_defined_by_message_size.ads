@@ -457,8 +457,7 @@ is
        and Predecessor (Ctx, F_Vector) = Predecessor (Ctx, F_Vector)'Old
        and Valid_Next (Ctx, F_Vector) = Valid_Next (Ctx, F_Vector)'Old
        and Get_Header (Ctx) = Get_Header (Ctx)'Old
-       and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
-       and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Vector)) + Field_Size (Ctx, F_Vector);
+       and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old;
 
    procedure Set_Vector (Ctx : in out Context; Seq_Ctx : RFLX.Sequence.Integer_Vector.Context) with
      Pre =>
@@ -482,7 +481,6 @@ is
        and Valid_Next (Ctx, F_Vector) = Valid_Next (Ctx, F_Vector)'Old
        and Get_Header (Ctx) = Get_Header (Ctx)'Old
        and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
-       and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Vector)) + Field_Size (Ctx, F_Vector)
        and (if Field_Size (Ctx, F_Vector) > 0 then Present (Ctx, F_Vector));
 
    procedure Initialize_Vector (Ctx : in out Context; Length : RFLX_Types.Length) with
@@ -504,8 +502,7 @@ is
        and Predecessor (Ctx, F_Vector) = Predecessor (Ctx, F_Vector)'Old
        and Valid_Next (Ctx, F_Vector) = Valid_Next (Ctx, F_Vector)'Old
        and Get_Header (Ctx) = Get_Header (Ctx)'Old
-       and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old
-       and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, Predecessor (Ctx, F_Vector)) + Field_Size (Ctx, F_Vector);
+       and Field_First (Ctx, F_Vector) = Field_First (Ctx, F_Vector)'Old;
 
    procedure Switch_To_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.Integer_Vector.Context) with
      Pre =>

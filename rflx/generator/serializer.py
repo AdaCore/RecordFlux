@@ -66,7 +66,6 @@ from rflx.const import BUILTINS_PACKAGE
 from rflx.identifier import ID, StrID
 from rflx.model import (
     FINAL,
-    INITIAL,
     ByteOrder,
     Enumeration,
     Field,
@@ -1696,35 +1695,6 @@ class SerializerGenerator:
             *self.setter_postconditions(message, field),
         ]
 
-    @staticmethod
-    def last_predecessor_relation(message: Message, field: Field) -> list[Expr]:
-        if field in message.direct_successors(INITIAL):
-            return []
-        for link in message.incoming(field):
-            if link.first != expr.UNDEFINED:
-                return []
-        return [
-            Equal(
-                Call(
-                    "Field_Last",
-                    [Variable("Ctx"), Variable(field.affixed_name)],
-                ),
-                Add(
-                    Call(
-                        "Field_Last",
-                        [
-                            Variable("Ctx"),
-                            Call(
-                                "Predecessor",
-                                [Variable("Ctx"), Variable(field.affixed_name)],
-                            ),
-                        ],
-                    ),
-                    Call("Field_Size", [Variable("Ctx"), Variable(field.affixed_name)]),
-                ),
-            )
-        ]
-
     def setter_postconditions(self, message: Message, field: Field) -> list[Expr]:
         return [
             *[
@@ -1754,7 +1724,6 @@ class SerializerGenerator:
                 ]
                 + [Call("Field_First", [Variable("Ctx"), Variable(field.affixed_name)])]
             ],
-            *self.last_predecessor_relation(message, field),
         ]
 
     @staticmethod

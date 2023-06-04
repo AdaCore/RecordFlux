@@ -373,7 +373,6 @@ is
        and Valid_Next (Ctx, F_Messages) = Valid_Next (Ctx, F_Messages)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_Messages) = Field_First (Ctx, F_Messages)'Old
-       and Field_Last (Ctx, F_Messages) = Field_Last (Ctx, Predecessor (Ctx, F_Messages)) + Field_Size (Ctx, F_Messages)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Messages);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Messages) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
