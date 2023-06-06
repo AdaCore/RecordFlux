@@ -7,6 +7,7 @@ TEST_PROCS ?= $(shell nproc)
 RECORDFLUX_ORIGIN ?= https://github.com/AdaCore
 GNATCOLL_ORIGIN ?= https://github.com/AdaCore
 LANGKIT_ORIGIN ?= https://github.com/AdaCore
+ADASAT_ORIGIN?= https://github.com/AdaCore
 VERSION ?= $(shell python3 -c "import setuptools_scm; print(setuptools_scm.get_version())")
 SDIST ?= dist/RecordFlux-$(VERSION).tar.gz
 
@@ -17,7 +18,8 @@ BUILD_SRC_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/$(SRC_DIR)
 PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps ide language rflx tests tools stubs setup.py
 DEVUTILS_HEAD = b196fbb5b791f6b80a91a5f78d6ef99e895a1e8c
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
-LANGKIT_HEAD = 02c2040c95cf8174f7e98969d751cde9639bd2bd
+LANGKIT_HEAD = 65e2dab678b2606e3b0eada64b7ef4fd8cae91bb
+ADASAT_HEAD = f948e2271aec51f9313fa41ff3c00230a483f9e8
 
 SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
@@ -72,6 +74,7 @@ endef
 $(shell $(call reinit_repo,devutils,$(DEVUTILS_HEAD)))
 $(shell $(call reinit_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD)))
 $(shell $(call reinit_repo,contrib/langkit,$(LANGKIT_HEAD)))
+$(shell $(call reinit_repo,contrib/adasat,$(ADASAT_HEAD)))
 
 .PHONY: all
 
@@ -79,10 +82,11 @@ all: check test prove
 
 .PHONY: init deinit
 
-init: devutils contrib/gnatcoll-bindings contrib/langkit
+init: devutils contrib/gnatcoll-bindings contrib/langkit contrib/adasat
 	$(VERBOSE)$(call checkout_repo,devutils,$(DEVUTILS_HEAD))
 	$(VERBOSE)$(call checkout_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD))
 	$(VERBOSE)$(call checkout_repo,contrib/langkit,$(LANGKIT_HEAD))
+	$(VERBOSE)$(call checkout_repo,contrib/adasat,$(ADASAT_HEAD))
 	$(VERBOSE)rm -f contrib/langkit/langkit/py.typed
 	$(VERBOSE)ln -sf devutils/pyproject.toml
 
@@ -90,6 +94,7 @@ deinit:
 	$(VERBOSE)$(call remove_repo,devutils)
 	$(VERBOSE)$(call remove_repo,contrib/gnatcoll-bindings)
 	$(VERBOSE)$(call remove_repo,contrib/langkit)
+	$(VERBOSE)$(call remove_repo,contrib/adasat)
 	$(VERBOSE)rm -f pyproject.toml
 
 devutils:
@@ -102,6 +107,10 @@ contrib/gnatcoll-bindings:
 contrib/langkit:
 	$(VERBOSE)mkdir -p contrib
 	$(VERBOSE)git clone $(LANGKIT_ORIGIN)/langkit.git contrib/langkit
+
+contrib/adasat:
+	$(VERBOSE)mkdir -p contrib
+	$(VERBOSE)git clone $(ADASAT_ORIGIN)/adasat.git contrib/adasat
 
 .PHONY: check check_packages check_dependencies check_contracts check_doc
 
@@ -299,8 +308,7 @@ $(SRC_DIR)/python/librflxlang: $(wildcard language/*.py)
 	language/generate.py $(BUILD_SRC_DIR) $(VERSION)
 	cp -a $(MAKEFILE_DIR)/contrib/langkit $(BUILD_SRC_DIR)/
 	cp -a $(MAKEFILE_DIR)/contrib/gnatcoll-bindings $(BUILD_SRC_DIR)/
-	mv $(BUILD_SRC_DIR)/librflxlang.gpr $(BUILD_SRC_DIR)/librflxlang.gpr.orig
-	tools/generate_gpr_file.py rflxlang $(BUILD_SRC_DIR) $(BUILD_SRC_DIR)/librflxlang.gpr.orig
+	cp -a $(MAKEFILE_DIR)/contrib/adasat $(BUILD_SRC_DIR)/
 	rm -rf $(SRC_DIR)
 	mv $(BUILD_SRC_DIR) $(SRC_DIR)
 
@@ -308,8 +316,15 @@ $(SRC_DIR)/python/librflxlang: $(wildcard language/*.py)
 
 parser: $(SRC_DIR)/python/librflxlang/librflxlang.so
 
+$(SRC_DIR)/python/librflxlang/librflxlang.so: export GPR_PROJECT_PATH := \
+	src/langkit/langkit/support:src/gnatcoll-bindings/gmp:src/gnatcoll-bindings/iconv:src/adasat
+$(SRC_DIR)/python/librflxlang/librflxlang.so: export GNATCOLL_ICONV_OPT := -v
 $(SRC_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | $(SRC_DIR)/python/librflxlang
-	gprbuild -j0 -Psrc/librflxlang.gpr -XLIBRARY_TYPE=static-pic
+	gprbuild -j0 -Psrc/librflxlang.gpr \
+		-XLIBRARY_TYPE=static-pic \
+		-XLIBRFLXLANG_LIBRARY_TYPE=relocatable \
+		-XLIBRFLXLANG_STANDALONE=encapsulated
+	cp $(SRC_DIR)/lib/relocatable/dev/librflxlang.so $@
 
 .PHONY: clean
 

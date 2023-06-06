@@ -1,3 +1,5 @@
+import os
+import shutil
 import site
 import subprocess
 
@@ -11,9 +13,28 @@ site.ENABLE_USER_SITE = True
 
 class BuildParser(bdist_wheel):  # type: ignore[misc]
     def run(self) -> None:
+        env = os.environ
+        env["GPR_PROJECT_PATH"] = (
+            "src/langkit/langkit/support:"
+            "src/gnatcoll-bindings/gmp:"
+            "src/gnatcoll-bindings/iconv:"
+            "src/adasat:"
+        )
+        env["GNATCOLL_ICONV_OPT"] = "-v"
         subprocess.run(
-            ["gprbuild", "-j0", "-Psrc/librflxlang.gpr", "-XLIBRARY_TYPE=static-pic"],
+            [
+                "gprbuild",
+                "-j0",
+                "-Psrc/librflxlang.gpr",
+                "-XLIBRARY_TYPE=static-pic",
+                "-XLIBRFLXLANG_LIBRARY_TYPE=relocatable",
+                "-XLIBRFLXLANG_STANDALONE=encapsulated",
+            ],
+            env=env,
             check=True,
+        )
+        shutil.copy(
+            "src/lib/relocatable/dev/librflxlang.so", "src/python/librflxlang/librflxlang.so"
         )
         super().run()
 
