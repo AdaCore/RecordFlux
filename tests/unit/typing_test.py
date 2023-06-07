@@ -338,6 +338,11 @@ def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None
             True,
         ),
         (
+            Integer("A", Bounds(0, 200)),
+            UniversalInteger(Bounds(10, 100)),
+            True,
+        ),
+        (
             Integer("A", Bounds(10, 100)),
             UniversalInteger(Bounds(0, 200)),
             True,
@@ -349,6 +354,57 @@ def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None
 def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> None:
     assert integer.is_compatible(other) == expected
     assert other.is_compatible(integer) == expected
+
+
+@pytest.mark.parametrize(
+    "integer,other,expected",
+    [
+        (Integer("A"), Any(), True),
+        (Integer("A"), AnyInteger(), True),
+        (Integer("A"), Integer("A"), True),
+        (Integer("A"), UniversalInteger(), True),
+        (
+            Integer("A", Bounds(10, 100)),
+            Any(),
+            True,
+        ),
+        (
+            Integer("A", Bounds(10, 100)),
+            Integer("A", Bounds(10, 100)),
+            True,
+        ),
+        (
+            Integer("A", Bounds(10, 100)),
+            UniversalInteger(Bounds(10, 100)),
+            True,
+        ),
+        (
+            Integer("A"),
+            Integer("B"),
+            False,
+        ),
+        (
+            Integer("A", Bounds(10, 100)),
+            Integer("B", Bounds(10, 100)),
+            False,
+        ),
+        (
+            Integer("A", Bounds(0, 200)),
+            UniversalInteger(Bounds(10, 100)),
+            True,
+        ),
+        (
+            Integer("A", Bounds(10, 100)),
+            UniversalInteger(Bounds(0, 200)),
+            False,
+        ),
+        (Integer("A"), Undefined(), False),
+        (Integer("A"), ENUMERATION_B, False),
+    ],
+)
+def test_integer_is_compatible_strong(integer: Type, other: Type, expected: bool) -> None:
+    assert integer.is_compatible_strong(other) == expected
+    assert other.is_compatible_strong(integer) == expected
 
 
 @pytest.mark.parametrize(
@@ -497,6 +553,11 @@ def test_composite_common_type(composite: Type, other: Type, expected: Type) -> 
         (
             Sequence("A", Integer("B")),
             Sequence("A", Integer("B")),
+            True,
+        ),
+        (
+            Sequence("A", Integer("B")),
+            Aggregate(Any()),
             True,
         ),
         (

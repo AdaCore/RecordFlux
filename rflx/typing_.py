@@ -65,7 +65,11 @@ class Type:
         raise NotImplementedError
 
     def is_compatible_strong(self, other: Type) -> bool:
-        return self.is_compatible(other)
+        return (
+            other.is_compatible_strong(self)
+            if isinstance(other, Integer)
+            else self.is_compatible(other)
+        )
 
     @abstractmethod
     def common_type(self, other: Type) -> Type:
@@ -163,11 +167,6 @@ class UniversalInteger(BoundedInteger):
     def __str__(self) -> str:
         return f"{self.DESCRIPTIVE_NAME} ({self.bounds})"
 
-    def is_compatible_strong(self, other: Type) -> bool:
-        return isinstance(other, UniversalInteger) or (
-            isinstance(other, Integer) and self.bounds in other.bounds
-        )
-
     def common_type(self, other: Type) -> Type:
         if isinstance(other, UndefinedInteger):
             return UndefinedInteger()
@@ -193,8 +192,11 @@ class Integer(BoundedInteger):
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}" ({self.bounds})'
 
     def is_compatible_strong(self, other: Type) -> bool:
-        return self == other or (
-            isinstance(other, UniversalInteger) and other.bounds in self.bounds
+        return (
+            self == other
+            or other == Any()
+            or other == AnyInteger()
+            or (isinstance(other, UniversalInteger) and other.bounds in self.bounds)
         )
 
     def common_type(self, other: Type) -> Type:
