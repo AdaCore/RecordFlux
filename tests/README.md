@@ -1,8 +1,8 @@
-# Test Structure
+# Tests
+
+## Test Structure
 
 All Python test files have the suffix `_test.py` (e.g., `generator_test.py`). The top level directory `tests` does not contain any test files. Utility functions used by multiple test files are collected in `tests/utils.py`.
-
-## Tests
 
 ### Unit Tests (`tests/unit`)
 
@@ -60,3 +60,10 @@ Test data should be kept as local as possible. If test data is required for a si
 ## Best Practices
 
 Unnecessary duplication of test code and test data should be avoided for maintainablity reasons. For example, the painful act of adapting all specifications due to a change of the syntax or semantics can be mitigated by keeping the number of specifications low (e.g., `Universal::Message` can be reused in new feature tests by adding a symbolic link to `../messages/universal.rflx`). The use of pytest's [test parameterization](https://docs.pytest.org/en/stable/parametrize.html) is particularly useful in unit tests.
+
+## Diffs
+
+The readability of pytest's diffs of complex objects can be improved by setting `RFLX_TESTING` and installing one of the following packages:
+
+- [pytest-clarity](https://github.com/darrenburns/pytest-clarity)
+- [pytest-icdiff](https://github.com/hjwp/pytest-icdiff)

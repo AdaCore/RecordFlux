@@ -1,11 +1,30 @@
 from __future__ import annotations
 
+import os
 import re
 import textwrap
 from abc import ABC
 from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
 from typing import TypeVar
+
+
+def format_repr(string: str) -> str:
+    """
+    Improve formatting of string representation.
+
+    When `RFLX_TESTING` is set, Black is used to format the string representation. This makes
+    pytest diffs of complex objects more readable, especially when using
+    [pytest-clarity](https://github.com/darrenburns/pytest-clarity) or
+    [pytest-icdiff](https://github.com/hjwp/pytest-icdiff).
+    """
+    if os.environ.get("RFLX_TESTING"):
+        from black import FileMode, format_str
+
+        return format_str(string, mode=FileMode(line_length=60))
+    else:
+        return string
+
 
 STDIN = Path("<stdin>")
 
@@ -26,7 +45,7 @@ class Base(ABC):
 
     def __repr__(self) -> str:
         args = "\n" + ",\n".join(f"{k}={v!r}" for k, v in self.__dict__.items() if k != "location")
-        return indent_next(f"\n{self.__class__.__name__}({indent(args, 4)})", 4)
+        return format_repr(indent_next(f"\n{self.__class__.__name__}({indent(args, 4)})", 4))
 
 
 def verbose_repr(obj: object, attributes: Sequence[str]) -> str:
@@ -40,8 +59,10 @@ def verbose_repr(obj: object, attributes: Sequence[str]) -> str:
 
     indentation = len(obj.__class__.__name__) + 1
     args = "".join(f"{a}={getattr(obj, a)!r},\n" for a in attributes)
-    return indent_next(
-        f"\n{obj.__class__.__name__}({indent_next(args, indentation)}\n){prefixed_str(obj)}", 4
+    return format_repr(
+        indent_next(
+            f"\n{obj.__class__.__name__}({indent_next(args, indentation)}\n){prefixed_str(obj)}", 4
+        )
     )
 
 
