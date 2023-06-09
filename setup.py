@@ -14,11 +14,13 @@ site.ENABLE_USER_SITE = True
 class BuildParser(bdist_wheel):  # type: ignore[misc]
     def run(self) -> None:
         env = os.environ
-        env["GPR_PROJECT_PATH"] = (
-            "src/langkit/langkit/support:"
-            "src/gnatcoll-bindings/gmp:"
-            "src/gnatcoll-bindings/iconv:"
-            "src/adasat:"
+        env["GPR_PROJECT_PATH"] = ":".join(
+            [
+                "src/langkit/langkit/support",
+                "src/gnatcoll-bindings/gmp",
+                "src/gnatcoll-bindings/iconv",
+                "src/adasat",
+            ]
         )
         env["GNATCOLL_ICONV_OPT"] = "-v"
         subprocess.run(
