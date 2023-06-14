@@ -75,7 +75,7 @@ cache_restoring:
     - eval `anod printenv spark2014`
 
 .setup_python_venv: &setup_python_venv
-    - python$PYTHON_VERSION -m venv .venv$PYTHON_VERSION
+    - python$PYTHON_VERSION -m venv --clear .venv$PYTHON_VERSION
     - . .venv$PYTHON_VERSION/bin/activate
     - python -m pip install --upgrade pip wheel
     - make init install
@@ -200,8 +200,7 @@ gnat_pro_compatibility:
     - cd gnatpro-$GNAT_VERSION-x86_64-linux-bin && echo -e "\n$CI_PROJECT_DIR/gnat\nY\nY" | ./doinstall && cd ..
     - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
     - gnat --version
-    - *setup_python
-    - pip install --force-reinstall --no-cache-dir RecordFlux-parser
+    - *setup_python_venv
     - export GNAT=pro$GNAT_VERSION
     - make test_compilation
 
@@ -225,8 +224,7 @@ gnat_fsf_compatibility:
     - eval `$CI_PROJECT_DIR/alr printenv`
     - popd
     - gnat --version
-    - *setup_python
-    - pip install --force-reinstall --no-cache-dir RecordFlux-parser
+    - *setup_python_venv
     - export GNAT=fsf$GNAT_VERSION
     - make test_compilation
 
@@ -254,8 +252,7 @@ gnat_community_compatibility:
     - sh ./install_package.sh ./gnat-x86_64-linux-bin $CI_PROJECT_DIR/gnat
     - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
     - gnat --version
-    - *setup_python
-    - pip install --force-reinstall --no-cache-dir RecordFlux-parser
+    - *setup_python_venv
     - export GNAT=community$GNAT_VERSION
     - make test_compilation
 
