@@ -26,6 +26,7 @@ class BuildParser(bdist_wheel):  # type: ignore[misc]
         subprocess.run(
             [
                 "gprbuild",
+                "-p",
                 "-j0",
                 "-Psrc/librflxlang.gpr",
                 "-XLIBRARY_TYPE=static-pic",

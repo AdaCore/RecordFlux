@@ -320,7 +320,7 @@ $(SRC_DIR)/python/librflxlang/librflxlang.so: export GPR_PROJECT_PATH := \
 	src/langkit/langkit/support:src/gnatcoll-bindings/gmp:src/gnatcoll-bindings/iconv:src/adasat
 $(SRC_DIR)/python/librflxlang/librflxlang.so: export GNATCOLL_ICONV_OPT := -v
 $(SRC_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | $(SRC_DIR)/python/librflxlang
-	gprbuild -j0 -Psrc/librflxlang.gpr \
+	gprbuild -p -j0 -Psrc/librflxlang.gpr \
 		-XLIBRARY_TYPE=static-pic \
 		-XLIBRFLXLANG_LIBRARY_TYPE=relocatable \
 		-XLIBRFLXLANG_STANDALONE=encapsulated
