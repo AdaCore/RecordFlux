@@ -14,7 +14,11 @@ site.ENABLE_USER_SITE = True
 class BuildParser(bdist_wheel):  # type: ignore[misc]
     def run(self) -> None:
         env = os.environ
-        env["GPR_PROJECT_PATH"] = ":".join(
+        if "GPR_PROJECT_PATH" in env:
+            env["GPR_PROJECT_PATH"] += ":"
+        else:
+            env["GPR_PROJECT_PATH"] = ""
+        env["GPR_PROJECT_PATH"] += ":".join(
             [
                 "src/langkit/langkit/support",
                 "src/gnatcoll-bindings/gmp",
