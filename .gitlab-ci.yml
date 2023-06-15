@@ -100,10 +100,13 @@ setup:
     - *setup_gnat
     - export PYTHON_VERSION=3.8
     - *setup_python_venv
+    - make clean
     - export PYTHON_VERSION=3.9
     - *setup_python_venv
+    - make clean
     - export PYTHON_VERSION=3.10
     - *setup_python_venv
+    - make clean
     - export PYTHON_VERSION=3.11
     - *setup_python_venv
 
@@ -183,6 +186,7 @@ python_compatibility:
       - PYTHON_VERSION:
         - "3.8"
         - "3.9"
+        - "3.10"
         - "3.11"
   script:
     - *setup_gnat
