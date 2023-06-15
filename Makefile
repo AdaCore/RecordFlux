@@ -316,8 +316,8 @@ $(SRC_DIR)/python/librflxlang: $(wildcard language/*.py)
 
 parser: $(SRC_DIR)/python/librflxlang/librflxlang.so
 
-$(SRC_DIR)/python/librflxlang/librflxlang.so: export GPR_PROJECT_PATH ?= \
-	src/langkit/langkit/support:src/gnatcoll-bindings/gmp:src/gnatcoll-bindings/iconv:src/adasat
+$(SRC_DIR)/python/librflxlang/librflxlang.so: export GPR_PROJECT_PATH := \
+	$(GPR_PROJECT_PATH):src/langkit/langkit/support:src/gnatcoll-bindings/gmp:src/gnatcoll-bindings/iconv:src/adasat
 $(SRC_DIR)/python/librflxlang/librflxlang.so: export GNATCOLL_ICONV_OPT := -v
 $(SRC_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | $(SRC_DIR)/python/librflxlang
 	gprbuild -p -j0 -Psrc/librflxlang.gpr \
