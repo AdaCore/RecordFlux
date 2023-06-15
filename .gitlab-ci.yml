@@ -10,6 +10,8 @@ variables:
    SPARK_BUILD_DATE: "20221214"
    PYTHON_VERSION: "3.10"
 
+   CLEAN_RECORDFLUX_SETUP: 0
+
 workflow:
   rules:
     # Switch between branch pipelines and merge request pipelines to ensure that all checks must
@@ -117,8 +119,15 @@ setup:
 
 .setup_python: &setup_python
     - export PATH=/it/e3/bin:$PATH
-    - . .venv$PYTHON_VERSION/bin/activate
-    - make init
+    - if [ $CLEAN_RECORDFLUX_SETUP -eq 1 ]; then
+        python$PYTHON_VERSION -m venv --clear .venv;
+        . .venv/bin/activate;
+        python -m pip install --upgrade pip wheel;
+        make init install;
+      else
+        . .venv$PYTHON_VERSION/bin/activate;
+        make init;
+      fi
 
 changelog:
   stage: testing
@@ -188,10 +197,12 @@ gnat_pro_compatibility:
      - mem:4
   parallel:
     matrix:
-      - GNAT_VERSION:
-        - "20.2"
-        - "21.2"
-        - "22.2"
+      - GNAT_VERSION: "20.2"
+        CLEAN_RECORDFLUX_SETUP: 0
+      - GNAT_VERSION: "21.2"
+        CLEAN_RECORDFLUX_SETUP: 0
+      - GNAT_VERSION: "22.2"
+        CLEAN_RECORDFLUX_SETUP: 1
   script:
     - . ~/.aws_container_credentials
     - export PATH=/it/e3/bin:$PATH
@@ -200,7 +211,7 @@ gnat_pro_compatibility:
     - cd gnatpro-$GNAT_VERSION-x86_64-linux-bin && echo -e "\n$CI_PROJECT_DIR/gnat\nY\nY" | ./doinstall && cd ..
     - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
     - gnat --version
-    - *setup_python_venv
+    - *setup_python
     - export GNAT=pro$GNAT_VERSION
     - make test_compilation
 
@@ -212,9 +223,10 @@ gnat_fsf_compatibility:
      - mem:4
   parallel:
     matrix:
-      - GNAT_VERSION:
-        - "11.2.4"
-        - "12.1.2"
+      - GNAT_VERSION: "11.2.4"
+        CLEAN_RECORDFLUX_SETUP: 1
+      - GNAT_VERSION: "12.1.2"
+        CLEAN_RECORDFLUX_SETUP: 1
   script:
     - apt-get install -y libgmp-dev
     - $CI_PROJECT_DIR/alr -n init --lib alire
@@ -224,7 +236,7 @@ gnat_fsf_compatibility:
     - eval `$CI_PROJECT_DIR/alr printenv`
     - popd
     - gnat --version
-    - *setup_python_venv
+    - *setup_python
     - export GNAT=fsf$GNAT_VERSION
     - make test_compilation
 
@@ -236,9 +248,10 @@ gnat_community_compatibility:
      - mem:4
   parallel:
     matrix:
-      - GNAT_VERSION:
-        - "2020"
-        - "2021"
+      - GNAT_VERSION: "2020"
+        CLEAN_RECORDFLUX_SETUP: 0
+      - GNAT_VERSION: "2021"
+        CLEAN_RECORDFLUX_SETUP: 1
   script:
     - apt update
     - apt-get install -y libgmp-dev libdbus-1-3 libfontconfig1 libx11-6 libx11-xcb1
@@ -252,7 +265,7 @@ gnat_community_compatibility:
     - sh ./install_package.sh ./gnat-x86_64-linux-bin $CI_PROJECT_DIR/gnat
     - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
     - gnat --version
-    - *setup_python_venv
+    - *setup_python
     - export GNAT=community$GNAT_VERSION
     - make test_compilation
 

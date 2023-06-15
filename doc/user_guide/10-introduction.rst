@@ -102,6 +102,12 @@ The officially supported distributions are:
 The software has successfully been used on various other versions of Linux, including Arch Linux and Debian.
 
 For installing RecordFlux itself, a *native* GNAT compiler for the host system must be installed.
+The following versions of GNAT are supported:
+
+-  GNAT Pro 22.2
+-  GNAT Community 2021
+-  FSF GNAT 11.2 or 12.1
+
 For compiling the generated code, one of the following versions of GNAT is required:
 
 -  GNAT Pro 20.2, 21.2 or 22.2
