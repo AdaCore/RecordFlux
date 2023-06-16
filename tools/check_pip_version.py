@@ -7,7 +7,7 @@ import sys
 import pip
 from pkg_resources import parse_version
 
-MINIMUM_REQUIRED_VERSION = "21.3"
+MINIMUM_REQUIRED_VERSION = "22.2"
 
 if __name__ == "__main__":
     if parse_version(pip.__version__) < parse_version(MINIMUM_REQUIRED_VERSION):
