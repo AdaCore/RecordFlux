@@ -1,0 +1,28 @@
+- [ ] Test GNAT Studio plugin
+   - Check verification, generation and display of message graph for example apps
+- [ ] Add release to `CHANGELOG`
+- [ ] Check if any GitHub issues are not yet mentioned in `CHANGELOG` (especially issue numbers below #1288)
+- [ ] Bring changes to `main` branch
+- [ ] Add tag to git repository
+   - Make sure that `main` is checked out and updated to the latest state
+   - `git tag -a vX.Y.Z -m ""`
+- [ ] Generate distribution archive
+   - `make dist`
+- [ ] Check distribution archive
+   - Check content of archive
+   - Install in new virtual environment
+   - Ensure that no additional packages to `rflx` are installed
+   - Test `rflx` executable
+- [ ] Push tag
+   - `git push --follow-tags`
+- [ ] Upload to TestPyPI
+   - `twine upload --repository-url https://test.pypi.org/legacy/ dist/RecordFlux-X.Y.Z.tar.gz`
+- [ ] Check project on TestPyPI
+- [ ] Test installation from TestPyPI
+   - `pip3 install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ RecordFlux`
+- [ ] Upload to PyPI
+   - `twine upload dist/RecordFlux-X.Y.Z.tar.gz`
+- [ ] Test installation from PyPI
+   - `pip3 install RecordFlux`
+- [ ] Publish release on GitHub
+- [ ] Update `release` branch
