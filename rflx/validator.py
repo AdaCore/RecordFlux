@@ -400,7 +400,7 @@ class CoverageInformation:
                 print("-" * 80)
                 for link in sorted(uncovered_links, key=lambda x: str(x.location)):
                     print(
-                        f"{str(link.location):<17}"
+                        f"{link.location!s:<17}"
                         f": missing link {link.source.name:^25} -> {link.target.name:^20}".rstrip()
                     )
 
@@ -432,10 +432,10 @@ class ValidationResult:
 
     def print_console_output(self) -> None:
         if self.validation_success:
-            print(f"{str(self.message_path):<80} PASSED")
+            print(f"{self.message_path!s:<80} PASSED")
         else:
             print(
-                f"{str(self.message_path):<80} FAILED\n"
+                f"{self.message_path!s:<80} FAILED\n"
                 f"provided as: {self.valid_original_message}\t "
                 f"recognized as: {self.valid_parser_result}"
             )
