@@ -45,14 +45,10 @@ stages:
     - popd
 
 .setup_gnat: &setup_gnat
-    - . ~/.aws_container_credentials
-    - export PATH=/it/e3/bin:$PATH
     - anod install gnat --build-date $GNAT_BUILD_DATE
     - eval `anod printenv gnat`
 
 .setup_spark: &setup_spark
-    - . ~/.aws_container_credentials
-    - export PATH=/it/e3/bin:$PATH
     - anod install spark2014 --build-date $SPARK_BUILD_DATE
     - eval `anod printenv spark2014`
 
@@ -188,8 +184,6 @@ gnat_pro_compatibility:
       - GNAT_VERSION: "22.2"
         CLEAN_RECORDFLUX_SETUP: 1
   script:
-    - . ~/.aws_container_credentials
-    - export PATH=/it/e3/bin:$PATH
     - e3-cathod components --setup $GNAT_VERSION --build-date all --platform x86_64-linux --component gnat --download
     - tar -xzf gnatpro-$GNAT_VERSION-x86_64-linux-bin.tar.gz
     - cd gnatpro-$GNAT_VERSION-x86_64-linux-bin && echo -e "\n$CI_PROJECT_DIR/gnat\nY\nY" | ./doinstall && cd ..
@@ -362,8 +356,6 @@ gnat_wave_compatibility:
      - cpu:2
      - mem:4
   script:
-    - . ~/.aws_container_credentials
-    - export PATH=/it/e3/bin:$PATH
     - anod install gnat
     - eval `anod printenv gnat`
     - gnat --version
