@@ -15,7 +15,10 @@ from rflx.model import (
     BUILTIN_TYPES,
     FINAL,
     INITIAL,
+    OPAQUE,
     UNCHECKED_OPAQUE,
+    AbstractMessage,
+    Cache,
     Enumeration,
     Field,
     Integer,
@@ -440,12 +443,55 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
                 ),
             ],
         ),
+        (
+            [
+                UNCHECKED_OPAQUE,
+                UncheckedMessage(
+                    ID("P::M"),
+                    [
+                        Link(INITIAL, Field("F"), size=Number(16)),
+                        Link(Field("F"), FINAL),
+                    ],
+                    [],
+                    [
+                        (Field("F"), OPAQUE.identifier, []),
+                    ],
+                    None,
+                    None,
+                    None,
+                ),
+            ],
+            [
+                OPAQUE,
+                Message(
+                    "P::M",
+                    [
+                        Link(INITIAL, Field("F"), size=Number(16)),
+                        Link(Field("F"), FINAL),
+                    ],
+                    {
+                        Field("F"): OPAQUE,
+                    },
+                ),
+            ],
+        ),
     ],
 )
 def test_unchecked_model_checked(
-    unchecked: list[UncheckedTopLevelDeclaration], expected: list[TopLevelDeclaration]
+    unchecked: list[UncheckedTopLevelDeclaration],
+    expected: list[TopLevelDeclaration],
+    tmp_path: Path,
 ) -> None:
-    assert UncheckedModel(unchecked, RecordFluxError()).checked() == Model(expected)
+    cache = Cache(tmp_path / "test.json")
+
+    assert UncheckedModel(unchecked, RecordFluxError()).checked(cache=cache) == Model(expected)
+
+    messages = [d for d in expected if isinstance(d, AbstractMessage)]
+    if messages:
+        for d in messages:
+            cache.is_verified(d)
+    else:
+        assert not cache._verified
 
 
 @pytest.mark.parametrize(
@@ -501,7 +547,11 @@ def test_unchecked_model_checked(
     ],
 )
 def test_unchecked_model_checked_error(
-    unchecked: list[UncheckedTopLevelDeclaration], expected: str
+    unchecked: list[UncheckedTopLevelDeclaration], expected: str, tmp_path: Path
 ) -> None:
+    cache = Cache(tmp_path / "test.json")
+
     with pytest.raises(RecordFluxError, match=expected):
-        UncheckedModel(unchecked, RecordFluxError()).checked()
+        UncheckedModel(unchecked, RecordFluxError()).checked(cache=cache)
+
+    assert not cache._verified

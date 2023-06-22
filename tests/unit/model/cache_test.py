@@ -9,22 +9,22 @@ from tests.data.models import TLV_MESSAGE
 
 
 def test_init(tmp_path: Path) -> None:
-    cache.CACHE_DIR = tmp_path / "Test"
-    cache.Cache()
-    assert not (tmp_path / "Test").exists()
+    file = tmp_path / "test.json"
+    cache.Cache(file)
+    assert not file.exists()
 
 
 def test_init_valid(tmp_path: Path) -> None:
-    cache.CACHE_DIR = tmp_path
-    (tmp_path / cache.VERIFICATION_FILE).write_text("{}")
-    cache.Cache()
+    file = tmp_path / "test.json"
+    file.write_text("{}")
+    cache.Cache(file)
 
 
 @pytest.mark.parametrize("content", ["invalid", "[]", "{A: B}"])
 def test_init_invalid(content: str, tmp_path: Path, capsys: CaptureFixture[str]) -> None:
-    cache.CACHE_DIR = tmp_path
-    (tmp_path / cache.VERIFICATION_FILE).write_text(content)
-    cache.Cache()
+    file = tmp_path / "test.json"
+    file.write_text(content)
+    cache.Cache(file)
     captured = capsys.readouterr()
     assert "verification cache will be ignored due to invalid format" in captured.out
 
@@ -75,8 +75,7 @@ def test_verified(tmp_path: Path) -> None:
             )
         },
     )
-    cache.CACHE_DIR = tmp_path
-    c = cache.Cache()
+    c = cache.Cache(tmp_path / "test.json")
     assert not c.is_verified(m1)
     assert not c.is_verified(m2)
     assert not c.is_verified(m3)
@@ -99,8 +98,7 @@ def test_verified(tmp_path: Path) -> None:
 
 
 def test_verified_disabled(tmp_path: Path) -> None:
-    cache.CACHE_DIR = tmp_path
-    c = cache.Cache(enabled=False)
+    c = cache.Cache(tmp_path / "test.json", enabled=False)
     assert not c.is_verified(TLV_MESSAGE)
     c.add_verified(TLV_MESSAGE)
     assert not c.is_verified(TLV_MESSAGE)

@@ -21,12 +21,7 @@ class UncheckedModel(Base):
     declarations: Sequence[top_level_declaration.UncheckedTopLevelDeclaration]
     error: RecordFluxError
 
-    def checked(
-        self, skip_verification: bool = False, workers: int = 1, cache: Optional[Cache] = None
-    ) -> Model:
-        if not cache:
-            cache = Cache(enabled=False)
-
+    def checked(self, cache: Cache, skip_verification: bool = False, workers: int = 1) -> Model:
         error = RecordFluxError(self.error)
         declarations: list[top_level_declaration.TopLevelDeclaration] = []
 
@@ -39,9 +34,9 @@ class UncheckedModel(Base):
                             skip_verification or cache.is_verified(checked_declaration), workers
                         )
                         declarations.append(proven_message)
+                        cache.add_verified(proven_message)
                     except RecordFluxError as e:
                         error.extend(e)
-                    cache.add_verified(checked_declaration)
                 elif isinstance(checked_declaration, session.UnprovenSession):
                     try:
                         proven_session = checked_declaration.proven(workers)

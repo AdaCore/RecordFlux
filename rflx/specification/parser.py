@@ -1528,7 +1528,7 @@ class Parser:
         self._workers = workers
         self._specifications: OrderedDict[ID, SpecificationFile] = OrderedDict()
         self._integration: Integration = Integration(integration_files_dir)
-        self._cache = Cache(not skip_verification and cached)
+        self._cache = Cache(enabled=not skip_verification and cached)
 
     def parse(self, *specfiles: Path) -> None:
         error = RecordFluxError()
@@ -1602,7 +1602,7 @@ class Parser:
     def create_model(self) -> model.Model:
         unchecked_model = self.create_unchecked_model()
         error = unchecked_model.error
-        checked_model = unchecked_model.checked(self.skip_verification, self._workers, self._cache)
+        checked_model = unchecked_model.checked(self._cache, self.skip_verification, self._workers)
         self._integration.validate(checked_model, error)
         error.propagate()
         return checked_model

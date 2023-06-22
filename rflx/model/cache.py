@@ -2,24 +2,31 @@ from __future__ import annotations
 
 import hashlib
 import json
-import pathlib
+from pathlib import Path
 
 from rflx import __version__
 from rflx.error import Subsystem, warn
 from rflx.model.message import AbstractMessage
 
-CACHE_DIR = pathlib.Path.home() / ".cache" / "RecordFlux"
-VERIFICATION_FILE = "verification.json"
+DEFAULT_FILE = Path.home() / ".cache" / "RecordFlux" / "verification.json"
 
 
 class Cache:
-    def __init__(self, enabled: bool = True) -> None:
+    """
+    Cache the successful verification of messages.
+
+    The cache holds a list of hashes of all message variants that were successfully verified. The
+    state of the cache is persisted on disk and restored on initialization.
+    """
+
+    def __init__(self, file: Path = DEFAULT_FILE, enabled: bool = True) -> None:
+        self._file = file
         self._enabled = enabled
 
         if not enabled:
             return
 
-        self._verification: dict[str, list[str]] = {}
+        self._verified: dict[str, list[str]] = {}
 
         self._load_cache()
 
@@ -28,8 +35,8 @@ class Cache:
             return False
 
         return (
-            message.full_name in self._verification
-            and self._message_hash(message) in self._verification[message.full_name]
+            message.full_name in self._verified
+            and self._message_hash(message) in self._verified[message.full_name]
         )
 
     def add_verified(self, message: AbstractMessage) -> None:
@@ -37,15 +44,15 @@ class Cache:
             return
 
         message_hash = self._message_hash(message)
-        if message.full_name not in self._verification:
-            self._verification[message.full_name] = []
-        if message_hash not in self._verification[message.full_name]:
-            self._verification[message.full_name].append(message_hash)
+        if message.full_name not in self._verified:
+            self._verified[message.full_name] = []
+        if message_hash not in self._verified[message.full_name]:
+            self._verified[message.full_name].append(message_hash)
             self._write_cache()
 
     def _load_cache(self) -> None:
         try:
-            with open(CACHE_DIR / VERIFICATION_FILE, encoding="utf-8") as f:
+            with open(self._file, encoding="utf-8") as f:
                 cache = json.load(f)
                 if isinstance(cache, dict) and all(
                     isinstance(i, str)
@@ -53,7 +60,7 @@ class Cache:
                     and all(isinstance(h, str) for h in l)
                     for i, l in cache.items()
                 ):
-                    self._verification = cache
+                    self._verified = cache
                 else:
                     raise TypeError
         except (json.JSONDecodeError, TypeError):
@@ -62,9 +69,9 @@ class Cache:
             pass
 
     def _write_cache(self) -> None:
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        with open(CACHE_DIR / VERIFICATION_FILE, "w", encoding="utf-8") as f:
-            json.dump(self._verification, f)
+        self._file.parent.mkdir(parents=True, exist_ok=True)
+        with open(self._file, "w", encoding="utf-8") as f:
+            json.dump(self._verified, f)
 
     @staticmethod
     def _message_hash(message: AbstractMessage) -> str:
