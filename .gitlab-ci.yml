@@ -4,8 +4,6 @@ variables:
    CI_FRAGMENTS_GIT: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/it/ci-fragments
    RECORDFLUX_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
 
-   GNATPROVE_CACHE_PACKAGE: gnatprove_cache.tar.gz
-
    GNAT_BUILD_DATE: "20220723"
    SPARK_BUILD_DATE: "20221214"
    PYTHON_VERSION: "3.10"
@@ -37,24 +35,6 @@ stages:
 .initialization:
   extends: .ci_job
   stage: initialization
-
-cache_restoring:
-  extends: .initialization
-  services:
-     - image:e3
-  script:
-    - export PATH=/it/e3/bin:$PATH
-    - git clone $CI_FRAGMENTS_GIT
-    - ci-fragments/download_generic_package $CI_PROJECT_PATH $GNATPROVE_CACHE_PACKAGE
-    - if [ -f $GNATPROVE_CACHE_PACKAGE ]; then
-        tar zxf $GNATPROVE_CACHE_PACKAGE;
-      fi
-  artifacts:
-    paths:
-      - build/gnatprove_cache
-      - build/test/gnatprove
-      - examples/apps/dhcp_client/obj/gnatprove
-      - examples/apps/ping/obj/gnatprove
 
 .setup_alire: &setup_alire
     - curl -Ls https://github.com/alire-project/alire/releases/download/v1.2.2/alr-1.2.2-x86_64.AppImage -o /tmp/alr.AppImage
@@ -276,7 +256,6 @@ gnat_community_compatibility:
 verification_tests:
   extends: .testing
   dependencies:
-    - cache_restoring
     - setup
   services:
      - image:recordflux
@@ -286,16 +265,19 @@ verification_tests:
     - *setup_spark
     - *setup_python
     - make prove_tests
-  artifacts:
-    when: always
+  cache:
+    key: verification_tests-$CI_COMMIT_REF_SLUG
     paths:
       - build/gnatprove_cache
       - build/test/gnatprove
+    fallback_keys:
+      - verification_tests-main
+    unprotect: true
+    when: always
 
 verification_python_tests:
   extends: .testing
   dependencies:
-    - cache_restoring
     - setup
   services:
      - image:recordflux
@@ -306,16 +288,19 @@ verification_python_tests:
     - *setup_spark
     - *setup_python
     - make prove_python_tests
-  artifacts:
-    when: always
+  cache:
+    key: verification_python_tests-$CI_COMMIT_REF_SLUG
     paths:
       - build/gnatprove_cache
       - build/test/gnatprove
+    fallback_keys:
+      - verification_python_tests-main
+    unprotect: true
+    when: always
 
 verification_apps:
   extends: .testing
   dependencies:
-    - cache_restoring
     - setup
   services:
      - image:recordflux
@@ -331,11 +316,15 @@ verification_apps:
     - *setup_spark
     - *setup_python
     - timeout -k 60 27600 make -C examples/apps/${APP} prove
-  artifacts:
-    when: always
+  cache:
+    key: verification_apps-$CI_COMMIT_REF_SLUG
     paths:
       - build/gnatprove_cache
       - examples/apps/${APP}/obj/gnatprove
+    fallback_keys:
+      - verification_apps-main
+    unprotect: true
+    when: always
 
 html_documentation:
   extends: .testing
@@ -356,38 +345,6 @@ pdf_documentation:
     - apt update
     - apt-get install -y latexmk texlive-latex-extra tex-gyre
     - make pdf_doc
-
-################
-# Finalization #
-################
-
-.finalization:
-  extends: .ci_job
-  stage: finalization
-
-cache_saving:
-  extends: .finalization
-  when: always
-  services:
-     - image:e3
-  dependencies:
-    - verification_tests
-    - verification_python_tests
-    - verification_apps
-  script:
-    - export PATH=/it/e3/bin:$PATH
-    - mkdir -p
-         build/gnatprove_cache
-         build/test/gnatprove
-         examples/apps/dhcp_client/obj/gnatprove
-         examples/apps/ping/obj/gnatprove
-    - tar czf $GNATPROVE_CACHE_PACKAGE
-         build/gnatprove_cache
-         build/test/gnatprove
-         examples/apps/dhcp_client/obj/gnatprove
-         examples/apps/ping/obj/gnatprove
-    - git clone $CI_FRAGMENTS_GIT
-    - ci-fragments/upload_generic_package $CI_PROJECT_PATH $GNATPROVE_CACHE_PACKAGE
 
 ##################
 # Scheduled jobs #
