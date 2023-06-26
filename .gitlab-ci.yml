@@ -308,12 +308,12 @@ verification_apps:
     - *setup_python
     - timeout -k 60 27600 make -C examples/apps/${APP} prove
   cache:
-    key: verification_apps-$CI_COMMIT_REF_SLUG
+    key: verification_apps-$APP-$CI_COMMIT_REF_SLUG
     paths:
       - build/gnatprove_cache
       - examples/apps/${APP}/obj/gnatprove
     fallback_keys:
-      - verification_apps-main
+      - verification_apps-$APP-main
     unprotect: true
     when: always
 
