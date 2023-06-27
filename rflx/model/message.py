@@ -130,22 +130,22 @@ class AbstractMessage(mty.Type):
             structure = [Link(INITIAL, FINAL)]
 
         self._structure = sorted(structure)
-        self._types = types
-        self._paths_cache: dict[Field, set[tuple[Link, ...]]] = {}
         self._checksums = checksums or {}
+        self._byte_order = {}
 
         self._state = state or MessageState()
-        self._unqualified_enum_literals = mty.unqualified_enum_literals(
-            self.dependencies, self.package
-        )
-        self._qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
-        self._type_names = mty.qualified_type_names(self.dependencies)
-        self._byte_order = {}
+        dependencies = self._dependencies(types)
+        self._unqualified_enum_literals = mty.unqualified_enum_literals(dependencies, self.package)
+        self._qualified_enum_literals = mty.qualified_enum_literals(dependencies)
+        self._type_names = mty.qualified_type_names(dependencies)
+        self._paths_cache: dict[Field, set[tuple[Link, ...]]] = {}
 
         try:
             if not state and not self.is_null:
-                self._state.has_unreachable = self._validate()
-                self._normalize()
+                self._state.has_unreachable = self._validate(self._structure, types)
+                self._structure, self._checksums = self._normalize(
+                    self._structure, types, self._checksums
+                )
                 fields = self._compute_topological_sorting(self._state.has_unreachable)
                 if fields:
                     # The fields of `types` are used to preserve the locations of the field
@@ -228,15 +228,15 @@ class AbstractMessage(mty.Type):
 
     @property
     def is_null(self) -> bool:
-        return self._structure == [Link(INITIAL, FINAL)] and not self._types
+        return self._structure == [Link(INITIAL, FINAL)] and not self.types
 
     @property
     def direct_dependencies(self) -> list[mty.Type]:
-        return [*self._types.values(), self]
+        return [*self.types.values(), self]
 
     @property
     def dependencies(self) -> list[mty.Type]:
-        return [*unique(a for t in self._types.values() for a in t.dependencies), self]
+        return self._dependencies(self.types)
 
     @property
     def byte_order(self) -> Mapping[Field, ByteOrder]:
@@ -433,7 +433,7 @@ class AbstractMessage(mty.Type):
 
     def _aggregate_constraints(self, expression: expr.Expr = expr.TRUE) -> list[expr.Expr]:
         def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
-            comp = self._types[Field(field.name)]
+            comp = self.types[Field(field.name)]
             assert isinstance(comp, mty.Composite)
             result = expr.Equal(
                 expr.Mul(aggregate.length, comp.element_size),
@@ -460,7 +460,7 @@ class AbstractMessage(mty.Type):
     def _scalar_constraints(self) -> list[expr.Expr]:
         scalar_types = [
             (f.name, t)
-            for f, t in self._types.items()
+            for f, t in self.types.items()
             if isinstance(t, mty.Scalar)
             and ID(f.name) not in self._qualified_enum_literals
             and f.name not in ["Message", "Final"]
@@ -486,11 +486,11 @@ class AbstractMessage(mty.Type):
             expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
         ]
 
-    def _validate(self) -> bool:
-        type_fields = {*self._types.keys(), INITIAL, FINAL}
-        structure_fields = {l.source for l in self.structure} | {l.target for l in self.structure}
+    def _validate(self, structure: Sequence[Link], types: Mapping[Field, mty.Type]) -> bool:
+        type_fields = {*types, INITIAL, FINAL}
+        structure_fields = {l.source for l in structure} | {l.target for l in structure}
 
-        self._validate_types(type_fields, structure_fields)
+        self._validate_types(types, type_fields, structure_fields)
         self._validate_initial_link()
         self._validate_names(type_fields)
 
@@ -501,11 +501,13 @@ class AbstractMessage(mty.Type):
 
         return has_unreachable
 
-    def _validate_types(self, type_fields: set[Field], structure_fields: set[Field]) -> None:
-        parameters = self._types.keys() - structure_fields
+    def _validate_types(
+        self, types: Mapping[Field, mty.Type], type_fields: set[Field], structure_fields: set[Field]
+    ) -> None:
+        parameters = type_fields - structure_fields - {INITIAL, FINAL}
 
         for p in parameters:
-            parameter_type = self._types[p]
+            parameter_type = types[p]
             if not isinstance(parameter_type, mty.Scalar):
                 self.error.extend(
                     [
@@ -722,7 +724,12 @@ class AbstractMessage(mty.Type):
                             ]
                         )
 
-    def _normalize(self) -> None:
+    def _normalize(
+        self,
+        structure: Sequence[Link],
+        types: Mapping[Field, mty.Type],
+        checksums: Mapping[ID, Sequence[expr.Expr]],
+    ) -> tuple[list[Link], dict[ID, Sequence[expr.Expr]]]:
         """
         Normalize structure of message.
 
@@ -741,7 +748,7 @@ class AbstractMessage(mty.Type):
                 self.package,
             )
 
-        self._structure = [
+        structure = [
             Link(
                 l.source,
                 l.target,
@@ -750,17 +757,12 @@ class AbstractMessage(mty.Type):
                 l.first.substituted(substitute),
                 l.location,
             )
-            for l in self.structure
+            for l in structure
         ]
 
-        self._checksums = {
-            i: [e.substituted(substitute) for e in expressions]
-            for i, expressions in self.checksums.items()
-        }
-
-        for link in self._structure:
-            if link.size == expr.UNDEFINED and link.target in self._types:
-                t = self._types[link.target]
+        for link in structure:
+            if link.size == expr.UNDEFINED and link.target in types:
+                t = types[link.target]
                 if isinstance(t, (mty.Opaque, mty.Sequence)) and all(
                     l.target == FINAL for l in self.outgoing(link.target)
                 ):
@@ -772,6 +774,13 @@ class AbstractMessage(mty.Type):
                             expr.Last(link.source.identifier),
                             location=link.location,
                         )
+
+        checksums = {
+            i: [e.substituted(substitute) for e in expressions]
+            for i, expressions in self.checksums.items()
+        }
+
+        return (structure, checksums)
 
     def _compute_topological_sorting(self, has_unreachable: bool) -> Optional[tuple[Field, ...]]:
         """Return fields topologically sorted (Kahn's algorithm)."""
@@ -844,6 +853,9 @@ class AbstractMessage(mty.Type):
         if isinstance(expression, expr.TypeName):
             expression.type_ = self._type_names[expression.identifier].type_
         return expression
+
+    def _dependencies(self, types: Mapping[Field, mty.Type]) -> list[mty.Type]:
+        return [*unique(a for t in types.values() for a in t.dependencies), self]
 
 
 class Message(AbstractMessage):
