@@ -148,10 +148,12 @@ class AbstractMessage(mty.Type):
                 self._normalize()
                 fields = self._compute_topological_sorting(self._state.has_unreachable)
                 if fields:
-                    self._state.field_types = {f: self._types[f] for f in fields}
-                    self._state.parameter_types = {
-                        f: t for f, t in self._types.items() if f not in fields
-                    }
+                    # The fields of `types` are used to preserve the locations of the field
+                    # definitions. `fields` cannot be used directly, as it contains the field
+                    # identifiers of link targets.
+                    ft = {f: (f, t) for f, t in types.items()}
+                    self._state.field_types = dict(ft[f] for f in fields)
+                    self._state.parameter_types = dict(ft[f] for f in types if f not in fields)
                 self._set_types()
             byte_order = byte_order if byte_order else ByteOrder.HIGH_ORDER_FIRST
             if not isinstance(byte_order, dict):
@@ -1925,7 +1927,8 @@ class Message(AbstractMessage):
         for f in (*self.fields, FINAL):
             for path in self.paths(f):
                 last = path[-1]
-                negative = expr.Less(self._target_size(last), expr.Number(0), last.size.location)
+                field_size = self._target_size(last)
+                negative = expr.Less(field_size, expr.Number(0), last.size.location)
                 start = expr.GreaterEqual(
                     self._target_first(last),
                     expr.First("Message"),
@@ -1957,7 +1960,7 @@ class Message(AbstractMessage):
                             f'negative size for field "{f.name}" ({path_message})',
                             Subsystem.MODEL,
                             Severity.ERROR,
-                            f.identifier.location,
+                            field_size.location,
                         )
                     ],
                 )
@@ -2015,7 +2018,7 @@ class Message(AbstractMessage):
 
                         is_multiple_of_element_size = expr.Not(
                             expr.Equal(
-                                expr.Mod(self._target_size(last), element_size),
+                                expr.Mod(field_size, element_size),
                                 expr.Number(0),
                                 last.location,
                             )
@@ -2030,7 +2033,7 @@ class Message(AbstractMessage):
                                     f" of {element_size} bit ({path_message})",
                                     Subsystem.MODEL,
                                     Severity.ERROR,
-                                    f.identifier.location,
+                                    field_size.location,
                                 )
                             ]
                         )

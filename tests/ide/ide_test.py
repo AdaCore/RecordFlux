@@ -74,7 +74,7 @@ def test_multiple_errors() -> None:
             f'{path}:84:30: model: error: invalid First for field "Final"',
             f"{path}:87:9: model: error: message size must be multiple of 8 bit",
             f"{path}:87:9: model: info: on path Field",
-            f'{path}:94:26: model: error: size of opaque field "Data" not multiple of 8 bit'
+            f'{path}:94:44: model: error: size of opaque field "Data" not multiple of 8 bit'
             " (Length -> Data)",
             f'{path}:97:8: model: error: undefined type "RFLX_Invalid::PDU1" in refinement',
             f'{path}:97:40: model: error: undefined type "RFLX_Invalid::SDU2" in refinement '
@@ -137,8 +137,8 @@ def test_multiple_errors() -> None:
             f"{path}:229:30: model: error: illegal first aspect at initial link",
             f'{path}:238:19: model: error: undefined variable "F1"',
             f"{path}:238:19: model: info: on path F1",
-            f'{path}:245:18: model: error: negative size for field "F2" (F1 -> F2)',
-            f"{path}:245:18: model: error: size of opaque field "
+            f'{path}:247:29: model: error: negative size for field "F2" (F1 -> F2)',
+            f"{path}:247:29: model: error: size of opaque field "
             f'"F2" not multiple of 8 bit (F1 -> F2)',
             f'{path}:242:9: model: error: negative start for field "Final" (F1 -> F2 -> Final)',
             f"{path}:245:18: model: info: unsatisfied \"F2'Last ="

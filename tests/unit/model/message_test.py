@@ -680,17 +680,22 @@ def test_successors() -> None:
     assert_equal(ETHERNET_FRAME.successors(FINAL), ())
 
 
-def test_field_locations() -> None:
-    f2 = Field(ID("F2", Location((2, 2))))
-    f3 = Field(ID("F3", Location((3, 2))))
+def test_field_identifier_locations() -> None:
+    p = Field(ID("P", Location((0, 1))))
+    a = Field(ID("A", Location((1, 2))))
+    b = Field(ID("B", Location((2, 3))))
 
     message = UnprovenMessage(
         "P::M",
-        [Link(INITIAL, f2), Link(f2, f3), Link(f3, FINAL)],
-        {Field("F2"): INTEGER, Field("F3"): INTEGER},
-        location=Location((17, 9)),
+        [Link(INITIAL, Field("A")), Link(Field("A"), Field("B")), Link(Field("B"), FINAL)],
+        {p: INTEGER, a: INTEGER, b: INTEGER},
     )
-    assert message.fields == (f2, f3)
+
+    assert message.parameters == (p,)
+    assert message.parameters[0].identifier.location == p.identifier.location
+    assert message.fields == (a, b)
+    assert message.fields[0].identifier.location == a.identifier.location
+    assert message.fields[1].identifier.location == b.identifier.location
 
 
 @pytest.mark.parametrize(
@@ -1214,10 +1219,10 @@ def test_opaque_size_not_multiple_of_8() -> None:
             " not multiple of 8 bit [(]O[)]$"
         ),
     ):
-        o = Field(ID("O", location=Location((44, 3))))
+        o = Field("O")
         Message(
             "P::M",
-            [Link(INITIAL, o, size=Number(68)), Link(o, FINAL)],
+            [Link(INITIAL, o, size=Number(68, location=Location((44, 3)))), Link(o, FINAL)],
             {o: OPAQUE},
         )
 
@@ -1228,10 +1233,14 @@ def test_opaque_size_not_multiple_of_8_dynamic() -> None:
         match=r'^<stdin>:44:3: model: error: size of opaque field "O" not multiple of 8 bit'
         " [(]L -> O[)]",
     ):
-        o = Field(ID("O", location=Location((44, 3))))
+        o = Field("O")
         Message(
             "P::M",
-            [Link(INITIAL, Field("L")), Link(Field("L"), o, size=Variable("L")), Link(o, FINAL)],
+            [
+                Link(INITIAL, Field("L")),
+                Link(Field("L"), o, size=Variable("L", location=Location((44, 3)))),
+                Link(o, FINAL),
+            ],
             {Field("L"): INTEGER, o: OPAQUE},
         )
 
@@ -1361,15 +1370,16 @@ def test_exclusive_prefixed_enum_valid() -> None:
 
 
 def test_exclusive_conflict() -> None:
-    f1 = Field(ID("F1", Location((8, 4))))
     structure = [
-        Link(INITIAL, f1),
-        Link(f1, FINAL, condition=Greater(Variable("F1"), Number(50), Location((10, 5)))),
-        Link(f1, Field("F2"), condition=Less(Variable("F1"), Number(80), Location((11, 7)))),
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), FINAL, condition=Greater(Variable("F1"), Number(50), Location((10, 5)))),
+        Link(
+            Field("F1"), Field("F2"), condition=Less(Variable("F1"), Number(80), Location((11, 7)))
+        ),
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
+        Field(ID("F1", Location((8, 4)))): INTEGER,
         Field("F2"): INTEGER,
     }
     assert_message_model_error(
@@ -1432,15 +1442,14 @@ def test_exclusive_with_size_valid_and_not() -> None:
 
 
 def test_exclusive_with_size_invalid() -> None:
-    f1 = Field(ID("F1", Location((98, 10))))
     structure = [
-        Link(INITIAL, f1, size=Number(32)),
-        Link(f1, FINAL, condition=Equal(Size("F1"), Number(32), Location((10, 2)))),
-        Link(f1, Field("F2"), condition=Equal(Size("F1"), Number(32), Location((12, 4)))),
+        Link(INITIAL, Field("F1"), size=Number(32)),
+        Link(Field("F1"), FINAL, condition=Equal(Size("F1"), Number(32), Location((10, 2)))),
+        Link(Field("F1"), Field("F2"), condition=Equal(Size("F1"), Number(32), Location((12, 4)))),
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): OPAQUE,
+        Field(ID("F1", Location((98, 10)))): OPAQUE,
         Field("F2"): INTEGER,
     }
     assert_message_model_error(
@@ -1459,16 +1468,28 @@ def test_no_valid_path() -> None:
     f2 = Field(ID("F2", Location((11, 6))))
     f3 = Field(ID("F3", Location((12, 7))))
     structure = [
-        Link(INITIAL, f1),
-        Link(f1, f2, condition=LessEqual(Variable("F1"), Number(80), Location((20, 2)))),
-        Link(f1, f3, condition=Greater(Variable("F1"), Number(80), Location((21, 3)))),
-        Link(f2, f3, condition=Greater(Variable("F1"), Number(80), Location((22, 4)))),
+        Link(INITIAL, Field(ID("F1", Location((10, 8))))),
+        Link(
+            f1,
+            Field(ID("F2", Location((11, 9)))),
+            condition=LessEqual(Variable("F1"), Number(80), Location((20, 2))),
+        ),
+        Link(
+            f1,
+            Field(ID("F3", Location((12, 10)))),
+            condition=Greater(Variable("F1"), Number(80), Location((21, 3))),
+        ),
+        Link(
+            f2,
+            Field(ID("F3", Location((13, 10)))),
+            condition=Greater(Variable("F1"), Number(80), Location((22, 4))),
+        ),
         Link(f3, FINAL, condition=LessEqual(Variable("F1"), Number(80), Location((23, 5)))),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
-        Field("F3"): INTEGER,
+        f1: INTEGER,
+        f2: INTEGER,
+        f3: INTEGER,
     }
     assert_message_model_error(
         structure,
@@ -1477,14 +1498,14 @@ def test_no_valid_path() -> None:
         r'<stdin>:11:6: model: error: unreachable field "F2" in "P::M"\n'
         r"<stdin>:11:6: model: info: path 0 [(]F1 -> F2[)]:\n"
         r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
-        r'<stdin>:11:6: model: info: unsatisfied "F1 > 80"\n'
+        r'<stdin>:11:9: model: info: unsatisfied "F1 > 80"\n'
         r'<stdin>:12:7: model: error: unreachable field "F3" in "P::M"\n'
         r"<stdin>:12:7: model: info: path 0 [(]F1 -> F2 -> F3[)]:\n"
         r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
         r"<stdin>:12:7: model: info: path 1 [(]F1 -> F3[)]:\n"
         r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:12:7: model: info: unsatisfied "F1 <= 80"\n'
+        r'<stdin>:12:10: model: info: unsatisfied "F1 <= 80"\n'
         r'model: error: unreachable field "Final" in "P::M"\n'
         r"model: info: path 0 [(]F1 -> F2 -> F3 -> Final[)]:\n"
         r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
@@ -1493,19 +1514,19 @@ def test_no_valid_path() -> None:
         r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
         r'<stdin>:23:5: model: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:22:4: model: error: contradicting condition in "P::M"\n'
-        r'<stdin>:10:5: model: info: on path: "F1"\n'
-        r'<stdin>:11:6: model: info: on path: "F2"\n'
+        r'<stdin>:10:8: model: info: on path: "F1"\n'
+        r'<stdin>:11:9: model: info: on path: "F2"\n'
         r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
         r'<stdin>:23:5: model: error: contradicting condition in "P::M"\n'
-        r'<stdin>:10:5: model: info: on path: "F1"\n'
-        r'<stdin>:11:6: model: info: on path: "F2"\n'
-        r'<stdin>:12:7: model: info: on path: "F3"\n'
+        r'<stdin>:10:8: model: info: on path: "F1"\n'
+        r'<stdin>:11:9: model: info: on path: "F2"\n'
+        r'<stdin>:13:10: model: info: on path: "F3"\n'
         r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
         r'<stdin>:23:5: model: error: contradicting condition in "P::M"\n'
-        r'<stdin>:10:5: model: info: on path: "F1"\n'
-        r'<stdin>:12:7: model: info: on path: "F3"\n'
+        r'<stdin>:10:8: model: info: on path: "F1"\n'
+        r'<stdin>:12:10: model: info: on path: "F3"\n'
         r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
         r'<stdin>:23:5: model: info: unsatisfied "F1 <= 80"'
         r"$",
@@ -1843,13 +1864,13 @@ def test_invalid_negative_field_size_1() -> None:
 
 
 def test_invalid_negative_field_size_2() -> None:
-    o = Field(ID("O", location=Location((44, 3))))
+    o = Field("O")
     structure = [
         Link(INITIAL, Field("L")),
         Link(
             Field("L"),
             o,
-            size=Mul(Number(8), Sub(Variable("L"), Number(50))),
+            size=Mul(Number(8), Sub(Variable("L"), Number(50)), location=Location((44, 3))),
         ),
         Link(o, FINAL),
     ]
@@ -2381,13 +2402,16 @@ def test_conditionally_unreachable_field_outgoing() -> None:
 
 
 def test_conditionally_unreachable_field_outgoing_multi() -> None:
-    f2 = Field(ID("F2", Location((90, 12))))
     structure = [
         Link(INITIAL, Field("F1")),
-        Link(Field("F1"), f2, LessEqual(Variable("F1"), Number(32), Location((66, 3)))),
+        Link(
+            Field("F1"),
+            Field(ID("F2", Location((91, 13)))),
+            LessEqual(Variable("F1"), Number(32), Location((66, 3))),
+        ),
         Link(Field("F1"), Field("F3"), Greater(Variable("F1"), Number(32))),
         Link(
-            f2,
+            Field("F2"),
             Field("F3"),
             And(
                 Greater(Variable("F1"), Number(32)),
@@ -2395,12 +2419,12 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
                 location=Location((22, 34)),
             ),
         ),
-        Link(f2, FINAL, Greater(Variable("F1"), Number(48))),
+        Link(Field("F2"), FINAL, Greater(Variable("F1"), Number(48))),
         Link(Field("F3"), FINAL),
     ]
     types = {
         Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field(ID("F2", Location((90, 12)))): INTEGER,
         Field("F3"): INTEGER,
     }
     assert_message_model_error(
@@ -2410,15 +2434,15 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
         r'<stdin>:90:12: model: error: unreachable field "F2" in "P::M"\n'
         r"<stdin>:90:12: model: info: path 0 [(]F1 -> F2[)]:\n"
         r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
-        r'<stdin>:90:12: model: info: unsatisfied "[(]F1 > 32 and F1 <= 48[)] or F1 > 48"\n'
+        r'<stdin>:91:13: model: info: unsatisfied "[(]F1 > 32 and F1 <= 48[)] or F1 > 48"\n'
         r'<stdin>:22:34: model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
-        r'<stdin>:90:12: model: info: on path: "F2"\n'
+        r'<stdin>:91:13: model: info: on path: "F2"\n'
         r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
         r'<stdin>:22:34: model: info: unsatisfied "F1 > 32 and F1 <= 48"\n'
         r'model: error: contradicting condition in "P::M"\n'
         r'model: info: on path: "F1"\n'
-        r'<stdin>:90:12: model: info: on path: "F2"\n'
+        r'<stdin>:91:13: model: info: on path: "F2"\n'
         r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
         r'model: info: unsatisfied "F1 > 48"'
         r"$",
