@@ -296,14 +296,6 @@ is
            when others =>
               True);
 
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
@@ -441,13 +433,11 @@ is
        and Invalid (Ctx, F_Length)
        and Invalid (Ctx, F_Checksum)
        and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_Destination_Port) = F_Source_Port
-            and Valid_Next (Ctx, F_Destination_Port))
+       and Valid_Next (Ctx, F_Destination_Port)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Source_Port) = Predecessor (Ctx, F_Source_Port)'Old
        and Valid_Next (Ctx, F_Source_Port) = Valid_Next (Ctx, F_Source_Port)'Old
        and Field_First (Ctx, F_Source_Port) = Field_First (Ctx, F_Source_Port)'Old;
 
@@ -467,13 +457,11 @@ is
        and Invalid (Ctx, F_Length)
        and Invalid (Ctx, F_Checksum)
        and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_Length) = F_Destination_Port
-            and Valid_Next (Ctx, F_Length))
+       and Valid_Next (Ctx, F_Length)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Destination_Port) = Predecessor (Ctx, F_Destination_Port)'Old
        and Valid_Next (Ctx, F_Destination_Port) = Valid_Next (Ctx, F_Destination_Port)'Old
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Field_First (Ctx, F_Destination_Port) = Field_First (Ctx, F_Destination_Port)'Old
@@ -495,13 +483,11 @@ is
        and Get_Length (Ctx) = Val
        and Invalid (Ctx, F_Checksum)
        and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_Checksum) = F_Length
-            and Valid_Next (Ctx, F_Checksum))
+       and Valid_Next (Ctx, F_Checksum)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
@@ -523,13 +509,11 @@ is
        and Valid (Ctx, F_Checksum)
        and Get_Checksum (Ctx) = Val
        and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_Payload) = F_Checksum
-            and Valid_Next (Ctx, F_Payload))
+       and Valid_Next (Ctx, F_Payload)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Checksum) = Predecessor (Ctx, F_Checksum)'Old
        and Valid_Next (Ctx, F_Checksum) = Valid_Next (Ctx, F_Checksum)'Old
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
@@ -556,7 +540,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
@@ -578,7 +561,6 @@ is
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and then Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and then Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and then Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
@@ -603,7 +585,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
@@ -632,7 +613,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Source_Port (Ctx) = Get_Source_Port (Ctx)'Old
        and Get_Destination_Port (Ctx) = Get_Destination_Port (Ctx)'Old
@@ -713,7 +693,6 @@ private
 
    type Field_Cursor is
       record
-         Predecessor : Virtual_Field := F_Final;
          State : Cursor_State := S_Invalid;
          First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
          Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
@@ -757,27 +736,11 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if Well_Formed (Cursors (F_Source_Port)) then Cursors (F_Source_Port).Predecessor = F_Initial)
-      and then (if
-                   Well_Formed (Cursors (F_Destination_Port))
-                then
-                   (Valid (Cursors (F_Source_Port))
-                    and then Cursors (F_Destination_Port).Predecessor = F_Source_Port))
-      and then (if
-                   Well_Formed (Cursors (F_Length))
-                then
-                   (Valid (Cursors (F_Destination_Port))
-                    and then Cursors (F_Length).Predecessor = F_Destination_Port))
-      and then (if
-                   Well_Formed (Cursors (F_Checksum))
-                then
-                   (Valid (Cursors (F_Length))
-                    and then Cursors (F_Checksum).Predecessor = F_Length))
-      and then (if
-                   Well_Formed (Cursors (F_Payload))
-                then
-                   (Valid (Cursors (F_Checksum))
-                    and then Cursors (F_Payload).Predecessor = F_Checksum)))
+     ((if Well_Formed (Cursors (F_Source_Port)) then True)
+      and then (if Well_Formed (Cursors (F_Destination_Port)) then Valid (Cursors (F_Source_Port)))
+      and then (if Well_Formed (Cursors (F_Length)) then Valid (Cursors (F_Destination_Port)))
+      and then (if Well_Formed (Cursors (F_Checksum)) then Valid (Cursors (F_Length)))
+      and then (if Well_Formed (Cursors (F_Payload)) then Valid (Cursors (F_Checksum))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
@@ -795,23 +758,19 @@ private
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
      ((case Fld is
           when F_Source_Port =>
-             Cursors (F_Source_Port).Predecessor = F_Initial,
+             True,
           when F_Destination_Port =>
              (Valid (Cursors (F_Source_Port))
-              and then True
-              and then Cursors (F_Destination_Port).Predecessor = F_Source_Port),
+              and then True),
           when F_Length =>
              (Valid (Cursors (F_Destination_Port))
-              and then True
-              and then Cursors (F_Length).Predecessor = F_Destination_Port),
+              and then True),
           when F_Checksum =>
              (Valid (Cursors (F_Length))
-              and then True
-              and then Cursors (F_Checksum).Predecessor = F_Length),
+              and then True),
           when F_Payload =>
              (Valid (Cursors (F_Checksum))
-              and then True
-              and then Cursors (F_Payload).Predecessor = F_Checksum)))
+              and then True)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -911,31 +870,26 @@ private
                     Well_Formed (Cursors (F_Source_Port))
                  then
                     (Cursors (F_Source_Port).Last - Cursors (F_Source_Port).First + 1 = 16
-                     and then Cursors (F_Source_Port).Predecessor = F_Initial
                      and then Cursors (F_Source_Port).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Destination_Port))
                           then
                              (Cursors (F_Destination_Port).Last - Cursors (F_Destination_Port).First + 1 = 16
-                              and then Cursors (F_Destination_Port).Predecessor = F_Source_Port
                               and then Cursors (F_Destination_Port).First = Cursors (F_Source_Port).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Length))
                           then
                              (Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
-                              and then Cursors (F_Length).Predecessor = F_Destination_Port
                               and then Cursors (F_Length).First = Cursors (F_Destination_Port).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Checksum))
                           then
                              (Cursors (F_Checksum).Last - Cursors (F_Checksum).First + 1 = 16
-                              and then Cursors (F_Checksum).Predecessor = F_Length
                               and then Cursors (F_Checksum).First = Cursors (F_Length).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Payload))
                           then
                              (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Length).Value) - 8) * 8
-                              and then Cursors (F_Payload).Predecessor = F_Checksum
                               and then Cursors (F_Payload).First = Cursors (F_Checksum).Last + 1))))
     with
      Post =>
@@ -1005,13 +959,6 @@ private
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
-     ((case Fld is
-          when F_Initial =>
-             F_Initial,
-          when others =>
-             Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));

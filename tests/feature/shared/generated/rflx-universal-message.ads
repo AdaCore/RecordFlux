@@ -300,14 +300,6 @@ is
            when others =>
               True);
 
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
@@ -447,25 +439,21 @@ is
        and (if
                RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
             then
-               Predecessor (Ctx, F_Data) = F_Message_Type
-               and Valid_Next (Ctx, F_Data))
+               Valid_Next (Ctx, F_Data))
        and (if
                RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
                and RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Null))
                and RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
             then
-               Predecessor (Ctx, F_Length) = F_Message_Type
-               and Valid_Next (Ctx, F_Length))
+               Valid_Next (Ctx, F_Length))
        and (if
                RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
             then
-               Predecessor (Ctx, F_Options) = F_Message_Type
-               and Valid_Next (Ctx, F_Options))
+               Valid_Next (Ctx, F_Options))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Message_Type) = Predecessor (Ctx, F_Message_Type)'Old
        and Valid_Next (Ctx, F_Message_Type) = Valid_Next (Ctx, F_Message_Type)'Old
        and Field_First (Ctx, F_Message_Type) = Field_First (Ctx, F_Message_Type)'Old;
 
@@ -490,34 +478,28 @@ is
        and (if
                RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
             then
-               Predecessor (Ctx, F_Data) = F_Length
-               and Valid_Next (Ctx, F_Data))
+               Valid_Next (Ctx, F_Data))
        and (if
                RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Option_Types))
             then
-               Predecessor (Ctx, F_Option_Types) = F_Length
-               and Valid_Next (Ctx, F_Option_Types))
+               Valid_Next (Ctx, F_Option_Types))
        and (if
                RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
             then
-               Predecessor (Ctx, F_Options) = F_Length
-               and Valid_Next (Ctx, F_Options))
+               Valid_Next (Ctx, F_Options))
        and (if
                RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Value))
                and RFLX_Types.Base_Integer (Get_Length (Ctx)) = Universal.Value'Size / 8
             then
-               Predecessor (Ctx, F_Value) = F_Length
-               and Valid_Next (Ctx, F_Value))
+               Valid_Next (Ctx, F_Value))
        and (if
                RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values))
             then
-               Predecessor (Ctx, F_Values) = F_Length
-               and Valid_Next (Ctx, F_Values))
+               Valid_Next (Ctx, F_Values))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Field_First (Ctx, F_Length) = Field_First (Ctx, F_Length)'Old
@@ -543,7 +525,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
        and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
@@ -573,7 +554,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
@@ -597,7 +577,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Types) = Predecessor (Ctx, F_Option_Types)'Old
        and Valid_Next (Ctx, F_Option_Types) = Valid_Next (Ctx, F_Option_Types)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
@@ -621,7 +600,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old;
@@ -642,7 +620,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Values) = Predecessor (Ctx, F_Values)'Old
        and Valid_Next (Ctx, F_Values) = Valid_Next (Ctx, F_Values)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
@@ -669,7 +646,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Types) = Predecessor (Ctx, F_Option_Types)'Old
        and Valid_Next (Ctx, F_Option_Types) = Valid_Next (Ctx, F_Option_Types)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
@@ -696,7 +672,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
@@ -720,7 +695,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Values) = Predecessor (Ctx, F_Values)'Old
        and Valid_Next (Ctx, F_Values) = Valid_Next (Ctx, F_Values)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
@@ -747,7 +721,6 @@ is
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and then Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and then Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and then Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
@@ -769,7 +742,6 @@ is
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Option_Types) = Predecessor (Ctx, F_Option_Types)'Old
        and then Valid_Next (Ctx, F_Option_Types) = Valid_Next (Ctx, F_Option_Types)'Old
        and then Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and then Get_Length (Ctx) = Get_Length (Ctx)'Old
@@ -793,7 +765,6 @@ is
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and then Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
        and then Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and then Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old;
@@ -812,7 +783,6 @@ is
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Values) = Predecessor (Ctx, F_Values)'Old
        and then Valid_Next (Ctx, F_Values) = Valid_Next (Ctx, F_Values)'Old
        and then Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and then Get_Length (Ctx) = Get_Length (Ctx)'Old
@@ -839,7 +809,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
@@ -869,7 +838,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
@@ -898,7 +866,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Types) = Predecessor (Ctx, F_Option_Types)'Old
        and Field_Last (Ctx, F_Option_Types) = Field_Last (Ctx, F_Option_Types)'Old
        and (for all F in Field range F_Message_Type .. F_Data =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -935,7 +902,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
        and Field_Last (Ctx, F_Options) = Field_Last (Ctx, F_Options)'Old
        and (for all F in Field range F_Message_Type .. F_Option_Types =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -971,7 +937,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Values) = Predecessor (Ctx, F_Values)'Old
        and Field_Last (Ctx, F_Values) = Field_Last (Ctx, F_Values)'Old
        and (for all F in Field range F_Message_Type .. F_Value =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -1124,7 +1089,6 @@ private
 
    type Field_Cursor is
       record
-         Predecessor : Virtual_Field := F_Final;
          State : Cursor_State := S_Invalid;
          First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
          Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
@@ -1168,12 +1132,11 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if Well_Formed (Cursors (F_Message_Type)) then Cursors (F_Message_Type).Predecessor = F_Initial)
+     ((if Well_Formed (Cursors (F_Message_Type)) then True)
       and then (if
                    Well_Formed (Cursors (F_Length))
                 then
                    (Valid (Cursors (F_Message_Type))
-                    and then Cursors (F_Length).Predecessor = F_Message_Type
                     and then (RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
                               and RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Null))
                               and RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data)))))
@@ -1181,38 +1144,31 @@ private
                    Well_Formed (Cursors (F_Data))
                 then
                    (Valid (Cursors (F_Length))
-                    and then Cursors (F_Data).Predecessor = F_Length
                     and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data)))
                    or (Valid (Cursors (F_Message_Type))
-                       and then Cursors (F_Data).Predecessor = F_Message_Type
                        and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))))
       and then (if
                    Well_Formed (Cursors (F_Option_Types))
                 then
                    (Valid (Cursors (F_Length))
-                    and then Cursors (F_Option_Types).Predecessor = F_Length
                     and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Option_Types))))
       and then (if
                    Well_Formed (Cursors (F_Options))
                 then
                    (Valid (Cursors (F_Length))
-                    and then Cursors (F_Options).Predecessor = F_Length
                     and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options)))
                    or (Valid (Cursors (F_Message_Type))
-                       and then Cursors (F_Options).Predecessor = F_Message_Type
                        and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))))
       and then (if
                    Well_Formed (Cursors (F_Value))
                 then
                    (Valid (Cursors (F_Length))
-                    and then Cursors (F_Value).Predecessor = F_Length
                     and then (RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Value))
                               and RFLX_Types.Base_Integer (Cursors (F_Length).Value) = Universal.Value'Size / 8)))
       and then (if
                    Well_Formed (Cursors (F_Values))
                 then
                    (Valid (Cursors (F_Length))
-                    and then Cursors (F_Values).Predecessor = F_Length
                     and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values)))))
     with
      Pre =>
@@ -1231,40 +1187,32 @@ private
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
      ((case Fld is
           when F_Message_Type =>
-             Cursors (F_Message_Type).Predecessor = F_Initial,
+             True,
           when F_Length =>
              (Valid (Cursors (F_Message_Type))
               and then (RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
                         and RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Null))
-                        and RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data)))
-              and then Cursors (F_Length).Predecessor = F_Message_Type),
+                        and RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data)))),
           when F_Data =>
              (Valid (Cursors (F_Length))
-              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
-              and then Cursors (F_Data).Predecessor = F_Length)
+              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data)))
              or (Valid (Cursors (F_Message_Type))
-                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
-                 and then Cursors (F_Data).Predecessor = F_Message_Type),
+                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))),
           when F_Option_Types =>
              (Valid (Cursors (F_Length))
-              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Option_Types))
-              and then Cursors (F_Option_Types).Predecessor = F_Length),
+              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Option_Types))),
           when F_Options =>
              (Valid (Cursors (F_Length))
-              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
-              and then Cursors (F_Options).Predecessor = F_Length)
+              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options)))
              or (Valid (Cursors (F_Message_Type))
-                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-                 and then Cursors (F_Options).Predecessor = F_Message_Type),
+                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))),
           when F_Value =>
              (Valid (Cursors (F_Length))
               and then (RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Value))
-                        and RFLX_Types.Base_Integer (Cursors (F_Length).Value) = Universal.Value'Size / 8)
-              and then Cursors (F_Value).Predecessor = F_Length),
+                        and RFLX_Types.Base_Integer (Cursors (F_Length).Value) = Universal.Value'Size / 8)),
           when F_Values =>
              (Valid (Cursors (F_Length))
-              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values))
-              and then Cursors (F_Values).Predecessor = F_Length)))
+              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values)))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1430,13 +1378,11 @@ private
                     Well_Formed (Cursors (F_Message_Type))
                  then
                     (Cursors (F_Message_Type).Last - Cursors (F_Message_Type).First + 1 = 8
-                     and then Cursors (F_Message_Type).Predecessor = F_Initial
                      and then Cursors (F_Message_Type).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Length))
                           then
                              (Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
-                              and then Cursors (F_Length).Predecessor = F_Message_Type
                               and then Cursors (F_Length).First = Cursors (F_Message_Type).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Data))
@@ -1446,20 +1392,17 @@ private
                                  and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
                               then
                                  Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                                 and then Cursors (F_Data).Predecessor = F_Length
                                  and then Cursors (F_Data).First = Cursors (F_Length).Last + 1)
                              and then (if
                                           Well_Formed (Cursors (F_Message_Type))
                                           and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
                                        then
                                           Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Message_Type).Last)
-                                          and then Cursors (F_Data).Predecessor = F_Message_Type
                                           and then Cursors (F_Data).First = Cursors (F_Message_Type).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Option_Types))
                           then
                              (Cursors (F_Option_Types).Last - Cursors (F_Option_Types).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                              and then Cursors (F_Option_Types).Predecessor = F_Length
                               and then Cursors (F_Option_Types).First = Cursors (F_Length).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Options))
@@ -1469,26 +1412,22 @@ private
                                  and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
                               then
                                  Cursors (F_Options).Last - Cursors (F_Options).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                                 and then Cursors (F_Options).Predecessor = F_Length
                                  and then Cursors (F_Options).First = Cursors (F_Length).Last + 1)
                              and then (if
                                           Well_Formed (Cursors (F_Message_Type))
                                           and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
                                        then
                                           Cursors (F_Options).Last - Cursors (F_Options).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Message_Type).Last)
-                                          and then Cursors (F_Options).Predecessor = F_Message_Type
                                           and then Cursors (F_Options).First = Cursors (F_Message_Type).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Value))
                           then
                              (Cursors (F_Value).Last - Cursors (F_Value).First + 1 = 8
-                              and then Cursors (F_Value).Predecessor = F_Length
                               and then Cursors (F_Value).First = Cursors (F_Length).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Values))
                           then
                              (Cursors (F_Values).Last - Cursors (F_Values).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                              and then Cursors (F_Values).Predecessor = F_Length
                               and then Cursors (F_Values).First = Cursors (F_Length).Last + 1))))
     with
      Post =>
@@ -1575,13 +1514,6 @@ private
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
 
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
-     ((case Fld is
-          when F_Initial =>
-             F_Initial,
-          when others =>
-             Ctx.Cursors (Fld).Predecessor));
-
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
@@ -1644,13 +1576,11 @@ private
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
      ((if
           Fld = F_Data
-          and then Ctx.Cursors (Fld).Predecessor = F_Message_Type
           and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
        then
           Size <= Available_Space (Ctx, Fld)
        elsif
           Fld = F_Options
-          and then Ctx.Cursors (Fld).Predecessor = F_Message_Type
           and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
        then
           Size <= Available_Space (Ctx, Fld)

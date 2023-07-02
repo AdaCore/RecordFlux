@@ -409,16 +409,6 @@ def message_structure_invariant(
                                     prefixed("Cursors").ada_expr(),
                                     Variable(link.target.affixed_name),
                                 ),
-                                "Predecessor",
-                            ),
-                            Variable(link.source.affixed_name),
-                        ),
-                        Equal(
-                            Selected(
-                                Indexed(
-                                    prefixed("Cursors").ada_expr(),
-                                    Variable(link.target.affixed_name),
-                                ),
                                 "First",
                             ),
                             first.ada_expr(),
@@ -585,21 +575,12 @@ def valid_path_to_next_field_condition(
                     l.condition.substituted(substitution(message, public=True, prefix=prefix))
                     .simplified()
                     .ada_expr(),
-                    And(
-                        Equal(
-                            Call(
-                                "Predecessor",
-                                [Variable("Ctx"), Variable(l.target.affixed_name)],
-                            ),
-                            Variable(field.affixed_name),
-                        ),
-                        Call(
-                            "Valid_Next",
-                            [Variable("Ctx"), Variable(l.target.affixed_name)],
-                        )
-                        if l.target != model.FINAL
-                        else TRUE,
-                    ),
+                    Call(
+                        "Valid_Next",
+                        [Variable("Ctx"), Variable(l.target.affixed_name)],
+                    )
+                    if l.target != model.FINAL
+                    else TRUE,
                 ),
             ],
         )
@@ -719,16 +700,6 @@ def initialize_field_statements(
                 ("First", Variable("First")),
                 ("Last", Variable("Last")),
                 ("Value", Number(0)),
-                (
-                    "Predecessor",
-                    Selected(
-                        Indexed(
-                            Variable("Ctx.Cursors"),
-                            Variable(field.affixed_name),
-                        ),
-                        "Predecessor",
-                    ),
-                ),
             ),
         ),
         Assignment(
@@ -741,7 +712,6 @@ def initialize_field_statements(
             ),
             NamedAggregate(
                 ("State", Variable("S_Invalid")),
-                ("Predecessor", Variable(field.affixed_name)),
                 ("others", Variable("<>")),
             ),
         ),
@@ -1060,24 +1030,10 @@ def context_cursors_initialization(message: model.Message) -> Expr:
             message.fields[0].affixed_name,
             NamedAggregate(
                 ("State", Variable("S_Invalid")),
-                (
-                    "Predecessor",
-                    Variable(model.INITIAL.affixed_name),
-                ),
                 ("others", Variable("<>")),
             ),
         ),
-        (
-            "others",
-            NamedAggregate(
-                ("State", Variable("S_Invalid")),
-                (
-                    "Predecessor",
-                    Variable(model.FINAL.affixed_name),
-                ),
-                ("others", Variable("<>")),
-            ),
-        ),
+        ("others", Variable("<>")),
     )
 
 

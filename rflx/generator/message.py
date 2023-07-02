@@ -216,11 +216,6 @@ def create_cursor_type() -> UnitPart:
                 "Field_Cursor",
                 [
                     Component(
-                        "Predecessor",
-                        "Virtual_Field",
-                        Variable(FINAL.affixed_name),
-                    ),
-                    Component(
                         "State",
                         "Cursor_State",
                         Variable("S_Invalid"),
@@ -432,16 +427,6 @@ def create_valid_predecessors_invariant_function(
                                                     )
                                                     if l.source != INITIAL
                                                     else expr.TRUE,
-                                                    expr.Equal(
-                                                        expr.Selected(
-                                                            expr.Indexed(
-                                                                expr.Variable("Cursors"),
-                                                                expr.Variable(f.affixed_name),
-                                                            ),
-                                                            "Predecessor",
-                                                        ),
-                                                        expr.Variable(l.source.affixed_name),
-                                                    ),
                                                     l.condition.substituted(
                                                         common.substitution(
                                                             message,
@@ -508,18 +493,8 @@ def create_valid_next_internal_function(
     )
 
     def link_expr(link: Link) -> Expr:
-        pred_cond = Equal(
-            Selected(
-                Indexed(
-                    Variable("Cursors"),
-                    Variable(link.target.affixed_name),
-                ),
-                "Predecessor",
-            ),
-            Variable(link.source.affixed_name),
-        )
         if link.source == INITIAL:
-            return pred_cond
+            return TRUE
         condition = link.condition.substituted(
             common.substitution(message, prefix, embedded=True),
         ).simplified()
@@ -529,7 +504,6 @@ def create_valid_next_internal_function(
                 [Indexed(Variable("Cursors"), Variable(link.source.affixed_name))],
             ),
             condition.ada_expr(),
-            pred_cond,
         )
 
     def valid_next_expr(fld: Field) -> Expr:
@@ -947,12 +921,7 @@ def create_context_type(message: Message) -> UnitPart:
                     Component(
                         "Cursors",
                         "Field_Cursors",
-                        NamedAggregate(
-                            (
-                                "others",
-                                Variable("<>"),
-                            ),
-                        ),
+                        NamedAggregate(("others", Variable("<>"))),
                     ),
                 ],
                 discriminants,
@@ -2251,50 +2220,6 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_predecessor_function() -> UnitPart:
-    specification = FunctionSpecification(
-        "Predecessor",
-        "Virtual_Field",
-        [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Virtual_Field")],
-    )
-
-    return UnitPart(
-        [
-            # Eng/RecordFlux/Workarounds#47
-            Pragma(
-                "Warnings",
-                [Variable("Off"), String("postcondition does not mention function result")],
-            ),
-            SubprogramDeclaration(specification, [Postcondition(TRUE)]),
-            Pragma(
-                "Warnings",
-                [Variable("On"), String("postcondition does not mention function result")],
-            ),
-        ],
-        private=[
-            ExpressionFunctionDeclaration(
-                specification,
-                Case(
-                    Variable("Fld"),
-                    [
-                        (
-                            Variable(INITIAL.affixed_name),
-                            Variable(INITIAL.affixed_name),
-                        ),
-                        (
-                            Variable("others"),
-                            Selected(
-                                Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                                "Predecessor",
-                            ),
-                        ),
-                    ],
-                ),
-            ),
-        ],
-    )
-
-
 def create_successor_function(prefix: str, message: Message) -> UnitPart:
     specification = FunctionSpecification(
         "Successor",
@@ -2880,7 +2805,6 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
                                         ),
                                         NamedAggregate(
                                             ("State", Variable("S_Invalid")),
-                                            ("Predecessor", Variable(FINAL.affixed_name)),
                                             ("others", Variable("<>")),
                                         ),
                                     ),
@@ -2907,16 +2831,6 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
                         ),
                         NamedAggregate(
                             ("State", Variable("S_Invalid")),
-                            (
-                                "Predecessor",
-                                Selected(
-                                    Indexed(
-                                        Variable("Ctx.Cursors"),
-                                        Variable("Fld"),
-                                    ),
-                                    "Predecessor",
-                                ),
-                            ),
                             ("others", Variable("<>")),
                         ),
                     ),
@@ -2952,10 +2866,6 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
                             *[
                                 Equal(e, Old(e))
                                 for e in [
-                                    Selected(
-                                        Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                                        "Predecessor",
-                                    ),
                                     Call("Has_Buffer", [Variable("Ctx")]),
                                     Call(
                                         "Field_First",
@@ -3085,13 +2995,6 @@ def create_switch_procedures(
                             *[
                                 Equal(e, Old(e))
                                 for e in [
-                                    Call(
-                                        "Predecessor",
-                                        [
-                                            Variable("Ctx"),
-                                            Variable(f.affixed_name),
-                                        ],
-                                    ),
                                     Call(
                                         "Field_Last",
                                         [
@@ -3417,7 +3320,6 @@ def create_update_procedures(
                                                     "First",
                                                     "Last",
                                                     "Value",
-                                                    "Predecessor",
                                                 )
                                             ],
                                         ),
@@ -3437,16 +3339,6 @@ def create_update_procedures(
                                 ),
                                 NamedAggregate(
                                     ("State", Variable("S_Invalid")),
-                                    (
-                                        "Predecessor",
-                                        Selected(
-                                            Indexed(
-                                                Variable("Ctx.Cursors"),
-                                                Variable(f.affixed_name),
-                                            ),
-                                            "Predecessor",
-                                        ),
-                                    ),
                                     ("others", Variable("<>")),
                                 ),
                             ),

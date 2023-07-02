@@ -577,7 +577,6 @@ class Generator:
                 scalar_fields,
                 composite_fields,
             ),
-            self._executor.submit(message_generator.create_predecessor_function),
             self._executor.submit(
                 message_generator.create_successor_function,
                 self._prefix,

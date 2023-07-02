@@ -280,14 +280,6 @@ is
        RFLX.Messages.Msg_LE_Nested.Valid_Next (Ctx, Fld)
        and then RFLX.Messages.Msg_LE_Nested.Sufficient_Space (Ctx, Fld);
 
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
@@ -389,13 +381,11 @@ is
        and Get_X_A (Ctx) = Val
        and Invalid (Ctx, F_X_B)
        and Invalid (Ctx, F_Y)
-       and (Predecessor (Ctx, F_X_B) = F_X_A
-            and Valid_Next (Ctx, F_X_B))
+       and Valid_Next (Ctx, F_X_B)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_X_A) = Predecessor (Ctx, F_X_A)'Old
        and Valid_Next (Ctx, F_X_A) = Valid_Next (Ctx, F_X_A)'Old
        and Field_First (Ctx, F_X_A) = Field_First (Ctx, F_X_A)'Old;
 
@@ -413,13 +403,11 @@ is
        and Valid (Ctx, F_X_B)
        and Get_X_B (Ctx) = Val
        and Invalid (Ctx, F_Y)
-       and (Predecessor (Ctx, F_Y) = F_X_B
-            and Valid_Next (Ctx, F_Y))
+       and Valid_Next (Ctx, F_Y)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_X_B) = Predecessor (Ctx, F_X_B)'Old
        and Valid_Next (Ctx, F_X_B) = Valid_Next (Ctx, F_X_B)'Old
        and Get_X_A (Ctx) = Get_X_A (Ctx)'Old
        and Field_First (Ctx, F_X_B) = Field_First (Ctx, F_X_B)'Old
@@ -444,7 +432,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Y) = Predecessor (Ctx, F_Y)'Old
        and Valid_Next (Ctx, F_Y) = Valid_Next (Ctx, F_Y)'Old
        and Get_X_A (Ctx) = Get_X_A (Ctx)'Old
        and Get_X_B (Ctx) = Get_X_B (Ctx)'Old
@@ -517,7 +504,6 @@ private
 
    type Field_Cursor is
       record
-         Predecessor : Virtual_Field := F_Final;
          State : Cursor_State := S_Invalid;
          First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
          Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
@@ -561,17 +547,9 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if Well_Formed (Cursors (F_X_A)) then Cursors (F_X_A).Predecessor = F_Initial)
-      and then (if
-                   Well_Formed (Cursors (F_X_B))
-                then
-                   (Valid (Cursors (F_X_A))
-                    and then Cursors (F_X_B).Predecessor = F_X_A))
-      and then (if
-                   Well_Formed (Cursors (F_Y))
-                then
-                   (Valid (Cursors (F_X_B))
-                    and then Cursors (F_Y).Predecessor = F_X_B)))
+     ((if Well_Formed (Cursors (F_X_A)) then True)
+      and then (if Well_Formed (Cursors (F_X_B)) then Valid (Cursors (F_X_A)))
+      and then (if Well_Formed (Cursors (F_Y)) then Valid (Cursors (F_X_B))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
@@ -589,15 +567,13 @@ private
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
      ((case Fld is
           when F_X_A =>
-             Cursors (F_X_A).Predecessor = F_Initial,
+             True,
           when F_X_B =>
              (Valid (Cursors (F_X_A))
-              and then True
-              and then Cursors (F_X_B).Predecessor = F_X_A),
+              and then True),
           when F_Y =>
              (Valid (Cursors (F_X_B))
-              and then True
-              and then Cursors (F_Y).Predecessor = F_X_B)))
+              and then True)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -689,19 +665,16 @@ private
                     Well_Formed (Cursors (F_X_A))
                  then
                     (Cursors (F_X_A).Last - Cursors (F_X_A).First + 1 = 32
-                     and then Cursors (F_X_A).Predecessor = F_Initial
                      and then Cursors (F_X_A).First = First))
                 and then (if
                              Well_Formed (Cursors (F_X_B))
                           then
                              (Cursors (F_X_B).Last - Cursors (F_X_B).First + 1 = 32
-                              and then Cursors (F_X_B).Predecessor = F_X_A
                               and then Cursors (F_X_B).First = Cursors (F_X_A).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Y))
                           then
                              (Cursors (F_Y).Last - Cursors (F_Y).First + 1 = 32
-                              and then Cursors (F_Y).Predecessor = F_X_B
                               and then Cursors (F_Y).First = Cursors (F_X_B).Last + 1))))
     with
      Post =>
@@ -767,13 +740,6 @@ private
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
-     ((case Fld is
-          when F_Initial =>
-             F_Initial,
-          when others =>
-             Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));

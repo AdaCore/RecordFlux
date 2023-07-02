@@ -300,14 +300,6 @@ is
            when others =>
               True);
 
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
@@ -445,13 +437,11 @@ is
        and Invalid (Ctx, F_Option_Number)
        and Invalid (Ctx, F_Option_Length)
        and Invalid (Ctx, F_Option_Data)
-       and (Predecessor (Ctx, F_Option_Class) = F_Copied
-            and Valid_Next (Ctx, F_Option_Class))
+       and Valid_Next (Ctx, F_Option_Class)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Copied) = Predecessor (Ctx, F_Copied)'Old
        and Valid_Next (Ctx, F_Copied) = Valid_Next (Ctx, F_Copied)'Old
        and Field_First (Ctx, F_Copied) = Field_First (Ctx, F_Copied)'Old;
 
@@ -471,13 +461,11 @@ is
        and Invalid (Ctx, F_Option_Number)
        and Invalid (Ctx, F_Option_Length)
        and Invalid (Ctx, F_Option_Data)
-       and (Predecessor (Ctx, F_Option_Number) = F_Option_Class
-            and Valid_Next (Ctx, F_Option_Number))
+       and Valid_Next (Ctx, F_Option_Number)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Class) = Predecessor (Ctx, F_Option_Class)'Old
        and Valid_Next (Ctx, F_Option_Class) = Valid_Next (Ctx, F_Option_Class)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Field_First (Ctx, F_Option_Class) = Field_First (Ctx, F_Option_Class)'Old
@@ -500,16 +488,11 @@ is
        and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Option_Number))
        and Invalid (Ctx, F_Option_Length)
        and Invalid (Ctx, F_Option_Data)
-       and (if
-               Get_Option_Number (Ctx) > 1
-            then
-               Predecessor (Ctx, F_Option_Length) = F_Option_Number
-               and Valid_Next (Ctx, F_Option_Length))
+       and (if Get_Option_Number (Ctx) > 1 then Valid_Next (Ctx, F_Option_Length))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Number) = Predecessor (Ctx, F_Option_Number)'Old
        and Valid_Next (Ctx, F_Option_Number) = Valid_Next (Ctx, F_Option_Number)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
@@ -545,13 +528,11 @@ is
                    and RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
                    and Get_Option_Number (Ctx) = 8)
             then
-               Predecessor (Ctx, F_Option_Data) = F_Option_Length
-               and Valid_Next (Ctx, F_Option_Data))
+               Valid_Next (Ctx, F_Option_Data))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Length) = Predecessor (Ctx, F_Option_Length)'Old
        and Valid_Next (Ctx, F_Option_Length) = Valid_Next (Ctx, F_Option_Length)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
@@ -578,7 +559,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
        and Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
@@ -600,7 +580,6 @@ is
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
        and then Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
        and then Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and then Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
@@ -625,7 +604,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
        and Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
@@ -654,7 +632,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
        and Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
        and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
        and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
@@ -683,7 +660,6 @@ private
 
    type Field_Cursor is
       record
-         Predecessor : Virtual_Field := F_Final;
          State : Cursor_State := S_Invalid;
          First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
          Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
@@ -727,28 +703,18 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if Well_Formed (Cursors (F_Copied)) then Cursors (F_Copied).Predecessor = F_Initial)
-      and then (if
-                   Well_Formed (Cursors (F_Option_Class))
-                then
-                   (Valid (Cursors (F_Copied))
-                    and then Cursors (F_Option_Class).Predecessor = F_Copied))
-      and then (if
-                   Well_Formed (Cursors (F_Option_Number))
-                then
-                   (Valid (Cursors (F_Option_Class))
-                    and then Cursors (F_Option_Number).Predecessor = F_Option_Class))
+     ((if Well_Formed (Cursors (F_Copied)) then True)
+      and then (if Well_Formed (Cursors (F_Option_Class)) then Valid (Cursors (F_Copied)))
+      and then (if Well_Formed (Cursors (F_Option_Number)) then Valid (Cursors (F_Option_Class)))
       and then (if
                    Well_Formed (Cursors (F_Option_Length))
                 then
                    (Valid (Cursors (F_Option_Number))
-                    and then Cursors (F_Option_Length).Predecessor = F_Option_Number
                     and then Cursors (F_Option_Number).Value > 1))
       and then (if
                    Well_Formed (Cursors (F_Option_Data))
                 then
                    (Valid (Cursors (F_Option_Length))
-                    and then Cursors (F_Option_Data).Predecessor = F_Option_Length
                     and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
                                and Cursors (F_Option_Number).Value = 4)
                               or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
@@ -778,19 +744,16 @@ private
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
      ((case Fld is
           when F_Copied =>
-             Cursors (F_Copied).Predecessor = F_Initial,
+             True,
           when F_Option_Class =>
              (Valid (Cursors (F_Copied))
-              and then True
-              and then Cursors (F_Option_Class).Predecessor = F_Copied),
+              and then True),
           when F_Option_Number =>
              (Valid (Cursors (F_Option_Class))
-              and then True
-              and then Cursors (F_Option_Number).Predecessor = F_Option_Class),
+              and then True),
           when F_Option_Length =>
              (Valid (Cursors (F_Option_Number))
-              and then Cursors (F_Option_Number).Value > 1
-              and then Cursors (F_Option_Length).Predecessor = F_Option_Number),
+              and then Cursors (F_Option_Number).Value > 1),
           when F_Option_Data =>
              (Valid (Cursors (F_Option_Length))
               and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
@@ -804,8 +767,7 @@ private
                             and Cursors (F_Option_Number).Value = 2)
                         or (Cursors (F_Option_Length).Value = 4
                             and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                            and Cursors (F_Option_Number).Value = 8))
-              and then Cursors (F_Option_Data).Predecessor = F_Option_Length)))
+                            and Cursors (F_Option_Number).Value = 8)))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -911,31 +873,26 @@ private
                     Well_Formed (Cursors (F_Copied))
                  then
                     (Cursors (F_Copied).Last - Cursors (F_Copied).First + 1 = 1
-                     and then Cursors (F_Copied).Predecessor = F_Initial
                      and then Cursors (F_Copied).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Option_Class))
                           then
                              (Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1 = 2
-                              and then Cursors (F_Option_Class).Predecessor = F_Copied
                               and then Cursors (F_Option_Class).First = Cursors (F_Copied).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Option_Number))
                           then
                              (Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1 = 5
-                              and then Cursors (F_Option_Number).Predecessor = F_Option_Class
                               and then Cursors (F_Option_Number).First = Cursors (F_Option_Class).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Option_Length))
                           then
                              (Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1 = 8
-                              and then Cursors (F_Option_Length).Predecessor = F_Option_Number
                               and then Cursors (F_Option_Length).First = Cursors (F_Option_Number).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Option_Data))
                           then
                              (Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8
-                              and then Cursors (F_Option_Data).Predecessor = F_Option_Length
                               and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))
     with
      Post =>
@@ -1026,13 +983,6 @@ private
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
-     ((case Fld is
-          when F_Initial =>
-             F_Initial,
-          when others =>
-             Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));

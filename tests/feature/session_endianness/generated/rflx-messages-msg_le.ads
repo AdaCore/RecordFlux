@@ -280,14 +280,6 @@ is
        RFLX.Messages.Msg_LE.Valid_Next (Ctx, Fld)
        and then RFLX.Messages.Msg_LE.Sufficient_Space (Ctx, Fld);
 
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
@@ -384,13 +376,11 @@ is
        and Valid (Ctx, F_C)
        and Get_C (Ctx) = Val
        and Invalid (Ctx, F_D)
-       and (Predecessor (Ctx, F_D) = F_C
-            and Valid_Next (Ctx, F_D))
+       and Valid_Next (Ctx, F_D)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_C) = Predecessor (Ctx, F_C)'Old
        and Valid_Next (Ctx, F_C) = Valid_Next (Ctx, F_C)'Old
        and Field_First (Ctx, F_C) = Field_First (Ctx, F_C)'Old;
 
@@ -412,7 +402,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_D) = Predecessor (Ctx, F_D)'Old
        and Valid_Next (Ctx, F_D) = Valid_Next (Ctx, F_D)'Old
        and Get_C (Ctx) = Get_C (Ctx)'Old
        and Field_First (Ctx, F_D) = Field_First (Ctx, F_D)'Old
@@ -479,7 +468,6 @@ private
 
    type Field_Cursor is
       record
-         Predecessor : Virtual_Field := F_Final;
          State : Cursor_State := S_Invalid;
          First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
          Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
@@ -523,8 +511,8 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if Well_Formed (Cursors (F_C)) then Cursors (F_C).Predecessor = F_Initial)
-      and then (if Well_Formed (Cursors (F_D)) then (Valid (Cursors (F_C)) and then Cursors (F_D).Predecessor = F_C)))
+     ((if Well_Formed (Cursors (F_C)) then True)
+      and then (if Well_Formed (Cursors (F_D)) then Valid (Cursors (F_C))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
@@ -542,11 +530,10 @@ private
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
      ((case Fld is
           when F_C =>
-             Cursors (F_C).Predecessor = F_Initial,
+             True,
           when F_D =>
              (Valid (Cursors (F_C))
-              and then True
-              and then Cursors (F_D).Predecessor = F_C)))
+              and then True)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -635,13 +622,11 @@ private
                     Well_Formed (Cursors (F_C))
                  then
                     (Cursors (F_C).Last - Cursors (F_C).First + 1 = 32
-                     and then Cursors (F_C).Predecessor = F_Initial
                      and then Cursors (F_C).First = First))
                 and then (if
                              Well_Formed (Cursors (F_D))
                           then
                              (Cursors (F_D).Last - Cursors (F_D).First + 1 = 32
-                              and then Cursors (F_D).Predecessor = F_C
                               and then Cursors (F_D).First = Cursors (F_C).Last + 1))))
     with
      Post =>
@@ -707,13 +692,6 @@ private
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
-     ((case Fld is
-          when F_Initial =>
-             F_Initial,
-          when others =>
-             Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));

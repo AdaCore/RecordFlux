@@ -114,13 +114,6 @@ class SerializerGenerator:
                             (
                                 AndThen(
                                     Equal(Variable("Fld"), Variable(l.target.affixed_name)),
-                                    Equal(
-                                        Selected(
-                                            Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                                            "Predecessor",
-                                        ),
-                                        Variable(l.source.affixed_name),
-                                    ),
                                     *(
                                         [
                                             l.condition.substituted(
@@ -264,16 +257,6 @@ class SerializerGenerator:
                     ("First", Variable("First")),
                     ("Last", Variable("Last")),
                     ("Value", Variable("Val")),
-                    (
-                        "Predecessor",
-                        Selected(
-                            Indexed(
-                                Variable("Ctx.Cursors"),
-                                Variable("Fld"),
-                            ),
-                            "Predecessor",
-                        ),
-                    ),
                 ),
             )
 
@@ -348,7 +331,6 @@ class SerializerGenerator:
                             ),
                             NamedAggregate(
                                 ("State", Variable("S_Invalid")),
-                                ("Predecessor", Variable("Fld")),
                                 ("others", Variable("<>")),
                             ),
                         ),
@@ -502,7 +484,6 @@ class SerializerGenerator:
                                         Variable("Ctx.First"),
                                         Variable("Ctx.Last"),
                                         Call("Has_Buffer", [Variable("Ctx")]),
-                                        Call("Predecessor", [Variable("Ctx"), Variable("Fld")]),
                                         Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                                     ]
                                 ],
@@ -863,7 +844,6 @@ class SerializerGenerator:
                                     Equal(e, Old(e))
                                     for e in [
                                         Call("Has_Buffer", [Variable("Ctx")]),
-                                        Call("Predecessor", [Variable("Ctx"), Variable("Fld")]),
                                         Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                                     ]
                                 ],
@@ -1717,10 +1697,6 @@ class SerializerGenerator:
             *[
                 Equal(e, Old(e))
                 for e in [
-                    Call(
-                        "Predecessor",
-                        [Variable("Ctx"), Variable(field.affixed_name)],
-                    ),
                     Call(
                         "Valid_Next",
                         [Variable("Ctx"), Variable(field.affixed_name)],

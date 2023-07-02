@@ -299,14 +299,6 @@ is
            when others =>
               True);
 
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
@@ -406,13 +398,11 @@ is
        and Invalid (Ctx, F_Integer_Vector)
        and Invalid (Ctx, F_Enumeration_Vector)
        and Invalid (Ctx, F_AV_Enumeration_Vector)
-       and (Predecessor (Ctx, F_Integer_Vector) = F_Length
-            and Valid_Next (Ctx, F_Integer_Vector))
+       and Valid_Next (Ctx, F_Integer_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Length) = Predecessor (Ctx, F_Length)'Old
        and Valid_Next (Ctx, F_Length) = Valid_Next (Ctx, F_Length)'Old
        and Field_First (Ctx, F_Length) = Field_First (Ctx, F_Length)'Old;
 
@@ -431,13 +421,11 @@ is
        and Well_Formed (Ctx, F_Integer_Vector)
        and Invalid (Ctx, F_Enumeration_Vector)
        and Invalid (Ctx, F_AV_Enumeration_Vector)
-       and (Predecessor (Ctx, F_Enumeration_Vector) = F_Integer_Vector
-            and Valid_Next (Ctx, F_Enumeration_Vector))
+       and Valid_Next (Ctx, F_Enumeration_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Integer_Vector) = Predecessor (Ctx, F_Integer_Vector)'Old
        and Valid_Next (Ctx, F_Integer_Vector) = Valid_Next (Ctx, F_Integer_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_Integer_Vector) = Field_First (Ctx, F_Integer_Vector)'Old;
@@ -457,13 +445,11 @@ is
        and Well_Formed (Ctx, F_Integer_Vector)
        and Invalid (Ctx, F_Enumeration_Vector)
        and Invalid (Ctx, F_AV_Enumeration_Vector)
-       and (Predecessor (Ctx, F_Enumeration_Vector) = F_Integer_Vector
-            and Valid_Next (Ctx, F_Enumeration_Vector))
+       and Valid_Next (Ctx, F_Enumeration_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Integer_Vector) = Predecessor (Ctx, F_Integer_Vector)'Old
        and Valid_Next (Ctx, F_Integer_Vector) = Valid_Next (Ctx, F_Integer_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_Integer_Vector) = Field_First (Ctx, F_Integer_Vector)'Old
@@ -483,13 +469,11 @@ is
        Has_Buffer (Ctx)
        and Well_Formed (Ctx, F_Enumeration_Vector)
        and Invalid (Ctx, F_AV_Enumeration_Vector)
-       and (Predecessor (Ctx, F_AV_Enumeration_Vector) = F_Enumeration_Vector
-            and Valid_Next (Ctx, F_AV_Enumeration_Vector))
+       and Valid_Next (Ctx, F_AV_Enumeration_Vector)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
@@ -513,7 +497,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
        and Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
        and Get_Length (Ctx) = Get_Length (Ctx)'Old
        and Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old
@@ -530,13 +513,11 @@ is
        and then Well_Formed (Ctx, F_Integer_Vector)
        and then Invalid (Ctx, F_Enumeration_Vector)
        and then Invalid (Ctx, F_AV_Enumeration_Vector)
-       and then (Predecessor (Ctx, F_Enumeration_Vector) = F_Integer_Vector
-                 and Valid_Next (Ctx, F_Enumeration_Vector))
+       and then Valid_Next (Ctx, F_Enumeration_Vector)
        and then Ctx.Buffer_First = Ctx.Buffer_First'Old
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Integer_Vector) = Predecessor (Ctx, F_Integer_Vector)'Old
        and then Valid_Next (Ctx, F_Integer_Vector) = Valid_Next (Ctx, F_Integer_Vector)'Old
        and then Get_Length (Ctx) = Get_Length (Ctx)'Old
        and then Field_First (Ctx, F_Integer_Vector) = Field_First (Ctx, F_Integer_Vector)'Old;
@@ -551,13 +532,11 @@ is
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Enumeration_Vector)
        and then Invalid (Ctx, F_AV_Enumeration_Vector)
-       and then (Predecessor (Ctx, F_AV_Enumeration_Vector) = F_Enumeration_Vector
-                 and Valid_Next (Ctx, F_AV_Enumeration_Vector))
+       and then Valid_Next (Ctx, F_AV_Enumeration_Vector)
        and then Ctx.Buffer_First = Ctx.Buffer_First'Old
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
        and then Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
        and then Get_Length (Ctx) = Get_Length (Ctx)'Old
        and then Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old;
@@ -576,7 +555,6 @@ is
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
        and then Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
        and then Get_Length (Ctx) = Get_Length (Ctx)'Old
        and then Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old;
@@ -605,7 +583,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Integer_Vector) = Predecessor (Ctx, F_Integer_Vector)'Old
        and Field_Last (Ctx, F_Integer_Vector) = Field_Last (Ctx, F_Integer_Vector)'Old
        and (for all F in Field range F_Length .. F_Length =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -614,8 +591,7 @@ is
            (for all F in Field range F_Enumeration_Vector .. F_AV_Enumeration_Vector =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
         others =>
-           (Predecessor (Ctx, F_Enumeration_Vector) = F_Integer_Vector
-            and Valid_Next (Ctx, F_Enumeration_Vector))
+           Valid_Next (Ctx, F_Enumeration_Vector)
            and Invalid (Ctx, F_Enumeration_Vector)
            and Invalid (Ctx, F_AV_Enumeration_Vector));
 
@@ -643,7 +619,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_Enumeration_Vector) = Field_Last (Ctx, F_Enumeration_Vector)'Old
        and (for all F in Field range F_Length .. F_Integer_Vector =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -652,8 +627,7 @@ is
            (for all F in Field range F_AV_Enumeration_Vector .. F_AV_Enumeration_Vector =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
         others =>
-           (Predecessor (Ctx, F_AV_Enumeration_Vector) = F_Enumeration_Vector
-            and Valid_Next (Ctx, F_AV_Enumeration_Vector))
+           Valid_Next (Ctx, F_AV_Enumeration_Vector)
            and Invalid (Ctx, F_AV_Enumeration_Vector));
 
    procedure Switch_To_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : out RFLX.Sequence.AV_Enumeration_Vector.Context) with
@@ -680,7 +654,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_AV_Enumeration_Vector) = Field_Last (Ctx, F_AV_Enumeration_Vector)'Old
        and (for all F in Field range F_Length .. F_Enumeration_Vector =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -822,7 +795,6 @@ private
 
    type Field_Cursor is
       record
-         Predecessor : Virtual_Field := F_Final;
          State : Cursor_State := S_Invalid;
          First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
          Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
@@ -866,22 +838,10 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if Well_Formed (Cursors (F_Length)) then Cursors (F_Length).Predecessor = F_Initial)
-      and then (if
-                   Well_Formed (Cursors (F_Integer_Vector))
-                then
-                   (Valid (Cursors (F_Length))
-                    and then Cursors (F_Integer_Vector).Predecessor = F_Length))
-      and then (if
-                   Well_Formed (Cursors (F_Enumeration_Vector))
-                then
-                   (Well_Formed (Cursors (F_Integer_Vector))
-                    and then Cursors (F_Enumeration_Vector).Predecessor = F_Integer_Vector))
-      and then (if
-                   Well_Formed (Cursors (F_AV_Enumeration_Vector))
-                then
-                   (Well_Formed (Cursors (F_Enumeration_Vector))
-                    and then Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector)))
+     ((if Well_Formed (Cursors (F_Length)) then True)
+      and then (if Well_Formed (Cursors (F_Integer_Vector)) then Valid (Cursors (F_Length)))
+      and then (if Well_Formed (Cursors (F_Enumeration_Vector)) then Well_Formed (Cursors (F_Integer_Vector)))
+      and then (if Well_Formed (Cursors (F_AV_Enumeration_Vector)) then Well_Formed (Cursors (F_Enumeration_Vector))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
@@ -899,19 +859,16 @@ private
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
      ((case Fld is
           when F_Length =>
-             Cursors (F_Length).Predecessor = F_Initial,
+             True,
           when F_Integer_Vector =>
              (Valid (Cursors (F_Length))
-              and then True
-              and then Cursors (F_Integer_Vector).Predecessor = F_Length),
+              and then True),
           when F_Enumeration_Vector =>
              (Well_Formed (Cursors (F_Integer_Vector))
-              and then True
-              and then Cursors (F_Enumeration_Vector).Predecessor = F_Integer_Vector),
+              and then True),
           when F_AV_Enumeration_Vector =>
              (Well_Formed (Cursors (F_Enumeration_Vector))
-              and then True
-              and then Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector)))
+              and then True)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1010,25 +967,21 @@ private
                     Well_Formed (Cursors (F_Length))
                  then
                     (Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
-                     and then Cursors (F_Length).Predecessor = F_Initial
                      and then Cursors (F_Length).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Integer_Vector))
                           then
                              (Cursors (F_Integer_Vector).Last - Cursors (F_Integer_Vector).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                              and then Cursors (F_Integer_Vector).Predecessor = F_Length
                               and then Cursors (F_Integer_Vector).First = Cursors (F_Length).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Enumeration_Vector))
                           then
                              (Cursors (F_Enumeration_Vector).Last - Cursors (F_Enumeration_Vector).First + 1 = 16
-                              and then Cursors (F_Enumeration_Vector).Predecessor = F_Integer_Vector
                               and then Cursors (F_Enumeration_Vector).First = Cursors (F_Integer_Vector).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_AV_Enumeration_Vector))
                           then
                              (Cursors (F_AV_Enumeration_Vector).Last - Cursors (F_AV_Enumeration_Vector).First + 1 = 16
-                              and then Cursors (F_AV_Enumeration_Vector).Predecessor = F_Enumeration_Vector
                               and then Cursors (F_AV_Enumeration_Vector).First = Cursors (F_Enumeration_Vector).Last + 1))))
     with
      Post =>
@@ -1094,13 +1047,6 @@ private
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
-     ((case Fld is
-          when F_Initial =>
-             F_Initial,
-          when others =>
-             Ctx.Cursors (Fld).Predecessor));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));

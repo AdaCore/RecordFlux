@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Functions `Valid_Next_Internal`, `Field_Size_Internal`, `Field_First_Internal` (eng/recordflux/RecordFlux#1382)
 
+### Changed
+
+- Removed `Predecessor` field from `Field_Cursor` record (eng/recordflux/RecordFlux#1387)
+
 ### Removed
 
 - Functions `Valid_Predecessor` and `Path_Condition` (eng/recordflux/RecordFlux#1382)

@@ -361,8 +361,6 @@ class ParserGenerator:
                             ),
                         ),
                         NamedAggregate(
-                            ("State", Variable("S_Invalid")),
-                            ("Predecessor", Variable("Fld")),
                             ("others", Variable("<>")),
                         ),
                     ),
@@ -466,16 +464,6 @@ class ParserGenerator:
                                                                         Variable("Fld"),
                                                                     ),
                                                                     NamedAggregate(
-                                                                        (
-                                                                            "State",
-                                                                            Variable("S_Invalid"),
-                                                                        ),
-                                                                        (
-                                                                            "Predecessor",
-                                                                            Variable(
-                                                                                FINAL.affixed_name,
-                                                                            ),
-                                                                        ),
                                                                         ("others", Variable("<>")),
                                                                     ),
                                                                 ),
@@ -492,10 +480,6 @@ class ParserGenerator:
                                                     ),
                                                     NamedAggregate(
                                                         ("State", Variable("S_Incomplete")),
-                                                        (
-                                                            "Predecessor",
-                                                            Variable(FINAL.affixed_name),
-                                                        ),
                                                         ("others", Variable("<>")),
                                                     ),
                                                 ),
@@ -1240,10 +1224,6 @@ def set_context_cursor_scalar() -> Assignment:
             ("First", Call("Field_First", [Variable("Ctx"), Variable("Fld")])),
             ("Last", Call("Field_Last", [Variable("Ctx"), Variable("Fld")])),
             ("Value", Variable("Value")),
-            (
-                "Predecessor",
-                Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
-            ),
         ),
     )
 
@@ -1271,15 +1251,5 @@ def set_context_cursor_composite_field(field_name: str) -> Assignment:
                 ),
             ),
             ("Value", Variable("Value")),
-            (
-                "Predecessor",
-                Selected(
-                    Indexed(
-                        Variable("Ctx.Cursors"),
-                        Variable(field_name),
-                    ),
-                    "Predecessor",
-                ),
-            ),
         ),
     )

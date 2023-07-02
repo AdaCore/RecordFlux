@@ -297,14 +297,6 @@ is
            when others =>
               True);
 
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
@@ -452,13 +444,11 @@ is
        and Invalid (Ctx, F_TCI)
        and Invalid (Ctx, F_Type_Length)
        and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_Source) = F_Destination
-            and Valid_Next (Ctx, F_Source))
+       and Valid_Next (Ctx, F_Source)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Destination) = Predecessor (Ctx, F_Destination)'Old
        and Valid_Next (Ctx, F_Destination) = Valid_Next (Ctx, F_Destination)'Old
        and Field_First (Ctx, F_Destination) = Field_First (Ctx, F_Destination)'Old;
 
@@ -480,13 +470,11 @@ is
        and Invalid (Ctx, F_TCI)
        and Invalid (Ctx, F_Type_Length)
        and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_Type_Length_TPID) = F_Source
-            and Valid_Next (Ctx, F_Type_Length_TPID))
+       and Valid_Next (Ctx, F_Type_Length_TPID)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Source) = Predecessor (Ctx, F_Source)'Old
        and Valid_Next (Ctx, F_Source) = Valid_Next (Ctx, F_Source)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Field_First (Ctx, F_Source) = Field_First (Ctx, F_Source)'Old
@@ -510,21 +498,12 @@ is
        and Invalid (Ctx, F_TCI)
        and Invalid (Ctx, F_Type_Length)
        and Invalid (Ctx, F_Payload)
-       and (if
-               Get_Type_Length_TPID (Ctx) = 16#8100#
-            then
-               Predecessor (Ctx, F_TPID) = F_Type_Length_TPID
-               and Valid_Next (Ctx, F_TPID))
-       and (if
-               Get_Type_Length_TPID (Ctx) /= 16#8100#
-            then
-               Predecessor (Ctx, F_Type_Length) = F_Type_Length_TPID
-               and Valid_Next (Ctx, F_Type_Length))
+       and (if Get_Type_Length_TPID (Ctx) = 16#8100# then Valid_Next (Ctx, F_TPID))
+       and (if Get_Type_Length_TPID (Ctx) /= 16#8100# then Valid_Next (Ctx, F_Type_Length))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Type_Length_TPID) = Predecessor (Ctx, F_Type_Length_TPID)'Old
        and Valid_Next (Ctx, F_Type_Length_TPID) = Valid_Next (Ctx, F_Type_Length_TPID)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
@@ -547,13 +526,11 @@ is
        and Invalid (Ctx, F_TCI)
        and Invalid (Ctx, F_Type_Length)
        and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_TCI) = F_TPID
-            and Valid_Next (Ctx, F_TCI))
+       and Valid_Next (Ctx, F_TCI)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_TPID) = Predecessor (Ctx, F_TPID)'Old
        and Valid_Next (Ctx, F_TPID) = Valid_Next (Ctx, F_TPID)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
@@ -577,13 +554,11 @@ is
        and Get_TCI (Ctx) = Val
        and Invalid (Ctx, F_Type_Length)
        and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_Type_Length) = F_TCI
-            and Valid_Next (Ctx, F_Type_Length))
+       and Valid_Next (Ctx, F_Type_Length)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_TCI) = Predecessor (Ctx, F_TCI)'Old
        and Valid_Next (Ctx, F_TCI) = Valid_Next (Ctx, F_TCI)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
@@ -606,21 +581,12 @@ is
        and Valid (Ctx, F_Type_Length)
        and Get_Type_Length (Ctx) = Val
        and Invalid (Ctx, F_Payload)
-       and (if
-               Get_Type_Length (Ctx) <= 1500
-            then
-               Predecessor (Ctx, F_Payload) = F_Type_Length
-               and Valid_Next (Ctx, F_Payload))
-       and (if
-               Get_Type_Length (Ctx) >= 1536
-            then
-               Predecessor (Ctx, F_Payload) = F_Type_Length
-               and Valid_Next (Ctx, F_Payload))
+       and (if Get_Type_Length (Ctx) <= 1500 then Valid_Next (Ctx, F_Payload))
+       and (if Get_Type_Length (Ctx) >= 1536 then Valid_Next (Ctx, F_Payload))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Type_Length) = Predecessor (Ctx, F_Type_Length)'Old
        and Valid_Next (Ctx, F_Type_Length) = Valid_Next (Ctx, F_Type_Length)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
@@ -647,7 +613,6 @@ is
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and then Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and then Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and then Get_Source (Ctx) = Get_Source (Ctx)'Old
@@ -672,7 +637,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
@@ -701,7 +665,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
        and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
        and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
        and Get_Source (Ctx) = Get_Source (Ctx)'Old
@@ -730,7 +693,6 @@ private
 
    type Field_Cursor is
       record
-         Predecessor : Virtual_Field := F_Final;
          State : Cursor_State := S_Invalid;
          First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
          Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
@@ -774,44 +736,27 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if Well_Formed (Cursors (F_Destination)) then Cursors (F_Destination).Predecessor = F_Initial)
-      and then (if
-                   Well_Formed (Cursors (F_Source))
-                then
-                   (Valid (Cursors (F_Destination))
-                    and then Cursors (F_Source).Predecessor = F_Destination))
-      and then (if
-                   Well_Formed (Cursors (F_Type_Length_TPID))
-                then
-                   (Valid (Cursors (F_Source))
-                    and then Cursors (F_Type_Length_TPID).Predecessor = F_Source))
+     ((if Well_Formed (Cursors (F_Destination)) then True)
+      and then (if Well_Formed (Cursors (F_Source)) then Valid (Cursors (F_Destination)))
+      and then (if Well_Formed (Cursors (F_Type_Length_TPID)) then Valid (Cursors (F_Source)))
       and then (if
                    Well_Formed (Cursors (F_TPID))
                 then
                    (Valid (Cursors (F_Type_Length_TPID))
-                    and then Cursors (F_TPID).Predecessor = F_Type_Length_TPID
                     and then Cursors (F_Type_Length_TPID).Value = 16#8100#))
-      and then (if
-                   Well_Formed (Cursors (F_TCI))
-                then
-                   (Valid (Cursors (F_TPID))
-                    and then Cursors (F_TCI).Predecessor = F_TPID))
+      and then (if Well_Formed (Cursors (F_TCI)) then Valid (Cursors (F_TPID)))
       and then (if
                    Well_Formed (Cursors (F_Type_Length))
                 then
-                   (Valid (Cursors (F_TCI))
-                    and then Cursors (F_Type_Length).Predecessor = F_TCI)
+                   Valid (Cursors (F_TCI))
                    or (Valid (Cursors (F_Type_Length_TPID))
-                       and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
                        and then Cursors (F_Type_Length_TPID).Value /= 16#8100#))
       and then (if
                    Well_Formed (Cursors (F_Payload))
                 then
                    (Valid (Cursors (F_Type_Length))
-                    and then Cursors (F_Payload).Predecessor = F_Type_Length
                     and then Cursors (F_Type_Length).Value <= 1500)
                    or (Valid (Cursors (F_Type_Length))
-                       and then Cursors (F_Payload).Predecessor = F_Type_Length
                        and then Cursors (F_Type_Length).Value >= 1536)))
     with
      Pre =>
@@ -830,37 +775,29 @@ private
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
      ((case Fld is
           when F_Destination =>
-             Cursors (F_Destination).Predecessor = F_Initial,
+             True,
           when F_Source =>
              (Valid (Cursors (F_Destination))
-              and then True
-              and then Cursors (F_Source).Predecessor = F_Destination),
+              and then True),
           when F_Type_Length_TPID =>
              (Valid (Cursors (F_Source))
-              and then True
-              and then Cursors (F_Type_Length_TPID).Predecessor = F_Source),
+              and then True),
           when F_TPID =>
              (Valid (Cursors (F_Type_Length_TPID))
-              and then Cursors (F_Type_Length_TPID).Value = 16#8100#
-              and then Cursors (F_TPID).Predecessor = F_Type_Length_TPID),
+              and then Cursors (F_Type_Length_TPID).Value = 16#8100#),
           when F_TCI =>
              (Valid (Cursors (F_TPID))
-              and then True
-              and then Cursors (F_TCI).Predecessor = F_TPID),
+              and then True),
           when F_Type_Length =>
              (Valid (Cursors (F_TCI))
-              and then True
-              and then Cursors (F_Type_Length).Predecessor = F_TCI)
+              and then True)
              or (Valid (Cursors (F_Type_Length_TPID))
-                 and then Cursors (F_Type_Length_TPID).Value /= 16#8100#
-                 and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID),
+                 and then Cursors (F_Type_Length_TPID).Value /= 16#8100#),
           when F_Payload =>
              (Valid (Cursors (F_Type_Length))
-              and then Cursors (F_Type_Length).Value <= 1500
-              and then Cursors (F_Payload).Predecessor = F_Type_Length)
+              and then Cursors (F_Type_Length).Value <= 1500)
              or (Valid (Cursors (F_Type_Length))
-                 and then Cursors (F_Type_Length).Value >= 1536
-                 and then Cursors (F_Payload).Predecessor = F_Type_Length)))
+                 and then Cursors (F_Type_Length).Value >= 1536)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1003,31 +940,26 @@ private
                     Well_Formed (Cursors (F_Destination))
                  then
                     (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1 = 48
-                     and then Cursors (F_Destination).Predecessor = F_Initial
                      and then Cursors (F_Destination).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Source))
                           then
                              (Cursors (F_Source).Last - Cursors (F_Source).First + 1 = 48
-                              and then Cursors (F_Source).Predecessor = F_Destination
                               and then Cursors (F_Source).First = Cursors (F_Destination).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Type_Length_TPID))
                           then
                              (Cursors (F_Type_Length_TPID).Last - Cursors (F_Type_Length_TPID).First + 1 = 16
-                              and then Cursors (F_Type_Length_TPID).Predecessor = F_Source
                               and then Cursors (F_Type_Length_TPID).First = Cursors (F_Source).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_TPID))
                           then
                              (Cursors (F_TPID).Last - Cursors (F_TPID).First + 1 = 16
-                              and then Cursors (F_TPID).Predecessor = F_Type_Length_TPID
                               and then Cursors (F_TPID).First = RFLX_Types.Bit_Index (Cursors (F_Type_Length_TPID).First)))
                 and then (if
                              Well_Formed (Cursors (F_TCI))
                           then
                              (Cursors (F_TCI).Last - Cursors (F_TCI).First + 1 = 16
-                              and then Cursors (F_TCI).Predecessor = F_TPID
                               and then Cursors (F_TCI).First = Cursors (F_TPID).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Type_Length))
@@ -1037,14 +969,12 @@ private
                                  and then True
                               then
                                  Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1 = 16
-                                 and then Cursors (F_Type_Length).Predecessor = F_TCI
                                  and then Cursors (F_Type_Length).First = Cursors (F_TCI).Last + 1)
                              and then (if
                                           Well_Formed (Cursors (F_Type_Length_TPID))
                                           and then Cursors (F_Type_Length_TPID).Value /= 16#8100#
                                        then
                                           Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1 = 16
-                                          and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
                                           and then Cursors (F_Type_Length).First = RFLX_Types.Bit_Index (Cursors (F_Type_Length_TPID).First)))
                 and then (if
                              Well_Formed (Cursors (F_Payload))
@@ -1054,14 +984,12 @@ private
                                  and then Cursors (F_Type_Length).Value <= 1500
                               then
                                  Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Type_Length).Value) * 8
-                                 and then Cursors (F_Payload).Predecessor = F_Type_Length
                                  and then Cursors (F_Payload).First = Cursors (F_Type_Length).Last + 1)
                              and then (if
                                           Well_Formed (Cursors (F_Type_Length))
                                           and then Cursors (F_Type_Length).Value >= 1536
                                        then
                                           Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Type_Length).Last)
-                                          and then Cursors (F_Payload).Predecessor = F_Type_Length
                                           and then Cursors (F_Payload).First = Cursors (F_Type_Length).Last + 1))))
     with
      Post =>
@@ -1142,13 +1070,6 @@ private
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
 
-   function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field is
-     ((case Fld is
-          when F_Initial =>
-             F_Initial,
-          when others =>
-             Ctx.Cursors (Fld).Predecessor));
-
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
@@ -1212,7 +1133,6 @@ private
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
      ((if
           Fld = F_Payload
-          and then Ctx.Cursors (Fld).Predecessor = F_Type_Length
           and then Ctx.Cursors (F_Type_Length).Value >= 1536
        then
           Size <= Available_Space (Ctx, Fld)

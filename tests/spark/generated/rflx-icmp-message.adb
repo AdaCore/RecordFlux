@@ -17,7 +17,7 @@ is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_Tag => (State => S_Invalid, Predecessor => F_Initial, others => <>), others => (State => S_Invalid, Predecessor => F_Final, others => <>)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_Tag => (State => S_Invalid, others => <>), others => <>));
       Buffer := null;
    end Initialize;
 
@@ -28,7 +28,7 @@ is
 
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
    begin
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_Tag => (State => S_Invalid, Predecessor => F_Initial, others => <>), others => (State => S_Invalid, Predecessor => F_Final, others => <>)));
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_Tag => (State => S_Invalid, others => <>), others => <>));
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
@@ -237,7 +237,6 @@ is
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
-       and Ctx.Cursors (Fld).Predecessor = Ctx.Cursors (Fld).Predecessor'Old
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
@@ -252,7 +251,7 @@ is
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
       for Fld_Loop in reverse Field'Succ (Fld) .. Field'Last loop
-         Ctx.Cursors (Fld_Loop) := (State => S_Invalid, Predecessor => F_Final, others => <>);
+         Ctx.Cursors (Fld_Loop) := (State => S_Invalid, others => <>);
          pragma Loop_Invariant (Field_First (Ctx, Fld) = First
                                 and Field_Size (Ctx, Fld) = Size);
          pragma Loop_Invariant ((for all F in Field =>
@@ -260,7 +259,7 @@ is
       end loop;
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
-      Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => Ctx.Cursors (Fld).Predecessor, others => <>);
+      Ctx.Cursors (Fld) := (State => S_Invalid, others => <>);
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
    end Reset_Dependent_Fields;
@@ -329,16 +328,16 @@ is
                Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                if Composite_Field (Fld) then
-                  Ctx.Cursors (Fld) := (State => S_Well_Formed, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
+                  Ctx.Cursors (Fld) := (State => S_Well_Formed, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value);
                else
-                  Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
+                  Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value);
                end if;
-               Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld, others => <>);
+               Ctx.Cursors (Successor (Ctx, Fld)) := (others => <>);
             else
-               Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final, others => <>);
+               Ctx.Cursors (Fld) := (others => <>);
             end if;
          else
-            Ctx.Cursors (Fld) := (State => S_Incomplete, Predecessor => F_Final, others => <>);
+            Ctx.Cursors (Fld) := (State => S_Incomplete, others => <>);
          end if;
       end if;
    end Verify;
@@ -400,7 +399,6 @@ is
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
        and then Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
-       and then Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
        and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
@@ -410,18 +408,15 @@ is
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
                             then
-                               Predecessor (Ctx, F_Code_Destination_Unreachable) = F_Tag
-                               and Valid_Next (Ctx, F_Code_Destination_Unreachable))
+                               Valid_Next (Ctx, F_Code_Destination_Unreachable))
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
                             then
-                               Predecessor (Ctx, F_Code_Redirect) = F_Tag
-                               and Valid_Next (Ctx, F_Code_Redirect))
+                               Valid_Next (Ctx, F_Code_Redirect))
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
                             then
-                               Predecessor (Ctx, F_Code_Time_Exceeded) = F_Tag
-                               and Valid_Next (Ctx, F_Code_Time_Exceeded))
+                               Valid_Next (Ctx, F_Code_Time_Exceeded))
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
@@ -432,30 +427,24 @@ is
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
                             then
-                               Predecessor (Ctx, F_Code_Zero) = F_Tag
-                               and Valid_Next (Ctx, F_Code_Zero)),
+                               Valid_Next (Ctx, F_Code_Zero)),
                     when F_Code_Destination_Unreachable =>
                        Get_Code_Destination_Unreachable (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Checksum) = F_Code_Destination_Unreachable
-                            and Valid_Next (Ctx, F_Checksum)),
+                       and Valid_Next (Ctx, F_Checksum),
                     when F_Code_Redirect =>
                        Get_Code_Redirect (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Checksum) = F_Code_Redirect
-                            and Valid_Next (Ctx, F_Checksum)),
+                       and Valid_Next (Ctx, F_Checksum),
                     when F_Code_Time_Exceeded =>
                        Get_Code_Time_Exceeded (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Checksum) = F_Code_Time_Exceeded
-                            and Valid_Next (Ctx, F_Checksum)),
+                       and Valid_Next (Ctx, F_Checksum),
                     when F_Code_Zero =>
-                       (Predecessor (Ctx, F_Checksum) = F_Code_Zero
-                        and Valid_Next (Ctx, F_Checksum)),
+                       Valid_Next (Ctx, F_Checksum),
                     when F_Checksum =>
                        Get_Checksum (Ctx) = To_Actual (Val)
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
                             then
-                               Predecessor (Ctx, F_Gateway_Internet_Address) = F_Checksum
-                               and Valid_Next (Ctx, F_Gateway_Internet_Address))
+                               Valid_Next (Ctx, F_Gateway_Internet_Address))
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
@@ -464,63 +453,51 @@ is
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
                             then
-                               Predecessor (Ctx, F_Identifier) = F_Checksum
-                               and Valid_Next (Ctx, F_Identifier))
+                               Valid_Next (Ctx, F_Identifier))
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
                             then
-                               Predecessor (Ctx, F_Pointer) = F_Checksum
-                               and Valid_Next (Ctx, F_Pointer))
+                               Valid_Next (Ctx, F_Pointer))
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench))
                             then
-                               Predecessor (Ctx, F_Unused_32) = F_Checksum
-                               and Valid_Next (Ctx, F_Unused_32)),
+                               Valid_Next (Ctx, F_Unused_32)),
                     when F_Gateway_Internet_Address =>
                        Get_Gateway_Internet_Address (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Data) = F_Gateway_Internet_Address
-                            and Valid_Next (Ctx, F_Data)),
+                       and Valid_Next (Ctx, F_Data),
                     when F_Identifier =>
                        Get_Identifier (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Sequence_Number) = F_Identifier
-                            and Valid_Next (Ctx, F_Sequence_Number)),
+                       and Valid_Next (Ctx, F_Sequence_Number),
                     when F_Pointer =>
                        Get_Pointer (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Unused_24) = F_Pointer
-                            and Valid_Next (Ctx, F_Unused_24)),
+                       and Valid_Next (Ctx, F_Unused_24),
                     when F_Unused_32 =>
-                       (Predecessor (Ctx, F_Data) = F_Unused_32
-                        and Valid_Next (Ctx, F_Data)),
+                       Valid_Next (Ctx, F_Data),
                     when F_Sequence_Number =>
                        Get_Sequence_Number (Ctx) = To_Actual (Val)
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
                             then
-                               Predecessor (Ctx, F_Data) = F_Sequence_Number
-                               and Valid_Next (Ctx, F_Data))
+                               Valid_Next (Ctx, F_Data))
                        and (if
                                RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
                                or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
                             then
-                               Predecessor (Ctx, F_Originate_Timestamp) = F_Sequence_Number
-                               and Valid_Next (Ctx, F_Originate_Timestamp))
+                               Valid_Next (Ctx, F_Originate_Timestamp))
                        and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                     when F_Unused_24 =>
-                       (Predecessor (Ctx, F_Data) = F_Unused_24
-                        and Valid_Next (Ctx, F_Data)),
+                       Valid_Next (Ctx, F_Data),
                     when F_Originate_Timestamp =>
                        Get_Originate_Timestamp (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Receive_Timestamp) = F_Originate_Timestamp
-                            and Valid_Next (Ctx, F_Receive_Timestamp)),
+                       and Valid_Next (Ctx, F_Receive_Timestamp),
                     when F_Data =>
                        (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                     when F_Receive_Timestamp =>
                        Get_Receive_Timestamp (Ctx) = To_Actual (Val)
-                       and (Predecessor (Ctx, F_Transmit_Timestamp) = F_Receive_Timestamp
-                            and Valid_Next (Ctx, F_Transmit_Timestamp)),
+                       and Valid_Next (Ctx, F_Transmit_Timestamp),
                     when F_Transmit_Timestamp =>
                        Get_Transmit_Timestamp (Ctx) = To_Actual (Val)
                        and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
@@ -541,11 +518,11 @@ is
       Ctx := Ctx'Update (Verified_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size, Written_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       if State_Valid then
-         Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
+         Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val);
       else
-         Ctx.Cursors (Fld) := (State => S_Well_Formed, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
+         Ctx.Cursors (Fld) := (State => S_Well_Formed, First => First, Last => Last, Value => Val);
       end if;
-      Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld, others => <>);
+      Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, others => <>);
       pragma Assert (Last = (Field_First (Ctx, Fld) + Size) - 1);
    end Set;
 
@@ -570,18 +547,15 @@ is
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
                        then
-                          Predecessor (Ctx, F_Code_Destination_Unreachable) = F_Tag
-                          and Valid_Next (Ctx, F_Code_Destination_Unreachable))
+                          Valid_Next (Ctx, F_Code_Destination_Unreachable))
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
                        then
-                          Predecessor (Ctx, F_Code_Redirect) = F_Tag
-                          and Valid_Next (Ctx, F_Code_Redirect))
+                          Valid_Next (Ctx, F_Code_Redirect))
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
                        then
-                          Predecessor (Ctx, F_Code_Time_Exceeded) = F_Tag
-                          and Valid_Next (Ctx, F_Code_Time_Exceeded))
+                          Valid_Next (Ctx, F_Code_Time_Exceeded))
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
@@ -592,30 +566,24 @@ is
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
                        then
-                          Predecessor (Ctx, F_Code_Zero) = F_Tag
-                          and Valid_Next (Ctx, F_Code_Zero)),
+                          Valid_Next (Ctx, F_Code_Zero)),
                when F_Code_Destination_Unreachable =>
                   Get_Code_Destination_Unreachable (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Checksum) = F_Code_Destination_Unreachable
-                       and Valid_Next (Ctx, F_Checksum)),
+                  and Valid_Next (Ctx, F_Checksum),
                when F_Code_Redirect =>
                   Get_Code_Redirect (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Checksum) = F_Code_Redirect
-                       and Valid_Next (Ctx, F_Checksum)),
+                  and Valid_Next (Ctx, F_Checksum),
                when F_Code_Time_Exceeded =>
                   Get_Code_Time_Exceeded (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Checksum) = F_Code_Time_Exceeded
-                       and Valid_Next (Ctx, F_Checksum)),
+                  and Valid_Next (Ctx, F_Checksum),
                when F_Code_Zero =>
-                  (Predecessor (Ctx, F_Checksum) = F_Code_Zero
-                   and Valid_Next (Ctx, F_Checksum)),
+                  Valid_Next (Ctx, F_Checksum),
                when F_Checksum =>
                   Get_Checksum (Ctx) = To_Actual (Val)
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
                        then
-                          Predecessor (Ctx, F_Gateway_Internet_Address) = F_Checksum
-                          and Valid_Next (Ctx, F_Gateway_Internet_Address))
+                          Valid_Next (Ctx, F_Gateway_Internet_Address))
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
@@ -624,63 +592,51 @@ is
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
                        then
-                          Predecessor (Ctx, F_Identifier) = F_Checksum
-                          and Valid_Next (Ctx, F_Identifier))
+                          Valid_Next (Ctx, F_Identifier))
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
                        then
-                          Predecessor (Ctx, F_Pointer) = F_Checksum
-                          and Valid_Next (Ctx, F_Pointer))
+                          Valid_Next (Ctx, F_Pointer))
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench))
                        then
-                          Predecessor (Ctx, F_Unused_32) = F_Checksum
-                          and Valid_Next (Ctx, F_Unused_32)),
+                          Valid_Next (Ctx, F_Unused_32)),
                when F_Gateway_Internet_Address =>
                   Get_Gateway_Internet_Address (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Data) = F_Gateway_Internet_Address
-                       and Valid_Next (Ctx, F_Data)),
+                  and Valid_Next (Ctx, F_Data),
                when F_Identifier =>
                   Get_Identifier (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Sequence_Number) = F_Identifier
-                       and Valid_Next (Ctx, F_Sequence_Number)),
+                  and Valid_Next (Ctx, F_Sequence_Number),
                when F_Pointer =>
                   Get_Pointer (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Unused_24) = F_Pointer
-                       and Valid_Next (Ctx, F_Unused_24)),
+                  and Valid_Next (Ctx, F_Unused_24),
                when F_Unused_32 =>
-                  (Predecessor (Ctx, F_Data) = F_Unused_32
-                   and Valid_Next (Ctx, F_Data)),
+                  Valid_Next (Ctx, F_Data),
                when F_Sequence_Number =>
                   Get_Sequence_Number (Ctx) = To_Actual (Val)
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
                        then
-                          Predecessor (Ctx, F_Data) = F_Sequence_Number
-                          and Valid_Next (Ctx, F_Data))
+                          Valid_Next (Ctx, F_Data))
                   and (if
                           RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
                           or RFLX_Types.Base_Integer (To_Base_Integer (Get_Tag (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
                        then
-                          Predecessor (Ctx, F_Originate_Timestamp) = F_Sequence_Number
-                          and Valid_Next (Ctx, F_Originate_Timestamp))
+                          Valid_Next (Ctx, F_Originate_Timestamp))
                   and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                when F_Unused_24 =>
-                  (Predecessor (Ctx, F_Data) = F_Unused_24
-                   and Valid_Next (Ctx, F_Data)),
+                  Valid_Next (Ctx, F_Data),
                when F_Originate_Timestamp =>
                   Get_Originate_Timestamp (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Receive_Timestamp) = F_Originate_Timestamp
-                       and Valid_Next (Ctx, F_Receive_Timestamp)),
+                  and Valid_Next (Ctx, F_Receive_Timestamp),
                when F_Data =>
                   (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
                when F_Receive_Timestamp =>
                   Get_Receive_Timestamp (Ctx) = To_Actual (Val)
-                  and (Predecessor (Ctx, F_Transmit_Timestamp) = F_Receive_Timestamp
-                       and Valid_Next (Ctx, F_Transmit_Timestamp)),
+                  and Valid_Next (Ctx, F_Transmit_Timestamp),
                when F_Transmit_Timestamp =>
                   Get_Transmit_Timestamp (Ctx) = To_Actual (Val)
                   and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
@@ -691,7 +647,6 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
-       and Predecessor (Ctx, Fld) = Predecessor (Ctx, Fld)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
    is
       Buffer_First, Buffer_Last : RFLX_Types.Index;
@@ -804,7 +759,6 @@ is
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
-       and then Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
        and then Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and then Get_Tag (Ctx) = Get_Tag (Ctx)'Old
        and then Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
@@ -818,8 +772,8 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      Ctx.Cursors (F_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Data).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data, others => <>);
+      Ctx.Cursors (F_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
+      Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, others => <>);
    end Initialize_Data_Private;
 
    procedure Initialize_Data (Ctx : in out Context; Length : RFLX_Types.Length) is
