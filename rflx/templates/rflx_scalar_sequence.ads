@@ -128,12 +128,7 @@ is
 
    function Has_Element (Ctx : Context) return Boolean;
 
-   function Valid_Element (Ctx : Context) return Boolean with
-     Contract_Cases =>
-       (Has_Buffer (Ctx) => (Valid_Element'Result or not Valid_Element'Result)
-        and Has_Buffer (Ctx),
-        not Has_Buffer (Ctx) => (Valid_Element'Result or not Valid_Element'Result)
-        and not Has_Buffer (Ctx));
+   function Valid_Element (Ctx : Context) return Boolean;
 
    function Get_Element (Ctx : Context) return Element_Type with
      Pre =>

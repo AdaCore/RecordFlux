@@ -114,10 +114,7 @@ is
         and Valid (Ctx)
         and Byte_Size (Ctx) = Buffer'Length);
 
-   function Has_Element (Ctx : Context) return Boolean with
-     Contract_Cases =>
-       (Has_Buffer (Ctx) => (Has_Element'Result or not Has_Element'Result) and Has_Buffer (Ctx),
-        not Has_Buffer (Ctx) => (Has_Element'Result or not Has_Element'Result) and not Has_Buffer (Ctx));
+   function Has_Element (Ctx : Context) return Boolean;
 
    procedure Append_Element (Ctx : in out Context; Element_Ctx : Element_Context) with
      Pre =>
