@@ -260,7 +260,6 @@ verification_tests:
     key: verification_tests-$CI_COMMIT_REF_SLUG
     paths:
       - build/gnatprove_cache
-      - build/test/gnatprove
     fallback_keys:
       - verification_tests-main
     unprotect: true
@@ -283,7 +282,6 @@ verification_python_tests:
     key: verification_python_tests-$CI_COMMIT_REF_SLUG
     paths:
       - build/gnatprove_cache
-      - build/test/gnatprove
     fallback_keys:
       - verification_python_tests-main
     unprotect: true
@@ -311,7 +309,6 @@ verification_apps:
     key: verification_apps-$APP-$CI_COMMIT_REF_SLUG
     paths:
       - build/gnatprove_cache
-      - examples/apps/${APP}/obj/gnatprove
     fallback_keys:
       - verification_apps-$APP-main
     unprotect: true
