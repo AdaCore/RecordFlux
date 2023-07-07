@@ -1756,7 +1756,26 @@ def test_valid_first() -> None:
     Message("P::M", structure, types)
 
 
-def test_invalid_first() -> None:
+def test_invalid_first_is_not_previous_field() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2")),
+        Link(Field("F2"), Field("F3"), first=First(ID("F1", location=Location((5, 14))))),
+        Link(Field("F3"), FINAL),
+    ]
+    types = {
+        Field("F1"): INTEGER,
+        Field("F2"): INTEGER,
+        Field("F3"): INTEGER,
+    }
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:5:14: model: error: invalid First for field "F3"$',
+    )
+
+
+def test_invalid_first_is_expression() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(
@@ -1807,8 +1826,11 @@ def test_invalid_first_forward_reference() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:10:20: model: error: undefined variable "F3"\n'
-        r"<stdin>:10:20: model: info: on path F1 -> F2$",
+        r"^"
+        r'<stdin>:10:20: model: error: undefined variable "F3"\n'
+        r"<stdin>:10:20: model: info: on path F1 -> F2\n"
+        r'<stdin>:10:20: model: error: invalid First for field "F2"'
+        r"$",
     )
 
 
@@ -1919,7 +1941,7 @@ def test_incongruent_overlay() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), Field("F3"), first=First("F1")),
+        Link(Field("F2"), Field("F3"), first=First("F2")),
         Link(Field("F3"), Field("F4")),
         Link(Field("F4"), FINAL),
     ]
@@ -1935,10 +1957,10 @@ def test_incongruent_overlay() -> None:
         structure,
         types,
         r"^"
-        r'model: error: field "F3" not congruent with overlaid field "F1"\n'
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'Last = [(]Message\'First [+] 8[)] - 1"\n'
-        r'model: info: unsatisfied "[(]F1\'First [+] 16[)] - 1 = F1\'Last"'
+        r'model: error: field "F3" not congruent with overlaid field "F2"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'model: info: unsatisfied "F2\'First = F1\'Last [+] 1"\n'
+        r'model: info: unsatisfied "[(]F2\'First [+] 16[)] - 1 = F2\'Last"'
         r"$",
     )
 

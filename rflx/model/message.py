@@ -1438,7 +1438,7 @@ class Message(AbstractMessage):
         for f in (INITIAL, *self.fields):
             for l in self.outgoing(f):
                 self._check_attributes(l.condition, l.condition.location)
-                self._check_first_expression(l, l.first.location)
+                self._check_first_expression(l)
                 self._check_size_expression(l)
 
     def _check_attributes(self, expression: expr.Expr, location: Optional[Location] = None) -> None:
@@ -1464,15 +1464,15 @@ class Message(AbstractMessage):
                     ],
                 )
 
-    def _check_first_expression(self, link: Link, location: Optional[Location] = None) -> None:
-        if link.first != expr.UNDEFINED and not isinstance(link.first, expr.First):
+    def _check_first_expression(self, link: Link) -> None:
+        if link.first not in (expr.UNDEFINED, expr.First(link.source.identifier)):
             self.error.extend(
                 [
                     (
                         f'invalid First for field "{link.target.name}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
-                        location,
+                        link.first.location,
                     )
                 ],
             )

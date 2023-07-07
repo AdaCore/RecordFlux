@@ -263,7 +263,7 @@ package RFLX_Invalid is
          F2 : U8
             then F3
                -- error: not congruent with overlayed field
-               with First => F1'First;
+               with First => F2'First;
          F3 : U16;
          F4 : U16;
       end message;

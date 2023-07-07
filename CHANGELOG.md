@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Caching of successful verification (eng/recordflux/RecordFlux#1345)
 - Locations of message fields and field sizes in error messages (eng/recordflux/RecordFlux#1349)
+- Invalid use of First aspect that led to overlay of multiple fields (eng/recordflux/RecordFlux#1332)
 
 ## [0.11.0] - 2023-06-16
 
