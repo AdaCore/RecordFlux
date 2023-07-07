@@ -1437,11 +1437,11 @@ class Message(AbstractMessage):
     def _verify_expressions(self) -> None:
         for f in (INITIAL, *self.fields):
             for l in self.outgoing(f):
-                self._check_attributes(l.condition, l.condition.location)
+                self._check_attributes(l.condition)
                 self._check_first_expression(l)
                 self._check_size_expression(l)
 
-    def _check_attributes(self, expression: expr.Expr, location: Optional[Location] = None) -> None:
+    def _check_attributes(self, expression: expr.Expr) -> None:
         for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):
             if isinstance(a, expr.Size) and not (
                 (
@@ -1459,7 +1459,7 @@ class Message(AbstractMessage):
                             f'invalid use of size attribute for "{a.prefix}"',
                             Subsystem.MODEL,
                             Severity.ERROR,
-                            location,
+                            expression.location,
                         )
                     ],
                 )
