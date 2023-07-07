@@ -1023,7 +1023,6 @@ is
    procedure Update_Option_Types (Ctx : in out Context; Seq_Ctx : in out RFLX.Universal.Option_Types.Context) with
      Pre =>
        RFLX.Universal.Message.Present (Ctx, RFLX.Universal.Message.F_Option_Types)
-       and then RFLX.Universal.Message.Complete_Option_Types (Ctx, Seq_Ctx)
        and then not RFLX.Universal.Message.Has_Buffer (Ctx)
        and then RFLX.Universal.Option_Types.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -1031,7 +1030,18 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_Option_Types)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_Option_Types),
      Post =>
-       Present (Ctx, F_Option_Types)
+       (if
+           RFLX.Universal.Message.Complete_Option_Types (Ctx, Seq_Ctx)
+        then
+           Present (Ctx, F_Option_Types)
+           and Context_Cursor (Ctx, F_Options) = Context_Cursor (Ctx, F_Options)'Old
+           and Context_Cursor (Ctx, F_Value) = Context_Cursor (Ctx, F_Value)'Old
+           and Context_Cursor (Ctx, F_Values) = Context_Cursor (Ctx, F_Values)'Old
+        else
+           Invalid (Ctx, F_Option_Types)
+           and Invalid (Ctx, F_Options)
+           and Invalid (Ctx, F_Value)
+           and Invalid (Ctx, F_Values))
        and Has_Buffer (Ctx)
        and not RFLX.Universal.Option_Types.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1044,17 +1054,13 @@ is
        and Field_Size (Ctx, F_Option_Types) = Field_Size (Ctx, F_Option_Types)'Old
        and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old
        and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
-       and Context_Cursor (Ctx, F_Data) = Context_Cursor (Ctx, F_Data)'Old
-       and Context_Cursor (Ctx, F_Options) = Context_Cursor (Ctx, F_Options)'Old
-       and Context_Cursor (Ctx, F_Value) = Context_Cursor (Ctx, F_Value)'Old
-       and Context_Cursor (Ctx, F_Values) = Context_Cursor (Ctx, F_Values)'Old,
+       and Context_Cursor (Ctx, F_Data) = Context_Cursor (Ctx, F_Data)'Old,
      Depends =>
        (Ctx => (Ctx, Seq_Ctx), Seq_Ctx => Seq_Ctx);
 
    procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out RFLX.Universal.Options.Context) with
      Pre =>
        RFLX.Universal.Message.Present (Ctx, RFLX.Universal.Message.F_Options)
-       and then RFLX.Universal.Message.Complete_Options (Ctx, Seq_Ctx)
        and then not RFLX.Universal.Message.Has_Buffer (Ctx)
        and then RFLX.Universal.Options.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -1062,7 +1068,16 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_Options)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_Options),
      Post =>
-       Present (Ctx, F_Options)
+       (if
+           RFLX.Universal.Message.Complete_Options (Ctx, Seq_Ctx)
+        then
+           Present (Ctx, F_Options)
+           and Context_Cursor (Ctx, F_Value) = Context_Cursor (Ctx, F_Value)'Old
+           and Context_Cursor (Ctx, F_Values) = Context_Cursor (Ctx, F_Values)'Old
+        else
+           Invalid (Ctx, F_Options)
+           and Invalid (Ctx, F_Value)
+           and Invalid (Ctx, F_Values))
        and Has_Buffer (Ctx)
        and not RFLX.Universal.Options.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1076,16 +1091,13 @@ is
        and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old
        and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
        and Context_Cursor (Ctx, F_Data) = Context_Cursor (Ctx, F_Data)'Old
-       and Context_Cursor (Ctx, F_Option_Types) = Context_Cursor (Ctx, F_Option_Types)'Old
-       and Context_Cursor (Ctx, F_Value) = Context_Cursor (Ctx, F_Value)'Old
-       and Context_Cursor (Ctx, F_Values) = Context_Cursor (Ctx, F_Values)'Old,
+       and Context_Cursor (Ctx, F_Option_Types) = Context_Cursor (Ctx, F_Option_Types)'Old,
      Depends =>
        (Ctx => (Ctx, Seq_Ctx), Seq_Ctx => Seq_Ctx);
 
    procedure Update_Values (Ctx : in out Context; Seq_Ctx : in out RFLX.Universal.Values.Context) with
      Pre =>
        RFLX.Universal.Message.Present (Ctx, RFLX.Universal.Message.F_Values)
-       and then RFLX.Universal.Message.Complete_Values (Ctx, Seq_Ctx)
        and then not RFLX.Universal.Message.Has_Buffer (Ctx)
        and then RFLX.Universal.Values.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -1093,7 +1105,12 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_Values)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_Values),
      Post =>
-       Present (Ctx, F_Values)
+       (if
+           RFLX.Universal.Message.Complete_Values (Ctx, Seq_Ctx)
+        then
+           Present (Ctx, F_Values)
+        else
+           Invalid (Ctx, F_Values))
        and Has_Buffer (Ctx)
        and not RFLX.Universal.Values.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

@@ -576,35 +576,44 @@ is
    end Switch_To_AV_Enumeration_Vector;
 
    procedure Update_Integer_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Integer_Vector.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Sequence.Integer_Vector.Valid (Seq_Ctx);
+      Valid_Sequence : constant Boolean := RFLX.Sequence.Message.Complete_Integer_Vector (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       RFLX.Sequence.Integer_Vector.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Integer_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Integer_Vector).First, Last => Ctx.Cursors (F_Integer_Vector).Last, Value => Ctx.Cursors (F_Integer_Vector).Value, Predecessor => Ctx.Cursors (F_Integer_Vector).Predecessor);
+      else
+         Reset_Dependent_Fields (Ctx, F_Integer_Vector);
+         Ctx.Cursors (F_Integer_Vector) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Integer_Vector).Predecessor);
       end if;
    end Update_Integer_Vector;
 
    procedure Update_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Enumeration_Vector.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Sequence.Enumeration_Vector.Valid (Seq_Ctx);
+      Valid_Sequence : constant Boolean := RFLX.Sequence.Message.Complete_Enumeration_Vector (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       RFLX.Sequence.Enumeration_Vector.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Enumeration_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Enumeration_Vector).First, Last => Ctx.Cursors (F_Enumeration_Vector).Last, Value => Ctx.Cursors (F_Enumeration_Vector).Value, Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
+      else
+         Reset_Dependent_Fields (Ctx, F_Enumeration_Vector);
+         Ctx.Cursors (F_Enumeration_Vector) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Enumeration_Vector).Predecessor);
       end if;
    end Update_Enumeration_Vector;
 
    procedure Update_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.AV_Enumeration_Vector.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Sequence.AV_Enumeration_Vector.Valid (Seq_Ctx);
+      Valid_Sequence : constant Boolean := RFLX.Sequence.Message.Complete_AV_Enumeration_Vector (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       RFLX.Sequence.AV_Enumeration_Vector.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Valid, First => Ctx.Cursors (F_AV_Enumeration_Vector).First, Last => Ctx.Cursors (F_AV_Enumeration_Vector).Last, Value => Ctx.Cursors (F_AV_Enumeration_Vector).Value, Predecessor => Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);
+      else
+         Reset_Dependent_Fields (Ctx, F_AV_Enumeration_Vector);
+         Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_AV_Enumeration_Vector).Predecessor);
       end if;
    end Update_AV_Enumeration_Vector;
 

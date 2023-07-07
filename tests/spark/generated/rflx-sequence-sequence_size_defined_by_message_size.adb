@@ -411,13 +411,16 @@ is
    end Switch_To_Vector;
 
    procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Integer_Vector.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Sequence.Integer_Vector.Valid (Seq_Ctx);
+      Valid_Sequence : constant Boolean := RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Complete_Vector (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       RFLX.Sequence.Integer_Vector.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Vector) := (State => S_Valid, First => Ctx.Cursors (F_Vector).First, Last => Ctx.Cursors (F_Vector).Last, Value => Ctx.Cursors (F_Vector).Value, Predecessor => Ctx.Cursors (F_Vector).Predecessor);
+      else
+         Reset_Dependent_Fields (Ctx, F_Vector);
+         Ctx.Cursors (F_Vector) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Vector).Predecessor);
       end if;
    end Update_Vector;
 

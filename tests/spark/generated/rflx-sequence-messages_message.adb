@@ -411,13 +411,16 @@ is
    end Switch_To_Messages;
 
    procedure Update_Messages (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Inner_Messages.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Sequence.Inner_Messages.Valid (Seq_Ctx);
+      Valid_Sequence : constant Boolean := RFLX.Sequence.Messages_Message.Complete_Messages (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       RFLX.Sequence.Inner_Messages.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Messages) := (State => S_Valid, First => Ctx.Cursors (F_Messages).First, Last => Ctx.Cursors (F_Messages).Last, Value => Ctx.Cursors (F_Messages).Value, Predecessor => Ctx.Cursors (F_Messages).Predecessor);
+      else
+         Reset_Dependent_Fields (Ctx, F_Messages);
+         Ctx.Cursors (F_Messages) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Messages).Predecessor);
       end if;
    end Update_Messages;
 

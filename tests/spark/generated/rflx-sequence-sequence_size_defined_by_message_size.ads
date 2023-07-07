@@ -546,7 +546,6 @@ is
    procedure Update_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Integer_Vector.Context) with
      Pre =>
        RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Present (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector)
-       and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Complete_Vector (Ctx, Seq_Ctx)
        and then not RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx)
        and then RFLX.Sequence.Integer_Vector.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -554,7 +553,12 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_Vector)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_Vector),
      Post =>
-       Present (Ctx, F_Vector)
+       (if
+           RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Complete_Vector (Ctx, Seq_Ctx)
+        then
+           Present (Ctx, F_Vector)
+        else
+           Invalid (Ctx, F_Vector))
        and Has_Buffer (Ctx)
        and not RFLX.Sequence.Integer_Vector.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

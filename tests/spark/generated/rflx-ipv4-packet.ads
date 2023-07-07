@@ -1397,7 +1397,6 @@ is
    procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out RFLX.IPv4.Options.Context) with
      Pre =>
        RFLX.IPv4.Packet.Present (Ctx, RFLX.IPv4.Packet.F_Options)
-       and then RFLX.IPv4.Packet.Complete_Options (Ctx, Seq_Ctx)
        and then not RFLX.IPv4.Packet.Has_Buffer (Ctx)
        and then RFLX.IPv4.Options.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -1405,7 +1404,14 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_Options)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_Options),
      Post =>
-       Present (Ctx, F_Options)
+       (if
+           RFLX.IPv4.Packet.Complete_Options (Ctx, Seq_Ctx)
+        then
+           Present (Ctx, F_Options)
+           and Context_Cursor (Ctx, F_Payload) = Context_Cursor (Ctx, F_Payload)'Old
+        else
+           Invalid (Ctx, F_Options)
+           and Invalid (Ctx, F_Payload))
        and Has_Buffer (Ctx)
        and not RFLX.IPv4.Options.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -1430,8 +1436,7 @@ is
        and Context_Cursor (Ctx, F_Protocol) = Context_Cursor (Ctx, F_Protocol)'Old
        and Context_Cursor (Ctx, F_Header_Checksum) = Context_Cursor (Ctx, F_Header_Checksum)'Old
        and Context_Cursor (Ctx, F_Source) = Context_Cursor (Ctx, F_Source)'Old
-       and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old
-       and Context_Cursor (Ctx, F_Payload) = Context_Cursor (Ctx, F_Payload)'Old,
+       and Context_Cursor (Ctx, F_Destination) = Context_Cursor (Ctx, F_Destination)'Old,
      Depends =>
        (Ctx => (Ctx, Seq_Ctx), Seq_Ctx => Seq_Ctx);
 

@@ -2923,18 +2923,51 @@ def create_update_procedures(
                                     Variable(prefix * message.identifier * f.affixed_name),
                                 ],
                             ),
-                            Call(
-                                prefix * message.identifier * f"Complete_{f.name}",
-                                [Variable("Ctx"), Variable("Seq_Ctx")],
-                            ),
                             *_switch_update_conditions(prefix, message, f),
                         )
                     ),
                     Postcondition(
                         And(
-                            Call(
-                                "Present",
-                                [Variable("Ctx"), Variable(f.affixed_name)],
+                            If(
+                                [
+                                    (
+                                        Call(
+                                            prefix * message.identifier * f"Complete_{f.name}",
+                                            [Variable("Ctx"), Variable("Seq_Ctx")],
+                                        ),
+                                        And(
+                                            Call(
+                                                "Present",
+                                                [Variable("Ctx"), Variable(f.affixed_name)],
+                                            ),
+                                            *[
+                                                Equal(e, Old(e))
+                                                for e in [
+                                                    Call(
+                                                        "Context_Cursor",
+                                                        [
+                                                            Variable("Ctx"),
+                                                            Variable(o.affixed_name),
+                                                        ],
+                                                    )
+                                                    for o in message.successors(f)
+                                                ]
+                                            ],
+                                        ),
+                                    ),
+                                ],
+                                And(
+                                    *[
+                                        Call(
+                                            "Invalid",
+                                            [
+                                                Variable("Ctx"),
+                                                Variable(o.affixed_name),
+                                            ],
+                                        )
+                                        for o in [f, *message.successors(f)]
+                                    ],
+                                ),
                             ),
                             Call("Has_Buffer", [Variable("Ctx")]),
                             Not(
@@ -2972,8 +3005,7 @@ def create_update_procedures(
                                             Variable(o.affixed_name),
                                         ],
                                     )
-                                    for o in message.fields
-                                    if o != f
+                                    for o in message.predecessors(f)
                                 ]
                             ],
                         )
@@ -2991,8 +3023,8 @@ def create_update_procedures(
                         ["Valid_Sequence"],
                         "Boolean",
                         Call(
-                            prefix * common.sequence_name(message, f) * "Valid",
-                            [Variable("Seq_Ctx")],
+                            prefix * message.identifier * f"Complete_{f.name}",
+                            [Variable("Ctx"), Variable("Seq_Ctx")],
                         ),
                         constant=True,
                     ),
@@ -3038,7 +3070,32 @@ def create_update_procedures(
                                     )
                                 ],
                             )
-                        ]
+                        ],
+                        [
+                            CallStatement(
+                                "Reset_Dependent_Fields",
+                                [Variable("Ctx"), Variable(f.affixed_name)],
+                            ),
+                            Assignment(
+                                Indexed(
+                                    Variable("Ctx.Cursors"),
+                                    Variable(f.affixed_name),
+                                ),
+                                NamedAggregate(
+                                    ("State", Variable("S_Invalid")),
+                                    (
+                                        "Predecessor",
+                                        Selected(
+                                            Indexed(
+                                                Variable("Ctx.Cursors"),
+                                                Variable(f.affixed_name),
+                                            ),
+                                            "Predecessor",
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ],
                     ),
                 ],
             )

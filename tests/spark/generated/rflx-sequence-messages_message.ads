@@ -544,7 +544,6 @@ is
    procedure Update_Messages (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Inner_Messages.Context) with
      Pre =>
        RFLX.Sequence.Messages_Message.Present (Ctx, RFLX.Sequence.Messages_Message.F_Messages)
-       and then RFLX.Sequence.Messages_Message.Complete_Messages (Ctx, Seq_Ctx)
        and then not RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
        and then RFLX.Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -552,7 +551,12 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_Messages)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_Messages),
      Post =>
-       Present (Ctx, F_Messages)
+       (if
+           RFLX.Sequence.Messages_Message.Complete_Messages (Ctx, Seq_Ctx)
+        then
+           Present (Ctx, F_Messages)
+        else
+           Invalid (Ctx, F_Messages))
        and Has_Buffer (Ctx)
        and not RFLX.Sequence.Inner_Messages.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

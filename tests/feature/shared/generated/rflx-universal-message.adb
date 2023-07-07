@@ -862,35 +862,44 @@ is
    end Switch_To_Values;
 
    procedure Update_Option_Types (Ctx : in out Context; Seq_Ctx : in out RFLX.Universal.Option_Types.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Universal.Option_Types.Valid (Seq_Ctx);
+      Valid_Sequence : constant Boolean := RFLX.Universal.Message.Complete_Option_Types (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       RFLX.Universal.Option_Types.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Option_Types) := (State => S_Valid, First => Ctx.Cursors (F_Option_Types).First, Last => Ctx.Cursors (F_Option_Types).Last, Value => Ctx.Cursors (F_Option_Types).Value, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
+      else
+         Reset_Dependent_Fields (Ctx, F_Option_Types);
+         Ctx.Cursors (F_Option_Types) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
       end if;
    end Update_Option_Types;
 
    procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out RFLX.Universal.Options.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Universal.Options.Valid (Seq_Ctx);
+      Valid_Sequence : constant Boolean := RFLX.Universal.Message.Complete_Options (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       RFLX.Universal.Options.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Options) := (State => S_Valid, First => Ctx.Cursors (F_Options).First, Last => Ctx.Cursors (F_Options).Last, Value => Ctx.Cursors (F_Options).Value, Predecessor => Ctx.Cursors (F_Options).Predecessor);
+      else
+         Reset_Dependent_Fields (Ctx, F_Options);
+         Ctx.Cursors (F_Options) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Options).Predecessor);
       end if;
    end Update_Options;
 
    procedure Update_Values (Ctx : in out Context; Seq_Ctx : in out RFLX.Universal.Values.Context) is
-      Valid_Sequence : constant Boolean := RFLX.Universal.Values.Valid (Seq_Ctx);
+      Valid_Sequence : constant Boolean := RFLX.Universal.Message.Complete_Values (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       RFLX.Universal.Values.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Values) := (State => S_Valid, First => Ctx.Cursors (F_Values).First, Last => Ctx.Cursors (F_Values).Last, Value => Ctx.Cursors (F_Values).Value, Predecessor => Ctx.Cursors (F_Values).Predecessor);
+      else
+         Reset_Dependent_Fields (Ctx, F_Values);
+         Ctx.Cursors (F_Values) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Values).Predecessor);
       end if;
    end Update_Values;
 

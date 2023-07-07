@@ -732,7 +732,6 @@ is
    procedure Update_Integer_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Integer_Vector.Context) with
      Pre =>
        RFLX.Sequence.Message.Present (Ctx, RFLX.Sequence.Message.F_Integer_Vector)
-       and then RFLX.Sequence.Message.Complete_Integer_Vector (Ctx, Seq_Ctx)
        and then not RFLX.Sequence.Message.Has_Buffer (Ctx)
        and then RFLX.Sequence.Integer_Vector.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -740,7 +739,16 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_Integer_Vector)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_Integer_Vector),
      Post =>
-       Present (Ctx, F_Integer_Vector)
+       (if
+           RFLX.Sequence.Message.Complete_Integer_Vector (Ctx, Seq_Ctx)
+        then
+           Present (Ctx, F_Integer_Vector)
+           and Context_Cursor (Ctx, F_Enumeration_Vector) = Context_Cursor (Ctx, F_Enumeration_Vector)'Old
+           and Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old
+        else
+           Invalid (Ctx, F_Integer_Vector)
+           and Invalid (Ctx, F_Enumeration_Vector)
+           and Invalid (Ctx, F_AV_Enumeration_Vector))
        and Has_Buffer (Ctx)
        and not RFLX.Sequence.Integer_Vector.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -751,16 +759,13 @@ is
        and Seq_Ctx.Last = Seq_Ctx.Last'Old
        and Field_First (Ctx, F_Integer_Vector) = Field_First (Ctx, F_Integer_Vector)'Old
        and Field_Size (Ctx, F_Integer_Vector) = Field_Size (Ctx, F_Integer_Vector)'Old
-       and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
-       and Context_Cursor (Ctx, F_Enumeration_Vector) = Context_Cursor (Ctx, F_Enumeration_Vector)'Old
-       and Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old,
+       and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old,
      Depends =>
        (Ctx => (Ctx, Seq_Ctx), Seq_Ctx => Seq_Ctx);
 
    procedure Update_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.Enumeration_Vector.Context) with
      Pre =>
        RFLX.Sequence.Message.Present (Ctx, RFLX.Sequence.Message.F_Enumeration_Vector)
-       and then RFLX.Sequence.Message.Complete_Enumeration_Vector (Ctx, Seq_Ctx)
        and then not RFLX.Sequence.Message.Has_Buffer (Ctx)
        and then RFLX.Sequence.Enumeration_Vector.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -768,7 +773,14 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_Enumeration_Vector)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_Enumeration_Vector),
      Post =>
-       Present (Ctx, F_Enumeration_Vector)
+       (if
+           RFLX.Sequence.Message.Complete_Enumeration_Vector (Ctx, Seq_Ctx)
+        then
+           Present (Ctx, F_Enumeration_Vector)
+           and Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old
+        else
+           Invalid (Ctx, F_Enumeration_Vector)
+           and Invalid (Ctx, F_AV_Enumeration_Vector))
        and Has_Buffer (Ctx)
        and not RFLX.Sequence.Enumeration_Vector.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -780,15 +792,13 @@ is
        and Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
        and Field_Size (Ctx, F_Enumeration_Vector) = Field_Size (Ctx, F_Enumeration_Vector)'Old
        and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
-       and Context_Cursor (Ctx, F_Integer_Vector) = Context_Cursor (Ctx, F_Integer_Vector)'Old
-       and Context_Cursor (Ctx, F_AV_Enumeration_Vector) = Context_Cursor (Ctx, F_AV_Enumeration_Vector)'Old,
+       and Context_Cursor (Ctx, F_Integer_Vector) = Context_Cursor (Ctx, F_Integer_Vector)'Old,
      Depends =>
        (Ctx => (Ctx, Seq_Ctx), Seq_Ctx => Seq_Ctx);
 
    procedure Update_AV_Enumeration_Vector (Ctx : in out Context; Seq_Ctx : in out RFLX.Sequence.AV_Enumeration_Vector.Context) with
      Pre =>
        RFLX.Sequence.Message.Present (Ctx, RFLX.Sequence.Message.F_AV_Enumeration_Vector)
-       and then RFLX.Sequence.Message.Complete_AV_Enumeration_Vector (Ctx, Seq_Ctx)
        and then not RFLX.Sequence.Message.Has_Buffer (Ctx)
        and then RFLX.Sequence.AV_Enumeration_Vector.Has_Buffer (Seq_Ctx)
        and then Ctx.Buffer_First = Seq_Ctx.Buffer_First
@@ -796,7 +806,12 @@ is
        and then Seq_Ctx.First = Field_First (Ctx, F_AV_Enumeration_Vector)
        and then Seq_Ctx.Last = Field_Last (Ctx, F_AV_Enumeration_Vector),
      Post =>
-       Present (Ctx, F_AV_Enumeration_Vector)
+       (if
+           RFLX.Sequence.Message.Complete_AV_Enumeration_Vector (Ctx, Seq_Ctx)
+        then
+           Present (Ctx, F_AV_Enumeration_Vector)
+        else
+           Invalid (Ctx, F_AV_Enumeration_Vector))
        and Has_Buffer (Ctx)
        and not RFLX.Sequence.AV_Enumeration_Vector.Has_Buffer (Seq_Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

@@ -824,13 +824,16 @@ is
    end Switch_To_Options;
 
    procedure Update_Options (Ctx : in out Context; Seq_Ctx : in out RFLX.IPv4.Options.Context) is
-      Valid_Sequence : constant Boolean := RFLX.IPv4.Options.Valid (Seq_Ctx);
+      Valid_Sequence : constant Boolean := RFLX.IPv4.Packet.Complete_Options (Ctx, Seq_Ctx);
       Buffer : RFLX_Types.Bytes_Ptr;
    begin
       RFLX.IPv4.Options.Take_Buffer (Seq_Ctx, Buffer);
       Ctx.Buffer := Buffer;
       if Valid_Sequence then
          Ctx.Cursors (F_Options) := (State => S_Valid, First => Ctx.Cursors (F_Options).First, Last => Ctx.Cursors (F_Options).Last, Value => Ctx.Cursors (F_Options).Value, Predecessor => Ctx.Cursors (F_Options).Predecessor);
+      else
+         Reset_Dependent_Fields (Ctx, F_Options);
+         Ctx.Cursors (F_Options) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Options).Predecessor);
       end if;
    end Update_Options;
 

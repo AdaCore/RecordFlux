@@ -876,6 +876,80 @@ package body RFLX.Sequence_Tests is
       RFLX_Types.Free (Buffer);
    end Test_Parsing_Message_Sequence_Loop;
 
+   procedure Test_Parsing_Invalid_Message_Sequence (T : in out AUnit.Test_Cases.Test_Case'Class) with
+     SPARK_Mode, Pre => True
+   is
+      pragma Unreferenced (T);
+      Buffer           : RFLX_Builtin_Types.Bytes_Ptr := new RFLX_Builtin_Types.Bytes'(5, 1, 0, 8, 0, 0);
+      Context          : Sequence.Messages_Message.Context;
+      Length           : Sequence.Length;
+      Sequence_Context : Sequence.Inner_Messages.Context;
+      Element_Context  : Sequence.Inner_Message.Context;
+      I                : Natural := 1;
+      package Message renames Sequence.Messages_Message;
+      package Inner_Message renames Sequence.Inner_Message;
+   begin
+      Message.Initialize (Context, Buffer, RFLX_Types.To_Last_Bit_Index (Buffer'Last));
+      Message.Verify_Message (Context);
+
+      Assert (Message.Valid (Context, Message.F_Length),  "Invalid Length");
+
+      Length := Message.Get_Length (Context);
+
+      Assert (Length'Image, Sequence.Length'Image (5), "Unexpected Length");
+      Assert (Message.Present (Context, Message.F_Messages), "Invalid Messages or Buffer");
+
+      Message.Switch_To_Messages (Context, Sequence_Context);
+
+      while Sequence.Inner_Messages.Has_Element (Sequence_Context) loop
+         pragma Loop_Invariant (Sequence.Inner_Messages.Has_Buffer (Sequence_Context));
+         pragma Loop_Invariant (Context.Buffer_First = Sequence_Context.Buffer_First);
+         pragma Loop_Invariant (Context.Buffer_Last = Sequence_Context.Buffer_Last);
+         pragma Loop_Invariant (Sequence_Context.First = Sequence_Context.First'Loop_Entry);
+         pragma Loop_Invariant (Sequence_Context.Last = Sequence_Context.Last'Loop_Entry);
+         pragma Loop_Invariant (not Inner_Message.Has_Buffer (Element_Context));
+
+         Assert (I <= 2, "Unexpected element");
+
+         Sequence.Inner_Messages.Switch (Sequence_Context, Element_Context);
+
+         Inner_Message.Verify_Message (Element_Context);
+
+         Assert (not Inner_Message.Valid_Message (Element_Context),
+                 "Valid Inner_Message " & I'Image);
+
+         Sequence.Inner_Messages.Update (Sequence_Context, Element_Context);
+
+         I := I + 1;
+      end loop;
+
+      Assert (I'Image, Natural'Image (3), "Unexpected number of elements");
+      Assert (not Message.Valid (Context, Message.F_Messages),
+              "Valid Messages before context update");
+      Assert (not Message.Complete_Messages (Context, Sequence_Context), "Valid Messages_Message");
+
+      -- Eng/RecordFlux/Workarounds#32
+      pragma Warnings (Off, "unused assignment to ""Sequence_Context""");
+      pragma Warnings (Off, """Sequence_Context"" is set by ""*"" but not used after the call");
+      Message.Update_Messages (Context, Sequence_Context);
+      pragma Warnings (On, """Sequence_Context"" is set by ""*"" but not used after the call");
+      pragma Warnings (On, "unused assignment to ""Sequence_Context""");
+
+      Assert (not Message.Valid (Context, Message.F_Messages),
+              "Valid Messages after context update");
+
+      Assert (not Message.Valid_Message (Context), "Valid Message after complete parsing");
+
+      -- Eng/RecordFlux/Workarounds#32
+      pragma Warnings (Off, "unused assignment to ""Context""");
+      pragma Warnings (Off, """Context"" is set by ""*"" but not used after the call");
+      Message.Take_Buffer (Context, Buffer);
+      pragma Warnings (On, """Context"" is set by ""*"" but not used after the call");
+      pragma Warnings (On, "unused assignment to ""Context""");
+
+      RFLX_Types.Free (Buffer);
+   end Test_Parsing_Invalid_Message_Sequence;
+
    procedure Test_Generating_Message_Sequence (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
@@ -1278,6 +1352,8 @@ package body RFLX.Sequence_Tests is
                         "Parsing message sequence (sequential)");
       Register_Routine (T, Test_Parsing_Message_Sequence_Loop'Access,
                         "Parsing message sequence (loop)");
+      Register_Routine (T, Test_Parsing_Invalid_Message_Sequence'Access,
+                        "Parsing invalid message sequence");
       Register_Routine (T, Test_Generating_Message_Sequence'Access,
                         "Generating message sequence");
       Register_Routine (T, Test_Generating_Message_Sequence_Independent'Access,
