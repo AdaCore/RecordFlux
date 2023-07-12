@@ -1544,8 +1544,6 @@ class Parser:
             if spec:
                 specifications.append(spec)
 
-            error.extend(style.check(f))
-
         _check_for_duplicate_specifications(
             error, [*self._specifications.values(), *specifications]
         )
@@ -1568,7 +1566,6 @@ class Parser:
         rule: str = lang.GrammarRule.main_rule_rule,
     ) -> None:
         error = RecordFluxError()
-        specifications = []
         string = textwrap.dedent(string)
         unit = lang.AnalysisContext().get_from_buffer(str(filename), string, rule=rule)
 
@@ -1576,17 +1573,16 @@ class Parser:
             error.extend(style.check_string(string))
             if unit.root is not None:
                 assert isinstance(unit.root, lang.Specification)
-                specifications.append(SpecificationFile.create(error, unit.root, filename))
+                spec = SpecificationFile.create(error, unit.root, filename)
+                _check_for_duplicate_specifications(error, [*self._specifications.values(), spec])
 
-        _check_for_duplicate_specifications(
-            error, [*self._specifications.values(), *specifications]
-        )
+                error.propagate()
+
+                self._specifications = _sort_specs_topologically(
+                    {**self._specifications, spec.package: spec}
+                )
 
         error.propagate()
-
-        self._specifications = _sort_specs_topologically(
-            {**self._specifications, **{s.package: s for s in specifications}}
-        )
 
     def create_unchecked_model(self) -> model.UncheckedModel:
         error = RecordFluxError()
@@ -1622,7 +1618,12 @@ class Parser:
         log.info("Parsing %s", filename)
         unit = lang.AnalysisContext().get_from_file(str(filename))
 
-        if diagnostics_to_error(unit.diagnostics, error, filename) or not unit.root:
+        if diagnostics_to_error(unit.diagnostics, error, filename):
+            return None
+        else:
+            error.extend(style.check(filename))
+
+        if not unit.root:
             return None
 
         assert isinstance(unit.root, lang.Specification)
@@ -1662,7 +1663,6 @@ class Parser:
                                 and c.name not in self._specifications
                             ]
                         )
-                    error.extend(style.check(f))
                     break
             else:
                 error.extend(
