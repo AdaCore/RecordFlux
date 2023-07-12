@@ -46,7 +46,7 @@ def check(spec_file: Path) -> RecordFluxError:
 def check_string(specification: str, spec_file: Path = Path("<stdin>")) -> RecordFluxError:
     error = RecordFluxError()
 
-    if not specification:
+    if specification in ("", "\n"):
         return error
 
     lines = specification.split("\n")

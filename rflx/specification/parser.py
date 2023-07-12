@@ -1574,8 +1574,9 @@ class Parser:
 
         if not diagnostics_to_error(unit.diagnostics, error, filename):
             error.extend(style.check_string(string))
-            assert isinstance(unit.root, lang.Specification)
-            specifications.append(SpecificationFile.create(error, unit.root, filename))
+            if unit.root is not None:
+                assert isinstance(unit.root, lang.Specification)
+                specifications.append(SpecificationFile.create(error, unit.root, filename))
 
         _check_for_duplicate_specifications(
             error, [*self._specifications.values(), *specifications]

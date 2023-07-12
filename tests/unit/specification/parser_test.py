@@ -217,6 +217,16 @@ def test_parse_string_error() -> None:
         p.parse_string("package A is end A;", filename=Path("a/b.rflx"))
 
 
+def test_parse_string_empty() -> None:
+    p = parser.Parser()
+    p.parse_string("")
+
+
+def test_parse_string_empty_file() -> None:
+    p = parser.Parser()
+    p.parse_string("\n")
+
+
 @pytest.mark.parametrize("spec", ["empty_file", "comment_only"])
 def test_parse_empty_specfication(spec: str) -> None:
     assert_ast_files([f"{SPEC_DIR}/{spec}.rflx"], {})
