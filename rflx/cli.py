@@ -8,11 +8,12 @@ import shutil
 import sys
 import traceback
 from collections.abc import Sequence
+from importlib import metadata
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Optional, Union
 
-from pkg_resources import get_distribution, resource_filename
+import importlib_resources
 
 from rflx import __version__
 from rflx.converter import iana
@@ -291,9 +292,10 @@ in the report."""
 
 def version() -> str:
     dependencies = [
-        f"{r.project_name} {get_distribution(r.project_name).version}"
-        for r in get_distribution("RecordFlux").requires()
-        if not r.project_name.startswith("RecordFlux")
+        f"{name} {metadata.version(name)}"
+        for r in metadata.requires("RecordFlux") or []
+        if not r.startswith("RecordFlux") and "; extra == " not in r
+        for name in [r.split()[0]]
     ]
     return "\n".join(
         [
@@ -444,7 +446,8 @@ def validate(args: argparse.Namespace) -> None:
 
 
 def setup(args: argparse.Namespace) -> None:
-    gnatstudio_dir = resource_filename("rflx_ide", "gnatstudio/")
+    # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
+    gnatstudio_dir = importlib_resources.files("rflx_ide") / "gnatstudio"
     plugins_dir = args.gnat_studio_dir / "plug-ins"
     if not plugins_dir.exists():
         plugins_dir.mkdir(parents=True, exist_ok=True)

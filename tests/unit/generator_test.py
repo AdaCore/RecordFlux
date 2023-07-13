@@ -6,7 +6,6 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-import pkg_resources
 import pytest
 from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
@@ -129,14 +128,14 @@ def test_generate(  # noqa: PLR0913
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_generate_missing_template_directory(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: "non-existent directory")
+    monkeypatch.setattr(const, "TEMPLATE_DIR", tmp_path / "non-existent directory")
     with pytest.raises(AssertionError, match="^template directory not found"):
         Generator().generate(Model(), Integration(), tmp_path)
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_generate_missing_template_files(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(pkg_resources, "resource_filename", lambda *x: tmp_path)
+    monkeypatch.setattr(const, "TEMPLATE_DIR", tmp_path)
     with pytest.raises(AssertionError, match="^template file not found"):
         Generator().generate(Model(), Integration(), tmp_path)
 

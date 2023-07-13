@@ -88,6 +88,7 @@ setup(
     install_requires=[
         "attrs >=20, <22",
         "icontract >=2.3.4, <3",
+        "importlib_resources >=6, <7",  # TODO(eng/recordflux/RecordFlux#1359): Remove
         "pydantic >=1, <2",
         "pydotplus >=2, <3",
         "ruamel.yaml >=0.17, <0.18",
@@ -105,7 +106,6 @@ setup(
             "sphinx >=4.5, <5",
             "sphinx-rtd-theme >= 1.1.1, <1.2",
             "tqdm >=4.61.1, <4.63",
-            "types-pkg_resources >=0.1.3, <0.2",
         ]
     },
     scripts=["bin/rflx"],

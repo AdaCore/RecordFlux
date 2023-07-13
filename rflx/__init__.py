@@ -1,3 +1,3 @@
-from pkg_resources import get_distribution
+from importlib.metadata import version
 
-__version__ = get_distribution("RecordFlux").version
+__version__ = version("RecordFlux")

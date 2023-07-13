@@ -3,22 +3,26 @@
 """Check that all development dependencies of RecordFlux are installed."""
 
 import sys
+from importlib.metadata import PackageNotFoundError, requires, version
 
-from pkg_resources import DistributionNotFound, get_distribution
+from packaging.markers import Marker
+from packaging.requirements import Requirement
 
 
 def check_dependencies() -> bool:
     result = True
 
-    requirements = get_distribution("RecordFlux").requires(extras=("devel",))
-    for r in requirements:
+    for requirement in requires("RecordFlux") or []:
+        r = Requirement(requirement)
+        if r.marker != Marker('extra == "devel"'):
+            continue
         try:
-            pkg = get_distribution(r.project_name)
-            if pkg not in r:
-                print(f"{r.project_name} has version {pkg.version}, should be {r}")
+            installed_version = version(r.name)
+            if installed_version not in r.specifier:
+                print(f"{r.name} has version {installed_version}, should be {r.specifier}")
                 result = False
-        except DistributionNotFound:
-            print(f"{r.project_name} not found")
+        except PackageNotFoundError:
+            print(f"{r.name} not found")
             result = False
 
     return result

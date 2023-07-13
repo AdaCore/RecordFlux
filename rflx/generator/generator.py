@@ -8,8 +8,6 @@ from datetime import date
 from pathlib import Path
 from typing import Optional
 
-import pkg_resources
-
 from rflx import __version__, expression as expr
 from rflx.ada import (
     FALSE,
@@ -131,7 +129,7 @@ class Generator:
         self._debug = debug
         self._ignore_unsupported_checksum = ignore_unsupported_checksum
         self._executor = ProcessPoolExecutor(max_workers=workers)
-        self._template_dir = Path(pkg_resources.resource_filename(*const.TEMPLATE_DIR))
+        self._template_dir = const.TEMPLATE_DIR
         assert self._template_dir.is_dir(), "template directory not found"
 
     def generate(

@@ -55,7 +55,6 @@ stages:
 .setup_python_venv: &setup_python_venv
     - python$PYTHON_VERSION -m venv --clear .venv$PYTHON_VERSION
     - . .venv$PYTHON_VERSION/bin/activate
-    - python -m pip install --upgrade pip wheel
     - make init install
 
 setup:
@@ -101,7 +100,6 @@ setup:
     - if [ $CLEAN_RECORDFLUX_SETUP -eq 1 ]; then
         python$PYTHON_VERSION -m venv --clear .venv;
         . .venv/bin/activate;
-        python -m pip install --upgrade pip wheel;
         make init install;
       else
         . .venv$PYTHON_VERSION/bin/activate;

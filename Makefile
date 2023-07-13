@@ -216,8 +216,8 @@ $(GNATPROVE_CACHE_DIR):
 .PHONY: install_build_deps install install_devel upgrade_devel install_devel_edge install_git_hooks install_gnat printenv_gnat
 
 install_build_deps:
-	tools/check_pip_version.py
-	pip install setuptools_scm wheel build contrib/langkit
+	pip3 install -U pip>=22.2
+	pip3 install packaging setuptools_scm wheel build contrib/langkit
 
 install: install_build_deps $(SDIST)
 	$(MAKE) -C devutils install_devel
@@ -226,9 +226,6 @@ install: install_build_deps $(SDIST)
 install_devel: install_build_deps parser
 	$(MAKE) -C devutils install_devel
 	pip3 install --force-reinstall -e ".[devel]" --config-settings editable_mode=strict
-
-upgrade_devel:
-	tools/upgrade_dependencies.py
 
 install_devel_edge: install_devel
 	$(MAKE) -C devutils install_devel_edge
