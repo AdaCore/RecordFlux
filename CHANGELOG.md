@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Locations of message fields and field sizes in error messages (eng/recordflux/RecordFlux#1349)
 - Invalid use of First aspect that led to overlay of multiple fields (eng/recordflux/RecordFlux#1332)
 - Update of message field with invalid sequence (eng/recordflux/RecordFlux#1353)
+- Detection of negative field size (eng/recordflux/RecordFlux#1357)
 
 ## [0.11.0] - 2023-06-16
 

@@ -107,10 +107,10 @@ package SLPv2 is
          Authentication_Block_Timestamp : U32;
          SLP_SPI_String_Length : U16;
          SLP_SPI_String : Opaque
-            with Size => SLP_SPI_String_Length * 8;
-         Structured_Authentication_Block : Opaque
-            with Size => 8 * Authentication_Block_Length - (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1)
+            with Size => SLP_SPI_String_Length * 8
             if (8 * Authentication_Block_Length >= (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1));
+         Structured_Authentication_Block : Opaque
+            with Size => 8 * Authentication_Block_Length - (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1);
       end message;
    type Authentication_Blocks is sequence of Authentication_Block;
 

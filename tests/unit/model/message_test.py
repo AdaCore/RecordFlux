@@ -1907,6 +1907,31 @@ def test_invalid_negative_field_size_2() -> None:
     )
 
 
+def test_invalid_negative_field_size_3() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            size=Sub(Mul(Variable("F1"), Number(8)), Number(16), location=Location((1, 2))),
+        ),
+        Link(
+            Field("F2"),
+            FINAL,
+            condition=Greater(Variable("F1"), Number(1)),
+        ),
+    ]
+    types = {
+        Field("F1"): INTEGER,
+        Field("F2"): OPAQUE,
+    }
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:1:2: model: error: negative size for field "F2" [(]F1 -> F2[)]$',
+    )
+
+
 def test_payload_no_size() -> None:
     structure = [
         Link(INITIAL, Field("F1")),

@@ -643,17 +643,19 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
 
            type M1 is
               message
-                 Size : Payload_Size;
-                 Payload : Opaque
-                    with Size => Size
+                 Size : Payload_Size
                     if Size mod 8 = 0;
+                 Payload : Opaque
+                    with Size => Size;
               end message;
 
            type M2 (Size : Payload_Size) is
               message
+                 null
+                    then Payload
+                       if Size mod 8 = 0;
                  Payload : Opaque
-                    with Size => Size
-                    if Size mod 8 = 0;
+                    with Size => Size;
               end message;
 
            generic

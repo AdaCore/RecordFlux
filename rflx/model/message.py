@@ -1948,13 +1948,6 @@ class Message(AbstractMessage):
                 )
 
                 facts = [fact for link in path for fact in self._link_expressions(link)]
-
-                outgoing = self.outgoing(f)
-                if f != FINAL and outgoing:
-                    facts.append(
-                        expr.Or(*[o.condition for o in outgoing], location=f.identifier.location)
-                    )
-
                 facts.extend(self.type_constraints(negative))
                 facts.extend(self.type_constraints(start))
 
