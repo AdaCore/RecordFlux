@@ -581,8 +581,13 @@ class Generator:
                 message_generator.create_successor_function,
                 self._prefix,
                 message,
+                sequence_fields,
             ),
-            self._executor.submit(message_generator.create_invalid_successor_function, message),
+            self._executor.submit(
+                message_generator.create_invalid_successor_function,
+                message,
+                SerializerGenerator.requires_set_procedure(message),
+            ),
             self._executor.submit(message_generator.create_valid_next_function, message),
             self._executor.submit(
                 message_generator.create_available_space_function,

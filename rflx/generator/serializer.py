@@ -321,19 +321,6 @@ class SerializerGenerator:
                             ],
                             [set_context_cursor(CursorState.WELL_FORMED)],
                         ),
-                        Assignment(
-                            Indexed(
-                                Variable("Ctx.Cursors"),
-                                Call(
-                                    "Successor",
-                                    [Variable("Ctx"), Variable("Fld")],
-                                ),
-                            ),
-                            NamedAggregate(
-                                ("State", Variable("S_Invalid")),
-                                ("others", Variable("<>")),
-                            ),
-                        ),
                         PragmaStatement(
                             "Assert",
                             [
@@ -510,6 +497,7 @@ class SerializerGenerator:
                                             Variable("Fld"),
                                             loop_entry=False,
                                             or_invalid=False,
+                                            including_limit=False,
                                         ),
                                     ]
                                     if len(message.fields) > 1

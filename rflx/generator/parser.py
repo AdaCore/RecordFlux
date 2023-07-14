@@ -347,27 +347,6 @@ class ParserGenerator:
             else set_context_cursor_scalar()
             if scalar_fields and not composite_fields
             else set_context_cursor_composite_field("Fld"),
-            *(
-                [
-                    # Eng/RecordFlux/RecordFlux#664
-                    # The provability of the context predicate is increased by splitting the
-                    # assignment into multiple statements.
-                    Assignment(
-                        Indexed(
-                            Variable("Ctx.Cursors"),
-                            Call(
-                                "Successor",
-                                [Variable("Ctx"), Variable("Fld")],
-                            ),
-                        ),
-                        NamedAggregate(
-                            ("others", Variable("<>")),
-                        ),
-                    ),
-                ]
-                if len(message.fields) > 1
-                else []
-            ),
         ]
 
         return UnitPart(

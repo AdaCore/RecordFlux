@@ -48,6 +48,7 @@ from rflx.ada import (
     Length,
     Less,
     LessEqual,
+    LoopEntry,
     Max,
     Mod,
     NamedAggregate,
@@ -78,7 +79,6 @@ from rflx.ada import (
     SubprogramBody,
     SubprogramDeclaration,
     SubprogramVariant,
-    Succ,
     UnitPart,
     UseTypeClause,
     ValueRange,
@@ -2220,7 +2220,16 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_successor_function(prefix: str, message: Message) -> UnitPart:
+def create_successor_function(
+    prefix: str,
+    message: Message,
+    sequence_fields: abc.Mapping[Field, Type],
+) -> UnitPart:
+    if (
+        len(sequence_fields) == 0
+        and len([t for t in message.field_types.values() if isinstance(t, (Opaque, Sequence))]) == 0
+    ):
+        return UnitPart()
     specification = FunctionSpecification(
         "Successor",
         "Virtual_Field",
@@ -2229,57 +2238,60 @@ def create_successor_function(prefix: str, message: Message) -> UnitPart:
 
     return UnitPart(
         [],
-        [
-            # Eng/RecordFlux/Workarounds#31
-            Pragma("Warnings", [Variable("Off"), String("precondition is always False")]),
-            ExpressionFunctionDeclaration(
-                specification,
-                Case(
-                    Variable("Fld"),
-                    [
-                        (
-                            Variable(f.affixed_name),
-                            If(
-                                [
-                                    (
-                                        l.condition.substituted(
-                                            common.substitution(message, prefix),
+        common.wrap_warning(
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Fld"),
+                        [
+                            (
+                                Variable(f.affixed_name),
+                                If(
+                                    [
+                                        (
+                                            l.condition.substituted(
+                                                common.substitution(message, prefix),
+                                            )
+                                            .simplified()
+                                            .ada_expr(),
+                                            Variable(l.target.affixed_name),
                                         )
-                                        .simplified()
-                                        .ada_expr(),
-                                        Variable(l.target.affixed_name),
-                                    )
-                                    for l in message.outgoing(f)
-                                ],
-                                Variable(INITIAL.affixed_name),
-                            ),
-                        )
-                        for f in message.fields
-                    ],
-                ),
-                [
-                    Precondition(
-                        And(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
-                            Call(
-                                prefix * message.identifier * "Well_Formed",
-                                [Variable("Ctx"), Variable("Fld")],
-                            ),
-                            Call(
-                                prefix * message.identifier * "Valid_Next",
-                                [Variable("Ctx"), Variable("Fld")],
+                                        for l in message.outgoing(f)
+                                    ],
+                                    Variable(INITIAL.affixed_name),
+                                ),
+                            )
+                            for f in message.fields
+                        ],
+                    ),
+                    [
+                        Precondition(
+                            And(
+                                Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
+                                Call(
+                                    prefix * message.identifier * "Well_Formed",
+                                    [Variable("Ctx"), Variable("Fld")],
+                                ),
+                                Call(
+                                    prefix * message.identifier * "Valid_Next",
+                                    [Variable("Ctx"), Variable("Fld")],
+                                ),
                             ),
                         ),
-                    ),
-                ],
-            ),
-            Pragma("Warnings", [Variable("On"), String("precondition is always False")]),
-        ],
+                    ],
+                ),
+            ],
+            [
+                # Eng/RecordFlux/Workarounds#31
+                "precondition is always False",
+            ],
+        ),
     )
 
 
-def create_invalid_successor_function(message: Message) -> UnitPart:
-    if len(message.fields) == 1:
+def create_invalid_successor_function(message: Message, requires_set_procedure: bool) -> UnitPart:
+    if len(message.fields) == 1 or not requires_set_procedure:
         return UnitPart()
 
     specification = FunctionSpecification(
@@ -2759,11 +2771,11 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
     field_location_invariant = And(
         Equal(
             Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-            Variable("First"),
+            LoopEntry(Call("Field_First", [Variable("Ctx"), Variable("Fld")])),
         ),
         Equal(
             Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
-            Variable("Size"),
+            LoopEntry(Call("Field_Size", [Variable("Ctx"), Variable("Fld")])),
         ),
     )
 
@@ -2772,69 +2784,36 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
         [
             SubprogramBody(
                 specification,
+                [],
                 [
-                    ObjectDeclaration(
-                        ["First"],
-                        const.TYPES_BIT_LENGTH,
-                        Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
-                        constant=True,
-                        aspects=[Ghost()],
-                    ),
-                    ObjectDeclaration(
-                        ["Size"],
-                        const.TYPES_BIT_LENGTH,
-                        Call("Field_Size", [Variable("Ctx"), Variable("Fld")]),
-                        constant=True,
-                        aspects=[Ghost()],
-                    ),
-                ],
-                [
-                    PragmaStatement("Assert", [field_location_invariant]),
-                    *(
-                        []
-                        if len(message.fields) == 1
-                        else [
-                            ForIn(
-                                "Fld_Loop",
-                                ValueRange(Succ("Field", Variable("Fld")), Last("Field")),
+                    ForIn(
+                        "Fld_Loop",
+                        ValueRange(Variable("Fld"), Last("Field")),
+                        [
+                            PragmaStatement("Loop_Invariant", [field_location_invariant]),
+                            PragmaStatement(
+                                "Loop_Invariant",
                                 [
-                                    Assignment(
-                                        Indexed(
-                                            Variable("Ctx.Cursors"),
-                                            Variable("Fld_Loop"),
-                                        ),
-                                        NamedAggregate(
-                                            ("State", Variable("S_Invalid")),
-                                            ("others", Variable("<>")),
-                                        ),
-                                    ),
-                                    PragmaStatement("Loop_Invariant", [field_location_invariant]),
-                                    PragmaStatement(
-                                        "Loop_Invariant",
-                                        [
-                                            common.unchanged_cursor_before_or_invalid(
-                                                Variable("Fld_Loop"),
-                                                loop_entry=True,
-                                            ),
-                                        ],
+                                    common.unchanged_cursor_before_or_invalid(
+                                        Variable("Fld_Loop"),
+                                        loop_entry=True,
+                                        including_limit=True,
                                     ),
                                 ],
-                                reverse=True,
                             ),
-                        ]
+                            Assignment(
+                                Indexed(
+                                    Variable("Ctx.Cursors"),
+                                    Variable("Fld_Loop"),
+                                ),
+                                NamedAggregate(
+                                    ("State", Variable("S_Invalid")),
+                                    ("others", Variable("<>")),
+                                ),
+                            ),
+                        ],
+                        reverse=True,
                     ),
-                    PragmaStatement("Assert", [field_location_invariant]),
-                    Assignment(
-                        Indexed(
-                            Variable("Ctx.Cursors"),
-                            Variable("Fld"),
-                        ),
-                        NamedAggregate(
-                            ("State", Variable("S_Invalid")),
-                            ("others", Variable("<>")),
-                        ),
-                    ),
-                    PragmaStatement("Assert", [field_location_invariant]),
                 ],
                 [
                     Precondition(
@@ -2848,20 +2827,6 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
                     Postcondition(
                         And(
                             Call("Valid_Next", [Variable("Ctx"), Variable("Fld")]),
-                            Call(
-                                "Invalid",
-                                [Indexed(Variable("Ctx.Cursors"), Variable("Fld"))],
-                            ),
-                            *(
-                                [
-                                    Call(
-                                        "Invalid_Successor",
-                                        [Variable("Ctx"), Variable("Fld")],
-                                    ),
-                                ]
-                                if len(message.fields) > 1
-                                else []
-                            ),
                             *common.context_invariant(message),
                             *[
                                 Equal(e, Old(e))

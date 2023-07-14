@@ -121,8 +121,6 @@ is
        RFLX.Fixed_Size.Simple_Message.Valid_Next (Ctx, Fld),
      Post =>
        Valid_Next (Ctx, Fld)
-       and Invalid (Ctx.Cursors (Fld))
-       and Invalid_Successor (Ctx, Fld)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -133,25 +131,14 @@ is
        and (for all F in Field =>
                (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F) else Invalid (Ctx, F)))
    is
-      First : constant RFLX_Types.Bit_Length := Field_First (Ctx, Fld) with
-        Ghost;
-      Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld) with
-        Ghost;
    begin
-      pragma Assert (Field_First (Ctx, Fld) = First
-                     and Field_Size (Ctx, Fld) = Size);
-      for Fld_Loop in reverse Field'Succ (Fld) .. Field'Last loop
-         Ctx.Cursors (Fld_Loop) := (State => S_Invalid, others => <>);
-         pragma Loop_Invariant (Field_First (Ctx, Fld) = First
-                                and Field_Size (Ctx, Fld) = Size);
+      for Fld_Loop in reverse Fld .. Field'Last loop
+         pragma Loop_Invariant (Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Loop_Entry
+                                and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Loop_Entry);
          pragma Loop_Invariant ((for all F in Field =>
-                                    (if F < Fld_Loop then Ctx.Cursors (F) = Ctx.Cursors'Loop_Entry (F) else Invalid (Ctx, F))));
+                                    (if F <= Fld_Loop then Ctx.Cursors (F) = Ctx.Cursors'Loop_Entry (F) else Invalid (Ctx, F))));
+         Ctx.Cursors (Fld_Loop) := (State => S_Invalid, others => <>);
       end loop;
-      pragma Assert (Field_First (Ctx, Fld) = First
-                     and Field_Size (Ctx, Fld) = Size);
-      Ctx.Cursors (Fld) := (State => S_Invalid, others => <>);
-      pragma Assert (Field_First (Ctx, Fld) = First
-                     and Field_Size (Ctx, Fld) = Size);
    end Reset_Dependent_Fields;
 
    function Composite_Field (Fld : Field) return Boolean is
@@ -201,7 +188,6 @@ is
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value);
                end if;
-               Ctx.Cursors (Successor (Ctx, Fld)) := (others => <>);
             else
                Ctx.Cursors (Fld) := (others => <>);
             end if;
@@ -306,7 +292,6 @@ is
       else
          Ctx.Cursors (Fld) := (State => S_Well_Formed, First => First, Last => Last, Value => Val);
       end if;
-      Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, others => <>);
       pragma Assert (Last = (Field_First (Ctx, Fld) + Size) - 1);
    end Set;
 

@@ -924,6 +924,7 @@ def unchanged_cursor_before_or_invalid(
     limit: Expr,
     loop_entry: bool,
     or_invalid: bool = True,
+    including_limit: bool = False,
 ) -> Expr:
     return ForAllIn(
         "F",
@@ -931,7 +932,9 @@ def unchanged_cursor_before_or_invalid(
         IfExpr(
             [
                 (
-                    Less(Variable("F"), limit),
+                    LessEqual(Variable("F"), limit)
+                    if including_limit
+                    else Less(Variable("F"), limit),
                     Equal(
                         Indexed(
                             Variable("Ctx.Cursors"),
