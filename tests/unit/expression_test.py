@@ -727,7 +727,7 @@ def test_math_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
 @pytest.mark.parametrize("expression", [Add, Mul, Sub, Div, Pow, Mod])
 def test_math_expr_z3expr_error(expression: Callable[[Expr, Expr], Expr]) -> None:
     with pytest.raises(Z3TypeError):
-        expression(String("X"), Number(1)).z3expr()
+        expression(String("X"), TRUE).z3expr()
 
 
 def test_add_neg() -> None:
@@ -1392,6 +1392,10 @@ def test_aggregate_precedence() -> None:
     assert Aggregate(Number(1), Number(2)).precedence == Precedence.LITERAL
 
 
+def test_aggregate_z3expr() -> None:
+    assert Aggregate(Number(1), Number(2)).z3expr() == z3.Int("[1, 2]")
+
+
 def test_aggregate_to_tac() -> None:
     assert Aggregate(Add(First(Variable("X", type_=INT_TY)), Number(1)), Number(2)).to_tac(
         "R", id_generator()
@@ -1546,7 +1550,7 @@ def test_relation_variables() -> None:
 @pytest.mark.parametrize("relation", [Less, LessEqual, GreaterEqual, Greater])
 def test_relation_z3expr_error(relation: Callable[[Expr, Expr], Expr]) -> None:
     with pytest.raises(Z3TypeError):
-        relation(String("X"), Number(1)).z3expr()
+        relation(Variable("X", type_=rty.BOOLEAN), Number(1)).z3expr()
 
 
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])

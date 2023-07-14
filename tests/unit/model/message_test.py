@@ -1020,8 +1020,9 @@ def test_invalid_relation_to_aggregate() -> None:
     )
 
 
-def test_invalid_element_in_relation_to_aggregate() -> None:
-    integer = Integer("P::Integer", Number(0), Number(255), Number(8))
+@pytest.mark.parametrize("lower", [Number(0), Number(1)])
+def test_invalid_element_in_relation_to_aggregate(lower: Number) -> None:
+    integer = Integer("P::Integer", lower, Number(255), Number(8))
     structure = [
         Link(INITIAL, Field("F1")),
         Link(
@@ -1036,7 +1037,7 @@ def test_invalid_element_in_relation_to_aggregate() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:10:20: model: error: expected integer type "P::Integer" \(0 .. 255\)\n'
+        rf'^<stdin>:10:20: model: error: expected integer type "P::Integer" \({lower} .. 255\)\n'
         r"<stdin>:10:20: model: info: found aggregate with element type universal integer"
         r" \(1 .. 2\)\n"
         r"model: info: on path F1 -> Final$",

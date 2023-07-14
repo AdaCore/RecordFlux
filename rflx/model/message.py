@@ -480,6 +480,7 @@ class AbstractMessage(mty.Type):
             (f.name, t)
             for f, t in self.types.items()
             if isinstance(t, mty.Scalar)
+            and t != mty.BOOLEAN
             and ID(f.name) not in self._qualified_enum_literals
             and f.name not in ["Message", "Final"]
         ]

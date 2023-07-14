@@ -2225,7 +2225,7 @@ class Aggregate(Expr):
         return ada.Aggregate(*[e.ada_expr() for e in self.elements])
 
     def z3expr(self) -> z3.ExprRef:
-        return z3.BoolVal(False)
+        return z3.Int(str(self))
 
     def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
         assert isinstance(self.type_, rty.Any)
@@ -2277,9 +2277,6 @@ class String(Aggregate):
 
     def ada_expr(self) -> ada.Expr:
         return ada.String(self.data)
-
-    def z3expr(self) -> z3.ExprRef:
-        return z3.BoolVal(False)
 
 
 class NamedAggregate(Expr):
@@ -2356,6 +2353,20 @@ class Relation(BinExpr):
     def precedence(self) -> Precedence:
         return Precedence.RELATIONAL_OPERATOR
 
+    def z3expr(self) -> z3.BoolRef:
+        left = self.left.z3expr()
+        right = self.right.z3expr()
+        if not (isinstance(left, z3.ArithRef) and isinstance(right, z3.ArithRef)) and not (
+            isinstance(left, z3.BoolRef) and isinstance(right, z3.BoolRef)
+        ):
+            raise Z3TypeError(
+                f'invalid relation between "{type(left).__name__}" and "{type(right).__name__}"'
+                f" in {self}"
+            )
+        result = self._operator(left, right)
+        assert isinstance(result, z3.BoolRef)
+        return result
+
     def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
         left_stmts, left_expr = _to_tac_basic_expr(self.left, variable_id)
         right_stmts, right_expr = _to_tac_basic_expr(self.right, variable_id)
@@ -2369,6 +2380,14 @@ class Relation(BinExpr):
                 origin=self,
             ),
         ]
+
+    @staticmethod
+    @abstractmethod
+    def _operator(
+        left: Union[z3.ArithRef, z3.BoolRef],
+        right: Union[z3.ArithRef, z3.BoolRef],
+    ) -> object:
+        raise NotImplementedError
 
 
 class Less(Relation):
@@ -2391,12 +2410,12 @@ class Less(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.Less(self.left.ada_expr(), self.right.ada_expr())
 
-    def z3expr(self) -> z3.BoolRef:
-        left = self.left.z3expr()
-        right = self.right.z3expr()
-        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
-            raise Z3TypeError("less relation between non-arithmetic terms")
-        return left < right
+    @staticmethod
+    def _operator(
+        left: Union[z3.ArithRef, z3.BoolRef],
+        right: Union[z3.ArithRef, z3.BoolRef],
+    ) -> object:
+        return operator.lt(left, right)
 
 
 class LessEqual(Relation):
@@ -2419,12 +2438,12 @@ class LessEqual(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.LessEqual(self.left.ada_expr(), self.right.ada_expr())
 
-    def z3expr(self) -> z3.BoolRef:
-        left = self.left.z3expr()
-        right = self.right.z3expr()
-        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
-            raise Z3TypeError("less-equal relation between non-arithmetic terms")
-        return left <= right
+    @staticmethod
+    def _operator(
+        left: Union[z3.ArithRef, z3.BoolRef],
+        right: Union[z3.ArithRef, z3.BoolRef],
+    ) -> object:
+        return operator.le(left, right)
 
 
 class Equal(Relation):
@@ -2444,12 +2463,12 @@ class Equal(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.Equal(self.left.ada_expr(), self.right.ada_expr())
 
-    def z3expr(self) -> z3.BoolRef:
-        left = self.left.z3expr()
-        right = self.right.z3expr()
-        result = left == right
-        assert isinstance(result, z3.BoolRef)
-        return result
+    @staticmethod
+    def _operator(
+        left: Union[z3.ArithRef, z3.BoolRef],
+        right: Union[z3.ArithRef, z3.BoolRef],
+    ) -> object:
+        return operator.eq(left, right)
 
 
 class GreaterEqual(Relation):
@@ -2472,12 +2491,12 @@ class GreaterEqual(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.GreaterEqual(self.left.ada_expr(), self.right.ada_expr())
 
-    def z3expr(self) -> z3.BoolRef:
-        left = self.left.z3expr()
-        right = self.right.z3expr()
-        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
-            raise Z3TypeError("greater-equal relation between non-arithmetic terms")
-        return left >= right
+    @staticmethod
+    def _operator(
+        left: Union[z3.ArithRef, z3.BoolRef],
+        right: Union[z3.ArithRef, z3.BoolRef],
+    ) -> object:
+        return operator.ge(left, right)
 
 
 class Greater(Relation):
@@ -2500,12 +2519,12 @@ class Greater(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.Greater(self.left.ada_expr(), self.right.ada_expr())
 
-    def z3expr(self) -> z3.BoolRef:
-        left = self.left.z3expr()
-        right = self.right.z3expr()
-        if not isinstance(left, z3.ArithRef) or not isinstance(right, z3.ArithRef):
-            raise Z3TypeError("greater relation between non-arithmetic terms")
-        return left > right
+    @staticmethod
+    def _operator(
+        left: Union[z3.ArithRef, z3.BoolRef],
+        right: Union[z3.ArithRef, z3.BoolRef],
+    ) -> object:
+        return operator.gt(left, right)
 
 
 class NotEqual(Relation):
@@ -2525,12 +2544,12 @@ class NotEqual(Relation):
     def ada_expr(self) -> ada.Expr:
         return ada.NotEqual(self.left.ada_expr(), self.right.ada_expr())
 
-    def z3expr(self) -> z3.BoolRef:
-        left = self.left.z3expr()
-        right = self.right.z3expr()
-        result = left != right
-        assert isinstance(result, z3.BoolRef)
-        return result
+    @staticmethod
+    def _operator(
+        left: Union[z3.ArithRef, z3.BoolRef],
+        right: Union[z3.ArithRef, z3.BoolRef],
+    ) -> object:
+        return operator.ne(left, right)
 
 
 class In(Relation):
@@ -2555,6 +2574,13 @@ class In(Relation):
     def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
         raise NotImplementedError
 
+    @staticmethod
+    def _operator(
+        left: Union[z3.ArithRef, z3.BoolRef],
+        right: Union[z3.ArithRef, z3.BoolRef],
+    ) -> object:
+        raise NotImplementedError
+
 
 class NotIn(Relation):
     def __neg__(self) -> Expr:
@@ -2576,6 +2602,13 @@ class NotIn(Relation):
         raise NotImplementedError
 
     def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+        raise NotImplementedError
+
+    @staticmethod
+    def _operator(
+        left: Union[z3.ArithRef, z3.BoolRef],
+        right: Union[z3.ArithRef, z3.BoolRef],
+    ) -> object:
         raise NotImplementedError
 
 
