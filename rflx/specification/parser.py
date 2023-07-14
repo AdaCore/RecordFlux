@@ -1553,11 +1553,11 @@ class Parser:
         self._parse_withed_files(
             error, [c for s in specifications for c in s.context_clauses], include_paths
         )
-        _check_for_dependency_cycles(error, specifications, self._specifications)
+
+        if not _check_for_dependency_cycles(error, specifications, self._specifications):
+            self._specifications = _sort_specs_topologically(self._specifications)
 
         error.propagate()
-
-        self._specifications = _sort_specs_topologically(self._specifications)
 
     def parse_string(
         self,
@@ -1770,13 +1770,18 @@ def _check_for_dependency_cycles(
     error: RecordFluxError,
     given_specs: list[SpecificationFile],
     specifications: Mapping[ID, SpecificationFile],
-) -> None:
+) -> bool:
+    result = False
+
     for spec in given_specs:
         for p, c in [(c.name, c) for c in spec.context_clauses]:
             try:
                 _check_for_dependency_cycle(p, c, [], specifications)
             except RecordFluxError as e:
+                result = True
                 error.extend(e)
+
+    return result
 
 
 def _check_for_dependency_cycle(

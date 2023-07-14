@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Missing quotes in error messages about invalid aspects (eng/recordflux/RecordFlux#1267)
+- Subsequent errors caused by style errors (eng/recordflux/RecordFlux#1268)
 
 ## [0.11.1] - 2023-07-14
 
