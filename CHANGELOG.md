@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for GNAT Pro 23.2
 
+### Fixed
+
+- Missing quotes in error messages about invalid aspects (eng/recordflux/RecordFlux#1267)
+
 ## [0.11.1] - 2023-07-14
 
 ### Fixed

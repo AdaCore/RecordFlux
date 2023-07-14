@@ -2843,7 +2843,7 @@ def test_parse_error_invalid_range_aspect() -> None:
            type T is range 1 .. 200 with Invalid => 42;
         end Test;
         """,
-        r"^<stdin>:2:14: parser: error: invalid aspect Invalid for range type Test::T$",
+        r'^<stdin>:2:14: parser: error: invalid aspect "Invalid" for range type "Test::T"$',
     )
 
 

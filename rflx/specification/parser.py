@@ -895,8 +895,8 @@ def create_range(
         error.extend(
             [
                 (
-                    f"invalid aspect {rangetype.f_size.f_identifier.text} "
-                    f"for range type {identifier}",
+                    f'invalid aspect "{rangetype.f_size.f_identifier.text}" '
+                    f'for range type "{identifier}"',
                     Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(rangetype, filename),
