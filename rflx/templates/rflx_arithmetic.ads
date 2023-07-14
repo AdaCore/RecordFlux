@@ -78,6 +78,9 @@ is
      with Pre => Mask < U64'Size,
           Post => Fits_Into (Mask_Upper'Result, Mask);
 
+   -- Eng/RecordFlux/Workarounds#50 (required for GNAT Pro 23.2)
+   pragma Warnings (Off, "aspect Unreferenced specified for ""Total_Bits""");
+
    -- Add A and B in the special case where A only uses the upper bits and B
    -- only the lower bits.
    function Add (A : U64; B : U64; Total_Bits, Lower_Bits : Natural) return U64
@@ -89,6 +92,8 @@ is
        and then Fits_Into (B, Lower_Bits),
      Post => Add'Result = A + B and Fits_Into (Add'Result, Total_Bits),
      Global => null;
+
+   pragma Warnings (On, "aspect Unreferenced specified for ""Total_Bits""");
 
    procedure Lemma_Size (Val : Base_Integer; Size : Positive)
    with Ghost,

@@ -77,6 +77,7 @@ is
    pragma Warnings (On, "condition can only be False if invalid values present");
 
    procedure Lemma_U64_Le16 (B : Base) is
+      pragma Unreferenced (B);
    begin
       null;
    end Lemma_U64_Le16;

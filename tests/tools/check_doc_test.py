@@ -102,7 +102,7 @@ def test_invalid_ada_code() -> None:
         match=(
             r"^<stdin>:3: error in code block\n"
             r"main.adb:1:01: (error: )?compilation unit expected\n"
-            r"gprbuild: [*][*][*] compilation phase failed\n$"
+            r"(gprbuild: [*][*][*] compilation phase failed\n)?$"
         ),
     ):
         check_file(
@@ -121,7 +121,7 @@ def test_invalid_ada_api_style() -> None:
         match=(
             r"^<stdin>:5: error in code block\n"
             r"main.adb:2:25: \(style\) space required\n"
-            r"gprbuild: [*][*][*] compilation phase failed\n$"
+            r"(gprbuild: [*][*][*] compilation phase failed\n)?$"
         ),
     ):
         check_file(

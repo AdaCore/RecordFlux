@@ -4,10 +4,12 @@ variables:
    CI_FRAGMENTS_GIT: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/it/ci-fragments
    RECORDFLUX_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
 
-   GNAT_BUILD_DATE: "20220723"
+   GNAT_VERSION: "23.2"
+   GNAT_BUILD_DATE: "all"
    SPARK_BUILD_DATE: "20221214"
    PYTHON_VERSION: "3.10"
 
+   # If set to 1, the packaging of RecordFlux including the compilation of the langkit-based parser will be tested.
    CLEAN_RECORDFLUX_SETUP: 0
 
 workflow:
@@ -45,8 +47,11 @@ stages:
     - popd
 
 .setup_gnat: &setup_gnat
-    - anod install gnat --build-date $GNAT_BUILD_DATE
-    - eval `anod printenv gnat`
+    - e3-cathod components --setup $GNAT_VERSION --build-date $GNAT_BUILD_DATE --platform x86_64-linux --component gnat --download
+    - tar -xzf gnatpro-$GNAT_VERSION-x86_64-linux-bin.tar.gz
+    - cd gnatpro-$GNAT_VERSION-x86_64-linux-bin && echo -e "\n$CI_PROJECT_DIR/gnat\nY\nY" | ./doinstall && cd ..
+    - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
+    - gnat --version
 
 .setup_spark: &setup_spark
     - anod install spark2014 --build-date $SPARK_BUILD_DATE
@@ -181,12 +186,10 @@ gnat_pro_compatibility:
         CLEAN_RECORDFLUX_SETUP: 0
       - GNAT_VERSION: "22.2"
         CLEAN_RECORDFLUX_SETUP: 1
+      - GNAT_VERSION: "23.2"
+        CLEAN_RECORDFLUX_SETUP: 1
   script:
-    - e3-cathod components --setup $GNAT_VERSION --build-date all --platform x86_64-linux --component gnat --download
-    - tar -xzf gnatpro-$GNAT_VERSION-x86_64-linux-bin.tar.gz
-    - cd gnatpro-$GNAT_VERSION-x86_64-linux-bin && echo -e "\n$CI_PROJECT_DIR/gnat\nY\nY" | ./doinstall && cd ..
-    - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
-    - gnat --version
+    - *setup_gnat
     - *setup_python
     - export GNAT=pro$GNAT_VERSION
     - make test_compilation
