@@ -4433,19 +4433,14 @@ def test_refinement_invalid_field() -> None:
         Refinement("P", message, Field(ID("X", Location((33, 22)))), message)
 
 
-def test_refinement_invalid_condition() -> None:
+def test_refinement_undefined_variable_in_condition() -> None:
     x = Field("X")
 
     message = Message("P::M", [Link(INITIAL, x, size=Number(8)), Link(x, FINAL)], {x: OPAQUE})
 
     with pytest.raises(
         RecordFluxError,
-        match=(
-            r"^"
-            r'<stdin>:10:20: model: error: unknown field or literal "Y" in refinement condition'
-            r' of "P::M"'
-            r"$"
-        ),
+        match=r'^<stdin>:10:20: model: error: undefined variable "Y"$',
     ):
         Refinement(
             "P",
@@ -4456,7 +4451,7 @@ def test_refinement_invalid_condition() -> None:
         )
 
 
-def test_refinement_invalid_condition_unqualified_literal() -> None:
+def test_refinement_unqualified_literal_in_condition() -> None:
     e = Enumeration(
         "P2::E",
         [("E1", Number(1)), ("E2", Number(2)), ("E3", Number(3))],
@@ -4475,12 +4470,7 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
 
     with pytest.raises(
         RecordFluxError,
-        match=(
-            r"^"
-            r'<stdin>:10:20: model: error: unknown field or literal "E1" in refinement condition'
-            r' of "P::M"'
-            r"$"
-        ),
+        match=r'^<stdin>:10:20: model: error: undefined variable "E1"$',
     ):
         Refinement(
             "P",
@@ -4488,6 +4478,38 @@ def test_refinement_invalid_condition_unqualified_literal() -> None:
             y,
             message,
             Equal(Variable("X"), Variable("E1", location=Location((10, 20)))),
+        )
+
+
+def test_refinement_type_error_in_condition() -> None:
+    message = Message(
+        "P::M",
+        [
+            Link(INITIAL, Field("L")),
+            Link(Field("L"), Field("P"), size=Mul(Variable("L"), Number(8))),
+            Link(Field("P"), FINAL),
+        ],
+        {
+            Field("L"): Integer("P::T", Number(0), Number(255), Number(8)),
+            Field("P"): OPAQUE,
+        },
+    )
+
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:10:20: model: error: expected integer type "P::T" \(0 \.\. 255\)\n'
+            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"'
+            r"$"
+        ),
+    ):
+        Refinement(
+            "P",
+            message,
+            Field("P"),
+            message,
+            Equal(Variable("L"), Literal("True", type_=rty.BOOLEAN, location=Location((10, 20)))),
         )
 
 

@@ -424,6 +424,24 @@ class AbstractMessage(mty.Type):
 
         return self.copy(structure=structure, types=types, byte_order=byte_order)
 
+    def typed_expression(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
+        expression = copy(expression)
+        if isinstance(expression, expr.Variable):
+            assert expression.identifier not in {
+                *self._qualified_enum_literals,
+                *self._type_names,
+            }, f'variable "{expression.identifier}" has the same name as a literal'
+            if expression.name.lower() == "message":
+                expression.type_ = rty.OPAQUE
+            elif Field(expression.identifier) in types:
+                expression.type_ = types[Field(expression.identifier)].type_
+        if isinstance(expression, expr.Literal):
+            if expression.identifier in self._qualified_enum_literals:
+                expression.type_ = self._qualified_enum_literals[expression.identifier].type_
+        if isinstance(expression, expr.TypeName):
+            expression.type_ = self._type_names[expression.identifier].type_
+        return expression
+
     def type_constraints(self, expression: expr.Expr) -> list[expr.Expr]:
         return [
             *self._aggregate_constraints(expression),
@@ -829,30 +847,12 @@ class AbstractMessage(mty.Type):
 
     def _set_types(self) -> None:
         def set_types(expression: expr.Expr) -> expr.Expr:
-            return self._typed_variable(expression, self.types)
+            return self.typed_expression(expression, self.types)
 
         for link in self.structure:
             link.condition = link.condition.substituted(set_types)
             link.size = link.size.substituted(set_types)
             link.first = link.first.substituted(set_types)
-
-    def _typed_variable(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
-        expression = copy(expression)
-        if isinstance(expression, expr.Variable):
-            assert expression.identifier not in {
-                *self._qualified_enum_literals,
-                *self._type_names,
-            }, f'variable "{expression.identifier}" has the same name as a literal'
-            if expression.name.lower() == "message":
-                expression.type_ = rty.OPAQUE
-            elif Field(expression.identifier) in types:
-                expression.type_ = types[Field(expression.identifier)].type_
-        if isinstance(expression, expr.Literal):
-            if expression.identifier in self._qualified_enum_literals:
-                expression.type_ = self._qualified_enum_literals[expression.identifier].type_
-        if isinstance(expression, expr.TypeName):
-            expression.type_ = self._type_names[expression.identifier].type_
-        return expression
 
     def _dependencies(self, types: Mapping[Field, mty.Type]) -> list[mty.Type]:
         return [*unique(a for t in types.values() for a in t.dependencies), self]
@@ -1374,7 +1374,7 @@ class Message(AbstractMessage):
         types: dict[Field, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
-            return self._typed_variable(expression, types)
+            return self.typed_expression(expression, types)
 
         def remove_types(expression: expr.Expr) -> expr.Expr:
             if isinstance(expression, expr.Variable):
@@ -2283,7 +2283,7 @@ class UnprovenMessage(AbstractMessage):
         structure = []
 
         def set_types(expression: expr.Expr) -> expr.Expr:
-            return self._typed_variable(expression, inner_message.types)
+            return self.typed_expression(expression, inner_message.types)
 
         for path in message.paths(FINAL):
             for link in path:
@@ -2626,6 +2626,7 @@ class Refinement(mty.Type):
 
         - Replace variables by literals where necessary.
         - Qualify enumeration literals to prevent ambiguities.
+        - Set expression types
         """
 
         unqualified_enum_literals = mty.unqualified_enum_literals(self.dependencies, self.package)
@@ -2637,6 +2638,11 @@ class Refinement(mty.Type):
                 e, unqualified_enum_literals, qualified_enum_literals, type_names, self.package
             )
         )
+
+        def set_types(expression: expr.Expr) -> expr.Expr:
+            return self.pdu.typed_expression(expression, self.pdu.types)
+
+        self.condition = self.condition.substituted(set_types)
 
     def _check_identifier(self) -> None:
         if len(self.package.parts) != 1:
@@ -2652,6 +2658,10 @@ class Refinement(mty.Type):
             )
 
     def _verify(self) -> None:
+        self._verify_field()
+        self._verify_condition()
+
+    def _verify_field(self) -> None:
         for f, t in self.pdu.types.items():
             if f == self.field:
                 if not isinstance(t, mty.Opaque):
@@ -2686,23 +2696,8 @@ class Refinement(mty.Type):
                 ],
             )
 
-        for variable in self.condition.variables():
-            literals = mty.enum_literals([mty.BOOLEAN, *self.pdu.types.values()], self.package)
-            if (
-                Field(str(variable.name)) not in self.pdu.fields
-                and variable.identifier not in literals
-            ):
-                self.error.extend(
-                    [
-                        (
-                            f'unknown field or literal "{variable.identifier}" in refinement'
-                            f' condition of "{self.pdu.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            variable.location,
-                        )
-                    ],
-                )
+    def _verify_condition(self) -> None:
+        self.error.extend(self.condition.check_type(rty.Any()))
 
         if not self.error.errors:
             if self.condition != expr.TRUE:

@@ -217,10 +217,8 @@ def test_refinement_invalid_condition() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:10:10: model: error: unknown field or literal "X"'
-        r' in refinement condition of "Test::PDU"\n'
-        r'<stdin>:10:14: model: error: unknown field or literal "Y"'
-        r' in refinement condition of "Test::PDU"'
+        r'<stdin>:10:10: model: error: undefined variable "X"\n'
+        r'<stdin>:10:14: model: error: undefined variable "Y"'
         r"$",
     )
 
