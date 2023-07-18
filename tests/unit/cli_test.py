@@ -4,6 +4,7 @@ import re
 from collections.abc import Callable
 from io import TextIOWrapper
 from pathlib import Path
+from typing import Optional
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -11,7 +12,7 @@ from _pytest.monkeypatch import MonkeyPatch
 import rflx.specification
 from rflx import cli, generator, validator
 from rflx.converter import iana
-from rflx.error import Location, Severity, Subsystem, fail, fatal_fail
+from rflx.error import FatalError, Location, Severity, Subsystem, fail, fatal_fail
 from rflx.pyrflx import PyRFLXError
 from tests.const import DATA_DIR, SPEC_DIR
 
@@ -555,3 +556,27 @@ def test_main_convert_iana(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
             (data, IANA_XML_FILE, False, tmp_path / "1"),
             (data, IANA_XML_FILE, True, tmp_path / "2"),
         ]
+
+
+@pytest.mark.parametrize(
+    "requirement, name, extra",
+    [
+        ("pydantic (<2,>=1)", "pydantic", None),
+        ("pydantic<2,>=1", "pydantic", None),
+        ("ruamel.yaml (<0.18,>=0.17)", "ruamel.yaml", None),
+        ("ruamel.yaml<0.18,>=0.17", "ruamel.yaml", None),
+        ("setuptools-scm (<8,>=6.2) ; extra == 'devel'", "setuptools-scm", "devel"),
+        ('setuptools_scm<8,>=6.2; extra == "devel"', "setuptools_scm", "devel"),
+    ],
+)
+def test_requirement(requirement: str, name: str, extra: Optional[str]) -> None:
+    r = cli.Requirement(requirement)
+    assert r.name == name
+    assert r.extra == extra
+
+
+def test_requirement_error() -> None:
+    with pytest.raises(
+        FatalError, match=r'^cli: error: failed parsing requirement "\(<2,>=1\) pydantic"$'
+    ):
+        cli.Requirement("(<2,>=1) pydantic")

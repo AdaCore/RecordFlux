@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import shutil
 import sys
 import traceback
@@ -17,7 +18,15 @@ import importlib_resources
 
 from rflx import __version__
 from rflx.converter import iana
-from rflx.error import ERROR_CONFIG, FatalError, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import (
+    ERROR_CONFIG,
+    FatalError,
+    RecordFluxError,
+    Severity,
+    Subsystem,
+    fail,
+    fatal_fail,
+)
 from rflx.generator import Debug, Generator
 from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
@@ -292,10 +301,9 @@ in the report."""
 
 def version() -> str:
     dependencies = [
-        f"{name} {metadata.version(name)}"
-        for r in metadata.requires("RecordFlux") or []
-        if not r.startswith("RecordFlux") and "; extra == " not in r
-        for name in [r.split()[0]]
+        f"{r.name} {metadata.version(r.name)}"
+        for r in (Requirement(r) for r in metadata.requires("RecordFlux") or [])
+        if r.extra != "devel"
     ]
     return "\n".join(
         [
@@ -303,6 +311,22 @@ def version() -> str:
             *dependencies,
         ]
     )
+
+
+class Requirement:
+    def __init__(self, string: str) -> None:
+        self.name: str
+        self.extra: Optional[str]
+
+        match = re.match(r'([^<=> (]{1,})[^;]*(?: *; extra == [\'"](.*)[\'"])?', string)
+
+        if match:
+            groups = match.groups()
+            assert len(groups) == 2 and isinstance(groups[0], str)
+            self.name = groups[0]
+            self.extra = groups[1]
+        else:
+            fatal_fail(f'failed parsing requirement "{string}"', Subsystem.CLI)
 
 
 def check(args: argparse.Namespace) -> None:
