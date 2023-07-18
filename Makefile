@@ -326,7 +326,7 @@ $(SRC_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | $(SRC_
 .PHONY: clean
 
 clean:
-	rm -rf $(BUILD_DIR)/[^_]* $(SRC_DIR) .coverage .hypothesis .mypy_cache .pytest_cache .ruff_cache
+	rm -rf $(BUILD_DIR)/[^_]* $(SRC_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C doc/language_reference clean
