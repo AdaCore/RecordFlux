@@ -216,7 +216,7 @@ $(GNATPROVE_CACHE_DIR):
 .PHONY: install_build_deps install install_devel upgrade_devel install_devel_edge install_git_hooks install_gnat printenv_gnat
 
 install_build_deps:
-	pip3 install -U pip>=22.2
+	pip3 install -U "pip>=22.2"
 	pip3 install packaging setuptools_scm wheel build contrib/langkit
 
 install: install_build_deps $(SDIST)
