@@ -259,6 +259,23 @@ def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Pat
                     )
                 ]
             )
+        if identifier.text.upper().startswith("RFLX_"):
+            error.extend(
+                [
+                    (
+                        f'illegal identifier "{identifier.text}"',
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(identifier, filename),
+                    ),
+                    (
+                        'identifiers starting with "RFLX_" are reserved for internal use',
+                        Subsystem.PARSER,
+                        Severity.INFO,
+                        node_location(identifier, filename),
+                    ),
+                ]
+            )
         return ID(identifier.text, location=node_location(identifier, filename))
     if isinstance(identifier, lang.ID):
         name = ID(identifier.f_name.text, location=node_location(identifier.f_name, filename))

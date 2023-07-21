@@ -51,6 +51,9 @@ def test_multiple_errors() -> None:
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid", should'
             ' be "rflx_invalid.rflx"',
             f'{path}:31:4: model: error: illegal redefinition of built-in type "Boolean"',
+            f'{path}:6:9: parser: error: illegal identifier "RFLX_Invalid"',
+            f'{path}:6:9: parser: info: identifiers starting with "RFLX_" are reserved for'
+            " internal use",
             f'{path}:72:18: parser: error: undefined field "X"',
             f'{path}:13:9: model: error: first of "Range2" contains variable',
             f'{path}:13:9: model: error: last of "Range2" contains variable',

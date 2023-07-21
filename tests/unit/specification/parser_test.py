@@ -103,6 +103,8 @@ ADA_KEYWORDS = [
     "xor",
 ]
 
+ILLEGAL_IDENTIFIERS = ["RFLX_Foo"]
+
 
 def to_dict(node: Any) -> Any:  # type: ignore[misc]
     if node is None:
@@ -2103,6 +2105,90 @@ def test_parse_error_reserved_word_in_session_identifier() -> None:
         end Test;
         """,
         r'^<stdin>:3:12: parser: error: reserved word "End" used as identifier$',
+    )
+
+
+@pytest.mark.parametrize("identifier", ILLEGAL_IDENTIFIERS)
+def test_parse_error_illegal_identifier_in_type_name(identifier: str) -> None:
+    assert_error_string(
+        f"""\
+        package Test is
+           type {identifier} is range 0 .. 255 with Size => 8;
+        end Test;
+        """,
+        r"^"
+        rf'<stdin>:2:9: parser: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:2:9: parser: info: identifiers starting with "RFLX_"'
+        r" are reserved for internal use"
+        r"$",
+    )
+
+
+@pytest.mark.parametrize("identifier", ILLEGAL_IDENTIFIERS)
+def test_parse_error_illegal_identifier_in_message_field(identifier: str) -> None:
+    assert_error_string(
+        f"""\
+        package Test is
+           type T is range 0 .. 255 with Size => 8;
+           type PDU is
+              message
+                 {identifier} : T;
+              end message;
+        end Test;
+        """,
+        r"^"
+        rf'<stdin>:5:10: parser: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:5:10: parser: info: identifiers starting with "RFLX_"'
+        r" are reserved for internal use"
+        r"$",
+    )
+
+
+@pytest.mark.parametrize("identifier", ILLEGAL_IDENTIFIERS)
+def test_parse_error_illegal_identifier_in_refinement_field(identifier: str) -> None:
+    assert_error_string(
+        f"""\
+        package Test is
+           type PDU is
+              message
+                 {identifier} : Opaque;
+              end message;
+           for PDU use ({identifier} => PDU);
+        end Test;
+        """,
+        r"^"
+        rf'<stdin>:4:10: parser: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:4:10: parser: info: identifiers starting with "RFLX_"'
+        r" are reserved for internal use\n"
+        rf'<stdin>:6:17: parser: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:6:17: parser: info: identifiers starting with "RFLX_"'
+        r" are reserved for internal use"
+        r"$",
+    )
+
+
+@pytest.mark.parametrize("identifier", ILLEGAL_IDENTIFIERS)
+def test_parse_error_illegal_identifier_in_session_identifier(identifier: str) -> None:
+    assert_error_string(
+        f"""\
+        package Test is
+           generic
+           session {identifier} is
+           begin
+              state S
+              is
+              begin
+              transition
+                 goto null
+              end S;
+           end {identifier};
+        end Test;
+        """,
+        r"^"
+        rf'<stdin>:3:12: parser: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:3:12: parser: info: identifiers starting with "RFLX_"'
+        r" are reserved for internal use"
+        r"$",
     )
 
 
