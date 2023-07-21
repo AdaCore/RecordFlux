@@ -4702,6 +4702,20 @@ def test_always_true_message_condition(
     )
 
 
+@pytest.mark.parametrize("value", [0, 42, 65535])
+def test_not_always_true_message_condition_for_always_valid_enum(value: int) -> None:
+    Message(
+        "P::M",
+        [
+            Link(INITIAL, Field("A")),
+            Link(Field("A"), FINAL, condition=Equal(Variable("A"), Literal("P::E"))),
+        ],
+        {
+            Field("A"): Enumeration("P::T", [("E", Number(value))], Number(16), always_valid=True),
+        },
+    )
+
+
 def test_possibly_always_true_refinement(
     monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
 ) -> None:

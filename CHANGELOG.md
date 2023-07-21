@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Missing type checking in refinement conditions (eng/recordflux/RecordFlux#1360)
 - Exception caused by comparing integer field to aggregate (eng/recordflux/RecordFlux#1251)
 - Unexpected errors when using `--max_errors=1` (eng/recordflux/RecordFlux#825)
+- Incorrect detection of conditions as always true for enumerations with `Always_Valid` aspect (eng/recordflux/RecordFlux#1276)
 
 ## [0.11.1] - 2023-07-14
 

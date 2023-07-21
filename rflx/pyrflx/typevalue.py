@@ -191,7 +191,7 @@ class IntegerValue(ScalarValue):
 
     def assign(self, value: int, check: bool = True) -> None:
         if check and (
-            And(*self._type.constraints("__VALUE__", check))
+            And(*self._type.constraints("__VALUE__"))
             .substituted(
                 mapping={Variable("__VALUE__"): Number(value), Size("__VALUE__"): self._type.size}
             )
@@ -255,7 +255,7 @@ class EnumValue(ScalarValue):
             raise PyRFLXError(f"{value} is not a valid enum value")
         r = (
             (
-                And(*self._type.constraints("__VALUE__", check, not self._imported))
+                And(*self._type.constraints("__VALUE__", same_package=not self._imported))
                 .substituted(
                     mapping={
                         **self.literals,

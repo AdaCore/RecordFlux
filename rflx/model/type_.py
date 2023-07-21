@@ -253,18 +253,15 @@ class Integer(Scalar):
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
     ) -> abc.Sequence[expr.Expr]:
-        if proof:
-            return [
-                expr.GreaterEqual(
-                    expr.Variable(name, type_=self.type_), self.first, location=self.location
-                ),
-                expr.LessEqual(
-                    expr.Variable(name, type_=self.type_), self.last, location=self.location
-                ),
-                expr.Equal(expr.Size(name), self.size, location=self.location),
-            ]
-
-        raise NotImplementedError
+        return [
+            expr.GreaterEqual(
+                expr.Variable(name, type_=self.type_), self.first, location=self.location
+            ),
+            expr.LessEqual(
+                expr.Variable(name, type_=self.type_), self.last, location=self.location
+            ),
+            expr.Equal(expr.Size(name), self.size, location=self.location),
+        ]
 
 
 class Enumeration(Scalar):
@@ -431,35 +428,43 @@ class Enumeration(Scalar):
     def constraints(
         self, name: str, proof: bool = False, same_package: bool = True
     ) -> abc.Sequence[expr.Expr]:
-        if proof:
-            prefixed_literals = {self.package * l: v for l, v in self.literals.items()}
-            if self.package == const.BUILTINS_PACKAGE:
-                literals = self.literals
-            elif same_package:
-                literals = {**self.literals, **prefixed_literals}
-            else:
-                literals = prefixed_literals
-            result: list[expr.Expr] = [
-                expr.Or(
-                    *[
-                        expr.Equal(
-                            expr.Variable(name, type_=self.type_), expr.Literal(l), self.location
-                        )
-                        for l in literals
-                    ],
-                    location=self.location,
-                )
-            ]
-            result.extend(
-                [
-                    expr.Equal(expr.Literal(l, type_=self.type_), v, self.location)
-                    for l, v in literals.items()
-                ]
-            )
-            result.append(expr.Equal(expr.Size(name), self.size, self.location))
-            return result
+        literals = dict(self.literals)
 
-        raise NotImplementedError
+        if proof and self.always_valid:
+            # Add a dummy literal to indicate that there are other valid values,
+            # thus preventing a condition from being falsely detected as always true.
+            for v in range(0, 2**self.size.value):  # pragma: no branch
+                if expr.Number(v) not in literals.values():
+                    literals["L_" + self.identifier.name + f"_{v}"] = expr.Number(v)
+                    break
+
+        prefixed_literals = {self.package * l: v for l, v in literals.items()}
+        if self.package == const.BUILTINS_PACKAGE:
+            literals = literals
+        elif same_package:
+            literals = {**literals, **prefixed_literals}
+        else:
+            literals = prefixed_literals
+
+        result: list[expr.Expr] = [
+            expr.Or(
+                *[
+                    expr.Equal(
+                        expr.Variable(name, type_=self.type_), expr.Literal(l), self.location
+                    )
+                    for l in literals
+                ],
+                location=self.location,
+            )
+        ]
+        result.extend(
+            [
+                expr.Equal(expr.Literal(l, type_=self.type_), v, self.location)
+                for l, v in literals.items()
+            ]
+        )
+        result.append(expr.Equal(expr.Size(name), self.size, self.location))
+        return result
 
 
 class Composite(Type):
