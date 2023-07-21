@@ -12,7 +12,7 @@ def test_definite_message_with_builtin_type_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(
         DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC,
         tmp_path,
-        units=["rflx-test-message"],
+        units=["rflx-test-message.adb"],
     )
 
 
@@ -20,7 +20,7 @@ def test_parameterized_message_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(
         PARAMETERIZED_MESSAGE_SPEC,
         tmp_path,
-        units=["rflx-test-message"],
+        units=["rflx-test-message.adb"],
     )
 
 
@@ -28,7 +28,7 @@ def test_definite_parameterized_message_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(
         DEFINITE_PARAMETERIZED_MESSAGE_SPEC,
         tmp_path,
-        units=["rflx-test-message"],
+        units=["rflx-test-message.adb"],
     )
 
 
@@ -54,7 +54,7 @@ def test_message_field_conditions_provability(tmp_path: Path) -> None:
                with Byte_Order => Low_Order_First;
       end Test;
     """
-    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-repr"])
+    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-repr.adb"])
 
 
 def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
@@ -82,7 +82,7 @@ def test_parameterized_message_set_scalar(tmp_path: Path) -> None:
 
       end Test;
     """
-    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-measurements_response"])
+    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-measurements_response.adb"])
 
 
 def test_message_large_number_of_fields(tmp_path: Path) -> None:
@@ -119,4 +119,4 @@ def test_message_large_number_of_fields(tmp_path: Path) -> None:
             end message;
       end Test;
    """
-    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-repr"])
+    utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-repr.adb"])
