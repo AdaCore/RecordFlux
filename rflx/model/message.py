@@ -1647,9 +1647,7 @@ class Message(AbstractMessage):
                 self.path_condition(l.source),
                 *self.type_constraints(l.condition),
             ]
-            unsat_error = RecordFluxError()
-            unknown_error = RecordFluxError()
-            unsat_error.extend(
+            unsat_error = RecordFluxError(
                 [
                     (
                         f'condition "{l.condition}" on transition "{l.source.identifier}"'
@@ -1660,7 +1658,7 @@ class Message(AbstractMessage):
                     )
                 ]
             )
-            unknown_error.extend(
+            unknown_error = RecordFluxError(
                 [
                     (
                         f'condition "{l.condition}" on transition "{l.source.identifier}"'
@@ -1686,10 +1684,9 @@ class Message(AbstractMessage):
                 for i2, c2 in enumerate(self.outgoing(f)):
                     if i1 < i2:
                         conflict = expr.And(c1.condition, c2.condition)
-                        error = RecordFluxError()
                         c1_message = str(c1.condition).replace("\n", " ")
                         c2_message = str(c2.condition).replace("\n", " ")
-                        error.extend(
+                        error = RecordFluxError(
                             [
                                 (
                                     f'conflicting conditions for field "{f.name}"',
@@ -1885,8 +1882,7 @@ class Message(AbstractMessage):
             facts.extend([f for l in path for f in self._link_expressions(l)])
 
             # Coverage expression must be False, i.e. no bits left
-            error = RecordFluxError()
-            error.extend(
+            error = RecordFluxError(
                 [
                     (
                         "path does not cover whole message",
@@ -1917,8 +1913,7 @@ class Message(AbstractMessage):
                     overlaid = expr.Equal(
                         self._target_last(l), expr.Last(l.first.prefix), l.location
                     )
-                    error = RecordFluxError()
-                    error.extend(
+                    error = RecordFluxError(
                         [
                             (
                                 f'field "{f.name}" not congruent with'
@@ -1958,9 +1953,8 @@ class Message(AbstractMessage):
                 if proof.result != expr.ProofResult.SAT:
                     continue
 
-                error = RecordFluxError()
                 path_message = " -> ".join([l.target.name for l in path])
-                error.extend(
+                error = RecordFluxError(
                     [
                         (
                             f'negative size for field "{f.name}" ({path_message})',
@@ -1972,9 +1966,8 @@ class Message(AbstractMessage):
                 )
                 proofs.add(negative, facts, sat_error=error, unknown_error=error)
 
-                error = RecordFluxError()
                 path_message = " -> ".join([last.target.name for last in path])
-                error.extend(
+                error = RecordFluxError(
                     [
                         (
                             f'negative start for field "{f.name}" ({path_message})',
@@ -1998,9 +1991,8 @@ class Message(AbstractMessage):
                             )
                         )
 
-                        error = RecordFluxError()
                         path_message = " -> ".join([p.target.name for p in path])
-                        error.extend(
+                        error = RecordFluxError(
                             [
                                 (
                                     f'opaque field "{f.name}" not aligned to {element_size} '
@@ -2030,9 +2022,8 @@ class Message(AbstractMessage):
                             )
                         )
 
-                        error = RecordFluxError()
                         path_message = " -> ".join([p.target.name for p in path])
-                        error.extend(
+                        error = RecordFluxError(
                             [
                                 (
                                     f'size of opaque field "{f.name}" not multiple'
@@ -2079,8 +2070,7 @@ class Message(AbstractMessage):
                 *type_constraints,
                 *field_size_constraints,
             ]
-            error = RecordFluxError()
-            error.extend(
+            error = RecordFluxError(
                 [
                     (
                         "message size must be multiple of 8 bit",

@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from rflx import expression as expr
-from rflx.error import RecordFluxError
+from rflx.error import ERROR_CONFIG, RecordFluxError
 from rflx.model import (
     BOOLEAN,
     FINAL,
@@ -510,6 +510,13 @@ def test_invalid_message_with_unreachable_field_after_merging() -> None:
         """,
         r'^<stdin>:17:10: model: error: unreachable field "D" in "Test::O"$',
     )
+
+
+def test_fail_after_value(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ERROR_CONFIG, "fail_after_value", 1)
+    p = parser.Parser()
+    p.parse(Path(f"{SPEC_DIR}/ethernet.rflx"))
+    p.create_model()
 
 
 def test_dependency_order() -> None:

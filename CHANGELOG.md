@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Subsequent errors caused by style errors (eng/recordflux/RecordFlux#1268)
 - Missing type checking in refinement conditions (eng/recordflux/RecordFlux#1360)
 - Exception caused by comparing integer field to aggregate (eng/recordflux/RecordFlux#1251)
+- Unexpected errors when using `--max_errors=1` (eng/recordflux/RecordFlux#825)
 
 ## [0.11.1] - 2023-07-14
 

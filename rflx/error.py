@@ -123,7 +123,7 @@ class BaseError(Exception, Base):
         super().__init__()
         self._messages: deque[BaseError.Entry] = deque()
         if entries:
-            self.extend(entries)
+            self._extend(entries)
 
     def __repr__(self) -> str:
         return verbose_repr(self, ["errors"])
@@ -164,11 +164,7 @@ class BaseError(Exception, Base):
         self,
         entries: Union[Sequence[tuple[str, Subsystem, Severity, Optional[Location]]], BaseError],
     ) -> None:
-        if isinstance(entries, BaseError):
-            self._messages.extend(entries.messages)
-        else:
-            for message, subsystem, severity, location in entries:
-                self._messages.append(BaseError.Entry(message, subsystem, severity, location))
+        self._extend(entries)
         num_errors = len(self.errors)
         if 0 < ERROR_CONFIG.fail_after_value <= num_errors:
             raise self
@@ -198,6 +194,16 @@ class BaseError(Exception, Base):
             ]
         )
         raise self
+
+    def _extend(
+        self,
+        entries: Union[Sequence[tuple[str, Subsystem, Severity, Optional[Location]]], BaseError],
+    ) -> None:
+        if isinstance(entries, BaseError):
+            self._messages.extend(entries.messages)
+        else:
+            for message, subsystem, severity, location in entries:
+                self._messages.append(BaseError.Entry(message, subsystem, severity, location))
 
 
 class RecordFluxError(BaseError):
