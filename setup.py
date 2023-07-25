@@ -86,7 +86,7 @@ setup(
     cmdclass={"bdist_wheel": BuildParser},
     python_requires=">=3.8",
     install_requires=[
-        "attrs >=20, <22",
+        "attrs >=22.1, <24",
         "icontract >=2.3.4, <3",
         "importlib_resources >=6, <7",  # TODO(eng/recordflux/RecordFlux#1359): Remove
         "pydantic >=1, <2",
