@@ -239,7 +239,14 @@ def fatal_fail(
 def warn(
     message: str,
     subsystem: Subsystem,
-    severity: Severity = Severity.WARNING,
     location: Optional[Location] = None,
 ) -> None:
-    print(RecordFluxError([(message, subsystem, severity, location)]))
+    print(RecordFluxError([(message, subsystem, Severity.WARNING, location)]))
+
+
+def info(
+    message: str,
+    subsystem: Subsystem,
+    location: Optional[Location] = None,
+) -> None:
+    print(RecordFluxError([(message, subsystem, Severity.INFO, location)]))

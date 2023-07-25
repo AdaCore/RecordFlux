@@ -16,7 +16,7 @@ from attr import define, field, frozen
 from rflx import typing_ as rty
 from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE
-from rflx.error import Location
+from rflx.error import Location, Subsystem, info
 from rflx.identifier import ID, StrID
 
 if TYPE_CHECKING:
@@ -1895,7 +1895,17 @@ def add_required_checks(
     case, a check statement is added in front of the respective statement. The check statements
     in the resulting list mark the places where the code generator must insert explicit checks.
     """
-    return remove_unnecessary_checks(add_checks(statements, variable_id), manager)
+    result = remove_unnecessary_checks(add_checks(statements, variable_id), manager)
+
+    for s in result:
+        if isinstance(s, Check):
+            info(
+                f'precondition "{s.expression.origin_str}" must be checked at runtime',
+                Subsystem.MODEL,
+                s.expression.location,
+            )
+
+    return result
 
 
 def to_integer(type_: rty.AnyInteger) -> rty.Integer:
