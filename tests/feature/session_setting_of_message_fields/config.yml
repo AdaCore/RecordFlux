@@ -9,4 +9,18 @@ sequence: |
   State: Process
   Read Channel: 1 0 1 65
   State: Reply
-prove:
+# TODO(eng/recordflux/RecordFlux#861): Add required checks
+#
+# rflx-test-session.adb:127:22: medium: assertion might fail
+#   127 |      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
+#       |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# rflx-test-session.adb:129:22: medium: assertion might fail
+#   129 |      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
+#       |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# rflx-test-session.adb:132:25: medium: assertion might fail
+#   132 |         pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data));
+#       |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# prove:

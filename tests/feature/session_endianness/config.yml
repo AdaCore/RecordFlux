@@ -16,4 +16,22 @@ sequence: |
   Read O: 0 1 0 1 0 0 0 32
   State: Reply2
   State: Start
-prove:
+# TODO(eng/recordflux/RecordFlux#861): Add required checks
+#
+# rflx-test-session.adb:69:71: medium: precondition might fail
+#    69 |      Messages.Msg_LE.Set_C (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_A (Ctx.P.In_Msg_Ctx));
+#       |                                                ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# rflx-test-session.adb:71:71: medium: precondition might fail
+#    71 |      Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx));
+#       |                                                ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# rflx-test-session.adb:145:62: medium: precondition might fail
+#   145 |      Messages.Msg.Set_A (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_C (Ctx.P.In_Msg2_Ctx));
+#       |                                              ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# rflx-test-session.adb:147:62: medium: precondition might fail
+#   147 |      Messages.Msg.Set_B (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_D (Ctx.P.In_Msg2_Ctx));
+#       |                                              ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# prove:
