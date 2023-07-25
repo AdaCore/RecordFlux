@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import multiprocessing
+from collections import defaultdict
 from pathlib import Path
 from typing import Final, Optional
 from urllib.parse import unquote, urlparse
@@ -131,45 +132,57 @@ class RecordFluxLanguageServer(LanguageServer):
 
         for folder_uri in list(self.workspace.folders.keys()):
             folder_path = Path(unquote(urlparse(folder_uri).path))
-            files.extend([file for file in folder_path.rglob("*.rflx") if file.is_file()])
+            for file in folder_path.rglob("*.rflx"):
+                if file.is_file():
+                    files.append(file)
+                    self.publish_diagnostics(file.as_uri(), [])
 
         if len(self.workspace.folders.keys()) == 0:
             for document_uri in self.workspace.documents.keys():
                 document_path = Path(unquote(urlparse(document_uri).path))
                 files.append(document_path)
+                self.publish_diagnostics(document_uri, [])
 
-        errors = rflx.error.RecordFluxError([])
-        parser = Parser(skip_verification=False, cached=True, workers=1, integration_files_dir=None)
+        parser = Parser(cached=True, workers=1, integration_files_dir=None)
+
+        error = rflx.error.RecordFluxError()
 
         for path in files:
             document = self.workspace.get_document(path.as_uri())
             try:
                 parser.parse_string(document.source, path)
-            except rflx.error.BaseError as local_errors:
-                errors.extend(local_errors)
+            except rflx.error.RecordFluxError as e:
+                error.extend(e)
+
+        self._publish_errors_as_diagnostics(error)
 
         self.rflx_model = parser.create_unchecked_model()
 
-        errors.extend(self.rflx_model.error)
-        self._publish_errors_as_diagnostics(files, errors)
+        self._publish_errors_as_diagnostics(errors + self.unchecked_model.error)
 
         self.model = LSModel(self.rflx_model)
 
-    def _publish_errors_as_diagnostics(
-        self, files: list[Path], errors: rflx.error.BaseError
-    ) -> None:
-        for file in files:
-            diagnostics = [
-                Diagnostic(
-                    lsp_location.range,
-                    error.message,
-                    rflx_severity_to_lsp(error.severity),
+        try:
+            parser.create_model()
+        except rflx.error.RecordFluxError as e:
+            error.extend(e)
+
+        self._publish_errors_as_diagnostics(error)
+
+    def _publish_errors_as_diagnostics(self, errors: rflx.error.RecordFluxError) -> None:
+        diagnostics = defaultdict(list)
+
+        for error in errors.messages:
+            location = rflx_location_to_lsp(error.location)
+            severity = rflx_severity_to_lsp(error.severity)
+
+            if location is not None:
+                diagnostics[location.uri].append(
+                    Diagnostic(location.range, error.message, severity)
                 )
-                for error in errors.messages
-                for lsp_location in [rflx_location_to_lsp(error.location)]
-                if lsp_location is not None and lsp_location.uri == file.absolute().as_uri()
-            ]
-            self.publish_diagnostics(file.absolute().as_uri(), diagnostics)
+
+        for uri, diag in diagnostics.items():
+            self.publish_diagnostics(uri, diag)
 
 
 server = RecordFluxLanguageServer("recordflux-ls", "v0.1")
@@ -238,8 +251,8 @@ async def semantic_tokens(
 @server.command(RecordFluxLanguageServer.CMD_SHOW_MESSAGE_GRAPH)
 async def display_message_graph(ls: RecordFluxLanguageServer, parameters: list[int]) -> None:
     try:
-        model = ls.rflx_model.checked(skip_verification=True, workers=1, cache=ls.rflx_model_cache)
-    except rflx.error.BaseError:
+        model = ls.rflx_model.checked(workers=1, cache=ls.rflx_model_cache)
+    except rflx.error.RecordFluxError:
         ls.show_message("Invalid specification", MessageType.Error)
         return
 
