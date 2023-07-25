@@ -1,0 +1,128 @@
+{
+	"name": "recordflux",
+	"displayName": "RecordFlux",
+	"description": "Language support for RecordFlux",
+	"author": "AdaCore",
+	"license": "GNU Affero General Public License",
+	"version": "0.0.1",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Microsoft/vscode-extension-samples"
+	},
+	"serverInfo": {
+		"name": "RecordFlux LS",
+		"module": "rflx_ls"
+	},
+	"publisher": "AdaCore",
+	"categories": [
+		"Programming Languages"
+	],
+	"keywords": [
+		"multi-root ready"
+	],
+	"engines": {
+		"vscode": "^1.77.0"
+	},
+	"main": "./out/extension",
+	"contributes": {
+		"commands": [
+			{
+				"command": "languageServerExample.test_recordflux_lsp",
+				"title": "RecordFlux LSP test"
+			}
+		],
+		"languages": [
+			{
+				"id": "recordflux",
+				"aliases": [
+					"RecordFlux",
+					"recordflux",
+					"rflx"
+				],
+				"extensions": [
+					".rflx"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "recordflux",
+				"scopeName": "source.recordflux",
+				"path": "./syntax/recordflux.tmLanguage.json"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "Example configuration",
+			"properties": {
+				"languageServerExample.maxNumberOfProblems": {
+					"scope": "resource",
+					"type": "number",
+					"default": 100,
+					"description": "Controls the maximum number of problems produced by the server."
+				},
+				"languageServerExample.port": {
+					"type": "number",
+					"default": 7000,
+					"scope": "window",
+					"description": "The WebSocket port to stream LSP log data into."
+				},
+				"languageServerExample.trace.server": {
+					"scope": "window",
+					"type": "object",
+					"description": "Traces the communication between VS Code and the language server.",
+					"properties": {
+						"verbosity": {
+							"type": "string",
+							"description": "Controls the verbosity of the trace.",
+							"enum": [
+								"off",
+								"message",
+								"verbose"
+							],
+							"default": "verbose"
+						},
+						"format": {
+							"type": "string",
+							"description": "Controls the output format of the trace.",
+							"enum": [
+								"text",
+								"json"
+							],
+							"default": "json"
+						}
+					}
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile:client": "tsc -p ./tsconfig.json",
+		"compile": "npm run compile:client",
+		"watch:client": "tsc -w -p ./tsconfig.json",
+		"lint": "eslint ./src --ext .ts,.tsx",
+		"test": "sh ./scripts/e2e.sh"
+	},
+	"dependencies": {
+		"fs-extra": "^11.1.1",
+		"vscode-languageclient": "8.1.0-next.6",
+		"ws": "8.12.0"
+	},
+	"devDependencies": {
+		"@types/fs-extra": "^11.0.1",
+		"@types/glob": "8.0.0",
+		"@types/mocha": "^10.0.1",
+		"@types/node": "^16.11.7",
+		"@types/vscode": "1.74.0",
+		"@types/ws": "8.5.4",
+		"@typescript-eslint/eslint-plugin": "^5.48.2",
+		"@typescript-eslint/parser": "^5.48.2",
+		"@vscode/test-electron": "2.2.2",
+		"eslint": "^8.26.0",
+		"glob": "8.1.0",
+		"mocha": "^10.2.0",
+		"typescript": "^4.9.4"
+	}
+}

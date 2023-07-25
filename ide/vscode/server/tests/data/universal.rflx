@@ -1,0 +1,81 @@
+package Universal is
+
+   type Message_Type is (MT_Null => 0,
+                         MT_Data => 1,
+                         MT_Value => 2,
+                         MT_Values => 3,
+                         MT_Option_Types => 4,
+                         MT_Options => 5,
+                         MT_Unconstrained_Data => 6,
+                         MT_Unconstrained_Options => 7) with Size => 8;
+
+   type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+
+   type Value is range 0 .. 255 with Size => 8;
+
+   type Values is sequence of Value;
+
+   type Option_Type is (OT_Null => 0, OT_Data => 1) with Size => 8, Always_Valid => True;
+
+   type Option_Types is sequence of Option_Type;
+
+   type Option is
+      message
+         Option_Type : Option_Type
+            then null
+               if Option_Type = OT_Null
+            then Length
+               if Option_Type = OT_Data;
+         Length : Length
+            then Data
+               with Size => Length * 8;
+         Data : Opaque;
+      end message;
+
+   type Options is sequence of Option;
+
+   type Message is
+      message
+         Message_Type : Message_Type
+            then null
+               if Message_Type = MT_Null
+            then Data
+               with Size => Message'Last - Message_Type'Last
+               if Message_Type = MT_Unconstrained_Data
+            then Length
+               if Message_Type /= MT_Null
+                  and Message_Type /= MT_Unconstrained_Data
+                  and Message_Type /= MT_Unconstrained_Options
+            then Options
+               with Size => Message'Last - Message_Type'Last
+               if Message_Type = MT_Unconstrained_Options;
+         Length : Length
+            then Data
+               with Size => Length * 8
+               if Message_Type = MT_Data
+            then Option_Types
+               with Size => Length * 8
+               if Message_Type = MT_Option_Types
+            then Options
+               with Size => Length * 8
+               if Message_Type = MT_Options
+            then Value
+               if Message_Type = MT_Value
+                  and Length = Universal::Value'Size / 8
+            then Values
+               with Size => Length * 8
+               if Message_Type = MT_Values;
+         Data : Opaque
+            then null;
+         Option_Types : Option_Types
+            then null;
+         Options : Options
+            then null;
+         Value : Value
+            then null;
+         Values : Values;
+      end message;
+
+   for Message use (Data => Option);
+
+end Universal;

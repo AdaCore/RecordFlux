@@ -1,0 +1,79 @@
+{
+	"name": "RecordFlux",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#operators"
+		},
+		{
+			"include": "#constants"
+		},
+		{
+			"include": "#types"
+		},
+		{
+			"include": "#support"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.recordflux",
+					"match": "\\b(if|then|return|goto)\\b"
+				},
+				{
+					"name": "keyword.other.recordflux",
+					"match": "\\b(begin|end|with|message|session|package|type|function|is|of|for|use|new|state|transition|exception|generic)"
+				}
+			]
+		},
+		"operators": {
+			"name": "entity.name.operator.recordflux",
+			"match": "=>|=|\\*|\\+|\\-|/=|\\.\\.|<|<=|>|>=|:=|\\b(or|and|range|sequence|'First|'Size|'Last|'Valid_Checksum|'Valid|'Write|'Read)"
+		},
+		"strings": {
+			"name": "string.quoted.double.recordflux",
+			"begin": "\"",
+			"end": "\""
+		},
+		"comments": {
+			"name": "comment.line.recordflux",
+			"begin": "--",
+			"end": "[\\n\\r]"
+		},
+		"constants": {
+			"patterns": [
+				{
+					"name": "constant.language.recordflux",
+					"match": "\\b(null|Low_Order_First|High_Order_First|Always_Valid|Readable|Writable)"
+				},
+				{
+					"name": "constant.numeric.recordflux",
+					"match": "\\d[0-9_]*(\\.\\d[0-9_]*)?([eE]([-+])?\\d[0-9_]*)?"
+				},
+				{
+					"name": "variable.language.recordflux",
+					"match": "\\b(Size|Byte_Order|Checksum)"
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"name": "entity.name.type.recordflux",
+					"match": "\\b(Opaque|Channel)"
+				}
+			]
+		}
+	},
+	"scopeName": "source.recordflux"
+}

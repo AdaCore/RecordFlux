@@ -1,0 +1,40 @@
+with Universal;
+
+package Messages is
+
+   type Integer is range 0 .. 2 ** 32 - 1 with Size => 32;
+
+   type Integers is sequence of Universal::Value;
+
+   type Enum_T is
+      (Enum_A => 0,
+       Enum_B => 1,
+       Enum_C => 2,
+       Enum_D => 4,
+       Enum_E => 8,
+       Enum_F => 16,
+       Enum_G => 32)
+   with Size => 32;
+
+   type Msg is
+      message
+         A : Integer;
+         B : Enum_T;
+      end message;
+
+   type Msg_LE_Nested is
+      message
+         X : Msg;
+         Y : Enum_T;
+         Z : Universal::Message;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Msg_LE is
+      message
+         C : Integer;
+         D : Enum_T;
+      end message
+         with Byte_Order => Low_Order_First;
+
+end Messages;

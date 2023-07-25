@@ -1,0 +1,92 @@
+with Universal;
+
+package Test is
+
+   type Result is (M_Valid, M_Invalid) with Size => 2;
+
+   type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Definite_Message is
+      message
+         Message_Type : Universal::Option_Type;
+         Length : Length;
+         Data : Opaque
+            with Size => Length * 8;
+      end message;
+
+   generic
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      -- §S-P-F-R-S
+      with function Get_Message_Type return Universal::Option_Type;
+      -- §S-P-F-P-S, §S-P-F-P-O, §S-P-F-R-M
+      with function Create_Message
+         (Message_Type : Universal::Option_Type;
+          Length : Length;
+          Data : Opaque)
+      return Definite_Message;
+      -- §S-P-F-P-S, §S-P-F-R-S
+      with function Valid_Message
+         (Message_Type : Universal::Option_Type;
+          Strict : Boolean)
+      return Result;
+   session Session is
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Definite_Message : Definite_Message; -- §S-D-V-T-M, §S-D-V-E-N
+   begin
+      state Start is
+      begin
+         Channel'Read (Message); -- §S-S-A-RD-V
+      transition
+         goto Process
+            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
+               and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+               and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+         goto null -- §S-S-T-N
+      end Start;
+
+      state Process is
+         Valid : Result; -- §S-S-D-V-T-SC
+         Message_Type : Universal::Option_Type; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
+         Length : Length;
+      begin
+         Message_Type := Get_Message_Type; -- §S-S-A-A-CL, §S-E-CL-N
+         Valid := Valid_Message (Message_Type, True); -- §S-S-A-A-CL, §S-E-CL-L
+         Length := Message.Data'Size / 8; -- §S-S-A-A-ME
+         -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
+         Definite_Message := Create_Message (Message_Type, Length, Message.Data);
+      transition
+         goto Reply
+            if Valid = M_Valid -- §S-S-T-BE
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Process;
+
+      state Reply is
+      begin
+         Channel'Write (Definite_Message); -- §S-S-A-WR-V
+      transition
+         goto Process_2 -- §S-S-T-N
+      end Reply;
+
+      state Process_2 is
+         Length : Length;
+      begin
+         Length := Message'Size / 8; -- §S-S-A-A-ME
+         -- §S-S-A-A-CL, §S-E-CL-L, §S-E-CL-V, §S-E-CL-OAT
+         Definite_Message := Create_Message (Universal::OT_Data, Length, Message'Opaque);
+      transition
+         goto Reply_2 -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Process_2;
+
+      state Reply_2 is
+      begin
+         Channel'Write (Definite_Message); -- §S-S-A-WR-V
+      transition
+         goto null -- §S-S-T-N
+      end Reply_2;
+   end Session;
+
+end Test;
