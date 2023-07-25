@@ -12,6 +12,18 @@ is
 
    use type RFLX.RFLX_Types.Bit_Length;
 
+   use type RFLX.Universal.Length;
+
+   pragma Warnings (Off, """*"" is already use-visible through previous use_type_clause");
+
+   pragma Warnings (Off, "use clause for type ""*"" defined at * has no effect");
+
+   use type RFLX.RFLX_Types.Base_Integer;
+
+   pragma Warnings (On, "use clause for type ""*"" defined at * has no effect");
+
+   pragma Warnings (On, """*"" is already use-visible through previous use_type_clause");
+
    procedure Start (Ctx : in out Context'Class) with
      Pre =>
        Initialized (Ctx),
@@ -39,6 +51,10 @@ is
        Initialized (Ctx)
    is
       Local : Universal.Value := 2;
+      T_0 : Universal.Value;
+      T_2 : Universal.Value;
+      T_3 : Universal.Value;
+      T_1 : RFLX.RFLX_Types.Base_Integer;
       function Process_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null)
        with
@@ -47,32 +63,47 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      -- tests/feature/session_variable_initialization/test.rflx:22:10
+      -- tests/feature/session_variable_initialization/test.rflx:22:27
       if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
-         Local := Local + Universal.Message.Get_Value (Ctx.P.Message_Ctx);
+         T_0 := Universal.Message.Get_Value (Ctx.P.Message_Ctx);
       else
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      -- tests/feature/session_variable_initialization/test.rflx:23:10
-      Ctx.P.Uninitialized_Global := Local;
-      -- tests/feature/session_variable_initialization/test.rflx:24:10
-      Ctx.P.Global := Ctx.P.Uninitialized_Global + 20;
-      -- tests/feature/session_variable_initialization/test.rflx:26:10
-      Universal.Message.Reset (Ctx.P.Message_Ctx);
-      if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < 32 then
+      -- tests/feature/session_variable_initialization/test.rflx:22:19
+      T_2 := 255 - T_0;
+      -- tests/feature/session_variable_initialization/test.rflx:22:19
+      if not (RFLX.RFLX_Types.Base_Integer (Local) <= RFLX.RFLX_Types.Base_Integer (T_2)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      -- tests/feature/session_variable_initialization/test.rflx:22:10
+      Local := Local + T_0;
+      -- tests/feature/session_variable_initialization/test.rflx:23:10
+      Ctx.P.Uninitialized_Global := Local;
+      -- tests/feature/session_variable_initialization/test.rflx:24:20
+      T_3 := 255 - 20;
+      -- tests/feature/session_variable_initialization/test.rflx:24:20
+      if not (RFLX.RFLX_Types.Base_Integer (Ctx.P.Uninitialized_Global) <= RFLX.RFLX_Types.Base_Integer (T_3)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      -- tests/feature/session_variable_initialization/test.rflx:24:10
+      Ctx.P.Global := Ctx.P.Uninitialized_Global + 20;
+      -- tests/feature/session_variable_initialization/test.rflx:27:51
+      T_1 := RFLX.RFLX_Types.Base_Integer (Universal.Value'Size);
+      -- tests/feature/session_variable_initialization/test.rflx:26:10
+      Universal.Message.Reset (Ctx.P.Message_Ctx);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
-      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (Universal.Value'Size / 8));
+      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (T_1) / Universal.Length (8));
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value));
       Universal.Message.Set_Value (Ctx.P.Message_Ctx, Ctx.P.Global);
-      if Local < Ctx.P.Global then
+      if RFLX.RFLX_Types.Base_Integer (Local) < RFLX.RFLX_Types.Base_Integer (Ctx.P.Global) then
          Ctx.P.Next_State := S_Reply;
       else
          Ctx.P.Next_State := S_Final;

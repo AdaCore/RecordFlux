@@ -6,14 +6,14 @@ import pytest
 import z3
 
 from rflx import expression as expr, tac, typing_ as rty
-from rflx.error import Location, RecordFluxError
+from rflx.error import Location
 from rflx.identifier import ID, id_generator
 
 PROOF_MANAGER = tac.ProofManager(2)
 INT_TY = rty.Integer("I", rty.Bounds(10, 100))
 ENUM_TY = rty.Enumeration("E", [ID("E1"), ID("E2")])
 MSG_TY = rty.Message("M", {("E", "I")}, {}, {ID("E"): ENUM_TY, ID("I"): INT_TY})
-SEQ_TY = rty.Sequence("S", rty.Message("M"))
+SEQ_TY = rty.Sequence("S", MSG_TY)
 
 
 def test_constructed_origin_location() -> None:
@@ -213,20 +213,20 @@ def test_write_z3_expr() -> None:
     assert tac.Write("X", tac.ObjVar("Y", MSG_TY)).to_z3_expr() == z3.BoolVal(True)
 
 
-def test_assert_substituted() -> None:
-    assert tac.Assert(tac.BoolVar("X")).substituted(
+def test_check_substituted() -> None:
+    assert tac.Check(tac.BoolVar("X")).substituted(
         {
             ID("X"): ID("Y"),
         }
-    ) == tac.Assert(tac.BoolVar("Y"))
+    ) == tac.Check(tac.BoolVar("Y"))
 
 
-def test_assert_to_z3_expr() -> None:
-    assert tac.Assert(tac.BoolVar("X")).to_z3_expr() == z3.Bool("X")
+def test_check_to_z3_expr() -> None:
+    assert tac.Check(tac.BoolVar("X")).to_z3_expr() == z3.Bool("X")
 
 
-def test_assert_preconditions() -> None:
-    assert not tac.Assert(tac.BoolVar("X")).preconditions(id_generator())
+def test_check_preconditions() -> None:
+    assert not tac.Check(tac.BoolVar("X")).preconditions(id_generator())
 
 
 def test_expr_location() -> None:
@@ -237,12 +237,33 @@ def test_expr_location() -> None:
     ).location == Location((1, 2))
 
 
+def test_expr_origin_str() -> None:
+    assert (
+        tac.IntVar(
+            "X",
+            INT_TY,
+            origin=expr.Variable("Y"),
+        ).origin_str
+        == "Y"
+    )
+
+
 def test_int_var_identifier() -> None:
     assert tac.IntVar("X", INT_TY).identifier == ID("X")
 
 
 def test_int_var_type() -> None:
     assert tac.IntVar("X", INT_TY).type_ == INT_TY
+
+
+def test_int_var_substituted() -> None:
+    assert tac.IntVar("X", INT_TY).substituted({}) == tac.IntVar("X", INT_TY)
+    assert tac.IntVar("X", INT_TY).substituted(
+        {
+            ID("X"): ID("Y"),
+            ID("Y"): ID("Z"),
+        }
+    ) == tac.IntVar("Y", INT_TY)
 
 
 def test_int_var_to_z3_expr() -> None:
@@ -259,6 +280,16 @@ def test_bool_var_identifier() -> None:
 
 def test_bool_var_type() -> None:
     assert tac.BoolVar("X").type_ == rty.BOOLEAN
+
+
+def test_bool_var_substituted() -> None:
+    assert tac.BoolVar("X").substituted({}) == tac.BoolVar("X")
+    assert tac.BoolVar("X").substituted(
+        {
+            ID("X"): ID("Y"),
+            ID("Y"): ID("Z"),
+        }
+    ) == tac.BoolVar("Y")
 
 
 def test_bool_var_to_z3_expr() -> None:
@@ -278,6 +309,7 @@ def test_obj_var_type() -> None:
 
 
 def test_obj_var_substituted() -> None:
+    assert tac.ObjVar("X", ENUM_TY).substituted({}) == tac.ObjVar("X", ENUM_TY)
     assert tac.ObjVar("X", ENUM_TY).substituted(
         {
             ID("X"): ID("Y"),
@@ -333,16 +365,20 @@ def test_bool_val_to_z3_expr() -> None:
 @pytest.mark.parametrize(
     "attribute, expected",
     [
-        (tac.Size("X"), "X'Size"),
-        (tac.Length("X"), "X'Length"),
-        (tac.First("X"), "X'First"),
-        (tac.Last("X"), "X'Last"),
-        (tac.ValidChecksum("X"), "X'Valid_Checksum"),
-        (tac.Valid("X"), "X'Valid"),
-        (tac.Present("X"), "X'Present"),
-        (tac.HasData("X"), "X'Has_Data"),
-        (tac.Head("X", ENUM_TY), "X'Head"),
-        (tac.Opaque("X"), "X'Opaque"),
+        (tac.Size("X", MSG_TY), "X'Size"),
+        (tac.Size("X", MSG_TY, negative=True), "-X'Size"),
+        (tac.Length("X", MSG_TY), "X'Length"),
+        (tac.Length("X", MSG_TY, negative=True), "-X'Length"),
+        (tac.First("X", MSG_TY), "X'First"),
+        (tac.First("X", MSG_TY, negative=True), "-X'First"),
+        (tac.Last("X", MSG_TY), "X'Last"),
+        (tac.Last("X", MSG_TY, negative=True), "-X'Last"),
+        (tac.ValidChecksum("X", MSG_TY), "X'Valid_Checksum"),
+        (tac.Valid("X", MSG_TY), "X'Valid"),
+        (tac.Present("X", MSG_TY), "X'Present"),
+        (tac.HasData("X", MSG_TY), "X'Has_Data"),
+        (tac.Head("X", SEQ_TY), "X'Head"),
+        (tac.Opaque("X", MSG_TY), "X'Opaque"),
     ],
 )
 def test_attr_str(attribute: tac.Attr, expected: str) -> None:
@@ -352,16 +388,17 @@ def test_attr_str(attribute: tac.Attr, expected: str) -> None:
 @pytest.mark.parametrize(
     "attribute, expected",
     [
-        (tac.Size("X"), rty.UniversalInteger()),
-        (tac.Length("X"), rty.UniversalInteger()),
-        (tac.First("X"), rty.UniversalInteger()),
-        (tac.Last("X"), rty.UniversalInteger()),
-        (tac.ValidChecksum("X"), rty.BOOLEAN),
-        (tac.Valid("X"), rty.BOOLEAN),
-        (tac.Present("X"), rty.BOOLEAN),
-        (tac.HasData("X"), rty.BOOLEAN),
-        (tac.Head("X", ENUM_TY), ENUM_TY),
-        (tac.Opaque("X"), rty.OPAQUE),
+        (tac.Size("X", MSG_TY), rty.BIT_LENGTH),
+        (tac.Size("X", ENUM_TY), rty.UniversalInteger()),
+        (tac.Length("X", MSG_TY), rty.UniversalInteger()),
+        (tac.First("X", MSG_TY), rty.UniversalInteger()),
+        (tac.Last("X", MSG_TY), rty.UniversalInteger()),
+        (tac.ValidChecksum("X", MSG_TY), rty.BOOLEAN),
+        (tac.Valid("X", MSG_TY), rty.BOOLEAN),
+        (tac.Present("X", MSG_TY), rty.BOOLEAN),
+        (tac.HasData("X", MSG_TY), rty.BOOLEAN),
+        (tac.Head("X", SEQ_TY), MSG_TY),
+        (tac.Opaque("X", MSG_TY), rty.OPAQUE),
     ],
 )
 def test_attr_type(attribute: tac.Attr, expected: rty.Type) -> None:
@@ -371,16 +408,16 @@ def test_attr_type(attribute: tac.Attr, expected: rty.Type) -> None:
 @pytest.mark.parametrize(
     "attribute, expected",
     [
-        (tac.Size("X"), tac.Size("Y")),
-        (tac.Length("X"), tac.Length("Y")),
-        (tac.First("X"), tac.First("Y")),
-        (tac.Last("X"), tac.Last("Y")),
-        (tac.ValidChecksum("X"), tac.ValidChecksum("Y")),
-        (tac.Valid("X"), tac.Valid("Y")),
-        (tac.Present("X"), tac.Present("Y")),
-        (tac.HasData("X"), tac.HasData("Y")),
-        (tac.Head("X", ENUM_TY), tac.Head("Y", ENUM_TY)),
-        (tac.Opaque("X"), tac.Opaque("Y")),
+        (tac.Size("X", MSG_TY), tac.Size("Y", MSG_TY)),
+        (tac.Length("X", MSG_TY), tac.Length("Y", MSG_TY)),
+        (tac.First("X", MSG_TY), tac.First("Y", MSG_TY)),
+        (tac.Last("X", MSG_TY), tac.Last("Y", MSG_TY)),
+        (tac.ValidChecksum("X", MSG_TY), tac.ValidChecksum("Y", MSG_TY)),
+        (tac.Valid("X", MSG_TY), tac.Valid("Y", MSG_TY)),
+        (tac.Present("X", MSG_TY), tac.Present("Y", MSG_TY)),
+        (tac.HasData("X", MSG_TY), tac.HasData("Y", MSG_TY)),
+        (tac.Head("X", SEQ_TY), tac.Head("Y", SEQ_TY)),
+        (tac.Opaque("X", MSG_TY), tac.Opaque("Y", MSG_TY)),
     ],
 )
 def test_attr_substituted(attribute: tac.Attr, expected: tac.Attr) -> None:
@@ -398,18 +435,80 @@ def test_attr_substituted(attribute: tac.Attr, expected: tac.Attr) -> None:
 @pytest.mark.parametrize(
     "attribute, expected",
     [
-        (tac.Size("X"), z3.Int("X'Size")),
-        (tac.Length("X"), z3.Int("X'Length")),
-        (tac.First("X"), z3.Int("X'First")),
-        (tac.Last("X"), z3.Int("X'Last")),
-        (tac.ValidChecksum("X"), z3.Bool("X'Valid_Checksum")),
-        (tac.Valid("X"), z3.Bool("X'Valid")),
-        (tac.Present("X"), z3.Bool("X'Present")),
-        (tac.HasData("X"), z3.Bool("X'Has_Data")),
+        (tac.Size("X", MSG_TY), z3.Int("X'Size")),
+        (tac.Length("X", MSG_TY), z3.Int("X'Length")),
+        (tac.First("X", MSG_TY), z3.Int("X'First")),
+        (tac.Last("X", MSG_TY), z3.Int("X'Last")),
+        (tac.ValidChecksum("X", MSG_TY), z3.Bool("X'Valid_Checksum")),
+        (tac.Valid("X", MSG_TY), z3.Bool("X'Valid")),
+        (tac.Present("X", MSG_TY), z3.Bool("X'Present")),
+        (tac.HasData("X", MSG_TY), z3.Bool("X'Has_Data")),
     ],
 )
 def test_attr_z3_expr(attribute: tac.Attr, expected: z3.ExprRef) -> None:
     assert attribute.prefix == ID("X")
+    assert attribute.to_z3_expr() == expected
+
+
+@pytest.mark.parametrize(
+    "attribute, expected",
+    [
+        (tac.FieldValid("X", "Y", MSG_TY), "X.Y'Field_Valid"),
+        (tac.FieldPresent("X", "Y", MSG_TY), "X.Y'Field_Present"),
+        (tac.FieldSize("X", "Y", MSG_TY), "X.Y'Field_Size"),
+    ],
+)
+def test_field_access_attr_str(attribute: tac.FieldAccessAttr, expected: str) -> None:
+    assert str(attribute) == expected
+
+
+@pytest.mark.parametrize(
+    "attribute, expected",
+    [
+        (tac.FieldValid("X", "Y", MSG_TY), rty.BOOLEAN),
+        (tac.FieldPresent("X", "Y", MSG_TY), rty.BOOLEAN),
+        (tac.FieldSize("X", "Y", MSG_TY), rty.UniversalInteger()),
+    ],
+)
+def test_field_access_attr_type(attribute: tac.FieldAccessAttr, expected: rty.Type) -> None:
+    assert attribute.type_ == expected
+
+
+def test_field_access_attr_field_type() -> None:
+    assert tac.FieldValid("X", "I", MSG_TY).field_type == INT_TY
+
+
+@pytest.mark.parametrize(
+    "attribute, expected",
+    [
+        (tac.FieldValid("X", "Y", MSG_TY), tac.FieldValid("Y", "Y", MSG_TY)),
+        (tac.FieldPresent("X", "Y", MSG_TY), tac.FieldPresent("Y", "Y", MSG_TY)),
+        (tac.FieldSize("X", "Y", MSG_TY), tac.FieldSize("Y", "Y", MSG_TY)),
+    ],
+)
+def test_field_access_attr_substituted(
+    attribute: tac.FieldAccessAttr, expected: tac.FieldAccessAttr
+) -> None:
+    assert (
+        attribute.substituted(
+            {
+                ID("X"): ID("Y"),
+                ID("Y"): ID("Z"),
+            }
+        )
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
+    "attribute, expected",
+    [
+        (tac.FieldValid("X", "Y", MSG_TY), z3.Bool("X.Y'Field_Valid")),
+        (tac.FieldPresent("X", "Y", MSG_TY), z3.Bool("X.Y'Field_Present")),
+        (tac.FieldSize("X", "Y", MSG_TY), z3.Int("X.Y'Field_Size")),
+    ],
+)
+def test_field_access_attr_z3_expr(attribute: tac.FieldAccessAttr, expected: z3.ExprRef) -> None:
     assert attribute.to_z3_expr() == expected
 
 
@@ -518,7 +617,12 @@ def test_add_preconditions() -> None:
     ).preconditions(id_generator()) == [
         tac.Cond(
             tac.LessEqual(tac.IntVar("X", INT_TY), tac.IntVar("T_0", INT_TY)),
-            [tac.Assign("T_0", tac.Sub(tac.IntVal(tac.INT_MAX), tac.IntVal(1)), INT_TY)],
+            [
+                tac.VarDecl("T_0", rty.BASE_INTEGER),
+                tac.Assign(
+                    "T_0", tac.Sub(tac.IntVal(tac.INT_MAX), tac.IntVal(1)), rty.BASE_INTEGER
+                ),
+            ],
         ),
     ]
 
@@ -555,7 +659,12 @@ def test_mul_preconditions() -> None:
     assert tac.Mul(tac.IntVar("X", INT_TY), tac.IntVal(1)).preconditions(id_generator()) == [
         tac.Cond(
             tac.LessEqual(tac.IntVar("X", INT_TY), tac.IntVar("T_0", INT_TY)),
-            [tac.Assign("T_0", tac.Div(tac.IntVal(tac.INT_MAX), tac.IntVal(1)), INT_TY)],
+            [
+                tac.VarDecl("T_0", rty.BASE_INTEGER),
+                tac.Assign(
+                    "T_0", tac.Div(tac.IntVal(tac.INT_MAX), tac.IntVal(1)), rty.BASE_INTEGER
+                ),
+            ],
         ),
     ]
 
@@ -590,7 +699,12 @@ def test_pow_preconditions() -> None:
     assert tac.Pow(tac.IntVar("X", INT_TY), tac.IntVal(1)).preconditions(id_generator()) == [
         tac.Cond(
             tac.LessEqual(tac.IntVar("T_0", INT_TY), tac.IntVal(tac.INT_MAX)),
-            [tac.Assign("T_0", tac.Pow(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
+            [
+                tac.VarDecl("T_0", rty.BASE_INTEGER),
+                tac.Assign(
+                    "T_0", tac.Pow(tac.IntVar("X", INT_TY), tac.IntVal(1)), rty.BASE_INTEGER
+                ),
+            ],
         ),
     ]
 
@@ -717,59 +831,62 @@ def test_not_equal_to_z3_expr() -> None:
 
 def test_int_call_str() -> None:
     assert (
-        str(tac.IntCall("X", [tac.IntVar("Y", INT_TY), tac.BoolVal(True)], INT_TY)) == "X (Y, True)"
+        str(tac.IntCall("X", [tac.IntVar("Y", INT_TY), tac.BoolVal(True)], [], INT_TY))
+        == "X (Y, True)"
     )
 
 
 def test_int_call_substituted() -> None:
-    assert tac.IntCall("X", [tac.IntVar("Y", INT_TY)], INT_TY).substituted(
+    assert tac.IntCall("X", [tac.IntVar("Y", INT_TY)], [], INT_TY).substituted(
         {ID("X"): ID("Y"), ID("Y"): ID("Z")}
-    ) == tac.IntCall("X", [tac.IntVar("Z", INT_TY)], INT_TY)
+    ) == tac.IntCall("X", [tac.IntVar("Z", INT_TY)], [], INT_TY)
 
 
 def test_int_call_to_z3_expr() -> None:
     assert tac.IntCall(
-        "X", [tac.IntVar("Y", INT_TY), tac.BoolVal(True)], INT_TY
+        "X", [tac.IntVar("Y", INT_TY), tac.BoolVal(True)], [], INT_TY
     ).to_z3_expr() == z3.Int("X")
 
 
 def test_bool_call_str() -> None:
-    assert str(tac.BoolCall("X", [tac.BoolVar("Y"), tac.BoolVal(True)])) == "X (Y, True)"
+    assert str(tac.BoolCall("X", [tac.BoolVar("Y"), tac.BoolVal(True)], [])) == "X (Y, True)"
 
 
 def test_bool_call_type() -> None:
-    assert tac.BoolCall("X", [tac.BoolVar("Y")], tac.BoolVal(True)).type_ == rty.BOOLEAN
+    assert tac.BoolCall("X", [tac.BoolVar("Y")], [], tac.BoolVal(True)).type_ == rty.BOOLEAN
 
 
 def test_bool_call_substituted() -> None:
-    assert tac.BoolCall("X", [tac.BoolVar("Y")]).substituted(
+    assert tac.BoolCall("X", [tac.BoolVar("Y")], []).substituted(
         {ID("X"): ID("Y"), ID("Y"): ID("Z")}
-    ) == tac.BoolCall("X", [tac.BoolVar("Z")])
+    ) == tac.BoolCall("X", [tac.BoolVar("Z")], [])
 
 
 def test_bool_call_to_z3_expr() -> None:
-    assert tac.BoolCall("X", [tac.BoolVar("Y")], tac.BoolVal(True)).to_z3_expr() == z3.Bool("X")
+    assert tac.BoolCall("X", [tac.BoolVar("Y")], [], tac.BoolVal(True)).to_z3_expr() == z3.Bool("X")
 
 
 def test_obj_call_str() -> None:
     assert (
-        str(tac.ObjCall("X", [tac.ObjVar("Y", MSG_TY), tac.BoolVal(True)], ENUM_TY))
+        str(tac.ObjCall("X", [tac.ObjVar("Y", MSG_TY), tac.BoolVal(True)], [], ENUM_TY))
         == "X (Y, True)"
     )
 
 
 def test_obj_call_type() -> None:
-    assert tac.ObjCall("X", [tac.ObjVar("Y", MSG_TY), tac.BoolVal(True)], ENUM_TY).type_ == ENUM_TY
+    assert (
+        tac.ObjCall("X", [tac.ObjVar("Y", MSG_TY), tac.BoolVal(True)], [], ENUM_TY).type_ == ENUM_TY
+    )
 
 
 def test_obj_call_substituted() -> None:
-    assert tac.ObjCall("X", [tac.BoolVar("Y")], ENUM_TY).substituted(
+    assert tac.ObjCall("X", [tac.BoolVar("Y")], [], ENUM_TY).substituted(
         {ID("X"): ID("Y"), ID("Y"): ID("Z")}
-    ) == tac.ObjCall("X", [tac.BoolVar("Z")], ENUM_TY)
+    ) == tac.ObjCall("X", [tac.BoolVar("Z")], [], ENUM_TY)
 
 
 def test_call_preconditions() -> None:
-    call = tac.IntCall("X", [tac.IntVar("Y", INT_TY), tac.BoolVal(True)], INT_TY)
+    call = tac.IntCall("X", [tac.IntVar("Y", INT_TY), tac.BoolVal(True)], [], INT_TY)
     assert not call.preconditions(id_generator())
     call.set_preconditions([tac.Cond(tac.Greater(tac.IntVar("Y", INT_TY), tac.IntVal(0)))])
     assert call.preconditions(id_generator()) == [
@@ -830,54 +947,94 @@ def test_obj_field_access_to_z3_expr() -> None:
 
 def test_int_if_expr_str() -> None:
     assert (
-        str(tac.IntIfExpr(tac.BoolVar("X"), tac.IntVar("Y", INT_TY), tac.IntVal(1), INT_TY))
-        == "(if X then Y else 1)"
+        str(
+            tac.IntIfExpr(
+                tac.BoolVar("X"),
+                tac.ComplexIntExpr([], tac.IntVar("Y", INT_TY)),
+                tac.ComplexIntExpr([], tac.IntVal(1)),
+                INT_TY,
+            )
+        )
+        == "(if X then {Y} else {1})"
     )
 
 
 def test_int_if_expr_type() -> None:
     assert (
-        tac.IntIfExpr(tac.BoolVar("X"), tac.IntVar("Y", INT_TY), tac.IntVal(1), INT_TY).type_
+        tac.IntIfExpr(
+            tac.BoolVar("X"),
+            tac.ComplexIntExpr([], tac.IntVar("Y", INT_TY)),
+            tac.ComplexIntExpr([], tac.IntVal(1)),
+            INT_TY,
+        ).type_
         == INT_TY
     )
 
 
 def test_int_if_expr_substituted() -> None:
     assert tac.IntIfExpr(
-        tac.BoolVar("X"), tac.IntVar("Y", INT_TY), tac.IntVal(False), INT_TY
+        tac.BoolVar("X"),
+        tac.ComplexIntExpr([], tac.IntVar("Y", INT_TY)),
+        tac.ComplexIntExpr([], tac.IntVal(1)),
+        INT_TY,
     ).substituted({ID("X"): ID("Y"), ID("Y"): ID("Z")}) == tac.IntIfExpr(
-        tac.BoolVar("Y"), tac.IntVar("Z", INT_TY), tac.IntVal(False), INT_TY
+        tac.BoolVar("Y"),
+        tac.ComplexIntExpr([], tac.IntVar("Z", INT_TY)),
+        tac.ComplexIntExpr([], tac.IntVal(1)),
+        INT_TY,
     )
 
 
 def test_int_if_expr_to_z3_expr() -> None:
     assert tac.IntIfExpr(
-        tac.BoolVar("X"), tac.IntVar("Y", INT_TY), tac.IntVal(1), INT_TY
+        tac.BoolVar("X"),
+        tac.ComplexIntExpr([], tac.IntVar("Y", INT_TY)),
+        tac.ComplexIntExpr([], tac.IntVal(1)),
+        INT_TY,
     ).to_z3_expr() == z3.If(z3.Bool("X"), z3.Int("Y"), z3.IntVal(1))
 
 
 def test_bool_if_expr_str() -> None:
     assert (
-        str(tac.BoolIfExpr(tac.BoolVar("X"), tac.BoolVar("Y"), tac.BoolVal(False)))
-        == "(if X then Y else False)"
+        str(
+            tac.BoolIfExpr(
+                tac.BoolVar("X"),
+                tac.ComplexBoolExpr([], tac.BoolVar("Y")),
+                tac.ComplexBoolExpr([], tac.BoolVal(False)),
+            )
+        )
+        == "(if X then {Y} else {False})"
     )
 
 
 def test_bool_if_expr_type() -> None:
     assert (
-        tac.BoolIfExpr(tac.BoolVar("X"), tac.BoolVar("Y"), tac.BoolVal(False)).type_ == rty.BOOLEAN
+        tac.BoolIfExpr(
+            tac.BoolVar("X"),
+            tac.ComplexBoolExpr([], tac.BoolVar("Y")),
+            tac.ComplexBoolExpr([], tac.BoolVal(False)),
+        ).type_
+        == rty.BOOLEAN
     )
 
 
 def test_bool_if_expr_substituted() -> None:
-    assert tac.BoolIfExpr(tac.BoolVar("X"), tac.BoolVar("Y"), tac.BoolVal(False)).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z")}
-    ) == tac.BoolIfExpr(tac.BoolVar("Y"), tac.BoolVar("Z"), tac.BoolVal(False))
+    assert tac.BoolIfExpr(
+        tac.BoolVar("X"),
+        tac.ComplexBoolExpr([], tac.BoolVar("Y")),
+        tac.ComplexBoolExpr([], tac.BoolVal(False)),
+    ).substituted({ID("X"): ID("Y"), ID("Y"): ID("Z")}) == tac.BoolIfExpr(
+        tac.BoolVar("Y"),
+        tac.ComplexBoolExpr([], tac.BoolVar("Z")),
+        tac.ComplexBoolExpr([], tac.BoolVal(False)),
+    )
 
 
 def test_bool_if_expr_to_z3_expr() -> None:
     assert tac.BoolIfExpr(
-        tac.BoolVar("X"), tac.BoolVar("Y"), tac.BoolVal(False)
+        tac.BoolVar("X"),
+        tac.ComplexBoolExpr([], tac.BoolVar("Y")),
+        tac.ComplexBoolExpr([], tac.BoolVal(False)),
     ).to_z3_expr() == z3.If(z3.Bool("X"), z3.Bool("Y"), z3.BoolVal(False))
 
 
@@ -899,28 +1056,55 @@ def test_conversion_to_z3_expr() -> None:
     assert tac.Conversion("X", tac.IntVar("Y", INT_TY), INT_TY).to_z3_expr() == z3.BoolVal(True)
 
 
+def test_int_conversion_str() -> None:
+    assert str(tac.IntConversion("X", tac.IntVar("Y", INT_TY), INT_TY)) == "X (Y)"
+
+
+def test_int_conversion_type() -> None:
+    assert tac.IntConversion("X", tac.IntVar("Y", INT_TY), INT_TY).type_ == INT_TY
+
+
+def test_int_conversion_substituted() -> None:
+    assert tac.IntConversion("X", tac.IntVar("Y", INT_TY), INT_TY).substituted(
+        {ID("X"): ID("Y"), ID("Y"): ID("Z")}
+    ) == tac.IntConversion("X", tac.IntVar("Z", INT_TY), INT_TY)
+
+
+def test_int_conversion_to_z3_expr() -> None:
+    assert tac.IntConversion("X", tac.IntVar("Y", INT_TY), INT_TY).to_z3_expr() == z3.Int("Y")
+
+
 def test_comprehension_str() -> None:
     assert (
         str(
             tac.Comprehension(
-                "X", tac.ObjVar("Y", SEQ_TY), [], tac.ObjVar("X", MSG_TY), [], tac.BoolVal(True)
+                "X",
+                tac.ObjVar("Y", SEQ_TY),
+                tac.ComplexExpr([], tac.ObjVar("X", MSG_TY)),
+                tac.ComplexBoolExpr([], tac.BoolVal(True)),
             )
         )
-        == "[for X in Y if True => X]"
+        == "[for X in Y if {True} => {X}]"
     )
     assert (
         str(
             tac.Comprehension(
                 "X",
                 tac.ObjVar("Y", SEQ_TY),
-                [tac.Assign("A", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
-                tac.IntVar("A", INT_TY),
-                [
-                    tac.Assign(
-                        "B", tac.Greater(tac.IntVar("X", INT_TY), tac.IntVar("0", INT_TY)), INT_TY
-                    )
-                ],
-                tac.BoolVar("B"),
+                tac.ComplexExpr(
+                    [tac.Assign("A", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
+                    tac.IntVar("A", INT_TY),
+                ),
+                tac.ComplexBoolExpr(
+                    [
+                        tac.Assign(
+                            "B",
+                            tac.Greater(tac.IntVar("X", INT_TY), tac.IntVar("0", INT_TY)),
+                            INT_TY,
+                        )
+                    ],
+                    tac.BoolVar("B"),
+                ),
             )
         )
         == "[for X in Y if {B := X > 0; B} => {A := X + 1; A}]"
@@ -929,21 +1113,137 @@ def test_comprehension_str() -> None:
 
 def test_comprehension_type() -> None:
     assert tac.Comprehension(
-        "X", tac.ObjVar("Y", SEQ_TY), [], tac.ObjVar("X", MSG_TY), [], tac.BoolVal(True)
+        "X",
+        tac.ObjVar("Y", SEQ_TY),
+        tac.ComplexExpr([], tac.ObjVar("X", MSG_TY)),
+        tac.ComplexBoolExpr([], tac.BoolVal(True)),
     ).type_ == rty.Aggregate(MSG_TY)
+
+
+def test_comprehension_substituted() -> None:
+    assert tac.Comprehension(
+        "X",
+        tac.ObjVar("Y", SEQ_TY),
+        tac.ComplexExpr([], tac.ObjVar("X", MSG_TY)),
+        tac.ComplexBoolExpr([], tac.BoolVal(True)),
+    ).substituted({ID("X"): ID("Y"), ID("Y"): ID("Z")}) == tac.Comprehension(
+        "Y",
+        tac.ObjVar("Z", SEQ_TY),
+        tac.ComplexExpr([], tac.ObjVar("Y", MSG_TY)),
+        tac.ComplexBoolExpr([], tac.BoolVal(True)),
+    )
 
 
 def test_comprehension_precondition() -> None:
     assert not tac.Comprehension(
-        "X", tac.ObjVar("Y", SEQ_TY), [], tac.ObjVar("X", MSG_TY), [], tac.BoolVal(True)
+        "X",
+        tac.ObjVar("Y", SEQ_TY),
+        tac.ComplexExpr([], tac.ObjVar("X", MSG_TY)),
+        tac.ComplexBoolExpr([], tac.BoolVal(True)),
     ).preconditions(id_generator())
     assert not tac.Comprehension(
         "X",
         tac.ObjVar("Y", SEQ_TY),
-        [tac.Assign("A", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
-        tac.IntVar("A", INT_TY),
-        [tac.Assign("B", tac.Greater(tac.IntVar("X", INT_TY), tac.IntVar("0", INT_TY)), INT_TY)],
-        tac.BoolVar("B"),
+        tac.ComplexExpr(
+            [tac.Assign("A", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
+            tac.IntVar("A", INT_TY),
+        ),
+        tac.ComplexBoolExpr(
+            [
+                tac.Assign(
+                    "B", tac.Greater(tac.IntVar("X", INT_TY), tac.IntVar("0", INT_TY)), INT_TY
+                )
+            ],
+            tac.BoolVar("B"),
+        ),
+    ).preconditions(id_generator())
+
+
+def test_find_str() -> None:
+    assert (
+        str(
+            tac.Find(
+                "X",
+                tac.ObjVar("Y", SEQ_TY),
+                tac.ComplexExpr([], tac.ObjVar("X", MSG_TY)),
+                tac.ComplexBoolExpr([], tac.BoolVal(True)),
+            )
+        )
+        == "Find (for X in Y if {True} => {X})"
+    )
+    assert (
+        str(
+            tac.Find(
+                "X",
+                tac.ObjVar("Y", SEQ_TY),
+                tac.ComplexExpr(
+                    [tac.Assign("A", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
+                    tac.IntVar("A", INT_TY),
+                ),
+                tac.ComplexBoolExpr(
+                    [
+                        tac.Assign(
+                            "B",
+                            tac.Greater(tac.IntVar("X", INT_TY), tac.IntVar("0", INT_TY)),
+                            INT_TY,
+                        )
+                    ],
+                    tac.BoolVar("B"),
+                ),
+            )
+        )
+        == "Find (for X in Y if {B := X > 0; B} => {A := X + 1; A})"
+    )
+
+
+def test_find_type() -> None:
+    assert (
+        tac.Find(
+            "X",
+            tac.ObjVar("Y", SEQ_TY),
+            tac.ComplexExpr([], tac.ObjVar("X", MSG_TY)),
+            tac.ComplexBoolExpr([], tac.BoolVal(True)),
+        ).type_
+        == MSG_TY
+    )
+
+
+def test_find_substituted() -> None:
+    assert tac.Find(
+        "X",
+        tac.ObjVar("Y", SEQ_TY),
+        tac.ComplexExpr([], tac.ObjVar("X", MSG_TY)),
+        tac.ComplexBoolExpr([], tac.BoolVal(True)),
+    ).substituted({ID("X"): ID("Y"), ID("Y"): ID("Z")}) == tac.Find(
+        "Y",
+        tac.ObjVar("Z", SEQ_TY),
+        tac.ComplexExpr([], tac.ObjVar("Y", MSG_TY)),
+        tac.ComplexBoolExpr([], tac.BoolVal(True)),
+    )
+
+
+def test_find_precondition() -> None:
+    assert not tac.Find(
+        "X",
+        tac.ObjVar("Y", SEQ_TY),
+        tac.ComplexExpr([], tac.ObjVar("X", MSG_TY)),
+        tac.ComplexBoolExpr([], tac.BoolVal(True)),
+    ).preconditions(id_generator())
+    assert not tac.Find(
+        "X",
+        tac.ObjVar("Y", SEQ_TY),
+        tac.ComplexExpr(
+            [tac.Assign("A", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
+            tac.IntVar("A", INT_TY),
+        ),
+        tac.ComplexBoolExpr(
+            [
+                tac.Assign(
+                    "B", tac.Greater(tac.IntVar("X", INT_TY), tac.IntVar("0", INT_TY)), INT_TY
+                )
+            ],
+            tac.BoolVar("B"),
+        ),
     ).preconditions(id_generator())
 
 
@@ -963,6 +1263,13 @@ def test_agg_substituted() -> None:
 
 def test_agg_preconditions() -> None:
     assert not tac.Agg([tac.IntVar("X", INT_TY), tac.IntVal(1)]).preconditions(id_generator())
+
+
+def test_named_agg_str() -> None:
+    assert (
+        str(tac.NamedAgg([(ID("X"), tac.IntVar("Z", INT_TY)), (ID("Y"), tac.IntVal(1))]))
+        == "[X => Z, Y => 1]"
+    )
 
 
 def test_str_str() -> None:
@@ -1026,22 +1333,16 @@ def test_case_expr_str() -> None:
             [
                 (
                     [tac.IntVal(1), tac.IntVal(3)],
-                    [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), MSG_TY), INT_TY)],
-                    tac.IntVar("T_1", INT_TY),
+                    tac.IntVal(0),
                 ),
                 (
                     [tac.IntVal(2)],
-                    [tac.Assign("T_3", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
-                    tac.IntVar("T_3", INT_TY),
+                    tac.IntVar("X", INT_TY),
                 ),
             ],
             INT_TY,
         )
-    ) == (
-        "(case X is\n"
-        "      when 1 | 3 => {T_1 := M.Y;}; T_1,\n"
-        "      when 2 => {T_3 := X + 1;}; T_3)"
-    )
+    ) == ("(case X is\n      when 1 | 3 => 0,\n      when 2 => X)")
 
 
 def test_case_expr_type() -> None:
@@ -1051,18 +1352,51 @@ def test_case_expr_type() -> None:
             [
                 (
                     [tac.IntVal(1), tac.IntVal(3)],
-                    [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), MSG_TY), INT_TY)],
-                    tac.IntVar("T_1", INT_TY),
+                    tac.IntVal(0),
                 ),
                 (
                     [tac.IntVal(2)],
-                    [tac.Assign("T_3", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
-                    tac.IntVar("T_3", INT_TY),
+                    tac.IntVar("X", INT_TY),
                 ),
             ],
             INT_TY,
         ).type_
         == INT_TY
+    )
+
+
+def test_case_expr_substituted() -> None:
+    assert tac.CaseExpr(
+        tac.IntVar("X", INT_TY),
+        [
+            (
+                [tac.IntVal(1), tac.IntVal(3)],
+                tac.IntVal(0),
+            ),
+            (
+                [tac.IntVal(2)],
+                tac.IntVar("X", INT_TY),
+            ),
+        ],
+        INT_TY,
+    ).substituted(
+        {
+            ID("X"): ID("Y"),
+            ID("Y"): ID("Z"),
+        }
+    ) == tac.CaseExpr(
+        tac.IntVar("Y", INT_TY),
+        [
+            (
+                [tac.IntVal(1), tac.IntVal(3)],
+                tac.IntVal(0),
+            ),
+            (
+                [tac.IntVal(2)],
+                tac.IntVar("Y", INT_TY),
+            ),
+        ],
+        INT_TY,
     )
 
 
@@ -1072,21 +1406,19 @@ def test_case_expr_precondition() -> None:
         [
             (
                 [tac.IntVal(1), tac.IntVal(3)],
-                [tac.Assign("T_1", tac.IntFieldAccess("M", ID("Y"), MSG_TY), INT_TY)],
-                tac.IntVar("T_1", INT_TY),
+                tac.IntVal(0),
             ),
             (
                 [tac.IntVal(2)],
-                [tac.Assign("T_3", tac.Add(tac.IntVar("X", INT_TY), tac.IntVal(1)), INT_TY)],
-                tac.IntVar("T_3", INT_TY),
+                tac.IntVar("X", INT_TY),
             ),
         ],
         INT_TY,
     ).preconditions(id_generator())
 
 
-def test_add_checks() -> None:
-    assert tac.add_checks(
+def test_add_required_checks() -> None:
+    assert tac.add_required_checks(
         [
             tac.Assign(
                 "X",
@@ -1101,7 +1433,7 @@ def test_add_checks() -> None:
         PROOF_MANAGER,
         id_generator(),
     ) == [
-        tac.Assert(
+        tac.Check(
             tac.NotEqual(
                 tac.IntVar("Z", INT_TY),
                 tac.IntVal(0),
@@ -1118,7 +1450,7 @@ def test_add_checks() -> None:
             INT_TY,
         ),
     ]
-    assert tac.add_checks(
+    assert tac.add_required_checks(
         [
             tac.Assign("A", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVal(1)), INT_TY),
             tac.Assign("B", tac.Div(tac.IntVar("A", INT_TY), tac.IntVar("Z", INT_TY)), INT_TY),
@@ -1129,190 +1461,19 @@ def test_add_checks() -> None:
         PROOF_MANAGER,
         id_generator(),
     ) == [
-        tac.Assign("T_0", tac.Sub(tac.IntVal(tac.INT_MAX), tac.IntVal(1)), INT_TY),
-        tac.Assert(tac.LessEqual(tac.IntVar("Y", INT_TY), tac.IntVar("T_0", INT_TY))),
+        tac.VarDecl("T_0", rty.BASE_INTEGER),
+        tac.Assign("T_0", tac.Sub(tac.IntVal(tac.INT_MAX), tac.IntVal(1)), rty.BASE_INTEGER),
+        tac.Check(tac.LessEqual(tac.IntVar("Y", INT_TY), tac.IntVar("T_0", INT_TY))),
         tac.Assign("A", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVal(1)), INT_TY),
-        tac.Assert(tac.NotEqual(tac.IntVar("Z", INT_TY), tac.IntVal(0))),
+        tac.Check(tac.NotEqual(tac.IntVar("Z", INT_TY), tac.IntVal(0))),
         tac.Assign("B", tac.Div(tac.IntVar("A", INT_TY), tac.IntVar("Z", INT_TY)), INT_TY),
-        tac.Assert(tac.GreaterEqual(tac.IntVar("B", INT_TY), tac.IntVal(1))),
+        tac.Check(tac.GreaterEqual(tac.IntVar("B", INT_TY), tac.IntVal(1))),
         tac.Assign("X", tac.Sub(tac.IntVar("B", INT_TY), tac.IntVal(1)), INT_TY),
         tac.Assign("Z", tac.IntVal(0), INT_TY),
+        tac.VarDecl("T_1", rty.BASE_INTEGER),
+        tac.Assign(
+            "T_1", tac.Sub(tac.IntVal(9223372036854775807), tac.IntVal(1)), rty.BASE_INTEGER
+        ),
+        tac.Check(tac.LessEqual(tac.IntVar("Z", INT_TY), tac.IntVar("T_1", rty.BASE_INTEGER))),
         tac.Assign("C", tac.Add(tac.IntVar("Z", INT_TY), tac.IntVal(1)), INT_TY),
-    ]
-
-
-def test_check_preconditions() -> None:
-    tac.check_preconditions(
-        [
-            tac.Assign("Z", tac.IntVal(1), INT_TY),
-            tac.Assign(
-                "X",
-                tac.Div(
-                    tac.IntVar("Y", INT_TY),
-                    tac.IntVar("Z", INT_TY),
-                    origin=expr.Variable("X", location=Location((1, 2))),
-                ),
-                INT_TY,
-            ),
-        ],
-        PROOF_MANAGER,
-        id_generator(),
-    ).propagate()
-
-
-@pytest.mark.parametrize(
-    "expression, error",
-    [
-        (
-            tac.Div(
-                tac.IntVar("Y", INT_TY),
-                tac.IntVar("Z", INT_TY, origin=expr.Variable("Z", location=Location((1, 2)))),
-            ),
-            "Z /= 0",
-        )
-    ],
-)
-def test_check_preconditions_error(expression: tac.Expr, error: str) -> None:
-    with pytest.raises(
-        RecordFluxError,
-        match=rf"^<stdin>:1:2: model: error: precondition might fail, cannot prove {error}$",
-    ):
-        tac.check_preconditions(
-            [
-                tac.Assign(
-                    "X",
-                    expression,
-                    INT_TY,
-                )
-            ],
-            PROOF_MANAGER,
-            id_generator(),
-        ).propagate()
-
-
-def test_to_ssa() -> None:
-    assert tac.to_ssa(
-        [
-            tac.Assign("A", tac.IntVal(1), INT_TY),
-            tac.Assign("A", tac.IntVal(0), INT_TY),
-            tac.Assign("A", tac.Div(tac.IntVar("Y", INT_TY), tac.IntVar("A", INT_TY)), INT_TY),
-            tac.Assign("B", tac.IntVar("A", INT_TY), INT_TY),
-            tac.Append("C", tac.IntVar("B", INT_TY), SEQ_TY),
-        ]
-    ) == [
-        tac.Assign("S_A_0", tac.IntVal(1), INT_TY),
-        tac.Assign("S_A_1", tac.IntVal(0), INT_TY),
-        tac.Assign("S_A_2", tac.Div(tac.IntVar("Y", INT_TY), tac.IntVar("S_A_1", INT_TY)), INT_TY),
-        tac.Assign("B", tac.IntVar("A", INT_TY), INT_TY),
-        tac.Append("C", tac.IntVar("B", INT_TY), SEQ_TY),
-    ]
-    assert tac.to_ssa(
-        [
-            tac.Assign("A", tac.IntVal(0), INT_TY),
-            tac.Assign("B", tac.IntVal(1), INT_TY),
-            tac.Assign(
-                "A",
-                tac.CaseExpr(
-                    tac.IntVar("X", INT_TY),
-                    [
-                        (
-                            [tac.IntVal(1), tac.IntVal(3)],
-                            [],
-                            tac.IntVar("A", INT_TY),
-                        ),
-                        (
-                            [tac.IntVal(2)],
-                            [
-                                tac.Assign(
-                                    "T_0", tac.Add(tac.IntVar("B", INT_TY), tac.IntVal(1)), INT_TY
-                                )
-                            ],
-                            tac.IntVar("T_0", INT_TY),
-                        ),
-                    ],
-                    INT_TY,
-                ),
-                INT_TY,
-            ),
-            tac.Assign("B", tac.Div(tac.IntVar("A", INT_TY), tac.IntVar("B", INT_TY)), INT_TY),
-        ]
-    ) == [
-        tac.Assign("S_A_0", tac.IntVal(0), INT_TY),
-        tac.Assign("S_B_0", tac.IntVal(1), INT_TY),
-        tac.Assign(
-            "S_A_1",
-            tac.CaseExpr(
-                tac.IntVar("X", INT_TY),
-                [
-                    (
-                        [tac.IntVal(1), tac.IntVal(3)],
-                        [],
-                        tac.IntVar("S_A_0", INT_TY),
-                    ),
-                    (
-                        [tac.IntVal(2)],
-                        [
-                            tac.Assign(
-                                "T_0", tac.Add(tac.IntVar("S_B_0", INT_TY), tac.IntVal(1)), INT_TY
-                            )
-                        ],
-                        tac.IntVar("T_0", INT_TY),
-                    ),
-                ],
-                INT_TY,
-            ),
-            INT_TY,
-        ),
-        tac.Assign(
-            "S_B_1", tac.Div(tac.IntVar("S_A_1", INT_TY), tac.IntVar("S_B_0", INT_TY)), INT_TY
-        ),
-    ]
-    assert tac.to_ssa(
-        [
-            tac.Assign("A", tac.IntVal(0), INT_TY),
-            tac.Assign("B", tac.IntVal(1), INT_TY),
-            tac.Assign(
-                "A",
-                tac.Comprehension(
-                    "X",
-                    tac.ObjVar("Y", SEQ_TY),
-                    [tac.Assign("T_0", tac.Add(tac.IntVar("A", INT_TY), tac.IntVal(1)), INT_TY)],
-                    tac.IntVar("T_0", INT_TY),
-                    [
-                        tac.Assign(
-                            "T_1",
-                            tac.Greater(tac.IntVar("B", INT_TY), tac.IntVar("0", INT_TY)),
-                            INT_TY,
-                        )
-                    ],
-                    tac.BoolVar("T_1"),
-                ),
-                SEQ_TY,
-            ),
-            tac.Assign("B", tac.Div(tac.IntVar("A", INT_TY), tac.IntVar("B", INT_TY)), INT_TY),
-        ]
-    ) == [
-        tac.Assign("S_A_0", tac.IntVal(0), INT_TY),
-        tac.Assign("S_B_0", tac.IntVal(1), INT_TY),
-        tac.Assign(
-            "S_A_1",
-            tac.Comprehension(
-                "X",
-                tac.ObjVar("Y", SEQ_TY),
-                [tac.Assign("T_0", tac.Add(tac.IntVar("S_A_0", INT_TY), tac.IntVal(1)), INT_TY)],
-                tac.IntVar("T_0", INT_TY),
-                [
-                    tac.Assign(
-                        "T_1",
-                        tac.Greater(tac.IntVar("S_B_0", INT_TY), tac.IntVar("0", INT_TY)),
-                        INT_TY,
-                    )
-                ],
-                tac.BoolVar("T_1"),
-            ),
-            SEQ_TY,
-        ),
-        tac.Assign(
-            "S_B_1", tac.Div(tac.IntVar("S_A_1", INT_TY), tac.IntVar("S_B_0", INT_TY)), INT_TY
-        ),
     ]

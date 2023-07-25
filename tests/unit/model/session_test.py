@@ -510,6 +510,9 @@ def test_declared_local_variable_message_field() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(
+                    target=ID("null"),
+                ),
                 declarations=[],
             ),
         ],
@@ -1069,8 +1072,7 @@ def test_unused_function() -> None:
 
 
 def test_renaming() -> None:
-    Session(
-        identifier="P::S",
+    assert_session_model_error(
         states=[
             State(
                 "Start",
@@ -1094,10 +1096,12 @@ def test_renaming() -> None:
                 "Null_Message",
                 "Null::Message",
                 expr.Selected(expr.Variable("Message"), "Value"),
+                location=Location((10, 20)),
             ),
         ],
         parameters=[],
         types=[NULL_MESSAGE, TLV_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
+        regex=r"^<stdin>:10:20: model: error: renaming declarations not yet supported$",
     )
 
 
@@ -1172,8 +1176,7 @@ def test_renaming_undefined() -> None:
 
 
 def test_for_all() -> None:
-    Session(
-        identifier="P::S",
+    assert_session_model_error(
         states=[
             State(
                 "Start",
@@ -1186,6 +1189,7 @@ def test_for_all() -> None:
                             expr.Greater(
                                 expr.Selected(expr.Variable("E"), "Length"), expr.Number(0)
                             ),
+                            location=Location((10, 20)),
                         ),
                     ),
                     Transition(
@@ -1197,6 +1201,7 @@ def test_for_all() -> None:
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
         types=[BOOLEAN, TLV_MESSAGES],
+        regex=r"^<stdin>:10:20: model: error: quantified expressions not yet supported$",
     )
 
 

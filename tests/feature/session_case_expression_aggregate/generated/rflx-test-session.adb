@@ -59,11 +59,6 @@ is
       end if;
       -- tests/feature/session_case_expression_aggregate/test.rflx:24:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
-      if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < 32 then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Prepare_Invariant);
-         goto Finalize_Prepare;
-      end if;
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));

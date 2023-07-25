@@ -20,6 +20,13 @@ is
      Post =>
        Initialized (Ctx)
    is
+      T_0 : Boolean;
+      T_1 : Boolean;
+      T_2 : Universal.Message_Type;
+      T_3 : Boolean;
+      T_4 : Boolean;
+      T_5 : Universal.Length;
+      T_6 : Boolean;
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null)
        with
@@ -30,16 +37,43 @@ is
       pragma Assert (Start_Invariant);
       -- tests/feature/session_simple/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_simple/test.rflx:15:16
+      T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_simple/test.rflx:15:16
+      T_1 := T_0;
+      -- tests/feature/session_simple/test.rflx:16:20
+      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         T_2 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
+      else
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      -- tests/feature/session_simple/test.rflx:16:20
+      T_3 := T_2 = Universal.MT_Data;
+      -- tests/feature/session_simple/test.rflx:15:16
+      T_4 := T_1
+      and then T_3;
+      -- tests/feature/session_simple/test.rflx:17:20
+      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         T_5 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
+      else
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      -- tests/feature/session_simple/test.rflx:17:20
+      T_6 := T_5 = 1;
       if
-         (Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) = True
-          and then Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx) = Universal.MT_Data)
-         and then Universal.Message.Get_Length (Ctx.P.Message_Ctx) = 1
+         T_4
+         and then T_6
       then
          Ctx.P.Next_State := S_Process;
       else
          Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
+      <<Finalize_Start>>
    end Start;
 
    procedure Process (Ctx : in out Context'Class) with
@@ -56,13 +90,8 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      -- tests/feature/session_simple/test.rflx:24:10
+      -- tests/feature/session_simple/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
-      if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < 32 then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
@@ -94,7 +123,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_simple/test.rflx:33:10
+      -- tests/feature/session_simple/test.rflx:35:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

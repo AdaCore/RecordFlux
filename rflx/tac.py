@@ -1,28 +1,26 @@
-"""
-Intermediate representation in three-address code (TAC) format.
-
-This module is still under development (cf. Eng/RecordFlux/RecordFlux#1204).
-"""
+"""Intermediate representation in three-address code (TAC) format."""
 
 from __future__ import annotations
 
 import re
 from abc import abstractmethod
-from collections import Counter
 from collections.abc import Generator, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from enum import Enum
 from sys import intern
-from typing import Optional, Protocol, TypeVar
+from typing import TYPE_CHECKING, Optional, Protocol, TypeVar, Union
 
 import z3
-from attr import define, field
+from attr import define, field, frozen
 
 from rflx import typing_ as rty
 from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.error import Location
 from rflx.identifier import ID, StrID
+
+if TYPE_CHECKING:
+    from rflx.model import type_ as mty
 
 INT_MIN: int = 0
 INT_MAX: int = 2**MAX_SCALAR_SIZE - 1
@@ -60,18 +58,17 @@ class ProofJob(Base):
     def __init__(
         self,
         facts: Sequence[Stmt],
+        results: Mapping[ProofResult, Sequence[int]],
         logic: str = "QF_NIA",
     ):
         self._facts = facts
         self._logic = logic
-
-        self._results: Mapping[ProofResult, object]
-        self._result: object
+        self._results = results
+        self._result: Sequence[int]
 
     @property
-    @abstractmethod
-    def result(self) -> object:
-        raise NotImplementedError
+    def result(self) -> Sequence[int]:
+        return self._result
 
     def check(self) -> ProofJob:
         """Check the specified facts and return the corresponding object depending on the result."""
@@ -85,40 +82,6 @@ class ProofJob(Base):
         self._result = self._results[proof_result]
 
         return self
-
-
-class StmtListProofJob(ProofJob):
-    def __init__(
-        self,
-        facts: Sequence[Stmt],
-        results: Mapping[ProofResult, Sequence[Stmt]],
-        logic: str = "QF_NIA",
-    ):
-        super().__init__(facts, logic)
-        self._results: Mapping[ProofResult, Sequence[Stmt]] = results
-
-        self._result: Sequence[Stmt]
-
-    @property
-    def result(self) -> Sequence[Stmt]:
-        return self._result
-
-
-class ErrorProofJob(ProofJob):
-    def __init__(
-        self,
-        facts: Sequence[Stmt],
-        results: Mapping[ProofResult, RecordFluxError],
-        logic: str = "QF_NIA",
-    ):
-        super().__init__(facts, logic)
-        self._results: Mapping[ProofResult, RecordFluxError] = results
-
-        self._result: RecordFluxError
-
-    @property
-    def result(self) -> RecordFluxError:
-        return self._result
 
 
 class ProofManager(Base):
@@ -198,10 +161,28 @@ class Stmt(Base):
 
 
 @define(eq=False)
+class VarDecl(Stmt):
+    identifier: ID = field(converter=ID)
+    type_: rty.NamedType
+    expression: Optional[ComplexExpr] = None
+    origin: Optional[Origin] = None
+
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return []
+
+    def to_z3_expr(self) -> z3.BoolRef:
+        raise NotImplementedError
+
+    def _update_str(self) -> None:
+        initialization = f" = {self.expression}" if self.expression else ""
+        self._str = intern(f"Var {self.identifier} : {self.type_.identifier}{initialization}")
+
+
+@define(eq=False)
 class Assign(Stmt):
     target: ID = field(converter=ID)
     expression: Expr
-    type_: rty.Any
+    type_: rty.NamedType
     origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Assign:
@@ -242,7 +223,7 @@ class Assign(Stmt):
 class FieldAssign(Stmt):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
-    expression: BasicExpr
+    expression: Expr
     type_: rty.Message
     origin: Optional[Origin] = None
 
@@ -275,7 +256,7 @@ class FieldAssign(Stmt):
 @define(eq=False)
 class Append(Stmt):
     sequence: ID = field(converter=ID)
-    expression: BasicExpr
+    expression: Expr
     type_: rty.Sequence
     origin: Optional[Origin] = None
 
@@ -300,7 +281,7 @@ class Append(Stmt):
 @define(eq=False)
 class Extend(Stmt):
     sequence: ID = field(converter=ID)
-    expression: BasicExpr
+    expression: Expr
     type_: rty.Sequence
     origin: Optional[Origin] = None
 
@@ -325,7 +306,7 @@ class Extend(Stmt):
 @define(eq=False)
 class Reset(Stmt):
     identifier: ID = field(converter=ID)
-    parameter_values: Mapping[ID, BasicExpr]
+    parameter_values: Mapping[ID, Expr]
     type_: rty.Any
     origin: Optional[Origin] = None
 
@@ -352,7 +333,7 @@ class Reset(Stmt):
 
 @define(eq=False)
 class ChannelStmt(Stmt):
-    channel: StrID = field(converter=ID)
+    channel: ID = field(converter=ID)
     expression: BasicExpr
     origin: Optional[Origin] = None
 
@@ -384,12 +365,16 @@ class Write(ChannelStmt):
 
 
 @define(eq=False)
-class Assert(Stmt):
+class Check(Stmt):
     expression: BoolExpr
     origin: Optional[Origin] = None
 
-    def substituted(self, mapping: Mapping[ID, ID]) -> Assert:
-        return Assert(
+    @property
+    def location(self) -> Optional[Location]:
+        return self.expression.location
+
+    def substituted(self, mapping: Mapping[ID, ID]) -> Check:
+        return Check(
             self.expression.substituted(mapping),
             self.origin,
         )
@@ -401,7 +386,7 @@ class Assert(Stmt):
         return self.expression.to_z3_expr()
 
     def _update_str(self) -> None:
-        self._str = intern(f"Assert {self.expression}")
+        self._str = intern(f"Check {self.expression}")
 
 
 Self = TypeVar("Self", bound="Expr")
@@ -615,11 +600,14 @@ class BoolVal(BasicBoolExpr):
 @define(eq=False)
 class Attr(Expr):
     prefix: ID = field(converter=ID)
+    prefix_type: rty.Any
     origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Attr:
         return self.__class__(
-            mapping[self.prefix] if self.prefix in mapping else self.prefix, self.origin
+            mapping[self.prefix] if self.prefix in mapping else self.prefix,
+            self.prefix_type,
+            self.origin,
         )
 
     def _update_str(self) -> None:
@@ -628,43 +616,59 @@ class Attr(Expr):
 
 
 @define(eq=False)
-class Size(Attr):
-    @property
-    def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger()
+class IntAttr(Attr, IntExpr):
+    prefix: ID = field(converter=ID)
+    prefix_type: rty.Any
+    negative: bool = False
+    origin: Optional[Origin] = None
 
-    def to_z3_expr(self) -> z3.ExprRef:
-        return z3.Int(str(self))
+    def substituted(self, mapping: Mapping[ID, ID]) -> IntAttr:
+        return self.__class__(
+            mapping[self.prefix] if self.prefix in mapping else self.prefix,
+            self.prefix_type,
+            self.negative,
+            self.origin,
+        )
 
+    def to_z3_expr(self) -> z3.ArithRef:
+        return -z3.Int(str(self)) if self.negative else z3.Int(str(self))
 
-@define(eq=False)
-class Length(Attr):
-    @property
-    def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger()
-
-    def to_z3_expr(self) -> z3.ExprRef:
-        return z3.Int(str(self))
-
-
-@define(eq=False)
-class First(Attr):
-    @property
-    def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger()
-
-    def to_z3_expr(self) -> z3.ExprRef:
-        return z3.Int(str(self))
+    def _update_str(self) -> None:
+        super(IntAttr, self)._update_str()  # noqa: UP008
+        if self.negative:
+            self._str = f"-{self._str}"
 
 
 @define(eq=False)
-class Last(Attr):
+class Size(IntAttr):
+    @property
+    def type_(self) -> rty.AnyInteger:
+        return (
+            rty.BIT_LENGTH
+            if isinstance(self.prefix_type, (rty.Composite, rty.Compound))
+            else rty.UniversalInteger()
+        )
+
+
+@define(eq=False)
+class Length(IntAttr):
     @property
     def type_(self) -> rty.UniversalInteger:
         return rty.UniversalInteger()
 
-    def to_z3_expr(self) -> z3.ExprRef:
-        return z3.Int(str(self))
+
+@define(eq=False)
+class First(IntAttr):
+    @property
+    def type_(self) -> rty.UniversalInteger:
+        return rty.UniversalInteger()
+
+
+@define(eq=False)
+class Last(IntAttr):
+    @property
+    def type_(self) -> rty.UniversalInteger:
+        return rty.UniversalInteger()
 
 
 @define(eq=False)
@@ -710,12 +714,13 @@ class HasData(Attr):
 @define(eq=False)
 class Head(Attr):
     prefix: ID = field(converter=ID)
-    element_type: rty.Any
+    prefix_type: rty.Composite
     origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Any:
-        return self.element_type
+        assert isinstance(self.prefix_type.element, rty.Any)
+        return self.prefix_type.element
 
     def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -723,12 +728,72 @@ class Head(Attr):
 
 @define(eq=False)
 class Opaque(Attr):
+    prefix: ID = field(converter=ID)
+    prefix_type: Union[rty.Message, rty.Sequence]
+    origin: Optional[Origin] = None
+
     @property
     def type_(self) -> rty.Sequence:
         return rty.OPAQUE
 
     def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
+
+
+@define(eq=False)
+class FieldAccessAttr(Expr):
+    message: ID = field(converter=ID)
+    field: ID = field(converter=ID)
+    message_type: rty.Compound
+    origin: Optional[Origin] = None
+
+    @property
+    def field_type(self) -> rty.Any:
+        type_ = self.message_type.field_types[self.field]
+        assert isinstance(type_, rty.Any)
+        return type_
+
+    def substituted(self, mapping: Mapping[ID, ID]) -> FieldAccessAttr:
+        return self.__class__(
+            mapping[self.message] if self.message in mapping else self.message,
+            self.field,
+            self.message_type,
+            self.origin,
+        )
+
+    def _update_str(self) -> None:
+        symbol = re.sub(r"([a-z])([A-Z])", r"\1_\2", self.__class__.__name__)
+        self._str = intern(f"{self.message}.{self.field}'{symbol}")
+
+
+@define(eq=False)
+class FieldValid(FieldAccessAttr, BoolExpr):
+    @property
+    def type_(self) -> rty.Enumeration:
+        return rty.BOOLEAN
+
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.Bool(str(self))
+
+
+@define(eq=False)
+class FieldPresent(FieldAccessAttr, BoolExpr):
+    @property
+    def type_(self) -> rty.Enumeration:
+        return rty.BOOLEAN
+
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.Bool(str(self))
+
+
+@define(eq=False)
+class FieldSize(FieldAccessAttr, IntExpr):
+    @property
+    def type_(self) -> rty.UniversalInteger:
+        return rty.UniversalInteger()
+
+    def to_z3_expr(self) -> z3.ArithRef:
+        return z3.Int(str(self))
 
 
 @define(eq=False)
@@ -806,6 +871,7 @@ class Add(BinaryIntExpr):
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
+        v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
             if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None
@@ -818,7 +884,7 @@ class Add(BinaryIntExpr):
                     self.left,
                     IntVar(
                         v_id,
-                        self.right.type_,
+                        v_type,
                         origin=(
                             ConstructedOrigin(
                                 f"{upper_bound} - {self.right.origin}",
@@ -829,8 +895,19 @@ class Add(BinaryIntExpr):
                         ),
                     ),
                 ),
-                [Assign(v_id, Sub(IntVal(INT_MAX), self.right), self.right.type_)],
-            )
+                [
+                    VarDecl(v_id, v_type, None, origin=self.origin),
+                    Assign(
+                        v_id,
+                        Sub(
+                            IntVal(upper_bound),
+                            self.right,
+                        ),
+                        v_type,
+                        origin=self.origin,
+                    ),
+                ],
+            ),
         ]
 
     @property
@@ -861,6 +938,7 @@ class Mul(BinaryIntExpr):
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
+        v_type = to_integer(self.right.type_)
         upper_bound = (
             self.type_.bounds.upper
             if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None
@@ -873,7 +951,7 @@ class Mul(BinaryIntExpr):
                     self.left,
                     IntVar(
                         v_id,
-                        self.right.type_,
+                        v_type,
                         origin=(
                             ConstructedOrigin(
                                 f"{upper_bound} / {self.right.origin}",
@@ -884,7 +962,10 @@ class Mul(BinaryIntExpr):
                         ),
                     ),
                 ),
-                [Assign(v_id, Div(IntVal(INT_MAX), self.right), self.right.type_)],
+                [
+                    VarDecl(v_id, v_type, None, origin=self.origin),
+                    Assign(v_id, Div(IntVal(upper_bound), self.right), v_type, origin=self.origin),
+                ],
             ),
         ]
 
@@ -916,6 +997,7 @@ class Pow(BinaryIntExpr):
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
+        v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
             if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None
@@ -928,7 +1010,10 @@ class Pow(BinaryIntExpr):
                     IntVar(v_id, self.type_, origin=self.origin),
                     IntVal(upper_bound),
                 ),
-                [Assign(v_id, self, self.type_)],
+                [
+                    VarDecl(v_id, v_type, None, origin=self.origin),
+                    Assign(v_id, self, to_integer(self.type_), origin=self.origin),
+                ],
             )
         ]
 
@@ -984,13 +1069,17 @@ class Or(BinaryBoolExpr):
 
 @define(eq=False)
 class Relation(BoolExpr, BinaryExpr):
-    left: BasicIntExpr
-    right: BasicIntExpr
+    left: BasicExpr
+    right: BasicExpr
     origin: Optional[Origin] = None
 
 
 @define(eq=False)
 class Less(Relation):
+    left: BasicIntExpr
+    right: BasicIntExpr
+    origin: Optional[Origin] = None
+
     def to_z3_expr(self) -> z3.BoolRef:
         return self.left.to_z3_expr() < self.right.to_z3_expr()
 
@@ -1001,6 +1090,10 @@ class Less(Relation):
 
 @define(eq=False)
 class LessEqual(Relation):
+    left: BasicIntExpr
+    right: BasicIntExpr
+    origin: Optional[Origin] = None
+
     def to_z3_expr(self) -> z3.BoolRef:
         return self.left.to_z3_expr() <= self.right.to_z3_expr()
 
@@ -1021,6 +1114,10 @@ class Equal(Relation):
 
 @define(eq=False)
 class GreaterEqual(Relation):
+    left: BasicIntExpr
+    right: BasicIntExpr
+    origin: Optional[Origin] = None
+
     def to_z3_expr(self) -> z3.BoolRef:
         return self.left.to_z3_expr() >= self.right.to_z3_expr()
 
@@ -1031,6 +1128,10 @@ class GreaterEqual(Relation):
 
 @define(eq=False)
 class Greater(Relation):
+    left: BasicIntExpr
+    right: BasicIntExpr
+    origin: Optional[Origin] = None
+
     def to_z3_expr(self) -> z3.BoolRef:
         return self.left.to_z3_expr() > self.right.to_z3_expr()
 
@@ -1052,7 +1153,8 @@ class NotEqual(Relation):
 @define(eq=False)
 class Call(Expr):
     identifier: ID = field(converter=ID)
-    arguments: Sequence[BasicExpr]
+    arguments: Sequence[Expr]
+    argument_types: Sequence[rty.Any]
     origin: Optional[Origin] = None
     _preconditions: list[Cond] = field(init=False, factory=list)
 
@@ -1072,7 +1174,8 @@ class Call(Expr):
 @define(eq=False)
 class IntCall(Call, IntExpr):
     identifier: ID = field(converter=ID)
-    arguments: Sequence[BasicExpr]
+    arguments: Sequence[Expr]
+    argument_types: Sequence[rty.Any]
     type_: rty.AnyInteger
     negative: bool = False
     origin: Optional[Origin] = None
@@ -1081,13 +1184,14 @@ class IntCall(Call, IntExpr):
         return self.__class__(
             self.identifier,
             [a.substituted(mapping) for a in self.arguments],
+            self.argument_types,
             self.type_,
             self.negative,
             self.origin,
         )
 
     def to_z3_expr(self) -> z3.ArithRef:
-        # TODO: return value need not to be identical for identical arguments
+        # TODO(eng/recordflux/RecordFlux#1338): Return value need not to be identical for identical arguments
         expression = z3.Int(str(self.identifier))
         return -expression if self.negative else expression
 
@@ -1105,30 +1209,29 @@ class BoolCall(Call, BoolExpr):
         return self.__class__(
             self.identifier,
             [a.substituted(mapping) for a in self.arguments],
+            self.argument_types,
             self.origin,
         )
 
     def to_z3_expr(self) -> z3.BoolRef:
-        # TODO: return value need not to be identical for identical arguments
+        # TODO(eng/recordflux/RecordFlux#1338): Return value need not to be identical for identical arguments
         return z3.Bool(str(self.identifier))
 
 
 @define(eq=False)
 class ObjCall(Call):
     identifier: ID = field(converter=ID)
-    arguments: Sequence[BasicExpr]
-    return_type: rty.Any
+    arguments: Sequence[Expr]
+    argument_types: Sequence[rty.Any]
+    type_: rty.Any
     origin: Optional[Origin] = None
-
-    @property
-    def type_(self) -> rty.Any:
-        return self.return_type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjCall:
         return self.__class__(
             self.identifier,
             [a.substituted(mapping) for a in self.arguments],
-            self.return_type,
+            self.argument_types,
+            self.type_,
             self.origin,
         )
 
@@ -1165,7 +1268,7 @@ class IntFieldAccess(FieldAccess, IntExpr):
 
     @property
     def type_(self) -> rty.AnyInteger:
-        type_ = self.message_type.field_types[self.field]
+        type_ = self.message_type.types[self.field]
         assert isinstance(type_, rty.AnyInteger)
         return type_
 
@@ -1221,8 +1324,8 @@ class ObjFieldAccess(FieldAccess):
 @define(eq=False)
 class IfExpr(Expr):
     condition: BasicBoolExpr
-    then_expr: BasicExpr
-    else_expr: BasicExpr
+    then_expr: ComplexExpr
+    else_expr: ComplexExpr
     origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IfExpr:
@@ -1234,19 +1337,23 @@ class IfExpr(Expr):
         )
 
     def to_z3_expr(self) -> z3.ExprRef:
-        return z3.If(
-            self.condition.to_z3_expr(), self.then_expr.to_z3_expr(), self.else_expr.to_z3_expr()
+        # TODO(eng/recordflux/RecordFlux#1339): Fix handling of complex expressions
+        if_expr = z3.If(
+            self.condition.to_z3_expr(),
+            self.then_expr.expr.to_z3_expr(),
+            self.else_expr.expr.to_z3_expr(),
         )
+        return if_expr
 
     def _update_str(self) -> None:
         self._str = intern(f"(if {self.condition} then {self.then_expr} else {self.else_expr})")
 
 
 @define(eq=False)
-class IntIfExpr(IfExpr):
+class IntIfExpr(IfExpr, IntExpr):
     condition: BasicBoolExpr
-    then_expr: BasicIntExpr
-    else_expr: BasicIntExpr
+    then_expr: ComplexIntExpr
+    else_expr: ComplexIntExpr
     return_type: rty.AnyInteger
     origin: Optional[Origin] = None
 
@@ -1254,17 +1361,27 @@ class IntIfExpr(IfExpr):
     def type_(self) -> rty.AnyInteger:
         return self.return_type
 
+    def to_z3_expr(self) -> z3.ArithRef:
+        result = super(IntIfExpr, self).to_z3_expr()  # noqa: UP008
+        assert isinstance(result, z3.ArithRef)
+        return result
+
 
 @define(eq=False)
-class BoolIfExpr(IfExpr):
+class BoolIfExpr(IfExpr, BoolExpr):
     condition: BasicBoolExpr
-    then_expr: BasicBoolExpr
-    else_expr: BasicBoolExpr
+    then_expr: ComplexBoolExpr
+    else_expr: ComplexBoolExpr
     origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Enumeration:
         return rty.BOOLEAN
+
+    def to_z3_expr(self) -> z3.BoolRef:
+        result = super(BoolIfExpr, self).to_z3_expr()  # noqa: UP008
+        assert isinstance(result, z3.BoolRef)
+        return result
 
 
 @define(eq=False)
@@ -1294,27 +1411,44 @@ class Conversion(Expr):
 
 
 @define(eq=False)
+class IntConversion(Conversion, BasicIntExpr):
+    identifier: ID = field(converter=ID)
+    argument: IntExpr
+    target_type: rty.Integer
+    origin: Optional[Origin] = None
+
+    @property
+    def type_(self) -> rty.Integer:
+        return self.target_type
+
+    def to_z3_expr(self) -> z3.ArithRef:
+        return self.argument.to_z3_expr()
+
+
+@define(eq=False)
 class Comprehension(Expr):
     iterator: ID = field(converter=ID)
-    sequence: BasicExpr
-    selector_stmts: list[Stmt]
-    selector: BasicExpr
-    condition_stmts: list[Stmt]
-    condition: BoolExpr
+    sequence: Union[Var, FieldAccess]
+    selector: ComplexExpr
+    condition: ComplexBoolExpr
     origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Aggregate:
-        return rty.Aggregate(self.selector.type_)
+        return rty.Aggregate(self.selector.expr.type_)
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Comprehension:
         return self.__class__(
-            self.iterator,
+            mapping[self.iterator] if self.iterator in mapping else self.iterator,
             self.sequence.substituted(mapping),
-            [s.substituted(mapping) for s in self.selector_stmts],
-            self.selector.substituted(mapping),
-            [s.substituted(mapping) for s in self.condition_stmts],
-            self.condition.substituted(mapping),
+            self.selector.__class__(
+                [s.substituted(mapping) for s in self.selector.stmts],
+                self.selector.expr.substituted(mapping),
+            ),
+            self.condition.__class__(
+                [s.substituted(mapping) for s in self.condition.stmts],
+                self.condition.expr.substituted(mapping),
+            ),
             self.origin,
         )
 
@@ -1325,13 +1459,48 @@ class Comprehension(Expr):
         raise NotImplementedError
 
     def _update_str(self) -> None:
-        selector = str(self.selector)
-        if self.selector_stmts:
-            selector = f"{{{'; '.join(str(s) for s in self.selector_stmts)}; {selector}}}"
-        condition = str(self.condition)
-        if self.condition_stmts:
-            condition = f"{{{'; '.join(str(s) for s in self.condition_stmts)}; {condition}}}"
-        self._str = intern(f"[for {self.iterator} in {self.sequence} if {condition} => {selector}]")
+        self._str = intern(
+            f"[for {self.iterator} in {self.sequence} if {self.condition} => {self.selector}]"
+        )
+
+
+@define(eq=False)
+class Find(Expr):
+    iterator: ID = field(converter=ID)
+    sequence: Union[Var, FieldAccess]
+    selector: ComplexExpr
+    condition: ComplexBoolExpr
+    origin: Optional[Origin] = None
+
+    @property
+    def type_(self) -> rty.Any:
+        return self.selector.expr.type_
+
+    def substituted(self, mapping: Mapping[ID, ID]) -> Find:
+        return self.__class__(
+            mapping[self.iterator] if self.iterator in mapping else self.iterator,
+            self.sequence.substituted(mapping),
+            self.selector.__class__(
+                [s.substituted(mapping) for s in self.selector.stmts],
+                self.selector.expr.substituted(mapping),
+            ),
+            self.condition.__class__(
+                [s.substituted(mapping) for s in self.condition.stmts],
+                self.condition.expr.substituted(mapping),
+            ),
+            self.origin,
+        )
+
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return []
+
+    def to_z3_expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+    def _update_str(self) -> None:
+        self._str = intern(
+            f"Find (for {self.iterator} in {self.sequence} if {self.condition} => {self.selector})"
+        )
 
 
 @define(eq=False)
@@ -1359,6 +1528,38 @@ class Agg(Expr):
         self._str = intern("[" + ", ".join(map(str, self.elements)) + "]")
 
 
+def _named_agg_elements_converter(
+    elements: Sequence[tuple[Union[StrID, BasicExpr], BasicExpr]]
+) -> Sequence[tuple[Union[ID, BasicExpr], BasicExpr]]:
+    return [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
+
+
+@define(eq=False)
+class NamedAgg(Expr):
+    """Only used by code generator and therefore provides minimum functionality."""
+
+    elements: Sequence[tuple[Union[ID, BasicExpr], BasicExpr]] = field(
+        converter=_named_agg_elements_converter
+    )
+    origin: Optional[Origin] = None
+
+    @property
+    def type_(self) -> rty.Any:
+        raise NotImplementedError
+
+    def substituted(self, mapping: Mapping[ID, ID]) -> NamedAgg:
+        raise NotImplementedError
+
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        raise NotImplementedError
+
+    def to_z3_expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+    def _update_str(self) -> None:
+        self._str = intern("[" + ", ".join([f"{k} => {v}" for k, v in self.elements]) + "]")
+
+
 @define(eq=False)
 class Str(Expr):
     string: str
@@ -1384,7 +1585,7 @@ class Str(Expr):
 @define(eq=False)
 class MsgAgg(Expr):
     identifier: ID = field(converter=ID)
-    field_values: Mapping[ID, BasicExpr]
+    field_values: Mapping[ID, Expr]
     type_: rty.Message
     origin: Optional[Origin] = None
 
@@ -1414,7 +1615,7 @@ class MsgAgg(Expr):
 @define(eq=False)
 class DeltaMsgAgg(Expr):
     identifier: ID = field(converter=ID)
-    field_values: Mapping[ID, BasicExpr]
+    field_values: Mapping[ID, Expr]
     type_: rty.Message
     origin: Optional[Origin] = None
 
@@ -1444,7 +1645,7 @@ class DeltaMsgAgg(Expr):
 @define(eq=False)
 class CaseExpr(Expr):
     expression: BasicExpr
-    choices: Sequence[tuple[Sequence[BasicExpr], list[Stmt], BasicExpr]]
+    choices: Sequence[tuple[Sequence[BasicExpr], BasicExpr]]
     type_: rty.Any
     origin: Optional[Origin] = None
 
@@ -1454,10 +1655,9 @@ class CaseExpr(Expr):
             [
                 (
                     [v.substituted(mapping) for v in vs],
-                    [s.substituted(mapping) for s in s],
                     e.substituted(mapping),
                 )
-                for vs, s, e in self.choices
+                for vs, e in self.choices
             ],
             self.type_,
             self.origin,
@@ -1470,148 +1670,233 @@ class CaseExpr(Expr):
         raise NotImplementedError
 
     def _update_str(self) -> None:
-        data = ",\n".join(
-            f"      when {' | '.join(map(str, c))} => "
-            + (f"{{{'; '.join(str(s) for s in s)};}}; {e}" if s else str(e))
-            for c, s, e in self.choices
-        )
+        data = ",\n".join(f"      when {' | '.join(map(str, c))} => {e}" for c, e in self.choices)
         self._str = intern(f"(case {self.expression} is\n{data})")
 
 
-def add_checks(
-    statements: Sequence[Stmt], manager: ProofManager, variable_id: Generator[ID, None, None]
-) -> list[Stmt]:
-    """
-    Add assert statements in places where preconditions are not statically true.
+@frozen
+class Decl:
+    identifier: ID = field(converter=ID)
+    location: Optional[Location]
 
-    For each statement it is checked, if its preconditions are statically true. If this is not the
-    case, an assert statement is added in front of the respective statement. The assert statements
-    in the resulting list mark the places where the code generator must insert explicit checks.
-    """
-    assert len({s.target for s in statements if isinstance(s, Assign)}) == len(
-        [s.target for s in statements if isinstance(s, Assign)]
-    ), "statements must be in SSA form"
 
-    facts: list[Stmt] = []
-    statement_precondition_count: list[tuple[Stmt, int]] = []
+@frozen
+class FormalDecl(Decl):
+    pass
+
+
+@frozen
+class Argument:
+    identifier: ID = field(converter=ID)
+    type_identifier: ID = field(converter=ID)
+    type_: rty.Type
+
+
+@frozen
+class FuncDecl(FormalDecl):
+    identifier: ID = field(converter=ID)
+    arguments: Sequence[Argument]
+    return_type: ID = field(converter=ID)
+    type_: rty.Type
+    location: Optional[Location]
+
+
+@frozen
+class ChannelDecl(FormalDecl):
+    identifier: ID = field(converter=ID)
+    readable: bool
+    writable: bool
+    location: Optional[Location]
+
+
+@frozen
+class ComplexExpr(Base):
+    stmts: list[Stmt]
+    expr: Expr
+
+    def __str__(self) -> str:
+        statements = "".join([f"{s}; " for s in self.stmts])
+        return f"{{{statements}{self.expr}}}"
+
+    def is_expr(self) -> bool:
+        return len(self.stmts) == 0
+
+    def is_basic_expr(self) -> bool:
+        return self.is_expr() and isinstance(self.expr, BasicExpr)
+
+    def substituted(self, mapping: Mapping[ID, ID]) -> ComplexExpr:
+        return self.__class__(
+            [s.substituted(mapping) for s in self.stmts], self.expr.substituted(mapping)
+        )
+
+
+@frozen
+class ComplexIntExpr(ComplexExpr):
+    stmts: list[Stmt]
+    expr: IntExpr
+
+
+@frozen
+class ComplexBoolExpr(ComplexExpr):
+    stmts: list[Stmt]
+    expr: BoolExpr
+
+
+@frozen
+class Transition:
+    target: ID = field(converter=ID)
+    condition: ComplexExpr
+    description: Optional[str]
+    location: Optional[Location]
+
+
+@frozen
+class State:
+    identifier: ID = field(converter=ID)
+    transitions: Sequence[Transition]
+    exception_transition: Optional[Transition]
+    actions: Sequence[Stmt]
+    description: Optional[str]
+    location: Optional[Location]
+
+    @property
+    def declarations(self) -> list[VarDecl]:
+        return [a for a in self.actions if isinstance(a, VarDecl)]
+
+
+FINAL_STATE = State("Final", [], None, [], None, None)
+
+
+@frozen(init=False)
+class Session:
+    identifier: ID = field(converter=ID)
+    states: Sequence[State]
+    declarations: Sequence[VarDecl]
+    parameters: Sequence[FormalDecl]
+    types: Mapping[ID, mty.Type]
+    location: Optional[Location]
+
+    def __init__(  # noqa: PLR0913
+        self,
+        identifier: ID,
+        states: Sequence[State],
+        declarations: Sequence[VarDecl],
+        parameters: Sequence[FormalDecl],
+        types: Mapping[ID, mty.Type],
+        location: Optional[Location],
+        variable_id: Generator[ID, None, None],
+        workers: int = 1,
+    ) -> None:
+        manager = ProofManager(workers)
+        states = [
+            State(
+                s.identifier,
+                [
+                    Transition(
+                        t.target,
+                        ComplexExpr(
+                            add_required_checks(t.condition.stmts, manager, variable_id),
+                            t.condition.expr,
+                        ),
+                        t.description,
+                        t.location,
+                    )
+                    for t in s.transitions
+                ],
+                s.exception_transition,
+                add_required_checks(s.actions, manager, variable_id),
+                s.description,
+                s.location,
+            )
+            for s in states
+        ]
+        self.__attrs_init__(identifier, states, declarations, parameters, types, location)
+
+    @property
+    def package(self) -> ID:
+        return self.identifier.parent
+
+    @property
+    def initial_state(self) -> State:
+        return self.states[0]
+
+    @identifier.validator
+    def _check_identifier(self, attribute: str, value: ID) -> None:
+        assert len(value.parts) == 2, attribute
+
+
+def add_checks(statements: Sequence[Stmt], variable_id: Generator[ID, None, None]) -> list[Stmt]:
+    """Add check statements in places where preconditions must be ensured."""
+
+    result = []
 
     for statement in statements:
         preconditions = statement.preconditions(variable_id)
-        manager.add(
-            [
-                StmtListProofJob(
-                    [
-                        Assert(Not(BoolVar("__GOAL__"))),
-                        Assign("__GOAL__", precondition.goal, precondition.goal.type_),
-                        *precondition.facts,
-                        *facts,
-                    ],
-                    {
-                        ProofResult.UNSAT: [],
-                        ProofResult.SAT: [*precondition.facts, Assert(precondition.goal)],
-                        ProofResult.UNKNOWN: [*precondition.facts, Assert(precondition.goal)],
-                    },
-                )
-                for precondition in preconditions
-            ]
-        )
-        facts.append(statement)
-        statement_precondition_count.append((statement, len(preconditions)))
 
-    proof_results = manager.check()
-    result: list[Stmt] = []
+        for precondition in preconditions:
+            result.extend([*precondition.facts, Check(precondition.goal)])
 
-    for statement, precondition_count in statement_precondition_count:
-        for _ in range(precondition_count):
-            r = proof_results.pop(0)
-            assert isinstance(r, StmtListProofJob)
-            result.extend(r.result)
         result.append(statement)
 
     return result
 
 
-def check_preconditions(
-    statements: Sequence[Stmt], manager: ProofManager, variable_id: Generator[ID, None, None]
-) -> RecordFluxError:
-    assert len({s.target for s in statements if isinstance(s, Assign)}) == len(
-        [s.target for s in statements if isinstance(s, Assign)]
-    ), "statements must be in SSA form"
+def remove_unnecessary_checks(statements: Sequence[Stmt], manager: ProofManager) -> list[Stmt]:
+    """Remove all checks that are always true."""
+
+    always_true: list[int] = []
 
     facts: list[Stmt] = []
 
-    for s in statements:
-        manager.add(
-            [
-                ErrorProofJob(
-                    [
-                        Assert(Not(BoolVar("__GOAL__"))),
-                        Assign("__GOAL__", precondition.goal, precondition.goal.type_),
-                        *precondition.facts,
-                        *facts,
-                    ],
-                    {
-                        ProofResult.UNSAT: RecordFluxError(),
-                        ProofResult.SAT: RecordFluxError(
-                            [
-                                (
-                                    "precondition might fail,"
-                                    f" cannot prove {precondition.goal.origin_str}",
-                                    Subsystem.MODEL,
-                                    Severity.ERROR,
-                                    precondition.goal.location,
-                                )
-                            ]
-                        ),
-                        ProofResult.UNKNOWN: RecordFluxError(
-                            [
-                                (
-                                    "precondition might fail,"
-                                    f" cannot prove {precondition.goal.origin_str}"
-                                    " (timeout)",
-                                    Subsystem.MODEL,
-                                    Severity.ERROR,
-                                    precondition.goal.location,
-                                )
-                            ]
-                        ),
-                    },
-                )
-                for precondition in s.preconditions(variable_id)
-            ]
-        )
-        facts.append(s)
+    for i, s in enumerate(statements):
+        if isinstance(s, Check):
+            manager.add(
+                [
+                    ProofJob(
+                        [
+                            Check(Not(BoolVar("__GOAL__"))),
+                            Assign("__GOAL__", s.expression, s.expression.type_),
+                            *facts,
+                        ],
+                        {
+                            ProofResult.UNSAT: [i],
+                            ProofResult.SAT: [],
+                            ProofResult.UNKNOWN: [],
+                        },
+                    )
+                ]
+            )
+            facts.append(s)
 
-    error = RecordFluxError()
     results = manager.check()
 
     for r in results:
-        assert isinstance(r, ErrorProofJob), r
-        error.extend(r.result)
+        always_true.extend(r.result)
 
-    return error
+    result = list(statements)
+    for i in reversed(always_true):
+        result = [*result[:i], *result[i + 1 :]]
+
+    return remove_unused_assignments(result)
 
 
-def to_ssa(statements: Sequence[Stmt], assigned: Optional[list[ID]] = None) -> list[Stmt]:
-    """Transform the statements into Static Single-Assignment form."""
-    occurrences = dict(Counter([s.target for s in statements if isinstance(s, Assign)]))
-    assigned = assigned or []
-    subs: dict[ID, ID] = {}
-    result: list[Stmt] = []
+def remove_unused_assignments(statements: Sequence[Stmt]) -> list[Stmt]:
+    # TODO(eng/recordflux/RecordFlux#1339): Add removal of unused assignments
+    return list(statements)
 
-    for s in statements:
-        if isinstance(s, Assign):
-            if occurrences[s.target] > 1:
-                newtarget = ID(f"S_{s.target}_{assigned.count(s.target)}")
-                assert newtarget not in assigned
-                assigned.append(s.target)
-                assigned.append(newtarget)
-                result.append(Assign(newtarget, s.expression.substituted(subs), s.type_, s.origin))
-                subs[s.target] = newtarget
-            else:
-                assigned.append(s.target)
-                result.append(s)
-        else:
-            result.append(s)
 
-    return result
+def add_required_checks(
+    statements: Sequence[Stmt], manager: ProofManager, variable_id: Generator[ID, None, None]
+) -> list[Stmt]:
+    """
+    Add check statements in places where preconditions are not always true.
+
+    For each statement it is checked, if its preconditions are always true. If this is not the
+    case, a check statement is added in front of the respective statement. The check statements
+    in the resulting list mark the places where the code generator must insert explicit checks.
+    """
+    return remove_unnecessary_checks(add_checks(statements, variable_id), manager)
+
+
+def to_integer(type_: rty.AnyInteger) -> rty.Integer:
+    return type_ if isinstance(type_, rty.Integer) else rty.BASE_INTEGER

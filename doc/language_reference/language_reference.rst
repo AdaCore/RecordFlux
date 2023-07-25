@@ -712,6 +712,8 @@ The transition target must be either a state name or `null`, which represents th
     * Size Attributes [§S-S-T-SAT]
     * Head Attributes [§S-S-T-HAT]
     * Has_Data Attributes [§S-S-T-HDAT]
+    * Field Valid Attributes [§S-S-T-FVAT]
+    * Field Present Attributes [§S-S-T-FPAT]
     * Selected Expressions [§S-S-T-S]
     * List Comprehensions [§S-S-T-LC]
     * Quantified Expressions [§S-S-T-Q]

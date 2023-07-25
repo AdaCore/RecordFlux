@@ -20,6 +20,8 @@ is
    is
       Message_Tag : TLV.Tag;
       Tag : TLV.Tag;
+      T_0 : Boolean;
+      T_1 : Boolean;
       function Global_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -35,14 +37,6 @@ is
    begin
       pragma Assert (Global_Invariant);
       -- tests/feature/session_sequence_append_head/test.rflx:17:10
-      if
-         not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx)
-         or TLV.Messages.Available_Space (Ctx.P.Messages_Ctx) < 32
-      then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Global_Invariant);
-         goto Finalize_Global;
-      end if;
       declare
          RFLX_Element_Messages_Ctx : TLV.Message.Context;
       begin
@@ -183,9 +177,13 @@ is
          pragma Assert (Global_Invariant);
          goto Finalize_Global;
       end if;
+      -- tests/feature/session_sequence_append_head/test.rflx:24:16
+      T_0 := Message_Tag = TLV.Msg_Data;
+      -- tests/feature/session_sequence_append_head/test.rflx:25:20
+      T_1 := Tag = TLV.Msg_Error;
       if
-         Message_Tag = TLV.Msg_Data
-         and then Tag = TLV.Msg_Error
+         T_0
+         and then T_1
       then
          Ctx.P.Next_State := S_Reply_1;
       else
@@ -230,6 +228,8 @@ is
       Local_Tags_Ctx : TLV.Tags.Context;
       Message_Tag : TLV.Tag;
       Tag : TLV.Tag;
+      T_2 : Boolean;
+      T_3 : Boolean;
       Local_Messages_Buffer : RFLX_Types.Bytes_Ptr;
       Local_Tags_Buffer : RFLX_Types.Bytes_Ptr;
       function Local_Invariant return Boolean is
@@ -265,14 +265,6 @@ is
       TLV.Tags.Initialize (Local_Tags_Ctx, Local_Tags_Buffer);
       pragma Assert (Local_Invariant);
       -- tests/feature/session_sequence_append_head/test.rflx:45:10
-      if
-         not TLV.Messages.Has_Element (Local_Messages_Ctx)
-         or TLV.Messages.Available_Space (Local_Messages_Ctx) < 40
-      then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Local_Invariant);
-         goto Finalize_Local;
-      end if;
       declare
          RFLX_Element_Local_Messages_Ctx : TLV.Message.Context;
       begin
@@ -297,14 +289,6 @@ is
          pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
       end;
       -- tests/feature/session_sequence_append_head/test.rflx:47:10
-      if
-         not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx)
-         or TLV.Messages.Available_Space (Ctx.P.Messages_Ctx) < 32
-      then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Local_Invariant);
-         goto Finalize_Local;
-      end if;
       declare
          RFLX_Element_Messages_Ctx : TLV.Message.Context;
       begin
@@ -438,9 +422,13 @@ is
          pragma Assert (Local_Invariant);
          goto Finalize_Local;
       end if;
+      -- tests/feature/session_sequence_append_head/test.rflx:55:16
+      T_2 := Message_Tag = TLV.Msg_Data;
+      -- tests/feature/session_sequence_append_head/test.rflx:56:20
+      T_3 := Tag = TLV.Msg_Data;
       if
-         Message_Tag = TLV.Msg_Data
-         and then Tag = TLV.Msg_Data
+         T_2
+         and then T_3
       then
          Ctx.P.Next_State := S_Reply_2;
       else

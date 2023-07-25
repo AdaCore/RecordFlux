@@ -15,6 +15,8 @@ package Test is
             if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
                and Message.Message_Type = Universal::MT_Options -- §S-S-T-S, §S-E-S-V, §S-S-T-L
          goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
       end Start;
 
       state Process is

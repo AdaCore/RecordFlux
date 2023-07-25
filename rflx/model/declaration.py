@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from typing import ClassVar, Optional
 
 import rflx.typing_ as rty
+from rflx import tac
 from rflx.common import Base
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import Expr, Selected, Variable
 from rflx.identifier import ID, StrID
 
@@ -44,7 +45,8 @@ class Declaration(Base):
 
 
 class BasicDeclaration(Declaration):
-    pass
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.VarDecl:
+        raise NotImplementedError
 
 
 class TypeCheckableDeclaration(Declaration):
@@ -113,6 +115,19 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
             return self.expression.variables()
         return []
 
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.VarDecl:
+        assert isinstance(self.type_, rty.NamedType)
+        if self.expression:
+            expression = self.expression.to_tac(variable_id)
+        else:
+            expression = None
+        return tac.VarDecl(
+            self.identifier,
+            self.type_,
+            expression,
+            origin=self,
+        )
+
 
 class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
     DESCRIPTIVE_NAME: ClassVar[str] = "renaming"
@@ -172,10 +187,20 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
     def variables(self) -> Sequence[Variable]:
         return self.expression.variables()
 
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.VarDecl:
+        fail(
+            "renaming declarations not yet supported",
+            Subsystem.MODEL,
+            location=self.location,
+        )
+
 
 class FormalDeclaration(Declaration):
     def variables(self) -> Sequence[Variable]:
         return []
+
+    def to_tac(self) -> tac.FormalDecl:
+        raise NotImplementedError
 
 
 class Argument(Base):
@@ -197,6 +222,9 @@ class Argument(Base):
     @property
     def type_identifier(self) -> ID:
         return self._type_identifier
+
+    def to_tac(self) -> tac.Argument:
+        return tac.Argument(self.identifier, self.type_identifier, self.type_)
 
 
 class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
@@ -234,6 +262,15 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
     def return_type(self) -> ID:
         return self._return_type
 
+    def to_tac(self) -> tac.FuncDecl:
+        return tac.FuncDecl(
+            self.identifier,
+            [a.to_tac() for a in self.arguments],
+            self.return_type,
+            self.type_,
+            self.location,
+        )
+
 
 class ChannelDeclaration(FormalDeclaration):
     DESCRIPTIVE_NAME: ClassVar[str] = "channel"
@@ -270,6 +307,9 @@ class ChannelDeclaration(FormalDeclaration):
     @property
     def writable(self) -> bool:
         return self._writable
+
+    def to_tac(self) -> tac.ChannelDecl:
+        return tac.ChannelDecl(self.identifier, self.readable, self.writable, self.location)
 
 
 def ada_type_name(identifier: ID) -> StrID:

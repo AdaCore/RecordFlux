@@ -19,6 +19,9 @@ is
      Post =>
        Initialized (Ctx)
    is
+      T_0 : Boolean;
+      T_1 : Universal.Message_Type;
+      T_2 : Boolean;
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null)
@@ -30,15 +33,28 @@ is
       pragma Assert (Start_Invariant);
       -- tests/feature/session_conversion/test.rflx:13:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_conversion/test.rflx:16:16
+      T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_conversion/test.rflx:17:20
+      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
+      else
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      -- tests/feature/session_conversion/test.rflx:17:20
+      T_2 := T_1 = Universal.MT_Data;
       if
-         Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx)
-         and then Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx) = Universal.MT_Data
+         T_0
+         and then T_2
       then
          Ctx.P.Next_State := S_Process;
       else
          Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
+      <<Finalize_Start>>
    end Start;
 
    procedure Process (Ctx : in out Context'Class) with
@@ -56,7 +72,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      -- tests/feature/session_conversion/test.rflx:23:10
+      -- tests/feature/session_conversion/test.rflx:25:10
       if Universal.Contains.Option_In_Message_Data (Ctx.P.Message_Ctx) then
          Universal.Contains.Copy_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx);
          Universal.Option.Verify_Message (Ctx.P.Inner_Message_Ctx);
@@ -85,7 +101,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_conversion/test.rflx:32:10
+      -- tests/feature/session_conversion/test.rflx:34:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

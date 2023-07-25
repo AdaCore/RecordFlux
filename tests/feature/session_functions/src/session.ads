@@ -35,6 +35,11 @@ is
        Strict        :        Boolean;
        Result        :    out RFLX.Test.Result);
 
+   overriding
+   procedure Byte_Size
+      (Ctx           : in out Context;
+       Result        :    out RFLX.Test.Length);
+
    pragma Warnings (On, "unused variable ""Ctx""");
    pragma Warnings (On, """Ctx"" is not modified, could be IN");
 

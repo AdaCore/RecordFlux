@@ -12,7 +12,7 @@ SEQ_TY = rty.Sequence("S", rty.Message("M"))
 
 def test_variable_assignment_to_tac() -> None:
     assert stmt.VariableAssignment(
-        "X", expr.Add(expr.Variable("Y", type_=INT_TY), expr.Number(1))
+        "X", expr.Add(expr.Variable("Y", type_=INT_TY), expr.Number(1)), INT_TY
     ).to_tac(id_generator()) == [
         tac.Assign("X", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVal(1)), INT_TY),
     ]
@@ -22,9 +22,13 @@ def test_variable_assignment_to_tac() -> None:
             expr.Variable("Y", type_=INT_TY),
             expr.Sub(expr.Variable("Z", type_=INT_TY), expr.Number(1)),
         ),
+        INT_TY,
     ).to_tac(id_generator()) == [
-        tac.Assign("T_1", tac.Sub(tac.IntVar("Z", INT_TY), tac.IntVal(1)), INT_TY),
-        tac.Assign("X", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVar("T_1", INT_TY)), INT_TY),
+        tac.VarDecl("T_0", rty.BASE_INTEGER),
+        tac.Assign("T_0", tac.Sub(tac.IntVar("Z", INT_TY), tac.IntVal(1)), rty.BASE_INTEGER),
+        tac.Assign(
+            "X", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVar("T_0", rty.BASE_INTEGER)), INT_TY
+        ),
     ]
 
 
@@ -33,10 +37,18 @@ def test_message_field_assignment_to_tac() -> None:
         tac.FieldAssign("X", "Y", tac.IntVal(1), MSG_TY),
     ]
     assert stmt.MessageFieldAssignment(
-        "X", "Y", expr.Add(expr.Variable("Z", type_=INT_TY), expr.Number(1)), MSG_TY
+        "X",
+        "Y",
+        expr.Add(
+            expr.Variable("Y", type_=INT_TY), expr.Variable("Z", type_=INT_TY), expr.Number(1)
+        ),
+        MSG_TY,
     ).to_tac(id_generator()) == [
-        tac.Assign("T_0", tac.Add(tac.IntVar("Z", INT_TY), tac.IntVal(1)), INT_TY),
-        tac.FieldAssign("X", "Y", tac.IntVar("T_0", INT_TY), MSG_TY),
+        tac.VarDecl("T_0", rty.BASE_INTEGER),
+        tac.Assign("T_0", tac.Add(tac.IntVar("Z", INT_TY), tac.IntVal(1)), rty.BASE_INTEGER),
+        tac.FieldAssign(
+            "X", "Y", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVar("T_0", rty.BASE_INTEGER)), MSG_TY
+        ),
     ]
 
 
@@ -45,22 +57,23 @@ def test_append_to_tac() -> None:
         tac.Append("X", tac.IntVal(1), SEQ_TY),
     ]
     assert stmt.Append(
-        "X", expr.Add(expr.Variable("Z", type_=INT_TY), expr.Number(1)), SEQ_TY
+        "X",
+        expr.Add(
+            expr.Variable("Y", type_=INT_TY), expr.Variable("Z", type_=INT_TY), expr.Number(1)
+        ),
+        SEQ_TY,
     ).to_tac(id_generator()) == [
-        tac.Assign("T_0", tac.Add(tac.IntVar("Z", INT_TY), tac.IntVal(1)), INT_TY),
-        tac.Append("X", tac.IntVar("T_0", INT_TY), SEQ_TY),
+        tac.VarDecl("T_0", rty.BASE_INTEGER),
+        tac.Assign("T_0", tac.Add(tac.IntVar("Z", INT_TY), tac.IntVal(1)), rty.BASE_INTEGER),
+        tac.Append(
+            "X", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVar("T_0", rty.BASE_INTEGER)), SEQ_TY
+        ),
     ]
 
 
 def test_extend_to_tac() -> None:
-    assert stmt.Extend("X", expr.Number(1), SEQ_TY).to_tac(id_generator()) == [
-        tac.Extend("X", tac.IntVal(1), SEQ_TY),
-    ]
-    assert stmt.Extend(
-        "X", expr.Add(expr.Variable("Z", type_=INT_TY), expr.Number(1)), SEQ_TY
-    ).to_tac(id_generator()) == [
-        tac.Assign("T_0", tac.Add(tac.IntVar("Z", INT_TY), tac.IntVal(1)), INT_TY),
-        tac.Extend("X", tac.IntVar("T_0", INT_TY), SEQ_TY),
+    assert stmt.Extend("X", expr.Variable("Y", type_=SEQ_TY), SEQ_TY).to_tac(id_generator()) == [
+        tac.Extend("X", tac.ObjVar("Y", SEQ_TY), SEQ_TY),
     ]
 
 
@@ -150,8 +163,7 @@ def test_reset_to_tac() -> None:
     assert stmt.Reset(
         "X", {ID("Y"): expr.Add(expr.Variable("Z", type_=INT_TY), expr.Number(1))}, MSG_TY
     ).to_tac(id_generator()) == [
-        tac.Assign("T_0", tac.Add(tac.IntVar("Z", INT_TY), tac.IntVal(1)), INT_TY),
-        tac.Reset("X", {ID("Y"): tac.IntVar("T_0", INT_TY)}, MSG_TY),
+        tac.Reset("X", {ID("Y"): tac.Add(tac.IntVar("Z", INT_TY), tac.IntVal(1))}, MSG_TY),
     ]
 
 
@@ -160,7 +172,8 @@ def test_read_to_tac() -> None:
         tac.Read("X", tac.ObjVar("M", MSG_TY)),
     ]
     assert stmt.Read("X", expr.Call("Y", type_=rty.Message("M"))).to_tac(id_generator()) == [
-        tac.Assign("T_0", tac.ObjCall("Y", [], MSG_TY), MSG_TY),
+        tac.VarDecl("T_0", MSG_TY),
+        tac.Assign("T_0", tac.ObjCall("Y", [], [], MSG_TY), MSG_TY),
         tac.Read("X", tac.ObjVar("T_0", MSG_TY)),
     ]
 
@@ -170,6 +183,7 @@ def test_write_to_tac() -> None:
         tac.Write("X", tac.ObjVar("M", MSG_TY)),
     ]
     assert stmt.Write("X", expr.Call("Y", type_=rty.Message("M"))).to_tac(id_generator()) == [
-        tac.Assign("T_0", tac.ObjCall("Y", [], MSG_TY), MSG_TY),
+        tac.VarDecl("T_0", MSG_TY),
+        tac.Assign("T_0", tac.ObjCall("Y", [], [], MSG_TY), MSG_TY),
         tac.Write("X", tac.ObjVar("T_0", MSG_TY)),
     ]

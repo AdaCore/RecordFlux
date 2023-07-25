@@ -27,7 +27,9 @@ package Test is
                                         Length => Options'Size / 8,
                                         Options => Options);
       transition
-         goto Reply -- §S-S-T-N
+         goto Reply
+            if Options'Valid -- §S-S-T-VAT
+         goto null -- §S-S-T-N
       exception
          goto null -- §S-S-E
       end Process;

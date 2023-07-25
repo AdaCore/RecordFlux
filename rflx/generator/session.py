@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+import typing as ty
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field as dataclass_field
+from functools import singledispatchmethod
 from typing import NoReturn, Optional, Union
 
-import attr
-
-from rflx import expression as expr, model, typing_ as rty
+from rflx import ada, model, tac, typing_ as rty
 from rflx.ada import (
     FALSE,
     TRUE,
     Add,
+    Aggregate,
     And,
     AndThen,
     Annotate,
+    Aspect,
     Assignment,
     Call,
     CallStatement,
@@ -25,6 +27,7 @@ from rflx.ada import (
     Component,
     Constrained,
     ContextItem,
+    Conversion,
     Declaration,
     Declare,
     EnumerationType,
@@ -48,9 +51,9 @@ from rflx.ada import (
     Length,
     Less,
     LessEqual,
+    Literal,
     LoopEntry,
     Min,
-    Mod,
     Mul,
     NamedAggregate,
     Not,
@@ -79,16 +82,15 @@ from rflx.ada import (
     SubprogramDeclaration,
     UnitPart,
     UseTypeClause,
+    Val,
     ValueRange,
     Variable,
     While,
     WithClause,
 )
-from rflx.common import unique
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import Location, Subsystem, fail, fatal_fail
 from rflx.identifier import ID
-from rflx.model import FINAL_STATE, declaration as decl, statement as stmt
 
 from . import common, const
 from .allocator import AllocatorGenerator
@@ -101,7 +103,7 @@ class SessionContext:
     referenced_packages_body: list[ID] = dataclass_field(default_factory=list)
     used_types: list[ID] = dataclass_field(default_factory=list)
     used_types_body: list[ID] = dataclass_field(default_factory=list)
-    state_exception: set[ID] = dataclass_field(default_factory=set)
+    states_with_exceptions: set[ID] = dataclass_field(default_factory=set)
 
 
 @dataclass
@@ -123,16 +125,17 @@ class EvaluatedDeclaration:
         return NotImplemented
 
 
-@attr.s()
+@dataclass
 class ExceptionHandler:
-    session_context_state_exception: set[ID] = attr.ib()
-    state: model.State = attr.ib()
-    finalization: Sequence[Statement] = attr.ib()
+    state: tac.State
+    finalization: Sequence[Statement]
+    record_state_with_exceptions: Callable[[], None]
 
     def execute(self) -> list[Statement]:
         assert (
             self.state.exception_transition
         ), f'missing exception transition for state "{self.state.identifier}"'
+        self.record_state_with_exceptions()
         return [
             Assignment(
                 "Ctx.P.Next_State",
@@ -144,7 +147,7 @@ class ExceptionHandler:
 
     def copy(self, finalization: Sequence[Statement]) -> ExceptionHandler:
         return ExceptionHandler(
-            self.session_context_state_exception, self.state, [*finalization, *self.finalization]
+            self.state, [*finalization, *self.finalization], self.record_state_with_exceptions
         )
 
 
@@ -158,7 +161,7 @@ class ChannelAccess:
 class SessionGenerator:
     def __init__(
         self,
-        session: model.Session,
+        session: tac.Session,
         allocator: AllocatorGenerator,
         prefix: str = "",
         debug: common.Debug = common.Debug.NONE,
@@ -194,6 +197,9 @@ class SessionGenerator:
     def _ada_type(self, identifier: ID) -> ID:
         if model.is_builtin_type(identifier):
             return identifier.name
+
+        if len(identifier.parts) > 1 and identifier.parent == BUILTINS_PACKAGE:
+            return self._prefix * const.TYPES_PACKAGE * identifier.name
 
         return model.internal_type_identifier(identifier, self._session.package)
 
@@ -287,16 +293,57 @@ class SessionGenerator:
 
     def _create_use_clauses_body(self) -> list[Declaration]:
         return [
-            UseTypeClause(self._prefix * type_identifier)
-            for type_identifier in self._session_context.used_types_body
-            if type_identifier.parent
-            not in [INTERNAL_PACKAGE, BUILTINS_PACKAGE, self._session.identifier.parent]
-            and type_identifier not in self._session_context.used_types
+            *[
+                UseTypeClause(self._prefix * type_identifier)
+                for type_identifier in self._session_context.used_types_body
+                if type_identifier.parent
+                not in [INTERNAL_PACKAGE, BUILTINS_PACKAGE, self._session.identifier.parent]
+                and type_identifier not in self._session_context.used_types
+            ],
+            *(
+                [
+                    # TODO(eng/recordflux/RecordFlux#1370): Remove the need to suppress warnings
+                    Pragma(
+                        "Warnings",
+                        [
+                            Variable("Off"),
+                            String('"*" is already use-visible through previous use_type_clause'),
+                        ],
+                    ),
+                    Pragma(
+                        "Warnings",
+                        [
+                            Variable("Off"),
+                            String('use clause for type "*" defined at * has no effect'),
+                        ],
+                    ),
+                    UseTypeClause(self._prefix * const.TYPES_BASE_INT),
+                    Pragma(
+                        "Warnings",
+                        [
+                            Variable("On"),
+                            String('use clause for type "*" defined at * has no effect'),
+                        ],
+                    ),
+                    Pragma(
+                        "Warnings",
+                        [
+                            Variable("On"),
+                            String('"*" is already use-visible through previous use_type_clause'),
+                        ],
+                    ),
+                ]
+                if any(
+                    type_identifier == rty.BASE_INTEGER.identifier
+                    for type_identifier in self._session_context.used_types_body
+                )
+                else []
+            ),
         ]
 
     def _create_state_machine(self) -> UnitPart:
         evaluated_declarations = self._evaluate_declarations(
-            self._session.declarations.values(),
+            self._session.declarations,
             session_global=True,
         )
         assert all(
@@ -318,13 +365,12 @@ class SessionGenerator:
 
         composite_globals = [
             d
-            for d in self._session.declarations.values()
-            if isinstance(d, decl.VariableDeclaration)
-            and isinstance(d.type_, (rty.Message, rty.Sequence))
+            for d in self._session.declarations
+            if isinstance(d, tac.VarDecl) and isinstance(d.type_, (rty.Message, rty.Sequence))
         ]
 
         unit = UnitPart()
-        unit += self._create_abstract_functions(self._session.parameters.values())
+        unit += self._create_abstract_functions(self._session.parameters)
         unit += self._create_uninitialized_function(composite_globals, is_global)
         unit += self._create_global_initialized_function(composite_globals, is_global)
         unit += self._create_initialized_function(composite_globals)
@@ -372,28 +418,28 @@ class SessionGenerator:
 
     @staticmethod
     def _channel_io(
-        session: model.Session, read: bool = False, write: bool = False
+        session: tac.Session, read: bool = False, write: bool = False
     ) -> dict[ID, list[ChannelAccess]]:
         assert (read and not write) or (not read and write)
 
         channels: dict[ID, list[ChannelAccess]] = {
             parameter.identifier: []
-            for parameter in session.parameters.values()
-            if isinstance(parameter, decl.ChannelDeclaration)
+            for parameter in session.parameters
+            if isinstance(parameter, tac.ChannelDecl)
         }
         for state in session.states:
             for action in state.actions:
                 if (
-                    isinstance(action, stmt.ChannelAttributeStatement)
-                    and isinstance(action, stmt.Read if read else stmt.Write)
-                    and isinstance(action.parameter, expr.Variable)
-                    and isinstance(action.parameter.type_, rty.Message)
+                    isinstance(action, tac.ChannelStmt)
+                    and isinstance(action, tac.Read if read else tac.Write)
+                    and isinstance(action.expression, tac.Var)
+                    and isinstance(action.expression.type_, rty.Message)
                 ):
-                    channels[action.identifier].append(
+                    channels[action.channel].append(
                         ChannelAccess(
                             state.identifier,
-                            action.parameter.identifier,
-                            action.parameter.type_.identifier,
+                            action.expression.identifier,
+                            action.expression.type_.identifier,
                         )
                     )
 
@@ -409,10 +455,8 @@ class SessionGenerator:
         )
 
     @staticmethod
-    def _create_channel_and_state_types(session: model.Session) -> UnitPart:
-        channel_params = [
-            x for x in session.parameters.values() if isinstance(x, decl.ChannelDeclaration)
-        ]
+    def _create_channel_and_state_types(session: tac.Session) -> UnitPart:
+        channel_params = [x for x in session.parameters if isinstance(x, tac.ChannelDecl)]
         return UnitPart(
             [
                 *(
@@ -427,7 +471,7 @@ class SessionGenerator:
                 ),
                 EnumerationType(
                     "State",
-                    {state_id(s.identifier): None for s in [*session.states, model.State("Final")]},
+                    {state_id(s.identifier): None for s in [*session.states, tac.FINAL_STATE]},
                 ),
             ],
         )
@@ -481,14 +525,14 @@ class SessionGenerator:
 
     def _create_abstract_functions(
         self,
-        parameters: Iterable[decl.FormalDeclaration],
+        parameters: Iterable[tac.FormalDecl],
     ) -> UnitPart:
         result: list[Declaration] = []
 
         for parameter in parameters:
-            if isinstance(parameter, decl.ChannelDeclaration):
+            if isinstance(parameter, tac.ChannelDecl):
                 pass
-            elif isinstance(parameter, decl.FunctionDeclaration):
+            elif isinstance(parameter, tac.FuncDecl):
                 result.extend(self._create_abstract_function(parameter))
             else:
                 fatal_fail(
@@ -499,9 +543,7 @@ class SessionGenerator:
 
         return UnitPart(result)
 
-    def _create_abstract_function(
-        self, function: decl.FunctionDeclaration
-    ) -> Sequence[SubprogramDeclaration]:
+    def _create_abstract_function(self, function: tac.FuncDecl) -> Sequence[SubprogramDeclaration]:
         procedure_parameters: list[Parameter] = [InOutParameter(["Ctx"], "Context")]
 
         if function.type_ == rty.Undefined():
@@ -593,7 +635,7 @@ class SessionGenerator:
 
     def _create_uninitialized_function(
         self,
-        composite_globals: Sequence[decl.VariableDeclaration],
+        composite_globals: Sequence[tac.VarDecl],
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
         specification = FunctionSpecification(
@@ -636,7 +678,7 @@ class SessionGenerator:
 
     def _create_global_initialized_function(
         self,
-        composite_globals: Sequence[decl.VariableDeclaration],
+        composite_globals: Sequence[tac.VarDecl],
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
         if not composite_globals:
@@ -660,7 +702,7 @@ class SessionGenerator:
                             for d in composite_globals
                             for e in [
                                 Call(
-                                    d.type_identifier * "Has_Buffer",
+                                    d.type_.identifier * "Has_Buffer",
                                     [Variable(context_id(d.identifier, is_global))],
                                 ),
                                 Equal(
@@ -681,9 +723,7 @@ class SessionGenerator:
             ],
         )
 
-    def _create_initialized_function(
-        self, composite_globals: Sequence[decl.VariableDeclaration]
-    ) -> UnitPart:
+    def _create_initialized_function(self, composite_globals: Sequence[tac.VarDecl]) -> UnitPart:
         specification = FunctionSpecification(
             "Initialized",
             "Boolean",
@@ -731,8 +771,8 @@ class SessionGenerator:
 
     def _create_states(
         self,
-        session: model.Session,
-        composite_globals: Sequence[decl.VariableDeclaration],
+        session: tac.Session,
+        composite_globals: Sequence[tac.VarDecl],
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
         if self._allocator.get_global_slot_ptrs() or self._allocator.get_local_slot_ptrs():
@@ -741,14 +781,31 @@ class SessionGenerator:
         unit_body: list[Declaration] = []
 
         for state in session.states:
-            if state == FINAL_STATE:
+            if state == tac.FINAL_STATE:
                 continue
 
             invariant = []
             slots = []
 
-            for d in state.declarations.values():
-                assert isinstance(d, decl.VariableDeclaration)
+            declarations = [
+                *[a for a in state.actions if isinstance(a, tac.VarDecl)],
+                *[
+                    s
+                    for a in state.actions
+                    if isinstance(a, tac.Assign)
+                    and isinstance(a.expression, (tac.Comprehension, tac.Find))
+                    for s in [*a.expression.selector.stmts, *a.expression.condition.stmts]
+                    if isinstance(s, tac.VarDecl)
+                ],
+                *[
+                    s
+                    for t in state.transitions
+                    for s in t.condition.stmts
+                    if isinstance(s, tac.VarDecl)
+                ],
+            ]
+
+            for d in declarations:
                 if isinstance(d.type_, (rty.Message, rty.Sequence)):
                     identifier = context_id(d.identifier, is_global)
                     type_identifier = self._ada_type(d.type_.identifier)
@@ -803,8 +860,11 @@ class SessionGenerator:
                 ]
             )
 
-            evaluated_declarations = self._evaluate_declarations(
-                state.declarations.values(), is_global
+            evaluated_declarations = self._evaluate_declarations(declarations, is_global)
+            exception_handler = ExceptionHandler(
+                state,
+                [PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")])],
+                lambda: self._session_context.states_with_exceptions.add(state.identifier),
             )
             statements = [
                 *[
@@ -813,15 +873,13 @@ class SessionGenerator:
                     for s in self._state_action(
                         state.identifier,
                         a,
-                        ExceptionHandler(
-                            self._session_context.state_exception,
-                            state,
-                            [PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")])],
-                        ),
+                        exception_handler,
                         is_global,
                     )
                 ],
-                *self._determine_next_state(state.transitions, is_global),
+                *self._determine_next_state(
+                    state.transitions, exception_handler, is_global, state.identifier
+                ),
             ]
 
             unit_body += [
@@ -840,18 +898,17 @@ class SessionGenerator:
                             And(*invariant),
                             [Annotate("GNATprove", "Inline_For_Proof"), Ghost()],
                         ),
-                        *(
-                            [ObjectDeclaration(["RFLX_Exception"], "Boolean", FALSE)]
-                            if state.identifier in self._session_context.state_exception
-                            else []
-                        ),
                     ],
                     [
                         *evaluated_declarations.initialization,
                         PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")]),
                         *statements,
                         PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")]),
-                        *([Label(f"Finalize_{state.identifier}")] if state.has_exceptions else []),
+                        *(
+                            [Label(f"Finalize_{state.identifier}")]
+                            if state.identifier in self._session_context.states_with_exceptions
+                            else []
+                        ),
                         *evaluated_declarations.finalization,
                         *(
                             [
@@ -873,14 +930,24 @@ class SessionGenerator:
         return UnitPart(body=unit_body)
 
     def _determine_next_state(
-        self, transitions: Sequence[model.Transition], is_global: Callable[[ID], bool]
+        self,
+        transitions: Sequence[tac.Transition],
+        exception_handler: ExceptionHandler,
+        is_global: Callable[[ID], bool],
+        state: ID,
     ) -> Sequence[Statement]:
         return (
             [
+                *[
+                    a
+                    for t in transitions
+                    for s in t.condition.stmts
+                    for a in self._state_action(state, s, exception_handler, is_global)
+                ],
                 IfStatement(
                     [
                         (
-                            t.condition.substituted(self._substitution(is_global)).ada_expr(),
+                            self._to_ada_expr(t.condition.expr, is_global),
                             [
                                 Assignment(
                                     "Ctx.P.Next_State",
@@ -896,14 +963,14 @@ class SessionGenerator:
                             Variable(state_id(transitions[-1].target)),
                         )
                     ],
-                )
+                ),
             ]
             if transitions
             else []
         )
 
     @staticmethod
-    def _create_active_function(session: model.Session) -> UnitPart:
+    def _create_active_function(session: tac.Session) -> UnitPart:
         specification = FunctionSpecification(
             "Active",
             "Boolean",
@@ -917,7 +984,7 @@ class SessionGenerator:
                 ExpressionFunctionDeclaration(
                     specification,
                     NotEqual(
-                        Variable("Ctx.P.Next_State"), Variable(state_id(FINAL_STATE.identifier))
+                        Variable("Ctx.P.Next_State"), Variable(state_id(tac.FINAL_STATE.identifier))
                     )
                     if len(session.states) > 1
                     else Variable("False"),
@@ -927,7 +994,7 @@ class SessionGenerator:
 
     @staticmethod
     def _create_initialize_procedure(
-        session: model.Session,
+        session: tac.Session,
         declarations: Sequence[Declaration],
         initialization: Sequence[Statement],
     ) -> UnitPart:
@@ -992,7 +1059,9 @@ class SessionGenerator:
                     declarations,
                     [
                         *finalization,
-                        Assignment("Ctx.P.Next_State", Variable(state_id(FINAL_STATE.identifier))),
+                        Assignment(
+                            "Ctx.P.Next_State", Variable(state_id(tac.FINAL_STATE.identifier))
+                        ),
                     ],
                 ),
             ],
@@ -1000,7 +1069,7 @@ class SessionGenerator:
 
     def _create_reset_messages_before_write_procedure(
         self,
-        session: model.Session,
+        session: tac.Session,
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
         self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
@@ -1013,14 +1082,14 @@ class SessionGenerator:
                 state,
                 [
                     (
-                        action.parameter.identifier,
-                        action.parameter.type_,
+                        action.expression.identifier,
+                        action.expression.type_,
                     )
                     for action in state.actions
                     if (
-                        isinstance(action, stmt.Read)
-                        and isinstance(action.parameter, expr.Variable)
-                        and isinstance(action.parameter.type_, rty.Message)
+                        isinstance(action, tac.Read)
+                        and isinstance(action.expression, tac.Var)
+                        and isinstance(action.expression.type_, rty.Message)
                     )
                 ],
             )
@@ -1073,7 +1142,7 @@ class SessionGenerator:
             ],
         )
 
-    def _create_tick_procedure(self, session: model.Session, has_writes: bool) -> UnitPart:
+    def _create_tick_procedure(self, session: tac.Session, has_writes: bool) -> UnitPart:
         specification = ProcedureSpecification("Tick", [InOutParameter(["Ctx"], "Context'Class")])
         return UnitPart(
             [
@@ -1101,7 +1170,7 @@ class SessionGenerator:
                                         *self._debug_output(f"State: {s.identifier}"),
                                         CallStatement(s.identifier, [Variable("Ctx")]),
                                     ]
-                                    if s != FINAL_STATE
+                                    if s != tac.FINAL_STATE
                                     else [NullStatement()],
                                 )
                                 for s in session.states
@@ -1118,7 +1187,7 @@ class SessionGenerator:
         )
 
     @staticmethod
-    def _create_in_io_state_function(session: model.Session) -> UnitPart:
+    def _create_in_io_state_function(session: tac.Session) -> UnitPart:
         io_states = [
             state
             for state in session.states
@@ -1126,9 +1195,9 @@ class SessionGenerator:
                 True
                 for action in state.actions
                 if (
-                    isinstance(action, (stmt.Read, stmt.Write))
-                    and isinstance(action.parameter, expr.Variable)
-                    and isinstance(action.parameter.type_, rty.Message)
+                    isinstance(action, (tac.Read, tac.Write))
+                    and isinstance(action.expression, tac.Var)
+                    and isinstance(action.expression.type_, rty.Message)
                 )
             )
         ]
@@ -1863,7 +1932,7 @@ class SessionGenerator:
 
     def _evaluate_declarations(
         self,
-        declarations: Iterable[decl.BasicDeclaration],
+        declarations: Iterable[tac.VarDecl],
         is_global: Optional[Callable[[ID], bool]] = None,
         session_global: bool = False,
     ) -> EvaluatedDeclaration:
@@ -1880,29 +1949,16 @@ class SessionGenerator:
         has_composite_declarations = False
 
         for declaration in declarations:
-            if isinstance(declaration, decl.VariableDeclaration):
-                result += self._declare(
-                    declaration.identifier,
-                    declaration.type_,
-                    is_global,
-                    declaration.location,
-                    declaration.expression,
-                    session_global=session_global,
-                )
-                if isinstance(declaration.type_, (rty.Message, rty.Sequence)):
-                    has_composite_declarations |= True
-            elif isinstance(declaration, decl.RenamingDeclaration):
-                fail(
-                    f'renaming declaration "{declaration.identifier}" not yet supported',
-                    Subsystem.GENERATOR,
-                    location=declaration.location,
-                )
-            else:
-                fatal_fail(
-                    f'unexpected declaration "{declaration.identifier}"',
-                    Subsystem.GENERATOR,
-                    location=declaration.location,
-                )
+            result += self._declare(
+                declaration.identifier,
+                declaration.type_,
+                is_global,
+                declaration.location,
+                declaration.expression,
+                session_global=session_global,
+            )
+            if isinstance(declaration.type_, (rty.Message, rty.Sequence)):
+                has_composite_declarations |= True
 
         if session_global and self._allocator.required:
             result.initialization.insert(
@@ -1924,13 +1980,16 @@ class SessionGenerator:
     def _state_action(
         self,
         state: ID,
-        action: stmt.Statement,
+        action: tac.Stmt,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        if isinstance(action, stmt.VariableAssignment):
+        if isinstance(action, tac.VarDecl):
+            return []
+
+        if isinstance(action, tac.Assign):
             result = self._assign(
-                action.identifier,
+                action.target,
                 action.type_,
                 action.expression,
                 exception_handler,
@@ -1939,8 +1998,8 @@ class SessionGenerator:
                 action.location,
             )
 
-        elif isinstance(action, stmt.MessageFieldAssignment):
-            result = self._assign_message_field(
+        elif isinstance(action, tac.FieldAssign):
+            result = self._message_field_assign(
                 action.message,
                 action.field,
                 action.type_,
@@ -1949,24 +2008,27 @@ class SessionGenerator:
                 is_global,
             )
 
-        elif isinstance(action, stmt.Append):
+        elif isinstance(action, tac.Append):
             result = self._append(action, exception_handler, is_global, state)
 
-        elif isinstance(action, stmt.Extend):
+        elif isinstance(action, tac.Extend):
             fail(
                 "Extend statement not yet supported",
                 Subsystem.GENERATOR,
                 location=action.location,
             )
 
-        elif isinstance(action, stmt.Reset):
+        elif isinstance(action, tac.Reset):
             result = self._reset(action, is_global)
 
-        elif isinstance(action, stmt.Read):
+        elif isinstance(action, tac.Read):
             result = self._read(action, is_global)
 
-        elif isinstance(action, stmt.Write):
+        elif isinstance(action, tac.Write):
             result = self._write(action)
+
+        elif isinstance(action, tac.Check):
+            result = self._check(action.expression, action.origin, exception_handler, is_global)
 
         else:
             fatal_fail(
@@ -1975,6 +2037,7 @@ class SessionGenerator:
                 location=action.location,
             )
 
+        assert action.location is not None
         return [CommentStatement(str(action.location)), *result]
 
     def _declare(  # noqa: PLR0913, PLR0912
@@ -1983,73 +2046,92 @@ class SessionGenerator:
         type_: rty.Type,
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
-        expression: Optional[expr.Expr] = None,
+        expression: Optional[tac.ComplexExpr] = None,
         constant: bool = False,
         session_global: bool = False,
     ) -> EvaluatedDeclaration:
         result = EvaluatedDeclaration()
 
-        if expression:
-            for e in expression.findall(lambda x: isinstance(x, expr.Call)):
-                fail(
-                    "initialization using function call not yet supported",
-                    Subsystem.GENERATOR,
-                    location=e.location,
-                )
+        if expression and isinstance(expression.expr, tac.Call):
+            fail(
+                "initialization using function call not yet supported",
+                Subsystem.GENERATOR,
+                location=expression.expr.location,
+            )
 
         if type_ == rty.OPAQUE:
-            initialization = expression
+            initialization = None
             object_type: Expr = Variable(const.TYPES_BYTES)
-            aspects = []
+            aspects: list[Aspect] = []
 
-            if isinstance(expression, expr.Aggregate):
-                if len(expression.elements) == 0:
-                    object_type = Slice(
-                        Variable(const.TYPES_BYTES),
-                        Last(const.TYPES_INDEX),
-                        First(const.TYPES_INDEX),
-                    )
-                    initialization = None
-                if len(expression.elements) > 0:
-                    aspects.append(
-                        SizeAspect(Mul(Number(len(expression.elements)), Size(const.TYPES_BYTE)))
+            if expression:
+                if expression.is_expr() and isinstance(expression.expr, tac.Agg):
+                    e = expression.expr
+                    if len(e.elements) == 0:
+                        object_type = Slice(
+                            Variable(const.TYPES_BYTES),
+                            Last(const.TYPES_INDEX),
+                            First(const.TYPES_INDEX),
+                        )
+                        initialization = None
+                    if len(e.elements) > 0:
+                        aspects.append(
+                            SizeAspect(Mul(Number(len(e.elements)), Size(const.TYPES_BYTE)))
+                        )
+                        initialization = expression.expr
+                else:
+                    fail(
+                        "initialization not yet supported",
+                        Subsystem.GENERATOR,
+                        location=expression.expr.location,
                     )
 
             result.global_declarations.append(
                 ObjectDeclaration(
                     [identifier],
                     object_type,
-                    initialization.substituted(self._substitution(is_global)).ada_expr()
-                    if initialization
-                    else None,
+                    self._to_ada_expr(initialization, is_global) if initialization else None,
                     constant=constant if initialization else False,
                     aliased=False,
                     aspects=aspects,
                 )
             )
 
-        elif isinstance(type_, (rty.Integer, rty.Enumeration)):
+        elif isinstance(type_, (rty.UniversalInteger, rty.Integer, rty.Enumeration)):
             result.global_declarations.append(
                 ObjectDeclaration(
                     [identifier],
-                    self._ada_type(type_.identifier),
-                    expression.ada_expr() if expression else None,
+                    self._ada_type(type_.identifier)
+                    if isinstance(type_, rty.NamedType)
+                    else const.TYPES_BASE_INT,
+                    self._to_ada_expr(expression.expr, is_global)
+                    if expression and expression.is_basic_expr()
+                    else None,
                 )
             )
-            if session_global and expression:
-                result.initialization.append(
-                    Assignment(
-                        variable_id(identifier, is_global),
-                        self._convert_type(expression, type_).ada_expr(),
-                    ),
-                )
+            if expression:
+                if session_global and expression.is_basic_expr():
+                    result.initialization.append(
+                        Assignment(
+                            variable_id(identifier, is_global),
+                            self._to_ada_expr(
+                                self._convert_type(expression.expr, type_), is_global
+                            ),
+                        ),
+                    )
+                if not expression.is_basic_expr():
+                    fail(
+                        "initialization with complex expression not yet supported",
+                        Subsystem.GENERATOR,
+                        location=expression.expr.location,
+                    )
 
         elif isinstance(type_, (rty.Message, rty.Sequence)):
             if expression is not None:
                 fail(
                     f"initialization for {type_} not yet supported",
                     Subsystem.GENERATOR,
-                    location=expression.location,
+                    location=expression.expr.location,
                 )
 
             type_identifier = self._ada_type(type_.identifier)
@@ -2105,14 +2187,15 @@ class SessionGenerator:
                 location=identifier.location,
             )
 
-        assert isinstance(
-            type_, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence, rty.Structure)
-        )
+        assert isinstance(type_, (rty.NamedType, rty.UniversalInteger)), type_
 
+        type_identifier = (
+            type_.identifier if isinstance(type_, rty.NamedType) else const.TYPES_BASE_INT
+        )
         if session_global:
-            self._session_context.referenced_types.append(type_.identifier)
+            self._session_context.referenced_types.append(type_identifier)
         else:
-            self._session_context.referenced_types_body.append(type_.identifier)
+            self._session_context.referenced_types_body.append(type_identifier)
 
         return result
 
@@ -2120,159 +2203,150 @@ class SessionGenerator:
         self,
         target: ID,
         target_type: rty.Type,
-        expression: expr.Expr,
+        expression: tac.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
-        if isinstance(expression, expr.DeltaMessageAggregate):
+        if isinstance(expression, tac.DeltaMsgAgg):
             return self._assign_to_delta_message_aggregate(
                 target, expression, exception_handler, is_global, state
             )
 
-        if isinstance(expression, expr.MessageAggregate):
+        if isinstance(expression, tac.MsgAgg):
             return self._assign_to_message_aggregate(
                 target, expression, exception_handler, is_global, state
             )
 
         if isinstance(target_type, rty.Message):
-            for v in expression.findall(
-                lambda x: isinstance(x, expr.Variable) and x.identifier == target
-            ):
+            if isinstance(expression, tac.Var) and expression.identifier == target:
                 fail(
                     f'referencing assignment target "{target}" of type message in expression'
                     " not yet supported",
                     Subsystem.GENERATOR,
-                    location=v.location,
+                    location=expression.location,
                 )
 
-        if isinstance(expression, expr.Selected):
-            return self._assign_to_selected(target, expression, exception_handler, is_global)
+        if isinstance(expression, tac.FieldAccess):
+            return self._assign_to_field_access(target, expression, exception_handler, is_global)
 
-        if isinstance(expression, expr.Head):
+        if isinstance(expression, tac.Head):
             return self._assign_to_head(
                 target, expression, exception_handler, is_global, state, alloc_id
             )
 
-        if isinstance(expression, expr.Comprehension):
+        if isinstance(expression, tac.Comprehension):
             assert isinstance(target_type, rty.Sequence)
             return self._assign_to_comprehension(
                 target, target_type, expression, exception_handler, is_global, state, alloc_id
             )
 
-        if isinstance(expression, expr.Call):
+        if isinstance(expression, tac.Find):
+            return self._assign_to_find(
+                target, expression, exception_handler, is_global, state, alloc_id
+            )
+
+        if isinstance(expression, tac.Call):
             return self._assign_to_call(target, expression, exception_handler, is_global, state)
 
-        if isinstance(expression, expr.Conversion):
+        if isinstance(expression, tac.Conversion):
             return self._assign_to_conversion(target, expression, exception_handler, is_global)
 
         if isinstance(
             expression,
             (
-                expr.Variable,
-                expr.Literal,
-                expr.Number,
-                expr.MathBinExpr,
-                expr.MathAssExpr,
-                expr.Relation,
-                expr.Attribute,
-                expr.Aggregate,
-                expr.BoolAssExpr,
-                expr.CaseExpr,
+                tac.Var,
+                tac.EnumLit,
+                tac.IntVal,
+                tac.BoolVal,
+                tac.BinaryIntExpr,
+                tac.Relation,
+                tac.Attr,
+                tac.FieldAccessAttr,
+                tac.Agg,
+                tac.BinaryBoolExpr,
+                tac.CaseExpr,
             ),
         ) and (
             isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration))
             or expression.type_ == rty.OPAQUE
         ):
-            value = expression.substituted(self._substitution(is_global))
             assert isinstance(
                 target_type, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence)
-            )
-            return self._if_valid_fields(
-                expression,
-                [
-                    Assignment(
-                        variable_id(target, is_global),
-                        self._convert_type(value, target_type).ada_expr(),
-                    ),
-                ],
-                exception_handler,
-                is_global,
-            )
+            ), target_type
+            return [
+                Assignment(
+                    variable_id(target, is_global),
+                    self._to_ada_expr(self._convert_type(expression, target_type), is_global),
+                )
+            ]
 
-        if isinstance(expression, expr.Variable) and isinstance(
+        if isinstance(expression, tac.Var) and isinstance(
             expression.type_, (rty.Message, rty.Sequence)
         ):
             _unsupported_expression(expression, "in assignment")
 
         _unexpected_expression(expression, "in assignment")
 
-    def _assign_to_selected(
+    def _assign_to_field_access(
         self,
         target: ID,
-        selected: expr.Selected,
+        field_access: tac.FieldAccess,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        if not isinstance(selected.prefix, expr.Variable):
-            fail(
-                f'accessing field of expression "{type(selected.prefix).__name__}"'
-                " not yet supported",
-                Subsystem.GENERATOR,
-                location=selected.prefix.location,
-            )
-
-        if isinstance(selected.prefix.type_, rty.Structure):
+        if isinstance(field_access.message_type, rty.Structure):
             return [
                 Assignment(
                     Variable(variable_id(target, is_global)),
-                    Variable(selected.prefix.identifier * selected.selector),
+                    Variable(field_access.message * field_access.field),
                 )
             ]
 
-        assert isinstance(selected.prefix.type_, rty.Message)
+        assert isinstance(field_access.message_type, rty.Message)
 
-        message_type = selected.prefix.type_.identifier
-        message_context = context_id(selected.prefix.identifier, is_global)
-        selector = selected.selector
+        message_type = field_access.message_type.identifier
+        message_context = context_id(field_access.message, is_global)
+        field = field_access.field
 
         if (
-            isinstance(selected.type_, (rty.AnyInteger, rty.Enumeration))
-            or selected.type_ == rty.OPAQUE
+            isinstance(field_access.type_, (rty.AnyInteger, rty.Enumeration))
+            or field_access.type_ == rty.OPAQUE
         ):
-            if selector in selected.prefix.type_.parameter_types:
+            if field in field_access.message_type.parameter_types:
                 return [
                     Assignment(
                         Variable(variable_id(target, is_global)),
-                        Variable(message_context * selector),
+                        Variable(message_context * field),
                     )
                 ]
 
             return [
+                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
                 self._if(
                     Call(
                         message_type * "Valid",
                         [
                             Variable(message_context),
-                            Variable(message_type * f"F_{selector}"),
+                            Variable(message_type * f"F_{field}"),
                         ],
                     ),
                     [
                         Assignment(
                             Variable(variable_id(target, is_global)),
                             Call(
-                                message_type * f"Get_{selector}",
+                                message_type * f"Get_{field}",
                                 [Variable(message_context)],
                             ),
                         )
                     ],
-                    f'access to invalid field "{selector}" of' f' "{message_context}"',
+                    f'access to invalid field "{field}" of' f' "{message_context}"',
                     exception_handler,
                 )
             ]
 
-        if isinstance(selected.type_, rty.Sequence):
+        if isinstance(field_access.type_, rty.Sequence):
             # Eng/RecordFlux/RecordFlux#577
             # The relevant buffer part has to be copied from the message context into a
             # sequence context. With the current implementation the sequence needs to
@@ -2286,7 +2360,7 @@ class SessionGenerator:
             )
 
         fatal_fail(
-            f'unexpected type ({selected.type_}) for "{selected}" in assignment of "{target}"',
+            f'unexpected type ({field_access.type_}) for "{field_access}" in assignment of "{target}"',
             Subsystem.GENERATOR,
             location=target.location,
         )
@@ -2294,7 +2368,7 @@ class SessionGenerator:
     def _assign_to_message_aggregate(
         self,
         target: ID,
-        message_aggregate: expr.MessageAggregate,
+        message_aggregate: tac.MsgAgg,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2320,9 +2394,7 @@ class SessionGenerator:
                     Variable(target_context),
                 ],
                 {
-                    p: self._convert_type(v, t)
-                    .substituted(self._substitution(is_global))
-                    .ada_expr()
+                    p: self._to_ada_expr(self._convert_type(v, t), is_global)
                     for p, v, t in parameter_values
                 },
             ),
@@ -2336,7 +2408,7 @@ class SessionGenerator:
     def _assign_to_delta_message_aggregate(
         self,
         target: ID,
-        delta_message_aggregate: expr.DeltaMessageAggregate,
+        delta_message_aggregate: tac.DeltaMsgAgg,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2352,11 +2424,8 @@ class SessionGenerator:
         first_field = fields[0]
         last_field = fields[-1]
 
-        required_space, required_space_precondition = self._required_space(
-            self._message_subpath_size(delta_message_aggregate), is_global, state
-        )
-
         return [
+            # TODO(eng/recordflux/RecordFlux#861): Move check into IR
             self._raise_exception_if(
                 Not(
                     Call(
@@ -2369,33 +2438,6 @@ class SessionGenerator:
                 ),
                 f'trying to set message fields "{first_field}" to "{last_field}" although'
                 f' "{first_field}" is not valid next field',
-                exception_handler,
-            ),
-            *(
-                [
-                    self._raise_exception_if(
-                        Not(required_space_precondition),
-                        "violated precondition for calculating required space for setting message"
-                        f' fields "{first_field}" to "{last_field}" (one of the message arguments'
-                        " is invalid or has a too small buffer)",
-                        exception_handler,
-                    )
-                ]
-                if required_space_precondition
-                else []
-            ),
-            self._raise_exception_if(
-                Less(
-                    Call(
-                        target_type_id * "Available_Space",
-                        [
-                            Variable(target_context),
-                            Variable(target_type_id * model.Field(first_field).affixed_name),
-                        ],
-                    ),
-                    required_space,
-                ),
-                f'insufficient space for setting message fields "{first_field}" to "{last_field}"',
                 exception_handler,
             ),
             *[
@@ -2415,59 +2457,45 @@ class SessionGenerator:
     def _assign_to_head(  # noqa: PLR0913
         self,
         target: ID,
-        head: expr.Head,
+        head: tac.Head,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
-        assert isinstance(head.prefix.type_, (rty.Sequence, rty.Aggregate))
-
-        if not isinstance(head.prefix.type_.element, (rty.Integer, rty.Enumeration, rty.Message)):
+        if not isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message)):
             fatal_fail(
-                f"unexpected sequence element type ({head.prefix.type_.element})"
+                f"unexpected sequence element type {head.type_}"
                 f' for "{head}" in assignment of "{target}"',
                 Subsystem.GENERATOR,
                 location=head.location,
             )
 
-        if isinstance(head.prefix, expr.Comprehension):
-            return self._assign_to_head_comprehension(
-                target, head, exception_handler, is_global, state, alloc_id
-            )
         return self._assign_to_head_sequence(
             target, head, exception_handler, is_global, state, alloc_id
         )
 
-    def _assign_to_head_comprehension(  # noqa: PLR0913
+    def _assign_to_find(  # noqa: PLR0913
         self,
         target: ID,
-        head: expr.Head,
+        find: tac.Find,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
-        comprehension = head.prefix
-        assert isinstance(comprehension, expr.Comprehension)
-        assert isinstance(comprehension.sequence.type_, rty.Sequence)
-        sequence_type_id = comprehension.sequence.type_.identifier
-        sequence_element_type = comprehension.sequence.type_.element
+        assert isinstance(find.sequence.type_, rty.Sequence)
+        sequence_type_id = find.sequence.type_.identifier
+        sequence_element_type = find.sequence.type_.element
 
         if isinstance(sequence_element_type, rty.Message):
-            if isinstance(comprehension.sequence, expr.Variable):
-                sequence_id = ID(f"{comprehension.sequence}")
+            if isinstance(find.sequence, tac.Var):
+                sequence_id = ID(f"{find.sequence}")
                 comprehension_sequence_id = copy_id(sequence_id)
-            elif isinstance(comprehension.sequence, expr.Selected):
-                selected = comprehension.sequence
-
-                if not isinstance(selected.prefix, expr.Variable):
-                    _unsupported_expression(
-                        selected.prefix, "as prefix of Selected in list comprehension"
-                    )
-
+            elif isinstance(find.sequence, tac.FieldAccess):
+                selected = find.sequence
                 sequence_id = ID(
-                    f"RFLX_{selected.prefix}_{selected.selector}",
+                    f"RFLX_{selected.message}_{selected.field}",
                     location=selected.location,
                 )
                 comprehension_sequence_id = sequence_id
@@ -2478,14 +2506,13 @@ class SessionGenerator:
             def comprehension_statements(
                 local_exception_handler: ExceptionHandler,
             ) -> list[Statement]:
-                assert isinstance(comprehension, expr.Comprehension)
-                assert isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message))
+                assert isinstance(find.type_, (rty.Integer, rty.Enumeration, rty.Message))
                 assert isinstance(
                     sequence_element_type, (rty.Message, rty.Integer, rty.Enumeration)
                 )
                 default_assignment = []
-                if isinstance(head.type_, (rty.Integer, rty.Enumeration)):
-                    default_assignment = [Assignment(target, First(head.type_.identifier))]
+                if isinstance(find.type_, (rty.Integer, rty.Enumeration)):
+                    default_assignment = [Assignment(target, First(find.type_.identifier))]
                 return [
                     Declare(
                         [ObjectDeclaration([found_id(target)], "Boolean", FALSE)],
@@ -2495,15 +2522,19 @@ class SessionGenerator:
                                 comprehension_sequence_id,
                                 sequence_type_id,
                                 target,
-                                head.type_,
-                                comprehension.iterator,
+                                find.type_,
+                                find.iterator,
                                 sequence_element_type.identifier,
-                                comprehension.selector,
-                                comprehension.condition,
+                                find.selector.stmts,
+                                find.selector.expr,
+                                find.condition.stmts,
+                                find.condition.expr,
                                 local_exception_handler,
                                 is_global,
+                                state,
                                 alloc_id,
                             ),
+                            # TODO(eng/recordflux/RecordFlux#861): Move check into IR
                             self._raise_exception_if(
                                 Not(Variable(found_id(target))),
                                 f'failed to find valid element in "{sequence_id}"',
@@ -2513,7 +2544,7 @@ class SessionGenerator:
                     )
                 ]
 
-            if isinstance(comprehension.sequence, expr.Variable):
+            if isinstance(find.sequence, tac.Var):
                 return [
                     self._declare_sequence_copy(
                         sequence_id,
@@ -2524,12 +2555,11 @@ class SessionGenerator:
                         alloc_id,
                     )
                 ]
-            if isinstance(comprehension.sequence, expr.Selected):
-                assert isinstance(selected.prefix, expr.Variable)
-                assert isinstance(selected.prefix.type_, rty.Message)
-                message_id = ID(selected.prefix.name)
-                message_type = selected.prefix.type_.identifier
-                message_field = selected.selector
+            if isinstance(find.sequence, tac.FieldAccess):
+                assert isinstance(selected.message_type, rty.Message)
+                message_id = selected.message
+                message_type = selected.message_type.identifier
+                message_field = selected.field
                 source_buffer_size = self._allocator.get_size(message_id, state)
                 target_buffer_size = self._allocator.get_size(target, state)
 
@@ -2559,32 +2589,30 @@ class SessionGenerator:
             f"iterating over sequence of {sequence_element_type}"
             " in list comprehension not yet supported",
             Subsystem.GENERATOR,
-            location=comprehension.sequence.location,
+            location=find.sequence.location,
         )
 
     def _assign_to_head_sequence(  # noqa: PLR0913
         self,
         target: ID,
-        head: expr.Head,
+        head: tac.Head,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
-        assert isinstance(head.prefix.type_, rty.Sequence)
+        assert isinstance(head.prefix_type, rty.Sequence)
         assert isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message))
 
-        if not isinstance(head.prefix, expr.Variable):
-            _unsupported_expression(head.prefix, "in Head attribute")
-
         target_type = head.type_.identifier
-        sequence_type = head.prefix.type_.identifier
-        sequence_id = head.prefix.identifier
+        sequence_type = head.prefix_type.identifier
+        sequence_id = head.prefix
         sequence_context = context_id(sequence_id, is_global)
         sequence_identifier = ID(f"{head.prefix}")
 
-        if isinstance(head.prefix.type_.element, (rty.Integer, rty.Enumeration)):
+        if isinstance(head.type_, (rty.Integer, rty.Enumeration)):
             return [
+                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
                 self._if(
                     AndThen(
                         Call(sequence_type * "Valid", [Variable(sequence_context)]),
@@ -2597,7 +2625,7 @@ class SessionGenerator:
                                 sequence_type * "Size",
                                 [Variable(sequence_context)],
                             ),
-                            Size(head.prefix.type_.element.identifier),
+                            Size(target_type),
                         ),
                     ),
                     [
@@ -2615,7 +2643,7 @@ class SessionGenerator:
                 )
             ]
 
-        assert isinstance(head.prefix.type_.element, rty.Message)
+        assert isinstance(head.type_, rty.Message)
 
         self._session_context.used_types_body.append(const.TYPES_LENGTH)
         self._session_context.referenced_types_body.append(target_type)
@@ -2743,7 +2771,7 @@ class SessionGenerator:
         self,
         target: ID,
         target_type: rty.Sequence,
-        comprehension: expr.Comprehension,
+        comprehension: tac.Comprehension,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2766,7 +2794,7 @@ class SessionGenerator:
         if isinstance(sequence_element_type, rty.Message):
             iterator_type_id = sequence_element_type.identifier
 
-            if isinstance(comprehension.sequence, expr.Variable):
+            if isinstance(comprehension.sequence, tac.Var):
                 sequence_id = ID(f"{comprehension.sequence}")
 
                 def statements(local_exception_handler: ExceptionHandler) -> list[Statement]:
@@ -2779,10 +2807,13 @@ class SessionGenerator:
                             target_type,
                             iterator_id,
                             iterator_type_id,
-                            comprehension.selector,
-                            comprehension.condition,
+                            comprehension.selector.stmts,
+                            comprehension.selector.expr,
+                            comprehension.condition.stmts,
+                            comprehension.condition.expr,
                             local_exception_handler,
                             is_global,
+                            state,
                             alloc_id,
                         ),
                     ]
@@ -2798,23 +2829,18 @@ class SessionGenerator:
                     ),
                 ]
 
-            if isinstance(comprehension.sequence, expr.Selected):
-                selected = comprehension.sequence
+            if isinstance(comprehension.sequence, tac.FieldAccess):
+                field_access = comprehension.sequence
 
-                if not isinstance(selected.prefix, expr.Variable):
-                    _unsupported_expression(
-                        selected.prefix, "as prefix of Selected in list comprehension"
-                    )
+                assert isinstance(field_access.message_type, rty.Message)
 
-                assert isinstance(selected.prefix.type_, rty.Message)
-
-                message_id = ID(selected.prefix.name)
-                message_type = selected.prefix.type_.identifier
+                message_id = ID(field_access.message)
+                message_type = field_access.message_type.identifier
                 sequence_id = ID(
-                    f"RFLX_{selected.prefix}_{selected.selector}",
-                    location=selected.location,
+                    f"RFLX_{field_access.message}_{field_access.field}",
+                    location=field_access.location,
                 )
-                message_field = selected.selector
+                message_field = field_access.field
                 source_buffer_size = self._allocator.get_size(message_id, state)
                 target_buffer_size = self._allocator.get_size(target, state)
 
@@ -2838,10 +2864,13 @@ class SessionGenerator:
                                         target_type,
                                         iterator_id,
                                         iterator_type_id,
-                                        comprehension.selector,
-                                        comprehension.condition,
+                                        comprehension.selector.stmts,
+                                        comprehension.selector.expr,
+                                        comprehension.condition.stmts,
+                                        comprehension.condition.expr,
                                         local_exception_handler,
                                         is_global,
+                                        state,
                                         alloc_id,
                                     )
                                 ],
@@ -2855,7 +2884,7 @@ class SessionGenerator:
                     ),
                 ]
 
-            _unsupported_expression(comprehension.sequence, "as sequence in list comprehension")
+            assert False
 
         fail(
             f"iterating over sequence of {sequence_element_type}"
@@ -2867,7 +2896,7 @@ class SessionGenerator:
     def _assign_to_call(
         self,
         target: ID,
-        call_expr: expr.Call,
+        call_expr: tac.Call,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2887,6 +2916,7 @@ class SessionGenerator:
                 )
             )
             post_call.append(
+                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
                 self._if(
                     Call(type_identifier * "Valid_Structure", [Variable(target_id)]),
                     [
@@ -2916,6 +2946,7 @@ class SessionGenerator:
         elif isinstance(call_expr.type_, rty.Structure):
             type_identifier = self._ada_type(call_expr.type_.identifier)
             post_call.append(
+                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
                 self._raise_exception_if(
                     Not(Call(type_identifier * "Valid_Structure", [Variable(target_id)])),
                     f'"{call_expr.identifier}" returned an invalid message',
@@ -2923,30 +2954,28 @@ class SessionGenerator:
                 )
             )
 
-        arguments: list[expr.Expr] = []
+        arguments: list[Expr] = []
 
-        assert len(call_expr.args) == len(call_expr.argument_types)
+        assert len(call_expr.arguments) == len(call_expr.argument_types)
 
-        for i, (a, t) in enumerate(zip(call_expr.args, call_expr.argument_types)):
+        for i, (a, t) in enumerate(zip(call_expr.arguments, call_expr.argument_types)):
             if not isinstance(
                 a,
                 (
-                    expr.Number,
-                    expr.Variable,
-                    expr.Literal,
-                    expr.Selected,
-                    expr.Size,
-                    expr.String,
-                    expr.Aggregate,
+                    tac.BoolVal,
+                    tac.IntVal,
+                    tac.Var,
+                    tac.EnumLit,
+                    tac.FieldAccess,
+                    tac.Size,
+                    tac.Str,
+                    tac.Agg,
+                    tac.Opaque,
                 ),
-            ) and not (
-                isinstance(a, expr.Opaque)
-                and isinstance(a.prefix, expr.Variable)
-                and a.type_ == rty.OPAQUE
             ):
                 _unsupported_expression(a, "as function argument")
 
-            if isinstance(a, expr.Variable) and isinstance(a.type_, rty.Message):
+            if isinstance(a, tac.Var) and isinstance(a.type_, rty.Message):
                 type_identifier = self._ada_type(a.type_.identifier)
                 local_declarations.append(
                     ObjectDeclaration(
@@ -2963,28 +2992,26 @@ class SessionGenerator:
                         ],
                     ),
                 )
-                arguments.append(a)
-            elif isinstance(a, expr.Selected) and a.type_ == rty.OPAQUE:
-                assert isinstance(a.prefix, expr.Variable)
-                assert isinstance(a.prefix.type_, rty.Message)
+                arguments.append(self._to_ada_expr(a, is_global))
+            elif isinstance(a, tac.FieldAccess) and a.type_ == rty.OPAQUE:
                 assert isinstance(a.type_, rty.Sequence)
-                argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.prefix}"
+                argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.message}"
                 argument_length = f"{argument_name}_Length"
-                argument = expr.Slice(
-                    expr.Variable(argument_name),
-                    expr.First(const.TYPES_INDEX),
-                    expr.Add(
-                        expr.First(const.TYPES_INDEX),
-                        expr.Call(
+                argument = Slice(
+                    Variable(argument_name),
+                    First(const.TYPES_INDEX),
+                    Add(
+                        First(const.TYPES_INDEX),
+                        Call(
                             const.TYPES_INDEX,
                             [
-                                expr.Variable(argument_length),
+                                Variable(argument_length),
                             ],
                         ),
-                        -expr.Number(2),
+                        -Number(2),
                     ),
                 )
-                type_identifier = self._ada_type(a.prefix.type_.identifier)
+                type_identifier = self._ada_type(a.message_type.identifier)
                 local_declarations.extend(
                     [
                         # Eng/RecordFlux/RecordFlux#917
@@ -2996,9 +3023,7 @@ class SessionGenerator:
                                 First(const.TYPES_INDEX),
                                 Add(
                                     First(const.TYPES_INDEX),
-                                    Number(
-                                        self._allocator.get_size(a.prefix.identifier, state) - 1
-                                    ),
+                                    Number(self._allocator.get_size(a.message, state) - 1),
                                 ),
                             ),
                             NamedAggregate(("others", Number(0))),
@@ -3013,10 +3038,8 @@ class SessionGenerator:
                                         Call(
                                             type_identifier * "Field_Size",
                                             [
-                                                Variable(
-                                                    context_id(a.prefix.identifier, is_global)
-                                                ),
-                                                Variable(type_identifier * f"F_{a.selector}"),
+                                                Variable(context_id(a.message, is_global)),
+                                                Variable(type_identifier * f"F_{a.field}"),
                                             ],
                                         ),
                                     ],
@@ -3029,36 +3052,31 @@ class SessionGenerator:
                 )
                 pre_call.append(
                     CallStatement(
-                        type_identifier * f"Get_{a.selector}",
-                        [
-                            Variable(context_id(a.prefix.identifier, is_global)),
-                            argument.ada_expr(),
-                        ],
+                        type_identifier * f"Get_{a.field}",
+                        [Variable(context_id(a.message, is_global)), argument],
                     ),
                 )
                 arguments.append(argument)
-            elif (
-                isinstance(a, expr.Opaque)
-                and isinstance(a.prefix, expr.Variable)
-                and isinstance(a.prefix.type_, (rty.Message, rty.Sequence))
+            elif isinstance(a, tac.Opaque) and isinstance(
+                a.prefix_type, (rty.Message, rty.Sequence)
             ):
                 self._session_context.used_types_body.append(const.TYPES_LENGTH)
                 argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.prefix}"
                 argument_length = f"{argument_name}_Length"
-                argument = expr.Slice(
-                    expr.Variable(argument_name),
-                    expr.First(const.TYPES_INDEX),
-                    expr.Add(
-                        expr.First(const.TYPES_INDEX),
-                        expr.Call(
+                argument = Slice(
+                    Variable(argument_name),
+                    First(const.TYPES_INDEX),
+                    Add(
+                        First(const.TYPES_INDEX),
+                        Call(
                             const.TYPES_INDEX,
-                            [expr.Add(expr.Variable(argument_length), expr.Number(1))],
+                            [Add(Variable(argument_length), Number(1))],
                         ),
-                        -expr.Number(2),
+                        -Number(2),
                     ),
                 )
-                type_identifier = self._ada_type(a.prefix.type_.identifier)
-                message_context = context_id(a.prefix.identifier, is_global)
+                type_identifier = self._ada_type(a.prefix_type.identifier)
+                context = context_id(a.prefix, is_global)
                 local_declarations.extend(
                     [
                         # Eng/RecordFlux/RecordFlux#917
@@ -3070,9 +3088,7 @@ class SessionGenerator:
                                 First(const.TYPES_INDEX),
                                 Add(
                                     First(const.TYPES_INDEX),
-                                    Number(
-                                        self._allocator.get_size(a.prefix.identifier, state) - 1
-                                    ),
+                                    Number(self._allocator.get_size(a.prefix, state) - 1),
                                 ),
                             ),
                             NamedAggregate(("others", Number(0))),
@@ -3083,7 +3099,7 @@ class SessionGenerator:
                             Call(
                                 type_identifier * "Byte_Size",
                                 [
-                                    Variable(message_context),
+                                    Variable(context),
                                 ],
                             ),
                             constant=True,
@@ -3092,43 +3108,31 @@ class SessionGenerator:
                 )
                 pre_call.extend(
                     [
+                        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
                         self._raise_exception_if(
                             Not(
                                 Call(
                                     type_identifier
                                     * (
                                         "Well_Formed_Message"
-                                        if isinstance(a.prefix.type_, rty.Message)
+                                        if isinstance(a.prefix_type, rty.Message)
                                         else "Valid"
                                     ),
-                                    [Variable(message_context)],
+                                    [Variable(context)],
                                 )
                             ),
-                            f'invalid message "{message_context}"',
+                            f'invalid "{context}"',
                             exception_handler,
                         ),
-                        CallStatement(
-                            type_identifier * "Data",
-                            [
-                                Variable(message_context),
-                                argument.ada_expr(),
-                            ],
-                        ),
+                        CallStatement(type_identifier * "Data", [Variable(context), argument]),
                     ]
                 )
                 arguments.append(argument)
-            elif (
-                isinstance(a, expr.Literal)
-                and isinstance(a.type_, rty.Enumeration)
-                and a.type_.always_valid
-                and a.identifier in self._session.literals
-            ):
-                arguments.append(expr.NamedAggregate(("Known", expr.TRUE), ("Enum", a)))
             else:
                 arguments.append(
-                    expr.Call(t.identifier, [a])
+                    Call(t.identifier, [self._to_ada_expr(a, is_global)])
                     if isinstance(t, rty.Integer) and not a.type_.is_compatible_strong(t)
-                    else a
+                    else self._to_ada_expr(a, is_global)
                 )
 
         call = [
@@ -3136,28 +3140,23 @@ class SessionGenerator:
                 call_expr.identifier,
                 [
                     Variable("Ctx"),
-                    *[a.substituted(self._substitution(is_global)).ada_expr() for a in arguments],
+                    *arguments,
                     Variable(target_id),
                 ],
             )
         ]
 
         if local_declarations:
-            return self._if_valid_fields(
-                expr.Or(*call_expr.args),
-                [
-                    Declare(
-                        local_declarations,
-                        [
-                            *pre_call,
-                            *call,
-                            *post_call,
-                        ],
-                    )
-                ],
-                exception_handler,
-                is_global,
-            )
+            return [
+                Declare(
+                    local_declarations,
+                    [
+                        *pre_call,
+                        *call,
+                        *post_call,
+                    ],
+                )
+            ]
 
         if isinstance(call_expr.type_, rty.Structure):
             return [*call, *post_call]
@@ -3167,19 +3166,18 @@ class SessionGenerator:
     def _assign_to_conversion(
         self,
         target: ID,
-        conversion: expr.Conversion,
+        conversion: tac.Conversion,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
         assert isinstance(conversion.type_, rty.Message)
-        assert isinstance(conversion.argument, expr.Selected)
+        assert isinstance(conversion.argument, tac.FieldAccess), conversion.argument
         assert conversion.argument.type_ == rty.OPAQUE
-        assert isinstance(conversion.argument.prefix, expr.Variable)
-        assert isinstance(conversion.argument.prefix.type_, rty.Message)
+        assert isinstance(conversion.argument.message_type, rty.Message)
 
-        pdu = conversion.argument.prefix.type_
+        pdu = conversion.argument.message_type
         sdu = conversion.type_
-        field = conversion.argument.selector
+        field = conversion.argument.field
         refinements = [
             r for r in pdu.refinements if r.sdu.identifier == sdu.identifier and r.field == field
         ]
@@ -3197,19 +3195,20 @@ class SessionGenerator:
         self._session_context.referenced_packages_body.append(contains_package)
 
         return [
+            # TODO(eng/recordflux/RecordFlux#861): Move check into IR
             self._if(
                 Call(
                     contains_package
                     * common.contains_function_name(
                         refinement.package, pdu.identifier, sdu.identifier, field
                     ),
-                    [Variable(context_id(conversion.argument.prefix.identifier, is_global))],
+                    [Variable(context_id(conversion.argument.message, is_global))],
                 ),
                 [
                     CallStatement(
                         contains_package * f"Copy_{field}",
                         [
-                            Variable(context_id(conversion.argument.prefix.identifier, is_global)),
+                            Variable(context_id(conversion.argument.message, is_global)),
                             Variable(context_id(target, is_global)),
                         ],
                     ),
@@ -3225,12 +3224,12 @@ class SessionGenerator:
             )
         ]
 
-    def _assign_message_field(  # noqa: PLR0913
+    def _message_field_assign(  # noqa: PLR0913
         self,
         target: ID,
         target_field: ID,
         message_type: rty.Type,
-        value: expr.Expr,
+        value: tac.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
@@ -3239,6 +3238,7 @@ class SessionGenerator:
         target_context = context_id(target, is_global)
 
         return [
+            # TODO(eng/recordflux/RecordFlux#861): Move check into IR
             self._raise_exception_if(
                 Not(
                     Call(
@@ -3279,7 +3279,7 @@ class SessionGenerator:
 
     def _append(
         self,
-        append: stmt.Append,
+        append: tac.Append,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -3340,41 +3340,39 @@ class SessionGenerator:
             ]
 
         if isinstance(append.type_.element, (rty.Integer, rty.Enumeration)):
-            if isinstance(append.parameter, (expr.Variable, expr.Literal, expr.Number)):
+            if isinstance(append.expression, (tac.Var, tac.EnumLit, tac.IntVal)):
                 sequence_type = append.type_.identifier
-                sequence_context = context_id(append.identifier, is_global)
+                sequence_context = context_id(append.sequence, is_global)
                 element_type = append.type_.element.identifier
 
                 return [
                     *check(sequence_type, Size(element_type)),
                     CallStatement(
                         sequence_type * "Append_Element",
-                        [Variable(sequence_context), append.parameter.ada_expr()],
+                        [
+                            Variable(sequence_context),
+                            self._to_ada_expr(append.expression, is_global),
+                        ],
                     ),
                 ]
 
-            _unsupported_expression(append.parameter, "in Append statement")
+            _unsupported_expression(append.expression, "in Append statement")
 
         if isinstance(append.type_.element, rty.Message):
             sequence_type = append.type_.identifier
-            sequence_context = context_id(append.identifier, is_global)
+            sequence_context = context_id(append.sequence, is_global)
             element_type = append.type_.element.identifier
-            element_context = context_id("RFLX_Element_" + append.identifier, is_global)
+            element_context = context_id("RFLX_Element_" + append.sequence, is_global)
 
             self._session_context.referenced_types_body.append(element_type)
 
-            if isinstance(append.parameter, expr.MessageAggregate):
-                required_space, required_space_precondition = self._required_space(
-                    self._message_size(append.parameter), is_global, state
-                )
-            else:
-                _unsupported_expression(append.parameter, "in Append statement")
+            if not isinstance(append.expression, tac.MsgAgg):
+                _unsupported_expression(append.expression, "in Append statement")
 
             update_context = self._update_context(sequence_context, element_context, sequence_type)
             local_exception_handler = exception_handler.copy(update_context)
 
             return [
-                *check(sequence_type, required_space, required_space_precondition),
                 Declare(
                     [ObjectDeclaration([element_context], element_type * "Context")],
                     [
@@ -3385,13 +3383,13 @@ class SessionGenerator:
                         *(
                             self._set_message_fields(
                                 element_context,
-                                append.parameters[0],
+                                append.expression,
                                 local_exception_handler,
                                 is_global,
                                 state,
                                 size_check=False,
                             )
-                            if isinstance(append.parameters[0], expr.MessageAggregate)
+                            if isinstance(append.expression, tac.MsgAgg)
                             else []
                         ),
                         *update_context,
@@ -3402,36 +3400,52 @@ class SessionGenerator:
         fatal_fail(
             f"unexpected element type {append.type_.element} in Append statement",
             Subsystem.GENERATOR,
-            location=append.parameter.location,
+            location=append.expression.location,
         )
 
     @staticmethod
-    def _read(read: stmt.Read, is_global: Callable[[ID], bool]) -> Sequence[Statement]:
-        assert isinstance(read.parameter.type_, rty.Message)
+    def _read(read: tac.Read, is_global: Callable[[ID], bool]) -> Sequence[Statement]:
+        if not isinstance(read.expression, tac.Var) or not isinstance(
+            read.expression.type_, rty.Message
+        ):
+            _unsupported_expression(read.expression, "in Read statement")
 
-        if not isinstance(read.parameter, expr.Variable):
-            _unsupported_expression(read.parameter, "in Read statement")
-
-        target_type = read.parameter.type_.identifier
-        target_context = context_id(read.parameter.identifier, is_global)
+        target_type = read.expression.type_.identifier
+        target_context = context_id(read.expression.identifier, is_global)
         return [
             CallStatement(target_type * "Verify_Message", [Variable(target_context)]),
         ]
 
     @staticmethod
     def _write(
-        write: stmt.Write,
+        write: tac.Write,
     ) -> Sequence[Statement]:
-        assert isinstance(write.parameter.type_, rty.Message)
-
-        if not isinstance(write.parameter, expr.Variable):
-            _unsupported_expression(write.parameter, "in Write statement")
+        if not isinstance(write.expression, tac.Var) or not isinstance(
+            write.expression.type_, rty.Message
+        ):
+            _unsupported_expression(write.expression, "in Write statement")
 
         return []
 
+    def _check(
+        self,
+        expression: tac.BoolExpr,
+        origin: Optional[tac.Origin],
+        exception_handler: ExceptionHandler,
+        is_global: Callable[[ID], bool],
+    ) -> Sequence[Statement]:
+        location = f"for {origin.location}" if origin and origin.location else ""
+        return [
+            self._raise_exception_if(
+                Not(self._to_ada_expr(expression, is_global)),
+                f"precondition failed{location}",
+                exception_handler,
+            )
+        ]
+
     def _reset(
         self,
-        reset: stmt.Reset,
+        reset: tac.Reset,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
         assert isinstance(reset.type_, (rty.Message, rty.Sequence))
@@ -3442,323 +3456,358 @@ class SessionGenerator:
             CallStatement(
                 target_type * "Reset",
                 [Variable(target_context)],
-                {
-                    n: e.substituted(self._substitution(is_global)).ada_expr()
-                    for n, e in reset.associations.items()
-                },
+                {n: self._to_ada_expr(e, is_global) for n, e in reset.parameter_values.items()},
             ),
         ]
 
-    def _message_size(self, message_aggregate: expr.MessageAggregate) -> expr.Expr:
-        message = self._model_type(message_aggregate.identifier)
-        assert isinstance(message, model.Message)
-        return message.size({model.Field(f): v for f, v in message_aggregate.field_values.items()})
+    @singledispatchmethod
+    def _to_ada_expr(self, expression: tac.Expr, is_global: Callable[[ID], bool]) -> Expr:
+        raise NotImplementedError(f"{type(expression).__name__} is not yet supported")
 
-    def _message_subpath_size(
-        self, delta_message_aggregate: expr.DeltaMessageAggregate
-    ) -> expr.Expr:
-        assert isinstance(delta_message_aggregate.type_, rty.Message)
-        message = self._model_type(delta_message_aggregate.type_.identifier)
-        assert isinstance(message, model.Message)
-        return message.size(
-            {model.Field(f): v for f, v in delta_message_aggregate.field_values.items()},
-            delta_message_aggregate.identifier,
-            subpath=True,
-        )
+    @_to_ada_expr.register
+    def _(self, expression: tac.Var, is_global: ty.Callable[[ID], bool]) -> Expr:
+        # TODO(eng/recordflux/RecordFlux#1359): Replace typing.Callable by collections.abc.Callable
+        return Variable(variable_id(expression.identifier, is_global))
 
-    def _required_space(
-        self, size: expr.Expr, is_global: Callable[[ID], bool], state: ID
-    ) -> tuple[Expr, Optional[Expr]]:
-        required_space = (
-            size.substituted(
-                lambda x: expr.Call(const.TYPES_BIT_LENGTH, [x])
-                if (isinstance(x, expr.Variable) and isinstance(x.type_, rty.AnyInteger))
-                else x
+    @_to_ada_expr.register
+    def _(self, expression: tac.IntVar, is_global: ty.Callable[[ID], bool]) -> Expr:
+        return Variable(variable_id(expression.identifier, is_global), expression.negative)
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.EnumLit, is_global: ty.Callable[[ID], bool]) -> Expr:
+        literal = Literal(expression.identifier)
+
+        if expression.type_.always_valid:
+            return NamedAggregate(("Known", TRUE), ("Enum", literal))
+
+        return literal
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.IntVal, is_global: ty.Callable[[ID], bool]) -> Expr:
+        return Number(expression.value)
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.BoolVal, is_global: ty.Callable[[ID], bool]) -> Expr:
+        return Literal(str(expression.value))
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.Valid, is_global: ty.Callable[[ID], bool]) -> Expr:
+        if isinstance(expression.prefix_type, rty.Message):
+            return Call(
+                expression.prefix_type.identifier * "Well_Formed_Message",
+                [Variable(context_id(expression.prefix, is_global))],
             )
-            .substituted(self._substitution(is_global))
-            .ada_expr()
+
+        if isinstance(expression.prefix_type, rty.Structure):
+            return Call(
+                expression.prefix_type.identifier * "Valid_Structure",
+                [Variable(expression.prefix)],
+            )
+
+        if isinstance(expression.prefix_type, rty.Sequence):
+            return Call(
+                expression.prefix_type.identifier * "Valid",
+                [Variable(context_id(expression.prefix, is_global))],
+            )
+
+        assert False, expression.prefix_type
+
+    def _convert_types_of_int_relation(self, expression: tac.Relation) -> tac.Relation:
+        if (
+            isinstance(expression.left, tac.IntExpr)
+            and isinstance(expression.right, tac.IntExpr)
+            and isinstance(expression.left.type_, rty.Integer)
+            and isinstance(expression.right.type_, rty.Integer)
+            and (
+                expression.left.type_ != rty.BASE_INTEGER
+                or expression.right.type_ != rty.BASE_INTEGER
+            )
+        ):
+            self._session_context.used_types_body.append(rty.BASE_INTEGER.identifier)
+            self._session_context.referenced_types_body.append(rty.BASE_INTEGER.identifier)
+
+            result = expression.__class__(
+                tac.IntConversion(
+                    self._ada_type(rty.BASE_INTEGER.identifier), expression.left, rty.BASE_INTEGER
+                )
+                if expression.left.type_ != rty.BASE_INTEGER
+                else expression.left,
+                tac.IntConversion(
+                    self._ada_type(rty.BASE_INTEGER.identifier), expression.right, rty.BASE_INTEGER
+                )
+                if expression.right.type_ != rty.BASE_INTEGER
+                else expression.right,
+            )
+            assert isinstance(result, tac.Relation)
+            return result
+
+        self._record_used_types(expression)
+
+        return expression
+
+    def _relation_to_ada_expr(
+        self, expression: tac.Relation, is_global: ty.Callable[[ID], bool]
+    ) -> Expr:
+        assert isinstance(expression, (tac.Equal, tac.NotEqual))
+        if (
+            isinstance(expression.left.type_, rty.Enumeration)
+            and expression.left.type_.always_valid
+        ):
+            relation = Equal if isinstance(expression, tac.Equal) else NotEqual
+
+            self._session_context.used_types_body.append(expression.left.type_.identifier)
+            return relation(
+                self._to_ada_expr(expression.left, is_global),
+                self._to_ada_expr(expression.right, is_global),
+            )
+
+        result = getattr(ada, expression.__class__.__name__)(
+            self._to_ada_expr(expression.left, is_global),
+            self._to_ada_expr(expression.right, is_global),
         )
-        precondition = [
-            *unique(
-                e
-                for v in size.variables()
-                if isinstance(v.type_, (rty.Message, rty.Sequence))
-                for s in [expr.Size(v).substituted(self._substitution(is_global)).ada_expr()]
-                for e in [
-                    LessEqual(
-                        s,
-                        Number(self._allocator.get_size(v.identifier, state) * 8),
-                    ),
-                    Equal(Mod(s, Size(const.TYPES_BYTE)), Number(0)),
-                ]
+        assert isinstance(result, Expr)
+        return result
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.Size, is_global: ty.Callable[[ID], bool]) -> Expr:
+        if (
+            isinstance(expression.prefix_type, rty.AnyInteger)
+            or (
+                isinstance(expression.prefix_type, rty.Aggregate)
+                and isinstance(expression.prefix_type.element, rty.AnyInteger)
+            )
+            or (
+                isinstance(expression.prefix_type, (rty.Integer, rty.Enumeration))
+                and expression.prefix == expression.prefix_type.identifier
+            )
+        ):
+            return Size(expression.prefix)
+
+        if (
+            isinstance(expression.prefix_type, (rty.Message, rty.Sequence))
+            and expression.prefix_type != rty.OPAQUE
+        ):
+            type_ = expression.prefix_type.identifier
+            context = context_id(expression.prefix, is_global)
+            return Call(type_ * "Size", [Variable(context)])
+
+        assert False
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.HasData, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.prefix_type, rty.Message)
+        type_ = expression.prefix_type.identifier
+        context = context_id(expression.prefix, is_global)
+        return Greater(Call(type_ * "Byte_Size", [Variable(context)]), Number(0))
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.Opaque, is_global: ty.Callable[[ID], bool]) -> Expr:
+        raise NotImplementedError
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.Head, is_global: ty.Callable[[ID], bool]) -> Expr:
+        _unsupported_expression(expression, "in expression")
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.FieldValid, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.message_type, rty.Message)
+        type_name = expression.message_type.identifier
+        return Call(
+            type_name
+            * (
+                "Valid"
+                if isinstance(expression.field_type, (rty.Integer, rty.Enumeration))
+                else "Well_Formed"
             ),
-            *unique(
-                Call(
-                    s.prefix.type_.identifier * "Well_Formed",
-                    [
-                        Variable(context_id(s.prefix.identifier, is_global)),
-                        Variable(s.prefix.type_.identifier * model.Field(s.selector).affixed_name),
-                    ],
+            [
+                Variable(context_id(expression.message, is_global)),
+                Variable(type_name * f"F_{expression.field}"),
+            ],
+        )
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.FieldPresent, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.message_type, rty.Message)
+        type_name = expression.message_type.identifier
+        return Call(
+            type_name
+            * (
+                "Valid"
+                if isinstance(expression.field_type, (rty.Integer, rty.Enumeration))
+                else "Well_Formed"
+            ),
+            [
+                Variable(context_id(expression.message, is_global)),
+                Variable(type_name * f"F_{expression.field}"),
+            ],
+        )
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.FieldSize, is_global: ty.Callable[[ID], bool]) -> Expr:
+        type_ = expression.message_type.identifier
+        if isinstance(expression.message_type, rty.Message):
+            context = context_id(expression.message, is_global)
+            return Call(
+                type_ * "Field_Size", [Variable(context), Variable(type_ * "F_" + expression.field)]
+            )
+
+        assert isinstance(expression.message_type, rty.Structure)
+        return Call(type_ * f"Field_Size_{expression.field}", [Variable(expression.message)])
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.UnaryExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
+        result = getattr(ada, expression.__class__.__name__)(
+            self._to_ada_expr(expression.expression, is_global)
+        )
+        assert isinstance(result, Expr)
+        return result
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.BinaryExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
+        self._record_used_types(expression)
+        name = expression.__class__.__name__
+        if name == "And":
+            name = "AndThen"
+        elif name == "Or":
+            name = "OrElse"
+        result = getattr(ada, name)(
+            self._to_ada_expr(expression.left, is_global),
+            self._to_ada_expr(expression.right, is_global),
+        )
+        assert isinstance(result, Expr)
+        return result
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.Relation, is_global: ty.Callable[[ID], bool]) -> Expr:
+        relation = self._convert_types_of_int_relation(expression)
+        result = getattr(ada, relation.__class__.__name__)(
+            self._to_ada_expr(relation.left, is_global),
+            self._to_ada_expr(relation.right, is_global),
+        )
+        assert isinstance(result, Expr)
+        return result
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.Equal, is_global: ty.Callable[[ID], bool]) -> Expr:
+        if expression.left == tac.BoolVal(True) and isinstance(expression.right, tac.Var):
+            return Variable(variable_id(expression.right.identifier, is_global))
+        if isinstance(expression.left, tac.Var) and expression.right == tac.BoolVal(True):
+            return Variable(variable_id(expression.left.identifier, is_global))
+        if expression.left == tac.BoolVal(False) and isinstance(expression.right, tac.Var):
+            return Not(Variable(variable_id(expression.right.identifier, is_global)))
+        if isinstance(expression.left, tac.Var) and expression.right == tac.BoolVal(False):
+            return Not(Variable(variable_id(expression.left.identifier, is_global)))
+        return self._relation_to_ada_expr(
+            self._convert_types_of_int_relation(expression), is_global
+        )
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.NotEqual, is_global: ty.Callable[[ID], bool]) -> Expr:
+        if expression.left == tac.BoolVal(True) and isinstance(expression.right, tac.Var):
+            return Not(Variable(variable_id(expression.right.identifier, is_global)))
+        if isinstance(expression.left, tac.Var) and expression.right == tac.BoolVal(True):
+            return Not(Variable(variable_id(expression.left.identifier, is_global)))
+        if expression.left == tac.BoolVal(False) and isinstance(expression.right, tac.Var):
+            return Variable(variable_id(expression.right.identifier, is_global))
+        if isinstance(expression.left, tac.Var) and expression.right == tac.BoolVal(False):
+            return Variable(variable_id(expression.left.identifier, is_global))
+        return self._relation_to_ada_expr(
+            self._convert_types_of_int_relation(expression), is_global
+        )
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.Call, is_global: ty.Callable[[ID], bool]) -> Expr:
+        raise NotImplementedError
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.FieldAccess, is_global: ty.Callable[[ID], bool]) -> Expr:
+        if expression.field in expression.message_type.parameter_types:
+            return Selected(Variable(context_id(expression.message, is_global)), expression.field)
+        if isinstance(expression.message_type, rty.Structure):
+            raise NotImplementedError
+        return Call(
+            expression.message_type.identifier * f"Get_{expression.field}",
+            [Variable(context_id(expression.message, is_global))],
+        )
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.IntFieldAccess, is_global: ty.Callable[[ID], bool]) -> Expr:
+        if expression.field in expression.message_type.parameter_types:
+            return Selected(
+                Variable(context_id(expression.message, is_global)),
+                expression.field,
+                expression.negative,
+            )
+        if isinstance(expression.message_type, rty.Structure):
+            return Selected(Variable(expression.message), expression.field, expression.negative)
+        return Call(
+            expression.message_type.identifier * f"Get_{expression.field}",
+            [Variable(context_id(expression.message, is_global))],
+            negative=expression.negative,
+        )
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.IfExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert expression.then_expr.is_expr() and expression.else_expr.is_expr()
+        return ada.If(
+            [
+                (
+                    self._to_ada_expr(expression.condition, is_global),
+                    self._to_ada_expr(expression.then_expr.expr, is_global),
                 )
-                for s in size.findall(lambda x: isinstance(x, expr.Selected))
-                if isinstance(s, expr.Selected)
-                and isinstance(s.prefix, expr.Variable)
-                and isinstance(s.prefix.type_, rty.Message)
-            ),
+            ],
+            self._to_ada_expr(expression.else_expr.expr, is_global),
+        )
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.Conversion, is_global: ty.Callable[[ID], bool]) -> Expr:
+        return Conversion(expression.identifier, self._to_ada_expr(expression.argument, is_global))
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.Agg, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert len(expression.elements) > 0
+        if len(expression.elements) == 1:
+            return NamedAggregate(
+                (
+                    First(const.TYPES_INDEX),
+                    Val(const.TYPES_BYTE, self._to_ada_expr(expression.elements[0], is_global)),
+                )
+            )
+        return Aggregate(
+            *[Val(const.TYPES_BYTE, self._to_ada_expr(e, is_global)) for e in expression.elements]
+        )
+
+    @_to_ada_expr.register
+    def _(self, expression: tac.NamedAgg, is_global: ty.Callable[[ID], bool]) -> Expr:
+        elements: list[tuple[Union[ID, ada.Expr], ada.Expr]] = [
+            (
+                n if isinstance(n, ID) else self._to_ada_expr(n, is_global),
+                self._to_ada_expr(e, is_global),
+            )
+            for n, e in expression.elements
         ]
-        return (required_space, AndThen(*precondition) if precondition else None)
+        return NamedAggregate(*elements)
 
-    def _substitution(  # noqa: PLR0915
-        self, is_global: Callable[[ID], bool]
-    ) -> Callable[[expr.Expr], expr.Expr]:
-        def func(expression: expr.Expr) -> expr.Expr:  # noqa: PLR0911, PLR0912, PLR0915
-            if isinstance(expression, (expr.Relation, expr.MathBinExpr)):
-                for e in [expression.left, expression.right]:
-                    if isinstance(e.type_, rty.Integer) or (
-                        isinstance(e.type_, rty.Enumeration) and not e.type_.always_valid
-                    ):
-                        self._session_context.used_types_body.append(e.type_.identifier)
-                        self._session_context.referenced_types_body.append(e.type_.identifier)
+    @_to_ada_expr.register
+    def _(self, expression: tac.Str, is_global: ty.Callable[[ID], bool]) -> Expr:
+        raise NotImplementedError
 
-            if isinstance(expression, expr.MathAssExpr):
-                for e in expression.terms:
-                    if isinstance(e.type_, (rty.Integer, rty.Enumeration)):
-                        self._session_context.used_types_body.append(e.type_.identifier)
+    @_to_ada_expr.register
+    def _(self, expression: tac.CaseExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
+        choices = [
+            (self._to_ada_expr(choice, is_global), self._to_ada_expr(expr, is_global))
+            for choices, expr in expression.choices
+            for choice in choices
+        ]
+        return ada.CaseExpr(self._to_ada_expr(expression.expression, is_global), choices)
 
-            if isinstance(expression, expr.And):
-                return expr.AndThen(*expression.terms)
-
-            if isinstance(expression, expr.Or):
-                return expr.OrElse(*expression.terms)
-
-            if isinstance(expression, expr.Selected):
-                if isinstance(expression.prefix, expr.Variable):
-                    assert isinstance(expression.prefix.type_, (rty.Message, rty.Structure))
-                    if expression.selector in expression.prefix.type_.parameter_types:
-                        return expr.Selected(
-                            expr.Variable(context_id(expression.prefix.identifier, is_global)),
-                            expression.selector,
-                        )
-                    if isinstance(expression.prefix.type_, rty.Structure):
-                        return expr.Selected(
-                            expr.Variable(expression.prefix.identifier),
-                            expression.selector,
-                        )
-                    return expr.Call(
-                        expression.prefix.type_.identifier * f"Get_{expression.selector}",
-                        [expr.Variable(context_id(expression.prefix.identifier, is_global))],
-                    )
-
-                assert False
-
-            if isinstance(expression, expr.Valid):
-                if isinstance(expression.prefix, expr.Variable):
-                    if isinstance(expression.prefix.type_, rty.Message):
-                        return expr.Call(
-                            expression.prefix.type_.identifier * "Well_Formed_Message",
-                            [expr.Variable(context_id(expression.prefix.identifier, is_global))],
-                        )
-
-                    if isinstance(expression.prefix.type_, rty.Sequence):
-                        return expr.Call(
-                            expression.prefix.type_.identifier * "Valid",
-                            [expr.Variable(context_id(expression.prefix.identifier, is_global))],
-                        )
-
-                    assert False
-
-                if isinstance(expression.prefix, expr.Selected):
-                    assert isinstance(expression.prefix.prefix, expr.Variable)
-                    assert isinstance(expression.prefix.prefix.type_, rty.Message)
-                    type_name = expression.prefix.prefix.type_.identifier
-                    return expr.Call(
-                        type_name
-                        * (
-                            "Valid"
-                            if isinstance(expression.prefix.type_, (rty.Integer, rty.Enumeration))
-                            else "Well_Formed"
-                        ),
-                        [
-                            expr.Variable(
-                                context_id(expression.prefix.prefix.identifier, is_global)
-                            ),
-                            expr.Variable(type_name * f"F_{expression.prefix.selector}"),
-                        ],
-                    )
-
-                assert False
-
-            if isinstance(expression, expr.Present):
-                if isinstance(expression.prefix, expr.Selected):
-                    assert isinstance(expression.prefix.prefix, expr.Variable)
-                    assert isinstance(expression.prefix.prefix.type_, rty.Message)
-                    type_name = expression.prefix.prefix.type_.identifier
-                    return expr.Call(
-                        type_name * "Present",
-                        [
-                            expr.Variable(
-                                context_id(expression.prefix.prefix.identifier, is_global)
-                            ),
-                            expr.Variable(type_name * f"F_{expression.prefix.selector}"),
-                        ],
-                    )
-
-                assert False
-
-            if isinstance(expression, expr.Aggregate):
-                assert len(expression.elements) > 0
-                if len(expression.elements) == 1:
-                    return expr.NamedAggregate(
-                        (
-                            str(expr.First(const.TYPES_INDEX)),
-                            expr.Val(const.TYPES_BYTE, expression.elements[0]),
-                        )
-                    )
-                return expr.Aggregate(*[expr.Val(const.TYPES_BYTE, e) for e in expression.elements])
-
-            if isinstance(expression, expr.Equal):
-                if expression.left == expr.TRUE and isinstance(expression.right, expr.Variable):
-                    return expression.right.copy(
-                        identifier=variable_id(expression.right.identifier, is_global)
-                    )
-                if isinstance(expression.left, expr.Variable) and expression.right == expr.TRUE:
-                    return expression.left.copy(
-                        identifier=variable_id(expression.left.identifier, is_global)
-                    )
-                if expression.left == expr.FALSE and isinstance(expression.right, expr.Variable):
-                    return expr.Not(
-                        expression.right.copy(
-                            identifier=variable_id(expression.right.identifier, is_global)
-                        )
-                    )
-                if isinstance(expression.left, expr.Variable) and expression.right == expr.FALSE:
-                    return expr.Not(
-                        expression.left.copy(
-                            identifier=variable_id(expression.left.identifier, is_global)
-                        )
-                    )
-
-            if isinstance(expression, expr.NotEqual):
-                if expression.left == expr.TRUE and isinstance(expression.right, expr.Variable):
-                    return expr.Not(
-                        expression.right.copy(
-                            identifier=variable_id(expression.right.identifier, is_global)
-                        )
-                    )
-                if isinstance(expression.left, expr.Variable) and expression.right == expr.TRUE:
-                    return expr.Not(
-                        expression.left.copy(
-                            identifier=variable_id(expression.left.identifier, is_global)
-                        )
-                    )
-                if expression.left == expr.FALSE and isinstance(expression.right, expr.Variable):
-                    return expression.right.copy(
-                        identifier=variable_id(expression.right.identifier, is_global)
-                    )
-                if isinstance(expression.left, expr.Variable) and expression.right == expr.FALSE:
-                    return expression.left.copy(
-                        identifier=variable_id(expression.left.identifier, is_global)
-                    )
-
-            if isinstance(expression, (expr.Equal, expr.NotEqual)) and isinstance(
-                expression.left.type_, rty.Enumeration
+    def _record_used_types(self, expression: tac.BinaryExpr) -> None:
+        for e in [expression.left, expression.right]:
+            if isinstance(e.type_, rty.Integer) or (
+                isinstance(e.type_, rty.Enumeration) and not e.type_.always_valid
             ):
-                relation = expression.__class__
-                if expression.left.type_.always_valid:
-                    selected = None
-                    literal = None
-
-                    if isinstance(expression.left, expr.Selected):
-                        selected = expression.left.substituted(self._substitution(is_global))
-                        literal = expression.right
-                    elif isinstance(expression.right, expr.Selected):
-                        selected = expression.right.substituted(self._substitution(is_global))
-                        literal = expression.left
-
-                    if selected and literal:
-                        assert isinstance(literal.type_, rty.Enumeration)
-                        self._session_context.used_types_body.append(
-                            literal.type_.identifier + "_Enum"
-                        )
-                        return expr.AndThen(
-                            expr.Selected(selected, "Known"),
-                            relation(expr.Selected(selected, "Enum"), literal),
-                        )
-
-            if isinstance(expression, expr.Size):
-                if isinstance(expression.prefix, (expr.Variable, expr.TypeName)):
-                    if (
-                        isinstance(expression.prefix.type_, rty.AnyInteger)
-                        or (
-                            isinstance(expression.prefix.type_, rty.Aggregate)
-                            and isinstance(expression.prefix.type_.element, rty.AnyInteger)
-                        )
-                        or (
-                            isinstance(expression.prefix.type_, (rty.Integer, rty.Enumeration))
-                            and expression.prefix.identifier == expression.prefix.type_.identifier
-                        )
-                    ):
-                        return expression
-
-                    if (
-                        isinstance(expression.prefix.type_, (rty.Message, rty.Sequence))
-                        and expression.prefix.type_ != rty.OPAQUE
-                    ):
-                        type_ = expression.prefix.type_.identifier
-                        context = context_id(expression.prefix.identifier, is_global)
-                        return expr.Call(type_ * "Size", [expr.Variable(context)])
-
-                    _unexpected_expression(expression.prefix, "in Size attribute")
-
-                if isinstance(expression.prefix, expr.Selected):
-                    assert isinstance(expression.prefix.prefix, expr.Variable)
-                    assert isinstance(expression.prefix.prefix.type_, (rty.Message, rty.Structure))
-                    type_ = expression.prefix.prefix.type_.identifier
-                    if isinstance(expression.prefix.prefix.type_, rty.Message):
-                        context = context_id(expression.prefix.prefix.identifier, is_global)
-                        return expr.Call(
-                            type_ * "Field_Size",
-                            [
-                                expr.Variable(context),
-                                expr.Variable(type_ * "F_" + expression.prefix.selector),
-                            ],
-                        )
-
-                    return expr.Call(
-                        type_ * f"Field_Size_{expression.prefix.selector}",
-                        [expression.prefix.prefix],
-                    )
-
-                _unsupported_expression(expression.prefix, "in Size attribute")
-
-            if isinstance(expression, expr.HasData):
-                assert isinstance(expression.prefix, expr.Variable)
-                assert isinstance(expression.prefix.type_, rty.Message)
-                type_ = expression.prefix.type_.identifier
-                context = context_id(expression.prefix.identifier, is_global)
-                return expr.Greater(
-                    expr.Call(type_ * "Byte_Size", [expr.Variable(context)]), expr.Number(0)
-                )
-
-            if isinstance(expression, expr.Opaque):
-                assert expression.type_ == rty.OPAQUE
-                if isinstance(expression.prefix, expr.Variable):
-                    if isinstance(expression.prefix.type_, (rty.Message, rty.Sequence)):
-                        type_ = expression.prefix.type_.identifier
-                        context = context_id(expression.prefix.identifier, is_global)
-                        return expr.Call(type_ * "Data", [expr.Variable(context)])
-
-                _unsupported_expression(expression.prefix, "in Opaque attribute")
-
-            if isinstance(expression, expr.Head):
-                _unsupported_expression(expression, "in expression")
-
-            if isinstance(expression, expr.Variable):
-                return expression.copy(identifier=variable_id(expression.identifier, is_global))
-
-            return expression
-
-        return func
+                self._session_context.used_types_body.append(e.type_.identifier)
+                self._session_context.referenced_types_body.append(e.type_.identifier)
 
     def _if(
         self,
@@ -3784,6 +3833,7 @@ class SessionGenerator:
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
+        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
         return self._if(
             Call(sequence_type * "Valid", [Variable(sequence_context)]),
             statements,
@@ -3798,6 +3848,7 @@ class SessionGenerator:
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
+        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
         return self._if(
             Call(
                 message_type * "Well_Formed_Message",
@@ -3816,6 +3867,7 @@ class SessionGenerator:
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
+        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
         return self._if(
             Call(
                 message_type * "Well_Formed",
@@ -3829,38 +3881,6 @@ class SessionGenerator:
             exception_handler,
         )
 
-    def _if_valid_fields(
-        self,
-        expression: expr.Expr,
-        statements: Sequence[Statement],
-        exception_handler: ExceptionHandler,
-        is_global: Callable[[ID], bool],
-    ) -> Sequence[Statement]:
-        """Ensure that all referenced fields in the expression are valid."""
-
-        selected = [
-            s
-            for s in expression.findall(lambda x: isinstance(x, expr.Selected))
-            if isinstance(s, expr.Selected)
-            and isinstance(s.prefix.type_, rty.Message)
-            and s.selector in s.prefix.type_.fields
-        ]
-
-        if selected:
-            expressions = " or ".join(f'"{s}"' for s in selected)
-            return [
-                self._if(
-                    expr.AndThen(*[expr.Valid(e) for e in selected])
-                    .substituted(self._substitution(is_global))
-                    .ada_expr(),
-                    statements,
-                    f"reference to invalid message field in {expressions}",
-                    exception_handler,
-                )
-            ]
-
-        return statements
-
     def _if_sufficient_space_in_sequence(
         self,
         required_space: Expr,
@@ -3869,6 +3889,7 @@ class SessionGenerator:
         statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
+        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
         return self._if(
             AndThen(
                 Call(
@@ -3933,7 +3954,7 @@ class SessionGenerator:
     def _set_message_fields(  # noqa: PLR0913
         self,
         target_context: ID,
-        message_aggregate: expr.MessageAggregate,
+        message_aggregate: tac.MsgAgg,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -3942,45 +3963,8 @@ class SessionGenerator:
         assert isinstance(message_aggregate.type_, rty.Message)
 
         message_type = message_aggregate.type_
-        size = self._message_size(message_aggregate)
-        required_space, required_space_precondition = self._required_space(size, is_global, state)
 
-        statements: list[Statement] = (
-            [
-                *(
-                    [
-                        self._raise_exception_if(
-                            Not(required_space_precondition),
-                            "violated precondition for calculating required space of message for"
-                            f' "{target_context}" (one of the message arguments is invalid or has a'
-                            " too small buffer)",
-                            exception_handler,
-                        )
-                    ]
-                    if required_space_precondition
-                    else []
-                ),
-                self._raise_exception_if(
-                    Less(
-                        Call(
-                            message_type.identifier * "Available_Space",
-                            [
-                                Variable(target_context),
-                                Variable(
-                                    message_type.identifier
-                                    * model.Field(next(iter(message_type.field_types))).affixed_name
-                                ),
-                            ],
-                        ),
-                        required_space,
-                    ),
-                    f'insufficient space in "{target_context}" for creating message',
-                    exception_handler,
-                ),
-            ]
-            if size_check
-            else []
-        )
+        statements: list[Statement] = []
 
         for f, v in message_aggregate.field_values.items():
             if f not in message_type.field_types:
@@ -3999,10 +3983,60 @@ class SessionGenerator:
         message_context: ID,
         field: ID,
         message_type: rty.Message,
-        value: expr.Expr,
+        value: tac.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
+        if isinstance(value, tac.FieldAccess) and value.type_ == rty.OPAQUE:
+            target_context = message_context
+            target_message_type = message_type
+            target_field = field
+            source_context = context_id(value.message, is_global)
+            source_field = value.field
+            source_message_type = value.message_type
+            self._session_context.used_types_body.append(const.TYPES_LENGTH)
+
+            if isinstance(source_message_type, rty.Message):
+                return [
+                    self._set_opaque_field_to_message_field(
+                        target_message_type.identifier,
+                        target_context,
+                        target_field,
+                        source_message_type.identifier,
+                        source_context,
+                        source_field,
+                    ),
+                ]
+            else:
+                assert isinstance(source_message_type, rty.Structure)
+                return [
+                    self._set_opaque_field_to_message_field_from_structure(
+                        target_message_type.identifier,
+                        target_context,
+                        target_field,
+                        source_message_type.identifier,
+                        value.message,
+                        source_field,
+                    ),
+                ]
+
+        if isinstance(value, tac.Opaque):
+            target_context = message_context
+            target_message_type = message_type
+            target_field = field
+            source_context = context_id(value.prefix, is_global)
+            assert isinstance(value.prefix_type, rty.Message)
+            source_message_type = value.prefix_type
+            return [
+                self._set_opaque_field_to_message(
+                    target_message_type.identifier,
+                    target_context,
+                    target_field,
+                    source_message_type.identifier,
+                    source_context,
+                ),
+            ]
+
         message_type_id = message_type.identifier
         field_type = message_type.field_types[field]
         statements: list[Statement] = []
@@ -4010,11 +4044,10 @@ class SessionGenerator:
 
         if isinstance(field_type, rty.Sequence):
             size: Expr
-            if isinstance(value, expr.Variable) and isinstance(
-                value.type_, (rty.Message, rty.Sequence)
-            ):
+            if isinstance(value, tac.Var) and isinstance(value.type_, (rty.Message, rty.Sequence)):
                 type_ = value.type_.identifier
                 context = context_id(value.identifier, is_global)
+                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
                 statements = self._ensure(
                     statements,
                     Call(
@@ -4029,50 +4062,12 @@ class SessionGenerator:
                     exception_handler,
                 )
             else:
-                if isinstance(value, expr.Aggregate):
+                if isinstance(value, tac.Agg):
                     size = Mul(Number(len(value.elements)), Size(const.TYPES_BYTE))
-                elif isinstance(value, expr.Selected):
-                    assert isinstance(value.prefix, expr.Variable) and isinstance(
-                        value.prefix.type_, rty.Compound
-                    )
-                    value_message_type_id = value.prefix.type_.identifier
-                    if isinstance(value.prefix.type_, rty.Message):
-                        value_message_context = context_id(value.prefix.identifier, is_global)
-                        statements = self._ensure(
-                            statements,
-                            Call(
-                                value_message_type_id * "Valid_Next",
-                                [
-                                    Variable(value_message_context),
-                                    Variable(value_message_type_id * f"F_{value.selector}"),
-                                ],
-                            ),
-                            f'access to invalid next message field for "{value}"',
-                            exception_handler,
-                        )
-                        size = Call(
-                            value_message_type_id * "Field_Size",
-                            [
-                                Variable(value_message_context),
-                                Variable(value_message_type_id * f"F_{value.selector}"),
-                            ],
-                        )
-                    else:
-                        assert isinstance(value.prefix.type_, rty.Structure)
-                        size = Call(
-                            value_message_type_id * f"Field_Size_{value.selector}",
-                            [Variable(value.prefix.identifier)],
-                        )
-
-                elif isinstance(value, expr.Opaque):
-                    size = (
-                        expr.Size(value.prefix)
-                        .substituted(self._substitution(is_global))
-                        .ada_expr()
-                    )
                 else:
-                    size = Size(value.substituted(self._substitution(is_global)).ada_expr())
+                    size = Size(self._to_ada_expr(value, is_global))
 
+                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
                 statements = self._ensure(
                     statements,
                     Call(
@@ -4100,23 +4095,31 @@ class SessionGenerator:
             ],
         )
 
-        if isinstance(value, (expr.Number, expr.Aggregate, expr.CaseExpr)) or (
+        if isinstance(value, (tac.IntVal, tac.BoolVal, tac.FieldAccess, tac.Agg, tac.CaseExpr)) or (
             isinstance(
                 value,
-                (expr.Variable, expr.Literal, expr.MathBinExpr, expr.MathAssExpr, expr.Size),
+                (tac.Var, tac.EnumLit, tac.BinaryIntExpr, tac.Size),
             )
             and isinstance(value.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
         ):
-            if isinstance(value, expr.Aggregate) and len(value.elements) == 0:
+            if isinstance(value, tac.Agg) and len(value.elements) == 0:
                 statements.append(
                     CallStatement(
                         message_type_id * f"Set_{field}_Empty", [Variable(message_context)]
                     )
                 )
             else:
-                value = self._convert_type(value, field_type).substituted(
-                    self._substitution(is_global)
-                )
+                ada_value: ada.Expr
+                if (
+                    isinstance(value, tac.Var)
+                    and isinstance(value.type_, rty.Enumeration)
+                    and value.type_.always_valid
+                ):
+                    ada_value = Selected(self._to_ada_expr(value, is_global), "Enum")
+                elif isinstance(value, tac.EnumLit):
+                    ada_value = Literal(value.identifier)
+                else:
+                    ada_value = self._to_ada_expr(self._convert_type(value, field_type), is_global)
                 statements.extend(
                     [
                         assert_sufficient_space,
@@ -4124,12 +4127,12 @@ class SessionGenerator:
                             message_type_id * f"Set_{field}",
                             [
                                 Variable(message_context),
-                                value.ada_expr(),
+                                ada_value,
                             ],
                         ),
                     ]
                 )
-        elif isinstance(value, expr.Variable) and isinstance(value.type_, rty.Sequence):
+        elif isinstance(value, tac.Var) and isinstance(value.type_, rty.Sequence):
             sequence_context = context_id(value.identifier, is_global)
             statements.extend(
                 [
@@ -4140,113 +4143,8 @@ class SessionGenerator:
                     ),
                 ]
             )
-        elif isinstance(value, expr.Variable) and isinstance(value.type_, rty.Message):
+        elif isinstance(value, tac.Var) and isinstance(value.type_, rty.Message):
             _unsupported_expression(value, "in message aggregate")
-        elif (
-            isinstance(value, expr.Selected)
-            and isinstance(value.prefix, expr.Variable)
-            and isinstance(value.prefix.type_, rty.Message)
-        ):
-            value_message_type_id = value.prefix.type_.identifier
-            value_message_context = context_id(value.prefix.identifier, is_global)
-            statements = self._ensure(
-                statements,
-                Call(
-                    value_message_type_id
-                    * ("Well_Formed" if isinstance(value.type_, rty.Sequence) else "Valid"),
-                    [
-                        Variable(value_message_context),
-                        Variable(value_message_type_id * f"F_{value.selector}"),
-                    ],
-                ),
-                f'access to invalid message field in "{value}"',
-                exception_handler,
-            )
-            if isinstance(field_type, (rty.Integer, rty.Enumeration)):
-                get_field_value = self._convert_type(
-                    expr.Call(
-                        value_message_type_id * f"Get_{value.selector}",
-                        [expr.Variable(value_message_context)],
-                    ),
-                    field_type,
-                    value.type_,
-                ).ada_expr()
-                statements.extend(
-                    [
-                        CallStatement(
-                            message_type_id * f"Set_{field}",
-                            [
-                                Variable(message_context),
-                                get_field_value,
-                            ],
-                        ),
-                    ]
-                )
-            else:
-                assert field_type == rty.OPAQUE
-                self._session_context.used_types_body.append(const.TYPES_LENGTH)
-                statements.extend(
-                    [
-                        self._set_opaque_field_to_message_field(
-                            message_type_id,
-                            message_context,
-                            field,
-                            value_message_type_id,
-                            value_message_context,
-                            value.selector,
-                        ),
-                    ]
-                )
-        elif (
-            isinstance(value, expr.Selected)
-            and isinstance(value.prefix, expr.Variable)
-            and isinstance(value.prefix.type_, rty.Structure)
-        ):
-            if isinstance(field_type, (rty.Integer, rty.Enumeration)):
-                statements.extend(
-                    [
-                        CallStatement(
-                            message_type_id * f"Set_{field}",
-                            [
-                                Variable(message_context),
-                                self._convert_type(value, field_type, value.type_)
-                                .simplified()
-                                .ada_expr(),
-                            ],
-                        )
-                    ]
-                )
-            else:
-                assert field_type == rty.OPAQUE
-                self._session_context.used_types_body.append(const.TYPES_LENGTH)
-                statements.extend(
-                    [
-                        self._set_opaque_field_to_message_field_from_structure(
-                            message_type_id,
-                            message_context,
-                            field,
-                            value.prefix.type_.identifier,
-                            value.prefix.identifier,
-                            value.selector,
-                        ),
-                    ]
-                )
-        elif isinstance(value, expr.Opaque) and isinstance(value.prefix, expr.Variable):
-            assert value.type_ == rty.OPAQUE
-            assert isinstance(value.prefix.type_, rty.Message)
-            value_message_type_id = value.prefix.type_.identifier
-            value_message_context = context_id(value.prefix.identifier, is_global)
-            statements.extend(
-                [
-                    self._set_opaque_field_to_message(
-                        message_type_id,
-                        message_context,
-                        field,
-                        value_message_type_id,
-                        value_message_context,
-                    ),
-                ]
-            )
         else:
             _unsupported_expression(value, "as value of message field")
 
@@ -4651,13 +4549,16 @@ class SessionGenerator:
         target_type: Union[rty.Sequence, rty.Integer, rty.Enumeration, rty.Message],
         iterator_identifier: ID,
         iterator_type: ID,
-        selector: expr.Expr,
-        condition: expr.Expr,
+        selector_stmts: list[tac.Stmt],
+        selector: tac.Expr,
+        condition_stmts: list[tac.Stmt],
+        condition: tac.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: ID,
         alloc_id: Optional[Location],
     ) -> While:
-        assert not isinstance(selector, expr.MessageAggregate)
+        assert not isinstance(selector, tac.MsgAgg)
 
         assert (
             isinstance(target_type.element, (rty.Integer, rty.Enumeration, rty.Message))
@@ -4811,38 +4712,40 @@ class SessionGenerator:
                             iterator_type * "Verify_Message",
                             [Variable(context_id(iterator_identifier, is_global))],
                         ),
-                        *self._if_valid_fields(
-                            condition,
+                        *[
+                            a
+                            for s in condition_stmts
+                            for a in self._state_action(
+                                state, s, local_exception_handler, is_global
+                            )
+                        ],
+                        IfStatement(
                             [
-                                IfStatement(
-                                    [
-                                        (
-                                            condition.substituted(
-                                                self._substitution(is_global)
-                                            ).ada_expr(),
-                                            self._comprehension_append_element(
-                                                target_identifier,
-                                                target_type,
-                                                selector,
-                                                update_context,
-                                                local_exception_handler,
-                                                is_global,
-                                            )
-                                            if isinstance(target_type, rty.Sequence)
-                                            else self._comprehension_assign_element(
-                                                target_identifier,
-                                                target_type,
-                                                selector,
-                                                update_context,
-                                                local_exception_handler,
-                                                is_global,
-                                            ),
-                                        )
-                                    ]
+                                (
+                                    self._to_ada_expr(condition, is_global),
+                                    self._comprehension_append_element(
+                                        target_identifier,
+                                        target_type,
+                                        selector_stmts,
+                                        selector,
+                                        update_context,
+                                        local_exception_handler,
+                                        is_global,
+                                        state,
+                                    )
+                                    if isinstance(target_type, rty.Sequence)
+                                    else self._comprehension_assign_element(
+                                        target_identifier,
+                                        target_type,
+                                        selector_stmts,
+                                        selector,
+                                        update_context,
+                                        local_exception_handler,
+                                        is_global,
+                                        state,
+                                    ),
                                 )
-                            ],
-                            local_exception_handler,
-                            is_global,
+                            ]
                         ),
                         *update_context,
                     ],
@@ -4854,16 +4757,18 @@ class SessionGenerator:
         self,
         target_identifier: ID,
         target_type: Union[rty.Integer, rty.Enumeration, rty.Message],
-        selector: expr.Expr,
+        selector_stmts: list[tac.Stmt],
+        selector: tac.Expr,
         update_context: Sequence[Statement],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: ID,
     ) -> Sequence[Statement]:
         target_type_id = target_type.identifier
         assign_element: Sequence[Statement]
 
         if isinstance(target_type, rty.Message):
-            if not isinstance(selector, expr.Variable):
+            if not isinstance(selector, tac.Var):
                 fail(
                     "expressions other than variables not yet supported"
                     " as selector for message types",
@@ -4915,35 +4820,37 @@ class SessionGenerator:
             ]
 
         elif isinstance(target_type, (rty.Integer, rty.Enumeration)):
-            assign_element = self._if_valid_fields(
-                selector,
-                [
-                    Assignment(
-                        Variable(variable_id(target_identifier, is_global)),
-                        selector.substituted(self._substitution(is_global)).ada_expr(),
-                    ),
-                ],
-                exception_handler,
-                is_global,
-            )
+            assign_element = [
+                Assignment(
+                    Variable(variable_id(target_identifier, is_global)),
+                    self._to_ada_expr(selector, is_global),
+                )
+            ]
         else:
             assert False
 
         return [
+            *[
+                a
+                for s in selector_stmts
+                for a in self._state_action(state, s, exception_handler, is_global)
+            ],
             *assign_element,
             Assignment(Variable(found_id(target_identifier)), TRUE),
             *update_context,
             ExitStatement(),
         ]
 
-    def _comprehension_append_element(
+    def _comprehension_append_element(  # noqa: PLR0913
         self,
         target_identifier: ID,
         target_type: rty.Sequence,
-        selector: expr.Expr,
+        selector_stmts: list[tac.Stmt],
+        selector: tac.Expr,
         _: Sequence[Statement],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
+        state: ID,
     ) -> Sequence[Statement]:
         assert isinstance(target_type, rty.Sequence)
 
@@ -4952,7 +4859,7 @@ class SessionGenerator:
         append_element: Statement
 
         if isinstance(target_type.element, rty.Message):
-            if not isinstance(selector, expr.Variable):
+            if not isinstance(selector, tac.Var):
                 fail(
                     "expressions other than variables not yet supported"
                     " as selector for message types",
@@ -4969,6 +4876,7 @@ class SessionGenerator:
                 target_type.element.identifier,
                 element_id,
                 [
+                    # TODO(eng/recordflux/RecordFlux#861): Move check into IR
                     self._if(
                         Greater(
                             Call(
@@ -5009,7 +4917,7 @@ class SessionGenerator:
                 target_type_id * "Append_Element",
                 [
                     Variable(context_id(target_identifier, is_global)),
-                    selector.substituted(self._substitution(is_global)).ada_expr(),
+                    self._to_ada_expr(selector, is_global),
                 ],
             )
 
@@ -5017,6 +4925,11 @@ class SessionGenerator:
             assert False
 
         return [
+            *[
+                a
+                for s in selector_stmts
+                for a in self._state_action(state, s, exception_handler, is_global)
+            ],
             self._if_sufficient_space_in_sequence(
                 required_space,
                 target_type_id,
@@ -5222,20 +5135,28 @@ class SessionGenerator:
 
     def _convert_type(
         self,
-        expression: expr.Expr,
+        expression: tac.Expr,
         target_type: rty.Type,
-        expression_type: Optional[rty.Type] = None,
-    ) -> expr.Expr:
-        if not expression_type:
-            expression_type = expression.type_
-
-        if expression_type.is_compatible_strong(target_type):
+    ) -> tac.Expr:
+        if target_type.is_compatible_strong(expression.type_):
             return expression
 
         assert isinstance(target_type, (rty.Integer, rty.Enumeration)), target_type
 
         self._session_context.referenced_types_body.append(target_type.identifier)
-        return expr.Conversion(target_type.identifier, expression)
+
+        if isinstance(expression, tac.BinaryIntExpr):
+            assert isinstance(target_type, rty.Integer)
+            return expression.__class__(
+                tac.IntConversion(
+                    self._ada_type(target_type.identifier), expression.left, target_type
+                ),
+                tac.IntConversion(
+                    self._ada_type(target_type.identifier), expression.right, target_type
+                ),
+            )
+
+        return tac.Conversion(self._ada_type(target_type.identifier), expression, target_type)
 
     def _debug_output(self, string: str) -> Sequence[CallStatement]:
         return (
@@ -5285,15 +5206,15 @@ def state_id(identifier: ID) -> ID:
     return "S_" + identifier
 
 
-def _unexpected_expression(expression: expr.Expr, context: str) -> NoReturn:
+def _unexpected_expression(expression: tac.Expr, context: str) -> NoReturn:
     fatal_fail(
-        f"unexpected {type(expression).__name__} with {expression.type_} {context}",
+        f'unexpected expression "{type(expression).__name__}" with {expression.type_} {context}',
         Subsystem.GENERATOR,
         location=expression.location,
     )
 
 
-def _unsupported_expression(expression: expr.Expr, context: str) -> NoReturn:
+def _unsupported_expression(expression: tac.Expr, context: str) -> NoReturn:
     fail(
         f"{type(expression).__name__} with {expression.type_} {context} not yet supported",
         Subsystem.GENERATOR,

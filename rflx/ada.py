@@ -39,9 +39,6 @@ class Expr(Base):
             self._update_str()
             return self._str
 
-    def __hash__(self) -> int:
-        return hash(self.__class__.__name__)
-
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
@@ -667,7 +664,7 @@ class NamedAggregate(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        raise NotImplementedError
+        return Precedence.LITERAL
 
     def rflx_expr(self) -> expr.NamedAggregate:
         elements: list[tuple[Union[ID, expr.Expr], expr.Expr]] = [

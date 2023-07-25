@@ -323,7 +323,7 @@ class Generator:
 
     def _create_session(self, session: Session, integration: Integration) -> dict[ID, Unit]:
         units: dict[ID, Unit] = {}
-        allocator_generator = AllocatorGenerator(session, integration, self._prefix)
+        allocator_generator = AllocatorGenerator(session.to_tac(), integration, self._prefix)
 
         if allocator_generator.required:
             unit = self._create_unit(
@@ -335,7 +335,7 @@ class Generator:
             units[allocator_generator.unit_identifier] = unit
 
         session_generator = SessionGenerator(
-            session, allocator_generator, self._prefix, debug=self._debug
+            session.to_tac(), allocator_generator, self._prefix, debug=self._debug
         )
         unit = self._create_unit(
             session_generator.unit_identifier,

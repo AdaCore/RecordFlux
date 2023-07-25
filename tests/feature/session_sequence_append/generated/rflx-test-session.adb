@@ -11,6 +11,8 @@ is
 
    use type RFLX.RFLX_Types.Bit_Length;
 
+   use type RFLX.Universal.Length;
+
    procedure Start (Ctx : in out Context'Class) with
      Pre =>
        Initialized (Ctx),
@@ -40,6 +42,7 @@ is
        Initialized (Ctx)
    is
       Options_Ctx : Universal.Options.Context;
+      T_0 : RFLX.RFLX_Types.Base_Integer;
       Options_Buffer : RFLX_Types.Bytes_Ptr;
       function Process_Invariant return Boolean is
         (Global_Initialized (Ctx)
@@ -61,109 +64,46 @@ is
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       pragma Assert (Process_Invariant);
       -- tests/feature/session_sequence_append/test.rflx:22:10
-      if
-         not (Universal.Option.Size (Ctx.P.Option_Ctx) <= 32768
-          and then Universal.Option.Size (Ctx.P.Option_Ctx) mod RFLX_Types.Byte'Size = 0
-          and then Universal.Option.Well_Formed (Ctx.P.Option_Ctx, Universal.Option.F_Data))
-      then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      if
-         not Universal.Options.Has_Element (Options_Ctx)
-         or Universal.Options.Available_Space (Options_Ctx) < Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data) + 24
-      then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
       declare
          RFLX_Element_Options_Ctx : Universal.Option.Context;
       begin
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type));
          Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
-         if Universal.Option.Valid (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
-            Universal.Option.Set_Length (RFLX_Element_Options_Ctx, Universal.Option.Get_Length (Ctx.P.Option_Ctx));
-         else
-            Ctx.P.Next_State := S_Final;
-            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
-            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
-         if Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
-            if Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data))) then
-               if Universal.Option.Well_Formed (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
-                  declare
-                     pragma Warnings (Off, "is not modified, could be declared constant");
-                     RFLX_Ctx_P_Option_Ctx_Tmp : Universal.Option.Context := Ctx.P.Option_Ctx;
-                     pragma Warnings (On, "is not modified, could be declared constant");
-                     function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-                       (Universal.Option.Has_Buffer (RFLX_Ctx_P_Option_Ctx_Tmp)
-                        and then Universal.Option.Well_Formed (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)
-                        and then Length = RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
-                     procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
-                       Pre =>
-                         RFLX_Process_Data_Pre (Data'Length)
-                     is
-                     begin
-                        Universal.Option.Get_Data (RFLX_Ctx_P_Option_Ctx_Tmp, Data);
-                     end RFLX_Process_Data;
-                     procedure RFLX_Universal_Option_Set_Data is new Universal.Option.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
-                  begin
-                     RFLX_Universal_Option_Set_Data (RFLX_Element_Options_Ctx, RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
-                     Ctx.P.Option_Ctx := RFLX_Ctx_P_Option_Ctx_Tmp;
-                  end;
-               else
-                  Ctx.P.Next_State := S_Final;
-                  pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-                  Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
-                  pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-                  pragma Assert (Process_Invariant);
-                  goto Finalize_Process;
-               end if;
-            else
-               Ctx.P.Next_State := S_Final;
-               pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
-               pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
-         else
-            Ctx.P.Next_State := S_Final;
-            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
-            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
-            pragma Assert (Process_Invariant);
-            goto Finalize_Process;
-         end if;
+         pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length));
+         Universal.Option.Set_Length (RFLX_Element_Options_Ctx, Universal.Option.Get_Length (Ctx.P.Option_Ctx));
+         declare
+            pragma Warnings (Off, "is not modified, could be declared constant");
+            RFLX_Ctx_P_Option_Ctx_Tmp : Universal.Option.Context := Ctx.P.Option_Ctx;
+            pragma Warnings (On, "is not modified, could be declared constant");
+            function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
+              (Universal.Option.Has_Buffer (RFLX_Ctx_P_Option_Ctx_Tmp)
+               and then Universal.Option.Well_Formed (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)
+               and then Length = RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
+            procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
+              Pre =>
+                RFLX_Process_Data_Pre (Data'Length)
+            is
+            begin
+               Universal.Option.Get_Data (RFLX_Ctx_P_Option_Ctx_Tmp, Data);
+            end RFLX_Process_Data;
+            procedure RFLX_Universal_Option_Set_Data is new Universal.Option.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
+         begin
+            RFLX_Universal_Option_Set_Data (RFLX_Element_Options_Ctx, RFLX_Types.To_Length (Universal.Option.Field_Size (RFLX_Ctx_P_Option_Ctx_Tmp, Universal.Option.F_Data)));
+            Ctx.P.Option_Ctx := RFLX_Ctx_P_Option_Ctx_Tmp;
+         end;
          pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      -- tests/feature/session_sequence_append/test.rflx:27:51
+      T_0 := RFLX.RFLX_Types.Base_Integer (Universal.Options.Size (Options_Ctx));
       -- tests/feature/session_sequence_append/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
-      if
-         not (Universal.Options.Size (Options_Ctx) <= 32768
-          and then Universal.Options.Size (Options_Ctx) mod RFLX_Types.Byte'Size = 0)
-      then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < Universal.Options.Size (Options_Ctx) + 24 then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Options);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
-      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (Universal.Options.Size (Options_Ctx) / 8));
+      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (T_0) / Universal.Length (8));
       if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Options_Ctx)) then
          pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options));
          Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
@@ -172,7 +112,11 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      Ctx.P.Next_State := S_Reply;
+      if Universal.Options.Valid (Options_Ctx) then
+         Ctx.P.Next_State := S_Reply;
+      else
+         Ctx.P.Next_State := S_Final;
+      end if;
       pragma Assert (Process_Invariant);
       <<Finalize_Process>>
       pragma Warnings (Off, """Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
@@ -201,7 +145,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_sequence_append/test.rflx:37:10
+      -- tests/feature/session_sequence_append/test.rflx:39:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

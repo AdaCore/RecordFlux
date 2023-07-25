@@ -14,12 +14,30 @@ is
 
    use type RFLX.RFLX_Types.Bit_Length;
 
+   use type RFLX.Universal.Option_Type;
+
+   pragma Warnings (Off, """*"" is already use-visible through previous use_type_clause");
+
+   pragma Warnings (Off, "use clause for type ""*"" defined at * has no effect");
+
+   use type RFLX.RFLX_Types.Base_Integer;
+
+   pragma Warnings (On, "use clause for type ""*"" defined at * has no effect");
+
+   pragma Warnings (On, """*"" is already use-visible through previous use_type_clause");
+
    procedure Start (Ctx : in out Context'Class) with
      Pre =>
        Initialized (Ctx),
      Post =>
        Initialized (Ctx)
    is
+      T_0 : Boolean;
+      T_1 : Universal.Message_Type;
+      T_2 : Boolean;
+      T_3 : Boolean;
+      T_4 : Universal.Length;
+      T_5 : Boolean;
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null)
@@ -31,16 +49,41 @@ is
       pragma Assert (Start_Invariant);
       -- tests/feature/session_message_optimization/test.rflx:24:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_message_optimization/test.rflx:27:16
+      T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_message_optimization/test.rflx:28:20
+      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
+      else
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      -- tests/feature/session_message_optimization/test.rflx:28:20
+      T_2 := T_1 = Universal.MT_Data;
+      -- tests/feature/session_message_optimization/test.rflx:27:16
+      T_3 := T_0
+      and then T_2;
+      -- tests/feature/session_message_optimization/test.rflx:29:20
+      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         T_4 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
+      else
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      -- tests/feature/session_message_optimization/test.rflx:29:20
+      T_5 := T_4 = 3;
       if
-         (Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx)
-          and then Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx) = Universal.MT_Data)
-         and then Universal.Message.Get_Length (Ctx.P.Message_Ctx) = 3
+         T_3
+         and then T_5
       then
          Ctx.P.Next_State := S_Process;
       else
          Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
+      <<Finalize_Start>>
    end Start;
 
    procedure Process (Ctx : in out Context'Class) with
@@ -49,7 +92,23 @@ is
      Post =>
        Initialized (Ctx)
    is
+      Option_Type : Universal.Option_Type;
       Local_Length : Universal.Length;
+      T_6 : Boolean;
+      T_7 : Boolean;
+      T_8 : Boolean;
+      T_9 : Universal.Option_Type;
+      T_10 : Boolean;
+      T_11 : Boolean;
+      T_12 : Boolean;
+      T_13 : Boolean;
+      T_14 : RFLX.RFLX_Types.Base_Integer;
+      T_15 : RFLX.RFLX_Types.Base_Integer;
+      T_16 : Boolean;
+      T_17 : Boolean;
+      T_18 : RFLX.RFLX_Types.Base_Integer;
+      T_19 : RFLX.RFLX_Types.Base_Integer;
+      T_20 : Boolean;
       Option_Data : Test.Option_Data.Structure;
       function Process_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
@@ -60,65 +119,94 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      -- tests/feature/session_message_optimization/test.rflx:38:10
-      if Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
-         declare
-            RFLX_Get_Option_Data_Arg_0_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
-            RFLX_Get_Option_Data_Arg_0_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data)) + 1;
-         begin
-            Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2));
-            Get_Option_Data (Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2), Option_Data);
-            if not Test.Option_Data.Valid_Structure (Option_Data) then
-               Ctx.P.Next_State := S_Final;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
-         end;
-      else
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
-      -- tests/feature/session_message_optimization/test.rflx:40:10
+      -- tests/feature/session_message_optimization/test.rflx:41:10
+      Option_Type := (Known => True, Enum => Universal.OT_Data);
+      -- tests/feature/session_message_optimization/test.rflx:43:10
+      declare
+         RFLX_Get_Option_Data_Arg_0_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         RFLX_Get_Option_Data_Arg_0_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data)) + 1;
+      begin
+         Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2));
+         Get_Option_Data (Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2), Option_Data);
+         if not Test.Option_Data.Valid_Structure (Option_Data) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+      end;
+      -- tests/feature/session_message_optimization/test.rflx:45:10
       Local_Length := Option_Data.Length;
-      -- tests/feature/session_message_optimization/test.rflx:42:10
+      -- tests/feature/session_message_optimization/test.rflx:47:10
       Universal.Option.Reset (Ctx.P.Option_Ctx);
-      -- tests/feature/session_message_optimization/test.rflx:44:10
+      -- tests/feature/session_message_optimization/test.rflx:49:10
       if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if Universal.Option.Available_Space (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) < Test.Option_Data.Field_Size_Data (Option_Data) + 24 then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Process_Invariant);
-         goto Finalize_Process;
-      end if;
       pragma Assert (Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type));
-      Universal.Option.Set_Option_Type (Ctx.P.Option_Ctx, Universal.OT_Data);
+      Universal.Option.Set_Option_Type (Ctx.P.Option_Ctx, Option_Type.Enum);
+      pragma Assert (Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Length));
       Universal.Option.Set_Length (Ctx.P.Option_Ctx, Option_Data.Length);
-      if Universal.Option.Valid_Length (Ctx.P.Option_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (Test.Option_Data.Field_Size_Data (Option_Data))) then
-         declare
-            function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-              (Test.Option_Data.Valid_Structure (Option_Data)
-               and then Length = RFLX_Types.To_Length (Test.Option_Data.Field_Size_Data (Option_Data)));
-            procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
-              Pre =>
-                RFLX_Process_Data_Pre (Data'Length)
-            is
-            begin
-               Data := Option_Data.Data (Option_Data.Data'First .. Option_Data.Data'First + Data'Length - 1);
-            end RFLX_Process_Data;
-            procedure RFLX_Universal_Option_Set_Data is new Universal.Option.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
+      declare
+         function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
+           (Test.Option_Data.Valid_Structure (Option_Data)
+            and then Length = RFLX_Types.To_Length (Test.Option_Data.Field_Size_Data (Option_Data)));
+         procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
+           Pre =>
+             RFLX_Process_Data_Pre (Data'Length)
+         is
          begin
-            RFLX_Universal_Option_Set_Data (Ctx.P.Option_Ctx, RFLX_Types.To_Length (Test.Option_Data.Field_Size_Data (Option_Data)));
-         end;
+            Data := Option_Data.Data (Option_Data.Data'First .. Option_Data.Data'First + Data'Length - 1);
+         end RFLX_Process_Data;
+         procedure RFLX_Universal_Option_Set_Data is new Universal.Option.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
+      begin
+         RFLX_Universal_Option_Set_Data (Ctx.P.Option_Ctx, RFLX_Types.To_Length (Test.Option_Data.Field_Size_Data (Option_Data)));
+      end;
+      -- tests/feature/session_message_optimization/test.rflx:56:16
+      T_6 := Local_Length > 0;
+      -- tests/feature/session_message_optimization/test.rflx:57:20
+      T_7 := Option_Type /= (Known => True, Enum => Universal.OT_Null);
+      -- tests/feature/session_message_optimization/test.rflx:56:16
+      T_8 := T_6
+      and then T_7;
+      -- tests/feature/session_message_optimization/test.rflx:58:34
+      if Universal.Option.Valid (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) then
+         T_9 := Universal.Option.Get_Option_Type (Ctx.P.Option_Ctx);
       else
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if Local_Length > 0 then
+      -- tests/feature/session_message_optimization/test.rflx:58:20
+      T_10 := Option_Type = T_9;
+      -- tests/feature/session_message_optimization/test.rflx:56:16
+      T_11 := T_8
+      and then T_10;
+      -- tests/feature/session_message_optimization/test.rflx:59:20
+      T_12 := Test.Option_Data.Valid_Structure (Option_Data);
+      -- tests/feature/session_message_optimization/test.rflx:56:16
+      T_13 := T_11
+      and then T_12;
+      -- tests/feature/session_message_optimization/test.rflx:60:20
+      T_14 := RFLX.RFLX_Types.Base_Integer (Test.Option_Data.Field_Size_Length (Option_Data));
+      -- tests/feature/session_message_optimization/test.rflx:60:46
+      T_15 := RFLX.RFLX_Types.Base_Integer (Universal.Length'Size);
+      -- tests/feature/session_message_optimization/test.rflx:60:20
+      T_16 := T_14 = T_15;
+      -- tests/feature/session_message_optimization/test.rflx:56:16
+      T_17 := T_13
+      and then T_16;
+      -- tests/feature/session_message_optimization/test.rflx:61:20
+      T_18 := RFLX.RFLX_Types.Base_Integer (Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data));
+      -- tests/feature/session_message_optimization/test.rflx:61:39
+      T_19 := RFLX.RFLX_Types.Base_Integer (Test.Option_Data.Field_Size_Data (Option_Data));
+      -- tests/feature/session_message_optimization/test.rflx:61:20
+      T_20 := T_18 = T_19;
+      if
+         T_17
+         and then T_20
+      then
          Ctx.P.Next_State := S_Reply;
       else
          Ctx.P.Next_State := S_Final;
@@ -142,7 +230,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_message_optimization/test.rflx:59:10
+      -- tests/feature/session_message_optimization/test.rflx:69:10
       Ctx.P.Next_State := S_Trigger_Error;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -163,14 +251,14 @@ is
         Ghost;
    begin
       pragma Assert (Trigger_Error_Invariant);
-      -- tests/feature/session_message_optimization/test.rflx:68:10
+      -- tests/feature/session_message_optimization/test.rflx:78:10
       Get_Option_Data (Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (0)), Null_Option_Data);
       if not Test.Option_Data.Valid_Structure (Null_Option_Data) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Trigger_Error_Invariant);
          goto Finalize_Trigger_Error;
       end if;
-      -- tests/feature/session_message_optimization/test.rflx:70:10
+      -- tests/feature/session_message_optimization/test.rflx:80:10
       if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Trigger_Error_Invariant);
@@ -181,6 +269,7 @@ is
          pragma Assert (Trigger_Error_Invariant);
          goto Finalize_Trigger_Error;
       end if;
+      pragma Assert (Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Length));
       Universal.Option.Set_Length (Ctx.P.Option_Ctx, Null_Option_Data.Length);
       Ctx.P.Next_State := S_Final;
       pragma Assert (Trigger_Error_Invariant);

@@ -20,6 +20,13 @@ is
      Post =>
        Initialized (Ctx)
    is
+      T_0 : Boolean;
+      T_1 : Boolean;
+      T_2 : Universal.Message_Type;
+      T_3 : Boolean;
+      T_4 : Boolean;
+      T_5 : Universal.Length;
+      T_6 : Boolean;
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 /= null)
@@ -31,16 +38,43 @@ is
       pragma Assert (Start_Invariant);
       -- tests/feature/session_integration/test.rflx:12:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_integration/test.rflx:15:16
+      T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_integration/test.rflx:15:16
+      T_1 := T_0;
+      -- tests/feature/session_integration/test.rflx:16:20
+      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         T_2 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
+      else
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      -- tests/feature/session_integration/test.rflx:16:20
+      T_3 := T_2 = Universal.MT_Data;
+      -- tests/feature/session_integration/test.rflx:15:16
+      T_4 := T_1
+      and then T_3;
+      -- tests/feature/session_integration/test.rflx:17:20
+      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         T_5 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
+      else
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      -- tests/feature/session_integration/test.rflx:17:20
+      T_6 := T_5 = 1;
       if
-         (Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) = True
-          and then Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx) = Universal.MT_Data)
-         and then Universal.Message.Get_Length (Ctx.P.Message_Ctx) = 1
+         T_4
+         and then T_6
       then
          Ctx.P.Next_State := S_Prepare_Message;
       else
          Ctx.P.Next_State := S_Final;
       end if;
       pragma Assert (Start_Invariant);
+      <<Finalize_Start>>
    end Start;
 
    procedure Prepare_Message (Ctx : in out Context'Class) with
@@ -58,13 +92,8 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Message_Invariant);
-      -- tests/feature/session_integration/test.rflx:23:10
+      -- tests/feature/session_integration/test.rflx:25:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
-      if Universal.Message.Available_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) < 32 then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Prepare_Message_Invariant);
-         goto Finalize_Prepare_Message;
-      end if;
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
@@ -97,7 +126,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_integration/test.rflx:33:10
+      -- tests/feature/session_integration/test.rflx:35:10
       Ctx.P.Next_State := S_Next;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -128,13 +157,8 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (M_Ctx, M_Buffer);
       pragma Assert (Next_Invariant);
-      -- tests/feature/session_integration/test.rflx:41:10
+      -- tests/feature/session_integration/test.rflx:43:10
       Universal.Message.Reset (M_Ctx);
-      if Universal.Message.Available_Space (M_Ctx, Universal.Message.F_Message_Type) < 32 then
-         Ctx.P.Next_State := S_Final;
-         pragma Assert (Next_Invariant);
-         goto Finalize_Next;
-      end if;
       pragma Assert (Universal.Message.Sufficient_Space (M_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (M_Ctx, Universal.MT_Data);
       pragma Assert (Universal.Message.Sufficient_Space (M_Ctx, Universal.Message.F_Length));

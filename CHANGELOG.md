@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for GNAT Pro 23.2
 
+### Changed
+
+- Prevent unnecessary runtime checks in generated code (eng/recordflux/RecordFlux#1204)
+
 ### Fixed
 
 - Missing quotes in error messages about invalid aspects (eng/recordflux/RecordFlux#1267)

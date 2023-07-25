@@ -17,7 +17,7 @@ is
 
    type Channel is (C_Channel);
 
-   type State is (S_Start, S_Process, S_Reply, S_Process_2, S_Reply_2, S_Final);
+   type State is (S_Start, S_Process, S_Reply, S_Process_2, S_Reply_2, S_Process_3, S_Reply_3, S_Final);
 
    type Private_Context is private;
 
@@ -33,6 +33,8 @@ is
    procedure Create_Message (Ctx : in out Context; Message_Type : RFLX.Universal.Option_Type; Length : RFLX.Test.Length; Data : RFLX_Types.Bytes; RFLX_Result : out RFLX.Test.Definite_Message.Structure) is abstract;
 
    procedure Valid_Message (Ctx : in out Context; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean; RFLX_Result : out RFLX.Test.Result) is abstract;
+
+   procedure Byte_Size (Ctx : in out Context; RFLX_Result : out RFLX.Test.Length) is abstract;
 
    function Uninitialized (Ctx : Context'Class) return Boolean;
 
@@ -154,7 +156,7 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Reply | S_Reply_2 =>
+                 when S_Reply | S_Reply_2 | S_Reply_3 =>
                     Test.Definite_Message.Well_Formed_Message (Ctx.P.Definite_Message_Ctx)
                     and Test.Definite_Message.Byte_Size (Ctx.P.Definite_Message_Ctx) > 0,
                  when others =>
@@ -164,7 +166,7 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Reply | S_Reply_2 =>
+                 when S_Reply | S_Reply_2 | S_Reply_3 =>
                     Test.Definite_Message.Byte_Size (Ctx.P.Definite_Message_Ctx),
                  when others =>
                     RFLX_Types.Unreachable)));

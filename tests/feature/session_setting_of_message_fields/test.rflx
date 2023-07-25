@@ -16,6 +16,8 @@ package Test is
                and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
                and Message.Length = 1 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
          goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
       end Start;
 
       state Process is
@@ -26,12 +28,16 @@ package Test is
          -- §S-S-A-MFA-L
          Message.Length := 1;
          -- §S-S-A-MFA-A
-         Message.Data := [2];
+         Message.Data := "A";
          -- §S-S-A-MFA-L
-         Local_Message.Message_Type := Universal::MT_Null;
+         Local_Message.Message_Type := Universal::MT_Data;
+         -- §S-S-A-MFA-L
+         Local_Message.Length := Message.Data'Size / 8;
+         -- §S-S-A-MFA-A
+         Local_Message.Data := Message.Data;
       transition
          goto Reply
-            if Message.Message_Type /= Local_Message.Message_Type -- §S-S-T-S, §S-E-S-V
+            if Message.Message_Type = Local_Message.Message_Type -- §S-S-T-S, §S-E-S-V
          goto null -- §S-S-T-N
       exception
          goto null -- §S-S-E

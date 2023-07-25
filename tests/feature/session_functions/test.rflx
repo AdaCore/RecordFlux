@@ -29,6 +29,8 @@ package Test is
          (Message_Type : Universal::Option_Type;
           Strict : Boolean)
       return Result;
+      -- §S-P-F-R-S
+      with function Byte_Size return Length;
    session Session is
       Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
       Definite_Message : Definite_Message; -- §S-D-V-T-M, §S-D-V-E-N
@@ -42,6 +44,8 @@ package Test is
                and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
                and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
          goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
       end Start;
 
       state Process is
@@ -51,7 +55,7 @@ package Test is
       begin
          Message_Type := Get_Message_Type; -- §S-S-A-A-CL, §S-E-CL-N
          Valid := Valid_Message (Message_Type, True); -- §S-S-A-A-CL, §S-E-CL-L
-         Length := Message.Data'Size / 8; -- §S-S-A-A-ME
+         Length := Message.Data'Size / Byte_Size; -- §S-S-A-A-ME
          -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
          Definite_Message := Create_Message (Message_Type, Length, Message.Data);
       transition
@@ -85,8 +89,30 @@ package Test is
       begin
          Channel'Write (Definite_Message); -- §S-S-A-WR-V
       transition
-         goto null -- §S-S-T-N
+         goto Process_3 -- §S-S-T-N
       end Reply_2;
+
+      state Process_3 is
+         Local_Message : Definite_Message;
+      begin
+         -- §S-S-A-A-CL, §S-E-CL-L, §S-E-CL-A
+         Local_Message := Create_Message (Universal::OT_Data, 2, [3, 4]);
+         -- §S-S-A-MFA-S
+         Definite_Message.Length := Local_Message.Length;
+         -- §S-S-A-MFA-S
+         Definite_Message.Data := Local_Message.Data;
+      transition
+         goto Reply_3 -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Process_3;
+
+      state Reply_3 is
+      begin
+         Channel'Write (Definite_Message); -- §S-S-A-WR-V
+      transition
+         goto null -- §S-S-T-N
+      end Reply_3;
    end Session;
 
 end Test;

@@ -41,4 +41,13 @@ is
                  else RFLX.Test.M_Invalid);
    end Valid_Message;
 
+   overriding
+   procedure Byte_Size
+      (Ctx           : in out Context;
+       Result        :    out RFLX.Test.Length)
+   is
+   begin
+      Result := 8;
+   end Byte_Size;
+
 end Session;

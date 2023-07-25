@@ -12,5 +12,8 @@ sequence: |
   State: Process_2
   Read Channel: 1 6 1 0 3 0 1 2
   State: Reply_2
+  State: Process_3
+  Read Channel: 1 2 3 4
+  State: Reply_3
 # Eng/RecordFlux/RecordFlux#691
 # prove:

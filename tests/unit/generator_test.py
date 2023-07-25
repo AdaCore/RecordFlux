@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import textwrap
-from collections import abc
+import typing as ty
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import pytest
+import z3
 from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
+from attr import define
 
 from rflx import ada, const as constants, expression as expr, tac, typing_ as rty
 from rflx.common import file_name
@@ -18,16 +21,11 @@ from rflx.generator.allocator import AllocatorGenerator
 from rflx.generator.common import Debug
 from rflx.generator.message import create_structure
 from rflx.generator.session import EvaluatedDeclaration, ExceptionHandler, SessionGenerator
-from rflx.identifier import ID
+from rflx.identifier import ID, id_generator
 from rflx.integration import Integration
 from rflx.model import (
     BUILTIN_TYPES,
     Model,
-    Session,
-    State,
-    Transition,
-    declaration as decl,
-    statement as stmt,
     type_ as mty,
 )
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
@@ -46,6 +44,9 @@ MODELS = [
     models.TLV_MODEL,
     Model(models.FIXED_SIZE_SIMPLE_MESSAGE.dependencies),
 ]
+
+MSG_TY = rty.Message("M")
+SEQ_TY = rty.Sequence("S", rty.Message("M"))
 
 
 def test_invalid_prefix() -> None:
@@ -299,12 +300,23 @@ def test_prefixed_type_identifier() -> None:
         assert common.prefixed_type_identifier(ID(t), "P") == t.name
 
 
-DUMMY_SESSION = Session(
-    identifier="P::S",
-    states=[State("State", [Transition("null")])],
+DUMMY_SESSION = tac.Session(
+    identifier=ID("P::S"),
+    states=[
+        tac.State(
+            "State",
+            [tac.Transition("Final", tac.ComplexExpr([], tac.BoolVal(True)), None, None)],
+            None,
+            [],
+            None,
+            None,
+        )
+    ],
     declarations=[],
     parameters=[],
-    types=[*models.UNIVERSAL_MODEL.types],
+    types={t.identifier: t for t in models.UNIVERSAL_MODEL.types},
+    location=None,
+    variable_id=id_generator(),
 )
 
 
@@ -312,7 +324,7 @@ DUMMY_SESSION = Session(
     "parameter, expected",
     [
         (
-            decl.FunctionDeclaration("F", [], "T", type_=rty.BOOLEAN),
+            tac.FuncDecl("F", [], "T", type_=rty.BOOLEAN, location=None),
             [
                 ada.SubprogramDeclaration(
                     specification=ada.ProcedureSpecification(
@@ -327,19 +339,20 @@ DUMMY_SESSION = Session(
             ],
         ),
         (
-            decl.FunctionDeclaration(
+            tac.FuncDecl(
                 "F",
                 [
-                    decl.Argument("P1", "Boolean", type_=rty.BOOLEAN),
-                    decl.Argument("P2", "T2", type_=rty.OPAQUE),
-                    decl.Argument(
+                    tac.Argument("P1", "Boolean", type_=rty.BOOLEAN),
+                    tac.Argument("P2", "T2", type_=rty.OPAQUE),
+                    tac.Argument(
                         "P3", "T3", type_=rty.Enumeration("T4", [ID("E1")], always_valid=True)
                     ),
-                    decl.Argument("P4", "T4", type_=rty.Integer("T2")),
-                    decl.Argument("P5", "T5", type_=rty.Message("T5", is_definite=True)),
+                    tac.Argument("P4", "T4", type_=rty.Integer("T2")),
+                    tac.Argument("P5", "T5", type_=rty.Message("T5", is_definite=True)),
                 ],
                 "T",
                 type_=rty.Message("T", is_definite=True),
+                location=None,
             ),
             [
                 ada.SubprogramDeclaration(
@@ -362,7 +375,7 @@ DUMMY_SESSION = Session(
     ],
 )
 def test_session_create_abstract_function(
-    parameter: decl.FunctionDeclaration, expected: Sequence[ada.SubprogramDeclaration]
+    parameter: tac.FuncDecl, expected: Sequence[ada.SubprogramDeclaration]
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -371,7 +384,7 @@ def test_session_create_abstract_function(
     assert session_generator._create_abstract_function(parameter) == expected
 
 
-class UnknownDeclaration(decl.FormalDeclaration, decl.BasicDeclaration):
+class UnknownDeclaration(tac.FormalDecl):
     def __str__(self) -> str:
         raise NotImplementedError
 
@@ -384,62 +397,82 @@ class UnknownDeclaration(decl.FormalDeclaration, decl.BasicDeclaration):
     "parameter, error_type, error_msg",
     [
         (
-            decl.FunctionDeclaration("F", [], "T", location=Location((10, 20))),
+            tac.FuncDecl(
+                "F",
+                [],
+                "T",
+                rty.Undefined(),
+                Location((10, 20)),
+            ),
             FatalError,
             r'return type of function "F" is undefined',
         ),
         (
-            decl.FunctionDeclaration("F", [], "T", type_=rty.OPAQUE, location=Location((10, 20))),
+            tac.FuncDecl(
+                "F",
+                [],
+                "T",
+                rty.OPAQUE,
+                Location((10, 20)),
+            ),
             FatalError,
             r'Opaque as return type of function "F" not allowed',
         ),
         (
-            decl.FunctionDeclaration(
-                "F", [], "T", type_=rty.Sequence("A", rty.Integer("B")), location=Location((10, 20))
+            tac.FuncDecl(
+                "F",
+                [],
+                "T",
+                rty.Sequence("A", rty.Integer("B")),
+                Location((10, 20)),
             ),
             RecordFluxError,
             r'sequence as return type of function "F" not yet supported',
         ),
         (
-            decl.FunctionDeclaration(
-                "F", [], "T", type_=rty.Message("A", is_definite=False), location=Location((10, 20))
+            tac.FuncDecl(
+                "F",
+                [],
+                "T",
+                rty.Message("A", is_definite=False),
+                Location((10, 20)),
             ),
             FatalError,
             r'non-definite message in return type of function "F" not allowed',
         ),
         (
-            decl.FunctionDeclaration(
+            tac.FuncDecl(
                 "F",
                 [],
                 "T",
-                type_=rty.Message(
+                rty.Message(
                     "M", {("F",)}, {ID("F"): rty.Sequence("A", rty.Integer("B"))}, is_definite=True
                 ),
-                location=Location((10, 20)),
+                Location((10, 20)),
             ),
             RecordFluxError,
             r'message containing sequence fields in return type of function "F" not yet supported',
         ),
         (
-            decl.FunctionDeclaration(
+            tac.FuncDecl(
                 "F",
-                [decl.Argument("P", "T", type_=rty.Sequence("A", rty.Integer("B")))],
+                [tac.Argument("P", "T", rty.Sequence("A", rty.Integer("B")))],
                 "T",
-                type_=rty.BOOLEAN,
-                location=Location((10, 20)),
+                rty.BOOLEAN,
+                Location((10, 20)),
             ),
             RecordFluxError,
             r'sequence as parameter of function "F" not yet supported',
         ),
         (
-            UnknownDeclaration("X", location=Location((10, 20))),
+            UnknownDeclaration("X", Location((10, 20))),
             FatalError,
             r'unexpected formal parameter "X"',
         ),
     ],
 )
 def test_session_create_abstract_functions_error(
-    parameter: decl.FormalDeclaration, error_type: type[BaseError], error_msg: str
+    parameter: tac.FormalDecl, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -453,19 +486,19 @@ def test_session_create_abstract_functions_error(
     "declaration, session_global, expected",
     [
         (
-            decl.VariableDeclaration("X", "Boolean", type_=rty.BOOLEAN),
+            tac.VarDecl("X", rty.BOOLEAN),
             False,
             EvaluatedDeclaration(global_declarations=[ada.ObjectDeclaration("X", "Boolean")]),
         ),
         (
-            decl.VariableDeclaration("X", "T", expr.Number(1), type_=rty.Integer("T")),
+            tac.VarDecl("X", rty.Integer("T"), tac.ComplexIntExpr([], tac.IntVal(1))),
             False,
             EvaluatedDeclaration(
                 global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))]
             ),
         ),
         (
-            decl.VariableDeclaration("X", "T", expr.Number(1), type_=rty.Integer("T")),
+            tac.VarDecl("X", rty.Integer("T"), tac.ComplexIntExpr([], tac.IntVal(1))),
             True,
             EvaluatedDeclaration(
                 global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))],
@@ -474,7 +507,7 @@ def test_session_create_abstract_functions_error(
                         "P.S_Allocator.Initialize",
                         [ada.Variable("Ctx.P.Slots"), ada.Variable("Ctx.P.Memory")],
                     ),
-                    ada.Assignment("Ctx.P.X", ada.Conversion("T", ada.Number(1))),
+                    ada.Assignment("Ctx.P.X", ada.Conversion("P.T", ada.Number(1))),
                 ],
                 finalization=[
                     ada.CallStatement("P.S_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
@@ -482,8 +515,8 @@ def test_session_create_abstract_functions_error(
             ),
         ),
         (
-            decl.VariableDeclaration(
-                "X", "T", type_=rty.Message("T"), location=Location(start=(1, 1))
+            tac.VarDecl(
+                "X", rty.Message("T"), origin=tac.ConstructedOrigin("X : T", Location((1, 1)))
             ),
             False,
             EvaluatedDeclaration(
@@ -565,8 +598,8 @@ def test_session_create_abstract_functions_error(
             ),
         ),
         (
-            decl.VariableDeclaration(
-                "X", "T", type_=rty.Message("T"), location=Location(start=(1, 1))
+            tac.VarDecl(
+                "X", rty.Message("T"), origin=tac.ConstructedOrigin("X : T", Location((1, 1)))
             ),
             True,
             EvaluatedDeclaration(
@@ -655,11 +688,11 @@ def test_session_create_abstract_functions_error(
     ],
 )
 def test_session_evaluate_declarations(
-    declaration: decl.BasicDeclaration, session_global: bool, expected: EvaluatedDeclaration
+    declaration: tac.VarDecl, session_global: bool, expected: EvaluatedDeclaration
 ) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
 
-    allocator._allocation_slots[Location(start=(1, 1))] = 1
+    allocator._allocation_slots[Location((1, 1))] = 1
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
     assert (
         session_generator._evaluate_declarations(
@@ -667,39 +700,6 @@ def test_session_evaluate_declarations(
         )
         == expected
     )
-
-
-@pytest.mark.parametrize(
-    "declaration, error_type, error_msg",
-    [
-        (
-            decl.RenamingDeclaration(
-                "X",
-                "T",
-                expr.Selected(expr.Variable("M"), "F"),
-                location=Location((10, 20)),
-            ),
-            RecordFluxError,
-            r'renaming declaration "X" not yet supported',
-        ),
-        (
-            UnknownDeclaration("X", location=Location((10, 20))),
-            FatalError,
-            r'unexpected declaration "X"',
-        ),
-    ],
-)
-def test_session_evaluate_declarations_error(
-    declaration: decl.BasicDeclaration, error_type: type[BaseError], error_msg: str
-) -> None:
-    session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
-    )
-
-    with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        session_generator._evaluate_declarations(  # pragma: no branch
-            [declaration], is_global=lambda x: False
-        )
 
 
 @dataclass
@@ -715,7 +715,7 @@ class EvaluatedDeclarationStr:
     [
         (
             rty.Integer("T"),
-            expr.Number(1),
+            tac.ComplexExpr([], tac.IntVal(1)),
             False,
             False,
             EvaluatedDeclarationStr(
@@ -724,17 +724,17 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.Integer("T"),
-            expr.Number(1),
+            tac.ComplexExpr([], tac.IntVal(1)),
             False,
             True,
             EvaluatedDeclarationStr(
                 global_declarations="X : P.T := 1;",
-                initialization="X := T (1);",
+                initialization="X := P.T (1);",
             ),
         ),
         (
             rty.Integer("T"),
-            expr.Number(1),
+            tac.ComplexExpr([], tac.IntVal(1)),
             True,
             False,
             EvaluatedDeclarationStr(
@@ -836,7 +836,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            expr.Aggregate(),
+            tac.ComplexExpr([], tac.Agg([])),
             False,
             False,
             EvaluatedDeclarationStr(
@@ -847,7 +847,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            expr.Aggregate(),
+            tac.ComplexExpr([], tac.Agg([])),
             True,
             False,
             EvaluatedDeclarationStr(
@@ -858,7 +858,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            expr.Aggregate(expr.Number(1)),
+            tac.ComplexExpr([], tac.Agg([tac.IntVal(1)])),
             False,
             False,
             EvaluatedDeclarationStr(
@@ -870,7 +870,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            expr.Aggregate(expr.Number(1)),
+            tac.ComplexExpr([], tac.Agg([tac.IntVal(1)])),
             True,
             False,
             EvaluatedDeclarationStr(
@@ -883,7 +883,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            expr.Aggregate(expr.Number(1), expr.Number(2)),
+            tac.ComplexExpr([], tac.Agg([tac.IntVal(1), tac.IntVal(2)])),
             False,
             False,
             EvaluatedDeclarationStr(
@@ -895,7 +895,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            expr.Aggregate(expr.Number(1), expr.Number(2)),
+            tac.ComplexExpr([], tac.Agg([tac.IntVal(1), tac.IntVal(2)])),
             False,
             True,
             EvaluatedDeclarationStr(
@@ -907,7 +907,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            expr.Aggregate(expr.Number(1), expr.Number(2)),
+            tac.ComplexExpr([], tac.Agg([tac.IntVal(1), tac.IntVal(2)])),
             True,
             False,
             EvaluatedDeclarationStr(
@@ -949,12 +949,12 @@ class EvaluatedDeclarationStr:
 )
 def test_session_declare(
     type_: rty.Type,
-    expression: expr.Expr,
+    expression: Optional[tac.ComplexExpr],
     constant: bool,
     session_global: bool,
     expected: EvaluatedDeclarationStr,
 ) -> None:
-    loc: Location = Location(start=(1, 1))
+    loc: Location = Location((1, 1))
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
 
     allocator._allocation_slots[loc] = 1
@@ -977,15 +977,55 @@ def test_session_declare(
     [
         (
             rty.Integer("T"),
-            expr.Call("F", location=Location((10, 20))),
+            tac.ComplexExpr(
+                [],
+                tac.IntCall(
+                    "F",
+                    [],
+                    [],
+                    rty.Integer("T"),
+                    origin=tac.ConstructedOrigin("F", Location((10, 20))),
+                ),
+            ),
             RecordFluxError,
             r"initialization using function call not yet supported",
         ),
         (
+            rty.OPAQUE,
+            tac.ComplexExpr(
+                [tac.Assign("X", tac.IntVal(0), rty.Integer("T"))],
+                tac.IntVar(
+                    "X", rty.Integer("T"), origin=tac.ConstructedOrigin("X", Location((10, 20)))
+                ),
+            ),
+            RecordFluxError,
+            r"initialization not yet supported",
+        ),
+        (
             rty.Message("T"),
-            expr.Variable("True", location=Location((10, 20))),
+            tac.ComplexExpr(
+                [],
+                tac.EnumLit(
+                    "True",
+                    rty.BOOLEAN,
+                    origin=tac.ConstructedOrigin("True", Location((10, 20))),
+                ),
+            ),
             RecordFluxError,
             r'initialization for message type "T" not yet supported',
+        ),
+        (
+            rty.Integer("T"),
+            tac.ComplexExpr(
+                [tac.Assign("X", tac.IntVal(0), rty.Integer("T"))],
+                tac.IntVar(
+                    "X",
+                    rty.Integer("T"),
+                    origin=tac.ConstructedOrigin("X", Location((10, 20))),
+                ),
+            ),
+            RecordFluxError,
+            r"initialization with complex expression not yet supported",
         ),
         (
             rty.Undefined(),
@@ -996,7 +1036,10 @@ def test_session_declare(
     ],
 )
 def test_session_declare_error(
-    type_: rty.Type, expression: expr.Expr, error_type: type[BaseError], error_msg: str
+    type_: rty.Type,
+    expression: Optional[tac.ComplexExpr],
+    error_type: type[BaseError],
+    error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -1004,7 +1047,7 @@ def test_session_declare_error(
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         session_generator._declare(  # pragma: no branch
-            ID("X", location=Location((10, 20))),
+            ID("X", Location((10, 20))),
             type_,
             lambda x: False,
             expression=expression,
@@ -1012,16 +1055,15 @@ def test_session_declare_error(
         )
 
 
-class UnknownStatement(stmt.Statement):
-    def check_type(
-        self, statement_type: rty.Type, typify_variable: Callable[[expr.Expr], expr.Expr]
-    ) -> RecordFluxError:
+@define
+class UnknownStatement(tac.Stmt):
+    def preconditions(self, variable_id: ty.Generator[ID, None, None]) -> list[tac.Cond]:
         raise NotImplementedError
 
-    def variables(self) -> Sequence[expr.Variable]:
+    def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: abc.Generator[ID, None, None]) -> list[tac.Stmt]:
+    def _update_str(self) -> None:
         raise NotImplementedError
 
 
@@ -1033,19 +1075,17 @@ class UnknownStatement(stmt.Statement):
             # Replace this test case by an integration test.
             #
             # X := Universal::Message'(Message_Type => Universal::MT_Data, Length => 0, Data => [])
-            stmt.VariableAssignment(
+            tac.Assign(
                 "X",
-                expr.MessageAggregate(
+                tac.MsgAgg(
                     "Universal::Message",
                     {
-                        "Message_Type": expr.Literal(
-                            "Universal::MT_Data",
-                            type_=rty.Enumeration(
-                                "Universal::Message_Type", [ID("Universal::MT_Data")]
-                            ),
+                        ID("Message_Type"): tac.EnumLit(
+                            ID("Universal::MT_Data"),
+                            rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                         ),
-                        "Length": expr.Number(0),
-                        "Data": expr.Aggregate(),
+                        ID("Length"): tac.IntVal(0),
+                        ID("Data"): tac.Agg([]),
                     },
                     type_=rty.Message(
                         "Universal::Message",
@@ -1058,18 +1098,13 @@ class UnknownStatement(stmt.Statement):
                         },
                     ),
                 ),
-                location=Location(start=(1, 1)),
+                MSG_TY,
+                origin=tac.ConstructedOrigin("", Location((1, 1))),
             ),
             ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
 -- <stdin>:1:1
 Universal.Message.Reset (X_Ctx);
-if Universal.Message.Available_Space (X_Ctx, Universal.Message.F_Message_Type) < 24 then
-   Ada.Text_IO.Put_Line ("Error: insufficient space in ""X_Ctx"" for creating message");
-   Ctx.P.Next_State := S_E;
-   pragma Finalization;
-   goto Finalize_S;
-end if;
 pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type));
 Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
 pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length));
@@ -1085,19 +1120,19 @@ end if;\
 """,
         ),
         (
-            stmt.VariableAssignment(
+            tac.Assign(
                 "X",
-                expr.Call(
+                tac.BoolCall(
                     "F",
                     [
-                        expr.Variable("A", type_=rty.Message("Universal::Message")),
+                        tac.ObjVar("A", rty.Message("Universal::Message")),
                     ],
-                    type_=rty.BOOLEAN,
-                    argument_types=[
+                    [
                         rty.Message("Universal::Message"),
                     ],
                 ),
-                location=Location(start=(1, 1)),
+                rty.BOOLEAN,
+                origin=tac.ConstructedOrigin("", Location((1, 1))),
             ),
             """\
 -- <stdin>:1:1
@@ -1110,19 +1145,20 @@ end;\
 """,
         ),
         (
-            stmt.VariableAssignment(
+            tac.Assign(
                 "X",
-                expr.Call(
+                tac.ObjCall(
                     "F",
                     [
-                        expr.Variable("A", type_=rty.Message("Universal::Message")),
+                        tac.ObjVar("A", rty.Message("Universal::Message")),
                     ],
-                    type_=rty.Message("Universal::Option"),
-                    argument_types=[
+                    [
                         rty.Message("Universal::Message"),
                     ],
+                    rty.Message("Universal::Option"),
                 ),
-                location=Location(start=(1, 1)),
+                rty.Message("Universal::Option"),
+                origin=tac.ConstructedOrigin("", Location((1, 1))),
             ),
             """\
 -- <stdin>:1:1
@@ -1151,56 +1187,58 @@ end;\
 """,
         ),
         (
-            stmt.VariableAssignment(
+            tac.Assign(
                 "X",
-                expr.And(
-                    expr.Variable("A", type_=rty.BOOLEAN),
-                    expr.Variable("B", type_=rty.BOOLEAN),
+                tac.And(
+                    tac.BoolVar("A"),
+                    tac.BoolVar("B"),
                 ),
-                type_=rty.BOOLEAN,
-                location=Location(start=(1, 1)),
+                rty.BOOLEAN,
+                origin=tac.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nX := A\nand then B;",
         ),
         (
-            stmt.Reset(
+            tac.Reset(
                 "X",
-                type_=rty.Message("P::M"),
-                location=Location(start=(1, 1)),
+                {},
+                rty.Message("P::M"),
+                origin=tac.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.M.Reset (X_Ctx);",
         ),
         (
-            stmt.Reset(
+            tac.Reset(
                 "X",
-                type_=rty.Sequence("P::S", rty.Integer("A")),
-                location=Location(start=(1, 1)),
+                {},
+                rty.Sequence("P::S", rty.Integer("A")),
+                origin=tac.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.S.Reset (X_Ctx);",
         ),
         (
-            stmt.Read(
+            tac.Read(
                 "X",
-                expr.Variable("Y", type_=rty.Message("P::M")),
-                location=Location(start=(1, 1)),
+                tac.ObjVar("Y", rty.Message("P::M")),
+                origin=tac.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.M.Verify_Message (Y_Ctx);",
         ),
         (
-            stmt.Write(
+            tac.Write(
                 "X",
-                expr.Variable("Y", type_=rty.Message("P::M")),
-                location=Location(start=(1, 1)),
+                tac.ObjVar("Y", rty.Message("P::M")),
+                origin=tac.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1",
         ),
     ],
 )
-def test_session_state_action(action: stmt.Statement, expected: str) -> None:
+def test_session_state_action(action: tac.Stmt, expected: str) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
 
-    allocator._allocation_slots[Location(start=(1, 1))] = 1
+    allocator._allocation_slots[Location((1, 1))] = 1
     assert (
         "\n".join(
             str(s)
@@ -1208,9 +1246,16 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
                 ID("S"),
                 action,
                 ExceptionHandler(
-                    set(),
-                    State("S", exception_transition=Transition("E")),
+                    tac.State(
+                        "S",
+                        [],
+                        tac.Transition("E", tac.ComplexExpr([], tac.BoolVal(True)), None, None),
+                        [],
+                        None,
+                        None,
+                    ),
                     [ada.PragmaStatement("Finalization", [])],
+                    lambda: None,
                 ),
                 lambda x: False,
             )
@@ -1223,51 +1268,24 @@ def test_session_state_action(action: stmt.Statement, expected: str) -> None:
     "action, error_type, error_msg",
     [
         (
-            stmt.Extend("L", expr.Variable("E"), location=Location((10, 20))),
+            tac.Extend(
+                "L",
+                tac.ObjVar("E", MSG_TY),
+                SEQ_TY,
+                origin=tac.ConstructedOrigin("", Location((10, 20))),
+            ),
             RecordFluxError,
             r"Extend statement not yet supported",
         ),
         (
-            stmt.Write(
-                "X",
-                expr.MessageAggregate(
-                    "Universal::Message",
-                    {
-                        "Message_Type": expr.Literal(
-                            "Universal::MT_Data",
-                            type_=rty.Enumeration(
-                                "Universal::Message_Type", [ID("Universal::MT_Data")]
-                            ),
-                        ),
-                        "Length": expr.Number(1),
-                        "Data": expr.Aggregate(expr.Number(2)),
-                    },
-                    type_=rty.Message(
-                        "Universal::Message",
-                        field_types={
-                            ID("Message_Type"): rty.Enumeration(
-                                "Universal::Message_Type", [ID("Universal::MT_Data")]
-                            ),
-                            ID("Length"): rty.Integer("Universal::Length"),
-                            ID("Data"): rty.OPAQUE,
-                        },
-                    ),
-                    location=Location(start=(10, 20)),
-                ),
-            ),
-            RecordFluxError,
-            r'MessageAggregate with message type "Universal::Message" in Write statement'
-            " not yet supported",
-        ),
-        (
-            UnknownStatement("X", location=Location((10, 20))),
+            UnknownStatement(tac.ConstructedOrigin("", Location((10, 20)))),
             FatalError,
             r'unexpected statement "UnknownStatement"',
         ),
     ],
 )
 def test_session_state_action_error(
-    action: stmt.Statement, error_type: type[BaseError], error_msg: str
+    action: tac.Stmt, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -1277,9 +1295,29 @@ def test_session_state_action_error(
         session_generator._state_action(  # pragma: no branch
             ID("S"),
             action,
-            ExceptionHandler(set(), State("S"), []),
+            ExceptionHandler(
+                tac.State("State", [], None, [], None, None),
+                [],
+                lambda: None,
+            ),
             lambda x: False,
         )
+
+
+@define
+class UnknownExpr(tac.Expr):
+    @property
+    def type_(self) -> rty.Any:
+        return rty.Message("T")
+
+    def preconditions(self, variable_id: ty.Generator[ID, None, None]) -> list[tac.Cond]:
+        raise NotImplementedError
+
+    def to_z3_expr(self) -> z3.ExprRef:
+        raise NotImplementedError
+
+    def _update_str(self) -> None:
+        raise NotImplementedError
 
 
 @pytest.mark.parametrize(
@@ -1287,37 +1325,22 @@ def test_session_state_action_error(
     [
         (
             rty.Sequence("A", rty.Integer("B")),
-            expr.Selected(
-                expr.Variable("Z", type_=rty.Message("C")),
+            tac.ObjFieldAccess(
                 "Z",
-                type_=rty.Sequence("A", rty.Integer("B")),
-                location=Location((10, 20)),
+                "Z",
+                rty.Message("C", {("Z",)}, {}, {ID("Z"): rty.Sequence("A", rty.Integer("B"))}),
+                origin=tac.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r"copying of sequence not yet supported",
         ),
         (
-            rty.Sequence("A", rty.Integer("B")),
-            expr.Selected(
-                expr.Call(
-                    "F",
-                    [expr.Variable("Y")],
-                    type_=rty.Message("C"),
-                    location=Location((10, 20)),
-                ),
-                "Z",
-                type_=rty.Sequence("A", rty.Integer("B")),
-            ),
-            RecordFluxError,
-            r'accessing field of expression "Call" not yet supported',
-        ),
-        (
             rty.Aggregate(rty.Integer("A")),
-            expr.Selected(
-                expr.Variable("Z", type_=rty.Message("B")),
+            tac.ObjFieldAccess(
                 "Z",
-                type_=rty.Aggregate(rty.AnyInteger()),
-                location=Location((10, 20)),
+                "Z",
+                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Aggregate(rty.AnyInteger())}),
+                origin=tac.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
             r'unexpected type \(aggregate with element integer type\) for "Z.Z"'
@@ -1325,21 +1348,21 @@ def test_session_state_action_error(
         ),
         (
             rty.Message("A"),
-            expr.MessageAggregate(
+            tac.MsgAgg(
                 "Universal::Message",
                 {
-                    "Message_Type": expr.Literal(
+                    ID("Message_Type"): tac.EnumLit(
                         "Universal::MT_Data",
-                        type_=rty.Enumeration(
-                            "Universal::Message_Type", [ID("Universal::MT_Data")]
-                        ),
+                        rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                     ),
-                    "Length": expr.Number(1),
-                    "Data": expr.Variable(
-                        "Z", type_=rty.Message("Universal::Option"), location=Location((10, 20))
+                    ID("Length"): tac.IntVal(1),
+                    ID("Data"): tac.ObjVar(
+                        "Z",
+                        rty.Message("Universal::Option"),
+                        origin=tac.ConstructedOrigin("", Location((10, 20))),
                     ),
                 },
-                type_=rty.Message(
+                rty.Message(
                     "Universal::Message",
                     field_types={
                         ID("Message_Type"): rty.Enumeration(
@@ -1351,34 +1374,30 @@ def test_session_state_action_error(
                 ),
             ),
             RecordFluxError,
-            r'Variable with message type "Universal::Option" in message aggregate'
+            r'ObjVar with message type "Universal::Option" in message aggregate'
             r" not yet supported",
         ),
         (
             rty.Message("A"),
-            expr.MessageAggregate(
+            tac.MsgAgg(
                 "Universal::Message",
                 {
-                    "Message_Type": expr.Literal(
+                    ID("Message_Type"): tac.EnumLit(
                         "Universal::MT_Data",
-                        type_=rty.Enumeration(
-                            "Universal::Message_Type", [ID("Universal::MT_Data")]
-                        ),
+                        rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                     ),
-                    "Length": expr.Last(
-                        expr.Variable(
-                            "Z",
-                            type_=rty.Message("Universal::Option"),
-                            location=Location((10, 20)),
-                        )
-                    ),
-                    "Data": expr.Variable(
+                    ID("Length"): tac.Last(
                         "Z",
-                        type_=rty.Message("Universal::Option"),
-                        location=Location((10, 20)),
+                        rty.Message("Universal::Option"),
+                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                    ),
+                    ID("Data"): tac.ObjVar(
+                        "Z",
+                        rty.Message("Universal::Option"),
+                        origin=tac.ConstructedOrigin("", Location((10, 20))),
                     ),
                 },
-                type_=rty.Message(
+                rty.Message(
                     "Universal::Message",
                     field_types={
                         ID("Message_Type"): rty.Enumeration(
@@ -1395,28 +1414,21 @@ def test_session_state_action_error(
         ),
         (
             rty.Message("A"),
-            expr.MessageAggregate(
+            tac.MsgAgg(
                 "Universal::Message",
                 {
-                    "Message_Type": expr.Literal(
+                    ID("Message_Type"): tac.EnumLit(
                         "Universal::MT_Data",
-                        type_=rty.Enumeration(
-                            "Universal::Message_Type", [ID("Universal::MT_Data")]
-                        ),
+                        rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                     ),
-                    "Length": expr.Number(1),
-                    "Data": expr.Head(
-                        expr.Variable(
-                            "Z",
-                            type_=rty.Sequence(
-                                "Universal::Options", rty.Message("Universal::Option")
-                            ),
-                            location=Location((10, 20)),
-                        ),
-                        type_=rty.Message("Universal::Option"),
+                    ID("Length"): tac.IntVal(1),
+                    ID("Data"): tac.Head(
+                        "Z",
+                        rty.Sequence("Universal::Options", rty.Message("Universal::Option")),
+                        origin=tac.ConstructedOrigin("", Location((10, 20))),
                     ),
                 },
-                type_=rty.Message(
+                rty.Message(
                     "Universal::Message",
                     field_types={
                         ID("Message_Type"): rty.Enumeration(
@@ -1431,280 +1443,244 @@ def test_session_state_action_error(
             r'Head with message type "Universal::Option" in expression not yet supported',
         ),
         (
-            rty.Integer("A"),
-            expr.Head(
-                expr.Call(
-                    "F",
-                    [expr.Variable("Y")],
-                    type_=rty.Sequence("B", rty.Integer("A", rty.Bounds(1, 100))),
-                    location=Location((10, 20)),
-                ),
-                type_=rty.Integer("A", rty.Bounds(1, 100)),
-            ),
-            RecordFluxError,
-            r'Call with sequence type "B" with element integer type "A" \(1 .. 100\)'
-            r" in Head attribute not yet supported",
-        ),
-        (
-            models.SEQUENCE_INTEGER_VECTOR.type_,
-            expr.Head(
-                expr.Call(
-                    "F",
-                    [expr.Variable("Y")],
-                    type_=rty.Sequence("S", models.SEQUENCE_INTEGER_VECTOR.type_),
-                    location=Location((10, 20)),
-                ),
-            ),
-            FatalError,
-            r'unexpected sequence element type \(sequence type "Sequence::Integer_Vector" with '
-            r'element integer type "Sequence::Integer" \(1 .. 100\)\) '
-            r'for "F \(Y\)\'Head" in assignment of "X"',
-        ),
-        (
             rty.Sequence("A", rty.Message("B")),
-            expr.Comprehension(
+            tac.Comprehension(
                 "E",
-                expr.Variable(
+                tac.ObjVar(
                     "L",
-                    type_=rty.Sequence("A", rty.Message("B")),
+                    rty.Sequence("A", rty.Message("B")),
                 ),
-                expr.Call(
-                    "F",
-                    [expr.Variable("E")],
-                    type_=rty.Message("B"),
-                    location=Location((10, 20)),
-                ),
-                expr.Greater(
-                    expr.Selected(expr.Variable("E", type_=rty.Message("B")), "Z"),
-                    expr.Number(0),
-                ),
-            ),
-            RecordFluxError,
-            "expressions other than variables not yet supported as selector for message types",
-        ),
-        (
-            rty.Message("B"),
-            expr.Head(
-                expr.Comprehension(
-                    "E",
-                    expr.Selected(
-                        expr.Variable("Y", type_=rty.Message("M")),
-                        "Z",
-                        type_=rty.Sequence("A", rty.Message("C")),
-                    ),
-                    expr.Selected(
-                        expr.Variable("E"),
-                        "Z",
-                        type_=rty.Message("B"),
-                        location=Location((10, 20)),
-                    ),
-                    expr.Greater(
-                        expr.Selected(expr.Variable("E", type_=rty.Message("B")), "Z"),
-                        expr.Number(0),
-                    ),
-                ),
-                type_=rty.Message("B"),
-            ),
-            RecordFluxError,
-            "expressions other than variables not yet supported as selector for message types",
-        ),
-        (
-            rty.Message("B"),
-            expr.Head(
-                expr.Comprehension(
-                    "E",
-                    expr.Variable(
-                        "L",
-                        type_=rty.Sequence("A", rty.Message("B")),
-                    ),
-                    expr.Call(
+                tac.ComplexExpr(
+                    [],
+                    tac.ObjCall(
                         "F",
-                        [expr.Variable("E")],
-                        type_=rty.Message("B"),
-                        location=Location((10, 20)),
-                    ),
-                    expr.Greater(
-                        expr.Selected(expr.Variable("E", type_=rty.Message("B")), "Z"),
-                        expr.Number(0),
+                        [],
+                        [],
+                        rty.Message("B"),
+                        origin=tac.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ),
-                type_=rty.Message("B"),
+                tac.ComplexBoolExpr([], tac.BoolVal(True)),
+            ),
+            RecordFluxError,
+            "expressions other than variables not yet supported as selector for message types",
+        ),
+        (
+            rty.Message("B"),
+            tac.Find(
+                "E",
+                tac.ObjFieldAccess(
+                    "Y",
+                    "Z",
+                    rty.Message("C", {("Z",)}, {}, {ID("Z"): rty.Sequence("D", rty.Message("B"))}),
+                ),
+                tac.ComplexExpr(
+                    [],
+                    tac.ObjFieldAccess(
+                        "E",
+                        "Z",
+                        rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Message("B")}),
+                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                    ),
+                ),
+                tac.ComplexBoolExpr(
+                    [
+                        tac.VarDecl("T_0", rty.Integer("I")),
+                        tac.Assign(
+                            "T_0",
+                            tac.IntFieldAccess(
+                                "E",
+                                "Z",
+                                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Integer("I")}),
+                            ),
+                            rty.Integer("I"),
+                            origin=tac.ConstructedOrigin("", Location((20, 30))),
+                        ),
+                    ],
+                    tac.Greater(
+                        tac.IntVar("T_0", rty.Integer("I")),
+                        tac.IntVal(0),
+                    ),
+                ),
+            ),
+            RecordFluxError,
+            "expressions other than variables not yet supported as selector for message types",
+        ),
+        (
+            rty.Message("B"),
+            tac.Find(
+                "E",
+                tac.ObjVar(
+                    "L",
+                    rty.Sequence("A", rty.Message("B")),
+                ),
+                tac.ComplexExpr(
+                    [],
+                    tac.ObjCall(
+                        "F",
+                        [],
+                        [],
+                        rty.Message("B"),
+                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                    ),
+                ),
+                tac.ComplexBoolExpr(
+                    [
+                        tac.VarDecl("T_0", rty.Integer("I")),
+                        tac.Assign(
+                            "T_0",
+                            tac.IntFieldAccess(
+                                "E",
+                                "Z",
+                                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Integer("I")}),
+                            ),
+                            rty.Integer("I"),
+                            origin=tac.ConstructedOrigin("", Location((20, 30))),
+                        ),
+                    ],
+                    tac.Greater(
+                        tac.IntVar("T_0", rty.Integer("I")),
+                        tac.IntVal(0),
+                    ),
+                ),
             ),
             RecordFluxError,
             "expressions other than variables not yet supported as selector for message types",
         ),
         (
             rty.Sequence("A", rty.Integer("B")),
-            expr.Comprehension(
+            tac.Comprehension(
                 "E",
-                expr.Selected(
-                    expr.Call(
-                        "L",
-                        [expr.Variable("Z")],
-                        location=Location((10, 20)),
-                    ),
-                    "Z",
-                    type_=rty.Sequence("A", rty.Message("C")),
+                tac.ObjVar(
+                    "L",
+                    rty.Sequence("A", rty.AnyInteger()),
+                    origin=tac.ConstructedOrigin("", Location((10, 20))),
                 ),
-                expr.Selected(expr.Variable("E"), "Z", type_=rty.Integer("B")),
-                expr.Greater(expr.Selected(expr.Variable("E"), "Z"), expr.Number(0)),
-            ),
-            RecordFluxError,
-            r"Call with undefined type as prefix of Selected in list comprehension"
-            r" not yet supported",
-        ),
-        (
-            rty.Message("B"),
-            expr.Head(
-                expr.Comprehension(
-                    "E",
-                    expr.Selected(
-                        expr.Call(
-                            "L",
-                            [expr.Variable("Z")],
-                            location=Location((10, 20)),
-                        ),
-                        "Z",
-                        type_=rty.Sequence("A", rty.Message("C")),
-                    ),
-                    expr.Selected(expr.Variable("E"), "Z", type_=rty.Message("B")),
-                    expr.Greater(expr.Selected(expr.Variable("E"), "Z"), expr.Number(0)),
+                tac.ComplexExpr([], tac.ObjVar("E", rty.Integer("B"))),
+                tac.ComplexBoolExpr(
+                    [], tac.Greater(tac.IntVar("E", rty.Integer("B")), tac.IntVal(0))
                 ),
-                type_=rty.Message("B"),
-            ),
-            RecordFluxError,
-            r"Call with undefined type as prefix of Selected in list comprehension"
-            r" not yet supported",
-        ),
-        (
-            rty.Sequence("A", rty.Integer("B")),
-            expr.Comprehension(
-                "E",
-                expr.Variable(
-                    "L", type_=rty.Sequence("A", rty.AnyInteger()), location=Location((10, 20))
-                ),
-                expr.Variable("E", type_=rty.Integer("B")),
-                expr.Greater(expr.Variable("E"), expr.Number(0)),
             ),
             RecordFluxError,
             r"iterating over sequence of integer type in list comprehension not yet supported",
         ),
         (
             rty.Integer("B"),
-            expr.Head(
-                expr.Comprehension(
-                    "E",
-                    expr.Variable(
-                        "L", type_=rty.Sequence("A", rty.AnyInteger()), location=Location((10, 20))
-                    ),
-                    expr.Variable("E", type_=rty.Integer("B")),
-                    expr.Greater(expr.Variable("E"), expr.Number(0)),
+            tac.Find(
+                "E",
+                tac.ObjVar(
+                    "L",
+                    rty.Sequence("A", rty.AnyInteger()),
+                    origin=tac.ConstructedOrigin("", Location((10, 20))),
                 ),
-                type_=rty.Integer("B"),
+                tac.ComplexExpr([], tac.ObjVar("E", rty.Integer("B"))),
+                tac.ComplexBoolExpr(
+                    [],
+                    tac.Greater(tac.IntVar("E", rty.Integer("B")), tac.IntVal(0)),
+                ),
             ),
             RecordFluxError,
             r"iterating over sequence of integer type in list comprehension not yet supported",
         ),
         (
             rty.Sequence("A", rty.Integer("B")),
-            expr.Comprehension(
-                "E",
-                expr.Call(
-                    "L",
-                    [expr.Variable("Z")],
-                    type_=rty.Sequence("A", rty.Message("C")),
-                    location=Location((10, 20)),
-                ),
-                expr.Selected(
-                    expr.Variable("E", type_=rty.Message("C")), "Z", type_=rty.Integer("B")
-                ),
-                expr.Greater(expr.Selected(expr.Variable("E"), "Z"), expr.Number(0)),
-            ),
-            RecordFluxError,
-            r'Call with sequence type "A" with element message type "C"'
-            r" as sequence in list comprehension not yet supported",
-        ),
-        (
-            rty.Sequence("A", rty.Integer("B")),
-            expr.Call(
+            tac.BoolCall(
                 "F",
                 [
-                    expr.Call(
+                    tac.IntCall(
                         "G",
-                        [
-                            expr.Variable(
-                                "Z",
-                            )
-                        ],
-                        location=Location((10, 20)),
+                        [],
+                        [],
+                        rty.Integer("C"),
+                        origin=tac.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ],
-                argument_types=[rty.Integer("C")],
+                [rty.Integer("C")],
             ),
             RecordFluxError,
-            r"Call with undefined type as function argument not yet supported",
+            r'IntCall with integer type "C" \(undefined\) as function argument not yet supported',
         ),
         (
             rty.Message("A"),
-            expr.Conversion(
+            tac.Conversion(
                 "T",
-                expr.Selected(
-                    expr.Variable("Z", type_=rty.Message("B")),
-                    "Z",
-                    type_=rty.OPAQUE,
-                ),
-                type_=rty.Message("A"),
-                location=Location((10, 20)),
+                tac.ObjFieldAccess("Z", "Z", rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.OPAQUE})),
+                rty.Message("A"),
+                origin=tac.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
             r'no refinement for field "Z" of message "B" leads to "A"',
         ),
         (
             rty.Message("A"),
-            expr.Variable(
+            tac.ObjVar(
                 "X",
-                type_=rty.Message("A"),
-                location=Location((10, 20)),
+                rty.Message("A"),
+                origin=tac.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r'referencing assignment target "X" of type message in expression not yet supported',
         ),
         (
             rty.Message("A"),
-            expr.Variable(
+            tac.ObjVar(
                 "Y",
-                type_=rty.Message("A"),
-                location=Location((10, 20)),
+                rty.Message("A"),
+                origin=tac.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
-            r'Variable with message type "A" in assignment not yet supported',
+            r'ObjVar with message type "A" in assignment not yet supported',
         ),
         (
-            rty.Undefined(),
-            expr.UndefinedExpr(location=Location((10, 20))),
+            rty.Message("A"),
+            UnknownExpr(
+                origin=tac.ConstructedOrigin("", Location((10, 20))),
+            ),
             FatalError,
-            r"unexpected UndefinedExpr with undefined type in assignment",
+            r'unexpected expression "UnknownExpr" with message type "T" in assignment',
+        ),
+        (
+            rty.Message("A"),
+            tac.Head(
+                "X",
+                rty.Sequence("B", rty.OPAQUE),
+                origin=tac.ConstructedOrigin("", Location((10, 20))),
+            ),
+            FatalError,
+            r'unexpected sequence element type sequence type "__INTERNAL__::Opaque" with element'
+            r' integer type "Byte" \(0 .. 255\) for "X\'Head" in assignment of "X"',
         ),
     ],
 )
 def test_session_assign_error(
     type_: rty.Type,
-    expression: expr.Expr,
+    expression: tac.Expr,
     error_type: type[BaseError],
     error_msg: str,
 ) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
-    alloc_id = Location(start=(1, 1))
+    alloc_id = Location((1, 1))
 
     allocator._allocation_slots[alloc_id] = 1
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         session_generator._assign(
-            ID("X", location=Location((10, 20))),
+            ID("X", Location((10, 20))),
             type_,
             expression,
-            ExceptionHandler(set(), State("S", exception_transition=Transition("E")), []),
+            ExceptionHandler(
+                tac.State(
+                    "S",
+                    [],
+                    tac.Transition("E", tac.ComplexExpr([], tac.BoolVal(True)), None, None),
+                    [],
+                    None,
+                    None,
+                ),
+                [],
+                lambda: None,
+            ),
             lambda x: False,
             ID("State"),
             alloc_id=alloc_id,
@@ -1715,36 +1691,46 @@ def test_session_assign_error(
     "append, error_type, error_msg",
     [
         (
-            stmt.Append(
+            tac.Append(
                 "L",
-                expr.Variable("X", type_=rty.Message("A"), location=Location((10, 20))),
-                type_=rty.Sequence("B", rty.Message("A")),
+                tac.ObjVar(
+                    "X",
+                    rty.Message("A"),
+                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                ),
+                rty.Sequence("B", rty.Message("A")),
             ),
             RecordFluxError,
-            r'Variable with message type "A" in Append statement not yet supported',
+            r'ObjVar with message type "A" in Append statement not yet supported',
         ),
         (
-            stmt.Append(
+            tac.Append(
                 "L",
-                expr.Variable("X", location=Location((10, 20))),
-                type_=rty.Sequence("B", rty.Undefined()),
+                tac.ObjVar("X", MSG_TY, origin=tac.ConstructedOrigin("", Location((10, 20)))),
+                rty.Sequence("B", rty.Undefined()),
             ),
             FatalError,
             r"unexpected element type undefined type in Append statement",
         ),
         (
-            stmt.Append(
+            tac.Append(
                 "L",
-                expr.Call("X", type_=rty.Integer("A"), location=Location((10, 20))),
-                type_=rty.Sequence("B", rty.Integer("A")),
+                tac.IntCall(
+                    "X",
+                    [],
+                    [],
+                    rty.Integer("A"),
+                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                ),
+                rty.Sequence("B", rty.Integer("A")),
             ),
             RecordFluxError,
-            r'Call with integer type "A" \(undefined\) in Append statement not yet supported',
+            r'IntCall with integer type "A" \(undefined\) in Append statement not yet supported',
         ),
     ],
 )
 def test_session_append_error(
-    append: stmt.Append, error_type: type[BaseError], error_msg: str
+    append: tac.Append, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -1753,7 +1739,18 @@ def test_session_append_error(
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         session_generator._append(
             append,
-            ExceptionHandler(set(), State("S", exception_transition=Transition("E")), []),
+            ExceptionHandler(
+                tac.State(
+                    "S",
+                    [],
+                    tac.Transition("E", tac.ComplexExpr([], tac.BoolVal(True)), None, None),
+                    [],
+                    None,
+                    None,
+                ),
+                [],
+                lambda: None,
+            ),
             lambda x: False,
             ID("State"),
         )
@@ -1763,17 +1760,20 @@ def test_session_append_error(
     "read, error_type, error_msg",
     [
         (
-            stmt.Read(
+            tac.Read(
                 "L",
-                expr.Call("X", type_=rty.Message("A"), location=Location((10, 20))),
-                type_=rty.Message("A"),
+                tac.EnumLit(
+                    "E",
+                    rty.Enumeration("A", [ID("E")]),
+                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                ),
             ),
             RecordFluxError,
-            r'Call with message type "A" in Read statement not yet supported',
+            r'EnumLit with enumeration type "A" in Read statement not yet supported',
         ),
     ],
 )
-def test_session_read_error(read: stmt.Read, error_type: type[BaseError], error_msg: str) -> None:
+def test_session_read_error(read: tac.Read, error_type: type[BaseError], error_msg: str) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
@@ -1789,19 +1789,20 @@ def test_session_read_error(read: stmt.Read, error_type: type[BaseError], error_
     "write, error_type, error_msg",
     [
         (
-            stmt.Write(
+            tac.Write(
                 "L",
-                expr.Call("X", type_=rty.Message("A"), location=Location((10, 20))),
-                type_=rty.Message("A"),
+                tac.EnumLit(
+                    "E",
+                    rty.Enumeration("A", [ID("E")]),
+                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                ),
             ),
             RecordFluxError,
-            r'Call with message type "A" in Write statement not yet supported',
+            r'EnumLit with enumeration type "A" in Write statement not yet supported',
         ),
     ],
 )
-def test_session_write_error(
-    write: stmt.Write, error_type: type[BaseError], error_msg: str
-) -> None:
+def test_session_write_error(write: tac.Write, error_type: type[BaseError], error_msg: str) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
@@ -1814,223 +1815,81 @@ def test_session_write_error(
     "expression, expected",
     [
         (
-            expr.And(expr.Variable("X"), expr.Variable("Y")),
-            expr.AndThen(expr.Variable("X"), expr.Variable("Y")),
-        ),
-        (
-            expr.Or(expr.Variable("X"), expr.Variable("Y")),
-            expr.OrElse(expr.Variable("X"), expr.Variable("Y")),
-        ),
-        (
-            expr.Selected(expr.Variable("X", type_=rty.Message("P::M")), "Y"),
-            expr.Call("P::M::Get_Y", [expr.Variable("X_Ctx")]),
-        ),
-        (
-            expr.Valid(expr.Variable("X", type_=rty.Message("P::M"))),
-            expr.Call("P::M::Well_Formed_Message", [expr.Variable("X_Ctx")]),
-        ),
-        (
-            expr.Valid(expr.Variable("X", type_=rty.Sequence("P::S", rty.Message("P::M")))),
-            expr.Call("P.S.Valid", [expr.Variable("X_Ctx")]),
-        ),
-        (
-            expr.Valid(
-                expr.Selected(
-                    expr.Variable("X", type_=rty.Message("P::M")), "Y", type_=rty.Integer("A")
-                )
+            tac.IntIfExpr(
+                tac.BoolVar("X"),
+                tac.ComplexIntExpr([], tac.IntVar("Y", rty.Integer("I"))),
+                tac.ComplexIntExpr([], tac.IntVal(1)),
+                rty.Integer("I"),
             ),
-            expr.Call("P::M::Valid", [expr.Variable("X_Ctx"), expr.Variable("P::M::F_Y")]),
+            ada.If([(ada.Variable("X"), ada.Variable("Y"))], ada.Number(1)),
         ),
         (
-            expr.Valid(
-                expr.Selected(expr.Variable("X", type_=rty.Message("P::M")), "Y", type_=rty.OPAQUE)
+            tac.NamedAgg([("X", tac.IntVal(1)), ("Y", tac.BoolVal(False))]),
+            ada.NamedAggregate(("X", ada.Number(1)), ("Y", ada.Literal("False"))),
+        ),
+        (
+            tac.And(tac.BoolVar("X"), tac.BoolVar("Y")),
+            ada.AndThen(ada.Variable("X"), ada.Variable("Y")),
+        ),
+        (
+            tac.Or(tac.BoolVar("X"), tac.BoolVar("Y")),
+            ada.OrElse(ada.Variable("X"), ada.Variable("Y")),
+        ),
+        (
+            tac.Not(tac.BoolVar("X")),
+            ada.Not(ada.Variable("X")),
+        ),
+        (
+            tac.Equal(
+                tac.ObjVar("X", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                tac.EnumLit("P::E1", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             ),
-            expr.Call("P::M::Well_Formed", [expr.Variable("X_Ctx"), expr.Variable("P::M::F_Y")]),
-        ),
-        (
-            expr.Present(expr.Selected(expr.Variable("X", type_=rty.Message("P::M")), "Y")),
-            expr.Call("P::M::Present", [expr.Variable("X_Ctx"), expr.Variable("P::M::F_Y")]),
-        ),
-        (
-            expr.Aggregate(expr.Number(1)),
-            expr.NamedAggregate(
-                (
-                    str(expr.First(const.TYPES_INDEX)),
-                    expr.Val(const.TYPES_BYTE, expr.Number(1)),
-                )
+            ada.Equal(
+                ada.Variable("X"),
+                ada.NamedAggregate(("Known", ada.Literal("True")), ("Enum", ada.Literal("P::E1"))),
             ),
         ),
         (
-            expr.Aggregate(expr.Number(1), expr.Number(2)),
-            expr.Aggregate(
-                expr.Val(const.TYPES_BYTE, expr.Number(1)),
-                expr.Val(const.TYPES_BYTE, expr.Number(2)),
+            tac.NotEqual(
+                tac.EnumLit("P::E1", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                tac.ObjVar("X", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             ),
-        ),
-        (
-            expr.Equal(expr.Variable("X"), expr.Variable("Y")),
-            expr.Equal(expr.Variable("X"), expr.Variable("Y")),
-        ),
-        (
-            expr.NotEqual(expr.Variable("X"), expr.Variable("Y")),
-            expr.NotEqual(expr.Variable("X"), expr.Variable("Y")),
-        ),
-        (
-            expr.Equal(
-                expr.Variable("X", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
-                expr.Variable("Y", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+            ada.NotEqual(
+                ada.NamedAggregate(("Known", ada.Literal("True")), ("Enum", ada.Literal("P::E1"))),
+                ada.Variable("X"),
             ),
-            expr.Equal(expr.Variable("X"), expr.Variable("Y")),
-        ),
-        (
-            expr.NotEqual(
-                expr.Variable("X", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
-                expr.Variable("Y", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
-            ),
-            expr.NotEqual(expr.Variable("X"), expr.Variable("Y")),
-        ),
-        (
-            expr.Size(expr.Variable("X", type_=rty.Integer("P::I"))),
-            expr.Size(expr.Variable("X")),
-        ),
-        (
-            expr.Size(expr.Variable("X", type_=rty.Aggregate(rty.Integer("P::I")))),
-            expr.Size(expr.Variable("X")),
-        ),
-        (
-            expr.Size(expr.Variable("X", type_=rty.Message("P::M"))),
-            expr.Call("P::M::Size", [expr.Variable("X_Ctx")]),
-        ),
-        (
-            expr.Size(expr.Variable("X", type_=rty.Sequence("P::S", rty.Message("P::M")))),
-            expr.Call("P::S::Size", [expr.Variable("X_Ctx")]),
-        ),
-        (
-            expr.Size(expr.Selected(expr.Variable("X", type_=rty.Message("P::M")), "Y")),
-            expr.Call("P::M::Field_Size", [expr.Variable("X_Ctx"), expr.Variable("P::M::F_Y")]),
-        ),
-        (
-            expr.HasData(expr.Variable("X", type_=rty.Message("P::M"))),
-            expr.Greater(expr.Call("P::M::Byte_Size", [expr.Variable("X_Ctx")]), expr.Number(0)),
-        ),
-        (
-            expr.Opaque(expr.Variable("X", type_=rty.Message("P::M"))),
-            expr.Call("P::M::Data", [expr.Variable("X_Ctx")]),
-        ),
-        (
-            expr.Selected(expr.Variable("M", type_=rty.Message("P::M")), "F"),
-            expr.Call("P::M::Get_F", [expr.Variable("M_Ctx")]),
-        ),
-        (
-            expr.Selected(expr.Variable("M", type_=rty.Structure("P::M")), "F"),
-            expr.Selected(expr.Variable("M"), "F"),
         ),
     ],
 )
-def test_session_substitution(expression: expr.Expr, expected: expr.Expr) -> None:
+def test_session_to_ada_expr(expression: tac.Expr, expected: ada.Expr) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
 
-    assert expression.substituted(session_generator._substitution(lambda x: False)) == expected
-
-
-@pytest.mark.parametrize(
-    "expression, error_type, error_msg",
-    [
-        (
-            expr.Size(expr.Variable("X", location=Location((10, 20)))),
-            FatalError,
-            r"unexpected Variable with undefined type in Size attribute",
-        ),
-        (
-            expr.Size(expr.Call("X", type_=rty.AnyInteger(), location=Location((10, 20)))),
-            RecordFluxError,
-            r"Call with integer type in Size attribute not yet supported",
-        ),
-        (
-            expr.Opaque(expr.Call("X", type_=rty.AnyInteger(), location=Location((10, 20)))),
-            RecordFluxError,
-            r"Call with integer type in Opaque attribute not yet supported",
-        ),
-        (
-            expr.Opaque(expr.Variable("X", type_=rty.AnyInteger(), location=Location((10, 20)))),
-            RecordFluxError,
-            r"Variable with integer type in Opaque attribute not yet supported",
-        ),
-    ],
-)
-def test_session_substitution_error(
-    expression: expr.Expr, error_type: type[BaseError], error_msg: str
-) -> None:
-    session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
-    )
-    with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        expression.substituted(  # pragma: no branch
-            session_generator._substitution(lambda x: False)
-        )
+    assert session_generator._to_ada_expr(expression, lambda x: False) == expected
 
 
 @pytest.mark.parametrize(
     "relation, left, right, expected",
     [
-        (expr.Equal, expr.Variable("X"), expr.TRUE, expr.Variable("X")),
-        (expr.Equal, expr.Variable("X"), expr.FALSE, expr.Not(expr.Variable("X"))),
-        (expr.NotEqual, expr.Variable("X"), expr.TRUE, expr.Not(expr.Variable("X"))),
-        (expr.NotEqual, expr.Variable("X"), expr.FALSE, expr.Variable("X")),
-        (
-            expr.Equal,
-            expr.Selected(
-                expr.Variable("X", type_=rty.Message("P::M")),
-                "Y",
-                type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True),
-            ),
-            expr.Variable("Z", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
-            expr.AndThen(
-                expr.Selected(expr.Call("P::M::Get_Y", [expr.Variable("X_Ctx")]), "Known"),
-                expr.Equal(
-                    expr.Selected(expr.Call("P::M::Get_Y", [expr.Variable("X_Ctx")]), "Enum"),
-                    expr.Variable("Z"),
-                ),
-            ),
-        ),
-        (
-            expr.NotEqual,
-            expr.Selected(
-                expr.Variable("X", type_=rty.Message("P::M")),
-                "Y",
-                type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True),
-            ),
-            expr.Variable("Z", type_=rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
-            expr.AndThen(
-                expr.Selected(expr.Call("P::M::Get_Y", [expr.Variable("X_Ctx")]), "Known"),
-                expr.NotEqual(
-                    expr.Selected(expr.Call("P::M::Get_Y", [expr.Variable("X_Ctx")]), "Enum"),
-                    expr.Variable("Z"),
-                ),
-            ),
-        ),
+        (tac.Equal, tac.BoolVar("X"), tac.BoolVal(True), ada.Variable("X")),
+        (tac.Equal, tac.BoolVar("X"), tac.BoolVal(False), ada.Not(ada.Variable("X"))),
+        (tac.NotEqual, tac.BoolVar("X"), tac.BoolVal(True), ada.Not(ada.Variable("X"))),
+        (tac.NotEqual, tac.BoolVar("X"), tac.BoolVal(False), ada.Variable("X")),
     ],
 )
-def test_session_substitution_equality(
-    relation: Callable[[expr.Expr, expr.Expr], expr.Expr],
-    left: expr.Expr,
-    right: expr.Expr,
-    expected: expr.Expr,
+def test_session_to_ada_expr_equality(
+    relation: Callable[[tac.Expr, tac.Expr], tac.Expr],
+    left: tac.Expr,
+    right: tac.Expr,
+    expected: ada.Expr,
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
 
-    assert (
-        relation(left, right).substituted(session_generator._substitution(lambda x: False))
-        == expected
-    )
-    assert (
-        relation(right, left).substituted(session_generator._substitution(lambda x: False))
-        == expected
-    )
+    assert session_generator._to_ada_expr(relation(left, right), lambda x: False) == expected
+    assert session_generator._to_ada_expr(relation(right, left), lambda x: False) == expected
 
 
 def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:

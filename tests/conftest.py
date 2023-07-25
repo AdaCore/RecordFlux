@@ -79,6 +79,16 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
             "    Actual:   " + re.sub(r"\n +", " ", str(left)),
             "    Expected: " + re.sub(r"\n +", " ", str(right)),
         ]
+    if isinstance(left, tac.ComplexExpr) and isinstance(right, tac.ComplexExpr) and op == "==":
+        return [
+            "ComplexExpr instances",
+            "repr:",
+            *[f"    {l}" for l in ("Actual:   " + repr(left)).split("\n")],
+            *[f"    {l}" for l in ("Expected: " + repr(right)).split("\n")],
+            "str:",
+            "    Actual:   " + re.sub(r"\n +", " ", str(left)),
+            "    Expected: " + re.sub(r"\n +", " ", str(right)),
+        ]
     return []
 
 

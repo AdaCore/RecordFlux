@@ -28,12 +28,17 @@ package Test is
                and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
                and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
          goto null -- §S-S-T-N
+      exception
+         goto Error -- §S-S-E
       end Start;
 
       state Process is
+         Option_Type : Universal::Option_Type; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
          Option_Data : Option_Data; -- §S-S-D-V-T-M, §S-S-D-V-E-N
          Local_Length : Universal::Length; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
       begin
+         -- §S-S-A-A-L
+         Option_Type := Universal::OT_Data;
          -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
          Option_Data := Get_Option_Data (Message.Data);
          -- §S-S-A-A-S
@@ -41,14 +46,19 @@ package Test is
          -- §S-S-A-RS
          Option'Reset;
          -- §S-S-A-MFA-L
-         Option.Option_Type := Universal::OT_Data;
+         Option.Option_Type := Option_Type;
          -- §S-S-A-MFA-S
          Option.Length := Option_Data.Length;
          -- §S-S-A-MFA-S
          Option.Data := Option_Data.Data;
       transition
-         goto Reply -- §S-S-T-ME
-            if Local_Length > 0
+         goto Reply
+            if Local_Length > 0 -- §S-S-T-ME
+               and Option_Type /= Universal::OT_Null -- §S-S-T-ME, §S-S-T-V, §S-S-T-L
+               and Option_Type = Option.Option_Type -- §S-S-T-ME, §S-S-T-S, §S-S-T-L
+               and Option_Data'Valid -- §S-S-T-VAT
+               and Option_Data.Length'Size = Universal::Length'Size -- §S-S-T-ME, §S-S-T-S, §S-S-T-SAT
+               and Option.Data'Size = Option_Data.Data'Size -- §S-S-T-ME, §S-S-T-S, §S-S-T-SAT
          goto null -- §S-S-T-N
       exception
          goto null -- §S-S-E

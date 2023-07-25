@@ -65,11 +65,6 @@ is
       pragma Assert (Check_Message_Invariant);
       -- tests/feature/session_functions_opaque/test.rflx:23:10
       Universal.Message.Reset (Message_Ctx);
-      if Universal.Message.Available_Space (Message_Ctx, Universal.Message.F_Message_Type) < 40 then
-         Ctx.P.Next_State := S_Error;
-         pragma Assert (Check_Message_Invariant);
-         goto Finalize_Check_Message;
-      end if;
       pragma Assert (Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Data);
       pragma Assert (Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Length));
@@ -137,14 +132,6 @@ is
       Universal.Options.Initialize (Message_Sequence_Ctx, Message_Sequence_Buffer);
       pragma Assert (Check_Message_Sequence_Invariant);
       -- tests/feature/session_functions_opaque/test.rflx:39:10
-      if
-         not Universal.Options.Has_Element (Message_Sequence_Ctx)
-         or Universal.Options.Available_Space (Message_Sequence_Ctx) < 40
-      then
-         Ctx.P.Next_State := S_Error;
-         pragma Assert (Check_Message_Sequence_Invariant);
-         goto Finalize_Check_Message_Sequence;
-      end if;
       declare
          RFLX_Element_Message_Sequence_Ctx : Universal.Option.Context;
       begin

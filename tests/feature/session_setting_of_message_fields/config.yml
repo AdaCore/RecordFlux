@@ -7,6 +7,6 @@ sequence: |
   Write Channel: 1 0 1 0
   State: Start
   State: Process
-  Read Channel: 1 0 1 2
+  Read Channel: 1 0 1 65
   State: Reply
 prove:

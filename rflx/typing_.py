@@ -124,13 +124,6 @@ class Enumeration(NamedType):
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
 
 
-BOOLEAN = Enumeration(
-    const.BUILTINS_PACKAGE * "Boolean",
-    [ID("False"), ID("True")],
-    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
-)
-
-
 @attr.s(frozen=True)
 class AnyInteger(Any):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
@@ -182,7 +175,7 @@ class UniversalInteger(BoundedInteger):
 
 
 @attr.s(frozen=True)
-class Integer(BoundedInteger):
+class Integer(BoundedInteger, NamedType):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
     identifier: ID = attr.ib(converter=ID)
     bounds: Bounds = attr.ib(Bounds(None, None))
@@ -192,6 +185,7 @@ class Integer(BoundedInteger):
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}" ({self.bounds})'
 
     def is_compatible_strong(self, other: Type) -> bool:
+        # TODO(eng/recordflux/RecordFlux#1352): Fix determination of compatibility
         return (
             self == other
             or other == Any()
@@ -200,6 +194,7 @@ class Integer(BoundedInteger):
         )
 
     def common_type(self, other: Type) -> Type:
+        # TODO(eng/recordflux/RecordFlux#1352): Fix determination of common type
         if isinstance(other, UndefinedInteger):
             return UndefinedInteger()
         if isinstance(other, UniversalInteger):
@@ -215,8 +210,10 @@ class Integer(BoundedInteger):
         return Undefined()
 
 
+@attr.s(frozen=True)
 class Composite(Any):
     DESCRIPTIVE_NAME: ClassVar[str] = "composite type"
+    element: Type = attr.ib()
 
 
 @attr.s(frozen=True)
@@ -429,3 +426,28 @@ def _undefined_type(location: Optional[Location], description: str = "") -> Reco
         ],
     )
     return error
+
+
+BOOLEAN = Enumeration(
+    const.BUILTINS_PACKAGE * "Boolean",
+    [ID("False"), ID("True")],
+    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+)
+
+# Assumes a Bit_Length type semantically equivalent to:
+#
+# type Bit_Length is range 0 .. Integer'Last * 8.
+#
+# Potentially failing range checks will not be detected in the model, if a custom Bit_Length type
+# with different bounds is used (eng/recordflux/RecordFlux#317).
+BIT_LENGTH = Integer(
+    const.BUILTINS_PACKAGE * "Bit_Length",
+    Bounds(0, (2**31 - 1) * 8),
+    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+)
+
+BASE_INTEGER = Integer(
+    const.BUILTINS_PACKAGE * "Base_Integer",
+    Bounds(0, 2**const.MAX_SCALAR_SIZE - 1),
+    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+)

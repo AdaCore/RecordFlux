@@ -68,7 +68,9 @@ class VariableAssignment(Assignment):
         ) + self.expression.check_type(statement_type)
 
     def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
-        return self.expression.to_tac(self.identifier, variable_id)
+        assert isinstance(self.type_, rty.NamedType)
+        expression = self.expression.to_tac(variable_id)
+        return [*expression.stmts, tac.Assign(self.identifier, expression.expr, self.type_, self)]
 
 
 class MessageFieldAssignment(Assignment):
@@ -135,10 +137,11 @@ class MessageFieldAssignment(Assignment):
 
     def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
         assert isinstance(self.type_, rty.Message)
-        expression_stmts, expression_expr = _to_tac_basic_expr(self.expression, variable_id)
+
+        expression = self.expression.to_tac(variable_id)
         return [
-            *expression_stmts,
-            tac.FieldAssign(self.message, self.field, expression_expr, self.type_, self),
+            *expression.stmts,
+            tac.FieldAssign(self.message, self.field, expression.expr, self.type_, self),
         ]
 
 
@@ -225,10 +228,10 @@ class Append(ListAttributeStatement):
 
     def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
         assert isinstance(self.type_, rty.Sequence)
-        parameter_stmts, parameter_expr = _to_tac_basic_expr(self.parameter, variable_id)
+        parameter = self.parameter.to_tac(variable_id)
         return [
-            *parameter_stmts,
-            tac.Append(self.identifier, parameter_expr, self.type_, self),
+            *parameter.stmts,
+            tac.Append(self.identifier, parameter.expr, self.type_, self),
         ]
 
 
@@ -253,10 +256,10 @@ class Extend(ListAttributeStatement):
 
     def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
         assert isinstance(self.type_, rty.Sequence)
-        parameter_stmts, parameter_expr = _to_tac_basic_expr(self.parameter, variable_id)
+        parameter = self.parameter.to_tac(variable_id)
         return [
-            *parameter_stmts,
-            tac.Extend(self.identifier, parameter_expr, self.type_, self),
+            *parameter.stmts,
+            tac.Extend(self.identifier, parameter.expr, self.type_, self),
         ]
 
 
@@ -342,9 +345,9 @@ class Reset(AttributeStatement):
         associations = {}
         stmts = []
         for i, e in self.associations.items():
-            e_stmts, e_expr = _to_tac_basic_expr(e, variable_id)
-            associations[i] = e_expr
-            stmts.extend(e_stmts)
+            e_tac = e.to_tac(variable_id)
+            associations[i] = e_tac.expr
+            stmts.extend(e_tac.stmts)
         return [
             *stmts,
             tac.Reset(self.identifier, associations, self.type_, self),
@@ -381,7 +384,7 @@ class ChannelAttributeStatement(AttributeStatement):
         parameter_stmts, parameter_expr = _to_tac_basic_expr(self.parameter, variable_id)
         return [
             *parameter_stmts,
-            getattr(tac, self.__class__.__name__)(self.identifier, parameter_expr, self.location),
+            getattr(tac, self.__class__.__name__)(self.identifier, parameter_expr, self),
         ]
 
     @abstractmethod

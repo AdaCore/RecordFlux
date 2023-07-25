@@ -16,7 +16,11 @@ package Test is
             if M_R'Valid = True -- §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
                and M_R.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
                and M_R.Length = 2 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+               and M_R.Length'Valid -- §S-S-T-FVAT
+               and M_R.Data'Present -- §S-S-T-FPAT
          goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
       end Start;
 
       state Process is

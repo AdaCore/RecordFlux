@@ -5,6 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Generator, Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Final, Optional
 
 from rflx import expression as expr, tac, typing_ as rty
@@ -45,6 +46,18 @@ class Transition(Base):
         )
         return f"goto {target}{with_aspects}{if_condition}"
 
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.Transition:
+        condition = self.condition.to_tac(variable_id)
+        return tac.Transition(
+            self.target,
+            tac.ComplexExpr(
+                condition.stmts,
+                condition.expr,
+            ),
+            self.description,
+            self.location,
+        )
+
 
 class State(Base):
     def __init__(  # noqa: PLR0913
@@ -71,8 +84,6 @@ class State(Base):
         self.declarations = {d.identifier: d for d in declarations} if declarations else {}
         self.description = description
         self.location = location
-
-        self._actions_ir: list[tac.Stmt] = []
 
         self._normalize()
 
@@ -114,39 +125,58 @@ class State(Base):
 
     @property
     def has_exceptions(self) -> bool:
+        # TODO(eng/recordflux/RecordFlux#861): Move into IR
+        # The need for exception transitions should be made dependent on the presence of asserts in
+        # the IR.
+        def has_expression_exceptions(expression: expr.Expr) -> bool:
+            return bool(
+                expression.findall(
+                    lambda x: isinstance(
+                        x,
+                        (
+                            expr.Selected,
+                            expr.Head,
+                            expr.Comprehension,
+                            expr.MessageAggregate,
+                            expr.DeltaMessageAggregate,
+                            expr.Conversion,
+                            expr.Opaque,
+                            expr.Add,
+                            expr.Sub,
+                            expr.Mul,
+                            expr.Div,
+                            expr.Mod,
+                            expr.Pow,
+                        ),
+                    )
+                )
+            )
+
         return any(
             isinstance(a, (stmt.Append, stmt.Extend, stmt.MessageFieldAssignment))
             or (
                 isinstance(a, stmt.VariableAssignment)
-                and (
-                    isinstance(a.type_, rty.Message)
-                    or (
-                        a.expression.findall(
-                            lambda x: isinstance(
-                                x,
-                                (
-                                    expr.Selected,
-                                    expr.Head,
-                                    expr.Comprehension,
-                                    expr.MessageAggregate,
-                                    expr.DeltaMessageAggregate,
-                                    expr.Conversion,
-                                    expr.Opaque,
-                                ),
-                            )
-                        )
-                    )
-                )
+                and (isinstance(a.type_, rty.Message) or (has_expression_exceptions(a.expression)))
             )
             for a in self._actions
-        )
+        ) or any(has_expression_exceptions(t.condition) for t in self._transitions)
 
     def optimize(self) -> None:
         self._optimize_structures()
 
-    def create_ir(self, variable_id: Generator[ID, None, None], workers: int) -> None:
-        actions_ir = tac.to_ssa([s for a in self._actions for s in a.to_tac(variable_id)])
-        self._actions_ir = tac.add_checks(actions_ir, tac.ProofManager(workers), variable_id)
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.State:
+        actions = [s for a in self._actions for s in a.to_tac(variable_id)]
+        transitions = [t.to_tac(variable_id) for t in self._transitions]
+        declarations = [d.to_tac(variable_id) for d in self.declarations.values()]
+
+        return tac.State(
+            self.identifier,
+            transitions,
+            (self.exception_transition.to_tac(variable_id) if self.exception_transition else None),
+            [*declarations, *actions],
+            self.description,
+            self.location,
+        )
 
     def _normalize(self) -> None:
         self._normalize_transitions()
@@ -380,10 +410,6 @@ class AbstractSession(TopLevelDeclaration):
     def initial_state(self) -> State:
         return self.states[0]
 
-    @property
-    def literals(self) -> Mapping[ID, mty.Type]:
-        return self._enum_literals
-
     def _normalize(self) -> None:
         """
         Normalize all expressions of the session.
@@ -463,7 +489,21 @@ class Session(AbstractSession):
         self.error.propagate()
 
         self._optimize()
-        self._create_ir()
+        self.to_tac()
+
+    @lru_cache
+    def to_tac(self) -> tac.Session:
+        variable_id = id_generator()
+        return tac.Session(
+            self.identifier,
+            [state.to_tac(variable_id) for state in self.states],
+            [d.to_tac(variable_id) for d in self.declarations.values()],
+            [p.to_tac() for p in self.parameters.values()],
+            self.types,
+            self.location,
+            variable_id,
+            self._workers,
+        )
 
     def _optimize(self) -> None:
         for state in self.states:
@@ -860,10 +900,6 @@ class Session(AbstractSession):
             self._validate_transitions(s, declarations)
 
         self._validate_usage()
-
-    def _create_ir(self) -> None:
-        for state in self.states:
-            state.create_ir(id_generator(), self._workers)
 
 
 class UnprovenSession(AbstractSession):

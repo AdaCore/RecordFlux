@@ -740,6 +740,8 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
                     and Msg.Message_Type = MT_Data
                     and Msg.Length = 1
                  goto null
+              exception
+                 goto null
               end Start;
 
               state Reply is

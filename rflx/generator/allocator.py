@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from itertools import zip_longest
 from typing import Optional
 
-from rflx import expression as expr, typing_ as rty
+from rflx import tac, typing_ as rty
 from rflx.ada import (
     Add,
     And,
@@ -45,7 +45,6 @@ from rflx.ada import (
 from rflx.error import Location
 from rflx.identifier import ID
 from rflx.integration import Integration
-from rflx.model import Session, State, declaration as decl, statement as stmt
 
 from . import const
 
@@ -63,7 +62,7 @@ class NumberedSlotInfo(SlotInfo):
 
 
 class AllocatorGenerator:
-    def __init__(self, session: Session, integration: Integration, prefix: str = "") -> None:
+    def __init__(self, session: tac.Session, integration: Integration, prefix: str = "") -> None:
         self._session = session
         self._prefix = prefix
         self._declaration_context: list[ContextItem] = []
@@ -338,21 +337,21 @@ class AllocatorGenerator:
 
     def _allocate_global_slots(self) -> list[SlotInfo]:
         slots = []
-        for d in self._session.declarations.values():
-            if isinstance(d, decl.VariableDeclaration) and self._needs_allocation(d.type_):
+        for d in self._session.declarations:
+            if self._needs_allocation(d.type_):
                 assert d.location is not None
                 slots.append(SlotInfo(self.get_size(d.identifier), [d.location]))
         return slots
 
     @staticmethod
-    def _scope(state: State, var_id: ID) -> Optional[ID]:
+    def _scope(state: tac.State, var_id: ID) -> Optional[ID]:
         """
         Return the scope of the variable var_id.
 
         Return the ID of the state if var_id was defined in that state, otherwise
         return None to indicate that var_id is a global variable of the session.
         """
-        if var_id in state.declarations.keys():
+        if any(var_id == d.identifier for d in state.declarations):
             return state.identifier.name
         return None
 
@@ -378,27 +377,24 @@ class AllocatorGenerator:
         alloc_requirements_per_state: list[list[AllocationRequirement]] = []
         for s in self._session.states:
             state_requirements = []
-            for d in s.declarations.values():
-                if isinstance(d, decl.VariableDeclaration) and self._needs_allocation(d.type_):
+            for a in s.actions:
+                if isinstance(a, tac.VarDecl) and self._needs_allocation(a.type_):
                     state_requirements.append(
                         AllocationRequirement(
-                            d.location, self.get_size(d.identifier, s.identifier.name)
+                            a.location, self.get_size(a.identifier, s.identifier.name)
                         )
                     )
-            for a in s.actions:
                 if (
-                    isinstance(a, stmt.VariableAssignment)
-                    and isinstance(a.expression, expr.Comprehension)
+                    isinstance(a, tac.Assign)
+                    and isinstance(a.expression, tac.Comprehension)
                     and isinstance(a.expression.sequence.type_, rty.Sequence)
                     and isinstance(a.expression.sequence.type_.element, rty.Message)
-                    and isinstance(a.expression.sequence, (expr.Selected, expr.Variable))
+                    and isinstance(a.expression.sequence, (tac.Var, tac.FieldAccess))
                 ):
-                    if isinstance(a.expression.sequence, expr.Selected) and isinstance(
-                        a.expression.sequence.prefix, expr.Variable
-                    ):
-                        identifier = a.expression.sequence.prefix.identifier
+                    if isinstance(a.expression.sequence, tac.FieldAccess):
+                        identifier = a.expression.sequence.message
                     else:
-                        assert isinstance(a.expression.sequence, expr.Variable)
+                        assert isinstance(a.expression.sequence, tac.Var)
                         identifier = a.expression.sequence.identifier
                     state_requirements.append(
                         AllocationRequirement(
@@ -406,20 +402,21 @@ class AllocatorGenerator:
                             self.get_size(identifier, self._scope(s, identifier)),
                         )
                     )
-                if isinstance(a, stmt.VariableAssignment) and isinstance(a.expression, expr.Head):
-                    if isinstance(a.expression.prefix, expr.Comprehension) and isinstance(
-                        a.expression.prefix.sequence, expr.Variable
-                    ):
-                        identifier = a.expression.prefix.sequence.identifier
-                    elif (
-                        isinstance(a.expression.prefix, expr.Comprehension)
-                        and isinstance(a.expression.prefix.sequence, expr.Selected)
-                        and isinstance(a.expression.prefix.sequence.prefix, expr.Variable)
-                    ):
-                        identifier = a.expression.prefix.sequence.prefix.identifier
+                if isinstance(a, tac.Assign) and isinstance(a.expression, tac.Head):
+                    identifier = a.expression.prefix
+                    state_requirements.append(
+                        AllocationRequirement(
+                            a.location,
+                            self.get_size(identifier, self._scope(s, identifier)),
+                        )
+                    )
+                if isinstance(a, tac.Assign) and isinstance(a.expression, tac.Find):
+                    if isinstance(a.expression.sequence, tac.Var):
+                        identifier = a.expression.sequence.identifier
+                    elif isinstance(a.expression.sequence, tac.FieldAccess):
+                        identifier = a.expression.sequence.message
                     else:
-                        assert isinstance(a.expression.prefix, expr.Variable)
-                        identifier = a.expression.prefix.identifier
+                        assert False
                     state_requirements.append(
                         AllocationRequirement(
                             a.location,

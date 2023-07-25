@@ -19,7 +19,7 @@ import z3
 from rflx import ada, tac, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
 
 MAX_LINE_LENGTH = 100
@@ -277,7 +277,7 @@ class Expr(DBC, Base):
         raise NotImplementedError
 
     @abstractmethod
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
     def check(self, facts: Optional[Sequence[Expr]] = None) -> Proof:
@@ -360,17 +360,9 @@ class Not(Expr):
             raise Z3TypeError("negating non-boolean term")
         return z3.Not(z3expr)
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexBoolExpr:
         inner_stmts, inner_expr = _to_tac_basic_bool(self.expr, variable_id)
-        return [
-            *inner_stmts,
-            tac.Assign(
-                target,
-                tac.Not(inner_expr, origin=self),
-                rty.BOOLEAN,
-                origin=self,
-            ),
-        ]
+        return tac.ComplexBoolExpr(inner_stmts, tac.Not(inner_expr, origin=self))
 
 
 class BinExpr(Expr):
@@ -644,45 +636,35 @@ class BoolAssExpr(AssExpr):
     def symbol(self) -> str:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexBoolExpr:
         if len(self.terms) == 0:
-            return [tac.Assign(target, tac.BoolVal(True), rty.BOOLEAN, origin=self)]
+            return tac.ComplexBoolExpr([], tac.BoolVal(value=True, origin=self))
 
         if len(self.terms) == 1:
             first_stmts, first_expr = _to_tac_basic_bool(self.terms[0], variable_id)
-            return [
-                *first_stmts,
-                tac.Assign(target, first_expr, rty.BOOLEAN, origin=self),
-            ]
+            return tac.ComplexBoolExpr(first_stmts, first_expr)
 
         if len(self.terms) == 2:
             left_stmts, left_expr = _to_tac_basic_bool(self.terms[0], variable_id)
             right_stmts, right_expr = _to_tac_basic_bool(self.terms[1], variable_id)
-            return [
-                *left_stmts,
-                *right_stmts,
-                tac.Assign(
-                    target,
-                    getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
-                    rty.BOOLEAN,
-                    origin=self,
-                ),
-            ]
+            return tac.ComplexBoolExpr(
+                [*left_stmts, *right_stmts],
+                getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
+            )
 
-        right_id = next(variable_id)
         left_stmts, left_expr = _to_tac_basic_bool(self.terms[0], variable_id)
-        return [
-            *(self.__class__(*self.terms[1:]).to_tac(right_id, variable_id)),
-            *left_stmts,
-            tac.Assign(
-                target,
-                getattr(tac, self.__class__.__name__)(
-                    left_expr, tac.BoolVar(right_id), origin=self
-                ),
-                rty.BOOLEAN,
-                origin=self,
-            ),
-        ]
+        right_id = next(variable_id)
+        right_origin = self.__class__(*self.terms[1:])
+        right = right_origin.to_tac(variable_id)
+        return tac.ComplexBoolExpr(
+            [
+                *right.stmts,
+                tac.VarDecl(right_id, rty.BOOLEAN, None, origin=right_origin),
+                tac.Assign(right_id, right.expr, rty.BOOLEAN, origin=right_origin),
+                *left_stmts,
+            ],
+            getattr(tac, self.__class__.__name__)(left_expr, tac.BoolVar(right_id), origin=self),
+        )
 
 
 class And(BoolAssExpr):
@@ -889,15 +871,8 @@ class Number(Expr):
     def z3expr(self) -> z3.ArithRef:
         return z3.IntVal(self.value)
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
-        return [
-            tac.Assign(
-                target,
-                tac.IntVal(self.value, origin=self),
-                self.type_,
-                origin=self,
-            )
-        ]
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexIntExpr:
+        return tac.ComplexIntExpr([], tac.IntVal(self.value, origin=self))
 
 
 class MathAssExpr(AssExpr):
@@ -912,38 +887,23 @@ class MathAssExpr(AssExpr):
             error += t.check_type_instance(rty.AnyInteger)
         return error
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexIntExpr:
         if len(self.terms) == 0:
-            return [
-                tac.Assign(
-                    target,
-                    tac.IntVal(0, origin=self),
-                    rty.UniversalInteger(),
-                    origin=self,
-                )
-            ]
+            return tac.ComplexIntExpr([], tac.IntVal(0, origin=self))
 
         assert isinstance(self.type_, rty.AnyInteger)
 
         if len(self.terms) == 1:
             first_stmts, first_expr = _to_tac_basic_int(self.terms[0], variable_id)
-            return [
-                *first_stmts,
-                tac.Assign(target, first_expr, self.type_, origin=self),
-            ]
+            return tac.ComplexIntExpr(first_stmts, first_expr)
 
         if len(self.terms) == 2:
             left_stmts, left_expr = _to_tac_basic_int(self.terms[0], variable_id)
             right_stmts, right_expr = _to_tac_basic_int(self.terms[1], variable_id)
-            return [
-                *left_stmts,
-                *right_stmts,
-                tac.Assign(
-                    target,
-                    getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
-                    self.type_,
-                ),
-            ]
+            return tac.ComplexIntExpr(
+                [*left_stmts, *right_stmts],
+                getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
+            )
 
         right_id = next(variable_id)
         left_stmts, left_expr = _to_tac_basic_int(self.terms[0], variable_id)
@@ -951,19 +911,21 @@ class MathAssExpr(AssExpr):
 
         assert isinstance(right_origin.type_, rty.AnyInteger)
 
-        return [
-            *(right_origin.to_tac(right_id, variable_id)),
-            *left_stmts,
-            tac.Assign(
-                target,
-                getattr(tac, self.__class__.__name__)(
-                    left_expr,
-                    tac.IntVar(right_id, right_origin.type_, origin=right_origin),
-                    origin=self,
-                ),
-                self.type_,
+        right = right_origin.to_tac(variable_id)
+
+        return tac.ComplexIntExpr(
+            [
+                *right.stmts,
+                tac.VarDecl(right_id, tac.to_integer(self.type_), None, origin=right_origin),
+                tac.Assign(right_id, right.expr, tac.to_integer(self.type_), origin=right_origin),
+                *left_stmts,
+            ],
+            getattr(tac, self.__class__.__name__)(
+                left_expr,
+                tac.IntVar(right_id, right_origin.type_, origin=right_origin),
+                origin=self,
             ),
-        ]
+        )
 
 
 class Add(MathAssExpr):
@@ -1066,21 +1028,15 @@ class MathBinExpr(BinExpr):
 
         return error
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexIntExpr:
         assert isinstance(self.type_, rty.AnyInteger)
 
         left_stmts, left_expr = _to_tac_basic_int(self.left, variable_id)
         right_stmts, right_expr = _to_tac_basic_int(self.right, variable_id)
-        return [
-            *left_stmts,
-            *right_stmts,
-            tac.Assign(
-                target,
-                getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
-                self.type_,
-                origin=self,
-            ),
-        ]
+        return tac.ComplexIntExpr(
+            [*left_stmts, *right_stmts],
+            getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
+        )
 
 
 class Sub(MathBinExpr):
@@ -1290,7 +1246,7 @@ class TypeName(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
 
@@ -1339,23 +1295,16 @@ class Literal(Name):
             return z3.BoolVal(False)
         return z3.Int(self.name)
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         assert isinstance(self.type_, rty.Enumeration)
 
         if self.type_ == rty.BOOLEAN:
             if self.identifier == ID("True"):
-                return [tac.Assign(target, tac.BoolVal(True), self.type_, origin=self)]
+                return tac.ComplexExpr([], tac.BoolVal(value=True, origin=self))
             assert self.identifier == ID("False")
-            return [tac.Assign(target, tac.BoolVal(False), self.type_, origin=self)]
+            return tac.ComplexExpr([], tac.BoolVal(value=False, origin=self))
 
-        return [
-            tac.Assign(
-                target,
-                tac.EnumLit(self.name, self.type_, origin=self),
-                self.type_,
-                origin=self,
-            )
-        ]
+        return tac.ComplexExpr([], tac.EnumLit(self.name, self.type_, origin=self))
 
     def copy(
         self,
@@ -1422,36 +1371,17 @@ class Variable(Name):
             return -z3.Int(self.name)
         return z3.Int(self.name)
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         if self.type_ == rty.BOOLEAN:
-            return [
-                tac.Assign(
-                    target,
-                    tac.BoolVar(self.name, origin=self),
-                    rty.BOOLEAN,
-                    origin=self,
-                )
-            ]
+            return tac.ComplexBoolExpr([], tac.BoolVar(self.name, origin=self))
         if isinstance(self.type_, rty.Integer):
-            return [
-                tac.Assign(
-                    target,
-                    tac.IntVar(self.name, self.type_, self.negative, origin=self),
-                    self.type_,
-                    origin=self,
-                )
-            ]
+            return tac.ComplexIntExpr(
+                [], tac.IntVar(self.name, self.type_, self.negative, origin=self)
+            )
 
         assert isinstance(self.type_, rty.Any)
 
-        return [
-            tac.Assign(
-                target,
-                tac.ObjVar(self.name, self.type_, origin=self),
-                self.type_,
-                origin=self,
-            )
-        ]
+        return tac.ComplexExpr([], tac.ObjVar(self.name, self.type_, origin=self))
 
     def copy(
         self,
@@ -1530,32 +1460,17 @@ class Attribute(Name):
             return -z3.Int(self.representation)
         return z3.Int(self.representation)
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
         if isinstance(self.prefix, TypeName):
-            return [
-                tac.Assign(
-                    target,
-                    self._to_tac(self.prefix.identifier),
-                    self.type_,
-                    origin=self,
-                ),
-            ]
+            return tac.ComplexExpr([], self._to_tac(self.prefix.identifier))
 
         prefix_stmts, prefix_expr = _to_tac_basic_expr(self.prefix, variable_id)
 
         assert isinstance(prefix_expr, tac.Var)
 
-        return [
-            *prefix_stmts,
-            tac.Assign(
-                target,
-                self._to_tac(prefix_expr.identifier),
-                self.type_,
-                origin=self,
-            ),
-        ]
+        return tac.ComplexExpr(prefix_stmts, self._to_tac(prefix_expr.identifier))
 
     @abstractmethod
     def _to_tac(self, prefix: ID) -> tac.Expr:
@@ -1567,11 +1482,29 @@ class Size(Attribute):
         super().__init__(prefix, negative)
         self.type_ = rty.UniversalInteger()
 
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+        assert isinstance(self.type_, rty.Any)
+
+        if isinstance(self.prefix, Selected):
+            assert isinstance(self.prefix.prefix.type_, rty.Compound)
+            assert isinstance(self.prefix.prefix, Variable)
+            return tac.ComplexExpr(
+                [],
+                tac.FieldSize(
+                    self.prefix.prefix.identifier,
+                    self.prefix.selector,
+                    self.prefix.prefix.type_,
+                ),
+            )
+
+        return super().to_tac(variable_id)
+
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        return tac.Size(prefix)
+        assert isinstance(self.prefix.type_, rty.Any)
+        return tac.Size(prefix, self.prefix.type_, self.negative, origin=self)
 
 
 class Length(Attribute):
@@ -1583,7 +1516,8 @@ class Length(Attribute):
         return self.prefix.check_type_instance(rty.Any)
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        return tac.Length(prefix)
+        assert isinstance(self.prefix.type_, rty.Any)
+        return tac.Length(prefix, self.prefix.type_, self.negative, origin=self)
 
 
 class First(Attribute):
@@ -1595,7 +1529,8 @@ class First(Attribute):
         return self.prefix.check_type_instance(rty.Any)
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        return tac.First(prefix)
+        assert isinstance(self.prefix.type_, rty.Any)
+        return tac.First(prefix, self.prefix.type_, self.negative, origin=self)
 
 
 class Last(Attribute):
@@ -1607,7 +1542,8 @@ class Last(Attribute):
         return self.prefix.check_type_instance(rty.Any)
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        return tac.Last(prefix)
+        assert isinstance(self.prefix.type_, rty.Any)
+        return tac.Last(prefix, self.prefix.type_, self.negative, origin=self)
 
 
 class ValidChecksum(Attribute):
@@ -1626,7 +1562,8 @@ class ValidChecksum(Attribute):
         return f"{self.prefix}'Valid_Checksum"
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        return tac.ValidChecksum(prefix)
+        assert isinstance(self.prefix.type_, rty.Any)
+        return tac.ValidChecksum(prefix, self.prefix.type_, origin=self)
 
 
 class Valid(Attribute):
@@ -1634,17 +1571,54 @@ class Valid(Attribute):
         super().__init__(prefix, negative)
         self.type_ = rty.BOOLEAN
 
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+        assert isinstance(self.type_, rty.Any)
+
+        if isinstance(self.prefix, Selected):
+            assert isinstance(self.prefix.prefix, Variable)
+            assert isinstance(self.prefix.prefix.type_, rty.Compound)
+            return tac.ComplexExpr(
+                [],
+                tac.FieldValid(
+                    self.prefix.prefix.identifier,
+                    self.prefix.selector,
+                    self.prefix.prefix.type_,
+                ),
+            )
+
+        return super().to_tac(variable_id)
+
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type_instance((rty.Sequence, rty.Message))
+        return self.prefix.check_type_instance(
+            (rty.Sequence, rty.Message) if isinstance(self.prefix, Variable) else rty.Any
+        )
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        return tac.Valid(prefix)
+        assert isinstance(self.prefix.type_, rty.Any)
+        return tac.Valid(prefix, self.prefix.type_, origin=self)
 
 
 class Present(Attribute):
     def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
         super().__init__(prefix, negative)
         self.type_ = rty.BOOLEAN
+
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+        assert isinstance(self.type_, rty.Any)
+
+        if isinstance(self.prefix, Selected):
+            assert isinstance(self.prefix.prefix, Variable)
+            assert isinstance(self.prefix.prefix.type_, rty.Compound)
+            return tac.ComplexExpr(
+                [],
+                tac.FieldPresent(
+                    self.prefix.prefix.identifier,
+                    self.prefix.selector,
+                    self.prefix.prefix.type_,
+                ),
+            )
+
+        return super().to_tac(variable_id)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         if isinstance(self.prefix, Selected):
@@ -1664,7 +1638,8 @@ class Present(Attribute):
         return error
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        return tac.Present(prefix)
+        assert isinstance(self.prefix.type_, rty.Any)
+        return tac.Present(prefix, self.prefix.type_, origin=self)
 
 
 class HasData(Attribute):
@@ -1680,7 +1655,8 @@ class HasData(Attribute):
         return self.prefix.check_type_instance(rty.Message)
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        return tac.HasData(prefix)
+        assert isinstance(self.prefix.type_, rty.Any)
+        return tac.HasData(prefix, self.prefix.type_, origin=self)
 
 
 class Head(Attribute):
@@ -1690,12 +1666,29 @@ class Head(Attribute):
         super().__init__(prefix, negative)
         self.type_ = type_
 
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+        assert isinstance(self.type_, rty.Any)
+
+        if isinstance(self.prefix, Comprehension):
+            comprehension = self.prefix.to_tac(variable_id)
+            assert isinstance(comprehension.expr, tac.Comprehension)
+            return tac.ComplexExpr(
+                comprehension.stmts,
+                tac.Find(
+                    comprehension.expr.iterator,
+                    comprehension.expr.sequence,
+                    comprehension.expr.selector,
+                    comprehension.expr.condition,
+                    comprehension.expr.origin,
+                ),
+            )
+
+        return super().to_tac(variable_id)
+
     def _check_type_subexpr(self) -> RecordFluxError:
         error = self.prefix.check_type_instance(rty.Composite)
         self.type_ = (
-            self.prefix.type_.element
-            if isinstance(self.prefix.type_, (rty.Aggregate, rty.Sequence))
-            else rty.Any()
+            self.prefix.type_.element if isinstance(self.prefix.type_, rty.Composite) else rty.Any()
         )
         if not isinstance(self.prefix, (Variable, Selected, Comprehension)):
             error.extend(
@@ -1711,8 +1704,9 @@ class Head(Attribute):
         return error
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        assert isinstance(self.type_, rty.Any)
-        return tac.Head(prefix, self.type_)
+        assert isinstance(self.prefix.type_, rty.Composite)
+        assert isinstance(self.prefix.type_.element, rty.Any)
+        return tac.Head(prefix, self.prefix.type_, origin=self)
 
 
 class Opaque(Attribute):
@@ -1724,7 +1718,8 @@ class Opaque(Attribute):
         return self.prefix.check_type_instance((rty.Sequence, rty.Message))
 
     def _to_tac(self, prefix: ID) -> tac.Expr:
-        return tac.Opaque(prefix)
+        assert isinstance(self.prefix.type_, (rty.Sequence, rty.Message))
+        return tac.Opaque(prefix, self.prefix.type_, origin=self)
 
 
 class Constrained(Attribute):
@@ -1813,7 +1808,7 @@ class Indexed(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
 
@@ -1902,51 +1897,32 @@ class Selected(Name):
             return -z3.Int(self.representation)
         return z3.Int(self.representation)
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
         assert isinstance(self.prefix.type_, rty.Compound)
         stmts, msg = _to_tac_basic_expr(self.prefix, variable_id)
         assert isinstance(msg, tac.ObjVar)
         if self.type_ == rty.BOOLEAN:
-            return [
-                *stmts,
-                tac.Assign(
-                    target,
-                    tac.BoolFieldAccess(
-                        msg.identifier, self.selector, self.prefix.type_, origin=self
-                    ),
-                    rty.BOOLEAN,
-                    origin=self,
-                ),
-            ]
+            return tac.ComplexExpr(
+                stmts,
+                tac.BoolFieldAccess(msg.identifier, self.selector, self.prefix.type_, origin=self),
+            )
         if isinstance(self.type_, rty.Integer):
-            return [
-                *stmts,
-                tac.Assign(
-                    target,
-                    tac.IntFieldAccess(
-                        msg.identifier,
-                        self.selector,
-                        self.prefix.type_,
-                        self.negative,
-                        origin=self,
-                    ),
-                    self.type_,
+            return tac.ComplexExpr(
+                stmts,
+                tac.IntFieldAccess(
+                    msg.identifier,
+                    self.selector,
+                    self.prefix.type_,
+                    self.negative,
                     origin=self,
                 ),
-            ]
+            )
         if isinstance(self.type_, (rty.Enumeration, rty.Sequence)):
-            return [
-                *stmts,
-                tac.Assign(
-                    target,
-                    tac.ObjFieldAccess(
-                        msg.identifier, self.selector, self.prefix.type_, origin=self
-                    ),
-                    self.type_,
-                    origin=self,
-                ),
-            ]
+            return tac.ComplexExpr(
+                stmts,
+                tac.ObjFieldAccess(msg.identifier, self.selector, self.prefix.type_, origin=self),
+            )
         assert False, self.type_
 
     def copy(  # noqa: PLR0913
@@ -2042,56 +2018,46 @@ class Call(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         arguments_stmts = []
         arguments_exprs = []
 
         for a in self.args:
-            a_stmts, a_expr = _to_tac_basic_expr(a, variable_id)
-            arguments_stmts.extend(a_stmts)
-            arguments_exprs.append(a_expr)
+            a_tac = a.to_tac(variable_id)
+            arguments_stmts.extend(a_tac.stmts)
+            arguments_exprs.append(a_tac.expr)
+
+        assert all(isinstance(t, rty.Any) for t in self.argument_types)
+        argument_types = [t for t in self.argument_types if isinstance(t, rty.Any)]
 
         if self.type_ is rty.BOOLEAN:
-            return [
-                *arguments_stmts,
-                tac.Assign(
-                    target,
-                    tac.BoolCall(
-                        self.identifier,
-                        arguments_exprs,
-                        origin=self,
-                    ),
-                    rty.BOOLEAN,
+            return tac.ComplexExpr(
+                arguments_stmts,
+                tac.BoolCall(
+                    self.identifier,
+                    arguments_exprs,
+                    argument_types,
                     origin=self,
                 ),
-            ]
+            )
 
-        if isinstance(self.type_, rty.AnyInteger):
-            return [
-                *arguments_stmts,
-                tac.Assign(
-                    target,
-                    tac.IntCall(
-                        self.identifier,
-                        arguments_exprs,
-                        self.type_,
-                        origin=self,
-                    ),
+        if isinstance(self.type_, rty.Integer):
+            return tac.ComplexExpr(
+                arguments_stmts,
+                tac.IntCall(
+                    self.identifier,
+                    arguments_exprs,
+                    argument_types,
                     self.type_,
                     origin=self,
                 ),
-            ]
+            )
 
         assert isinstance(self.type_, (rty.Enumeration, rty.Structure, rty.Message))
-        return [
-            *arguments_stmts,
-            tac.Assign(
-                target,
-                tac.ObjCall(self.identifier, arguments_exprs, self.type_, origin=self),
-                self.type_,
-                origin=self,
-            ),
-        ]
+        return tac.ComplexExpr(
+            arguments_stmts,
+            tac.ObjCall(self.identifier, arguments_exprs, argument_types, self.type_, origin=self),
+        )
 
     def variables(self) -> list[Variable]:
         result = [Variable(self.identifier, location=self.location)]
@@ -2144,12 +2110,12 @@ class Slice(Name):
         return f"{self.prefix} ({self.first} .. {self.last})"
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Slice(self.prefix.ada_expr(), self.first.ada_expr(), self.last.ada_expr())
+        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
 
@@ -2170,7 +2136,7 @@ class UndefinedExpr(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
 
@@ -2232,7 +2198,7 @@ class Aggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
         elements = []
@@ -2243,15 +2209,7 @@ class Aggregate(Expr):
             elements.append(e_expr)
             stmts.extend(e_stmts)
 
-        return [
-            *stmts,
-            tac.Assign(
-                target,
-                tac.Agg(elements, origin=self),
-                self.type_,
-                origin=self,
-            ),
-        ]
+        return tac.ComplexExpr(stmts, tac.Agg(elements, origin=self))
 
 
 class String(Aggregate):
@@ -2311,19 +2269,12 @@ class NamedAggregate(Expr):
         raise NotImplementedError
 
     def ada_expr(self) -> ada.Expr:
-        elements: list[tuple[Union[ID, ada.Expr], ada.Expr]] = [
-            (
-                n if isinstance(n, ID) else n.ada_expr(),
-                e.ada_expr(),
-            )
-            for n, e in self.elements
-        ]
-        return ada.NamedAggregate(*elements)
+        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
 
@@ -2372,19 +2323,13 @@ class Relation(BinExpr):
         assert isinstance(result, z3.BoolRef)
         return result
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         left_stmts, left_expr = _to_tac_basic_expr(self.left, variable_id)
         right_stmts, right_expr = _to_tac_basic_expr(self.right, variable_id)
-        return [
-            *left_stmts,
-            *right_stmts,
-            tac.Assign(
-                target,
-                getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
-                rty.BOOLEAN,
-                origin=self,
-            ),
-        ]
+        return tac.ComplexBoolExpr(
+            [*left_stmts, *right_stmts],
+            getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
+        )
 
     @staticmethod
     @abstractmethod
@@ -2576,7 +2521,7 @@ class In(Relation):
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
     @staticmethod
@@ -2606,7 +2551,7 @@ class NotIn(Relation):
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
     @staticmethod
@@ -2727,7 +2672,7 @@ class IfExpr(Expr):
             self.else_expression.z3expr(),
         )
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         assert len(self.condition_expressions) == 1
         assert self.else_expression is not None
 
@@ -2739,47 +2684,37 @@ class IfExpr(Expr):
         then_expression = self.condition_expressions[0][1]
 
         if then_expression.type_ is rty.BOOLEAN and self.else_expression.type_ is rty.BOOLEAN:
-            then_bool_stmts, then_bool_expr = _to_tac_basic_bool(then_expression, variable_id)
-            else_bool_stmts, else_bool_expr = _to_tac_basic_bool(self.else_expression, variable_id)
-            return [
-                *condition_stmts,
-                *then_bool_stmts,
-                *else_bool_stmts,
-                tac.Assign(
-                    target,
-                    tac.BoolIfExpr(
-                        condition_expr,
-                        then_bool_expr,
-                        else_bool_expr,
-                        origin=self,
-                    ),
-                    rty.BOOLEAN,
+            then_expr = then_expression.to_tac(variable_id)
+            else_expr = self.else_expression.to_tac(variable_id)
+            assert isinstance(then_expr, tac.ComplexBoolExpr)
+            assert isinstance(else_expr, tac.ComplexBoolExpr)
+            return tac.ComplexBoolExpr(
+                [*condition_stmts],
+                tac.BoolIfExpr(
+                    condition_expr,
+                    then_expr,
+                    else_expr,
                     origin=self,
                 ),
-            ]
+            )
 
         assert isinstance(self.type_, rty.AnyInteger)
         assert isinstance(then_expression.type_, rty.AnyInteger)
         assert isinstance(self.else_expression.type_, rty.AnyInteger)
-        then_int_stmts, then_int_expr = _to_tac_basic_int(then_expression, variable_id)
-        else_int_stmts, else_int_expr = _to_tac_basic_int(self.else_expression, variable_id)
-        return [
-            *condition_stmts,
-            *then_int_stmts,
-            *else_int_stmts,
-            tac.Assign(
-                target,
-                tac.IntIfExpr(
-                    condition_expr,
-                    then_int_expr,
-                    else_int_expr,
-                    self.type_,
-                    origin=self,
-                ),
+        then_expr = then_expression.to_tac(variable_id)
+        else_expr = self.else_expression.to_tac(variable_id)
+        assert isinstance(then_expr, tac.ComplexIntExpr)
+        assert isinstance(else_expr, tac.ComplexIntExpr)
+        return tac.ComplexIntExpr(
+            [*condition_stmts],
+            tac.IntIfExpr(
+                condition_expr,
+                then_expr,
+                else_expr,
                 self.type_,
                 origin=self,
             ),
-        ]
+        )
 
 
 class QuantifiedExpr(Expr):
@@ -2849,8 +2784,12 @@ class QuantifiedExpr(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
-        raise NotImplementedError
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+        fail(
+            "quantified expressions not yet supported",
+            Subsystem.MODEL,
+            location=self.location,
+        )
 
     def substituted(
         self,
@@ -2961,7 +2900,7 @@ class ValueRange(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
 
@@ -3064,18 +3003,13 @@ class Conversion(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
-        assert isinstance(self.type_, rty.Any)
-        argument_stmts, argument_expr = _to_tac_basic_expr(self.argument, variable_id)
-        return [
-            *argument_stmts,
-            tac.Assign(
-                target,
-                tac.Conversion(self.identifier, argument_expr, self.type_, origin=self),
-                self.type_,
-                origin=self,
-            ),
-        ]
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+        assert isinstance(self.type_, rty.NamedType)
+        argument = self.argument.to_tac(variable_id)
+        return tac.ComplexExpr(
+            argument.stmts,
+            tac.Conversion(self.identifier, argument.expr, self.type_, origin=self),
+        )
 
     def variables(self) -> list[Variable]:
         return self.argument.variables()
@@ -3116,7 +3050,7 @@ class QualifiedExpr(Expr):
     def z3expr(self) -> z3.ArithRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         raise NotImplementedError
 
 
@@ -3202,27 +3136,22 @@ class Comprehension(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
-        sequence_stmts, sequence_expr = _to_tac_basic_expr(self.sequence, variable_id)
-        selector_stmts, selector_expr = _to_tac_basic_expr(self.selector, variable_id)
-        condition_stmts, condition_expr = _to_tac_basic_bool(self.condition, variable_id)
-        return [
-            *sequence_stmts,
-            tac.Assign(
-                target,
-                tac.Comprehension(
-                    self.iterator,
-                    sequence_expr,
-                    selector_stmts,
-                    selector_expr,
-                    condition_stmts,
-                    condition_expr,
-                    origin=self,
-                ),
-                self.type_,
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+        sequence = self.sequence.to_tac(variable_id)
+        selector = self.selector.to_tac(variable_id)
+        condition = self.condition.to_tac(variable_id)
+        assert isinstance(sequence.expr, (tac.Var, tac.FieldAccess))
+        assert isinstance(condition, tac.ComplexBoolExpr), condition
+        return tac.ComplexExpr(
+            sequence.stmts,
+            tac.Comprehension(
+                self.iterator,
+                sequence.expr,
+                selector,
+                condition,
                 origin=self,
             ),
-        ]
+        )
 
     def variables(self) -> list[Variable]:
         return [
@@ -3398,23 +3327,18 @@ class MessageAggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         assert isinstance(self.type_, rty.Message)
         field_values = {}
         stmts = []
         for i, e in self.field_values.items():
-            e_stmts, e_expr = _to_tac_basic_expr(e, variable_id)
-            field_values[i] = e_expr
-            stmts.extend(e_stmts)
-        return [
-            *stmts,
-            tac.Assign(
-                target,
-                self._tac_expr(self.identifier, field_values, self.type_, self),
-                self.type_,
-                origin=self,
-            ),
-        ]
+            e_tac = e.to_tac(variable_id)
+            field_values[i] = e_tac.expr
+            stmts.extend(e_tac.stmts)
+        return tac.ComplexExpr(
+            stmts,
+            self._tac_expr(self.identifier, field_values, self.type_, self),
+        )
 
     def variables(self) -> list[Variable]:
         result = []
@@ -3425,7 +3349,7 @@ class MessageAggregate(Expr):
     @property
     def _tac_expr(
         self,
-    ) -> Callable[[ID, dict[ID, tac.BasicExpr], rty.Message, tac.Origin], tac.Expr]:
+    ) -> Callable[[ID, dict[ID, tac.Expr], rty.Message, tac.Origin], tac.Expr]:
         return tac.MsgAgg
 
 
@@ -3443,7 +3367,7 @@ class DeltaMessageAggregate(MessageAggregate):
     @property
     def _tac_expr(
         self,
-    ) -> Callable[[ID, dict[ID, tac.BasicExpr], rty.Message, tac.Origin], tac.Expr]:
+    ) -> Callable[[ID, dict[ID, tac.Expr], rty.Message, tac.Origin], tac.Expr]:
         return tac.DeltaMsgAgg
 
     def _matching_field_combinations(self, field_position: int) -> set[tuple[str, ...]]:
@@ -3758,20 +3682,12 @@ class CaseExpr(Expr):
         raise NotImplementedError
 
     def ada_expr(self) -> ada.Expr:
-        choices = [
-            (
-                Literal(choice).ada_expr() if isinstance(choice, (str, ID)) else choice.ada_expr(),
-                expr.ada_expr(),
-            )
-            for choices, expr in self.choices
-            for choice in choices
-        ]
-        return ada.CaseExpr(self.expr.ada_expr(), choices)
+        raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, target: StrID, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
         expression_stmts, expression_expr = _to_tac_basic_expr(self.expr, variable_id)
@@ -3779,6 +3695,7 @@ class CaseExpr(Expr):
 
         for choice, expr in self.choices:
             e_stmts, e_expr = _to_tac_basic_expr(expr, variable_id)
+            assert not e_stmts  # TODO: add check for unsupported case expressions to model
             cs: list[tac.BasicExpr]
             if isinstance(self.expr.type_, rty.Enumeration):
                 assert all(isinstance(c, ID) for c in choice)
@@ -3787,22 +3704,17 @@ class CaseExpr(Expr):
                 assert isinstance(self.expr.type_, rty.AnyInteger)
                 assert all(isinstance(c, Number) for c in choice)
                 cs = [tac.IntVal(int(c)) for c in choice if isinstance(c, Number)]
-            choices.append((cs, e_stmts, e_expr))
+            choices.append((cs, e_expr))
 
-        return [
-            *expression_stmts,
-            tac.Assign(
-                target,
-                tac.CaseExpr(
-                    expression_expr,
-                    choices,
-                    self.type_,
-                    origin=self,
-                ),
-                type_=self.type_,
+        return tac.ComplexExpr(
+            expression_stmts,
+            tac.CaseExpr(
+                expression_expr,
+                choices,
+                self.type_,
                 origin=self,
             ),
-        ]
+        )
 
     def variables(self) -> list[Variable]:
         simplified = self.simplified()
@@ -3843,18 +3755,19 @@ def _to_tac_basic_int(
 ) -> tuple[list[tac.Stmt], tac.BasicIntExpr]:
     assert isinstance(expression.type_, rty.AnyInteger)
 
-    result_id = next(variable_id)
-    result_stmts = expression.to_tac(result_id, variable_id)
-    if (
-        len(result_stmts) == 1
-        and isinstance(result_stmts[0], tac.Assign)
-        and isinstance(result_stmts[0].expression, tac.BasicExpr)
-    ):
-        assert isinstance(result_stmts[0].expression, tac.BasicIntExpr)
-        result_expr = result_stmts[0].expression
-        result_stmts = []
+    result = expression.to_tac(variable_id)
+    if isinstance(result.expr, tac.BasicIntExpr):
+        result_expr = result.expr
+        result_stmts = result.stmts
     else:
-        result_expr = tac.IntVar(result_id, expression.type_, origin=expression)
+        result_id = next(variable_id)
+        result_type = tac.to_integer(expression.type_)
+        result_expr = tac.IntVar(result_id, result_type, origin=expression)
+        result_stmts = [
+            *result.stmts,
+            tac.VarDecl(result_id, result_type, None, origin=expression),
+            tac.Assign(result_id, result.expr, result_type, origin=expression),
+        ]
     return (result_stmts, result_expr)
 
 
@@ -3863,43 +3776,48 @@ def _to_tac_basic_bool(
 ) -> tuple[list[tac.Stmt], tac.BasicBoolExpr]:
     assert expression.type_ == rty.BOOLEAN
 
-    result_id = next(variable_id)
-    result_stmts = expression.to_tac(result_id, variable_id)
-    if (
-        len(result_stmts) == 1
-        and isinstance(result_stmts[0], tac.Assign)
-        and isinstance(result_stmts[0].expression, tac.BasicExpr)
-    ):
-        assert isinstance(result_stmts[0].expression, tac.BasicBoolExpr)
-        result_expr = result_stmts[0].expression
-        result_stmts = []
+    result = expression.to_tac(variable_id)
+    if isinstance(result.expr, tac.BasicBoolExpr):
+        result_expr = result.expr
+        result_stmts = result.stmts
     else:
+        result_id = next(variable_id)
         result_expr = tac.BoolVar(result_id, origin=expression)
+        result_stmts = [
+            *result.stmts,
+            tac.VarDecl(result_id, rty.BOOLEAN, None, origin=expression),
+            tac.Assign(result_id, result.expr, rty.BOOLEAN, origin=expression),
+        ]
     return (result_stmts, result_expr)
 
 
 def _to_tac_basic_expr(
     expression: Expr, variable_id: Generator[ID, None, None]
 ) -> tuple[list[tac.Stmt], tac.BasicExpr]:
-    result_id = next(variable_id)
-    result_stmts = expression.to_tac(result_id, variable_id)
-    if (
-        len(result_stmts) == 1
-        and isinstance(result_stmts[0], tac.Assign)
-        and isinstance(result_stmts[0].expression, tac.BasicExpr)
-    ):
-        result_expr = result_stmts[0].expression
-        result_stmts = []
+    result = expression.to_tac(variable_id)
+    if isinstance(result.expr, tac.BasicExpr):
+        result_expr = result.expr
+        result_stmts = result.stmts
     else:
-        assign = result_stmts[-1]
-        assert isinstance(assign, tac.Assign)
-        if isinstance(assign.expression, tac.BoolExpr):
+        result_id = next(variable_id)
+
+        if isinstance(result.expr, tac.BoolExpr):
             result_expr = tac.BoolVar(result_id, origin=expression)
-        elif isinstance(assign.expression, tac.IntExpr):
+        elif isinstance(result.expr, tac.IntExpr):
             assert isinstance(expression.type_, rty.AnyInteger)
-            result_expr = tac.IntVar(result_id, expression.type_, origin=expression)
+            result_expr = tac.IntVar(result_id, tac.to_integer(expression.type_), origin=expression)
         else:
-            assert isinstance(assign.expression, tac.Expr)
             assert isinstance(expression.type_, rty.Any)
             result_expr = tac.ObjVar(result_id, expression.type_, origin=expression)
+
+        result_type = result_expr.type_
+
+        assert isinstance(result_type, rty.NamedType)
+
+        result_stmts = [
+            *result.stmts,
+            tac.VarDecl(result_id, result_type, None, origin=expression),
+            tac.Assign(result_id, result.expr, result_type, origin=expression),
+        ]
+
     return (result_stmts, result_expr)
