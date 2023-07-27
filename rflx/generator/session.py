@@ -6,7 +6,7 @@ from dataclasses import dataclass, field as dataclass_field
 from functools import singledispatchmethod
 from typing import NoReturn, Optional, Union
 
-from rflx import ada, model, tac, typing_ as rty
+from rflx import ada, ir, model, typing_ as rty
 from rflx.ada import (
     FALSE,
     TRUE,
@@ -127,7 +127,7 @@ class EvaluatedDeclaration:
 
 @dataclass
 class ExceptionHandler:
-    state: tac.State
+    state: ir.State
     finalization: Sequence[Statement]
     record_state_with_exceptions: Callable[[], None]
 
@@ -161,7 +161,7 @@ class ChannelAccess:
 class SessionGenerator:
     def __init__(
         self,
-        session: tac.Session,
+        session: ir.Session,
         allocator: AllocatorGenerator,
         prefix: str = "",
         debug: common.Debug = common.Debug.NONE,
@@ -366,7 +366,7 @@ class SessionGenerator:
         composite_globals = [
             d
             for d in self._session.declarations
-            if isinstance(d, tac.VarDecl) and isinstance(d.type_, (rty.Message, rty.Sequence))
+            if isinstance(d, ir.VarDecl) and isinstance(d.type_, (rty.Message, rty.Sequence))
         ]
 
         unit = UnitPart()
@@ -418,21 +418,21 @@ class SessionGenerator:
 
     @staticmethod
     def _channel_io(
-        session: tac.Session, read: bool = False, write: bool = False
+        session: ir.Session, read: bool = False, write: bool = False
     ) -> dict[ID, list[ChannelAccess]]:
         assert (read and not write) or (not read and write)
 
         channels: dict[ID, list[ChannelAccess]] = {
             parameter.identifier: []
             for parameter in session.parameters
-            if isinstance(parameter, tac.ChannelDecl)
+            if isinstance(parameter, ir.ChannelDecl)
         }
         for state in session.states:
             for action in state.actions:
                 if (
-                    isinstance(action, tac.ChannelStmt)
-                    and isinstance(action, tac.Read if read else tac.Write)
-                    and isinstance(action.expression, tac.Var)
+                    isinstance(action, ir.ChannelStmt)
+                    and isinstance(action, ir.Read if read else ir.Write)
+                    and isinstance(action.expression, ir.Var)
                     and isinstance(action.expression.type_, rty.Message)
                 ):
                     channels[action.channel].append(
@@ -455,8 +455,8 @@ class SessionGenerator:
         )
 
     @staticmethod
-    def _create_channel_and_state_types(session: tac.Session) -> UnitPart:
-        channel_params = [x for x in session.parameters if isinstance(x, tac.ChannelDecl)]
+    def _create_channel_and_state_types(session: ir.Session) -> UnitPart:
+        channel_params = [x for x in session.parameters if isinstance(x, ir.ChannelDecl)]
         return UnitPart(
             [
                 *(
@@ -471,7 +471,7 @@ class SessionGenerator:
                 ),
                 EnumerationType(
                     "State",
-                    {state_id(s.identifier): None for s in [*session.states, tac.FINAL_STATE]},
+                    {state_id(s.identifier): None for s in [*session.states, ir.FINAL_STATE]},
                 ),
             ],
         )
@@ -525,14 +525,14 @@ class SessionGenerator:
 
     def _create_abstract_functions(
         self,
-        parameters: Iterable[tac.FormalDecl],
+        parameters: Iterable[ir.FormalDecl],
     ) -> UnitPart:
         result: list[Declaration] = []
 
         for parameter in parameters:
-            if isinstance(parameter, tac.ChannelDecl):
+            if isinstance(parameter, ir.ChannelDecl):
                 pass
-            elif isinstance(parameter, tac.FuncDecl):
+            elif isinstance(parameter, ir.FuncDecl):
                 result.extend(self._create_abstract_function(parameter))
             else:
                 fatal_fail(
@@ -543,7 +543,7 @@ class SessionGenerator:
 
         return UnitPart(result)
 
-    def _create_abstract_function(self, function: tac.FuncDecl) -> Sequence[SubprogramDeclaration]:
+    def _create_abstract_function(self, function: ir.FuncDecl) -> Sequence[SubprogramDeclaration]:
         procedure_parameters: list[Parameter] = [InOutParameter(["Ctx"], "Context")]
 
         if function.type_ == rty.Undefined():
@@ -635,7 +635,7 @@ class SessionGenerator:
 
     def _create_uninitialized_function(
         self,
-        composite_globals: Sequence[tac.VarDecl],
+        composite_globals: Sequence[ir.VarDecl],
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
         specification = FunctionSpecification(
@@ -678,7 +678,7 @@ class SessionGenerator:
 
     def _create_global_initialized_function(
         self,
-        composite_globals: Sequence[tac.VarDecl],
+        composite_globals: Sequence[ir.VarDecl],
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
         if not composite_globals:
@@ -723,7 +723,7 @@ class SessionGenerator:
             ],
         )
 
-    def _create_initialized_function(self, composite_globals: Sequence[tac.VarDecl]) -> UnitPart:
+    def _create_initialized_function(self, composite_globals: Sequence[ir.VarDecl]) -> UnitPart:
         specification = FunctionSpecification(
             "Initialized",
             "Boolean",
@@ -771,8 +771,8 @@ class SessionGenerator:
 
     def _create_states(
         self,
-        session: tac.Session,
-        composite_globals: Sequence[tac.VarDecl],
+        session: ir.Session,
+        composite_globals: Sequence[ir.VarDecl],
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
         if self._allocator.get_global_slot_ptrs() or self._allocator.get_local_slot_ptrs():
@@ -781,27 +781,27 @@ class SessionGenerator:
         unit_body: list[Declaration] = []
 
         for state in session.states:
-            if state == tac.FINAL_STATE:
+            if state == ir.FINAL_STATE:
                 continue
 
             invariant = []
             slots = []
 
             declarations = [
-                *[a for a in state.actions if isinstance(a, tac.VarDecl)],
+                *[a for a in state.actions if isinstance(a, ir.VarDecl)],
                 *[
                     s
                     for a in state.actions
-                    if isinstance(a, tac.Assign)
-                    and isinstance(a.expression, (tac.Comprehension, tac.Find))
+                    if isinstance(a, ir.Assign)
+                    and isinstance(a.expression, (ir.Comprehension, ir.Find))
                     for s in [*a.expression.selector.stmts, *a.expression.condition.stmts]
-                    if isinstance(s, tac.VarDecl)
+                    if isinstance(s, ir.VarDecl)
                 ],
                 *[
                     s
                     for t in state.transitions
                     for s in t.condition.stmts
-                    if isinstance(s, tac.VarDecl)
+                    if isinstance(s, ir.VarDecl)
                 ],
             ]
 
@@ -931,7 +931,7 @@ class SessionGenerator:
 
     def _determine_next_state(
         self,
-        transitions: Sequence[tac.Transition],
+        transitions: Sequence[ir.Transition],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -970,7 +970,7 @@ class SessionGenerator:
         )
 
     @staticmethod
-    def _create_active_function(session: tac.Session) -> UnitPart:
+    def _create_active_function(session: ir.Session) -> UnitPart:
         specification = FunctionSpecification(
             "Active",
             "Boolean",
@@ -984,7 +984,7 @@ class SessionGenerator:
                 ExpressionFunctionDeclaration(
                     specification,
                     NotEqual(
-                        Variable("Ctx.P.Next_State"), Variable(state_id(tac.FINAL_STATE.identifier))
+                        Variable("Ctx.P.Next_State"), Variable(state_id(ir.FINAL_STATE.identifier))
                     )
                     if len(session.states) > 1
                     else Variable("False"),
@@ -994,7 +994,7 @@ class SessionGenerator:
 
     @staticmethod
     def _create_initialize_procedure(
-        session: tac.Session,
+        session: ir.Session,
         declarations: Sequence[Declaration],
         initialization: Sequence[Statement],
     ) -> UnitPart:
@@ -1060,7 +1060,7 @@ class SessionGenerator:
                     [
                         *finalization,
                         Assignment(
-                            "Ctx.P.Next_State", Variable(state_id(tac.FINAL_STATE.identifier))
+                            "Ctx.P.Next_State", Variable(state_id(ir.FINAL_STATE.identifier))
                         ),
                     ],
                 ),
@@ -1069,7 +1069,7 @@ class SessionGenerator:
 
     def _create_reset_messages_before_write_procedure(
         self,
-        session: tac.Session,
+        session: ir.Session,
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
         self._session_context.used_types_body.append(const.TYPES_BIT_LENGTH)
@@ -1087,8 +1087,8 @@ class SessionGenerator:
                     )
                     for action in state.actions
                     if (
-                        isinstance(action, tac.Read)
-                        and isinstance(action.expression, tac.Var)
+                        isinstance(action, ir.Read)
+                        and isinstance(action.expression, ir.Var)
                         and isinstance(action.expression.type_, rty.Message)
                     )
                 ],
@@ -1142,7 +1142,7 @@ class SessionGenerator:
             ],
         )
 
-    def _create_tick_procedure(self, session: tac.Session, has_writes: bool) -> UnitPart:
+    def _create_tick_procedure(self, session: ir.Session, has_writes: bool) -> UnitPart:
         specification = ProcedureSpecification("Tick", [InOutParameter(["Ctx"], "Context'Class")])
         return UnitPart(
             [
@@ -1170,7 +1170,7 @@ class SessionGenerator:
                                         *self._debug_output(f"State: {s.identifier}"),
                                         CallStatement(s.identifier, [Variable("Ctx")]),
                                     ]
-                                    if s != tac.FINAL_STATE
+                                    if s != ir.FINAL_STATE
                                     else [NullStatement()],
                                 )
                                 for s in session.states
@@ -1187,7 +1187,7 @@ class SessionGenerator:
         )
 
     @staticmethod
-    def _create_in_io_state_function(session: tac.Session) -> UnitPart:
+    def _create_in_io_state_function(session: ir.Session) -> UnitPart:
         io_states = [
             state
             for state in session.states
@@ -1195,8 +1195,8 @@ class SessionGenerator:
                 True
                 for action in state.actions
                 if (
-                    isinstance(action, (tac.Read, tac.Write))
-                    and isinstance(action.expression, tac.Var)
+                    isinstance(action, (ir.Read, ir.Write))
+                    and isinstance(action.expression, ir.Var)
                     and isinstance(action.expression.type_, rty.Message)
                 )
             )
@@ -1932,7 +1932,7 @@ class SessionGenerator:
 
     def _evaluate_declarations(
         self,
-        declarations: Iterable[tac.VarDecl],
+        declarations: Iterable[ir.VarDecl],
         is_global: Optional[Callable[[ID], bool]] = None,
         session_global: bool = False,
     ) -> EvaluatedDeclaration:
@@ -1980,14 +1980,14 @@ class SessionGenerator:
     def _state_action(
         self,
         state: ID,
-        action: tac.Stmt,
+        action: ir.Stmt,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        if isinstance(action, tac.VarDecl):
+        if isinstance(action, ir.VarDecl):
             return []
 
-        if isinstance(action, tac.Assign):
+        if isinstance(action, ir.Assign):
             result = self._assign(
                 action.target,
                 action.type_,
@@ -1998,7 +1998,7 @@ class SessionGenerator:
                 action.location,
             )
 
-        elif isinstance(action, tac.FieldAssign):
+        elif isinstance(action, ir.FieldAssign):
             result = self._message_field_assign(
                 action.message,
                 action.field,
@@ -2008,26 +2008,26 @@ class SessionGenerator:
                 is_global,
             )
 
-        elif isinstance(action, tac.Append):
+        elif isinstance(action, ir.Append):
             result = self._append(action, exception_handler, is_global, state)
 
-        elif isinstance(action, tac.Extend):
+        elif isinstance(action, ir.Extend):
             fail(
                 "Extend statement not yet supported",
                 Subsystem.GENERATOR,
                 location=action.location,
             )
 
-        elif isinstance(action, tac.Reset):
+        elif isinstance(action, ir.Reset):
             result = self._reset(action, is_global)
 
-        elif isinstance(action, tac.Read):
+        elif isinstance(action, ir.Read):
             result = self._read(action, is_global)
 
-        elif isinstance(action, tac.Write):
+        elif isinstance(action, ir.Write):
             result = self._write(action)
 
-        elif isinstance(action, tac.Check):
+        elif isinstance(action, ir.Check):
             result = self._check(action.expression, action.origin, exception_handler, is_global)
 
         else:
@@ -2046,13 +2046,13 @@ class SessionGenerator:
         type_: rty.Type,
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
-        expression: Optional[tac.ComplexExpr] = None,
+        expression: Optional[ir.ComplexExpr] = None,
         constant: bool = False,
         session_global: bool = False,
     ) -> EvaluatedDeclaration:
         result = EvaluatedDeclaration()
 
-        if expression and isinstance(expression.expr, tac.Call):
+        if expression and isinstance(expression.expr, ir.Call):
             fail(
                 "initialization using function call not yet supported",
                 Subsystem.GENERATOR,
@@ -2065,7 +2065,7 @@ class SessionGenerator:
             aspects: list[Aspect] = []
 
             if expression:
-                if expression.is_expr() and isinstance(expression.expr, tac.Agg):
+                if expression.is_expr() and isinstance(expression.expr, ir.Agg):
                     e = expression.expr
                     if len(e.elements) == 0:
                         object_type = Slice(
@@ -2203,24 +2203,24 @@ class SessionGenerator:
         self,
         target: ID,
         target_type: rty.Type,
-        expression: tac.Expr,
+        expression: ir.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
-        if isinstance(expression, tac.DeltaMsgAgg):
+        if isinstance(expression, ir.DeltaMsgAgg):
             return self._assign_to_delta_message_aggregate(
                 target, expression, exception_handler, is_global, state
             )
 
-        if isinstance(expression, tac.MsgAgg):
+        if isinstance(expression, ir.MsgAgg):
             return self._assign_to_message_aggregate(
                 target, expression, exception_handler, is_global, state
             )
 
         if isinstance(target_type, rty.Message):
-            if isinstance(expression, tac.Var) and expression.identifier == target:
+            if isinstance(expression, ir.Var) and expression.identifier == target:
                 fail(
                     f'referencing assignment target "{target}" of type message in expression'
                     " not yet supported",
@@ -2228,45 +2228,45 @@ class SessionGenerator:
                     location=expression.location,
                 )
 
-        if isinstance(expression, tac.FieldAccess):
+        if isinstance(expression, ir.FieldAccess):
             return self._assign_to_field_access(target, expression, exception_handler, is_global)
 
-        if isinstance(expression, tac.Head):
+        if isinstance(expression, ir.Head):
             return self._assign_to_head(
                 target, expression, exception_handler, is_global, state, alloc_id
             )
 
-        if isinstance(expression, tac.Comprehension):
+        if isinstance(expression, ir.Comprehension):
             assert isinstance(target_type, rty.Sequence)
             return self._assign_to_comprehension(
                 target, target_type, expression, exception_handler, is_global, state, alloc_id
             )
 
-        if isinstance(expression, tac.Find):
+        if isinstance(expression, ir.Find):
             return self._assign_to_find(
                 target, expression, exception_handler, is_global, state, alloc_id
             )
 
-        if isinstance(expression, tac.Call):
+        if isinstance(expression, ir.Call):
             return self._assign_to_call(target, expression, exception_handler, is_global, state)
 
-        if isinstance(expression, tac.Conversion):
+        if isinstance(expression, ir.Conversion):
             return self._assign_to_conversion(target, expression, exception_handler, is_global)
 
         if isinstance(
             expression,
             (
-                tac.Var,
-                tac.EnumLit,
-                tac.IntVal,
-                tac.BoolVal,
-                tac.BinaryIntExpr,
-                tac.Relation,
-                tac.Attr,
-                tac.FieldAccessAttr,
-                tac.Agg,
-                tac.BinaryBoolExpr,
-                tac.CaseExpr,
+                ir.Var,
+                ir.EnumLit,
+                ir.IntVal,
+                ir.BoolVal,
+                ir.BinaryIntExpr,
+                ir.Relation,
+                ir.Attr,
+                ir.FieldAccessAttr,
+                ir.Agg,
+                ir.BinaryBoolExpr,
+                ir.CaseExpr,
             ),
         ) and (
             isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration))
@@ -2282,7 +2282,7 @@ class SessionGenerator:
                 )
             ]
 
-        if isinstance(expression, tac.Var) and isinstance(
+        if isinstance(expression, ir.Var) and isinstance(
             expression.type_, (rty.Message, rty.Sequence)
         ):
             _unsupported_expression(expression, "in assignment")
@@ -2292,7 +2292,7 @@ class SessionGenerator:
     def _assign_to_field_access(
         self,
         target: ID,
-        field_access: tac.FieldAccess,
+        field_access: ir.FieldAccess,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
@@ -2368,7 +2368,7 @@ class SessionGenerator:
     def _assign_to_message_aggregate(
         self,
         target: ID,
-        message_aggregate: tac.MsgAgg,
+        message_aggregate: ir.MsgAgg,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2408,7 +2408,7 @@ class SessionGenerator:
     def _assign_to_delta_message_aggregate(
         self,
         target: ID,
-        delta_message_aggregate: tac.DeltaMsgAgg,
+        delta_message_aggregate: ir.DeltaMsgAgg,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2457,7 +2457,7 @@ class SessionGenerator:
     def _assign_to_head(  # noqa: PLR0913
         self,
         target: ID,
-        head: tac.Head,
+        head: ir.Head,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2478,7 +2478,7 @@ class SessionGenerator:
     def _assign_to_find(  # noqa: PLR0913
         self,
         target: ID,
-        find: tac.Find,
+        find: ir.Find,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2489,10 +2489,10 @@ class SessionGenerator:
         sequence_element_type = find.sequence.type_.element
 
         if isinstance(sequence_element_type, rty.Message):
-            if isinstance(find.sequence, tac.Var):
+            if isinstance(find.sequence, ir.Var):
                 sequence_id = ID(f"{find.sequence}")
                 comprehension_sequence_id = copy_id(sequence_id)
-            elif isinstance(find.sequence, tac.FieldAccess):
+            elif isinstance(find.sequence, ir.FieldAccess):
                 selected = find.sequence
                 sequence_id = ID(
                     f"RFLX_{selected.message}_{selected.field}",
@@ -2544,7 +2544,7 @@ class SessionGenerator:
                     )
                 ]
 
-            if isinstance(find.sequence, tac.Var):
+            if isinstance(find.sequence, ir.Var):
                 return [
                     self._declare_sequence_copy(
                         sequence_id,
@@ -2555,7 +2555,7 @@ class SessionGenerator:
                         alloc_id,
                     )
                 ]
-            if isinstance(find.sequence, tac.FieldAccess):
+            if isinstance(find.sequence, ir.FieldAccess):
                 assert isinstance(selected.message_type, rty.Message)
                 message_id = selected.message
                 message_type = selected.message_type.identifier
@@ -2595,7 +2595,7 @@ class SessionGenerator:
     def _assign_to_head_sequence(  # noqa: PLR0913
         self,
         target: ID,
-        head: tac.Head,
+        head: ir.Head,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2771,7 +2771,7 @@ class SessionGenerator:
         self,
         target: ID,
         target_type: rty.Sequence,
-        comprehension: tac.Comprehension,
+        comprehension: ir.Comprehension,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2794,7 +2794,7 @@ class SessionGenerator:
         if isinstance(sequence_element_type, rty.Message):
             iterator_type_id = sequence_element_type.identifier
 
-            if isinstance(comprehension.sequence, tac.Var):
+            if isinstance(comprehension.sequence, ir.Var):
                 sequence_id = ID(f"{comprehension.sequence}")
 
                 def statements(local_exception_handler: ExceptionHandler) -> list[Statement]:
@@ -2829,7 +2829,7 @@ class SessionGenerator:
                     ),
                 ]
 
-            if isinstance(comprehension.sequence, tac.FieldAccess):
+            if isinstance(comprehension.sequence, ir.FieldAccess):
                 field_access = comprehension.sequence
 
                 assert isinstance(field_access.message_type, rty.Message)
@@ -2896,7 +2896,7 @@ class SessionGenerator:
     def _assign_to_call(
         self,
         target: ID,
-        call_expr: tac.Call,
+        call_expr: ir.Call,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -2962,20 +2962,20 @@ class SessionGenerator:
             if not isinstance(
                 a,
                 (
-                    tac.BoolVal,
-                    tac.IntVal,
-                    tac.Var,
-                    tac.EnumLit,
-                    tac.FieldAccess,
-                    tac.Size,
-                    tac.Str,
-                    tac.Agg,
-                    tac.Opaque,
+                    ir.BoolVal,
+                    ir.IntVal,
+                    ir.Var,
+                    ir.EnumLit,
+                    ir.FieldAccess,
+                    ir.Size,
+                    ir.Str,
+                    ir.Agg,
+                    ir.Opaque,
                 ),
             ):
                 _unsupported_expression(a, "as function argument")
 
-            if isinstance(a, tac.Var) and isinstance(a.type_, rty.Message):
+            if isinstance(a, ir.Var) and isinstance(a.type_, rty.Message):
                 type_identifier = self._ada_type(a.type_.identifier)
                 local_declarations.append(
                     ObjectDeclaration(
@@ -2993,7 +2993,7 @@ class SessionGenerator:
                     ),
                 )
                 arguments.append(self._to_ada_expr(a, is_global))
-            elif isinstance(a, tac.FieldAccess) and a.type_ == rty.OPAQUE:
+            elif isinstance(a, ir.FieldAccess) and a.type_ == rty.OPAQUE:
                 assert isinstance(a.type_, rty.Sequence)
                 argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.message}"
                 argument_length = f"{argument_name}_Length"
@@ -3057,7 +3057,7 @@ class SessionGenerator:
                     ),
                 )
                 arguments.append(argument)
-            elif isinstance(a, tac.Opaque) and isinstance(
+            elif isinstance(a, ir.Opaque) and isinstance(
                 a.prefix_type, (rty.Message, rty.Sequence)
             ):
                 self._session_context.used_types_body.append(const.TYPES_LENGTH)
@@ -3166,12 +3166,12 @@ class SessionGenerator:
     def _assign_to_conversion(
         self,
         target: ID,
-        conversion: tac.Conversion,
+        conversion: ir.Conversion,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
         assert isinstance(conversion.type_, rty.Message)
-        assert isinstance(conversion.argument, tac.FieldAccess), conversion.argument
+        assert isinstance(conversion.argument, ir.FieldAccess), conversion.argument
         assert conversion.argument.type_ == rty.OPAQUE
         assert isinstance(conversion.argument.message_type, rty.Message)
 
@@ -3229,7 +3229,7 @@ class SessionGenerator:
         target: ID,
         target_field: ID,
         message_type: rty.Type,
-        value: tac.Expr,
+        value: ir.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
@@ -3279,7 +3279,7 @@ class SessionGenerator:
 
     def _append(
         self,
-        append: tac.Append,
+        append: ir.Append,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -3340,7 +3340,7 @@ class SessionGenerator:
             ]
 
         if isinstance(append.type_.element, (rty.Integer, rty.Enumeration)):
-            if isinstance(append.expression, (tac.Var, tac.EnumLit, tac.IntVal)):
+            if isinstance(append.expression, (ir.Var, ir.EnumLit, ir.IntVal)):
                 sequence_type = append.type_.identifier
                 sequence_context = context_id(append.sequence, is_global)
                 element_type = append.type_.element.identifier
@@ -3366,7 +3366,7 @@ class SessionGenerator:
 
             self._session_context.referenced_types_body.append(element_type)
 
-            if not isinstance(append.expression, tac.MsgAgg):
+            if not isinstance(append.expression, ir.MsgAgg):
                 _unsupported_expression(append.expression, "in Append statement")
 
             update_context = self._update_context(sequence_context, element_context, sequence_type)
@@ -3389,7 +3389,7 @@ class SessionGenerator:
                                 state,
                                 size_check=False,
                             )
-                            if isinstance(append.expression, tac.MsgAgg)
+                            if isinstance(append.expression, ir.MsgAgg)
                             else []
                         ),
                         *update_context,
@@ -3404,8 +3404,8 @@ class SessionGenerator:
         )
 
     @staticmethod
-    def _read(read: tac.Read, is_global: Callable[[ID], bool]) -> Sequence[Statement]:
-        if not isinstance(read.expression, tac.Var) or not isinstance(
+    def _read(read: ir.Read, is_global: Callable[[ID], bool]) -> Sequence[Statement]:
+        if not isinstance(read.expression, ir.Var) or not isinstance(
             read.expression.type_, rty.Message
         ):
             _unsupported_expression(read.expression, "in Read statement")
@@ -3418,9 +3418,9 @@ class SessionGenerator:
 
     @staticmethod
     def _write(
-        write: tac.Write,
+        write: ir.Write,
     ) -> Sequence[Statement]:
-        if not isinstance(write.expression, tac.Var) or not isinstance(
+        if not isinstance(write.expression, ir.Var) or not isinstance(
             write.expression.type_, rty.Message
         ):
             _unsupported_expression(write.expression, "in Write statement")
@@ -3429,8 +3429,8 @@ class SessionGenerator:
 
     def _check(
         self,
-        expression: tac.BoolExpr,
-        origin: Optional[tac.Origin],
+        expression: ir.BoolExpr,
+        origin: Optional[ir.Origin],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
@@ -3445,7 +3445,7 @@ class SessionGenerator:
 
     def _reset(
         self,
-        reset: tac.Reset,
+        reset: ir.Reset,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
         assert isinstance(reset.type_, (rty.Message, rty.Sequence))
@@ -3461,20 +3461,20 @@ class SessionGenerator:
         ]
 
     @singledispatchmethod
-    def _to_ada_expr(self, expression: tac.Expr, is_global: Callable[[ID], bool]) -> Expr:
+    def _to_ada_expr(self, expression: ir.Expr, is_global: Callable[[ID], bool]) -> Expr:
         raise NotImplementedError(f"{type(expression).__name__} is not yet supported")
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Var, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Var, is_global: ty.Callable[[ID], bool]) -> Expr:
         # TODO(eng/recordflux/RecordFlux#1359): Replace typing.Callable by collections.abc.Callable
         return Variable(variable_id(expression.identifier, is_global))
 
     @_to_ada_expr.register
-    def _(self, expression: tac.IntVar, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntVar, is_global: ty.Callable[[ID], bool]) -> Expr:
         return Variable(variable_id(expression.identifier, is_global), expression.negative)
 
     @_to_ada_expr.register
-    def _(self, expression: tac.EnumLit, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.EnumLit, is_global: ty.Callable[[ID], bool]) -> Expr:
         literal = Literal(expression.identifier)
 
         if expression.type_.always_valid:
@@ -3483,15 +3483,15 @@ class SessionGenerator:
         return literal
 
     @_to_ada_expr.register
-    def _(self, expression: tac.IntVal, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntVal, is_global: ty.Callable[[ID], bool]) -> Expr:
         return Number(expression.value)
 
     @_to_ada_expr.register
-    def _(self, expression: tac.BoolVal, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.BoolVal, is_global: ty.Callable[[ID], bool]) -> Expr:
         return Literal(str(expression.value))
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Valid, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Valid, is_global: ty.Callable[[ID], bool]) -> Expr:
         if isinstance(expression.prefix_type, rty.Message):
             return Call(
                 expression.prefix_type.identifier * "Well_Formed_Message",
@@ -3512,10 +3512,10 @@ class SessionGenerator:
 
         assert False, expression.prefix_type
 
-    def _convert_types_of_int_relation(self, expression: tac.Relation) -> tac.Relation:
+    def _convert_types_of_int_relation(self, expression: ir.Relation) -> ir.Relation:
         if (
-            isinstance(expression.left, tac.IntExpr)
-            and isinstance(expression.right, tac.IntExpr)
+            isinstance(expression.left, ir.IntExpr)
+            and isinstance(expression.right, ir.IntExpr)
             and isinstance(expression.left.type_, rty.Integer)
             and isinstance(expression.right.type_, rty.Integer)
             and (
@@ -3527,18 +3527,18 @@ class SessionGenerator:
             self._session_context.referenced_types_body.append(rty.BASE_INTEGER.identifier)
 
             result = expression.__class__(
-                tac.IntConversion(
+                ir.IntConversion(
                     self._ada_type(rty.BASE_INTEGER.identifier), expression.left, rty.BASE_INTEGER
                 )
                 if expression.left.type_ != rty.BASE_INTEGER
                 else expression.left,
-                tac.IntConversion(
+                ir.IntConversion(
                     self._ada_type(rty.BASE_INTEGER.identifier), expression.right, rty.BASE_INTEGER
                 )
                 if expression.right.type_ != rty.BASE_INTEGER
                 else expression.right,
             )
-            assert isinstance(result, tac.Relation)
+            assert isinstance(result, ir.Relation)
             return result
 
         self._record_used_types(expression)
@@ -3546,14 +3546,14 @@ class SessionGenerator:
         return expression
 
     def _relation_to_ada_expr(
-        self, expression: tac.Relation, is_global: ty.Callable[[ID], bool]
+        self, expression: ir.Relation, is_global: ty.Callable[[ID], bool]
     ) -> Expr:
-        assert isinstance(expression, (tac.Equal, tac.NotEqual))
+        assert isinstance(expression, (ir.Equal, ir.NotEqual))
         if (
             isinstance(expression.left.type_, rty.Enumeration)
             and expression.left.type_.always_valid
         ):
-            relation = Equal if isinstance(expression, tac.Equal) else NotEqual
+            relation = Equal if isinstance(expression, ir.Equal) else NotEqual
 
             self._session_context.used_types_body.append(expression.left.type_.identifier)
             return relation(
@@ -3569,7 +3569,7 @@ class SessionGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Size, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Size, is_global: ty.Callable[[ID], bool]) -> Expr:
         if (
             isinstance(expression.prefix_type, rty.AnyInteger)
             or (
@@ -3594,22 +3594,22 @@ class SessionGenerator:
         assert False
 
     @_to_ada_expr.register
-    def _(self, expression: tac.HasData, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.HasData, is_global: ty.Callable[[ID], bool]) -> Expr:
         assert isinstance(expression.prefix_type, rty.Message)
         type_ = expression.prefix_type.identifier
         context = context_id(expression.prefix, is_global)
         return Greater(Call(type_ * "Byte_Size", [Variable(context)]), Number(0))
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Opaque, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Opaque, is_global: ty.Callable[[ID], bool]) -> Expr:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Head, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Head, is_global: ty.Callable[[ID], bool]) -> Expr:
         _unsupported_expression(expression, "in expression")
 
     @_to_ada_expr.register
-    def _(self, expression: tac.FieldValid, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldValid, is_global: ty.Callable[[ID], bool]) -> Expr:
         assert isinstance(expression.message_type, rty.Message)
         type_name = expression.message_type.identifier
         return Call(
@@ -3626,7 +3626,7 @@ class SessionGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: tac.FieldPresent, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldPresent, is_global: ty.Callable[[ID], bool]) -> Expr:
         assert isinstance(expression.message_type, rty.Message)
         type_name = expression.message_type.identifier
         return Call(
@@ -3643,7 +3643,7 @@ class SessionGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: tac.FieldSize, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldSize, is_global: ty.Callable[[ID], bool]) -> Expr:
         type_ = expression.message_type.identifier
         if isinstance(expression.message_type, rty.Message):
             context = context_id(expression.message, is_global)
@@ -3655,7 +3655,7 @@ class SessionGenerator:
         return Call(type_ * f"Field_Size_{expression.field}", [Variable(expression.message)])
 
     @_to_ada_expr.register
-    def _(self, expression: tac.UnaryExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.UnaryExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
         result = getattr(ada, expression.__class__.__name__)(
             self._to_ada_expr(expression.expression, is_global)
         )
@@ -3663,7 +3663,7 @@ class SessionGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: tac.BinaryExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.BinaryExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
         self._record_used_types(expression)
         name = expression.__class__.__name__
         if name == "And":
@@ -3678,7 +3678,7 @@ class SessionGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Relation, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Relation, is_global: ty.Callable[[ID], bool]) -> Expr:
         relation = self._convert_types_of_int_relation(expression)
         result = getattr(ada, relation.__class__.__name__)(
             self._to_ada_expr(relation.left, is_global),
@@ -3688,39 +3688,39 @@ class SessionGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Equal, is_global: ty.Callable[[ID], bool]) -> Expr:
-        if expression.left == tac.BoolVal(True) and isinstance(expression.right, tac.Var):
+    def _(self, expression: ir.Equal, is_global: ty.Callable[[ID], bool]) -> Expr:
+        if expression.left == ir.BoolVal(True) and isinstance(expression.right, ir.Var):
             return Variable(variable_id(expression.right.identifier, is_global))
-        if isinstance(expression.left, tac.Var) and expression.right == tac.BoolVal(True):
+        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(True):
             return Variable(variable_id(expression.left.identifier, is_global))
-        if expression.left == tac.BoolVal(False) and isinstance(expression.right, tac.Var):
+        if expression.left == ir.BoolVal(False) and isinstance(expression.right, ir.Var):
             return Not(Variable(variable_id(expression.right.identifier, is_global)))
-        if isinstance(expression.left, tac.Var) and expression.right == tac.BoolVal(False):
+        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(False):
             return Not(Variable(variable_id(expression.left.identifier, is_global)))
         return self._relation_to_ada_expr(
             self._convert_types_of_int_relation(expression), is_global
         )
 
     @_to_ada_expr.register
-    def _(self, expression: tac.NotEqual, is_global: ty.Callable[[ID], bool]) -> Expr:
-        if expression.left == tac.BoolVal(True) and isinstance(expression.right, tac.Var):
+    def _(self, expression: ir.NotEqual, is_global: ty.Callable[[ID], bool]) -> Expr:
+        if expression.left == ir.BoolVal(True) and isinstance(expression.right, ir.Var):
             return Not(Variable(variable_id(expression.right.identifier, is_global)))
-        if isinstance(expression.left, tac.Var) and expression.right == tac.BoolVal(True):
+        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(True):
             return Not(Variable(variable_id(expression.left.identifier, is_global)))
-        if expression.left == tac.BoolVal(False) and isinstance(expression.right, tac.Var):
+        if expression.left == ir.BoolVal(False) and isinstance(expression.right, ir.Var):
             return Variable(variable_id(expression.right.identifier, is_global))
-        if isinstance(expression.left, tac.Var) and expression.right == tac.BoolVal(False):
+        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(False):
             return Variable(variable_id(expression.left.identifier, is_global))
         return self._relation_to_ada_expr(
             self._convert_types_of_int_relation(expression), is_global
         )
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Call, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Call, is_global: ty.Callable[[ID], bool]) -> Expr:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: tac.FieldAccess, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldAccess, is_global: ty.Callable[[ID], bool]) -> Expr:
         if expression.field in expression.message_type.parameter_types:
             return Selected(Variable(context_id(expression.message, is_global)), expression.field)
         if isinstance(expression.message_type, rty.Structure):
@@ -3731,7 +3731,7 @@ class SessionGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: tac.IntFieldAccess, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntFieldAccess, is_global: ty.Callable[[ID], bool]) -> Expr:
         if expression.field in expression.message_type.parameter_types:
             return Selected(
                 Variable(context_id(expression.message, is_global)),
@@ -3747,7 +3747,7 @@ class SessionGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: tac.IfExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IfExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
         assert expression.then_expr.is_expr() and expression.else_expr.is_expr()
         return ada.If(
             [
@@ -3760,11 +3760,11 @@ class SessionGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Conversion, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Conversion, is_global: ty.Callable[[ID], bool]) -> Expr:
         return Conversion(expression.identifier, self._to_ada_expr(expression.argument, is_global))
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Agg, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Agg, is_global: ty.Callable[[ID], bool]) -> Expr:
         assert len(expression.elements) > 0
         if len(expression.elements) == 1:
             return NamedAggregate(
@@ -3778,7 +3778,7 @@ class SessionGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: tac.NamedAgg, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.NamedAgg, is_global: ty.Callable[[ID], bool]) -> Expr:
         elements: list[tuple[Union[ID, ada.Expr], ada.Expr]] = [
             (
                 n if isinstance(n, ID) else self._to_ada_expr(n, is_global),
@@ -3789,11 +3789,11 @@ class SessionGenerator:
         return NamedAggregate(*elements)
 
     @_to_ada_expr.register
-    def _(self, expression: tac.Str, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Str, is_global: ty.Callable[[ID], bool]) -> Expr:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: tac.CaseExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.CaseExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
         choices = [
             (self._to_ada_expr(choice, is_global), self._to_ada_expr(expr, is_global))
             for choices, expr in expression.choices
@@ -3801,7 +3801,7 @@ class SessionGenerator:
         ]
         return ada.CaseExpr(self._to_ada_expr(expression.expression, is_global), choices)
 
-    def _record_used_types(self, expression: tac.BinaryExpr) -> None:
+    def _record_used_types(self, expression: ir.BinaryExpr) -> None:
         for e in [expression.left, expression.right]:
             if isinstance(e.type_, rty.Integer) or (
                 isinstance(e.type_, rty.Enumeration) and not e.type_.always_valid
@@ -3954,7 +3954,7 @@ class SessionGenerator:
     def _set_message_fields(  # noqa: PLR0913
         self,
         target_context: ID,
-        message_aggregate: tac.MsgAgg,
+        message_aggregate: ir.MsgAgg,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
@@ -3983,11 +3983,11 @@ class SessionGenerator:
         message_context: ID,
         field: ID,
         message_type: rty.Message,
-        value: tac.Expr,
+        value: ir.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        if isinstance(value, tac.FieldAccess) and value.type_ == rty.OPAQUE:
+        if isinstance(value, ir.FieldAccess) and value.type_ == rty.OPAQUE:
             target_context = message_context
             target_message_type = message_type
             target_field = field
@@ -4020,7 +4020,7 @@ class SessionGenerator:
                     ),
                 ]
 
-        if isinstance(value, tac.Opaque):
+        if isinstance(value, ir.Opaque):
             target_context = message_context
             target_message_type = message_type
             target_field = field
@@ -4044,7 +4044,7 @@ class SessionGenerator:
 
         if isinstance(field_type, rty.Sequence):
             size: Expr
-            if isinstance(value, tac.Var) and isinstance(value.type_, (rty.Message, rty.Sequence)):
+            if isinstance(value, ir.Var) and isinstance(value.type_, (rty.Message, rty.Sequence)):
                 type_ = value.type_.identifier
                 context = context_id(value.identifier, is_global)
                 # TODO(eng/recordflux/RecordFlux#861): Move check into IR
@@ -4062,7 +4062,7 @@ class SessionGenerator:
                     exception_handler,
                 )
             else:
-                if isinstance(value, tac.Agg):
+                if isinstance(value, ir.Agg):
                     size = Mul(Number(len(value.elements)), Size(const.TYPES_BYTE))
                 else:
                     size = Size(self._to_ada_expr(value, is_global))
@@ -4095,14 +4095,14 @@ class SessionGenerator:
             ],
         )
 
-        if isinstance(value, (tac.IntVal, tac.BoolVal, tac.FieldAccess, tac.Agg, tac.CaseExpr)) or (
+        if isinstance(value, (ir.IntVal, ir.BoolVal, ir.FieldAccess, ir.Agg, ir.CaseExpr)) or (
             isinstance(
                 value,
-                (tac.Var, tac.EnumLit, tac.BinaryIntExpr, tac.Size),
+                (ir.Var, ir.EnumLit, ir.BinaryIntExpr, ir.Size),
             )
             and isinstance(value.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
         ):
-            if isinstance(value, tac.Agg) and len(value.elements) == 0:
+            if isinstance(value, ir.Agg) and len(value.elements) == 0:
                 statements.append(
                     CallStatement(
                         message_type_id * f"Set_{field}_Empty", [Variable(message_context)]
@@ -4111,12 +4111,12 @@ class SessionGenerator:
             else:
                 ada_value: ada.Expr
                 if (
-                    isinstance(value, tac.Var)
+                    isinstance(value, ir.Var)
                     and isinstance(value.type_, rty.Enumeration)
                     and value.type_.always_valid
                 ):
                     ada_value = Selected(self._to_ada_expr(value, is_global), "Enum")
-                elif isinstance(value, tac.EnumLit):
+                elif isinstance(value, ir.EnumLit):
                     ada_value = Literal(value.identifier)
                 else:
                     ada_value = self._to_ada_expr(self._convert_type(value, field_type), is_global)
@@ -4132,7 +4132,7 @@ class SessionGenerator:
                         ),
                     ]
                 )
-        elif isinstance(value, tac.Var) and isinstance(value.type_, rty.Sequence):
+        elif isinstance(value, ir.Var) and isinstance(value.type_, rty.Sequence):
             sequence_context = context_id(value.identifier, is_global)
             statements.extend(
                 [
@@ -4143,7 +4143,7 @@ class SessionGenerator:
                     ),
                 ]
             )
-        elif isinstance(value, tac.Var) and isinstance(value.type_, rty.Message):
+        elif isinstance(value, ir.Var) and isinstance(value.type_, rty.Message):
             _unsupported_expression(value, "in message aggregate")
         else:
             _unsupported_expression(value, "as value of message field")
@@ -4549,16 +4549,16 @@ class SessionGenerator:
         target_type: Union[rty.Sequence, rty.Integer, rty.Enumeration, rty.Message],
         iterator_identifier: ID,
         iterator_type: ID,
-        selector_stmts: list[tac.Stmt],
-        selector: tac.Expr,
-        condition_stmts: list[tac.Stmt],
-        condition: tac.Expr,
+        selector_stmts: list[ir.Stmt],
+        selector: ir.Expr,
+        condition_stmts: list[ir.Stmt],
+        condition: ir.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
         alloc_id: Optional[Location],
     ) -> While:
-        assert not isinstance(selector, tac.MsgAgg)
+        assert not isinstance(selector, ir.MsgAgg)
 
         assert (
             isinstance(target_type.element, (rty.Integer, rty.Enumeration, rty.Message))
@@ -4757,8 +4757,8 @@ class SessionGenerator:
         self,
         target_identifier: ID,
         target_type: Union[rty.Integer, rty.Enumeration, rty.Message],
-        selector_stmts: list[tac.Stmt],
-        selector: tac.Expr,
+        selector_stmts: list[ir.Stmt],
+        selector: ir.Expr,
         update_context: Sequence[Statement],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
@@ -4768,7 +4768,7 @@ class SessionGenerator:
         assign_element: Sequence[Statement]
 
         if isinstance(target_type, rty.Message):
-            if not isinstance(selector, tac.Var):
+            if not isinstance(selector, ir.Var):
                 fail(
                     "expressions other than variables not yet supported"
                     " as selector for message types",
@@ -4845,8 +4845,8 @@ class SessionGenerator:
         self,
         target_identifier: ID,
         target_type: rty.Sequence,
-        selector_stmts: list[tac.Stmt],
-        selector: tac.Expr,
+        selector_stmts: list[ir.Stmt],
+        selector: ir.Expr,
         _: Sequence[Statement],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
@@ -4859,7 +4859,7 @@ class SessionGenerator:
         append_element: Statement
 
         if isinstance(target_type.element, rty.Message):
-            if not isinstance(selector, tac.Var):
+            if not isinstance(selector, ir.Var):
                 fail(
                     "expressions other than variables not yet supported"
                     " as selector for message types",
@@ -5135,9 +5135,9 @@ class SessionGenerator:
 
     def _convert_type(
         self,
-        expression: tac.Expr,
+        expression: ir.Expr,
         target_type: rty.Type,
-    ) -> tac.Expr:
+    ) -> ir.Expr:
         if target_type.is_compatible_strong(expression.type_):
             return expression
 
@@ -5145,18 +5145,18 @@ class SessionGenerator:
 
         self._session_context.referenced_types_body.append(target_type.identifier)
 
-        if isinstance(expression, tac.BinaryIntExpr):
+        if isinstance(expression, ir.BinaryIntExpr):
             assert isinstance(target_type, rty.Integer)
             return expression.__class__(
-                tac.IntConversion(
+                ir.IntConversion(
                     self._ada_type(target_type.identifier), expression.left, target_type
                 ),
-                tac.IntConversion(
+                ir.IntConversion(
                     self._ada_type(target_type.identifier), expression.right, target_type
                 ),
             )
 
-        return tac.Conversion(self._ada_type(target_type.identifier), expression, target_type)
+        return ir.Conversion(self._ada_type(target_type.identifier), expression, target_type)
 
     def _debug_output(self, string: str) -> Sequence[CallStatement]:
         return (
@@ -5206,7 +5206,7 @@ def state_id(identifier: ID) -> ID:
     return "S_" + identifier
 
 
-def _unexpected_expression(expression: tac.Expr, context: str) -> NoReturn:
+def _unexpected_expression(expression: ir.Expr, context: str) -> NoReturn:
     fatal_fail(
         f'unexpected expression "{type(expression).__name__}" with {expression.type_} {context}',
         Subsystem.GENERATOR,
@@ -5214,7 +5214,7 @@ def _unexpected_expression(expression: tac.Expr, context: str) -> NoReturn:
     )
 
 
-def _unsupported_expression(expression: tac.Expr, context: str) -> NoReturn:
+def _unsupported_expression(expression: ir.Expr, context: str) -> NoReturn:
     fail(
         f"{type(expression).__name__} with {expression.type_} {context} not yet supported",
         Subsystem.GENERATOR,

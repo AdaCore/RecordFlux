@@ -4,10 +4,10 @@ from abc import abstractmethod
 from collections.abc import Callable, Generator, Mapping, Sequence
 from typing import Optional
 
-from rflx import tac, typing_ as rty
+from rflx import ir, typing_ as rty
 from rflx.common import Base
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
-from rflx.expression import Expr, Variable, _to_tac_basic_expr
+from rflx.expression import Expr, Variable, _to_ir_basic_expr
 from rflx.identifier import ID, StrID
 
 
@@ -35,7 +35,7 @@ class Statement(Base):
         raise NotImplementedError
 
     @abstractmethod
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         raise NotImplementedError
 
 
@@ -67,10 +67,10 @@ class VariableAssignment(Assignment):
             statement_type, rty.Any, self.location, f'variable "{self.identifier}"'
         ) + self.expression.check_type(statement_type)
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.NamedType)
-        expression = self.expression.to_tac(variable_id)
-        return [*expression.stmts, tac.Assign(self.identifier, expression.expr, self.type_, self)]
+        expression = self.expression.to_ir(variable_id)
+        return [*expression.stmts, ir.Assign(self.identifier, expression.expr, self.type_, self)]
 
 
 class MessageFieldAssignment(Assignment):
@@ -135,13 +135,13 @@ class MessageFieldAssignment(Assignment):
             + self.expression.check_type(field_type)
         )
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.Message)
 
-        expression = self.expression.to_tac(variable_id)
+        expression = self.expression.to_ir(variable_id)
         return [
             *expression.stmts,
-            tac.FieldAssign(self.message, self.field, expression.expr, self.type_, self),
+            ir.FieldAssign(self.message, self.field, expression.expr, self.type_, self),
         ]
 
 
@@ -170,7 +170,7 @@ class AttributeStatement(Statement):
     def variables(self) -> Sequence[Variable]:
         return [Variable(self.identifier), *[e for p in self.parameters for e in p.variables()]]
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         raise NotImplementedError
 
 
@@ -226,12 +226,12 @@ class Append(ListAttributeStatement):
         assert isinstance(self.parameters, list)
         self.parameters[0] = value
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.Sequence)
-        parameter = self.parameter.to_tac(variable_id)
+        parameter = self.parameter.to_ir(variable_id)
         return [
             *parameter.stmts,
-            tac.Append(self.identifier, parameter.expr, self.type_, self),
+            ir.Append(self.identifier, parameter.expr, self.type_, self),
         ]
 
 
@@ -254,12 +254,12 @@ class Extend(ListAttributeStatement):
         assert isinstance(self.parameters, list)
         self.parameters[0] = value
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.Sequence)
-        parameter = self.parameter.to_tac(variable_id)
+        parameter = self.parameter.to_ir(variable_id)
         return [
             *parameter.stmts,
-            tac.Extend(self.identifier, parameter.expr, self.type_, self),
+            ir.Extend(self.identifier, parameter.expr, self.type_, self),
         ]
 
 
@@ -340,17 +340,17 @@ class Reset(AttributeStatement):
             *[v for e in self.associations.values() for v in e.variables()],
         ]
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, (rty.Sequence, rty.Message))
         associations = {}
         stmts = []
         for i, e in self.associations.items():
-            e_tac = e.to_tac(variable_id)
-            associations[i] = e_tac.expr
-            stmts.extend(e_tac.stmts)
+            e_ir = e.to_ir(variable_id)
+            associations[i] = e_ir.expr
+            stmts.extend(e_ir.stmts)
         return [
             *stmts,
-            tac.Reset(self.identifier, associations, self.type_, self),
+            ir.Reset(self.identifier, associations, self.type_, self),
         ]
 
 
@@ -380,11 +380,11 @@ class ChannelAttributeStatement(AttributeStatement):
     def parameter(self) -> Expr:
         return self.parameters[0]
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> list[tac.Stmt]:
-        parameter_stmts, parameter_expr = _to_tac_basic_expr(self.parameter, variable_id)
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
+        parameter_stmts, parameter_expr = _to_ir_basic_expr(self.parameter, variable_id)
         return [
             *parameter_stmts,
-            getattr(tac, self.__class__.__name__)(self.identifier, parameter_expr, self),
+            getattr(ir, self.__class__.__name__)(self.identifier, parameter_expr, self),
         ]
 
     @abstractmethod

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Final, Optional
 
-from rflx import expression as expr, tac, typing_ as rty
+from rflx import expression as expr, ir, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.error import Location, Severity, Subsystem
 from rflx.identifier import ID, StrID, id_generator
@@ -46,11 +46,11 @@ class Transition(Base):
         )
         return f"goto {target}{with_aspects}{if_condition}"
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.Transition:
-        condition = self.condition.to_tac(variable_id)
-        return tac.Transition(
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.Transition:
+        condition = self.condition.to_ir(variable_id)
+        return ir.Transition(
             self.target,
-            tac.ComplexExpr(
+            ir.ComplexExpr(
                 condition.stmts,
                 condition.expr,
             ),
@@ -164,15 +164,15 @@ class State(Base):
     def optimize(self) -> None:
         self._optimize_structures()
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.State:
-        actions = [s for a in self._actions for s in a.to_tac(variable_id)]
-        transitions = [t.to_tac(variable_id) for t in self._transitions]
-        declarations = [d.to_tac(variable_id) for d in self.declarations.values()]
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.State:
+        actions = [s for a in self._actions for s in a.to_ir(variable_id)]
+        transitions = [t.to_ir(variable_id) for t in self._transitions]
+        declarations = [d.to_ir(variable_id) for d in self.declarations.values()]
 
-        return tac.State(
+        return ir.State(
             self.identifier,
             transitions,
-            (self.exception_transition.to_tac(variable_id) if self.exception_transition else None),
+            (self.exception_transition.to_ir(variable_id) if self.exception_transition else None),
             [*declarations, *actions],
             self.description,
             self.location,
@@ -489,16 +489,16 @@ class Session(AbstractSession):
         self.error.propagate()
 
         self._optimize()
-        self.to_tac()
+        self.to_ir()
 
     @lru_cache
-    def to_tac(self) -> tac.Session:
+    def to_ir(self) -> ir.Session:
         variable_id = id_generator()
-        return tac.Session(
+        return ir.Session(
             self.identifier,
-            [state.to_tac(variable_id) for state in self.states],
-            [d.to_tac(variable_id) for d in self.declarations.values()],
-            [p.to_tac() for p in self.parameters.values()],
+            [state.to_ir(variable_id) for state in self.states],
+            [d.to_ir(variable_id) for d in self.declarations.values()],
+            [p.to_ir() for p in self.parameters.values()],
             self.types,
             self.location,
             variable_id,

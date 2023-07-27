@@ -5,7 +5,7 @@ from collections.abc import Callable, Generator, Sequence
 from typing import ClassVar, Optional
 
 import rflx.typing_ as rty
-from rflx import tac
+from rflx import ir
 from rflx.common import Base
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import Expr, Selected, Variable
@@ -45,7 +45,7 @@ class Declaration(Base):
 
 
 class BasicDeclaration(Declaration):
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.VarDecl:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.VarDecl:
         raise NotImplementedError
 
 
@@ -115,13 +115,13 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
             return self.expression.variables()
         return []
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.VarDecl:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.VarDecl:
         assert isinstance(self.type_, rty.NamedType)
         if self.expression:
-            expression = self.expression.to_tac(variable_id)
+            expression = self.expression.to_ir(variable_id)
         else:
             expression = None
-        return tac.VarDecl(
+        return ir.VarDecl(
             self.identifier,
             self.type_,
             expression,
@@ -187,7 +187,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
     def variables(self) -> Sequence[Variable]:
         return self.expression.variables()
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.VarDecl:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.VarDecl:
         fail(
             "renaming declarations not yet supported",
             Subsystem.MODEL,
@@ -199,7 +199,7 @@ class FormalDeclaration(Declaration):
     def variables(self) -> Sequence[Variable]:
         return []
 
-    def to_tac(self) -> tac.FormalDecl:
+    def to_ir(self) -> ir.FormalDecl:
         raise NotImplementedError
 
 
@@ -223,8 +223,8 @@ class Argument(Base):
     def type_identifier(self) -> ID:
         return self._type_identifier
 
-    def to_tac(self) -> tac.Argument:
-        return tac.Argument(self.identifier, self.type_identifier, self.type_)
+    def to_ir(self) -> ir.Argument:
+        return ir.Argument(self.identifier, self.type_identifier, self.type_)
 
 
 class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
@@ -262,10 +262,10 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
     def return_type(self) -> ID:
         return self._return_type
 
-    def to_tac(self) -> tac.FuncDecl:
-        return tac.FuncDecl(
+    def to_ir(self) -> ir.FuncDecl:
+        return ir.FuncDecl(
             self.identifier,
-            [a.to_tac() for a in self.arguments],
+            [a.to_ir() for a in self.arguments],
             self.return_type,
             self.type_,
             self.location,
@@ -308,8 +308,8 @@ class ChannelDeclaration(FormalDeclaration):
     def writable(self) -> bool:
         return self._writable
 
-    def to_tac(self) -> tac.ChannelDecl:
-        return tac.ChannelDecl(self.identifier, self.readable, self.writable, self.location)
+    def to_ir(self) -> ir.ChannelDecl:
+        return ir.ChannelDecl(self.identifier, self.readable, self.writable, self.location)
 
 
 def ada_type_name(identifier: ID) -> StrID:

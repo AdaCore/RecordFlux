@@ -7,7 +7,7 @@ from collections.abc import Sequence
 
 import hypothesis
 
-from rflx import expression as expr, model, tac
+from rflx import expression as expr, ir, model
 from tests.const import FIXTURE_DIR
 
 hypothesis.settings.register_profile(
@@ -31,7 +31,7 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
             "    Actual:   " + re.sub(r"\n +", " ", str(left)),
             "    Expected: " + re.sub(r"\n +", " ", str(right)),
         ]
-    if isinstance(left, tac.Stmt) and isinstance(right, tac.Stmt) and op == "==":
+    if isinstance(left, ir.Stmt) and isinstance(right, ir.Stmt) and op == "==":
         return [
             "Stmt instances",
             "repr:",
@@ -41,7 +41,7 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
             "    Actual:   " + re.sub(r"\n +", " ", str(left)),
             "    Expected: " + re.sub(r"\n +", " ", str(right)),
         ]
-    if isinstance(left, tac.Expr) and isinstance(right, tac.Expr) and op == "==":
+    if isinstance(left, ir.Expr) and isinstance(right, ir.Expr) and op == "==":
         return [
             "Expr instances",
             "repr:",
@@ -79,7 +79,7 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
             "    Actual:   " + re.sub(r"\n +", " ", str(left)),
             "    Expected: " + re.sub(r"\n +", " ", str(right)),
         ]
-    if isinstance(left, tac.ComplexExpr) and isinstance(right, tac.ComplexExpr) and op == "==":
+    if isinstance(left, ir.ComplexExpr) and isinstance(right, ir.ComplexExpr) and op == "==":
         return [
             "ComplexExpr instances",
             "repr:",

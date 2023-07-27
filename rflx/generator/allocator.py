@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from itertools import zip_longest
 from typing import Optional
 
-from rflx import tac, typing_ as rty
+from rflx import ir, typing_ as rty
 from rflx.ada import (
     Add,
     And,
@@ -62,7 +62,7 @@ class NumberedSlotInfo(SlotInfo):
 
 
 class AllocatorGenerator:
-    def __init__(self, session: tac.Session, integration: Integration, prefix: str = "") -> None:
+    def __init__(self, session: ir.Session, integration: Integration, prefix: str = "") -> None:
         self._session = session
         self._prefix = prefix
         self._declaration_context: list[ContextItem] = []
@@ -344,7 +344,7 @@ class AllocatorGenerator:
         return slots
 
     @staticmethod
-    def _scope(state: tac.State, var_id: ID) -> Optional[ID]:
+    def _scope(state: ir.State, var_id: ID) -> Optional[ID]:
         """
         Return the scope of the variable var_id.
 
@@ -378,23 +378,23 @@ class AllocatorGenerator:
         for s in self._session.states:
             state_requirements = []
             for a in s.actions:
-                if isinstance(a, tac.VarDecl) and self._needs_allocation(a.type_):
+                if isinstance(a, ir.VarDecl) and self._needs_allocation(a.type_):
                     state_requirements.append(
                         AllocationRequirement(
                             a.location, self.get_size(a.identifier, s.identifier.name)
                         )
                     )
                 if (
-                    isinstance(a, tac.Assign)
-                    and isinstance(a.expression, tac.Comprehension)
+                    isinstance(a, ir.Assign)
+                    and isinstance(a.expression, ir.Comprehension)
                     and isinstance(a.expression.sequence.type_, rty.Sequence)
                     and isinstance(a.expression.sequence.type_.element, rty.Message)
-                    and isinstance(a.expression.sequence, (tac.Var, tac.FieldAccess))
+                    and isinstance(a.expression.sequence, (ir.Var, ir.FieldAccess))
                 ):
-                    if isinstance(a.expression.sequence, tac.FieldAccess):
+                    if isinstance(a.expression.sequence, ir.FieldAccess):
                         identifier = a.expression.sequence.message
                     else:
-                        assert isinstance(a.expression.sequence, tac.Var)
+                        assert isinstance(a.expression.sequence, ir.Var)
                         identifier = a.expression.sequence.identifier
                     state_requirements.append(
                         AllocationRequirement(
@@ -402,7 +402,7 @@ class AllocatorGenerator:
                             self.get_size(identifier, self._scope(s, identifier)),
                         )
                     )
-                if isinstance(a, tac.Assign) and isinstance(a.expression, tac.Head):
+                if isinstance(a, ir.Assign) and isinstance(a.expression, ir.Head):
                     identifier = a.expression.prefix
                     state_requirements.append(
                         AllocationRequirement(
@@ -410,10 +410,10 @@ class AllocatorGenerator:
                             self.get_size(identifier, self._scope(s, identifier)),
                         )
                     )
-                if isinstance(a, tac.Assign) and isinstance(a.expression, tac.Find):
-                    if isinstance(a.expression.sequence, tac.Var):
+                if isinstance(a, ir.Assign) and isinstance(a.expression, ir.Find):
+                    if isinstance(a.expression.sequence, ir.Var):
                         identifier = a.expression.sequence.identifier
-                    elif isinstance(a.expression.sequence, tac.FieldAccess):
+                    elif isinstance(a.expression.sequence, ir.FieldAccess):
                         identifier = a.expression.sequence.message
                     else:
                         assert False

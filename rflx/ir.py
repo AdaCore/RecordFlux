@@ -1,4 +1,4 @@
-"""Intermediate representation in three-address code (TAC) format."""
+"""Intermediate representation."""
 
 from __future__ import annotations
 
@@ -121,6 +121,8 @@ class Cond(Base):
 
 @define(init=False, eq=False)
 class Stmt(Base):
+    """Statement in three-address code (TAC) format."""
+
     origin: Optional[Origin]
     _str: Optional[str] = field(init=False, default=None)
 
@@ -394,6 +396,8 @@ Self = TypeVar("Self", bound="Expr")
 
 @define(init=False)
 class Expr(Base):
+    """Expression in three-address code (TAC) format."""
+
     origin: Optional[Origin]
     _str: Optional[str] = field(init=False, default=None)
 

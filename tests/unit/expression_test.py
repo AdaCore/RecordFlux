@@ -6,7 +6,7 @@ from collections.abc import Callable, Mapping
 import pytest
 import z3
 
-from rflx import ada, tac, typing_ as rty
+from rflx import ada, ir, typing_ as rty
 from rflx.error import FatalError, Location, RecordFluxError
 from rflx.expression import (
     FALSE,
@@ -114,8 +114,8 @@ def test_true_z3expr() -> None:
     assert TRUE.z3expr() == z3.BoolVal(True)
 
 
-def test_true_to_tac() -> None:
-    assert TRUE.to_tac(id_generator()) == tac.ComplexExpr([], tac.BoolVal(True))
+def test_true_to_ir() -> None:
+    assert TRUE.to_ir(id_generator()) == ir.ComplexExpr([], ir.BoolVal(True))
 
 
 def test_false_type() -> None:
@@ -137,8 +137,8 @@ def test_false_z3expr() -> None:
     assert FALSE.z3expr() == z3.BoolVal(False)
 
 
-def test_false_to_tac() -> None:
-    assert FALSE.to_tac(id_generator()) == tac.ComplexExpr([], tac.BoolVal(False))
+def test_false_to_ir() -> None:
+    assert FALSE.to_ir(id_generator()) == ir.ComplexExpr([], ir.BoolVal(False))
 
 
 def test_not_type() -> None:
@@ -225,21 +225,19 @@ def test_not_z3expr() -> None:
         Not(Variable("X")).z3expr()
 
 
-def test_not_to_tac() -> None:
-    assert Not(TRUE).to_tac(id_generator()) == tac.ComplexBoolExpr([], tac.Not(tac.BoolVal(True)))
-    assert Not(Variable("X", type_=rty.BOOLEAN)).to_tac(id_generator()) == tac.ComplexBoolExpr(
-        [], tac.Not(tac.BoolVar("X"))
+def test_not_to_ir() -> None:
+    assert Not(TRUE).to_ir(id_generator()) == ir.ComplexBoolExpr([], ir.Not(ir.BoolVal(True)))
+    assert Not(Variable("X", type_=rty.BOOLEAN)).to_ir(id_generator()) == ir.ComplexBoolExpr(
+        [], ir.Not(ir.BoolVar("X"))
     )
-    assert Not(Less(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY))).to_tac(
+    assert Not(Less(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY))).to_ir(
         id_generator()
-    ) == tac.ComplexBoolExpr(
+    ) == ir.ComplexBoolExpr(
         [
-            tac.VarDecl("T_0", rty.BOOLEAN),
-            tac.Assign(
-                "T_0", tac.Less(tac.IntVar("X", INT_TY), tac.IntVar("Y", INT_TY)), rty.BOOLEAN
-            ),
+            ir.VarDecl("T_0", rty.BOOLEAN),
+            ir.Assign("T_0", ir.Less(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), rty.BOOLEAN),
         ],
-        tac.Not(tac.BoolVar("T_0")),
+        ir.Not(ir.BoolVar("T_0")),
     )
 
 
@@ -489,28 +487,28 @@ def test_and_z3expr() -> None:
     assert_equal(And(TRUE, TRUE).z3expr(), z3.And(z3.BoolVal(True), z3.BoolVal(True)))
 
 
-@pytest.mark.parametrize(["op", "tac_op"], [(And, tac.And), (Or, tac.Or)])
-def test_and_or_to_tac(  # type: ignore[misc]
-    op: Callable[..., Expr], tac_op: Callable[[tac.BoolExpr, tac.BoolExpr], tac.BoolExpr]
+@pytest.mark.parametrize(["op", "ir_op"], [(And, ir.And), (Or, ir.Or)])
+def test_and_or_to_ir(  # type: ignore[misc]
+    op: Callable[..., Expr], ir_op: Callable[[ir.BoolExpr, ir.BoolExpr], ir.BoolExpr]
 ) -> None:
-    assert op().to_tac(id_generator()) == tac.ComplexBoolExpr(
+    assert op().to_ir(id_generator()) == ir.ComplexBoolExpr(
         [],
-        tac.BoolVal(True),
+        ir.BoolVal(True),
     )
-    assert op(Variable("X", type_=rty.BOOLEAN)).to_tac(id_generator()) == tac.ComplexBoolExpr(
+    assert op(Variable("X", type_=rty.BOOLEAN)).to_ir(id_generator()) == ir.ComplexBoolExpr(
         [],
-        tac.BoolVar("X"),
+        ir.BoolVar("X"),
     )
     assert op(
         Variable("X", type_=rty.BOOLEAN),
         Variable("Y", type_=rty.BOOLEAN),
         Variable("Z", type_=rty.BOOLEAN),
-    ).to_tac(id_generator()) == tac.ComplexBoolExpr(
+    ).to_ir(id_generator()) == ir.ComplexBoolExpr(
         [
-            tac.VarDecl("T_0", rty.BOOLEAN),
-            tac.Assign("T_0", tac_op(tac.BoolVar("Y"), tac.BoolVar("Z")), rty.BOOLEAN),
+            ir.VarDecl("T_0", rty.BOOLEAN),
+            ir.Assign("T_0", ir_op(ir.BoolVar("Y"), ir.BoolVar("Z")), rty.BOOLEAN),
         ],
-        tac_op(tac.BoolVar("X"), tac.BoolVar("T_0")),
+        ir_op(ir.BoolVar("X"), ir.BoolVar("T_0")),
     )
     assert op(
         op(
@@ -518,12 +516,12 @@ def test_and_or_to_tac(  # type: ignore[misc]
             Variable("Y", type_=rty.BOOLEAN),
         ),
         Variable("Z", type_=rty.BOOLEAN),
-    ).to_tac(id_generator()) == tac.ComplexBoolExpr(
+    ).to_ir(id_generator()) == ir.ComplexBoolExpr(
         [
-            tac.VarDecl("T_0", rty.BOOLEAN),
-            tac.Assign("T_0", tac_op(tac.BoolVar("X"), tac.BoolVar("Y")), rty.BOOLEAN),
+            ir.VarDecl("T_0", rty.BOOLEAN),
+            ir.Assign("T_0", ir_op(ir.BoolVar("X"), ir.BoolVar("Y")), rty.BOOLEAN),
         ],
-        tac_op(tac.BoolVar("T_0"), tac.BoolVar("Z")),
+        ir_op(ir.BoolVar("T_0"), ir.BoolVar("Z")),
     )
 
 
@@ -777,28 +775,28 @@ def test_add_z3expr() -> None:
     )
 
 
-@pytest.mark.parametrize(["op", "tac_op"], [(Add, tac.Add), (Mul, tac.Mul)])
-def test_add_mul_to_tac(  # type: ignore[misc]
-    op: Callable[..., Expr], tac_op: Callable[[tac.IntExpr, tac.IntExpr], tac.IntExpr]
+@pytest.mark.parametrize(["op", "ir_op"], [(Add, ir.Add), (Mul, ir.Mul)])
+def test_add_mul_to_ir(  # type: ignore[misc]
+    op: Callable[..., Expr], ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr]
 ) -> None:
-    assert op().to_tac(id_generator()) == tac.ComplexIntExpr(
+    assert op().to_ir(id_generator()) == ir.ComplexIntExpr(
         [],
-        tac.IntVal(0),
+        ir.IntVal(0),
     )
-    assert op(Variable("X", type_=INT_TY)).to_tac(id_generator()) == tac.ComplexIntExpr(
+    assert op(Variable("X", type_=INT_TY)).to_ir(id_generator()) == ir.ComplexIntExpr(
         [],
-        tac.IntVar("X", INT_TY),
+        ir.IntVar("X", INT_TY),
     )
     assert op(
         Variable("X", type_=INT_TY),
         Variable("Y", type_=INT_TY),
         Variable("Z", type_=INT_TY),
-    ).to_tac(id_generator()) == tac.ComplexIntExpr(
+    ).to_ir(id_generator()) == ir.ComplexIntExpr(
         [
-            tac.VarDecl("T_0", INT_TY),
-            tac.Assign("T_0", tac_op(tac.IntVar("Y", INT_TY), tac.IntVar("Z", INT_TY)), INT_TY),
+            ir.VarDecl("T_0", INT_TY),
+            ir.Assign("T_0", ir_op(ir.IntVar("Y", INT_TY), ir.IntVar("Z", INT_TY)), INT_TY),
         ],
-        tac_op(tac.IntVar("X", INT_TY), tac.IntVar("T_0", INT_TY)),
+        ir_op(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
     )
     assert op(
         op(
@@ -806,12 +804,12 @@ def test_add_mul_to_tac(  # type: ignore[misc]
             Variable("Y", type_=INT_TY),
         ),
         Variable("Z", type_=INT_TY),
-    ).to_tac(id_generator()) == tac.ComplexIntExpr(
+    ).to_ir(id_generator()) == ir.ComplexIntExpr(
         [
-            tac.VarDecl("T_0", INT_TY),
-            tac.Assign("T_0", tac_op(tac.IntVar("X", INT_TY), tac.IntVar("Y", INT_TY)), INT_TY),
+            ir.VarDecl("T_0", INT_TY),
+            ir.Assign("T_0", ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), INT_TY),
         ],
-        tac_op(tac.IntVar("T_0", INT_TY), tac.IntVar("Z", INT_TY)),
+        ir_op(ir.IntVar("T_0", INT_TY), ir.IntVar("Z", INT_TY)),
     )
 
 
@@ -870,17 +868,17 @@ def test_sub_z3expr() -> None:
 
 
 @pytest.mark.parametrize(
-    ["op", "tac_op"], [(Sub, tac.Sub), (Div, tac.Div), (Pow, tac.Pow), (Mod, tac.Mod)]
+    ["op", "ir_op"], [(Sub, ir.Sub), (Div, ir.Div), (Pow, ir.Pow), (Mod, ir.Mod)]
 )
-def test_sub_div_pow_mod_to_tac(  # type: ignore[misc]
-    op: Callable[..., Expr], tac_op: Callable[[tac.IntExpr, tac.IntExpr], tac.IntExpr]
+def test_sub_div_pow_mod_to_ir(  # type: ignore[misc]
+    op: Callable[..., Expr], ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr]
 ) -> None:
     assert op(
         Variable("X", type_=INT_TY),
         Variable("Y", type_=INT_TY),
-    ).to_tac(id_generator()) == tac.ComplexIntExpr(
+    ).to_ir(id_generator()) == ir.ComplexIntExpr(
         [],
-        tac_op(tac.IntVar("X", INT_TY), tac.IntVar("Y", INT_TY)),
+        ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
     )
     assert op(
         op(
@@ -888,12 +886,12 @@ def test_sub_div_pow_mod_to_tac(  # type: ignore[misc]
             Variable("Y", type_=INT_TY),
         ),
         Variable("Z", type_=INT_TY),
-    ).to_tac(id_generator()) == tac.ComplexIntExpr(
+    ).to_ir(id_generator()) == ir.ComplexIntExpr(
         [
-            tac.VarDecl("T_0", INT_TY),
-            tac.Assign("T_0", tac_op(tac.IntVar("X", INT_TY), tac.IntVar("Y", INT_TY)), INT_TY),
+            ir.VarDecl("T_0", INT_TY),
+            ir.Assign("T_0", ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), INT_TY),
         ],
-        tac_op(tac.IntVar("T_0", INT_TY), tac.IntVar("Z", INT_TY)),
+        ir_op(ir.IntVar("T_0", INT_TY), ir.IntVar("Z", INT_TY)),
     )
 
 
@@ -962,9 +960,9 @@ def test_term_simplified() -> None:
     )
 
 
-def test_literal_to_tac() -> None:
-    assert Literal("X", type_=ENUM_TY).to_tac(id_generator()) == tac.ComplexExpr(
-        [], tac.EnumLit("X", ENUM_TY)
+def test_literal_to_ir() -> None:
+    assert Literal("X", type_=ENUM_TY).to_ir(id_generator()) == ir.ComplexExpr(
+        [], ir.EnumLit("X", ENUM_TY)
     )
 
 
@@ -1026,21 +1024,21 @@ def test_variable_z3expr() -> None:
     assert z3.simplify(Sub(Variable("X"), Variable("X")).z3expr()) == z3.IntVal(0)
 
 
-def test_variable_to_tac() -> None:
-    assert Variable("X", type_=rty.BOOLEAN).to_tac(id_generator()) == tac.ComplexBoolExpr(
-        [], tac.BoolVar("X")
+def test_variable_to_ir() -> None:
+    assert Variable("X", type_=rty.BOOLEAN).to_ir(id_generator()) == ir.ComplexBoolExpr(
+        [], ir.BoolVar("X")
     )
-    assert Variable("X", type_=INT_TY).to_tac(id_generator()) == tac.ComplexIntExpr(
-        [], tac.IntVar("X", INT_TY)
+    assert Variable("X", type_=INT_TY).to_ir(id_generator()) == ir.ComplexIntExpr(
+        [], ir.IntVar("X", INT_TY)
     )
-    assert Variable("X", type_=INT_TY, negative=True).to_tac(id_generator()) == tac.ComplexIntExpr(
-        [], tac.IntVar("X", INT_TY, negative=True)
+    assert Variable("X", type_=INT_TY, negative=True).to_ir(id_generator()) == ir.ComplexIntExpr(
+        [], ir.IntVar("X", INT_TY, negative=True)
     )
-    assert Variable("X", type_=MSG_TY).to_tac(id_generator()) == tac.ComplexExpr(
-        [], tac.ObjVar("X", MSG_TY)
+    assert Variable("X", type_=MSG_TY).to_ir(id_generator()) == ir.ComplexExpr(
+        [], ir.ObjVar("X", MSG_TY)
     )
-    assert Variable("X", type_=SEQ_TY).to_tac(id_generator()) == tac.ComplexExpr(
-        [], tac.ObjVar("X", SEQ_TY)
+    assert Variable("X", type_=SEQ_TY).to_ir(id_generator()) == ir.ComplexExpr(
+        [], ir.ObjVar("X", SEQ_TY)
     )
 
 
@@ -1211,34 +1209,34 @@ def test_attribute_z3expr_error() -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute, tac_attribute",
+    "attribute, ir_attribute",
     [
-        (Size(Variable("X", type_=MSG_TY)), tac.Size("X", MSG_TY)),
-        (Length(Variable("X", type_=MSG_TY)), tac.Length("X", MSG_TY)),
-        (First(Variable("X", type_=MSG_TY)), tac.First("X", MSG_TY)),
-        (Last(Variable("X", type_=MSG_TY)), tac.Last("X", MSG_TY)),
-        (Head(Variable("X", type_=SEQ_TY), type_=MSG_TY), tac.Head("X", SEQ_TY)),
-        (Opaque(Variable("X", type_=MSG_TY)), tac.Opaque("X", MSG_TY)),
+        (Size(Variable("X", type_=MSG_TY)), ir.Size("X", MSG_TY)),
+        (Length(Variable("X", type_=MSG_TY)), ir.Length("X", MSG_TY)),
+        (First(Variable("X", type_=MSG_TY)), ir.First("X", MSG_TY)),
+        (Last(Variable("X", type_=MSG_TY)), ir.Last("X", MSG_TY)),
+        (Head(Variable("X", type_=SEQ_TY), type_=MSG_TY), ir.Head("X", SEQ_TY)),
+        (Opaque(Variable("X", type_=MSG_TY)), ir.Opaque("X", MSG_TY)),
     ],
 )
-def test_attribute_to_tac_int(attribute: Expr, tac_attribute: tac.Expr) -> None:
-    assert attribute.to_tac(id_generator()) == tac.ComplexExpr([], tac_attribute)
+def test_attribute_to_ir_int(attribute: Expr, ir_attribute: ir.Expr) -> None:
+    assert attribute.to_ir(id_generator()) == ir.ComplexExpr([], ir_attribute)
 
 
 @pytest.mark.parametrize(
-    "attribute, tac_attribute",
+    "attribute, ir_attribute",
     [
-        (ValidChecksum(Variable("X", type_=MSG_TY)), tac.ValidChecksum("X", MSG_TY)),
-        (Valid(Variable("X", type_=MSG_TY)), tac.Valid("X", MSG_TY)),
-        (Present(Variable("X", type_=MSG_TY)), tac.Present("X", MSG_TY)),
+        (ValidChecksum(Variable("X", type_=MSG_TY)), ir.ValidChecksum("X", MSG_TY)),
+        (Valid(Variable("X", type_=MSG_TY)), ir.Valid("X", MSG_TY)),
+        (Present(Variable("X", type_=MSG_TY)), ir.Present("X", MSG_TY)),
         (
             HasData(Variable("X", type_=rty.Channel(readable=True, writable=False))),
-            tac.HasData("X", MSG_TY),
+            ir.HasData("X", MSG_TY),
         ),
     ],
 )
-def test_attribute_to_tac_bool(attribute: Expr, tac_attribute: tac.Expr) -> None:
-    assert attribute.to_tac(id_generator()) == tac.ComplexExpr([], tac_attribute)
+def test_attribute_to_ir_bool(attribute: Expr, ir_attribute: ir.Expr) -> None:
+    assert attribute.to_ir(id_generator()) == ir.ComplexExpr([], ir_attribute)
 
 
 def test_val_substituted() -> None:
@@ -1314,19 +1312,19 @@ def test_aggregate_z3expr() -> None:
     assert Aggregate(Number(1), Number(2)).z3expr() == z3.Int("[1, 2]")
 
 
-def test_aggregate_to_tac() -> None:
-    assert Aggregate(Add(First(Variable("X", type_=INT_TY)), Number(1)), Number(2)).to_tac(
+def test_aggregate_to_ir() -> None:
+    assert Aggregate(Add(First(Variable("X", type_=INT_TY)), Number(1)), Number(2)).to_ir(
         id_generator()
-    ) == tac.ComplexExpr(
+    ) == ir.ComplexExpr(
         [
-            tac.VarDecl("T_0", rty.BASE_INTEGER),
-            tac.Assign("T_0", tac.First("X", INT_TY), rty.BASE_INTEGER),
-            tac.VarDecl("T_1", rty.BASE_INTEGER),
-            tac.Assign(
-                "T_1", tac.Add(tac.IntVar("T_0", rty.BASE_INTEGER), tac.IntVal(1)), rty.BASE_INTEGER
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
+            ir.Assign("T_0", ir.First("X", INT_TY), rty.BASE_INTEGER),
+            ir.VarDecl("T_1", rty.BASE_INTEGER),
+            ir.Assign(
+                "T_1", ir.Add(ir.IntVar("T_0", rty.BASE_INTEGER), ir.IntVal(1)), rty.BASE_INTEGER
             ),
         ],
-        tac.Agg([tac.IntVar("T_1", rty.BASE_INTEGER), tac.IntVal(2)]),
+        ir.Agg([ir.IntVar("T_1", rty.BASE_INTEGER), ir.IntVal(2)]),
     )
 
 
@@ -1478,22 +1476,22 @@ def test_relation_z3expr_error(relation: Callable[[Expr, Expr], Expr]) -> None:
 
 
 @pytest.mark.parametrize(
-    ["relation", "tac_relation"],
+    ["relation", "ir_relation"],
     [
-        (Less, tac.Less),
-        (LessEqual, tac.LessEqual),
-        (Equal, tac.Equal),
-        (GreaterEqual, tac.GreaterEqual),
-        (Greater, tac.Greater),
-        (NotEqual, tac.NotEqual),
+        (Less, ir.Less),
+        (LessEqual, ir.LessEqual),
+        (Equal, ir.Equal),
+        (GreaterEqual, ir.GreaterEqual),
+        (Greater, ir.Greater),
+        (NotEqual, ir.NotEqual),
     ],
 )
-def test_relation_to_tac(  # type: ignore[misc]
-    relation: Callable[..., Expr], tac_relation: Callable[[tac.IntExpr, tac.IntExpr], tac.BoolExpr]
+def test_relation_to_ir(  # type: ignore[misc]
+    relation: Callable[..., Expr], ir_relation: Callable[[ir.IntExpr, ir.IntExpr], ir.BoolExpr]
 ) -> None:
-    assert relation(Variable("X", type_=INT_TY), Number(10)).to_tac(
+    assert relation(Variable("X", type_=INT_TY), Number(10)).to_ir(
         id_generator()
-    ) == tac.ComplexBoolExpr([], tac_relation(tac.IntVar("X", INT_TY), tac.IntVal(10)))
+    ) == ir.ComplexBoolExpr([], ir_relation(ir.IntVar("X", INT_TY), ir.IntVal(10)))
 
 
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
@@ -1687,28 +1685,28 @@ def test_if_expr_z3expr() -> None:
         IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).z3expr()
 
 
-def test_if_expr_to_tac() -> None:
+def test_if_expr_to_ir() -> None:
     assert IfExpr(
         [(Variable("X", type_=rty.BOOLEAN), Variable("Y", type_=rty.BOOLEAN))],
         Variable("Z", type_=rty.BOOLEAN),
-    ).to_tac(id_generator()) == tac.ComplexBoolExpr(
+    ).to_ir(id_generator()) == ir.ComplexBoolExpr(
         [],
-        tac.BoolIfExpr(
-            tac.BoolVar("X"),
-            tac.ComplexBoolExpr([], tac.BoolVar("Y")),
-            tac.ComplexBoolExpr([], tac.BoolVar("Z")),
+        ir.BoolIfExpr(
+            ir.BoolVar("X"),
+            ir.ComplexBoolExpr([], ir.BoolVar("Y")),
+            ir.ComplexBoolExpr([], ir.BoolVar("Z")),
             rty.BOOLEAN,
         ),
     )
     assert IfExpr(
         [(Variable("X", type_=rty.BOOLEAN), Variable("Y", type_=INT_TY))],
         Variable("Z", type_=INT_TY),
-    ).to_tac(id_generator()) == tac.ComplexIntExpr(
+    ).to_ir(id_generator()) == ir.ComplexIntExpr(
         [],
-        tac.IntIfExpr(
-            tac.BoolVar("X"),
-            tac.ComplexIntExpr([], tac.IntVar("Y", INT_TY)),
-            tac.ComplexIntExpr([], tac.IntVar("Z", INT_TY)),
+        ir.IntIfExpr(
+            ir.BoolVar("X"),
+            ir.ComplexIntExpr([], ir.IntVar("Y", INT_TY)),
+            ir.ComplexIntExpr([], ir.IntVar("Z", INT_TY)),
             INT_TY,
         ),
     )
@@ -1720,15 +1718,15 @@ def test_if_expr_to_tac() -> None:
             )
         ],
         Sub(Variable("Z", type_=INT_TY), Number(2)),
-    ).to_tac(id_generator()) == tac.ComplexIntExpr(
+    ).to_ir(id_generator()) == ir.ComplexIntExpr(
         [
-            tac.VarDecl("T_0", rty.BOOLEAN),
-            tac.Assign("T_0", tac.And(tac.BoolVar("X"), tac.BoolVal(True)), rty.BOOLEAN),
+            ir.VarDecl("T_0", rty.BOOLEAN),
+            ir.Assign("T_0", ir.And(ir.BoolVar("X"), ir.BoolVal(True)), rty.BOOLEAN),
         ],
-        tac.IntIfExpr(
-            tac.BoolVar("T_0"),
-            tac.ComplexIntExpr([], tac.Add(tac.IntVar("Y", INT_TY), tac.IntVal(1))),
-            tac.ComplexIntExpr([], tac.Sub(tac.IntVar("Z", INT_TY), tac.IntVal(2))),
+        ir.IntIfExpr(
+            ir.BoolVar("T_0"),
+            ir.ComplexIntExpr([], ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1))),
+            ir.ComplexIntExpr([], ir.Sub(ir.IntVar("Z", INT_TY), ir.IntVal(2))),
             INT_TY,
         ),
     )
@@ -2036,8 +2034,8 @@ def test_number_z3expr() -> None:
     assert Number(42).z3expr() == z3.IntVal(42)
 
 
-def test_number_to_tac() -> None:
-    assert Number(42).to_tac(id_generator()) == tac.ComplexIntExpr([], tac.IntVal(42))
+def test_number_to_ir() -> None:
+    assert Number(42).to_ir(id_generator()) == ir.ComplexIntExpr([], ir.IntVal(42))
 
 
 def test_number_str() -> None:
@@ -2185,19 +2183,19 @@ def test_selected_z3expr() -> None:
     assert Selected(Variable("X"), "Y", negative=True).z3expr() == -z3.Int("X.Y")
 
 
-def test_selected_to_tac() -> None:
-    assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=rty.BOOLEAN).to_tac(
+def test_selected_to_ir() -> None:
+    assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=rty.BOOLEAN).to_ir(
         id_generator()
-    ) == tac.ComplexExpr([], tac.BoolFieldAccess("X", "Y", MSG_TY))
-    assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY).to_tac(
+    ) == ir.ComplexExpr([], ir.BoolFieldAccess("X", "Y", MSG_TY))
+    assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY).to_ir(
         id_generator()
-    ) == tac.ComplexExpr([], tac.IntFieldAccess("X", "Y", MSG_TY))
-    assert Selected(Variable("X", type_=rty.Message("M")), "Y", negative=True, type_=INT_TY).to_tac(
+    ) == ir.ComplexExpr([], ir.IntFieldAccess("X", "Y", MSG_TY))
+    assert Selected(Variable("X", type_=rty.Message("M")), "Y", negative=True, type_=INT_TY).to_ir(
         id_generator()
-    ) == tac.ComplexExpr([], tac.IntFieldAccess("X", "Y", MSG_TY, negative=True))
-    assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=SEQ_TY).to_tac(
+    ) == ir.ComplexExpr([], ir.IntFieldAccess("X", "Y", MSG_TY, negative=True))
+    assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=SEQ_TY).to_ir(
         id_generator()
-    ) == tac.ComplexExpr([], tac.ObjFieldAccess("X", "Y", MSG_TY))
+    ) == ir.ComplexExpr([], ir.ObjFieldAccess("X", "Y", MSG_TY))
 
 
 def test_in_variables() -> None:
@@ -2262,23 +2260,21 @@ def test_call_str() -> None:
     assert str(-Call("Test", [])) == "(-Test)"
 
 
-def test_call_to_tac() -> None:
+def test_call_to_ir() -> None:
     assert Call(
         "X",
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=INT_TY)],
         type_=INT_TY,
-    ).to_tac(id_generator()) == tac.ComplexExpr(
+    ).to_ir(id_generator()) == ir.ComplexExpr(
         [],
-        tac.IntCall(
-            "X", [tac.BoolVar("Y"), tac.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], INT_TY
-        ),
+        ir.IntCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], INT_TY),
     )
     assert Call(
         "X",
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=rty.BOOLEAN)],
         type_=rty.BOOLEAN,
-    ).to_tac(id_generator()) == tac.ComplexExpr(
-        [], tac.BoolCall("X", [tac.BoolVar("Y"), tac.BoolVar("Z")], [rty.BOOLEAN, rty.BOOLEAN])
+    ).to_ir(id_generator()) == ir.ComplexExpr(
+        [], ir.BoolCall("X", [ir.BoolVar("Y"), ir.BoolVar("Z")], [rty.BOOLEAN, rty.BOOLEAN])
     )
     assert Call(
         "X",
@@ -2287,13 +2283,13 @@ def test_call_to_tac() -> None:
             Add(Variable("Y", type_=INT_TY), Number(1)),
         ],
         type_=rty.BOOLEAN,
-    ).to_tac(id_generator()) == tac.ComplexExpr(
+    ).to_ir(id_generator()) == ir.ComplexExpr(
         [],
-        tac.BoolCall(
+        ir.BoolCall(
             "X",
             [
-                tac.And(tac.BoolVar("X"), tac.BoolVal(True)),
-                tac.Add(tac.IntVar("Y", INT_TY), tac.IntVal(1)),
+                ir.And(ir.BoolVar("X"), ir.BoolVal(True)),
+                ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)),
             ],
             [rty.BOOLEAN, INT_TY],
         ),
@@ -2302,11 +2298,9 @@ def test_call_to_tac() -> None:
         "X",
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=INT_TY)],
         type_=MSG_TY,
-    ).to_tac(id_generator()) == tac.ComplexExpr(
+    ).to_ir(id_generator()) == ir.ComplexExpr(
         [],
-        tac.ObjCall(
-            "X", [tac.BoolVar("Y"), tac.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], MSG_TY
-        ),
+        ir.ObjCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], MSG_TY),
     )
 
 
@@ -2369,10 +2363,10 @@ def test_conversion_ada_expr() -> None:
     assert Conversion("X", Variable("Y")).ada_expr() == ada.Conversion("X", ada.Variable("Y"))
 
 
-def test_conversion_to_tac() -> None:
-    assert Conversion("X", Variable("Y", type_=rty.BOOLEAN), type_=INT_TY).to_tac(
+def test_conversion_to_ir() -> None:
+    assert Conversion("X", Variable("Y", type_=rty.BOOLEAN), type_=INT_TY).to_ir(
         id_generator()
-    ) == tac.ComplexExpr([], tac.Conversion("X", tac.BoolVar("Y"), INT_TY))
+    ) == ir.ComplexExpr([], ir.Conversion("X", ir.BoolVar("Y"), INT_TY))
 
 
 def test_qualified_expr_simplified() -> None:
@@ -2475,30 +2469,30 @@ def test_comprehension_str() -> None:
     )
 
 
-def test_comprehension_to_tac() -> None:
+def test_comprehension_to_ir() -> None:
     assert Comprehension(
         "X",
         Selected(Variable("M", type_=rty.Message("M")), "Y", type_=rty.Sequence("S", INT_TY)),
         Add(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY), Number(1)),
         Less(Sub(Variable("X", type_=INT_TY), Number(1)), Number(100)),
-    ).to_tac(id_generator()) == tac.ComplexExpr(
+    ).to_ir(id_generator()) == ir.ComplexExpr(
         [],
-        tac.Comprehension(
+        ir.Comprehension(
             "X",
-            tac.ObjFieldAccess("M", ID("Y"), MSG_TY),
-            tac.ComplexExpr(
+            ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
+            ir.ComplexExpr(
                 [
-                    tac.VarDecl("T_0", rty.BASE_INTEGER),
-                    tac.Assign("T_0", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVal(1)), INT_TY),
+                    ir.VarDecl("T_0", rty.BASE_INTEGER),
+                    ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
                 ],
-                tac.Add(tac.IntVar("X", INT_TY), tac.IntVar("T_0", rty.BASE_INTEGER)),
+                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
             ),
-            tac.ComplexBoolExpr(
+            ir.ComplexBoolExpr(
                 [
-                    tac.VarDecl("T_1", rty.BASE_INTEGER),
-                    tac.Assign("T_1", tac.Sub(tac.IntVar("X", INT_TY), tac.IntVal(1)), rty.BOOLEAN),
+                    ir.VarDecl("T_1", rty.BASE_INTEGER),
+                    ir.Assign("T_1", ir.Sub(ir.IntVar("X", INT_TY), ir.IntVal(1)), rty.BOOLEAN),
                 ],
-                tac.Less(tac.IntVar("T_1", rty.BASE_INTEGER), tac.IntVal(100)),
+                ir.Less(ir.IntVar("T_1", rty.BASE_INTEGER), ir.IntVal(100)),
             ),
         ),
     )
@@ -2706,10 +2700,10 @@ def test_message_aggregate_variables() -> None:
 
 
 @pytest.mark.parametrize(
-    ["agg", "tac_agg"], [(MessageAggregate, tac.MsgAgg), (DeltaMessageAggregate, tac.DeltaMsgAgg)]
+    ["agg", "ir_agg"], [(MessageAggregate, ir.MsgAgg), (DeltaMessageAggregate, ir.DeltaMsgAgg)]
 )
-def test_message_aggregate_to_tac(  # type: ignore[misc]
-    agg: Callable[..., Expr], tac_agg: Callable[..., tac.Expr]
+def test_message_aggregate_to_ir(  # type: ignore[misc]
+    agg: Callable[..., Expr], ir_agg: Callable[..., ir.Expr]
 ) -> None:
     assert agg(
         "X",
@@ -2722,16 +2716,16 @@ def test_message_aggregate_to_tac(  # type: ignore[misc]
             "Z": Add(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY), Number(1)),
         },
         MSG_TY,
-    ).to_tac(id_generator()) == tac.ComplexExpr(
+    ).to_ir(id_generator()) == ir.ComplexExpr(
         [
-            tac.VarDecl("T_0", rty.BASE_INTEGER),
-            tac.Assign("T_0", tac.Add(tac.IntVar("Y", INT_TY), tac.IntVal(1)), rty.BASE_INTEGER),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
+            ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
         ],
-        tac_agg(
+        ir_agg(
             "X",
             {
-                ID("Y"): tac.ObjFieldAccess("M", ID("Y"), MSG_TY),
-                ID("Z"): tac.Add(tac.IntVar("X", INT_TY), tac.IntVar("T_0", rty.BASE_INTEGER)),
+                ID("Y"): ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
+                ID("Z"): ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
             },
             MSG_TY,
         ),
@@ -3099,7 +3093,7 @@ def test_case_invalid() -> None:
     )
 
 
-def test_case_to_tac() -> None:
+def test_case_to_ir() -> None:
     assert CaseExpr(
         Variable("X", type_=INT_TY),
         [
@@ -3109,18 +3103,18 @@ def test_case_to_tac() -> None:
                 Variable("X", type_=INT_TY),
             ),
         ],
-    ).to_tac(id_generator()) == tac.ComplexExpr(
+    ).to_ir(id_generator()) == ir.ComplexExpr(
         [],
-        tac.CaseExpr(
-            tac.IntVar("X", INT_TY),
+        ir.CaseExpr(
+            ir.IntVar("X", INT_TY),
             [
                 (
-                    [tac.IntVal(1), tac.IntVal(3)],
-                    tac.IntVal(0),
+                    [ir.IntVal(1), ir.IntVal(3)],
+                    ir.IntVal(0),
                 ),
                 (
-                    [tac.IntVal(2)],
-                    tac.IntVar("X", INT_TY),
+                    [ir.IntVal(2)],
+                    ir.IntVar("X", INT_TY),
                 ),
             ],
             INT_TY,

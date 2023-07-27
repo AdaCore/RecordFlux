@@ -16,7 +16,7 @@ from typing import Optional, Union
 
 import z3
 
-from rflx import ada, tac, typing_ as rty
+from rflx import ada, ir, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
@@ -277,7 +277,7 @@ class Expr(DBC, Base):
         raise NotImplementedError
 
     @abstractmethod
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
     def check(self, facts: Optional[Sequence[Expr]] = None) -> Proof:
@@ -360,9 +360,9 @@ class Not(Expr):
             raise Z3TypeError("negating non-boolean term")
         return z3.Not(z3expr)
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexBoolExpr:
-        inner_stmts, inner_expr = _to_tac_basic_bool(self.expr, variable_id)
-        return tac.ComplexBoolExpr(inner_stmts, tac.Not(inner_expr, origin=self))
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexBoolExpr:
+        inner_stmts, inner_expr = _to_ir_basic_bool(self.expr, variable_id)
+        return ir.ComplexBoolExpr(inner_stmts, ir.Not(inner_expr, origin=self))
 
 
 class BinExpr(Expr):
@@ -636,34 +636,34 @@ class BoolAssExpr(AssExpr):
     def symbol(self) -> str:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexBoolExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexBoolExpr:
         if len(self.terms) == 0:
-            return tac.ComplexBoolExpr([], tac.BoolVal(value=True, origin=self))
+            return ir.ComplexBoolExpr([], ir.BoolVal(value=True, origin=self))
 
         if len(self.terms) == 1:
-            first_stmts, first_expr = _to_tac_basic_bool(self.terms[0], variable_id)
-            return tac.ComplexBoolExpr(first_stmts, first_expr)
+            first_stmts, first_expr = _to_ir_basic_bool(self.terms[0], variable_id)
+            return ir.ComplexBoolExpr(first_stmts, first_expr)
 
         if len(self.terms) == 2:
-            left_stmts, left_expr = _to_tac_basic_bool(self.terms[0], variable_id)
-            right_stmts, right_expr = _to_tac_basic_bool(self.terms[1], variable_id)
-            return tac.ComplexBoolExpr(
+            left_stmts, left_expr = _to_ir_basic_bool(self.terms[0], variable_id)
+            right_stmts, right_expr = _to_ir_basic_bool(self.terms[1], variable_id)
+            return ir.ComplexBoolExpr(
                 [*left_stmts, *right_stmts],
-                getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
+                getattr(ir, self.__class__.__name__)(left_expr, right_expr, origin=self),
             )
 
-        left_stmts, left_expr = _to_tac_basic_bool(self.terms[0], variable_id)
+        left_stmts, left_expr = _to_ir_basic_bool(self.terms[0], variable_id)
         right_id = next(variable_id)
         right_origin = self.__class__(*self.terms[1:])
-        right = right_origin.to_tac(variable_id)
-        return tac.ComplexBoolExpr(
+        right = right_origin.to_ir(variable_id)
+        return ir.ComplexBoolExpr(
             [
                 *right.stmts,
-                tac.VarDecl(right_id, rty.BOOLEAN, None, origin=right_origin),
-                tac.Assign(right_id, right.expr, rty.BOOLEAN, origin=right_origin),
+                ir.VarDecl(right_id, rty.BOOLEAN, None, origin=right_origin),
+                ir.Assign(right_id, right.expr, rty.BOOLEAN, origin=right_origin),
                 *left_stmts,
             ],
-            getattr(tac, self.__class__.__name__)(left_expr, tac.BoolVar(right_id), origin=self),
+            getattr(ir, self.__class__.__name__)(left_expr, ir.BoolVar(right_id), origin=self),
         )
 
 
@@ -871,8 +871,8 @@ class Number(Expr):
     def z3expr(self) -> z3.ArithRef:
         return z3.IntVal(self.value)
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexIntExpr:
-        return tac.ComplexIntExpr([], tac.IntVal(self.value, origin=self))
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
+        return ir.ComplexIntExpr([], ir.IntVal(self.value, origin=self))
 
 
 class MathAssExpr(AssExpr):
@@ -887,42 +887,42 @@ class MathAssExpr(AssExpr):
             error += t.check_type_instance(rty.AnyInteger)
         return error
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexIntExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
         if len(self.terms) == 0:
-            return tac.ComplexIntExpr([], tac.IntVal(0, origin=self))
+            return ir.ComplexIntExpr([], ir.IntVal(0, origin=self))
 
         assert isinstance(self.type_, rty.AnyInteger)
 
         if len(self.terms) == 1:
-            first_stmts, first_expr = _to_tac_basic_int(self.terms[0], variable_id)
-            return tac.ComplexIntExpr(first_stmts, first_expr)
+            first_stmts, first_expr = _to_ir_basic_int(self.terms[0], variable_id)
+            return ir.ComplexIntExpr(first_stmts, first_expr)
 
         if len(self.terms) == 2:
-            left_stmts, left_expr = _to_tac_basic_int(self.terms[0], variable_id)
-            right_stmts, right_expr = _to_tac_basic_int(self.terms[1], variable_id)
-            return tac.ComplexIntExpr(
+            left_stmts, left_expr = _to_ir_basic_int(self.terms[0], variable_id)
+            right_stmts, right_expr = _to_ir_basic_int(self.terms[1], variable_id)
+            return ir.ComplexIntExpr(
                 [*left_stmts, *right_stmts],
-                getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
+                getattr(ir, self.__class__.__name__)(left_expr, right_expr, origin=self),
             )
 
         right_id = next(variable_id)
-        left_stmts, left_expr = _to_tac_basic_int(self.terms[0], variable_id)
+        left_stmts, left_expr = _to_ir_basic_int(self.terms[0], variable_id)
         right_origin = self.__class__(*self.terms[1:], location=self.terms[1].location)
 
         assert isinstance(right_origin.type_, rty.AnyInteger)
 
-        right = right_origin.to_tac(variable_id)
+        right = right_origin.to_ir(variable_id)
 
-        return tac.ComplexIntExpr(
+        return ir.ComplexIntExpr(
             [
                 *right.stmts,
-                tac.VarDecl(right_id, tac.to_integer(self.type_), None, origin=right_origin),
-                tac.Assign(right_id, right.expr, tac.to_integer(self.type_), origin=right_origin),
+                ir.VarDecl(right_id, ir.to_integer(self.type_), None, origin=right_origin),
+                ir.Assign(right_id, right.expr, ir.to_integer(self.type_), origin=right_origin),
                 *left_stmts,
             ],
-            getattr(tac, self.__class__.__name__)(
+            getattr(ir, self.__class__.__name__)(
                 left_expr,
-                tac.IntVar(right_id, right_origin.type_, origin=right_origin),
+                ir.IntVar(right_id, right_origin.type_, origin=right_origin),
                 origin=self,
             ),
         )
@@ -1028,14 +1028,14 @@ class MathBinExpr(BinExpr):
 
         return error
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexIntExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
         assert isinstance(self.type_, rty.AnyInteger)
 
-        left_stmts, left_expr = _to_tac_basic_int(self.left, variable_id)
-        right_stmts, right_expr = _to_tac_basic_int(self.right, variable_id)
-        return tac.ComplexIntExpr(
+        left_stmts, left_expr = _to_ir_basic_int(self.left, variable_id)
+        right_stmts, right_expr = _to_ir_basic_int(self.right, variable_id)
+        return ir.ComplexIntExpr(
             [*left_stmts, *right_stmts],
-            getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
+            getattr(ir, self.__class__.__name__)(left_expr, right_expr, origin=self),
         )
 
 
@@ -1246,7 +1246,7 @@ class TypeName(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -1295,16 +1295,16 @@ class Literal(Name):
             return z3.BoolVal(False)
         return z3.Int(self.name)
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Enumeration)
 
         if self.type_ == rty.BOOLEAN:
             if self.identifier == ID("True"):
-                return tac.ComplexExpr([], tac.BoolVal(value=True, origin=self))
+                return ir.ComplexExpr([], ir.BoolVal(value=True, origin=self))
             assert self.identifier == ID("False")
-            return tac.ComplexExpr([], tac.BoolVal(value=False, origin=self))
+            return ir.ComplexExpr([], ir.BoolVal(value=False, origin=self))
 
-        return tac.ComplexExpr([], tac.EnumLit(self.name, self.type_, origin=self))
+        return ir.ComplexExpr([], ir.EnumLit(self.name, self.type_, origin=self))
 
     def copy(
         self,
@@ -1371,17 +1371,17 @@ class Variable(Name):
             return -z3.Int(self.name)
         return z3.Int(self.name)
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         if self.type_ == rty.BOOLEAN:
-            return tac.ComplexBoolExpr([], tac.BoolVar(self.name, origin=self))
+            return ir.ComplexBoolExpr([], ir.BoolVar(self.name, origin=self))
         if isinstance(self.type_, rty.Integer):
-            return tac.ComplexIntExpr(
-                [], tac.IntVar(self.name, self.type_, self.negative, origin=self)
+            return ir.ComplexIntExpr(
+                [], ir.IntVar(self.name, self.type_, self.negative, origin=self)
             )
 
         assert isinstance(self.type_, rty.Any)
 
-        return tac.ComplexExpr([], tac.ObjVar(self.name, self.type_, origin=self))
+        return ir.ComplexExpr([], ir.ObjVar(self.name, self.type_, origin=self))
 
     def copy(
         self,
@@ -1460,20 +1460,20 @@ class Attribute(Name):
             return -z3.Int(self.representation)
         return z3.Int(self.representation)
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
         if isinstance(self.prefix, TypeName):
-            return tac.ComplexExpr([], self._to_tac(self.prefix.identifier))
+            return ir.ComplexExpr([], self._to_ir(self.prefix.identifier))
 
-        prefix_stmts, prefix_expr = _to_tac_basic_expr(self.prefix, variable_id)
+        prefix_stmts, prefix_expr = _to_ir_basic_expr(self.prefix, variable_id)
 
-        assert isinstance(prefix_expr, tac.Var)
+        assert isinstance(prefix_expr, ir.Var)
 
-        return tac.ComplexExpr(prefix_stmts, self._to_tac(prefix_expr.identifier))
+        return ir.ComplexExpr(prefix_stmts, self._to_ir(prefix_expr.identifier))
 
     @abstractmethod
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         raise NotImplementedError
 
 
@@ -1482,29 +1482,29 @@ class Size(Attribute):
         super().__init__(prefix, negative)
         self.type_ = rty.UniversalInteger()
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
         if isinstance(self.prefix, Selected):
             assert isinstance(self.prefix.prefix.type_, rty.Compound)
             assert isinstance(self.prefix.prefix, Variable)
-            return tac.ComplexExpr(
+            return ir.ComplexExpr(
                 [],
-                tac.FieldSize(
+                ir.FieldSize(
                     self.prefix.prefix.identifier,
                     self.prefix.selector,
                     self.prefix.prefix.type_,
                 ),
             )
 
-        return super().to_tac(variable_id)
+        return super().to_ir(variable_id)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return tac.Size(prefix, self.prefix.type_, self.negative, origin=self)
+        return ir.Size(prefix, self.prefix.type_, self.negative, origin=self)
 
 
 class Length(Attribute):
@@ -1515,9 +1515,9 @@ class Length(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return tac.Length(prefix, self.prefix.type_, self.negative, origin=self)
+        return ir.Length(prefix, self.prefix.type_, self.negative, origin=self)
 
 
 class First(Attribute):
@@ -1528,9 +1528,9 @@ class First(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return tac.First(prefix, self.prefix.type_, self.negative, origin=self)
+        return ir.First(prefix, self.prefix.type_, self.negative, origin=self)
 
 
 class Last(Attribute):
@@ -1541,9 +1541,9 @@ class Last(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return tac.Last(prefix, self.prefix.type_, self.negative, origin=self)
+        return ir.Last(prefix, self.prefix.type_, self.negative, origin=self)
 
 
 class ValidChecksum(Attribute):
@@ -1561,9 +1561,9 @@ class ValidChecksum(Attribute):
     def representation(self) -> str:
         return f"{self.prefix}'Valid_Checksum"
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return tac.ValidChecksum(prefix, self.prefix.type_, origin=self)
+        return ir.ValidChecksum(prefix, self.prefix.type_, origin=self)
 
 
 class Valid(Attribute):
@@ -1571,31 +1571,31 @@ class Valid(Attribute):
         super().__init__(prefix, negative)
         self.type_ = rty.BOOLEAN
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
         if isinstance(self.prefix, Selected):
             assert isinstance(self.prefix.prefix, Variable)
             assert isinstance(self.prefix.prefix.type_, rty.Compound)
-            return tac.ComplexExpr(
+            return ir.ComplexExpr(
                 [],
-                tac.FieldValid(
+                ir.FieldValid(
                     self.prefix.prefix.identifier,
                     self.prefix.selector,
                     self.prefix.prefix.type_,
                 ),
             )
 
-        return super().to_tac(variable_id)
+        return super().to_ir(variable_id)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(
             (rty.Sequence, rty.Message) if isinstance(self.prefix, Variable) else rty.Any
         )
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return tac.Valid(prefix, self.prefix.type_, origin=self)
+        return ir.Valid(prefix, self.prefix.type_, origin=self)
 
 
 class Present(Attribute):
@@ -1603,22 +1603,22 @@ class Present(Attribute):
         super().__init__(prefix, negative)
         self.type_ = rty.BOOLEAN
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
         if isinstance(self.prefix, Selected):
             assert isinstance(self.prefix.prefix, Variable)
             assert isinstance(self.prefix.prefix.type_, rty.Compound)
-            return tac.ComplexExpr(
+            return ir.ComplexExpr(
                 [],
-                tac.FieldPresent(
+                ir.FieldPresent(
                     self.prefix.prefix.identifier,
                     self.prefix.selector,
                     self.prefix.prefix.type_,
                 ),
             )
 
-        return super().to_tac(variable_id)
+        return super().to_ir(variable_id)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         if isinstance(self.prefix, Selected):
@@ -1637,9 +1637,9 @@ class Present(Attribute):
             )
         return error
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return tac.Present(prefix, self.prefix.type_, origin=self)
+        return ir.Present(prefix, self.prefix.type_, origin=self)
 
 
 class HasData(Attribute):
@@ -1654,9 +1654,9 @@ class HasData(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Message)
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return tac.HasData(prefix, self.prefix.type_, origin=self)
+        return ir.HasData(prefix, self.prefix.type_, origin=self)
 
 
 class Head(Attribute):
@@ -1666,15 +1666,15 @@ class Head(Attribute):
         super().__init__(prefix, negative)
         self.type_ = type_
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
         if isinstance(self.prefix, Comprehension):
-            comprehension = self.prefix.to_tac(variable_id)
-            assert isinstance(comprehension.expr, tac.Comprehension)
-            return tac.ComplexExpr(
+            comprehension = self.prefix.to_ir(variable_id)
+            assert isinstance(comprehension.expr, ir.Comprehension)
+            return ir.ComplexExpr(
                 comprehension.stmts,
-                tac.Find(
+                ir.Find(
                     comprehension.expr.iterator,
                     comprehension.expr.sequence,
                     comprehension.expr.selector,
@@ -1683,7 +1683,7 @@ class Head(Attribute):
                 ),
             )
 
-        return super().to_tac(variable_id)
+        return super().to_ir(variable_id)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = self.prefix.check_type_instance(rty.Composite)
@@ -1703,10 +1703,10 @@ class Head(Attribute):
             )
         return error
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Composite)
         assert isinstance(self.prefix.type_.element, rty.Any)
-        return tac.Head(prefix, self.prefix.type_, origin=self)
+        return ir.Head(prefix, self.prefix.type_, origin=self)
 
 
 class Opaque(Attribute):
@@ -1717,9 +1717,9 @@ class Opaque(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance((rty.Sequence, rty.Message))
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, (rty.Sequence, rty.Message))
-        return tac.Opaque(prefix, self.prefix.type_, origin=self)
+        return ir.Opaque(prefix, self.prefix.type_, origin=self)
 
 
 class Constrained(Attribute):
@@ -1728,7 +1728,7 @@ class Constrained(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         raise NotImplementedError
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         raise NotImplementedError
 
 
@@ -1777,7 +1777,7 @@ class Val(Attribute):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def _to_tac(self, prefix: ID) -> tac.Expr:
+    def _to_ir(self, prefix: ID) -> ir.Expr:
         raise NotImplementedError
 
 
@@ -1808,7 +1808,7 @@ class Indexed(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -1897,20 +1897,20 @@ class Selected(Name):
             return -z3.Int(self.representation)
         return z3.Int(self.representation)
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
         assert isinstance(self.prefix.type_, rty.Compound)
-        stmts, msg = _to_tac_basic_expr(self.prefix, variable_id)
-        assert isinstance(msg, tac.ObjVar)
+        stmts, msg = _to_ir_basic_expr(self.prefix, variable_id)
+        assert isinstance(msg, ir.ObjVar)
         if self.type_ == rty.BOOLEAN:
-            return tac.ComplexExpr(
+            return ir.ComplexExpr(
                 stmts,
-                tac.BoolFieldAccess(msg.identifier, self.selector, self.prefix.type_, origin=self),
+                ir.BoolFieldAccess(msg.identifier, self.selector, self.prefix.type_, origin=self),
             )
         if isinstance(self.type_, rty.Integer):
-            return tac.ComplexExpr(
+            return ir.ComplexExpr(
                 stmts,
-                tac.IntFieldAccess(
+                ir.IntFieldAccess(
                     msg.identifier,
                     self.selector,
                     self.prefix.type_,
@@ -1919,9 +1919,9 @@ class Selected(Name):
                 ),
             )
         if isinstance(self.type_, (rty.Enumeration, rty.Sequence)):
-            return tac.ComplexExpr(
+            return ir.ComplexExpr(
                 stmts,
-                tac.ObjFieldAccess(msg.identifier, self.selector, self.prefix.type_, origin=self),
+                ir.ObjFieldAccess(msg.identifier, self.selector, self.prefix.type_, origin=self),
             )
         assert False, self.type_
 
@@ -2018,22 +2018,22 @@ class Call(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         arguments_stmts = []
         arguments_exprs = []
 
         for a in self.args:
-            a_tac = a.to_tac(variable_id)
-            arguments_stmts.extend(a_tac.stmts)
-            arguments_exprs.append(a_tac.expr)
+            a_ir = a.to_ir(variable_id)
+            arguments_stmts.extend(a_ir.stmts)
+            arguments_exprs.append(a_ir.expr)
 
         assert all(isinstance(t, rty.Any) for t in self.argument_types)
         argument_types = [t for t in self.argument_types if isinstance(t, rty.Any)]
 
         if self.type_ is rty.BOOLEAN:
-            return tac.ComplexExpr(
+            return ir.ComplexExpr(
                 arguments_stmts,
-                tac.BoolCall(
+                ir.BoolCall(
                     self.identifier,
                     arguments_exprs,
                     argument_types,
@@ -2042,9 +2042,9 @@ class Call(Name):
             )
 
         if isinstance(self.type_, rty.Integer):
-            return tac.ComplexExpr(
+            return ir.ComplexExpr(
                 arguments_stmts,
-                tac.IntCall(
+                ir.IntCall(
                     self.identifier,
                     arguments_exprs,
                     argument_types,
@@ -2054,9 +2054,9 @@ class Call(Name):
             )
 
         assert isinstance(self.type_, (rty.Enumeration, rty.Structure, rty.Message))
-        return tac.ComplexExpr(
+        return ir.ComplexExpr(
             arguments_stmts,
-            tac.ObjCall(self.identifier, arguments_exprs, argument_types, self.type_, origin=self),
+            ir.ObjCall(self.identifier, arguments_exprs, argument_types, self.type_, origin=self),
         )
 
     def variables(self) -> list[Variable]:
@@ -2115,7 +2115,7 @@ class Slice(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -2136,7 +2136,7 @@ class UndefinedExpr(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -2198,18 +2198,18 @@ class Aggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
         elements = []
         stmts = []
 
         for e in self.elements:
-            e_stmts, e_expr = _to_tac_basic_expr(e, variable_id)
+            e_stmts, e_expr = _to_ir_basic_expr(e, variable_id)
             elements.append(e_expr)
             stmts.extend(e_stmts)
 
-        return tac.ComplexExpr(stmts, tac.Agg(elements, origin=self))
+        return ir.ComplexExpr(stmts, ir.Agg(elements, origin=self))
 
 
 class String(Aggregate):
@@ -2274,7 +2274,7 @@ class NamedAggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -2323,12 +2323,12 @@ class Relation(BinExpr):
         assert isinstance(result, z3.BoolRef)
         return result
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
-        left_stmts, left_expr = _to_tac_basic_expr(self.left, variable_id)
-        right_stmts, right_expr = _to_tac_basic_expr(self.right, variable_id)
-        return tac.ComplexBoolExpr(
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
+        left_stmts, left_expr = _to_ir_basic_expr(self.left, variable_id)
+        right_stmts, right_expr = _to_ir_basic_expr(self.right, variable_id)
+        return ir.ComplexBoolExpr(
             [*left_stmts, *right_stmts],
-            getattr(tac, self.__class__.__name__)(left_expr, right_expr, origin=self),
+            getattr(ir, self.__class__.__name__)(left_expr, right_expr, origin=self),
         )
 
     @staticmethod
@@ -2521,7 +2521,7 @@ class In(Relation):
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
     @staticmethod
@@ -2551,7 +2551,7 @@ class NotIn(Relation):
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
     @staticmethod
@@ -2672,25 +2672,25 @@ class IfExpr(Expr):
             self.else_expression.z3expr(),
         )
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert len(self.condition_expressions) == 1
         assert self.else_expression is not None
 
         condition = self.condition_expressions[0][0]
-        condition_stmts, condition_expr = _to_tac_basic_bool(condition, variable_id)
+        condition_stmts, condition_expr = _to_ir_basic_bool(condition, variable_id)
 
         assert condition.type_ is rty.BOOLEAN
 
         then_expression = self.condition_expressions[0][1]
 
         if then_expression.type_ is rty.BOOLEAN and self.else_expression.type_ is rty.BOOLEAN:
-            then_expr = then_expression.to_tac(variable_id)
-            else_expr = self.else_expression.to_tac(variable_id)
-            assert isinstance(then_expr, tac.ComplexBoolExpr)
-            assert isinstance(else_expr, tac.ComplexBoolExpr)
-            return tac.ComplexBoolExpr(
+            then_expr = then_expression.to_ir(variable_id)
+            else_expr = self.else_expression.to_ir(variable_id)
+            assert isinstance(then_expr, ir.ComplexBoolExpr)
+            assert isinstance(else_expr, ir.ComplexBoolExpr)
+            return ir.ComplexBoolExpr(
                 [*condition_stmts],
-                tac.BoolIfExpr(
+                ir.BoolIfExpr(
                     condition_expr,
                     then_expr,
                     else_expr,
@@ -2701,13 +2701,13 @@ class IfExpr(Expr):
         assert isinstance(self.type_, rty.AnyInteger)
         assert isinstance(then_expression.type_, rty.AnyInteger)
         assert isinstance(self.else_expression.type_, rty.AnyInteger)
-        then_expr = then_expression.to_tac(variable_id)
-        else_expr = self.else_expression.to_tac(variable_id)
-        assert isinstance(then_expr, tac.ComplexIntExpr)
-        assert isinstance(else_expr, tac.ComplexIntExpr)
-        return tac.ComplexIntExpr(
+        then_expr = then_expression.to_ir(variable_id)
+        else_expr = self.else_expression.to_ir(variable_id)
+        assert isinstance(then_expr, ir.ComplexIntExpr)
+        assert isinstance(else_expr, ir.ComplexIntExpr)
+        return ir.ComplexIntExpr(
             [*condition_stmts],
-            tac.IntIfExpr(
+            ir.IntIfExpr(
                 condition_expr,
                 then_expr,
                 else_expr,
@@ -2784,7 +2784,7 @@ class QuantifiedExpr(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         fail(
             "quantified expressions not yet supported",
             Subsystem.MODEL,
@@ -2900,7 +2900,7 @@ class ValueRange(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -3003,12 +3003,12 @@ class Conversion(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.NamedType)
-        argument = self.argument.to_tac(variable_id)
-        return tac.ComplexExpr(
+        argument = self.argument.to_ir(variable_id)
+        return ir.ComplexExpr(
             argument.stmts,
-            tac.Conversion(self.identifier, argument.expr, self.type_, origin=self),
+            ir.Conversion(self.identifier, argument.expr, self.type_, origin=self),
         )
 
     def variables(self) -> list[Variable]:
@@ -3050,7 +3050,7 @@ class QualifiedExpr(Expr):
     def z3expr(self) -> z3.ArithRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -3136,15 +3136,15 @@ class Comprehension(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
-        sequence = self.sequence.to_tac(variable_id)
-        selector = self.selector.to_tac(variable_id)
-        condition = self.condition.to_tac(variable_id)
-        assert isinstance(sequence.expr, (tac.Var, tac.FieldAccess))
-        assert isinstance(condition, tac.ComplexBoolExpr), condition
-        return tac.ComplexExpr(
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
+        sequence = self.sequence.to_ir(variable_id)
+        selector = self.selector.to_ir(variable_id)
+        condition = self.condition.to_ir(variable_id)
+        assert isinstance(sequence.expr, (ir.Var, ir.FieldAccess))
+        assert isinstance(condition, ir.ComplexBoolExpr), condition
+        return ir.ComplexExpr(
             sequence.stmts,
-            tac.Comprehension(
+            ir.Comprehension(
                 self.iterator,
                 sequence.expr,
                 selector,
@@ -3327,17 +3327,17 @@ class MessageAggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Message)
         field_values = {}
         stmts = []
         for i, e in self.field_values.items():
-            e_tac = e.to_tac(variable_id)
-            field_values[i] = e_tac.expr
-            stmts.extend(e_tac.stmts)
-        return tac.ComplexExpr(
+            e_ir = e.to_ir(variable_id)
+            field_values[i] = e_ir.expr
+            stmts.extend(e_ir.stmts)
+        return ir.ComplexExpr(
             stmts,
-            self._tac_expr(self.identifier, field_values, self.type_, self),
+            self._ir_expr(self.identifier, field_values, self.type_, self),
         )
 
     def variables(self) -> list[Variable]:
@@ -3347,10 +3347,10 @@ class MessageAggregate(Expr):
         return result
 
     @property
-    def _tac_expr(
+    def _ir_expr(
         self,
-    ) -> Callable[[ID, dict[ID, tac.Expr], rty.Message, tac.Origin], tac.Expr]:
-        return tac.MsgAgg
+    ) -> Callable[[ID, dict[ID, ir.Expr], rty.Message, ir.Origin], ir.Expr]:
+        return ir.MsgAgg
 
 
 class DeltaMessageAggregate(MessageAggregate):
@@ -3365,10 +3365,10 @@ class DeltaMessageAggregate(MessageAggregate):
         self._str = intern(f"{self.identifier} with delta {field_values}")
 
     @property
-    def _tac_expr(
+    def _ir_expr(
         self,
-    ) -> Callable[[ID, dict[ID, tac.Expr], rty.Message, tac.Origin], tac.Expr]:
-        return tac.DeltaMsgAgg
+    ) -> Callable[[ID, dict[ID, ir.Expr], rty.Message, ir.Origin], ir.Expr]:
+        return ir.DeltaMsgAgg
 
     def _matching_field_combinations(self, field_position: int) -> set[tuple[str, ...]]:
         fields = tuple(str(f) for i, f in enumerate(self.field_values) if i <= field_position)
@@ -3687,28 +3687,28 @@ class CaseExpr(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_tac(self, variable_id: Generator[ID, None, None]) -> tac.ComplexExpr:
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Any)
 
-        expression_stmts, expression_expr = _to_tac_basic_expr(self.expr, variable_id)
+        expression_stmts, expression_expr = _to_ir_basic_expr(self.expr, variable_id)
         choices = []
 
         for choice, expr in self.choices:
-            e_stmts, e_expr = _to_tac_basic_expr(expr, variable_id)
+            e_stmts, e_expr = _to_ir_basic_expr(expr, variable_id)
             assert not e_stmts  # TODO: add check for unsupported case expressions to model
-            cs: list[tac.BasicExpr]
+            cs: list[ir.BasicExpr]
             if isinstance(self.expr.type_, rty.Enumeration):
                 assert all(isinstance(c, ID) for c in choice)
-                cs = [tac.EnumLit(c, self.expr.type_) for c in choice if isinstance(c, ID)]
+                cs = [ir.EnumLit(c, self.expr.type_) for c in choice if isinstance(c, ID)]
             else:
                 assert isinstance(self.expr.type_, rty.AnyInteger)
                 assert all(isinstance(c, Number) for c in choice)
-                cs = [tac.IntVal(int(c)) for c in choice if isinstance(c, Number)]
+                cs = [ir.IntVal(int(c)) for c in choice if isinstance(c, Number)]
             choices.append((cs, e_expr))
 
-        return tac.ComplexExpr(
+        return ir.ComplexExpr(
             expression_stmts,
-            tac.CaseExpr(
+            ir.CaseExpr(
                 expression_expr,
                 choices,
                 self.type_,
@@ -3750,65 +3750,65 @@ def _similar_field_names(
     return []
 
 
-def _to_tac_basic_int(
+def _to_ir_basic_int(
     expression: Expr, variable_id: Generator[ID, None, None]
-) -> tuple[list[tac.Stmt], tac.BasicIntExpr]:
+) -> tuple[list[ir.Stmt], ir.BasicIntExpr]:
     assert isinstance(expression.type_, rty.AnyInteger)
 
-    result = expression.to_tac(variable_id)
-    if isinstance(result.expr, tac.BasicIntExpr):
+    result = expression.to_ir(variable_id)
+    if isinstance(result.expr, ir.BasicIntExpr):
         result_expr = result.expr
         result_stmts = result.stmts
     else:
         result_id = next(variable_id)
-        result_type = tac.to_integer(expression.type_)
-        result_expr = tac.IntVar(result_id, result_type, origin=expression)
+        result_type = ir.to_integer(expression.type_)
+        result_expr = ir.IntVar(result_id, result_type, origin=expression)
         result_stmts = [
             *result.stmts,
-            tac.VarDecl(result_id, result_type, None, origin=expression),
-            tac.Assign(result_id, result.expr, result_type, origin=expression),
+            ir.VarDecl(result_id, result_type, None, origin=expression),
+            ir.Assign(result_id, result.expr, result_type, origin=expression),
         ]
     return (result_stmts, result_expr)
 
 
-def _to_tac_basic_bool(
+def _to_ir_basic_bool(
     expression: Expr, variable_id: Generator[ID, None, None]
-) -> tuple[list[tac.Stmt], tac.BasicBoolExpr]:
+) -> tuple[list[ir.Stmt], ir.BasicBoolExpr]:
     assert expression.type_ == rty.BOOLEAN
 
-    result = expression.to_tac(variable_id)
-    if isinstance(result.expr, tac.BasicBoolExpr):
+    result = expression.to_ir(variable_id)
+    if isinstance(result.expr, ir.BasicBoolExpr):
         result_expr = result.expr
         result_stmts = result.stmts
     else:
         result_id = next(variable_id)
-        result_expr = tac.BoolVar(result_id, origin=expression)
+        result_expr = ir.BoolVar(result_id, origin=expression)
         result_stmts = [
             *result.stmts,
-            tac.VarDecl(result_id, rty.BOOLEAN, None, origin=expression),
-            tac.Assign(result_id, result.expr, rty.BOOLEAN, origin=expression),
+            ir.VarDecl(result_id, rty.BOOLEAN, None, origin=expression),
+            ir.Assign(result_id, result.expr, rty.BOOLEAN, origin=expression),
         ]
     return (result_stmts, result_expr)
 
 
-def _to_tac_basic_expr(
+def _to_ir_basic_expr(
     expression: Expr, variable_id: Generator[ID, None, None]
-) -> tuple[list[tac.Stmt], tac.BasicExpr]:
-    result = expression.to_tac(variable_id)
-    if isinstance(result.expr, tac.BasicExpr):
+) -> tuple[list[ir.Stmt], ir.BasicExpr]:
+    result = expression.to_ir(variable_id)
+    if isinstance(result.expr, ir.BasicExpr):
         result_expr = result.expr
         result_stmts = result.stmts
     else:
         result_id = next(variable_id)
 
-        if isinstance(result.expr, tac.BoolExpr):
-            result_expr = tac.BoolVar(result_id, origin=expression)
-        elif isinstance(result.expr, tac.IntExpr):
+        if isinstance(result.expr, ir.BoolExpr):
+            result_expr = ir.BoolVar(result_id, origin=expression)
+        elif isinstance(result.expr, ir.IntExpr):
             assert isinstance(expression.type_, rty.AnyInteger)
-            result_expr = tac.IntVar(result_id, tac.to_integer(expression.type_), origin=expression)
+            result_expr = ir.IntVar(result_id, ir.to_integer(expression.type_), origin=expression)
         else:
             assert isinstance(expression.type_, rty.Any)
-            result_expr = tac.ObjVar(result_id, expression.type_, origin=expression)
+            result_expr = ir.ObjVar(result_id, expression.type_, origin=expression)
 
         result_type = result_expr.type_
 
@@ -3816,8 +3816,8 @@ def _to_tac_basic_expr(
 
         result_stmts = [
             *result.stmts,
-            tac.VarDecl(result_id, result_type, None, origin=expression),
-            tac.Assign(result_id, result.expr, result_type, origin=expression),
+            ir.VarDecl(result_id, result_type, None, origin=expression),
+            ir.Assign(result_id, result.expr, result_type, origin=expression),
         ]
 
     return (result_stmts, result_expr)

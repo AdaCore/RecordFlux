@@ -13,7 +13,7 @@ from _pytest.capture import CaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from attr import define
 
-from rflx import ada, const as constants, expression as expr, tac, typing_ as rty
+from rflx import ada, const as constants, expression as expr, ir, typing_ as rty
 from rflx.common import file_name
 from rflx.error import BaseError, FatalError, Location, RecordFluxError
 from rflx.generator import Generator, common, const
@@ -300,12 +300,12 @@ def test_prefixed_type_identifier() -> None:
         assert common.prefixed_type_identifier(ID(t), "P") == t.name
 
 
-DUMMY_SESSION = tac.Session(
+DUMMY_SESSION = ir.Session(
     identifier=ID("P::S"),
     states=[
-        tac.State(
+        ir.State(
             "State",
-            [tac.Transition("Final", tac.ComplexExpr([], tac.BoolVal(True)), None, None)],
+            [ir.Transition("Final", ir.ComplexExpr([], ir.BoolVal(True)), None, None)],
             None,
             [],
             None,
@@ -324,7 +324,7 @@ DUMMY_SESSION = tac.Session(
     "parameter, expected",
     [
         (
-            tac.FuncDecl("F", [], "T", type_=rty.BOOLEAN, location=None),
+            ir.FuncDecl("F", [], "T", type_=rty.BOOLEAN, location=None),
             [
                 ada.SubprogramDeclaration(
                     specification=ada.ProcedureSpecification(
@@ -339,16 +339,16 @@ DUMMY_SESSION = tac.Session(
             ],
         ),
         (
-            tac.FuncDecl(
+            ir.FuncDecl(
                 "F",
                 [
-                    tac.Argument("P1", "Boolean", type_=rty.BOOLEAN),
-                    tac.Argument("P2", "T2", type_=rty.OPAQUE),
-                    tac.Argument(
+                    ir.Argument("P1", "Boolean", type_=rty.BOOLEAN),
+                    ir.Argument("P2", "T2", type_=rty.OPAQUE),
+                    ir.Argument(
                         "P3", "T3", type_=rty.Enumeration("T4", [ID("E1")], always_valid=True)
                     ),
-                    tac.Argument("P4", "T4", type_=rty.Integer("T2")),
-                    tac.Argument("P5", "T5", type_=rty.Message("T5", is_definite=True)),
+                    ir.Argument("P4", "T4", type_=rty.Integer("T2")),
+                    ir.Argument("P5", "T5", type_=rty.Message("T5", is_definite=True)),
                 ],
                 "T",
                 type_=rty.Message("T", is_definite=True),
@@ -375,7 +375,7 @@ DUMMY_SESSION = tac.Session(
     ],
 )
 def test_session_create_abstract_function(
-    parameter: tac.FuncDecl, expected: Sequence[ada.SubprogramDeclaration]
+    parameter: ir.FuncDecl, expected: Sequence[ada.SubprogramDeclaration]
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -384,7 +384,7 @@ def test_session_create_abstract_function(
     assert session_generator._create_abstract_function(parameter) == expected
 
 
-class UnknownDeclaration(tac.FormalDecl):
+class UnknownDeclaration(ir.FormalDecl):
     def __str__(self) -> str:
         raise NotImplementedError
 
@@ -397,7 +397,7 @@ class UnknownDeclaration(tac.FormalDecl):
     "parameter, error_type, error_msg",
     [
         (
-            tac.FuncDecl(
+            ir.FuncDecl(
                 "F",
                 [],
                 "T",
@@ -408,7 +408,7 @@ class UnknownDeclaration(tac.FormalDecl):
             r'return type of function "F" is undefined',
         ),
         (
-            tac.FuncDecl(
+            ir.FuncDecl(
                 "F",
                 [],
                 "T",
@@ -419,7 +419,7 @@ class UnknownDeclaration(tac.FormalDecl):
             r'Opaque as return type of function "F" not allowed',
         ),
         (
-            tac.FuncDecl(
+            ir.FuncDecl(
                 "F",
                 [],
                 "T",
@@ -430,7 +430,7 @@ class UnknownDeclaration(tac.FormalDecl):
             r'sequence as return type of function "F" not yet supported',
         ),
         (
-            tac.FuncDecl(
+            ir.FuncDecl(
                 "F",
                 [],
                 "T",
@@ -441,7 +441,7 @@ class UnknownDeclaration(tac.FormalDecl):
             r'non-definite message in return type of function "F" not allowed',
         ),
         (
-            tac.FuncDecl(
+            ir.FuncDecl(
                 "F",
                 [],
                 "T",
@@ -454,9 +454,9 @@ class UnknownDeclaration(tac.FormalDecl):
             r'message containing sequence fields in return type of function "F" not yet supported',
         ),
         (
-            tac.FuncDecl(
+            ir.FuncDecl(
                 "F",
-                [tac.Argument("P", "T", rty.Sequence("A", rty.Integer("B")))],
+                [ir.Argument("P", "T", rty.Sequence("A", rty.Integer("B")))],
                 "T",
                 rty.BOOLEAN,
                 Location((10, 20)),
@@ -472,7 +472,7 @@ class UnknownDeclaration(tac.FormalDecl):
     ],
 )
 def test_session_create_abstract_functions_error(
-    parameter: tac.FormalDecl, error_type: type[BaseError], error_msg: str
+    parameter: ir.FormalDecl, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -486,19 +486,19 @@ def test_session_create_abstract_functions_error(
     "declaration, session_global, expected",
     [
         (
-            tac.VarDecl("X", rty.BOOLEAN),
+            ir.VarDecl("X", rty.BOOLEAN),
             False,
             EvaluatedDeclaration(global_declarations=[ada.ObjectDeclaration("X", "Boolean")]),
         ),
         (
-            tac.VarDecl("X", rty.Integer("T"), tac.ComplexIntExpr([], tac.IntVal(1))),
+            ir.VarDecl("X", rty.Integer("T"), ir.ComplexIntExpr([], ir.IntVal(1))),
             False,
             EvaluatedDeclaration(
                 global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))]
             ),
         ),
         (
-            tac.VarDecl("X", rty.Integer("T"), tac.ComplexIntExpr([], tac.IntVal(1))),
+            ir.VarDecl("X", rty.Integer("T"), ir.ComplexIntExpr([], ir.IntVal(1))),
             True,
             EvaluatedDeclaration(
                 global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))],
@@ -515,8 +515,8 @@ def test_session_create_abstract_functions_error(
             ),
         ),
         (
-            tac.VarDecl(
-                "X", rty.Message("T"), origin=tac.ConstructedOrigin("X : T", Location((1, 1)))
+            ir.VarDecl(
+                "X", rty.Message("T"), origin=ir.ConstructedOrigin("X : T", Location((1, 1)))
             ),
             False,
             EvaluatedDeclaration(
@@ -598,8 +598,8 @@ def test_session_create_abstract_functions_error(
             ),
         ),
         (
-            tac.VarDecl(
-                "X", rty.Message("T"), origin=tac.ConstructedOrigin("X : T", Location((1, 1)))
+            ir.VarDecl(
+                "X", rty.Message("T"), origin=ir.ConstructedOrigin("X : T", Location((1, 1)))
             ),
             True,
             EvaluatedDeclaration(
@@ -688,7 +688,7 @@ def test_session_create_abstract_functions_error(
     ],
 )
 def test_session_evaluate_declarations(
-    declaration: tac.VarDecl, session_global: bool, expected: EvaluatedDeclaration
+    declaration: ir.VarDecl, session_global: bool, expected: EvaluatedDeclaration
 ) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
 
@@ -715,7 +715,7 @@ class EvaluatedDeclarationStr:
     [
         (
             rty.Integer("T"),
-            tac.ComplexExpr([], tac.IntVal(1)),
+            ir.ComplexExpr([], ir.IntVal(1)),
             False,
             False,
             EvaluatedDeclarationStr(
@@ -724,7 +724,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.Integer("T"),
-            tac.ComplexExpr([], tac.IntVal(1)),
+            ir.ComplexExpr([], ir.IntVal(1)),
             False,
             True,
             EvaluatedDeclarationStr(
@@ -734,7 +734,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.Integer("T"),
-            tac.ComplexExpr([], tac.IntVal(1)),
+            ir.ComplexExpr([], ir.IntVal(1)),
             True,
             False,
             EvaluatedDeclarationStr(
@@ -836,7 +836,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            tac.ComplexExpr([], tac.Agg([])),
+            ir.ComplexExpr([], ir.Agg([])),
             False,
             False,
             EvaluatedDeclarationStr(
@@ -847,7 +847,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            tac.ComplexExpr([], tac.Agg([])),
+            ir.ComplexExpr([], ir.Agg([])),
             True,
             False,
             EvaluatedDeclarationStr(
@@ -858,7 +858,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            tac.ComplexExpr([], tac.Agg([tac.IntVal(1)])),
+            ir.ComplexExpr([], ir.Agg([ir.IntVal(1)])),
             False,
             False,
             EvaluatedDeclarationStr(
@@ -870,7 +870,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            tac.ComplexExpr([], tac.Agg([tac.IntVal(1)])),
+            ir.ComplexExpr([], ir.Agg([ir.IntVal(1)])),
             True,
             False,
             EvaluatedDeclarationStr(
@@ -883,7 +883,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            tac.ComplexExpr([], tac.Agg([tac.IntVal(1), tac.IntVal(2)])),
+            ir.ComplexExpr([], ir.Agg([ir.IntVal(1), ir.IntVal(2)])),
             False,
             False,
             EvaluatedDeclarationStr(
@@ -895,7 +895,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            tac.ComplexExpr([], tac.Agg([tac.IntVal(1), tac.IntVal(2)])),
+            ir.ComplexExpr([], ir.Agg([ir.IntVal(1), ir.IntVal(2)])),
             False,
             True,
             EvaluatedDeclarationStr(
@@ -907,7 +907,7 @@ class EvaluatedDeclarationStr:
         ),
         (
             rty.OPAQUE,
-            tac.ComplexExpr([], tac.Agg([tac.IntVal(1), tac.IntVal(2)])),
+            ir.ComplexExpr([], ir.Agg([ir.IntVal(1), ir.IntVal(2)])),
             True,
             False,
             EvaluatedDeclarationStr(
@@ -949,7 +949,7 @@ class EvaluatedDeclarationStr:
 )
 def test_session_declare(
     type_: rty.Type,
-    expression: Optional[tac.ComplexExpr],
+    expression: Optional[ir.ComplexExpr],
     constant: bool,
     session_global: bool,
     expected: EvaluatedDeclarationStr,
@@ -977,14 +977,14 @@ def test_session_declare(
     [
         (
             rty.Integer("T"),
-            tac.ComplexExpr(
+            ir.ComplexExpr(
                 [],
-                tac.IntCall(
+                ir.IntCall(
                     "F",
                     [],
                     [],
                     rty.Integer("T"),
-                    origin=tac.ConstructedOrigin("F", Location((10, 20))),
+                    origin=ir.ConstructedOrigin("F", Location((10, 20))),
                 ),
             ),
             RecordFluxError,
@@ -992,10 +992,10 @@ def test_session_declare(
         ),
         (
             rty.OPAQUE,
-            tac.ComplexExpr(
-                [tac.Assign("X", tac.IntVal(0), rty.Integer("T"))],
-                tac.IntVar(
-                    "X", rty.Integer("T"), origin=tac.ConstructedOrigin("X", Location((10, 20)))
+            ir.ComplexExpr(
+                [ir.Assign("X", ir.IntVal(0), rty.Integer("T"))],
+                ir.IntVar(
+                    "X", rty.Integer("T"), origin=ir.ConstructedOrigin("X", Location((10, 20)))
                 ),
             ),
             RecordFluxError,
@@ -1003,12 +1003,12 @@ def test_session_declare(
         ),
         (
             rty.Message("T"),
-            tac.ComplexExpr(
+            ir.ComplexExpr(
                 [],
-                tac.EnumLit(
+                ir.EnumLit(
                     "True",
                     rty.BOOLEAN,
-                    origin=tac.ConstructedOrigin("True", Location((10, 20))),
+                    origin=ir.ConstructedOrigin("True", Location((10, 20))),
                 ),
             ),
             RecordFluxError,
@@ -1016,12 +1016,12 @@ def test_session_declare(
         ),
         (
             rty.Integer("T"),
-            tac.ComplexExpr(
-                [tac.Assign("X", tac.IntVal(0), rty.Integer("T"))],
-                tac.IntVar(
+            ir.ComplexExpr(
+                [ir.Assign("X", ir.IntVal(0), rty.Integer("T"))],
+                ir.IntVar(
                     "X",
                     rty.Integer("T"),
-                    origin=tac.ConstructedOrigin("X", Location((10, 20))),
+                    origin=ir.ConstructedOrigin("X", Location((10, 20))),
                 ),
             ),
             RecordFluxError,
@@ -1037,7 +1037,7 @@ def test_session_declare(
 )
 def test_session_declare_error(
     type_: rty.Type,
-    expression: Optional[tac.ComplexExpr],
+    expression: Optional[ir.ComplexExpr],
     error_type: type[BaseError],
     error_msg: str,
 ) -> None:
@@ -1056,8 +1056,8 @@ def test_session_declare_error(
 
 
 @define
-class UnknownStatement(tac.Stmt):
-    def preconditions(self, variable_id: ty.Generator[ID, None, None]) -> list[tac.Cond]:
+class UnknownStatement(ir.Stmt):
+    def preconditions(self, variable_id: ty.Generator[ID, None, None]) -> list[ir.Cond]:
         raise NotImplementedError
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -1075,17 +1075,17 @@ class UnknownStatement(tac.Stmt):
             # Replace this test case by an integration test.
             #
             # X := Universal::Message'(Message_Type => Universal::MT_Data, Length => 0, Data => [])
-            tac.Assign(
+            ir.Assign(
                 "X",
-                tac.MsgAgg(
+                ir.MsgAgg(
                     "Universal::Message",
                     {
-                        ID("Message_Type"): tac.EnumLit(
+                        ID("Message_Type"): ir.EnumLit(
                             ID("Universal::MT_Data"),
                             rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                         ),
-                        ID("Length"): tac.IntVal(0),
-                        ID("Data"): tac.Agg([]),
+                        ID("Length"): ir.IntVal(0),
+                        ID("Data"): ir.Agg([]),
                     },
                     type_=rty.Message(
                         "Universal::Message",
@@ -1099,7 +1099,7 @@ class UnknownStatement(tac.Stmt):
                     ),
                 ),
                 MSG_TY,
-                origin=tac.ConstructedOrigin("", Location((1, 1))),
+                origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             ""  # https://github.com/PyCQA/pylint/issues/3368
             + """\
@@ -1120,19 +1120,19 @@ end if;\
 """,
         ),
         (
-            tac.Assign(
+            ir.Assign(
                 "X",
-                tac.BoolCall(
+                ir.BoolCall(
                     "F",
                     [
-                        tac.ObjVar("A", rty.Message("Universal::Message")),
+                        ir.ObjVar("A", rty.Message("Universal::Message")),
                     ],
                     [
                         rty.Message("Universal::Message"),
                     ],
                 ),
                 rty.BOOLEAN,
-                origin=tac.ConstructedOrigin("", Location((1, 1))),
+                origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             """\
 -- <stdin>:1:1
@@ -1145,12 +1145,12 @@ end;\
 """,
         ),
         (
-            tac.Assign(
+            ir.Assign(
                 "X",
-                tac.ObjCall(
+                ir.ObjCall(
                     "F",
                     [
-                        tac.ObjVar("A", rty.Message("Universal::Message")),
+                        ir.ObjVar("A", rty.Message("Universal::Message")),
                     ],
                     [
                         rty.Message("Universal::Message"),
@@ -1158,7 +1158,7 @@ end;\
                     rty.Message("Universal::Option"),
                 ),
                 rty.Message("Universal::Option"),
-                origin=tac.ConstructedOrigin("", Location((1, 1))),
+                origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             """\
 -- <stdin>:1:1
@@ -1187,54 +1187,54 @@ end;\
 """,
         ),
         (
-            tac.Assign(
+            ir.Assign(
                 "X",
-                tac.And(
-                    tac.BoolVar("A"),
-                    tac.BoolVar("B"),
+                ir.And(
+                    ir.BoolVar("A"),
+                    ir.BoolVar("B"),
                 ),
                 rty.BOOLEAN,
-                origin=tac.ConstructedOrigin("", Location((1, 1))),
+                origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nX := A\nand then B;",
         ),
         (
-            tac.Reset(
+            ir.Reset(
                 "X",
                 {},
                 rty.Message("P::M"),
-                origin=tac.ConstructedOrigin("", Location((1, 1))),
+                origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.M.Reset (X_Ctx);",
         ),
         (
-            tac.Reset(
+            ir.Reset(
                 "X",
                 {},
                 rty.Sequence("P::S", rty.Integer("A")),
-                origin=tac.ConstructedOrigin("", Location((1, 1))),
+                origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.S.Reset (X_Ctx);",
         ),
         (
-            tac.Read(
+            ir.Read(
                 "X",
-                tac.ObjVar("Y", rty.Message("P::M")),
-                origin=tac.ConstructedOrigin("", Location((1, 1))),
+                ir.ObjVar("Y", rty.Message("P::M")),
+                origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.M.Verify_Message (Y_Ctx);",
         ),
         (
-            tac.Write(
+            ir.Write(
                 "X",
-                tac.ObjVar("Y", rty.Message("P::M")),
-                origin=tac.ConstructedOrigin("", Location((1, 1))),
+                ir.ObjVar("Y", rty.Message("P::M")),
+                origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1",
         ),
     ],
 )
-def test_session_state_action(action: tac.Stmt, expected: str) -> None:
+def test_session_state_action(action: ir.Stmt, expected: str) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
 
@@ -1246,10 +1246,10 @@ def test_session_state_action(action: tac.Stmt, expected: str) -> None:
                 ID("S"),
                 action,
                 ExceptionHandler(
-                    tac.State(
+                    ir.State(
                         "S",
                         [],
-                        tac.Transition("E", tac.ComplexExpr([], tac.BoolVal(True)), None, None),
+                        ir.Transition("E", ir.ComplexExpr([], ir.BoolVal(True)), None, None),
                         [],
                         None,
                         None,
@@ -1268,24 +1268,24 @@ def test_session_state_action(action: tac.Stmt, expected: str) -> None:
     "action, error_type, error_msg",
     [
         (
-            tac.Extend(
+            ir.Extend(
                 "L",
-                tac.ObjVar("E", MSG_TY),
+                ir.ObjVar("E", MSG_TY),
                 SEQ_TY,
-                origin=tac.ConstructedOrigin("", Location((10, 20))),
+                origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r"Extend statement not yet supported",
         ),
         (
-            UnknownStatement(tac.ConstructedOrigin("", Location((10, 20)))),
+            UnknownStatement(ir.ConstructedOrigin("", Location((10, 20)))),
             FatalError,
             r'unexpected statement "UnknownStatement"',
         ),
     ],
 )
 def test_session_state_action_error(
-    action: tac.Stmt, error_type: type[BaseError], error_msg: str
+    action: ir.Stmt, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -1296,7 +1296,7 @@ def test_session_state_action_error(
             ID("S"),
             action,
             ExceptionHandler(
-                tac.State("State", [], None, [], None, None),
+                ir.State("State", [], None, [], None, None),
                 [],
                 lambda: None,
             ),
@@ -1305,12 +1305,12 @@ def test_session_state_action_error(
 
 
 @define
-class UnknownExpr(tac.Expr):
+class UnknownExpr(ir.Expr):
     @property
     def type_(self) -> rty.Any:
         return rty.Message("T")
 
-    def preconditions(self, variable_id: ty.Generator[ID, None, None]) -> list[tac.Cond]:
+    def preconditions(self, variable_id: ty.Generator[ID, None, None]) -> list[ir.Cond]:
         raise NotImplementedError
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -1325,22 +1325,22 @@ class UnknownExpr(tac.Expr):
     [
         (
             rty.Sequence("A", rty.Integer("B")),
-            tac.ObjFieldAccess(
+            ir.ObjFieldAccess(
                 "Z",
                 "Z",
                 rty.Message("C", {("Z",)}, {}, {ID("Z"): rty.Sequence("A", rty.Integer("B"))}),
-                origin=tac.ConstructedOrigin("", Location((10, 20))),
+                origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r"copying of sequence not yet supported",
         ),
         (
             rty.Aggregate(rty.Integer("A")),
-            tac.ObjFieldAccess(
+            ir.ObjFieldAccess(
                 "Z",
                 "Z",
                 rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Aggregate(rty.AnyInteger())}),
-                origin=tac.ConstructedOrigin("", Location((10, 20))),
+                origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
             r'unexpected type \(aggregate with element integer type\) for "Z.Z"'
@@ -1348,18 +1348,18 @@ class UnknownExpr(tac.Expr):
         ),
         (
             rty.Message("A"),
-            tac.MsgAgg(
+            ir.MsgAgg(
                 "Universal::Message",
                 {
-                    ID("Message_Type"): tac.EnumLit(
+                    ID("Message_Type"): ir.EnumLit(
                         "Universal::MT_Data",
                         rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                     ),
-                    ID("Length"): tac.IntVal(1),
-                    ID("Data"): tac.ObjVar(
+                    ID("Length"): ir.IntVal(1),
+                    ID("Data"): ir.ObjVar(
                         "Z",
                         rty.Message("Universal::Option"),
-                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                        origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 },
                 rty.Message(
@@ -1379,22 +1379,22 @@ class UnknownExpr(tac.Expr):
         ),
         (
             rty.Message("A"),
-            tac.MsgAgg(
+            ir.MsgAgg(
                 "Universal::Message",
                 {
-                    ID("Message_Type"): tac.EnumLit(
+                    ID("Message_Type"): ir.EnumLit(
                         "Universal::MT_Data",
                         rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                     ),
-                    ID("Length"): tac.Last(
+                    ID("Length"): ir.Last(
                         "Z",
                         rty.Message("Universal::Option"),
-                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                        origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
-                    ID("Data"): tac.ObjVar(
+                    ID("Data"): ir.ObjVar(
                         "Z",
                         rty.Message("Universal::Option"),
-                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                        origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 },
                 rty.Message(
@@ -1414,18 +1414,18 @@ class UnknownExpr(tac.Expr):
         ),
         (
             rty.Message("A"),
-            tac.MsgAgg(
+            ir.MsgAgg(
                 "Universal::Message",
                 {
-                    ID("Message_Type"): tac.EnumLit(
+                    ID("Message_Type"): ir.EnumLit(
                         "Universal::MT_Data",
                         rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                     ),
-                    ID("Length"): tac.IntVal(1),
-                    ID("Data"): tac.Head(
+                    ID("Length"): ir.IntVal(1),
+                    ID("Data"): ir.Head(
                         "Z",
                         rty.Sequence("Universal::Options", rty.Message("Universal::Option")),
-                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                        origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 },
                 rty.Message(
@@ -1444,62 +1444,62 @@ class UnknownExpr(tac.Expr):
         ),
         (
             rty.Sequence("A", rty.Message("B")),
-            tac.Comprehension(
+            ir.Comprehension(
                 "E",
-                tac.ObjVar(
+                ir.ObjVar(
                     "L",
                     rty.Sequence("A", rty.Message("B")),
                 ),
-                tac.ComplexExpr(
+                ir.ComplexExpr(
                     [],
-                    tac.ObjCall(
+                    ir.ObjCall(
                         "F",
                         [],
                         [],
                         rty.Message("B"),
-                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                        origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ),
-                tac.ComplexBoolExpr([], tac.BoolVal(True)),
+                ir.ComplexBoolExpr([], ir.BoolVal(True)),
             ),
             RecordFluxError,
             "expressions other than variables not yet supported as selector for message types",
         ),
         (
             rty.Message("B"),
-            tac.Find(
+            ir.Find(
                 "E",
-                tac.ObjFieldAccess(
+                ir.ObjFieldAccess(
                     "Y",
                     "Z",
                     rty.Message("C", {("Z",)}, {}, {ID("Z"): rty.Sequence("D", rty.Message("B"))}),
                 ),
-                tac.ComplexExpr(
+                ir.ComplexExpr(
                     [],
-                    tac.ObjFieldAccess(
+                    ir.ObjFieldAccess(
                         "E",
                         "Z",
                         rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Message("B")}),
-                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                        origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ),
-                tac.ComplexBoolExpr(
+                ir.ComplexBoolExpr(
                     [
-                        tac.VarDecl("T_0", rty.Integer("I")),
-                        tac.Assign(
+                        ir.VarDecl("T_0", rty.Integer("I")),
+                        ir.Assign(
                             "T_0",
-                            tac.IntFieldAccess(
+                            ir.IntFieldAccess(
                                 "E",
                                 "Z",
                                 rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Integer("I")}),
                             ),
                             rty.Integer("I"),
-                            origin=tac.ConstructedOrigin("", Location((20, 30))),
+                            origin=ir.ConstructedOrigin("", Location((20, 30))),
                         ),
                     ],
-                    tac.Greater(
-                        tac.IntVar("T_0", rty.Integer("I")),
-                        tac.IntVal(0),
+                    ir.Greater(
+                        ir.IntVar("T_0", rty.Integer("I")),
+                        ir.IntVal(0),
                     ),
                 ),
             ),
@@ -1508,39 +1508,39 @@ class UnknownExpr(tac.Expr):
         ),
         (
             rty.Message("B"),
-            tac.Find(
+            ir.Find(
                 "E",
-                tac.ObjVar(
+                ir.ObjVar(
                     "L",
                     rty.Sequence("A", rty.Message("B")),
                 ),
-                tac.ComplexExpr(
+                ir.ComplexExpr(
                     [],
-                    tac.ObjCall(
+                    ir.ObjCall(
                         "F",
                         [],
                         [],
                         rty.Message("B"),
-                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                        origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ),
-                tac.ComplexBoolExpr(
+                ir.ComplexBoolExpr(
                     [
-                        tac.VarDecl("T_0", rty.Integer("I")),
-                        tac.Assign(
+                        ir.VarDecl("T_0", rty.Integer("I")),
+                        ir.Assign(
                             "T_0",
-                            tac.IntFieldAccess(
+                            ir.IntFieldAccess(
                                 "E",
                                 "Z",
                                 rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Integer("I")}),
                             ),
                             rty.Integer("I"),
-                            origin=tac.ConstructedOrigin("", Location((20, 30))),
+                            origin=ir.ConstructedOrigin("", Location((20, 30))),
                         ),
                     ],
-                    tac.Greater(
-                        tac.IntVar("T_0", rty.Integer("I")),
-                        tac.IntVal(0),
+                    ir.Greater(
+                        ir.IntVar("T_0", rty.Integer("I")),
+                        ir.IntVal(0),
                     ),
                 ),
             ),
@@ -1549,34 +1549,32 @@ class UnknownExpr(tac.Expr):
         ),
         (
             rty.Sequence("A", rty.Integer("B")),
-            tac.Comprehension(
+            ir.Comprehension(
                 "E",
-                tac.ObjVar(
+                ir.ObjVar(
                     "L",
                     rty.Sequence("A", rty.AnyInteger()),
-                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                    origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
-                tac.ComplexExpr([], tac.ObjVar("E", rty.Integer("B"))),
-                tac.ComplexBoolExpr(
-                    [], tac.Greater(tac.IntVar("E", rty.Integer("B")), tac.IntVal(0))
-                ),
+                ir.ComplexExpr([], ir.ObjVar("E", rty.Integer("B"))),
+                ir.ComplexBoolExpr([], ir.Greater(ir.IntVar("E", rty.Integer("B")), ir.IntVal(0))),
             ),
             RecordFluxError,
             r"iterating over sequence of integer type in list comprehension not yet supported",
         ),
         (
             rty.Integer("B"),
-            tac.Find(
+            ir.Find(
                 "E",
-                tac.ObjVar(
+                ir.ObjVar(
                     "L",
                     rty.Sequence("A", rty.AnyInteger()),
-                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                    origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
-                tac.ComplexExpr([], tac.ObjVar("E", rty.Integer("B"))),
-                tac.ComplexBoolExpr(
+                ir.ComplexExpr([], ir.ObjVar("E", rty.Integer("B"))),
+                ir.ComplexBoolExpr(
                     [],
-                    tac.Greater(tac.IntVar("E", rty.Integer("B")), tac.IntVal(0)),
+                    ir.Greater(ir.IntVar("E", rty.Integer("B")), ir.IntVal(0)),
                 ),
             ),
             RecordFluxError,
@@ -1584,15 +1582,15 @@ class UnknownExpr(tac.Expr):
         ),
         (
             rty.Sequence("A", rty.Integer("B")),
-            tac.BoolCall(
+            ir.BoolCall(
                 "F",
                 [
-                    tac.IntCall(
+                    ir.IntCall(
                         "G",
                         [],
                         [],
                         rty.Integer("C"),
-                        origin=tac.ConstructedOrigin("", Location((10, 20))),
+                        origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ],
                 [rty.Integer("C")],
@@ -1602,31 +1600,31 @@ class UnknownExpr(tac.Expr):
         ),
         (
             rty.Message("A"),
-            tac.Conversion(
+            ir.Conversion(
                 "T",
-                tac.ObjFieldAccess("Z", "Z", rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.OPAQUE})),
+                ir.ObjFieldAccess("Z", "Z", rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.OPAQUE})),
                 rty.Message("A"),
-                origin=tac.ConstructedOrigin("", Location((10, 20))),
+                origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
             r'no refinement for field "Z" of message "B" leads to "A"',
         ),
         (
             rty.Message("A"),
-            tac.ObjVar(
+            ir.ObjVar(
                 "X",
                 rty.Message("A"),
-                origin=tac.ConstructedOrigin("", Location((10, 20))),
+                origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r'referencing assignment target "X" of type message in expression not yet supported',
         ),
         (
             rty.Message("A"),
-            tac.ObjVar(
+            ir.ObjVar(
                 "Y",
                 rty.Message("A"),
-                origin=tac.ConstructedOrigin("", Location((10, 20))),
+                origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r'ObjVar with message type "A" in assignment not yet supported',
@@ -1634,17 +1632,17 @@ class UnknownExpr(tac.Expr):
         (
             rty.Message("A"),
             UnknownExpr(
-                origin=tac.ConstructedOrigin("", Location((10, 20))),
+                origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
             r'unexpected expression "UnknownExpr" with message type "T" in assignment',
         ),
         (
             rty.Message("A"),
-            tac.Head(
+            ir.Head(
                 "X",
                 rty.Sequence("B", rty.OPAQUE),
-                origin=tac.ConstructedOrigin("", Location((10, 20))),
+                origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
             r'unexpected sequence element type sequence type "__INTERNAL__::Opaque" with element'
@@ -1654,7 +1652,7 @@ class UnknownExpr(tac.Expr):
 )
 def test_session_assign_error(
     type_: rty.Type,
-    expression: tac.Expr,
+    expression: ir.Expr,
     error_type: type[BaseError],
     error_msg: str,
 ) -> None:
@@ -1670,10 +1668,10 @@ def test_session_assign_error(
             type_,
             expression,
             ExceptionHandler(
-                tac.State(
+                ir.State(
                     "S",
                     [],
-                    tac.Transition("E", tac.ComplexExpr([], tac.BoolVal(True)), None, None),
+                    ir.Transition("E", ir.ComplexExpr([], ir.BoolVal(True)), None, None),
                     [],
                     None,
                     None,
@@ -1691,12 +1689,12 @@ def test_session_assign_error(
     "append, error_type, error_msg",
     [
         (
-            tac.Append(
+            ir.Append(
                 "L",
-                tac.ObjVar(
+                ir.ObjVar(
                     "X",
                     rty.Message("A"),
-                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                    origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
                 rty.Sequence("B", rty.Message("A")),
             ),
@@ -1704,23 +1702,23 @@ def test_session_assign_error(
             r'ObjVar with message type "A" in Append statement not yet supported',
         ),
         (
-            tac.Append(
+            ir.Append(
                 "L",
-                tac.ObjVar("X", MSG_TY, origin=tac.ConstructedOrigin("", Location((10, 20)))),
+                ir.ObjVar("X", MSG_TY, origin=ir.ConstructedOrigin("", Location((10, 20)))),
                 rty.Sequence("B", rty.Undefined()),
             ),
             FatalError,
             r"unexpected element type undefined type in Append statement",
         ),
         (
-            tac.Append(
+            ir.Append(
                 "L",
-                tac.IntCall(
+                ir.IntCall(
                     "X",
                     [],
                     [],
                     rty.Integer("A"),
-                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                    origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
                 rty.Sequence("B", rty.Integer("A")),
             ),
@@ -1730,7 +1728,7 @@ def test_session_assign_error(
     ],
 )
 def test_session_append_error(
-    append: tac.Append, error_type: type[BaseError], error_msg: str
+    append: ir.Append, error_type: type[BaseError], error_msg: str
 ) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
@@ -1740,10 +1738,10 @@ def test_session_append_error(
         session_generator._append(
             append,
             ExceptionHandler(
-                tac.State(
+                ir.State(
                     "S",
                     [],
-                    tac.Transition("E", tac.ComplexExpr([], tac.BoolVal(True)), None, None),
+                    ir.Transition("E", ir.ComplexExpr([], ir.BoolVal(True)), None, None),
                     [],
                     None,
                     None,
@@ -1760,12 +1758,12 @@ def test_session_append_error(
     "read, error_type, error_msg",
     [
         (
-            tac.Read(
+            ir.Read(
                 "L",
-                tac.EnumLit(
+                ir.EnumLit(
                     "E",
                     rty.Enumeration("A", [ID("E")]),
-                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                    origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
             ),
             RecordFluxError,
@@ -1773,7 +1771,7 @@ def test_session_append_error(
         ),
     ],
 )
-def test_session_read_error(read: tac.Read, error_type: type[BaseError], error_msg: str) -> None:
+def test_session_read_error(read: ir.Read, error_type: type[BaseError], error_msg: str) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
@@ -1789,12 +1787,12 @@ def test_session_read_error(read: tac.Read, error_type: type[BaseError], error_m
     "write, error_type, error_msg",
     [
         (
-            tac.Write(
+            ir.Write(
                 "L",
-                tac.EnumLit(
+                ir.EnumLit(
                     "E",
                     rty.Enumeration("A", [ID("E")]),
-                    origin=tac.ConstructedOrigin("", Location((10, 20))),
+                    origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
             ),
             RecordFluxError,
@@ -1802,7 +1800,7 @@ def test_session_read_error(read: tac.Read, error_type: type[BaseError], error_m
         ),
     ],
 )
-def test_session_write_error(write: tac.Write, error_type: type[BaseError], error_msg: str) -> None:
+def test_session_write_error(write: ir.Write, error_type: type[BaseError], error_msg: str) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
@@ -1815,34 +1813,34 @@ def test_session_write_error(write: tac.Write, error_type: type[BaseError], erro
     "expression, expected",
     [
         (
-            tac.IntIfExpr(
-                tac.BoolVar("X"),
-                tac.ComplexIntExpr([], tac.IntVar("Y", rty.Integer("I"))),
-                tac.ComplexIntExpr([], tac.IntVal(1)),
+            ir.IntIfExpr(
+                ir.BoolVar("X"),
+                ir.ComplexIntExpr([], ir.IntVar("Y", rty.Integer("I"))),
+                ir.ComplexIntExpr([], ir.IntVal(1)),
                 rty.Integer("I"),
             ),
             ada.If([(ada.Variable("X"), ada.Variable("Y"))], ada.Number(1)),
         ),
         (
-            tac.NamedAgg([("X", tac.IntVal(1)), ("Y", tac.BoolVal(False))]),
+            ir.NamedAgg([("X", ir.IntVal(1)), ("Y", ir.BoolVal(False))]),
             ada.NamedAggregate(("X", ada.Number(1)), ("Y", ada.Literal("False"))),
         ),
         (
-            tac.And(tac.BoolVar("X"), tac.BoolVar("Y")),
+            ir.And(ir.BoolVar("X"), ir.BoolVar("Y")),
             ada.AndThen(ada.Variable("X"), ada.Variable("Y")),
         ),
         (
-            tac.Or(tac.BoolVar("X"), tac.BoolVar("Y")),
+            ir.Or(ir.BoolVar("X"), ir.BoolVar("Y")),
             ada.OrElse(ada.Variable("X"), ada.Variable("Y")),
         ),
         (
-            tac.Not(tac.BoolVar("X")),
+            ir.Not(ir.BoolVar("X")),
             ada.Not(ada.Variable("X")),
         ),
         (
-            tac.Equal(
-                tac.ObjVar("X", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
-                tac.EnumLit("P::E1", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+            ir.Equal(
+                ir.ObjVar("X", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                ir.EnumLit("P::E1", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             ),
             ada.Equal(
                 ada.Variable("X"),
@@ -1850,9 +1848,9 @@ def test_session_write_error(write: tac.Write, error_type: type[BaseError], erro
             ),
         ),
         (
-            tac.NotEqual(
-                tac.EnumLit("P::E1", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
-                tac.ObjVar("X", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+            ir.NotEqual(
+                ir.EnumLit("P::E1", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                ir.ObjVar("X", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             ),
             ada.NotEqual(
                 ada.NamedAggregate(("Known", ada.Literal("True")), ("Enum", ada.Literal("P::E1"))),
@@ -1861,7 +1859,7 @@ def test_session_write_error(write: tac.Write, error_type: type[BaseError], erro
         ),
     ],
 )
-def test_session_to_ada_expr(expression: tac.Expr, expected: ada.Expr) -> None:
+def test_session_to_ada_expr(expression: ir.Expr, expected: ada.Expr) -> None:
     session_generator = SessionGenerator(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
@@ -1872,16 +1870,16 @@ def test_session_to_ada_expr(expression: tac.Expr, expected: ada.Expr) -> None:
 @pytest.mark.parametrize(
     "relation, left, right, expected",
     [
-        (tac.Equal, tac.BoolVar("X"), tac.BoolVal(True), ada.Variable("X")),
-        (tac.Equal, tac.BoolVar("X"), tac.BoolVal(False), ada.Not(ada.Variable("X"))),
-        (tac.NotEqual, tac.BoolVar("X"), tac.BoolVal(True), ada.Not(ada.Variable("X"))),
-        (tac.NotEqual, tac.BoolVar("X"), tac.BoolVal(False), ada.Variable("X")),
+        (ir.Equal, ir.BoolVar("X"), ir.BoolVal(True), ada.Variable("X")),
+        (ir.Equal, ir.BoolVar("X"), ir.BoolVal(False), ada.Not(ada.Variable("X"))),
+        (ir.NotEqual, ir.BoolVar("X"), ir.BoolVal(True), ada.Not(ada.Variable("X"))),
+        (ir.NotEqual, ir.BoolVar("X"), ir.BoolVal(False), ada.Variable("X")),
     ],
 )
 def test_session_to_ada_expr_equality(
-    relation: Callable[[tac.Expr, tac.Expr], tac.Expr],
-    left: tac.Expr,
-    right: tac.Expr,
+    relation: Callable[[ir.Expr, ir.Expr], ir.Expr],
+    left: ir.Expr,
+    right: ir.Expr,
     expected: ada.Expr,
 ) -> None:
     session_generator = SessionGenerator(
