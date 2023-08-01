@@ -10,6 +10,7 @@
 .mypy_cache
 .venv*
 .vscode/configurationCache.log
+/generated
 \.*.swp
 __pycache__
 build
@@ -19,6 +20,5 @@ dist
 gnatinspect.db
 htmlcov
 pyproject.toml
-src
 why3session.xml.bak
 why3shapes.gz.bak

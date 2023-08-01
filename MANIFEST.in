@@ -4,11 +4,11 @@ exclude .git* defaults* Makefile MANIFEST.in
 graft bin
 graft ide
 graft rflx
-include src/librflxlang.gpr
-recursive-include src/src *.ad? *.c *.h
-recursive-include src/gnatcoll-bindings/iconv *.ad? *.gpr *.c
-recursive-include src/gnatcoll-bindings/gmp *.ad? *.gpr *.c
-recursive-include src/adasat *.ad? *.gpr
-recursive-include src/python py.typed *.py *.pyi
-recursive-include src/langkit/langkit/support *.gpr *.ad?
+include generated/librflxlang.gpr
+recursive-include generated/src *.ad? *.c *.h
+recursive-include generated/gnatcoll-bindings/iconv *.ad? *.gpr *.c
+recursive-include generated/gnatcoll-bindings/gmp *.ad? *.gpr *.c
+recursive-include generated/adasat *.ad? *.gpr
+recursive-include generated/python py.typed *.py *.pyi
+recursive-include generated/langkit/langkit/support *.gpr *.ad?
 global-exclude *.py[cod]

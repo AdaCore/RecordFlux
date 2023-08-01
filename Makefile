@@ -12,9 +12,9 @@ VERSION ?= $(shell python3 -c "import setuptools_scm; print(setuptools_scm.get_v
 SDIST ?= dist/RecordFlux-$(VERSION).tar.gz
 
 BUILD_DIR = build
-SRC_DIR = src
+GENERATED_DIR = generated
 MAKEFILE_DIR := $(dir $(abspath Makefile))
-BUILD_SRC_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/$(SRC_DIR)
+BUILD_GENERATED_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/$(GENERATED_DIR)
 PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps ide language rflx tests tools stubs setup.py
 DEVUTILS_HEAD = 7f4319741b23b926aca093467e097005d4a1f642
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
@@ -132,17 +132,17 @@ check_doc:
 
 test: test_coverage test_unit_coverage test_language_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
 
-# A separate invocation of `coverage report` is needed to exclude `src` in the coverage report.
+# A separate invocation of `coverage report` is needed to exclude `$(GENERATED_DIR)` in the coverage report.
 # Currently, pytest's CLI does not allow the specification of omitted directories
 # (cf. https://github.com/pytest-dev/pytest-cov/issues/373).
 
 test_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/integration
-	coverage report --fail-under=100 --show-missing --skip-covered --omit="src/*"
+	coverage report --fail-under=100 --show-missing --skip-covered --omit="$(GENERATED_DIR)/*"
 
 test_unit_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tools --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/tools
-	coverage report --fail-under=94.68 --show-missing --skip-covered --omit="src/*"
+	coverage report --fail-under=94.68 --show-missing --skip-covered --omit="$(GENERATED_DIR)/*"
 
 test_language_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx_lang --cov-branch --cov-fail-under=73.8 --cov-report=term-missing:skip-covered tests/language
@@ -296,37 +296,37 @@ build_pdf_doc_user_guide:
 
 dist: $(SDIST)
 
-$(SDIST): $(SRC_DIR)/python/librflxlang pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
+$(SDIST): $(GENERATED_DIR)/python/librflxlang pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
 	python3 -m build --sdist
 
-$(SRC_DIR)/python/librflxlang: export PYTHONPATH=$(MAKEFILE_DIR)
-$(SRC_DIR)/python/librflxlang: $(wildcard language/*.py)
-	mkdir -p $(BUILD_SRC_DIR)
-	language/generate.py $(BUILD_SRC_DIR) $(VERSION)
-	cp -a $(MAKEFILE_DIR)/contrib/langkit $(BUILD_SRC_DIR)/
-	cp -a $(MAKEFILE_DIR)/contrib/gnatcoll-bindings $(BUILD_SRC_DIR)/
-	cp -a $(MAKEFILE_DIR)/contrib/adasat $(BUILD_SRC_DIR)/
-	rm -rf $(SRC_DIR)
-	mv $(BUILD_SRC_DIR) $(SRC_DIR)
+$(GENERATED_DIR)/python/librflxlang: export PYTHONPATH=$(MAKEFILE_DIR)
+$(GENERATED_DIR)/python/librflxlang: $(wildcard language/*.py)
+	mkdir -p $(BUILD_GENERATED_DIR)
+	language/generate.py $(BUILD_GENERATED_DIR) $(VERSION)
+	cp -a $(MAKEFILE_DIR)/contrib/langkit $(BUILD_GENERATED_DIR)/
+	cp -a $(MAKEFILE_DIR)/contrib/gnatcoll-bindings $(BUILD_GENERATED_DIR)/
+	cp -a $(MAKEFILE_DIR)/contrib/adasat $(BUILD_GENERATED_DIR)/
+	rm -rf $(GENERATED_DIR)
+	mv $(BUILD_GENERATED_DIR) $(GENERATED_DIR)
 
 .PHONY: parser
 
-parser: $(SRC_DIR)/python/librflxlang/librflxlang.so
+parser: $(GENERATED_DIR)/python/librflxlang/librflxlang.so
 
-$(SRC_DIR)/python/librflxlang/librflxlang.so: export GPR_PROJECT_PATH := \
-	$(GPR_PROJECT_PATH):src/langkit/langkit/support:src/gnatcoll-bindings/gmp:src/gnatcoll-bindings/iconv:src/adasat
-$(SRC_DIR)/python/librflxlang/librflxlang.so: export GNATCOLL_ICONV_OPT := -v
-$(SRC_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | $(SRC_DIR)/python/librflxlang
-	gprbuild -p -j0 -Psrc/librflxlang.gpr \
+$(GENERATED_DIR)/python/librflxlang/librflxlang.so: export GPR_PROJECT_PATH := \
+	$(GPR_PROJECT_PATH):$(GENERATED_DIR)/langkit/langkit/support:$(GENERATED_DIR)/gnatcoll-bindings/gmp:$(GENERATED_DIR)/gnatcoll-bindings/iconv:$(GENERATED_DIR)/adasat
+$(GENERATED_DIR)/python/librflxlang/librflxlang.so: export GNATCOLL_ICONV_OPT := -v
+$(GENERATED_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | $(GENERATED_DIR)/python/librflxlang
+	gprbuild -p -j0 -P$(GENERATED_DIR)/librflxlang.gpr \
 		-XLIBRARY_TYPE=static-pic \
 		-XLIBRFLXLANG_LIBRARY_TYPE=relocatable \
 		-XLIBRFLXLANG_STANDALONE=encapsulated
-	cp $(SRC_DIR)/lib/relocatable/dev/librflxlang.so $@
+	cp $(GENERATED_DIR)/lib/relocatable/dev/librflxlang.so $@
 
 .PHONY: clean
 
 clean:
-	rm -rf $(BUILD_DIR)/[^_]* $(SRC_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
+	rm -rf $(BUILD_DIR)/[^_]* $(GENERATED_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C doc/language_reference clean

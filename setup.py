@@ -20,10 +20,10 @@ class BuildParser(bdist_wheel):  # type: ignore[misc]
             env["GPR_PROJECT_PATH"] = ""
         env["GPR_PROJECT_PATH"] += ":".join(
             [
-                "src/langkit/langkit/support",
-                "src/gnatcoll-bindings/gmp",
-                "src/gnatcoll-bindings/iconv",
-                "src/adasat",
+                "generated/langkit/langkit/support",
+                "generated/gnatcoll-bindings/gmp",
+                "generated/gnatcoll-bindings/iconv",
+                "generated/adasat",
             ]
         )
         env["GNATCOLL_ICONV_OPT"] = "-v"
@@ -32,7 +32,7 @@ class BuildParser(bdist_wheel):  # type: ignore[misc]
                 "gprbuild",
                 "-p",
                 "-j0",
-                "-Psrc/librflxlang.gpr",
+                "-Pgenerated/librflxlang.gpr",
                 "-XLIBRARY_TYPE=static-pic",
                 "-XLIBRFLXLANG_LIBRARY_TYPE=relocatable",
                 "-XLIBRFLXLANG_STANDALONE=encapsulated",
@@ -41,7 +41,8 @@ class BuildParser(bdist_wheel):  # type: ignore[misc]
             check=True,
         )
         shutil.copy(
-            "src/lib/relocatable/dev/librflxlang.so", "src/python/librflxlang/librflxlang.so"
+            "generated/lib/relocatable/dev/librflxlang.so",
+            "generated/python/librflxlang/librflxlang.so",
         )
         super().run()
 
@@ -80,7 +81,7 @@ setup(
         "Topic :: System :: Networking",
     ],
     packages=["rflx", "rflx_ide", "rflx_lang"],
-    package_dir={"rflx_ide": "ide", "rflx_lang": "src/python/librflxlang"},
+    package_dir={"rflx_ide": "ide", "rflx_lang": "generated/python/librflxlang"},
     package_data={"rflx_lang": ["librflxlang.so", "py.typed", "*.pyi"]},
     include_package_data=True,
     cmdclass={"bdist_wheel": BuildParser},
