@@ -5,10 +5,11 @@ import json
 from pathlib import Path
 
 from rflx import __version__
+from rflx.const import CACHE_PATH
 from rflx.error import Subsystem, warn
 from rflx.model.message import AbstractMessage
 
-DEFAULT_FILE = Path.home() / ".cache" / "RecordFlux" / "verification.json"
+DEFAULT_FILE = CACHE_PATH / "verification.json"
 
 
 class Cache:

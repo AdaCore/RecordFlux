@@ -4,14 +4,14 @@
 	"description": "Language support for RecordFlux",
 	"author": "AdaCore",
 	"license": "GNU Affero General Public License",
-	"version": "0.0.1",
+	"version": "0.0.0",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+		"url": "https://github.com/AdaCore/RecordFlux"
 	},
 	"serverInfo": {
 		"name": "RecordFlux LS",
-		"module": "rflx_ls"
+		"module": "rflx"
 	},
 	"publisher": "AdaCore",
 	"categories": [
@@ -106,6 +106,7 @@
 		"test": "sh ./scripts/e2e.sh"
 	},
 	"dependencies": {
+		"@vscode/vsce": "^2.20.1",
 		"fs-extra": "^11.1.1",
 		"vscode-languageclient": "8.1.0-next.6",
 		"ws": "8.12.0"

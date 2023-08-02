@@ -3,7 +3,6 @@ import {
 	LanguageClient,
 } from "vscode-languageclient/node";
 
-import { BUNDLED_PYTHON_SCRIPTS_DIR } from "./common/constants";
 import { restartServer, isServerInstalled, installServer } from "./server";
 import { cleanupMessageGraphs, updateMessageGraphs } from "./graph";
 import { initializePython, checkVersion, onDidChangePythonInterpreter, resolveInterpreter, getInterpreterDetails } from "./common/python";
@@ -113,7 +112,7 @@ async function runServer(serverInfo: IServerInfo, outputChannel: vscode.LogOutpu
 
 		switch (result) {
 			case "Install":
-				if (!await installServer(BUNDLED_PYTHON_SCRIPTS_DIR, workspaceSetting)) {
+				if (!await installServer(workspaceSetting)) {
 					return await runServer(serverInfo, outputChannel);
 				}
 				break;

@@ -5,7 +5,7 @@ import re
 import textwrap
 from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
-from typing import TypeVar
+from typing import NoReturn, TypeVar
 
 
 def format_repr(string: str) -> str:
@@ -85,3 +85,7 @@ def unique(iterable: Iterable[T]) -> Iterator[T]:
     # In Python 3.7+, standard `dict` is guaranteed to preserve order:
     # https://stackoverflow.com/a/39980744
     return iter(dict.fromkeys(iterable))
+
+
+def assert_never(value: NoReturn) -> NoReturn:
+    assert False, f'unhandled value "{value}" ({type(value).__name__})'

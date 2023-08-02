@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import multiprocessing
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
@@ -258,7 +259,12 @@ class AbstractMessage(mty.Type):
         raise NotImplementedError
 
     @abstractmethod
-    def proven(self, skip_proof: bool = False, workers: int = 1) -> Message:
+    def proven(
+        self,
+        skip_proof: bool = False,
+        workers: int = 1,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
+    ) -> Message:
         raise NotImplementedError
 
     @property
@@ -879,12 +885,14 @@ class Message(AbstractMessage):
         state: Optional[MessageState] = None,
         skip_proof: bool = False,
         workers: int = 1,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
     ) -> None:
         super().__init__(identifier, structure, types, checksums, byte_order, location, state)
 
         self._refinements: list[Refinement] = []
         self._skip_proof = skip_proof
         self._workers = workers
+        self._mp_context = mp_context or multiprocessing.get_context()
 
         if not self.error.errors and not skip_proof:
             self.verify()
@@ -936,7 +944,12 @@ class Message(AbstractMessage):
             skip_proof=self._skip_proof,
         )
 
-    def proven(self, _skip_proof: bool = False, _workers: int = 1) -> Message:
+    def proven(
+        self,
+        _skip_proof: bool = False,
+        _workers: int = 1,
+        _mp_context: Optional[multiprocessing.context.BaseContext] = None,
+    ) -> Message:
         return copy(self)
 
     def is_possibly_empty(self, field: Field) -> bool:
@@ -1648,7 +1661,7 @@ class Message(AbstractMessage):
             )
 
     def _prove_static_conditions(self) -> None:
-        proofs = expr.ParallelProofs(self._workers)
+        proofs = expr.ParallelProofs(self._workers, self._mp_context)
         for l in self._structure:
             if l.condition == expr.TRUE:
                 continue
@@ -1688,7 +1701,7 @@ class Message(AbstractMessage):
         proofs.check(self.error)
 
     def _prove_conflicting_conditions(self) -> None:
-        proofs = expr.ParallelProofs(self._workers)
+        proofs = expr.ParallelProofs(self._workers, self._mp_context)
         for f in (INITIAL, *self.fields):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
@@ -1857,7 +1870,7 @@ class Message(AbstractMessage):
         effectively pruning the range that this field covers from the bit range of the message. For
         the overall expression, prove that it is false for all f, i.e. no bits are left.
         """
-        proofs = expr.ParallelProofs(self._workers)
+        proofs = expr.ParallelProofs(self._workers, self._mp_context)
         for path in [p[:-1] for p in self.paths(FINAL) if p]:
             facts: Sequence[expr.Expr]
 
@@ -1912,7 +1925,7 @@ class Message(AbstractMessage):
         proofs.check(self.error)
 
     def _prove_overlays(self) -> None:
-        proofs = expr.ParallelProofs(self._workers)
+        proofs = expr.ParallelProofs(self._workers, self._mp_context)
         for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self.paths(f) if p]:
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
@@ -1944,7 +1957,7 @@ class Message(AbstractMessage):
         proofs.check(self.error)
 
     def _prove_field_positions(self) -> None:
-        proofs = expr.ParallelProofs(self._workers)
+        proofs = expr.ParallelProofs(self._workers, self._mp_context)
         for f in (*self.fields, FINAL):
             for path in self.paths(f):
                 last = path[-1]
@@ -2062,7 +2075,7 @@ class Message(AbstractMessage):
 
     def _prove_message_size(self) -> None:
         """Prove that all paths lead to a message with a size that is a multiple of 8 bit."""
-        proofs = expr.ParallelProofs(self._workers)
+        proofs = expr.ParallelProofs(self._workers, self._mp_context)
         type_constraints = self.type_constraints(expr.TRUE)
         field_size_constraints = [
             expr.Equal(expr.Mod(expr.Size(f.name), expr.Number(8)), expr.Number(0))
@@ -2213,7 +2226,12 @@ class DerivedMessage(Message):
             location if location else self.location,
         )
 
-    def proven(self, _skip_proof: bool = False, _workers: int = 1) -> DerivedMessage:
+    def proven(
+        self,
+        _skip_proof: bool = False,
+        _workers: int = 1,
+        _mp_context: Optional[multiprocessing.context.BaseContext] = None,
+    ) -> DerivedMessage:
         return copy(self)
 
 
@@ -2236,7 +2254,12 @@ class UnprovenMessage(AbstractMessage):
             location if location else self.location,
         )
 
-    def proven(self, skip_proof: bool = False, workers: int = 1) -> Message:
+    def proven(
+        self,
+        skip_proof: bool = False,
+        workers: int = 1,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
+    ) -> Message:
         return Message(
             identifier=self.identifier,
             structure=self.structure,
@@ -2247,6 +2270,7 @@ class UnprovenMessage(AbstractMessage):
             state=self._state,
             skip_proof=skip_proof,
             workers=workers,
+            mp_context=mp_context or multiprocessing.get_context(),
         )
 
     @ensure(lambda result: valid_message_field_types(result))
@@ -2595,10 +2619,17 @@ class UnprovenDerivedMessage(UnprovenMessage):
             location if location else self.location,
         )
 
-    def proven(self, _skip_proof: bool = False, _workers: int = 1) -> DerivedMessage:
+    def proven(
+        self,
+        _skip_proof: bool = False,
+        workers: int = 1,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
+    ) -> DerivedMessage:
         return DerivedMessage(
             self.identifier,
-            self.base if isinstance(self.base, Message) else self.base.proven(),
+            self.base
+            if isinstance(self.base, Message)
+            else self.base.proven(workers=workers, mp_context=mp_context),
             self.structure,
             self.types,
             self.checksums,

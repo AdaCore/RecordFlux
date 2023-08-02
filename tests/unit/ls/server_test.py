@@ -17,7 +17,10 @@ from lsprotocol.types import (
     WorkspaceFolder,
 )
 from pygls.workspace import Workspace
-from rflx_ls import model, server
+
+from rflx.ls import model, server
+
+DATA_DIR = Path("tests/unit/ls/data")
 
 VALID_LSP_TOKEN_CATEGORIES: Final = {
     "namespace",
@@ -46,70 +49,65 @@ VALID_LSP_TOKEN_CATEGORIES: Final = {
 }
 
 
-@pytest.fixture
+@pytest.fixture()
 def language_server() -> server.RecordFluxLanguageServer:
-    language_server = server.RecordFluxLanguageServer("recordflux-ls", "v0.1")
+    language_server = server.RecordFluxLanguageServer()
     language_server.lsp.workspace = Workspace(
-        Path("tests/data").absolute().as_uri(),
+        DATA_DIR.absolute().as_uri(),
         None,
-        workspace_folders=[WorkspaceFolder(Path("tests/data").absolute().as_uri(), "data")],
-    )  # type: ignore
+        workspace_folders=[WorkspaceFolder(DATA_DIR.absolute().as_uri(), "data")],
+    )  # type: ignore[no-untyped-call]
 
     return language_server
 
 
 def test_lsp_tokens_categories() -> None:
     assert all(
-        token_type in VALID_LSP_TOKEN_CATEGORIES
-        for token_type in server.LSP_TOKEN_CATEGORIES.keys()
+        token_type in VALID_LSP_TOKEN_CATEGORIES for token_type in server.LSP_TOKEN_CATEGORIES
     )
 
     seen: set[int] = set()
 
-    for token_value in server.LSP_TOKEN_CATEGORIES.keys():
+    for token_value in server.LSP_TOKEN_CATEGORIES:
         assert server.LSP_TOKEN_CATEGORIES[token_value] not in seen
         seen.add(server.LSP_TOKEN_CATEGORIES[token_value])
 
 
-def test_rflx_type_to_lsp_token() -> None:
+def test_type_to_lsp_token() -> None:
     assert all(
-        server.rflx_type_to_lsp_token(token_category) in server.LSP_TOKEN_CATEGORIES.keys()
-        for token_category in model.SymbolCategory
-        if not token_category == model.SymbolCategory.UNDEFINED
+        category.to_lsp_token() in server.LSP_TOKEN_CATEGORIES
+        for category in model.SymbolCategory
+        if category != model.SymbolCategory.UNDEFINED
     )
-    assert set(server.LSP_TOKEN_CATEGORIES.keys()) == set(
-        [
-            server.rflx_type_to_lsp_token(token_category)
-            for token_category in model.SymbolCategory
-            if not token_category == model.SymbolCategory.UNDEFINED
-        ]
-    )
+    assert set(server.LSP_TOKEN_CATEGORIES.keys()) == {
+        category.to_lsp_token()
+        for category in model.SymbolCategory
+        if category != model.SymbolCategory.UNDEFINED
+    }
 
 
-@pytest.mark.asyncio
-async def test_goto_definition(language_server: server.RecordFluxLanguageServer) -> None:
+@pytest.mark.asyncio()
+async def test_go_to_definition(language_server: server.RecordFluxLanguageServer) -> None:
     positions: dict[tuple[int, int], Location] = {
         (19, 41): Location(
-            Path("tests/data/universal.rflx").absolute().as_uri(),
+            (DATA_DIR / "universal.rflx").absolute().as_uri(),
             Range(Position(17, 8), Position(17, 88)),
-        )
+        ),
     }
 
     for i, position in enumerate(positions):
         params = DefinitionParams(
-            TextDocumentIdentifier(Path("tests/data/universal.rflx").absolute().as_uri()),
+            TextDocumentIdentifier((DATA_DIR / "universal.rflx").absolute().as_uri()),
             Position(position[0], position[1] + (i % 2)),
         )
-        assert [positions[position]] == await server.goto_definition(language_server, params)
+        assert [positions[position]] == await server.go_to_definition(language_server, params)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_code_lenses(language_server: server.RecordFluxLanguageServer) -> None:
     assert await server.code_lens(
         language_server,
-        CodeLensParams(
-            TextDocumentIdentifier(Path("tests/data/messages.rflx").absolute().as_uri())
-        ),
+        CodeLensParams(TextDocumentIdentifier((DATA_DIR / "messages.rflx").absolute().as_uri())),
     ) == [
         CodeLens(
             range=Range(Position(18, 8), Position(22, 17)),
@@ -129,7 +127,7 @@ async def test_code_lenses(language_server: server.RecordFluxLanguageServer) -> 
     ]
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_message_graph(
     language_server: server.RecordFluxLanguageServer,
     monkeypatch: pytest.MonkeyPatch,
@@ -140,16 +138,17 @@ async def test_message_graph(
     language_server.update_model()
     await server.display_message_graph(language_server, [15])
 
-    assert (server.CACHE_PATH / "graphs" / "Msg.svg").is_file()
+    assert (tmp_path / "graphs" / "Msg.svg").is_file()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_semantic_tokens(language_server: server.RecordFluxLanguageServer) -> None:
     params = SemanticTokensParams(
-        TextDocumentIdentifier(Path("tests/data/universal.rflx").absolute().as_uri())
+        TextDocumentIdentifier((DATA_DIR / "universal.rflx").absolute().as_uri()),
     )
     tokens = await server.semantic_tokens(language_server, params)
 
+    assert tokens.data != [17, 84, 4, 2, 0], "lexer seems to use an empty model"
     assert tokens.data == [
         0,
         8,
@@ -661,4 +660,4 @@ async def test_semantic_tokens(language_server: server.RecordFluxLanguageServer)
         9,
         7,
         0,
-    ], "if the semantic token list is [17, 84, 4, 2, 0], the error probably comes from the fact that the lexer is using an empty model"
+    ]

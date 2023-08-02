@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Optional
 
+from rflx.common import assert_never
 from rflx.error import Location
 from rflx.identifier import ID
 from rflx.model import UncheckedModel
@@ -37,6 +38,34 @@ class SymbolCategory(Enum):
     SESSION_STATE_VARIABLE = auto()
     PACKAGE = auto()
 
+    def to_lsp_token(self) -> str:  # noqa: PLR0911
+        if self is SymbolCategory.KEYWORD:
+            return "keyword"
+        if self is SymbolCategory.NUMERIC or self is SymbolCategory.SEQUENCE:
+            return "type"
+        if self is SymbolCategory.ENUMERATION:
+            return "enum"
+        if self is SymbolCategory.ENUMERATION_LITERAL:
+            return "enumMember"
+        if self is SymbolCategory.MESSAGE:
+            return "struct"
+        if self is SymbolCategory.MESSAGE_FIELD or self is SymbolCategory.SESSION_MEMBER:
+            return "property"
+        if self is SymbolCategory.SESSION:
+            return "class"
+        if self is SymbolCategory.SESSION_STATE or self is SymbolCategory.SESSION_CHANNEL:
+            return "event"
+        if self is SymbolCategory.SESSION_STATE_VARIABLE:
+            return "variable"
+        if self is SymbolCategory.SESSION_FUNCTION:
+            return "method"
+        if self is SymbolCategory.PACKAGE:
+            return "namespace"
+        if self is SymbolCategory.SESSION_FUNCTION_PARAMETER:
+            return "parameter"
+        assert self is not SymbolCategory.UNDEFINED
+        assert_never(self)
+
 
 @dataclass(eq=True, frozen=True)
 class Symbol:
@@ -58,14 +87,14 @@ class Symbol:
 
 
 class LSModel:
-    def __init__(self, rflx_model: UncheckedModel):
+    def __init__(self, unchecked_model: UncheckedModel):
         self._symbols: dict[str, list[Symbol]] = defaultdict(list)
 
-        for rflx_declaration in rflx_model.declarations:
-            symbols = LSModel._rflx_declaration_to_symbols(rflx_declaration)
+        for declaration in unchecked_model.declarations:
+            symbols = LSModel._to_symbols(declaration)
             if len(symbols) == 0:
                 continue
-            self._append_package_of(rflx_declaration)
+            self._append_package_of(declaration)
             for symbol in symbols:
                 self._append_symbol(symbol)
 
@@ -76,7 +105,7 @@ class LSModel:
         return self._symbols[lexeme]
 
     def lexeme_exists_as(self, lexeme: str, symbol_category: SymbolCategory) -> bool:
-        return any([symbol.category == symbol_category for symbol in self._symbols[lexeme]])
+        return any(symbol.category == symbol_category for symbol in self._symbols[lexeme])
 
     def _package_already_registered(self, package: Symbol) -> bool:
         if str(package.identifier.name) not in self._symbols:
@@ -88,9 +117,9 @@ class LSModel:
 
         return False
 
-    def _append_package_of(self, rflx_declaration: UncheckedTopLevelDeclaration) -> None:
-        package_identifier = rflx_declaration.identifier.parent
-        package = LSModel._convert_rflx_package(package_identifier)
+    def _append_package_of(self, declaration: UncheckedTopLevelDeclaration) -> None:
+        package_identifier = declaration.identifier.parent
+        package = LSModel._to_symbol(package_identifier)
         if not self._package_already_registered(package):
             self._append_symbol(package)
 
@@ -98,10 +127,10 @@ class LSModel:
         self._symbols[str(symbol.identifier.name)].append(symbol)
 
     @staticmethod
-    def _rflx_declaration_to_symbols(declaration: UncheckedTopLevelDeclaration) -> list[Symbol]:
+    def _to_symbols(declaration: UncheckedTopLevelDeclaration) -> list[Symbol]:
         if isinstance(declaration, UncheckedInteger):
             return [
-                Symbol(declaration.identifier, SymbolCategory.NUMERIC, declaration.location, None)
+                Symbol(declaration.identifier, SymbolCategory.NUMERIC, declaration.location, None),
             ]
 
         if isinstance(declaration, UncheckedEnumeration):
@@ -116,14 +145,17 @@ class LSModel:
             ]
             result.append(
                 Symbol(
-                    declaration.identifier, SymbolCategory.ENUMERATION, declaration.location, None
-                )
+                    declaration.identifier,
+                    SymbolCategory.ENUMERATION,
+                    declaration.location,
+                    None,
+                ),
             )
             return result
 
         if isinstance(declaration, UncheckedSequence):
             return [
-                Symbol(declaration.identifier, SymbolCategory.SEQUENCE, declaration.location, None)
+                Symbol(declaration.identifier, SymbolCategory.SEQUENCE, declaration.location, None),
             ]
 
         if isinstance(declaration, UncheckedMessage):
@@ -137,7 +169,7 @@ class LSModel:
                 for field in declaration.field_types
             ]
             result.append(
-                Symbol(declaration.identifier, SymbolCategory.MESSAGE, declaration.location, None)
+                Symbol(declaration.identifier, SymbolCategory.MESSAGE, declaration.location, None),
             )
             return result
 
@@ -207,7 +239,7 @@ class LSModel:
                     SymbolCategory.SESSION,
                     declaration.location,
                     None,
-                )
+                ),
             ]
             result.extend(channels)
             result.extend(functions)
@@ -221,5 +253,5 @@ class LSModel:
         return []
 
     @staticmethod
-    def _convert_rflx_package(package: ID) -> Symbol:
+    def _to_symbol(package: ID) -> Symbol:
         return Symbol(package.name, SymbolCategory.PACKAGE, package.location, None)

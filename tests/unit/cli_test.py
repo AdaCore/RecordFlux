@@ -12,6 +12,7 @@ import rflx.specification
 from rflx import cli, generator, validator
 from rflx.converter import iana
 from rflx.error import FatalError, Location, Severity, Subsystem, fail, fatal_fail
+from rflx.ls.server import server
 from rflx.pyrflx import PyRFLXError
 from tests.const import DATA_DIR, SPEC_DIR
 
@@ -572,6 +573,13 @@ def test_main_convert_iana(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
         (data, IANA_XML_FILE, False, tmp_path / "1"),
         (data, IANA_XML_FILE, True, tmp_path / "2"),
     ]
+
+
+def test_main_run_ls(monkeypatch: pytest.MonkeyPatch) -> None:
+    called = []
+    monkeypatch.setattr(server, "start_io", lambda: called.append(True))
+    assert cli.main(["rflx", "run_ls"]) == 0
+    assert any(called)
 
 
 @pytest.mark.parametrize(

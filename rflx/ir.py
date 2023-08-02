@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import multiprocessing
 import re
 from abc import abstractmethod
 from collections.abc import Generator, Mapping, Sequence
@@ -85,15 +86,23 @@ class ProofJob(Base):
 
 
 class ProofManager(Base):
-    def __init__(self, workers: int) -> None:
+    def __init__(
+        self,
+        workers: int,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
+    ) -> None:
         self._jobs: list[ProofJob] = []
         self._workers = workers
+        self._mp_context = mp_context
 
     def add(self, jobs: Sequence[ProofJob]) -> None:
         self._jobs.extend(jobs)
 
     def check(self) -> list[ProofJob]:
-        with ProcessPoolExecutor(max_workers=self._workers) as executor:
+        with ProcessPoolExecutor(
+            max_workers=self._workers,
+            mp_context=self._mp_context,
+        ) as executor:
             result = list(executor.map(ProofManager._check, self._jobs))  # noqa: SLF001
 
         self._jobs.clear()
@@ -1792,8 +1801,9 @@ class Session:
         location: Optional[Location],
         variable_id: Generator[ID, None, None],
         workers: int = 1,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
     ) -> None:
-        manager = ProofManager(workers)
+        manager = ProofManager(workers, mp_context)
         states = [
             State(
                 s.identifier,

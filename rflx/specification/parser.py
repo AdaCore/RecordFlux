@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import multiprocessing
 import textwrap
 from collections import OrderedDict, defaultdict
 from collections.abc import Callable, Mapping, Sequence
@@ -1627,12 +1628,14 @@ class Parser:
         skip_verification: bool = False,
         cached: bool = False,
         workers: int = 1,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
         integration_files_dir: Optional[Path] = None,
     ) -> None:
         if skip_verification:
             warn("model verification skipped", Subsystem.MODEL)
         self.skip_verification = skip_verification
         self._workers = workers
+        self._mp_context = mp_context or multiprocessing.get_context()
         self._specifications: OrderedDict[ID, SpecificationFile] = OrderedDict()
         self._integration: Integration = Integration(integration_files_dir)
         self._cache = Cache(enabled=not skip_verification and cached)
@@ -1709,7 +1712,12 @@ class Parser:
     def create_model(self) -> model.Model:
         unchecked_model = self.create_unchecked_model()
         error = unchecked_model.error
-        checked_model = unchecked_model.checked(self._cache, self.skip_verification, self._workers)
+        checked_model = unchecked_model.checked(
+            self._cache,
+            self.skip_verification,
+            self._workers,
+            self._mp_context,
+        )
         self._integration.validate(checked_model, error)
         error.propagate()
         return checked_model

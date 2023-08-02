@@ -1,0 +1,13 @@
+**/tsconfig.json
+.nvmrc
+.vscode/**
+Makefile
+README.md
+# TODO(eng/recordflux/RecordFlux#1396): Determine necessary parts of node_modules
+# node_modules/**
+# !node_modules/vscode-jsonrpc/**
+# !node_modules/vscode-languageclient/**
+# !node_modules/vscode-languageserver-protocol/**
+# !node_modules/vscode-languageserver-types/**
+scripts
+testFixture

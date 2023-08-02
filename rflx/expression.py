@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import difflib
 import itertools
+import multiprocessing
 import operator
 from abc import abstractmethod
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
@@ -98,10 +99,15 @@ class ProofJob:
 
 
 class ParallelProofs:
-    def __init__(self, workers: int) -> None:
+    def __init__(
+        self,
+        workers: int,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
+    ) -> None:
         self._proofs: list[list[ProofJob]] = []
         self._current: list[ProofJob] = []
         self._workers = workers
+        self._mp_context = mp_context
 
     def add(  # noqa: PLR0913
         self,
@@ -157,7 +163,10 @@ class ParallelProofs:
 
     def check(self, error: RecordFluxError) -> None:
         self.push()
-        with ProcessPoolExecutor(max_workers=self._workers) as executor:
+        with ProcessPoolExecutor(
+            max_workers=self._workers,
+            mp_context=self._mp_context,
+        ) as executor:
             for e in executor.map(ParallelProofs.check_proof, self._proofs):
                 error.extend(e)
         error.propagate()

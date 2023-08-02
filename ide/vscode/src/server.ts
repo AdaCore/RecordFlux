@@ -21,7 +21,7 @@ import { isVirtualWorkspace } from './common/vscodeapi';
 export type IInitOptions = { settings: ISettings[]; globalSettings: ISettings };
 
 
-export async function installServer(serverDirPath: string, workspaceSetting: ISettings): Promise<boolean> {
+export async function installServer(workspaceSetting: ISettings): Promise<boolean> {
     const installLogFile = "install.log";
     const installLogPath = path.join(CACHE_DIR, installLogFile);
 
@@ -40,8 +40,7 @@ export async function installServer(serverDirPath: string, workspaceSetting: ISe
         const promise = new Promise<boolean>(resolve => {
             const logging = fsapi.createWriteStream(installLogPath, { flags: "a" });
 
-            // TODO: replace path with RecordFlux-LS from PyPi
-            const process = spawn(workspaceSetting.interpreter[0], ["-m", "pip", "install", serverDirPath]);
+            const process = spawn(workspaceSetting.interpreter[0], ["-m", "pip", "install", "RecordFlux"]);
 
             process.stdout.pipe(logging);
             process.stderr.pipe(logging);
@@ -74,7 +73,7 @@ export async function isServerInstalled(serverId: string): Promise<boolean> {
     const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
 
     try {
-        execSync(`${workspaceSetting.interpreter[0]} -m rflx_ls --version`);
+        execSync(`${workspaceSetting.interpreter[0]} -m rflx --version`);
     }
     catch (_error) {
         return false;
@@ -98,7 +97,7 @@ async function createServer(
     newEnv.LS_IMPORT_STRATEGY = settings.importStrategy;
     newEnv.LS_SHOW_NOTIFICATION = settings.showNotifications;
 
-    const args = settings.interpreter.slice(1).concat(["-m", "rflx_ls"]);
+    const args = settings.interpreter.slice(1).concat(["-m", "rflx", "ls"]);
     traceInfo(`Server run command: ${[command, ...args].join(' ')}`);
 
     const serverOptions: ServerOptions = {

@@ -143,6 +143,8 @@ test_tools:
 
 test_ide:
 	$(PYTEST) tests/ide
+	# TODO(eng/recordflux/RecordFlux#1361): Execute `test` instead of `build`
+	$(MAKE) -C ide/vscode build
 
 test_optimized:
 	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation
@@ -316,3 +318,4 @@ clean:
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C doc/language_reference clean
 	$(MAKE) -C doc/user_guide clean
+	$(MAKE) -C ide/vscode clean

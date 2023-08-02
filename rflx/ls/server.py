@@ -6,8 +6,6 @@ from pathlib import Path
 from typing import Final, Optional
 from urllib.parse import unquote, urlparse
 
-import rflx.error
-import rflx.model
 from lsprotocol.types import (
     TEXT_DOCUMENT_CODE_LENS,
     TEXT_DOCUMENT_DEFINITION,
@@ -29,19 +27,17 @@ from lsprotocol.types import (
     SemanticTokensParams,
 )
 from pygls.server import LanguageServer
+
+from rflx import __version__, error
+from rflx.common import assert_never
+from rflx.const import CACHE_PATH
 from rflx.graph import create_message_graph, write_graph
+from rflx.model import Message, UncheckedMessage, UncheckedModel
 from rflx.model.cache import Cache
 from rflx.specification import Parser
 
-from rflx_ls.lexer import LSLexer
-from rflx_ls.model import LSModel, SymbolCategory
-
-# workaround to prevent a deadlock while calling create_model()
-# on rflx.specification.Parser after parsing a file containing
-# a session
-multiprocessing.set_start_method("spawn", force=True)
-
-CACHE_PATH: Final = Path.home() / ".cache" / "RecordFlux"
+from .lexer import LSLexer
+from .model import LSModel
 
 LSP_TOKEN_CATEGORIES: Final = {
     "type": 0,
@@ -59,35 +55,7 @@ LSP_TOKEN_CATEGORIES: Final = {
 }
 
 
-def rflx_type_to_lsp_token(type: SymbolCategory) -> str:  # noqa: PLR0911
-    if type == SymbolCategory.KEYWORD:
-        return "keyword"
-    if type in {SymbolCategory.NUMERIC, SymbolCategory.SEQUENCE}:
-        return "type"
-    if type == SymbolCategory.ENUMERATION:
-        return "enum"
-    if type == SymbolCategory.ENUMERATION_LITERAL:
-        return "enumMember"
-    if type == SymbolCategory.MESSAGE:
-        return "struct"
-    if type in {SymbolCategory.MESSAGE_FIELD, SymbolCategory.SESSION_MEMBER}:
-        return "property"
-    if type == SymbolCategory.SESSION:
-        return "class"
-    if type in {SymbolCategory.SESSION_STATE, SymbolCategory.SESSION_CHANNEL}:
-        return "event"
-    if type == SymbolCategory.SESSION_STATE_VARIABLE:
-        return "variable"
-    if type == SymbolCategory.SESSION_FUNCTION:
-        return "method"
-    if type == SymbolCategory.PACKAGE:
-        return "namespace"
-    if type == SymbolCategory.SESSION_FUNCTION_PARAMETER:
-        return "parameter"
-    return "you probably created a new type without modifying lsp_token_types and/or rflx_type_to_lsp in main.py"
-
-
-def rflx_location_to_lsp(location: Optional[rflx.error.Location]) -> Optional[Location]:
+def to_lsp_location(location: Optional[error.Location]) -> Optional[Location]:
     if location is None or location.source is None:
         return None
 
@@ -96,18 +64,21 @@ def rflx_location_to_lsp(location: Optional[rflx.error.Location]) -> Optional[Lo
     end = location.end if location.end is not None else location.start
 
     return Location(
-        source, Range(Position(start[0] - 1, start[1] - 1), Position(end[0] - 1, end[1] - 1))
+        source,
+        Range(Position(start[0] - 1, start[1] - 1), Position(end[0] - 1, end[1] - 1)),
     )
 
 
-def rflx_severity_to_lsp(severity: rflx.error.Severity) -> Optional[DiagnosticSeverity]:
-    if severity == rflx.error.Severity.ERROR:
+def to_lsp_severity(severity: error.Severity) -> Optional[DiagnosticSeverity]:
+    if severity is error.Severity.ERROR:
         return DiagnosticSeverity.Error
-    if severity == rflx.error.Severity.INFO:
+    if severity is error.Severity.INFO:
         return DiagnosticSeverity.Information
-    if severity == rflx.error.Severity.WARNING:
+    if severity is error.Severity.WARNING:
         return DiagnosticSeverity.Warning
-    return None
+    if severity is error.Severity.NONE:
+        return None
+    assert_never(severity)
 
 
 def initialize_lexer(language_server: RecordFluxLanguageServer, uri: str) -> LSLexer:
@@ -121,11 +92,12 @@ def initialize_lexer(language_server: RecordFluxLanguageServer, uri: str) -> LSL
 class RecordFluxLanguageServer(LanguageServer):
     CMD_SHOW_MESSAGE_GRAPH: Final = "showMessageGraph"
 
-    def __init__(self, name: str, version: str) -> None:
-        super().__init__(name, version)
-        self.rflx_model = rflx.model.UncheckedModel([], rflx.error.RecordFluxError())
-        self.model = LSModel(self.rflx_model)
-        self.rflx_model_cache = Cache()
+    def __init__(self, workers: int = 1) -> None:
+        super().__init__("RecordFlux Language Server", __version__)
+        self.workers = workers
+        self.unchecked_model = UncheckedModel([], error.RecordFluxError())
+        self.model = LSModel(self.unchecked_model)
+        self.cache = Cache()
 
     def update_model(self) -> None:
         files: list[Path] = []
@@ -138,67 +110,76 @@ class RecordFluxLanguageServer(LanguageServer):
                     self.publish_diagnostics(file.as_uri(), [])
 
         if len(self.workspace.folders.keys()) == 0:
-            for document_uri in self.workspace.documents.keys():
+            for document_uri in self.workspace.documents:
                 document_path = Path(unquote(urlparse(document_uri).path))
                 files.append(document_path)
                 self.publish_diagnostics(document_uri, [])
 
-        parser = Parser(cached=True, workers=1, integration_files_dir=None)
+        # Workaround to prevent a deadlock when language server is run by VS Code
+        mp_context = multiprocessing.get_context(method="spawn")
 
-        error = rflx.error.RecordFluxError()
+        parser = Parser(
+            skip_verification=False,
+            cached=True,
+            workers=self.workers,
+            mp_context=mp_context,
+            integration_files_dir=None,
+        )
+
+        errors = error.RecordFluxError()
 
         for path in files:
             document = self.workspace.get_document(path.as_uri())
             try:
                 parser.parse_string(document.source, path)
-            except rflx.error.RecordFluxError as e:
-                error.extend(e)
+            except error.RecordFluxError as e:
+                errors.extend(e)
 
-        self._publish_errors_as_diagnostics(error)
+        self._publish_errors_as_diagnostics(errors)
 
-        self.rflx_model = parser.create_unchecked_model()
+        self.unchecked_model = parser.create_unchecked_model()
 
         self._publish_errors_as_diagnostics(errors + self.unchecked_model.error)
 
-        self.model = LSModel(self.rflx_model)
+        self.model = LSModel(self.unchecked_model)
 
         try:
             parser.create_model()
-        except rflx.error.RecordFluxError as e:
-            error.extend(e)
+        except error.RecordFluxError as e:
+            errors.extend(e)
 
-        self._publish_errors_as_diagnostics(error)
+        self._publish_errors_as_diagnostics(errors)
 
-    def _publish_errors_as_diagnostics(self, errors: rflx.error.RecordFluxError) -> None:
+    def _publish_errors_as_diagnostics(self, errors: error.RecordFluxError) -> None:
         diagnostics = defaultdict(list)
 
-        for error in errors.messages:
-            location = rflx_location_to_lsp(error.location)
-            severity = rflx_severity_to_lsp(error.severity)
+        for msg in errors.messages:
+            location = to_lsp_location(msg.location)
+            severity = to_lsp_severity(msg.severity)
 
             if location is not None:
-                diagnostics[location.uri].append(
-                    Diagnostic(location.range, error.message, severity)
-                )
+                diagnostics[location.uri].append(Diagnostic(location.range, msg.message, severity))
 
         for uri, diag in diagnostics.items():
             self.publish_diagnostics(uri, diag)
 
 
-server = RecordFluxLanguageServer("recordflux-ls", "v0.1")
+server = RecordFluxLanguageServer()
 
 
 @server.feature(TEXT_DOCUMENT_DIAGNOSTIC)
 async def diagnostics(
-    ls: RecordFluxLanguageServer, params: DocumentDiagnosticParams
+    ls: RecordFluxLanguageServer,
+    params: DocumentDiagnosticParams,
 ) -> list[Diagnostic]:
     ls.show_message(f"Diagnostics {params.text_document.uri}")
     return []
 
 
 @server.feature(TEXT_DOCUMENT_DEFINITION)
-async def goto_definition(
-    ls: RecordFluxLanguageServer, params: DefinitionParams
+async def go_to_definition(
+    ls: RecordFluxLanguageServer,
+    params: DefinitionParams,
 ) -> Optional[list[Location]]:
     lexer = initialize_lexer(ls, params.text_document.uri)
     token = lexer.search_token(params.position.line, params.position.character)
@@ -206,7 +187,7 @@ async def goto_definition(
     if token is None or token.symbol is None:
         return None
 
-    location = rflx_location_to_lsp(token.symbol.definition_location)
+    location = to_lsp_location(token.symbol.definition_location)
 
     if location is None:
         return None
@@ -219,7 +200,8 @@ async def goto_definition(
     SemanticTokensLegend(token_types=list(LSP_TOKEN_CATEGORIES.keys()), token_modifiers=[]),
 )
 async def semantic_tokens(
-    ls: RecordFluxLanguageServer, params: SemanticTokensParams
+    ls: RecordFluxLanguageServer,
+    params: SemanticTokensParams,
 ) -> SemanticTokens:
     lexer = initialize_lexer(ls, params.text_document.uri)
 
@@ -238,7 +220,7 @@ async def semantic_tokens(
         relative_line = token.line_number - previous_line
         relative_offset = token.character_offset - previous_offset
         length = len(token.lexeme)
-        token_category = LSP_TOKEN_CATEGORIES[rflx_type_to_lsp_token(token.symbol.category)]
+        token_category = LSP_TOKEN_CATEGORIES[token.symbol.category.to_lsp_token()]
 
         previous_line = token.line_number
         previous_offset = token.character_offset
@@ -251,20 +233,20 @@ async def semantic_tokens(
 @server.command(RecordFluxLanguageServer.CMD_SHOW_MESSAGE_GRAPH)
 async def display_message_graph(ls: RecordFluxLanguageServer, parameters: list[int]) -> None:
     try:
-        model = ls.rflx_model.checked(workers=1, cache=ls.rflx_model_cache)
-    except rflx.error.RecordFluxError:
+        model = ls.unchecked_model.checked(workers=ls.workers, cache=ls.cache)
+    except error.RecordFluxError:
         ls.show_message("Invalid specification", MessageType.Error)
         return
 
     message_index = parameters[0]
-    proven_message = model.declarations[message_index]
-    assert isinstance(proven_message, rflx.model.Message)
+    message = model.declarations[message_index]
+    assert isinstance(message, Message)
 
     graph_cache = CACHE_PATH / "graphs"
     graph_cache.mkdir(parents=True, exist_ok=True)
 
-    graph = create_message_graph(proven_message)
-    write_graph(graph, graph_cache / f"{proven_message.name}.svg")
+    graph = create_message_graph(message)
+    write_graph(graph, graph_cache / f"{message.name}.svg")
 
 
 @server.feature(TEXT_DOCUMENT_CODE_LENS)
@@ -273,11 +255,11 @@ async def code_lens(ls: RecordFluxLanguageServer, params: CodeLensParams) -> lis
 
     result: list[CodeLens] = []
 
-    for index, declaration in enumerate(ls.rflx_model.declarations):
-        if not isinstance(declaration, rflx.model.message.UncheckedMessage):
+    for index, declaration in enumerate(ls.unchecked_model.declarations):
+        if not isinstance(declaration, UncheckedMessage):
             continue
 
-        location = rflx_location_to_lsp(declaration.location)
+        location = to_lsp_location(declaration.location)
 
         if location is None or location.uri != params.text_document.uri:
             continue
@@ -286,9 +268,11 @@ async def code_lens(ls: RecordFluxLanguageServer, params: CodeLensParams) -> lis
             CodeLens(
                 location.range,
                 Command(
-                    "Show message graph", RecordFluxLanguageServer.CMD_SHOW_MESSAGE_GRAPH, [index]
+                    "Show message graph",
+                    RecordFluxLanguageServer.CMD_SHOW_MESSAGE_GRAPH,
+                    [index],
                 ),
-            )
+            ),
         )
 
     return result

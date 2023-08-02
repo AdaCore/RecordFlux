@@ -42,6 +42,8 @@ package Test is
                and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
                and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
          goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-T-N
       end Start;
 
       state Process is

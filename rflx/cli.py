@@ -31,6 +31,7 @@ from rflx.generator import Debug, Generator
 from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
 from rflx.integration import Integration
+from rflx.ls.server import server
 from rflx.model import Message, Model, Session
 from rflx.pyrflx import PyRFLXError
 from rflx.specification import Parser
@@ -249,7 +250,7 @@ def main(  # noqa: PLR0915
         "--gnat-studio-dir",
         dest="gnat_studio_dir",
         type=Path,
-        help="path to the GNAT Studio settings directory (default: %(default)s)",
+        help="path to the GNAT Studio settings directory (default: $HOME/.gnatstudio)",
         default=Path.home() / ".gnatstudio",
     )
     parser_setup.set_defaults(func=setup)
@@ -282,6 +283,9 @@ def main(  # noqa: PLR0915
     )
     parser_iana.add_argument("file", type=argparse.FileType("r"), nargs="?", default=sys.stdin)
     parser_iana.set_defaults(func=convert_iana)
+
+    parser_run_ls = subparsers.add_parser("run_ls", help="run language server")
+    parser_run_ls.set_defaults(func=run_language_server)
 
     args = parser.parse_args(argv[1:])
 
@@ -530,3 +534,8 @@ def convert_iana(args: argparse.Namespace) -> None:
         args.output_directory,
         os.environ.get("RFLX_REPRODUCIBLE") is not None,
     )
+
+
+def run_language_server(args: argparse.Namespace) -> None:
+    server.workers = args.workers
+    server.start_io()

@@ -90,6 +90,7 @@ setup(
         "importlib_resources >=6, <7",  # TODO(eng/recordflux/RecordFlux#1359): Remove
         "pydantic >=1, <2",
         "pydotplus >=2, <3",
+        "pygls >=1, <2",
         "ruamel.yaml >=0.17, <0.18",
         "z3-solver >=4, <5",
     ],
@@ -99,6 +100,7 @@ setup(
             "furo == 2022.4.7",
             "hypothesis >=6.14, <6.24",
             "pyicontract-lint >=2.1.2, <2.2",
+            "pytest-asyncio==0.21",
             "pytest-timeout >=2, <3",
             "scapy ==2.4.5",
             "setuptools_scm >=6.2, <8",

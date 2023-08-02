@@ -1,18 +1,19 @@
 from pathlib import Path, PosixPath
 
 import pytest
-import rflx.expression
-import rflx.model
+
+from rflx import expression as expr
 from rflx.error import Location
 from rflx.identifier import ID
+from rflx.ls.model import LSModel, Symbol, SymbolCategory
+from rflx.model import UncheckedEnumeration, UncheckedInteger, UncheckedSequence
 from rflx.specification.parser import Parser
-from rflx_ls.model import LSModel, Symbol, SymbolCategory
 
 
-@pytest.fixture
+@pytest.fixture()
 def model() -> LSModel:
     parser = Parser()
-    for path in Path("tests/data").glob("*.rflx"):
+    for path in Path("tests/unit/ls/data").glob("*.rflx"):
         if path.is_file():
             parser.parse_string(path.read_text())
     return LSModel(parser.create_unchecked_model())
@@ -74,56 +75,68 @@ def test_model_get_types(model: LSModel) -> None:
     }
 
 
-def test_convert_rflx_integer() -> None:
-    rflx_integer_type = rflx.model.UncheckedInteger(
+def test_integer_to_symbols() -> None:
+    integer = UncheckedInteger(
         ID("Package::Integer_Identifier"),
-        rflx.expression.Number(0),
-        rflx.expression.Number(100),
-        rflx.expression.Number(8),
+        expr.Number(0),
+        expr.Number(100),
+        expr.Number(8),
         None,
     )
-    symbols = LSModel._rflx_declaration_to_symbols(rflx_integer_type)
+    symbols = LSModel._to_symbols(integer)  # noqa: SLF001
     assert len(symbols) == 1
     assert symbols[0] == Symbol(
-        ID("Package::Integer_Identifier"), SymbolCategory.NUMERIC, None, None
+        ID("Package::Integer_Identifier"),
+        SymbolCategory.NUMERIC,
+        None,
+        None,
     )
 
 
-def test_convert_rflx_enumeration() -> None:
-    symbols = LSModel._rflx_declaration_to_symbols(
-        rflx.model.UncheckedEnumeration(
+def test_enumeration_to_symbols() -> None:
+    symbols = LSModel._to_symbols(  # noqa: SLF001
+        UncheckedEnumeration(
             ID("Package::Enumeration_Identifier"),
-            [(ID("Literal"), rflx.expression.Number(0))],
-            rflx.expression.Number(1),
+            [(ID("Literal"), expr.Number(0))],
+            expr.Number(1),
             always_valid=True,
             location=None,
-        )
+        ),
     )
     assert len(symbols) == 2
     assert symbols[0] == Symbol(
-        ID("Package::Literal"), SymbolCategory.ENUMERATION_LITERAL, None, None
+        ID("Package::Literal"),
+        SymbolCategory.ENUMERATION_LITERAL,
+        None,
+        None,
     )
     assert symbols[1] == Symbol(
-        ID("Package::Enumeration_Identifier"), SymbolCategory.ENUMERATION, None, None
+        ID("Package::Enumeration_Identifier"),
+        SymbolCategory.ENUMERATION,
+        None,
+        None,
     )
 
 
-def test_convert_rflx_sequence() -> None:
-    symbols = LSModel._rflx_declaration_to_symbols(
-        rflx.model.UncheckedSequence(
+def test_sequence_to_symbols() -> None:
+    symbols = LSModel._to_symbols(  # noqa: SLF001
+        UncheckedSequence(
             ID("Package::Sequence_Identifier"),
             ID("Package::Integer_Identifier"),
             None,
-        )
+        ),
     )
     assert len(symbols) == 1
     assert symbols[0] == Symbol(
-        ID("Package::Sequence_Identifier"), SymbolCategory.SEQUENCE, None, None
+        ID("Package::Sequence_Identifier"),
+        SymbolCategory.SEQUENCE,
+        None,
+        None,
     )
 
 
-def test_convert_rflx_package() -> None:
-    symbol = LSModel._convert_rflx_package(ID("Package_Identifier"))
+def test_to_symbol() -> None:
+    symbol = LSModel._to_symbol(ID("Package_Identifier"))  # noqa: SLF001
     assert symbol == Symbol(ID("Package_Identifier"), SymbolCategory.PACKAGE, None, None)
 
 

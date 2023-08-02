@@ -2,7 +2,7 @@
 prune *
 exclude .git* defaults* Makefile MANIFEST.in
 graft bin
-graft ide
+graft ide/gnatstudio
 graft rflx
 include generated/librflxlang.gpr
 recursive-include generated/src *.ad? *.c *.h

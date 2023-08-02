@@ -1,3 +1,0 @@
-#!/usr/bin/env -S python3 -O
-
-import rflx_ls.__main__
