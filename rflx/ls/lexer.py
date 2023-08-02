@@ -125,7 +125,7 @@ class LSLexer:
 
         if state.foreign_package is not None and state.foreign_package != ID(lexeme):
             for symbol in symbols:
-                if symbol.identifier == state.foreign_package * ID(lexeme):
+                if symbol.identifier == state.foreign_package * ID(lexeme):  # pragma: no branch
                     return symbol
             return None
 
@@ -156,9 +156,8 @@ class LSLexer:
 
     @_process_ast_node.register
     def _(self, node: rflx_lang.ID, state: State) -> None:
-        identifier_node = node.cast(rflx_lang.ID)
-        if identifier_node.f_package is not None:
-            state.foreign_package = ID(identifier_node.f_package.text)
+        if node.f_package is not None:
+            state.foreign_package = ID(node.f_package.text)
         self._process_children(node, state)
         state.foreign_package = None
 

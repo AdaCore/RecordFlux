@@ -14,65 +14,70 @@ from rflx.specification.parser import Parser
 def model() -> LSModel:
     parser = Parser()
     for path in Path("tests/unit/ls/data").glob("*.rflx"):
-        if path.is_file():
-            parser.parse_string(path.read_text())
+        parser.parse_string(path.read_text())
     return LSModel(parser.create_unchecked_model())
 
 
 def test_model_get_types(model: LSModel) -> None:
     assert model.get_symbols("notatype") == []
-    assert set(model.get_symbols("Message")) == {
+    assert model.get_symbols("Message") == [
         Symbol(
-            ID("Universal::Message"),
+            ID("Message"),
+            SymbolCategory.PACKAGE,
+            Location((3, 9), PosixPath("<stdin>"), (3, 21)),
+            None,
+        ),
+        Symbol(
+            ID("Message::Message"),
             SymbolCategory.MESSAGE,
             Location((37, 9), PosixPath("<stdin>"), (77, 18)),
             None,
         ),
         Symbol(
-            ID("Test::Session::Message"),
+            ID("Session::Session::Message"),
             SymbolCategory.SESSION_MEMBER,
-            Location((33, 7), PosixPath("<stdin>"), (33, 35)),
-            ID("Test::Session"),
+            Location((30, 7), PosixPath("<stdin>"), (30, 33)),
+            ID("Session::Session"),
         ),
-    }
-    assert set(model.get_symbols("Message_Type")) == {
+    ]
+    assert model.get_symbols("Message_Type") == [
         Symbol(
-            ID("Universal::Message_Type"),
+            ID("Message::Message_Type"),
             SymbolCategory.ENUMERATION,
             Location((3, 9), PosixPath("<stdin>"), (10, 71)),
             None,
         ),
         Symbol(
-            ID("Universal::Message::Message_Type"),
+            ID("Message::Message::Message_Type"),
             SymbolCategory.MESSAGE_FIELD,
             Location((39, 10), PosixPath("<stdin>"), (39, 22)),
-            ID("Universal::Message"),
+            ID("Message::Message"),
         ),
         Symbol(
-            ID("Test::Definite_Message::Message_Type"),
+            ID("Session::Definite_Message::Message_Type"),
             SymbolCategory.MESSAGE_FIELD,
             Location((11, 10), PosixPath("<stdin>"), (11, 22)),
-            ID("Test::Definite_Message"),
+            ID("Session::Definite_Message"),
         ),
         Symbol(
-            ID("Test::Session::Process::Message_Type"),
+            ID("Session::Session::Create_Message::Message_Type"),
+            SymbolCategory.SESSION_FUNCTION_PARAMETER,
+            Location((21, 11), PosixPath("<stdin>"), (21, 23)),
+            ID("Session::Session::Create_Message"),
+        ),
+        Symbol(
+            ID("Session::Session::Valid_Message::Message_Type"),
+            SymbolCategory.SESSION_FUNCTION_PARAMETER,
+            Location((26, 11), PosixPath("<stdin>"), (26, 23)),
+            ID("Session::Session::Valid_Message"),
+        ),
+        Symbol(
+            ID("Session::Session::Process::Message_Type"),
             SymbolCategory.SESSION_STATE_VARIABLE,
-            Location((49, 10), PosixPath("<stdin>"), (49, 22)),
-            ID("Test::Session::Process"),
+            Location((48, 10), PosixPath("<stdin>"), (48, 22)),
+            ID("Session::Session::Process"),
         ),
-        Symbol(
-            ID("Test::Session::Create_Message::Message_Type"),
-            SymbolCategory.SESSION_FUNCTION_PARAMETER,
-            Location((23, 11), PosixPath("<stdin>"), (23, 23)),
-            ID("Test::Session::Create_Message"),
-        ),
-        Symbol(
-            ID("Test::Session::Valid_Message::Message_Type"),
-            SymbolCategory.SESSION_FUNCTION_PARAMETER,
-            Location((29, 11), PosixPath("<stdin>"), (29, 23)),
-            ID("Test::Session::Valid_Message"),
-        ),
-    }
+    ]
 
 
 def test_integer_to_symbols() -> None:
@@ -141,12 +146,6 @@ def test_to_symbol() -> None:
 
 
 def test_model_complete(model: LSModel) -> None:
-    assert "Integer" in model
-    assert "Enum_T" in model
-    assert "Msg" in model
-    assert "Msg_LE_Nested" in model
-    assert "Msg_LE" in model
-
     assert "Message_Type" in model
     assert "MT_Null" in model
     assert "MT_Data" in model
@@ -164,6 +163,9 @@ def test_model_complete(model: LSModel) -> None:
     assert "Option" in model
     assert "Options" in model
     assert "Message" in model
+    assert "Msg" in model
+    assert "Msg_LE_Nested" in model
+    assert "Msg_LE" in model
 
     assert "Result" in model
     assert "Length" in model

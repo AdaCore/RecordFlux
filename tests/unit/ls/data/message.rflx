@@ -1,4 +1,4 @@
-package Universal is
+package Message is
 
    type Message_Type is (MT_Null => 0,
                          MT_Data => 1,
@@ -61,7 +61,7 @@ package Universal is
                if Message_Type = MT_Options
             then Value
                if Message_Type = MT_Value
-                  and Length = Universal::Value'Size / 8
+                  and Length = Message::Value'Size / 8
             then Values
                with Size => Length * 8
                if Message_Type = MT_Values;
@@ -76,6 +76,30 @@ package Universal is
          Values : Values;
       end message;
 
-   for Message use (Data => Option);
+   type Msg is
+      message
+         A : Value;
+         B : Message_Type;
+      end message;
 
-end Universal;
+   type Msg_LE_Nested is
+      message
+         X : Msg;
+         Y : Message_Type;
+         Z : Message::Message;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   type Msg_LE is
+      message
+         C : Value;
+         D : Message_Type;
+      end message
+         with Byte_Order => Low_Order_First;
+
+   for Message::Message use (Data => Message::Option)
+      if Message_Type = MT_Data;
+
+   for Option use (Data => Msg_LE);
+
+end Message;

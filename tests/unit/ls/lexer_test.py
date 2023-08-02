@@ -15,29 +15,27 @@ DATA_DIR = Path("tests/unit/ls/data")
 @pytest.fixture()
 def model() -> LSModel:
     parser = Parser()
-    parser.parse_string((DATA_DIR / "universal.rflx").read_text())
+    parser.parse_string((DATA_DIR / "message.rflx").read_text())
     return LSModel(parser.create_unchecked_model())
 
 
 def test_tokenization_with_empty_model() -> None:
     lexer = LSLexer(LSModel(UncheckedModel([], RecordFluxError())))
-    lexer.tokenize((DATA_DIR / "universal.rflx").read_text())
-    lexer.tokenize((DATA_DIR / "messages.rflx").read_text())
+    lexer.tokenize((DATA_DIR / "message.rflx").read_text())
+    lexer.tokenize((DATA_DIR / "session.rflx").read_text())
     tokens = lexer.tokens
 
-    assert len(tokens) == 167
-    # assert tokens[...] == ...
+    assert len(tokens) == 274
 
 
 def test_tokenization_with_model(model: LSModel) -> None:
     lexer = LSLexer(model)
-    lexer.tokenize((DATA_DIR / "universal.rflx").read_text())
-    lexer.tokenize((DATA_DIR / "messages.rflx").read_text())
+    lexer.tokenize((DATA_DIR / "message.rflx").read_text())
+    lexer.tokenize((DATA_DIR / "session.rflx").read_text())
 
     tokens = lexer.tokens
 
-    assert len(tokens) == 167
-    # assert tokens[...] == ...
+    assert len(tokens) == 274
 
 
 def test_search_token(model: LSModel) -> None:
@@ -45,22 +43,22 @@ def test_search_token(model: LSModel) -> None:
 
     assert lexer.search_token(5, 1) is None
 
-    lexer.tokenize((DATA_DIR / "universal.rflx").read_text())
+    lexer.tokenize((DATA_DIR / "message.rflx").read_text())
 
     assert lexer.search_token(0, 10) == Token(
         symbol=Symbol(
-            ID("Universal"),
+            ID("Message"),
             SymbolCategory.PACKAGE,
             Location((3, 9), PosixPath("<stdin>"), (3, 21)),
             None,
         ),
-        lexeme="Universal",
+        lexeme="Message",
         line_number=0,
         character_offset=8,
     )
     assert lexer.search_token(21, 12) == Token(
         symbol=Symbol(
-            identifier=ID("Universal::Option"),
+            identifier=ID("Message::Option"),
             category=SymbolCategory.MESSAGE,
             definition_location=Location(
                 (22, 9),

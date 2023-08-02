@@ -1,0 +1,91 @@
+with Message;
+
+package Session is
+
+   type Result is (M_Valid, M_Invalid) with Size => 2;
+
+   type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Definite_Message is
+      message
+         Message_Type : Message::Option_Type;
+         Length : Length;
+         Data : Opaque
+            with Size => Length * 8;
+      end message;
+
+   generic
+      Channel : Channel with Readable, Writable;
+      with function Get_Message_Type return Message::Option_Type;
+      with function Create_Message
+         (Message_Type : Message::Option_Type;
+          Length : Length;
+          Data : Opaque)
+      return Definite_Message;
+      with function Valid_Message
+         (Message_Type : Message::Option_Type;
+          Strict : Boolean)
+      return Result;
+   session Session is
+      Message : Message::Message;
+      Definite_Message : Definite_Message;
+   begin
+      state Start is
+      begin
+         Channel'Read (Message);
+      transition
+         goto Process
+            if Message'Valid
+               and Message.Message_Type = Message::MT_Data
+               and Message.Length = 3
+         goto null
+      exception
+         goto null
+      end Start;
+
+      state Process is
+         Valid : Result;
+         Message_Type : Message::Option_Type;
+         Length : Length;
+      begin
+         Message_Type := Get_Message_Type;
+         Valid := Valid_Message (Message_Type, True);
+         Length := Message.Data'Size / 8;
+
+         Definite_Message := Create_Message (Message_Type, Length, Message.Data);
+      transition
+         goto Reply
+            if Valid = M_Valid
+         goto null
+      exception
+         goto null
+      end Process;
+
+      state Reply is
+      begin
+         Channel'Write (Definite_Message);
+      transition
+         goto Process_2
+      end Reply;
+
+      state Process_2 is
+         Length : Length;
+      begin
+         Length := Message'Size / 8;
+
+         Definite_Message := Create_Message (Message::OT_Data, Length, Message'Opaque);
+      transition
+         goto Reply_2
+      exception
+         goto null
+      end Process_2;
+
+      state Reply_2 is
+      begin
+         Channel'Write (Definite_Message);
+      transition
+         goto null
+      end Reply_2;
+   end Session;
+
+end Session;

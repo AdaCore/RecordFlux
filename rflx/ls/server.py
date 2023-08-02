@@ -9,7 +9,6 @@ from urllib.parse import unquote, urlparse
 from lsprotocol.types import (
     TEXT_DOCUMENT_CODE_LENS,
     TEXT_DOCUMENT_DEFINITION,
-    TEXT_DOCUMENT_DIAGNOSTIC,
     TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
     CodeLens,
     CodeLensParams,
@@ -17,9 +16,7 @@ from lsprotocol.types import (
     DefinitionParams,
     Diagnostic,
     DiagnosticSeverity,
-    DocumentDiagnosticParams,
     Location,
-    MessageType,
     Position,
     Range,
     SemanticTokens,
@@ -32,7 +29,7 @@ from rflx import __version__, error
 from rflx.common import assert_never
 from rflx.const import CACHE_PATH
 from rflx.graph import create_message_graph, write_graph
-from rflx.model import Message, UncheckedMessage, UncheckedModel
+from rflx.model import Message, Model, UncheckedMessage, UncheckedModel
 from rflx.model.cache import Cache
 from rflx.specification import Parser
 
@@ -96,20 +93,21 @@ class RecordFluxLanguageServer(LanguageServer):
         super().__init__("RecordFlux Language Server", __version__)
         self.workers = workers
         self.unchecked_model = UncheckedModel([], error.RecordFluxError())
+        self.checked_model = Model()
         self.model = LSModel(self.unchecked_model)
         self.cache = Cache()
 
     def update_model(self) -> None:
         files: list[Path] = []
 
-        for folder_uri in list(self.workspace.folders.keys()):
+        for folder_uri in list(self.workspace.folders):
             folder_path = Path(unquote(urlparse(folder_uri).path))
             for file in folder_path.rglob("*.rflx"):
                 if file.is_file():
                     files.append(file)
                     self.publish_diagnostics(file.as_uri(), [])
 
-        if len(self.workspace.folders.keys()) == 0:
+        if len(self.workspace.folders) == 0:
             for document_uri in self.workspace.documents:
                 document_path = Path(unquote(urlparse(document_uri).path))
                 files.append(document_path)
@@ -144,7 +142,7 @@ class RecordFluxLanguageServer(LanguageServer):
         self.model = LSModel(self.unchecked_model)
 
         try:
-            parser.create_model()
+            self.checked_model = parser.create_model()
         except error.RecordFluxError as e:
             errors.extend(e)
 
@@ -165,15 +163,6 @@ class RecordFluxLanguageServer(LanguageServer):
 
 
 server = RecordFluxLanguageServer()
-
-
-@server.feature(TEXT_DOCUMENT_DIAGNOSTIC)
-async def diagnostics(
-    ls: RecordFluxLanguageServer,
-    params: DocumentDiagnosticParams,
-) -> list[Diagnostic]:
-    ls.show_message(f"Diagnostics {params.text_document.uri}")
-    return []
 
 
 @server.feature(TEXT_DOCUMENT_DEFINITION)
@@ -197,7 +186,7 @@ async def go_to_definition(
 
 @server.feature(
     TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-    SemanticTokensLegend(token_types=list(LSP_TOKEN_CATEGORIES.keys()), token_modifiers=[]),
+    SemanticTokensLegend(token_types=list(LSP_TOKEN_CATEGORIES), token_modifiers=[]),
 )
 async def semantic_tokens(
     ls: RecordFluxLanguageServer,
@@ -231,15 +220,9 @@ async def semantic_tokens(
 
 
 @server.command(RecordFluxLanguageServer.CMD_SHOW_MESSAGE_GRAPH)
-async def display_message_graph(ls: RecordFluxLanguageServer, parameters: list[int]) -> None:
-    try:
-        model = ls.unchecked_model.checked(workers=ls.workers, cache=ls.cache)
-    except error.RecordFluxError:
-        ls.show_message("Invalid specification", MessageType.Error)
-        return
+async def show_message_graph(ls: RecordFluxLanguageServer, parameters: list[int]) -> None:
+    message = ls.checked_model.declarations[parameters[0]]
 
-    message_index = parameters[0]
-    message = model.declarations[message_index]
     assert isinstance(message, Message)
 
     graph_cache = CACHE_PATH / "graphs"

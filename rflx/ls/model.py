@@ -64,7 +64,7 @@ class SymbolCategory(Enum):
         if self is SymbolCategory.SESSION_FUNCTION_PARAMETER:
             return "parameter"
         assert self is not SymbolCategory.UNDEFINED
-        assert_never(self)
+        assert_never(self)  # pragma: no cover
 
 
 @dataclass(eq=True, frozen=True)
@@ -104,18 +104,13 @@ class LSModel:
     def get_symbols(self, lexeme: str) -> list[Symbol]:
         return self._symbols[lexeme]
 
-    def lexeme_exists_as(self, lexeme: str, symbol_category: SymbolCategory) -> bool:
-        return any(symbol.category == symbol_category for symbol in self._symbols[lexeme])
-
     def _package_already_registered(self, package: Symbol) -> bool:
-        if str(package.identifier.name) not in self._symbols:
-            return False
-
-        for symbol in self._symbols[str(package.identifier.name)]:
-            if symbol.category == SymbolCategory.PACKAGE:
-                return True
-
-        return False
+        return any(
+            symbol.category == SymbolCategory.PACKAGE
+            for lexeme, symbols in self._symbols.items()
+            if lexeme == str(package.identifier)
+            for symbol in symbols
+        )
 
     def _append_package_of(self, declaration: UncheckedTopLevelDeclaration) -> None:
         package_identifier = declaration.identifier.parent
