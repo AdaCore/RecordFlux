@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import multiprocessing
+import uuid
 from collections import defaultdict
 from pathlib import Path
 from typing import Final, Optional
@@ -22,6 +23,9 @@ from lsprotocol.types import (
     SemanticTokens,
     SemanticTokensLegend,
     SemanticTokensParams,
+    WorkDoneProgressBegin,
+    WorkDoneProgressEnd,
+    WorkDoneProgressReport,
 )
 from pygls.server import LanguageServer
 
@@ -98,6 +102,12 @@ class RecordFluxLanguageServer(LanguageServer):
         self.cache = Cache()
 
     def update_model(self) -> None:
+        token = str(uuid.uuid4())
+        self.progress.create(token)
+        self.progress.begin(
+            token, WorkDoneProgressBegin(title="Initializing", percentage=0, cancellable=False)
+        )
+
         files: list[Path] = []
 
         for folder_uri in list(self.workspace.folders):
@@ -112,6 +122,11 @@ class RecordFluxLanguageServer(LanguageServer):
                 document_path = Path(unquote(urlparse(document_uri).path))
                 files.append(document_path)
                 self.publish_diagnostics(document_uri, [])
+
+        self.progress.report(
+            token,
+            WorkDoneProgressReport(message="Parsing", percentage=25),
+        )
 
         # Workaround to prevent a deadlock when language server is run by VS Code
         mp_context = multiprocessing.get_context(method="spawn")
@@ -135,11 +150,21 @@ class RecordFluxLanguageServer(LanguageServer):
 
         self._publish_errors_as_diagnostics(errors)
 
+        self.progress.report(
+            token,
+            WorkDoneProgressReport(message="Creating unchecked model", percentage=50),
+        )
+
         self.unchecked_model = parser.create_unchecked_model()
 
         self._publish_errors_as_diagnostics(errors + self.unchecked_model.error)
 
         self.model = LSModel(self.unchecked_model)
+
+        self.progress.report(
+            token,
+            WorkDoneProgressReport(message="Creating model", percentage=75),
+        )
 
         try:
             self.checked_model = parser.create_model()
@@ -147,6 +172,8 @@ class RecordFluxLanguageServer(LanguageServer):
             errors.extend(e)
 
         self._publish_errors_as_diagnostics(errors)
+
+        self.progress.end(token, WorkDoneProgressEnd(message="Completed"))
 
     def _publish_errors_as_diagnostics(self, errors: error.RecordFluxError) -> None:
         diagnostics = defaultdict(list)
