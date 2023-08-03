@@ -11,12 +11,15 @@ from lsprotocol.types import (
     DefinitionParams,
     Diagnostic,
     DiagnosticSeverity,
+    DidChangeTextDocumentParams,
+    DidOpenTextDocumentParams,
     Location,
     Position,
     Range,
     SemanticTokensParams,
     TextDocumentIdentifier,
     TextDocumentItem,
+    VersionedTextDocumentIdentifier,
     WorkspaceFolder,
 )
 from pygls.workspace import Workspace
@@ -182,7 +185,7 @@ def test_update_model_error_in_parser(tmp_path: Path, monkeypatch: pytest.Monkey
     assert published_diagnostics == [
         (document.absolute().as_uri(), []),
         *(
-            3
+            2
             * [
                 (
                     document.absolute().as_uri(),
@@ -219,25 +222,20 @@ def test_update_model_error_in_unchecked_model(
 
     assert published_diagnostics == [
         (document.absolute().as_uri(), []),
-        *(
-            2
-            * [
-                (
-                    document.absolute().as_uri(),
-                    [
-                        Diagnostic(
-                            Range(Position(0, 8), Position(0, 11)),
-                            'reserved word "End" used as identifier',
-                            DiagnosticSeverity.Error,
-                        ),
-                    ],
+        (
+            document.absolute().as_uri(),
+            [
+                Diagnostic(
+                    Range(Position(0, 8), Position(0, 11)),
+                    'reserved word "End" used as identifier',
+                    DiagnosticSeverity.Error,
                 ),
-            ]
+            ],
         ),
     ]
 
 
-def test_update_model_error_in_model(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_verify(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     published_diagnostics: list[tuple[str, list[Diagnostic]]] = []
     mock_publish_diagnostics(published_diagnostics, monkeypatch)
 
@@ -253,6 +251,7 @@ def test_update_model_error_in_model(tmp_path: Path, monkeypatch: pytest.MonkeyP
         workspace_folders=[WorkspaceFolder(tmp_path.absolute().as_uri(), "tmp_path")],
     )  # type: ignore[no-untyped-call]
     ls.update_model()
+    ls.verify()
 
     assert published_diagnostics == [
         (document.absolute().as_uri(), []),
@@ -305,6 +304,60 @@ def test_publish_errors_as_diagnostics(monkeypatch: pytest.MonkeyPatch) -> None:
             ],
         ),
     ]
+
+
+@pytest.mark.asyncio()
+async def test_did_open(
+    language_server: server.RecordFluxLanguageServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    update_model_called = []
+    verify_called = []
+    monkeypatch.setattr(
+        server.RecordFluxLanguageServer,
+        "update_model",
+        lambda _: update_model_called.append(True),
+    )
+    monkeypatch.setattr(  # pragma: no branch
+        server.RecordFluxLanguageServer,
+        "verify",
+        lambda _: verify_called.append(True),
+    )
+
+    await server.did_open(
+        language_server,
+        DidOpenTextDocumentParams(TextDocumentItem("", "", 0, "")),
+    )
+
+    assert any(update_model_called)
+    assert any(verify_called)
+
+
+@pytest.mark.asyncio()
+async def test_did_change(
+    language_server: server.RecordFluxLanguageServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    update_model_called = []
+    verify_called = []
+    monkeypatch.setattr(
+        server.RecordFluxLanguageServer,
+        "update_model",
+        lambda _: update_model_called.append(True),
+    )
+    monkeypatch.setattr(  # pragma: no branch
+        server.RecordFluxLanguageServer,
+        "verify",
+        lambda _: verify_called.append(True),
+    )
+
+    await server.did_change(
+        language_server,
+        DidChangeTextDocumentParams(VersionedTextDocumentIdentifier(0, ""), []),
+    )
+
+    assert any(update_model_called)
+    assert any(verify_called)
 
 
 @pytest.mark.asyncio()
@@ -394,6 +447,7 @@ async def test_show_message_graph(
     monkeypatch.setattr(server, "CACHE_PATH", tmp_path)
 
     language_server.update_model()
+    language_server.verify()
     index, identifier = next(  # pragma: no branch
         (i, d.identifier.name)
         for i, d in enumerate(language_server.checked_model.declarations)

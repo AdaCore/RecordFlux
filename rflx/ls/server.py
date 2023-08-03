@@ -10,6 +10,8 @@ from urllib.parse import unquote, urlparse
 from lsprotocol.types import (
     TEXT_DOCUMENT_CODE_LENS,
     TEXT_DOCUMENT_DEFINITION,
+    TEXT_DOCUMENT_DID_CHANGE,
+    TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
     CodeLens,
     CodeLensParams,
@@ -17,6 +19,8 @@ from lsprotocol.types import (
     DefinitionParams,
     Diagnostic,
     DiagnosticSeverity,
+    DidChangeTextDocumentParams,
+    DidOpenTextDocumentParams,
     Location,
     Position,
     Range,
@@ -25,7 +29,6 @@ from lsprotocol.types import (
     SemanticTokensParams,
     WorkDoneProgressBegin,
     WorkDoneProgressEnd,
-    WorkDoneProgressReport,
 )
 from pygls.server import LanguageServer
 
@@ -101,11 +104,17 @@ class RecordFluxLanguageServer(LanguageServer):
         self.model = LSModel(self.unchecked_model)
         self.cache = Cache()
 
+        self._parser: Parser
+        self._error: error.RecordFluxError
+        # Workaround to prevent a deadlock when language server is run by VS Code
+        self._mp_context = multiprocessing.get_context(method="spawn")
+
     def update_model(self) -> None:
         token = str(uuid.uuid4())
         self.progress.create(token)
         self.progress.begin(
-            token, WorkDoneProgressBegin(title="Initializing", percentage=0, cancellable=False)
+            token,
+            WorkDoneProgressBegin(title="Update", percentage=0, cancellable=False),
         )
 
         files: list[Path] = []
@@ -123,55 +132,49 @@ class RecordFluxLanguageServer(LanguageServer):
                 files.append(document_path)
                 self.publish_diagnostics(document_uri, [])
 
-        self.progress.report(
-            token,
-            WorkDoneProgressReport(message="Parsing", percentage=25),
-        )
-
-        # Workaround to prevent a deadlock when language server is run by VS Code
-        mp_context = multiprocessing.get_context(method="spawn")
-
-        parser = Parser(
-            skip_verification=False,
+        self._parser = Parser(
             cached=True,
             workers=self.workers,
-            mp_context=mp_context,
-            integration_files_dir=None,
+            mp_context=self._mp_context,
         )
 
-        errors = error.RecordFluxError()
+        self._error = error.RecordFluxError()
 
         for path in files:
             document = self.workspace.get_document(path.as_uri())
             try:
-                parser.parse_string(document.source, path)
+                self._parser.parse_string(document.source, path)
             except error.RecordFluxError as e:
-                errors.extend(e)
+                self._error.extend(e)
 
-        self._publish_errors_as_diagnostics(errors)
+        self._publish_errors_as_diagnostics(self._error)
 
-        self.progress.report(
-            token,
-            WorkDoneProgressReport(message="Creating unchecked model", percentage=50),
-        )
+        self.unchecked_model = self._parser.create_unchecked_model()
 
-        self.unchecked_model = parser.create_unchecked_model()
-
-        self._publish_errors_as_diagnostics(errors + self.unchecked_model.error)
+        self._publish_errors_as_diagnostics(self._error + self.unchecked_model.error)
 
         self.model = LSModel(self.unchecked_model)
 
-        self.progress.report(
+        self.progress.end(token, WorkDoneProgressEnd(message="Completed"))
+
+    def verify(self) -> None:
+        token = str(uuid.uuid4())
+        self.progress.create(token)
+        self.progress.begin(
             token,
-            WorkDoneProgressReport(message="Creating model", percentage=75),
+            WorkDoneProgressBegin(title="Verification", percentage=0, cancellable=True),
         )
 
         try:
-            self.checked_model = parser.create_model()
+            self.checked_model = self.unchecked_model.checked(
+                self.cache,
+                workers=self.workers,
+                mp_context=self._mp_context,
+            )
         except error.RecordFluxError as e:
-            errors.extend(e)
+            self._error.extend(e)
 
-        self._publish_errors_as_diagnostics(errors)
+        self._publish_errors_as_diagnostics(self._error)
 
         self.progress.end(token, WorkDoneProgressEnd(message="Completed"))
 
@@ -190,6 +193,18 @@ class RecordFluxLanguageServer(LanguageServer):
 
 
 server = RecordFluxLanguageServer()
+
+
+@server.feature(TEXT_DOCUMENT_DID_OPEN)
+async def did_open(ls: RecordFluxLanguageServer, _params: DidOpenTextDocumentParams) -> None:
+    ls.update_model()
+    ls.thread_pool_executor.submit(ls.verify)
+
+
+@server.feature(TEXT_DOCUMENT_DID_CHANGE)
+async def did_change(ls: RecordFluxLanguageServer, _params: DidChangeTextDocumentParams) -> None:
+    ls.update_model()
+    ls.thread_pool_executor.submit(ls.verify)
 
 
 @server.feature(TEXT_DOCUMENT_DEFINITION)

@@ -166,7 +166,9 @@ class BaseError(Exception, Base):
     ) -> None:
         self._extend(entries)
         num_errors = len(self.errors)
-        if 0 < ERROR_CONFIG.fail_after_value <= num_errors:
+        # In some cases, accessing ERROR_CONFIG.fail_after_value will result in an AttributeError
+        # if the code is executed inside a thread.
+        if 0 < getattr(ERROR_CONFIG, "fail_after_value", 0) <= num_errors:
             raise self
 
     def propagate(self) -> None:
