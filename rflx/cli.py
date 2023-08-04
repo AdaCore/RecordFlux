@@ -270,7 +270,7 @@ def main(  # noqa: PLR0915
         args.func(args)
     except RecordFluxError as e:
         return f"{e}"
-    except Exception:
+    except Exception:  # noqa: BLE001
         if args.unsafe:
             return f"""
 ----------------------------------------------------------------------------
