@@ -19,7 +19,7 @@ class BuildParser(bdist_wheel):  # type: ignore[misc]
             env["GPR_PROJECT_PATH"] += ":"
         else:
             env["GPR_PROJECT_PATH"] = ""
-        env["GPR_PROJECT_PATH"] += ":".join(
+        env["GPR_PROJECT_PATH"] += ":".join(  # noqa: FLY002
             [
                 "generated/langkit/langkit/support",
                 "generated/gnatcoll-bindings/gmp",
