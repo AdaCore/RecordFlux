@@ -551,12 +551,11 @@ def test_main_convert_iana(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
         == 0
     )
 
-    with open(IANA_XML_FILE, encoding="utf-8") as f:
-        data = f.read()
-        assert result == [
-            (data, IANA_XML_FILE, False, tmp_path / "1"),
-            (data, IANA_XML_FILE, True, tmp_path / "2"),
-        ]
+    data = Path(IANA_XML_FILE).read_text(encoding="utf-8")
+    assert result == [
+        (data, IANA_XML_FILE, False, tmp_path / "1"),
+        (data, IANA_XML_FILE, True, tmp_path / "2"),
+    ]
 
 
 @pytest.mark.parametrize(

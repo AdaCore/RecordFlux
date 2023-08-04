@@ -5,14 +5,14 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
 
-import os
 import sys
+from pathlib import Path
 
 from rflx import __version__
 
 # -- Path setup --------------------------------------------------------------
 
-sys.path.insert(0, os.path.abspath("../.."))
+sys.path.insert(0, str(Path("../..").resolve()))
 
 # -- Project information -----------------------------------------------------
 

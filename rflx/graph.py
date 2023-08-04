@@ -40,7 +40,7 @@ def _graph_with_defaults(name: str) -> Dot:
 def write_graph(graph: Dot, filename: Path, fmt: str = "svg") -> None:
     log.info("Creating %s", filename)
 
-    with open(filename, "wb") as f:
+    with filename.open("wb") as f:
         graph.write(f, format=fmt)
 
 

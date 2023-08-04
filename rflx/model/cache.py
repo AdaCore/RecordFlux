@@ -52,7 +52,7 @@ class Cache:
 
     def _load_cache(self) -> None:
         try:
-            with open(self._file, encoding="utf-8") as f:
+            with self._file.open(encoding="utf-8") as f:
                 cache = json.load(f)
                 if isinstance(cache, dict) and all(
                     isinstance(i, str)
@@ -70,7 +70,7 @@ class Cache:
 
     def _write_cache(self) -> None:
         self._file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self._file, "w", encoding="utf-8") as f:
+        with self._file.open("w", encoding="utf-8") as f:
             json.dump(self._verified, f)
 
     @staticmethod

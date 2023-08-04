@@ -76,8 +76,7 @@ def main(argv: Sequence[str]) -> Union[bool, str]:
             number = str(i).zfill(ceil(log(len(pkts)) / log(10)))
             filename = args.output / f"{prefix}_{number}.raw"
             print(f"Creating {filename}")
-            with open(filename, "wb") as f:
-                f.write(bytes(p))
+            Path(filename).write_bytes(bytes(p))
             hexdump(bytes(p))
 
     return False

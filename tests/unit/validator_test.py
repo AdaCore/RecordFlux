@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -313,7 +312,7 @@ def test_validate_coverage(capsys: pytest.CaptureFixture[str]) -> None:
 
 --------------------------------------------------------------------------------
                      RecordFlux Validation Coverage Report
-Directory: {os.getcwd()}
+Directory: {Path.cwd()}
 --------------------------------------------------------------------------------
 File                                          Links       Used        Coverage
 ethernet.rflx                                    10         10         100.00%
@@ -359,7 +358,7 @@ def test_coverage_threshold_missed(capsys: pytest.CaptureFixture[str]) -> None:
 
 --------------------------------------------------------------------------------
                      RecordFlux Validation Coverage Report
-Directory: {os.getcwd()}
+Directory: {Path.cwd()}
 --------------------------------------------------------------------------------
 File                                          Links       Used        Coverage
 ipv4.rflx                                        28         18          64.29%

@@ -20,8 +20,7 @@ def test_ethernet(tmp_path: Path) -> None:
 
 
 def test_ethernet_parsing_ethernet_2(ethernet_frame_value: pyrflx.MessageValue) -> None:
-    with open(CAPTURED_DIR / "ethernet_ipv4_udp.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_ipv4_udp.raw").read_bytes()
     ethernet_frame_value.parse(msg_as_bytes)
     assert ethernet_frame_value.get("Destination") == int("ffffffffffff", 16)
     assert ethernet_frame_value.get("Source") == int("0", 16)
@@ -34,16 +33,14 @@ def test_ethernet_parsing_ethernet_2(ethernet_frame_value: pyrflx.MessageValue) 
 
 
 def test_ethernet_parsing_ieee_802_3(ethernet_frame_value: pyrflx.MessageValue) -> None:
-    with open(CAPTURED_DIR / "ethernet_802.3.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_802.3.raw").read_bytes()
     ethernet_frame_value.parse(msg_as_bytes)
     assert ethernet_frame_value.valid_message
     assert ethernet_frame_value.bytestring == msg_as_bytes
 
 
 def test_ethernet_parsing_ethernet_2_vlan(ethernet_frame_value: pyrflx.MessageValue) -> None:
-    with open(CAPTURED_DIR / "ethernet_vlan_tag.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_vlan_tag.raw").read_bytes()
     ethernet_frame_value.parse(msg_as_bytes)
     assert ethernet_frame_value.get("Destination") == int("ffffffffffff", 16)
     assert ethernet_frame_value.get("Source") == int("0", 16)
@@ -61,8 +58,7 @@ def test_ethernet_parsing_ethernet_2_vlan(ethernet_frame_value: pyrflx.MessageVa
 def test_ethernet_parsing_invalid_ethernet_2_too_short(
     ethernet_frame_value: pyrflx.MessageValue,
 ) -> None:
-    with open(CAPTURED_DIR / "ethernet_invalid_too_short.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_invalid_too_short.raw").read_bytes()
     with pytest.raises(
         PyRFLXError,
         match=r"^pyrflx: error: none of the field conditions .* for field Payload"
@@ -75,8 +71,7 @@ def test_ethernet_parsing_invalid_ethernet_2_too_short(
 def test_ethernet_parsing_invalid_ethernet_2_too_long(
     ethernet_frame_value: pyrflx.MessageValue,
 ) -> None:
-    with open(CAPTURED_DIR / "ethernet_invalid_too_long.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_invalid_too_long.raw").read_bytes()
     with pytest.raises(
         PyRFLXError,
         match=r"^pyrflx: error: none of the field conditions .* for field Payload"
@@ -89,8 +84,7 @@ def test_ethernet_parsing_invalid_ethernet_2_too_long(
 def test_ethernet_parsing_invalid_ethernet_2_undefined_type(
     ethernet_frame_value: pyrflx.MessageValue,
 ) -> None:
-    with open(CAPTURED_DIR / "ethernet_undefined.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_undefined.raw").read_bytes()
     with pytest.raises(
         PyRFLXError,
         match=r"^pyrflx: error: none of the field conditions .* for field Type_Length"
@@ -104,8 +98,7 @@ def test_ethernet_parsing_invalid_ethernet_2_undefined_type(
 def test_ethernet_parsing_ieee_802_3_invalid_length(
     ethernet_frame_value: pyrflx.MessageValue,
 ) -> None:
-    with open(CAPTURED_DIR / "ethernet_802.3_invalid_length.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_802.3_invalid_length.raw").read_bytes()
     with pytest.raises(
         PyRFLXError,
         match="^pyrflx: error: Bitstring representing the message is too short"
@@ -143,8 +136,7 @@ def test_ethernet_generating_ethernet_2(ethernet_frame_value: pyrflx.MessageValu
     ethernet_frame_value.set("Type_Length_TPID", int("0800", 16))
     ethernet_frame_value.set("Type_Length", int("0800", 16))
     ethernet_frame_value.set("Payload", payload)
-    with open(CAPTURED_DIR / "ethernet_ipv4_udp.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_ipv4_udp.raw").read_bytes()
     assert ethernet_frame_value.bytestring == msg_as_bytes
 
 
@@ -161,8 +153,7 @@ def test_ethernet_generating_ieee_802_3(ethernet_frame_value: pyrflx.MessageValu
     ethernet_frame_value.set("Type_Length", 46)
     ethernet_frame_value.set("Payload", payload)
     assert ethernet_frame_value.valid_message
-    with open(CAPTURED_DIR / "ethernet_802.3.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_802.3.raw").read_bytes()
     assert ethernet_frame_value.bytestring == msg_as_bytes
 
 
@@ -181,8 +172,7 @@ def test_ethernet_generating_ethernet_2_vlan(ethernet_frame_value: pyrflx.Messag
     ethernet_frame_value.set("Type_Length", int("0800", 16))
     ethernet_frame_value.set("Payload", payload)
     assert ethernet_frame_value.valid_message
-    with open(CAPTURED_DIR / "ethernet_vlan_tag.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_vlan_tag.raw").read_bytes()
     assert ethernet_frame_value.bytestring == msg_as_bytes
 
 
@@ -200,8 +190,7 @@ def test_ipv4(tmp_path: Path) -> None:
 
 
 def test_ipv4_parsing_ipv4(ipv4_packet_value: pyrflx.MessageValue) -> None:
-    with open(CAPTURED_DIR / "ipv4_udp.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ipv4_udp.raw").read_bytes()
     ipv4_packet_value.parse(msg_as_bytes)
     assert ipv4_packet_value.get("Version") == 4
     assert ipv4_packet_value.get("IHL") == 5
@@ -237,8 +226,7 @@ def test_ipv4_parsing_ipv4_option_value(ipv4_option_value: pyrflx.MessageValue) 
 def test_ipv4_parsing_ipv4_with_options(
     ipv4_packet_value: pyrflx.MessageValue,
 ) -> None:  # pragma: no cover
-    with open(CAPTURED_DIR / "ipv4-options_udp.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ipv4-options_udp.raw").read_bytes()
     ipv4_packet_value.parse(msg_as_bytes)
     assert ipv4_packet_value.valid_message
 
@@ -313,8 +301,7 @@ def test_in_ipv4(tmp_path: Path) -> None:
 
 
 def test_in_ipv4_parsing_udp_in_ipv4(ipv4_packet_value: pyrflx.MessageValue) -> None:
-    with open(CAPTURED_DIR / "ipv4_udp.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ipv4_udp.raw").read_bytes()
     ipv4_packet_value.parse(msg_as_bytes)
     nested_udp = ipv4_packet_value.get("Payload")
     assert isinstance(nested_udp, pyrflx.MessageValue)
@@ -322,8 +309,7 @@ def test_in_ipv4_parsing_udp_in_ipv4(ipv4_packet_value: pyrflx.MessageValue) -> 
 
 
 def test_in_ipv4_parsing_udp_in_ipv4_in_ethernet(ethernet_frame_value: pyrflx.MessageValue) -> None:
-    with open(CAPTURED_DIR / "ethernet_ipv4_udp.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_ipv4_udp.raw").read_bytes()
     ethernet_frame_value.parse(msg_as_bytes)
     nested_ipv4 = ethernet_frame_value.get("Payload")
     assert isinstance(nested_ipv4, pyrflx.MessageValue)
@@ -340,8 +326,7 @@ def test_in_ipv4_generating_udp_in_ipv4_in_ethernet(
     ipv4_packet_value: pyrflx.MessageValue,
     udp_datagram_value: pyrflx.MessageValue,
 ) -> None:
-    with open(CAPTURED_DIR / "ethernet_ipv4_udp.raw", "rb") as file:
-        msg_as_bytes: bytes = file.read()
+    msg_as_bytes: bytes = (CAPTURED_DIR / "ethernet_ipv4_udp.raw").read_bytes()
     ethernet_frame_value.parse(msg_as_bytes)
     parsed_frame = ethernet_frame_value.bytestring
 

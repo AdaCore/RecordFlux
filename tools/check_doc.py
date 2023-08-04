@@ -240,8 +240,7 @@ def check_files(files: list[Path]) -> None:
 
     for filename in files:
         # Avoid inclusion of byte order mark: https://stackoverflow.com/a/49150749
-        with open(filename, encoding="utf-8-sig") as f:
-            found = check_file(filename, f.read()) or found
+        found = check_file(filename, filename.read_text(encoding="utf-8-sig")) or found
 
     if not found:
         files_str = ", ".join(str(f) for f in files)

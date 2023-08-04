@@ -39,7 +39,7 @@ class Check(Enum):
 
 
 def check(spec_file: Path) -> RecordFluxError:
-    with open(spec_file, encoding="utf-8", newline="") as f:
+    with spec_file.open(encoding="utf-8", newline="") as f:
         return check_string(f.read(), spec_file)
 
 

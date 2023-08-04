@@ -3,8 +3,8 @@
 """RecordFlux support for GNAT Studio."""
 
 import json
-import os
 import re
+from pathlib import Path
 
 import GPS
 import highlighter.common as hl
@@ -259,7 +259,7 @@ def parse_output(output):
                     importance=to_importance(data["severity"]),
                 )
             elif message:
-                data["relative"] = os.path.basename(data["filename"])
+                data["relative"] = Path.name(data["filename"])
                 message.create_nested_message(
                     file=GPS.File(data["filename"]),
                     line=int(data["line"]),
@@ -323,10 +323,10 @@ def output_dir():
     assert output_dir, "Output directory not configured"
     create_missing = GPS.Project.root().get_attribute_as_string("Create_Missing_Dirs")
     if create_missing and create_missing.lower() == "true":
-        if os.path.exists(output_dir):
-            assert os.path.isdir(output_dir)
+        if Path.exists(output_dir):
+            assert Path.is_dir(output_dir)
         else:
-            os.makedirs(output_dir)
+            Path.mkdir(output_dir, parents=True)
     return output_dir
 
 
@@ -358,7 +358,7 @@ def get_message_name(locations, name, line, column):
 
 
 def display_message_graph(filename):
-    with open(output_dir() + "/locations.json") as f:
+    with (output_dir() + "/locations.json").open() as f:
         locations = json.load(f)
     loc = GPS.EditorBuffer.get().current_view().cursor()
     column = loc.column()

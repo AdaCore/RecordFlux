@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import os
 import re
 from collections.abc import Sequence
@@ -93,6 +92,5 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
 
 
 pytest_plugins = [
-    re.sub(r"[/\\]", ".", fixture.replace(".py", ""))
-    for fixture in glob.glob(f"{FIXTURE_DIR}/*.py")
+    re.sub(r"[/\\]", ".", str(fixture).replace(".py", "")) for fixture in FIXTURE_DIR.glob("*.py")
 ]

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import json
-import os
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -370,7 +369,7 @@ class CoverageInformation:
         print("\n")
         print("-" * 80)
         print(f"{'RecordFlux Validation Coverage Report' : ^80}".rstrip())
-        print(f"Directory: {os.getcwd()}")
+        print(f"Directory: {Path.cwd()}")
         print("-" * 80)
         print(f"{'File' : <40} {'Links' : >10} {'Used' : >10} {'Coverage' : >15}")
         for file in self._spec_files:
@@ -449,7 +448,7 @@ class OutputWriter:
     def __init__(self, file: Optional[Path]) -> None:
         if file is not None:
             try:
-                self.file = open(file, "w", encoding="utf-8")  # noqa: SIM115
+                self.file = file.open("w", encoding="utf-8")
             except OSError as e:
                 raise ValidationError(f"cannot open output file {file}: {e}") from e
             self.file.write("[\n")

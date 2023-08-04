@@ -426,7 +426,7 @@ def graph(args: argparse.Namespace) -> None:
     }
 
     filename = args.output_directory.joinpath("locations.json")
-    with open(filename, "w", encoding="utf-8") as f:
+    with filename.open("w", encoding="utf-8") as f:
         json.dump(locations, f)
 
 

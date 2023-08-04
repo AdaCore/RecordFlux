@@ -2,6 +2,7 @@ import os
 import shutil
 import site
 import subprocess
+from pathlib import Path
 
 from setuptools import setup
 from wheel.bdist_wheel import bdist_wheel
@@ -47,16 +48,13 @@ class BuildParser(bdist_wheel):  # type: ignore[misc]
         super().run()
 
 
-with open("README.md", encoding="utf-8") as f:
-    readme = f.read()
-
 setup(
     name="RecordFlux",
     description=(
         "A toolset for the formal specification and generation of verifiable binary parsers, "
         "message generators and protocol state machines."
     ),
-    long_description=readme,
+    long_description=Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     author="Tobias Reiher",
     author_email="reiher@adacore.com",

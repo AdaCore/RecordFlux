@@ -101,8 +101,7 @@ def test_ethernet_802_3(ethernet_frame_value: MessageValue) -> None:
         ),
     )
     assert ethernet_frame_value.valid_message
-    with open(CAPTURED_DIR / "ethernet_802.3.raw", "rb") as raw:
-        assert ethernet_frame_value.bytestring == raw.read()
+    assert ethernet_frame_value.bytestring == (CAPTURED_DIR / "ethernet_802.3.raw").read_bytes()
 
 
 def test_ethernet_payload(ethernet_frame_value: MessageValue) -> None:

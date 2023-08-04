@@ -61,7 +61,7 @@ def write_rflx_specification(
     registry_last_updated: Optional[Element],
     reproducible: bool,
 ) -> None:
-    with open(file, "w+", encoding="utf-8") as f:
+    with file.open("w+", encoding="utf-8") as f:
         f.write(
             "-- AUTOMATICALLY GENERATED. DO NOT EDIT.\n"
             + (
