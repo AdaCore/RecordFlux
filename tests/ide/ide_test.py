@@ -157,7 +157,7 @@ def test_multiple_errors() -> None:
             f'{path}:276:29: model: error: size aspect for final field in "RFLX_Invalid::M17"',
             f"{path}:279:9: model: error: unnecessary always-valid aspect"
             ' on "Unnecessary_Always_Valid_Enum"',
-            f"{path}:290:30: model: error: undefined variable " '"Undef_Var"',
+            f'{path}:290:30: model: error: undefined variable "Undef_Var"',
             f'{path}:28:9: model: error: name conflict for type "RFLX_Invalid::R"',
             f'{path}:8:9: model: info: previous occurrence of "RFLX_Invalid::R"',
             f'{path}:31:9: model: error: name conflict for type "__BUILTINS__::Boolean"',

@@ -1101,8 +1101,7 @@ class UnknownStatement(ir.Stmt):
                 MSG_TY,
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
-            ""  # https://github.com/PyCQA/pylint/issues/3368
-            + """\
+            """\
 -- <stdin>:1:1
 Universal.Message.Reset (X_Ctx);
 pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type));

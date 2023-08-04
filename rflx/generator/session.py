@@ -2346,7 +2346,7 @@ class SessionGenerator:
                             ),
                         )
                     ],
-                    f'access to invalid field "{field}" of' f' "{message_context}"',
+                    f'access to invalid field "{field}" of "{message_context}"',
                     exception_handler,
                 )
             ]

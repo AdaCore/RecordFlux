@@ -212,7 +212,7 @@ def test_validate_not_regular_file(tmp_path: Path) -> None:
     )
     with pytest.raises(
         ValidationError,
-        match=(r"^" rf"{subdir} is not a regular file" r"$"),
+        match=rf"^{subdir} is not a regular file$",
     ):
         validator.validate(ID("Ethernet::Frame"), tmp_path)
 

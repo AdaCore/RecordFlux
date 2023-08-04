@@ -926,7 +926,7 @@ def test_parse_message_type_spec() -> None:
                         "_kind": "TypeDecl",
                         "definition": {
                             "_kind": "NullMessageTypeDef",
-                            "_value": "null " "message",
+                            "_value": "null message",
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_PDU"},
                         "parameters": None,
