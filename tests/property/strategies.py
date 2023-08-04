@@ -228,7 +228,7 @@ def messages(  # noqa: PLR0915
     alignment = 0
     alignments = {}
     types_ = {}
-    for i in range(draw(st.integers(min_value=1 if not_null else 0, max_value=4))):
+    for _ in range(draw(st.integers(min_value=1 if not_null else 0, max_value=4))):
         f = draw(fields())
         t = draw(
             st.one_of(scalars(unique_identifiers), composites(unique_identifiers))

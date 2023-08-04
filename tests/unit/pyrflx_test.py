@@ -40,7 +40,7 @@ def assert_bytestring_error(msg: MessageValue, msg_name: ID) -> None:
         PyRFLXError,
         match=f"^pyrflx: error: cannot create bytestring of invalid message: {msg_name}$",
     ):
-        msg.bytestring
+        msg.bytestring  # noqa: B018
 
 
 def test_file_not_found(tmp_path: Path) -> None:
@@ -488,9 +488,9 @@ def test_integer_value() -> None:
     rangevalue = IntegerValue(rangetype)
     assert not rangevalue.initialized
     with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
-        rangevalue.value
+        rangevalue.value  # noqa: B018
     with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Int not initialized$"):
-        rangevalue.expr
+        rangevalue.expr  # noqa: B018
     rangevalue.assign(10)
     assert rangevalue.initialized
     assert rangevalue.value == 10  # type: ignore[unreachable]
@@ -526,9 +526,9 @@ def test_enum_value_literals(enum_value: EnumValue) -> None:
 
 def test_enum_value_assign(enum_value: EnumValue) -> None:
     with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Enum not initialized$"):
-        enum_value.value
+        enum_value.value  # noqa: B018
     with pytest.raises(PyRFLXError, match="^pyrflx: error: value Test::Enum not initialized$"):
-        enum_value.expr
+        enum_value.expr  # noqa: B018
 
     enum_value.assign("One")
     assert enum_value.initialized
@@ -613,7 +613,7 @@ def test_opaque_value() -> None:
     with pytest.raises(
         PyRFLXError, match="^pyrflx: error: value __INTERNAL__::Opaque not initialized$"
     ):
-        opaquevalue.value
+        opaquevalue.value  # noqa: B018
     opaquevalue.assign(b"\x01\x02")
     assert opaquevalue.initialized
     assert opaquevalue.value == b"\x01\x02"  # type: ignore[unreachable]

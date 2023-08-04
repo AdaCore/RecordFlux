@@ -53,7 +53,7 @@ def test_validate_spec(spec: Path) -> None:
             )
 
             if not test_data_dir.is_dir():
-                warnings.warn(f"No example data found for {message_value.identifier}")
+                warnings.warn(f"No example data found for {message_value.identifier}", stacklevel=1)
                 continue
 
             directory_invalid = test_data_dir / "invalid"

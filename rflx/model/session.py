@@ -491,7 +491,7 @@ class Session(AbstractSession):
         self._optimize()
         self.to_ir()
 
-    @lru_cache
+    @lru_cache  # noqa: B019
     def to_ir(self) -> ir.Session:
         variable_id = id_generator()
         return ir.Session(

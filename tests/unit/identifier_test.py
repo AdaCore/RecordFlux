@@ -104,7 +104,7 @@ def test_id_parent() -> None:
 
 def test_id_parent_error() -> None:
     with pytest.raises(FatalError, match=r"^id: error: empty identifier$"):
-        ID("A").parent
+        ID("A").parent  # noqa: B018
 
 
 def test_id_flat() -> None:

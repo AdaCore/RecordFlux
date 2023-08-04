@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections import abc
 from pathlib import Path
-from typing import ClassVar, Optional, Union
+from typing import ClassVar, Final, Optional, Union
 
 import attr
 
@@ -85,6 +85,9 @@ class Undefined(Type):
 
     def common_type(self, _other: Type) -> Type:
         return self
+
+
+UNDEFINED: Final = Undefined()
 
 
 @attr.s(frozen=True)

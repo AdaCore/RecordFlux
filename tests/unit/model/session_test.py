@@ -137,7 +137,6 @@ def test_empty_states() -> None:
         declarations=[],
         parameters=[],
         types=[],
-        location=Location((1, 1)),
         regex=r"^<stdin>:1:1: model: error: empty states$",
     )
 

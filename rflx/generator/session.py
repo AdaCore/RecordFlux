@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as ty
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field as dataclass_field
-from functools import singledispatchmethod
+from functools import partial, singledispatchmethod
 from typing import NoReturn, Optional, Union
 
 from rflx import ada, ir, model, typing_ as rty
@@ -864,7 +864,12 @@ class SessionGenerator:
             exception_handler = ExceptionHandler(
                 state,
                 [PragmaStatement("Assert", [Call(f"{state.identifier}_Invariant")])],
-                lambda: self._session_context.states_with_exceptions.add(state.identifier),
+                partial(
+                    lambda state: self._session_context.states_with_exceptions.add(
+                        state.identifier
+                    ),
+                    state,
+                ),
             )
             statements = [
                 *[

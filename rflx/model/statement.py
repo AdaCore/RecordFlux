@@ -15,7 +15,7 @@ class Statement(Base):
     def __init__(
         self,
         identifier: StrID,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ):
         self.identifier = ID(identifier)
@@ -44,7 +44,7 @@ class Assignment(Statement):
         self,
         identifier: StrID,
         expression: Expr,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, type_, location)
@@ -79,7 +79,7 @@ class MessageFieldAssignment(Assignment):
         message: StrID,
         field: StrID,
         expression: Expr,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(message, expression, type_, location)
@@ -93,7 +93,7 @@ class MessageFieldAssignment(Assignment):
         self, statement_type: rty.Type, typify_variable: Callable[[Expr], Expr]
     ) -> RecordFluxError:
         error = RecordFluxError()
-        field_type: rty.Type = rty.Undefined()
+        field_type: rty.Type = rty.UNDEFINED
         if isinstance(statement_type, rty.Message):
             if self.field in statement_type.fields:
                 field_type = statement_type.types[self.field]
@@ -151,7 +151,7 @@ class AttributeStatement(Statement):
         identifier: StrID,
         attribute: str,
         parameters: list[Expr],
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, type_, location)
@@ -179,7 +179,7 @@ class ListAttributeStatement(AttributeStatement):
         self,
         identifier: StrID,
         parameter: Expr,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
@@ -268,7 +268,7 @@ class Reset(AttributeStatement):
         self,
         identifier: StrID,
         associations: Optional[Mapping[ID, Expr]] = None,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [], type_, location)
@@ -359,7 +359,7 @@ class ChannelAttributeStatement(AttributeStatement):
         self,
         identifier: StrID,
         parameter: Expr,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)

@@ -58,7 +58,6 @@ def assert_session_model_error(
     parameters: Sequence[decl.FormalDeclaration],
     types: Sequence[Type],
     regex: str,
-    location: Location = Location((1, 1)),
 ) -> None:
     check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
@@ -68,7 +67,7 @@ def assert_session_model_error(
             declarations,
             parameters,
             types,
-            location=location,
+            location=Location((1, 1)),
         )
 
 

@@ -54,7 +54,7 @@ class TypeCheckableDeclaration(Declaration):
         self,
         identifier: StrID,
         type_identifier: StrID,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ):
         super().__init__(identifier, location)
@@ -89,7 +89,7 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         identifier: StrID,
         type_identifier: StrID,
         expression: Optional[Expr] = None,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ):
         super().__init__(identifier, type_identifier, type_, location)
@@ -137,7 +137,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         identifier: StrID,
         type_identifier: StrID,
         expression: Selected,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ):
         super().__init__(identifier, type_identifier, type_, location)
@@ -204,9 +204,7 @@ class FormalDeclaration(Declaration):
 
 
 class Argument(Base):
-    def __init__(
-        self, identifier: StrID, type_identifier: StrID, type_: rty.Type = rty.Undefined()
-    ):
+    def __init__(self, identifier: StrID, type_identifier: StrID, type_: rty.Type = rty.UNDEFINED):
         super().__init__()
         self._identifier = ID(identifier)
         self._type_identifier = ID(type_identifier)
@@ -235,7 +233,7 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         identifier: StrID,
         arguments: Sequence[Argument],
         return_type: StrID,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ):
         super().__init__(identifier, return_type, type_, location)

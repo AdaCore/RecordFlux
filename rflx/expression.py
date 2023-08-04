@@ -107,9 +107,9 @@ class ParallelProofs:
         self,
         goal: Expr,
         facts: Sequence[Expr],
-        unsat_error: RecordFluxError = RecordFluxError(),
-        unknown_error: RecordFluxError = RecordFluxError(),
-        sat_error: RecordFluxError = RecordFluxError(),
+        unsat_error: RecordFluxError = RecordFluxError(),  # noqa: B008
+        unknown_error: RecordFluxError = RecordFluxError(),  # noqa: B008
+        sat_error: RecordFluxError = RecordFluxError(),  # noqa: B008
         add_unsat: bool = False,
     ) -> None:
         """
@@ -168,7 +168,7 @@ class Expr(DBC, Base):
 
     def __init__(
         self,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ):
         self.type_ = type_
@@ -370,7 +370,7 @@ class BinExpr(Expr):
         self,
         left: Expr,
         right: Expr,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(type_, location)
@@ -438,7 +438,7 @@ class BinExpr(Expr):
 
 class AssExpr(Expr):
     def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
-        super().__init__(rty.Undefined(), location)
+        super().__init__(rty.UNDEFINED, location)
         self.terms = list(terms)
 
     def __repr__(self) -> str:
@@ -879,7 +879,7 @@ class MathAssExpr(AssExpr):
     def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
         super().__init__(*terms, location=location)
         common_type = rty.common_type([t.type_ for t in terms])
-        self.type_ = common_type if common_type != rty.Undefined() else rty.UndefinedInteger()
+        self.type_ = common_type if common_type != rty.UNDEFINED else rty.UndefinedInteger()
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
@@ -1172,7 +1172,7 @@ class Name(Expr):
         self,
         negative: bool = False,
         immutable: bool = False,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(type_, location)
@@ -1217,7 +1217,7 @@ class TypeName(Name):
     def __init__(
         self,
         identifier: StrID,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         self.identifier = ID(identifier)
@@ -1254,7 +1254,7 @@ class Literal(Name):
     def __init__(
         self,
         identifier: StrID,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         self.identifier = ID(identifier)
@@ -1325,7 +1325,7 @@ class Variable(Name):
         identifier: StrID,
         negative: bool = False,
         immutable: bool = False,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         assert (
@@ -1661,7 +1661,7 @@ class HasData(Attribute):
 
 class Head(Attribute):
     def __init__(
-        self, prefix: Union[StrID, Expr], negative: bool = False, type_: rty.Type = rty.Undefined()
+        self, prefix: Union[StrID, Expr], negative: bool = False, type_: rty.Type = rty.UNDEFINED
     ):
         super().__init__(prefix, negative)
         self.type_ = type_
@@ -1819,7 +1819,7 @@ class Selected(Name):
         selector: StrID,
         negative: bool = False,
         immutable: bool = False,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         assert not prefix.negative if isinstance(prefix, Name) else True
@@ -1951,7 +1951,7 @@ class Call(Name):
         args: Optional[Sequence[Expr]] = None,
         negative: bool = False,
         immutable: bool = False,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         argument_types: Optional[Sequence[rty.Type]] = None,
         location: Optional[Location] = None,
     ) -> None:
@@ -1977,7 +1977,7 @@ class Call(Name):
         for a, t in itertools.zip_longest(self.args, self.argument_types[: len(self.args)]):
             error += a.check_type(t if t is not None else rty.Any())
 
-        if self.type_ != rty.Undefined():
+        if self.type_ != rty.UNDEFINED:
             if len(self.args) < len(self.argument_types):
                 error.extend(
                     [
@@ -2909,7 +2909,7 @@ class Conversion(Expr):
         self,
         identifier: StrID,
         argument: Expr,
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         argument_types: Optional[Sequence[rty.Type]] = None,
         location: Optional[Location] = None,
     ) -> None:
@@ -3168,7 +3168,7 @@ class MessageAggregate(Expr):
         self,
         identifier: StrID,
         field_values: Mapping[StrID, Expr],
-        type_: rty.Type = rty.Undefined(),
+        type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(type_, location)

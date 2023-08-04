@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import re
 import textwrap
-from abc import ABC
 from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
 from typing import TypeVar
@@ -29,7 +28,7 @@ def format_repr(string: str) -> str:
 STDIN = Path("<stdin>")
 
 
-class Base(ABC):
+class Base:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             for k in other.__dict__:
