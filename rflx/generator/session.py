@@ -3689,13 +3689,13 @@ class SessionGenerator:
 
     @_to_ada_expr.register
     def _(self, expression: ir.Equal, is_global: ty.Callable[[ID], bool]) -> Expr:
-        if expression.left == ir.BoolVal(True) and isinstance(expression.right, ir.Var):
+        if expression.left == ir.BoolVal(value=True) and isinstance(expression.right, ir.Var):
             return Variable(variable_id(expression.right.identifier, is_global))
-        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(True):
+        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(value=True):
             return Variable(variable_id(expression.left.identifier, is_global))
-        if expression.left == ir.BoolVal(False) and isinstance(expression.right, ir.Var):
+        if expression.left == ir.BoolVal(value=False) and isinstance(expression.right, ir.Var):
             return Not(Variable(variable_id(expression.right.identifier, is_global)))
-        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(False):
+        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(value=False):
             return Not(Variable(variable_id(expression.left.identifier, is_global)))
         return self._relation_to_ada_expr(
             self._convert_types_of_int_relation(expression), is_global
@@ -3703,13 +3703,13 @@ class SessionGenerator:
 
     @_to_ada_expr.register
     def _(self, expression: ir.NotEqual, is_global: ty.Callable[[ID], bool]) -> Expr:
-        if expression.left == ir.BoolVal(True) and isinstance(expression.right, ir.Var):
+        if expression.left == ir.BoolVal(value=True) and isinstance(expression.right, ir.Var):
             return Not(Variable(variable_id(expression.right.identifier, is_global)))
-        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(True):
+        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(value=True):
             return Not(Variable(variable_id(expression.left.identifier, is_global)))
-        if expression.left == ir.BoolVal(False) and isinstance(expression.right, ir.Var):
+        if expression.left == ir.BoolVal(value=False) and isinstance(expression.right, ir.Var):
             return Variable(variable_id(expression.right.identifier, is_global))
-        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(False):
+        if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(value=False):
             return Variable(variable_id(expression.left.identifier, is_global))
         return self._relation_to_ada_expr(
             self._convert_types_of_int_relation(expression), is_global

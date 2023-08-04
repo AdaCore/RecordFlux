@@ -55,7 +55,7 @@ def test_assign_to_z3_expr() -> None:
     assert ir.Assign("X", ir.BoolVar("Y"), rty.BOOLEAN).to_z3_expr() == (
         z3.Bool("X") == z3.Bool("Y")
     )
-    assert ir.Assign("X", ir.ObjVar("Y", MSG_TY), MSG_TY).to_z3_expr() == z3.BoolVal(True)
+    assert ir.Assign("X", ir.ObjVar("Y", MSG_TY), MSG_TY).to_z3_expr() == z3.BoolVal(val=True)
 
 
 def test_assign_target_var() -> None:
@@ -95,7 +95,9 @@ def test_field_assign_to_z3_expr() -> None:
     assert ir.FieldAssign("X", "Y", ir.BoolVar("Z"), MSG_TY).to_z3_expr() == (
         z3.Bool("X.Y") == z3.Bool("Z")
     )
-    assert ir.FieldAssign("X", "Y", ir.ObjVar("Z", MSG_TY), MSG_TY).to_z3_expr() == z3.BoolVal(True)
+    assert ir.FieldAssign("X", "Y", ir.ObjVar("Z", MSG_TY), MSG_TY).to_z3_expr() == z3.BoolVal(
+        val=True
+    )
 
 
 def test_append_str() -> None:
@@ -116,7 +118,7 @@ def test_append_preconditions() -> None:
 
 
 def test_append_to_z3_expr() -> None:
-    assert ir.Append("X", ir.ObjVar("Y", MSG_TY), SEQ_TY).to_z3_expr() == z3.BoolVal(True)
+    assert ir.Append("X", ir.ObjVar("Y", MSG_TY), SEQ_TY).to_z3_expr() == z3.BoolVal(val=True)
 
 
 def test_extend_str() -> None:
@@ -137,7 +139,7 @@ def test_extend_preconditions() -> None:
 
 
 def test_extend_to_z3_expr() -> None:
-    assert ir.Extend("X", ir.ObjVar("Y", SEQ_TY), SEQ_TY).to_z3_expr() == z3.BoolVal(True)
+    assert ir.Extend("X", ir.ObjVar("Y", SEQ_TY), SEQ_TY).to_z3_expr() == z3.BoolVal(val=True)
 
 
 def test_reset_str() -> None:
@@ -163,8 +165,10 @@ def test_reset_preconditions() -> None:
 
 
 def test_reset_to_z3_expr() -> None:
-    assert ir.Reset("X", {}, MSG_TY).to_z3_expr() == z3.BoolVal(True)
-    assert ir.Reset("X", {ID("Y"): ir.IntVar("Z", INT_TY)}, MSG_TY).to_z3_expr() == z3.BoolVal(True)
+    assert ir.Reset("X", {}, MSG_TY).to_z3_expr() == z3.BoolVal(val=True)
+    assert ir.Reset("X", {ID("Y"): ir.IntVar("Z", INT_TY)}, MSG_TY).to_z3_expr() == z3.BoolVal(
+        val=True
+    )
 
 
 def test_read_str() -> None:
@@ -185,7 +189,7 @@ def test_read_preconditions() -> None:
 
 
 def test_read_to_z3_expr() -> None:
-    assert ir.Read("X", ir.ObjVar("Y", MSG_TY)).to_z3_expr() == z3.BoolVal(True)
+    assert ir.Read("X", ir.ObjVar("Y", MSG_TY)).to_z3_expr() == z3.BoolVal(val=True)
 
 
 def test_write_str() -> None:
@@ -206,7 +210,7 @@ def test_write_preconditions() -> None:
 
 
 def test_write_z3_expr() -> None:
-    assert ir.Write("X", ir.ObjVar("Y", MSG_TY)).to_z3_expr() == z3.BoolVal(True)
+    assert ir.Write("X", ir.ObjVar("Y", MSG_TY)).to_z3_expr() == z3.BoolVal(val=True)
 
 
 def test_check_substituted() -> None:
@@ -349,13 +353,13 @@ def test_int_val_to_z3_expr() -> None:
 
 
 def test_bool_val_str() -> None:
-    assert str(ir.BoolVal(True)) == "True"
-    assert str(ir.BoolVal(False)) == "False"
+    assert str(ir.BoolVal(value=True)) == "True"
+    assert str(ir.BoolVal(value=False)) == "False"
 
 
 def test_bool_val_to_z3_expr() -> None:
-    assert ir.BoolVal(True).to_z3_expr() == z3.BoolVal(True)
-    assert ir.BoolVal(False).to_z3_expr() == z3.BoolVal(False)
+    assert ir.BoolVal(value=True).to_z3_expr() == z3.BoolVal(val=True)
+    assert ir.BoolVal(value=False).to_z3_expr() == z3.BoolVal(val=False)
 
 
 @pytest.mark.parametrize(
@@ -730,22 +734,22 @@ def test_not_to_z3_expr() -> None:
 
 
 def test_and_str() -> None:
-    assert str(ir.And(ir.BoolVar("X"), ir.BoolVal(True))) == "X and True"
+    assert str(ir.And(ir.BoolVar("X"), ir.BoolVal(value=True))) == "X and True"
 
 
 def test_and_to_z3_expr() -> None:
-    assert ir.And(ir.BoolVar("X"), ir.BoolVal(True)).to_z3_expr() == z3.And(
-        z3.Bool("X"), z3.BoolVal(True)
+    assert ir.And(ir.BoolVar("X"), ir.BoolVal(value=True)).to_z3_expr() == z3.And(
+        z3.Bool("X"), z3.BoolVal(val=True)
     )
 
 
 def test_or_str() -> None:
-    assert str(ir.Or(ir.BoolVar("X"), ir.BoolVal(True))) == "X or True"
+    assert str(ir.Or(ir.BoolVar("X"), ir.BoolVal(value=True))) == "X or True"
 
 
 def test_or_to_z3_expr() -> None:
-    assert ir.Or(ir.BoolVar("X"), ir.BoolVal(True)).to_z3_expr() == z3.Or(
-        z3.Bool("X"), z3.BoolVal(True)
+    assert ir.Or(ir.BoolVar("X"), ir.BoolVal(value=True)).to_z3_expr() == z3.Or(
+        z3.Bool("X"), z3.BoolVal(val=True)
     )
 
 
@@ -811,7 +815,7 @@ def test_not_equal_to_z3_expr() -> None:
 
 def test_int_call_str() -> None:
     assert (
-        str(ir.IntCall("X", [ir.IntVar("Y", INT_TY), ir.BoolVal(True)], [], INT_TY))
+        str(ir.IntCall("X", [ir.IntVar("Y", INT_TY), ir.BoolVal(value=True)], [], INT_TY))
         == "X (Y, True)"
     )
 
@@ -824,16 +828,16 @@ def test_int_call_substituted() -> None:
 
 def test_int_call_to_z3_expr() -> None:
     assert ir.IntCall(
-        "X", [ir.IntVar("Y", INT_TY), ir.BoolVal(True)], [], INT_TY
+        "X", [ir.IntVar("Y", INT_TY), ir.BoolVal(value=True)], [], INT_TY
     ).to_z3_expr() == z3.Int("X")
 
 
 def test_bool_call_str() -> None:
-    assert str(ir.BoolCall("X", [ir.BoolVar("Y"), ir.BoolVal(True)], [])) == "X (Y, True)"
+    assert str(ir.BoolCall("X", [ir.BoolVar("Y"), ir.BoolVal(value=True)], [])) == "X (Y, True)"
 
 
 def test_bool_call_type() -> None:
-    assert ir.BoolCall("X", [ir.BoolVar("Y")], [], ir.BoolVal(True)).type_ == rty.BOOLEAN
+    assert ir.BoolCall("X", [ir.BoolVar("Y")], [], ir.BoolVal(value=True)).type_ == rty.BOOLEAN
 
 
 def test_bool_call_substituted() -> None:
@@ -843,18 +847,23 @@ def test_bool_call_substituted() -> None:
 
 
 def test_bool_call_to_z3_expr() -> None:
-    assert ir.BoolCall("X", [ir.BoolVar("Y")], [], ir.BoolVal(True)).to_z3_expr() == z3.Bool("X")
+    assert ir.BoolCall("X", [ir.BoolVar("Y")], [], ir.BoolVal(value=True)).to_z3_expr() == z3.Bool(
+        "X"
+    )
 
 
 def test_obj_call_str() -> None:
     assert (
-        str(ir.ObjCall("X", [ir.ObjVar("Y", MSG_TY), ir.BoolVal(True)], [], ENUM_TY))
+        str(ir.ObjCall("X", [ir.ObjVar("Y", MSG_TY), ir.BoolVal(value=True)], [], ENUM_TY))
         == "X (Y, True)"
     )
 
 
 def test_obj_call_type() -> None:
-    assert ir.ObjCall("X", [ir.ObjVar("Y", MSG_TY), ir.BoolVal(True)], [], ENUM_TY).type_ == ENUM_TY
+    assert (
+        ir.ObjCall("X", [ir.ObjVar("Y", MSG_TY), ir.BoolVal(value=True)], [], ENUM_TY).type_
+        == ENUM_TY
+    )
 
 
 def test_obj_call_substituted() -> None:
@@ -864,7 +873,7 @@ def test_obj_call_substituted() -> None:
 
 
 def test_call_preconditions() -> None:
-    call = ir.IntCall("X", [ir.IntVar("Y", INT_TY), ir.BoolVal(True)], [], INT_TY)
+    call = ir.IntCall("X", [ir.IntVar("Y", INT_TY), ir.BoolVal(value=True)], [], INT_TY)
     assert not call.preconditions(id_generator())
     call.set_preconditions([ir.Cond(ir.Greater(ir.IntVar("Y", INT_TY), ir.IntVal(0)))])
     assert call.preconditions(id_generator()) == [
@@ -978,7 +987,7 @@ def test_bool_if_expr_str() -> None:
             ir.BoolIfExpr(
                 ir.BoolVar("X"),
                 ir.ComplexBoolExpr([], ir.BoolVar("Y")),
-                ir.ComplexBoolExpr([], ir.BoolVal(False)),
+                ir.ComplexBoolExpr([], ir.BoolVal(value=False)),
             )
         )
         == "(if X then {Y} else {False})"
@@ -990,7 +999,7 @@ def test_bool_if_expr_type() -> None:
         ir.BoolIfExpr(
             ir.BoolVar("X"),
             ir.ComplexBoolExpr([], ir.BoolVar("Y")),
-            ir.ComplexBoolExpr([], ir.BoolVal(False)),
+            ir.ComplexBoolExpr([], ir.BoolVal(value=False)),
         ).type_
         == rty.BOOLEAN
     )
@@ -1000,11 +1009,11 @@ def test_bool_if_expr_substituted() -> None:
     assert ir.BoolIfExpr(
         ir.BoolVar("X"),
         ir.ComplexBoolExpr([], ir.BoolVar("Y")),
-        ir.ComplexBoolExpr([], ir.BoolVal(False)),
+        ir.ComplexBoolExpr([], ir.BoolVal(value=False)),
     ).substituted({ID("X"): ID("Y"), ID("Y"): ID("Z")}) == ir.BoolIfExpr(
         ir.BoolVar("Y"),
         ir.ComplexBoolExpr([], ir.BoolVar("Z")),
-        ir.ComplexBoolExpr([], ir.BoolVal(False)),
+        ir.ComplexBoolExpr([], ir.BoolVal(value=False)),
     )
 
 
@@ -1012,8 +1021,8 @@ def test_bool_if_expr_to_z3_expr() -> None:
     assert ir.BoolIfExpr(
         ir.BoolVar("X"),
         ir.ComplexBoolExpr([], ir.BoolVar("Y")),
-        ir.ComplexBoolExpr([], ir.BoolVal(False)),
-    ).to_z3_expr() == z3.If(z3.Bool("X"), z3.Bool("Y"), z3.BoolVal(False))
+        ir.ComplexBoolExpr([], ir.BoolVal(value=False)),
+    ).to_z3_expr() == z3.If(z3.Bool("X"), z3.Bool("Y"), z3.BoolVal(val=False))
 
 
 def test_conversion_str() -> None:
@@ -1031,7 +1040,7 @@ def test_conversion_substituted() -> None:
 
 
 def test_conversion_to_z3_expr() -> None:
-    assert ir.Conversion("X", ir.IntVar("Y", INT_TY), INT_TY).to_z3_expr() == z3.BoolVal(True)
+    assert ir.Conversion("X", ir.IntVar("Y", INT_TY), INT_TY).to_z3_expr() == z3.BoolVal(val=True)
 
 
 def test_int_conversion_str() -> None:
@@ -1059,7 +1068,7 @@ def test_comprehension_str() -> None:
                 "X",
                 ir.ObjVar("Y", SEQ_TY),
                 ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
-                ir.ComplexBoolExpr([], ir.BoolVal(True)),
+                ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
             )
         )
         == "[for X in Y if {True} => {X}]"
@@ -1094,7 +1103,7 @@ def test_comprehension_type() -> None:
         "X",
         ir.ObjVar("Y", SEQ_TY),
         ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
-        ir.ComplexBoolExpr([], ir.BoolVal(True)),
+        ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
     ).type_ == rty.Aggregate(MSG_TY)
 
 
@@ -1103,12 +1112,12 @@ def test_comprehension_substituted() -> None:
         "X",
         ir.ObjVar("Y", SEQ_TY),
         ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
-        ir.ComplexBoolExpr([], ir.BoolVal(True)),
+        ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
     ).substituted({ID("X"): ID("Y"), ID("Y"): ID("Z")}) == ir.Comprehension(
         "Y",
         ir.ObjVar("Z", SEQ_TY),
         ir.ComplexExpr([], ir.ObjVar("Y", MSG_TY)),
-        ir.ComplexBoolExpr([], ir.BoolVal(True)),
+        ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
     )
 
 
@@ -1117,7 +1126,7 @@ def test_comprehension_precondition() -> None:
         "X",
         ir.ObjVar("Y", SEQ_TY),
         ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
-        ir.ComplexBoolExpr([], ir.BoolVal(True)),
+        ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
     ).preconditions(id_generator())
     assert not ir.Comprehension(
         "X",
@@ -1140,7 +1149,7 @@ def test_find_str() -> None:
                 "X",
                 ir.ObjVar("Y", SEQ_TY),
                 ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
-                ir.ComplexBoolExpr([], ir.BoolVal(True)),
+                ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
             )
         )
         == "Find (for X in Y if {True} => {X})"
@@ -1176,7 +1185,7 @@ def test_find_type() -> None:
             "X",
             ir.ObjVar("Y", SEQ_TY),
             ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
-            ir.ComplexBoolExpr([], ir.BoolVal(True)),
+            ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
         ).type_
         == MSG_TY
     )
@@ -1187,12 +1196,12 @@ def test_find_substituted() -> None:
         "X",
         ir.ObjVar("Y", SEQ_TY),
         ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
-        ir.ComplexBoolExpr([], ir.BoolVal(True)),
+        ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
     ).substituted({ID("X"): ID("Y"), ID("Y"): ID("Z")}) == ir.Find(
         "Y",
         ir.ObjVar("Z", SEQ_TY),
         ir.ComplexExpr([], ir.ObjVar("Y", MSG_TY)),
-        ir.ComplexBoolExpr([], ir.BoolVal(True)),
+        ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
     )
 
 
@@ -1201,7 +1210,7 @@ def test_find_precondition() -> None:
         "X",
         ir.ObjVar("Y", SEQ_TY),
         ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
-        ir.ComplexBoolExpr([], ir.BoolVal(True)),
+        ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
     ).preconditions(id_generator())
     assert not ir.Find(
         "X",

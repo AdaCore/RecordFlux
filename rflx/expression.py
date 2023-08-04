@@ -1290,9 +1290,9 @@ class Literal(Name):
 
     def z3expr(self) -> z3.ExprRef:
         if self.identifier == ID("True"):
-            return z3.BoolVal(True)
+            return z3.BoolVal(val=True)
         if self.identifier == ID("False"):
-            return z3.BoolVal(False)
+            return z3.BoolVal(val=False)
         return z3.Int(self.name)
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:

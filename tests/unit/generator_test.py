@@ -305,7 +305,7 @@ DUMMY_SESSION = ir.Session(
     states=[
         ir.State(
             "State",
-            [ir.Transition("Final", ir.ComplexExpr([], ir.BoolVal(True)), None, None)],
+            [ir.Transition("Final", ir.ComplexExpr([], ir.BoolVal(value=True)), None, None)],
             None,
             [],
             None,
@@ -1249,7 +1249,7 @@ def test_session_state_action(action: ir.Stmt, expected: str) -> None:
                     ir.State(
                         "S",
                         [],
-                        ir.Transition("E", ir.ComplexExpr([], ir.BoolVal(True)), None, None),
+                        ir.Transition("E", ir.ComplexExpr([], ir.BoolVal(value=True)), None, None),
                         [],
                         None,
                         None,
@@ -1460,7 +1460,7 @@ class UnknownExpr(ir.Expr):
                         origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ),
-                ir.ComplexBoolExpr([], ir.BoolVal(True)),
+                ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
             ),
             RecordFluxError,
             "expressions other than variables not yet supported as selector for message types",
@@ -1671,7 +1671,7 @@ def test_session_assign_error(
                 ir.State(
                     "S",
                     [],
-                    ir.Transition("E", ir.ComplexExpr([], ir.BoolVal(True)), None, None),
+                    ir.Transition("E", ir.ComplexExpr([], ir.BoolVal(value=True)), None, None),
                     [],
                     None,
                     None,
@@ -1741,7 +1741,7 @@ def test_session_append_error(
                 ir.State(
                     "S",
                     [],
-                    ir.Transition("E", ir.ComplexExpr([], ir.BoolVal(True)), None, None),
+                    ir.Transition("E", ir.ComplexExpr([], ir.BoolVal(value=True)), None, None),
                     [],
                     None,
                     None,
@@ -1822,7 +1822,7 @@ def test_session_write_error(write: ir.Write, error_type: type[BaseError], error
             ada.If([(ada.Variable("X"), ada.Variable("Y"))], ada.Number(1)),
         ),
         (
-            ir.NamedAgg([("X", ir.IntVal(1)), ("Y", ir.BoolVal(False))]),
+            ir.NamedAgg([("X", ir.IntVal(1)), ("Y", ir.BoolVal(value=False))]),
             ada.NamedAggregate(("X", ada.Number(1)), ("Y", ada.Literal("False"))),
         ),
         (
@@ -1870,10 +1870,10 @@ def test_session_to_ada_expr(expression: ir.Expr, expected: ada.Expr) -> None:
 @pytest.mark.parametrize(
     "relation, left, right, expected",
     [
-        (ir.Equal, ir.BoolVar("X"), ir.BoolVal(True), ada.Variable("X")),
-        (ir.Equal, ir.BoolVar("X"), ir.BoolVal(False), ada.Not(ada.Variable("X"))),
-        (ir.NotEqual, ir.BoolVar("X"), ir.BoolVal(True), ada.Not(ada.Variable("X"))),
-        (ir.NotEqual, ir.BoolVar("X"), ir.BoolVal(False), ada.Variable("X")),
+        (ir.Equal, ir.BoolVar("X"), ir.BoolVal(value=True), ada.Variable("X")),
+        (ir.Equal, ir.BoolVar("X"), ir.BoolVal(value=False), ada.Not(ada.Variable("X"))),
+        (ir.NotEqual, ir.BoolVar("X"), ir.BoolVal(value=True), ada.Not(ada.Variable("X"))),
+        (ir.NotEqual, ir.BoolVar("X"), ir.BoolVal(value=False), ada.Variable("X")),
     ],
 )
 def test_session_to_ada_expr_equality(

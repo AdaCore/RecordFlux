@@ -111,11 +111,11 @@ def test_true_variables() -> None:
 
 
 def test_true_z3expr() -> None:
-    assert TRUE.z3expr() == z3.BoolVal(True)
+    assert TRUE.z3expr() == z3.BoolVal(val=True)
 
 
 def test_true_to_ir() -> None:
-    assert TRUE.to_ir(id_generator()) == ir.ComplexExpr([], ir.BoolVal(True))
+    assert TRUE.to_ir(id_generator()) == ir.ComplexExpr([], ir.BoolVal(value=True))
 
 
 def test_false_type() -> None:
@@ -134,11 +134,11 @@ def test_false_variables() -> None:
 
 
 def test_false_z3expr() -> None:
-    assert FALSE.z3expr() == z3.BoolVal(False)
+    assert FALSE.z3expr() == z3.BoolVal(val=False)
 
 
 def test_false_to_ir() -> None:
-    assert FALSE.to_ir(id_generator()) == ir.ComplexExpr([], ir.BoolVal(False))
+    assert FALSE.to_ir(id_generator()) == ir.ComplexExpr([], ir.BoolVal(value=False))
 
 
 def test_not_type() -> None:
@@ -219,14 +219,14 @@ def test_not_simplified() -> None:
 
 
 def test_not_z3expr() -> None:
-    assert Not(TRUE).z3expr() == z3.Not(z3.BoolVal(True))
-    assert Not(FALSE).z3expr() == z3.Not(z3.BoolVal(False))
+    assert Not(TRUE).z3expr() == z3.Not(z3.BoolVal(val=True))
+    assert Not(FALSE).z3expr() == z3.Not(z3.BoolVal(val=False))
     with pytest.raises(Z3TypeError):
         Not(Variable("X")).z3expr()
 
 
 def test_not_to_ir() -> None:
-    assert Not(TRUE).to_ir(id_generator()) == ir.ComplexBoolExpr([], ir.Not(ir.BoolVal(True)))
+    assert Not(TRUE).to_ir(id_generator()) == ir.ComplexBoolExpr([], ir.Not(ir.BoolVal(value=True)))
     assert Not(Variable("X", type_=rty.BOOLEAN)).to_ir(id_generator()) == ir.ComplexBoolExpr(
         [], ir.Not(ir.BoolVar("X"))
     )
@@ -478,13 +478,13 @@ def test_and_simplified() -> None:
 def test_and_z3expr() -> None:
     assert_equal(
         And(TRUE, FALSE, TRUE).z3expr(),
-        z3.And(z3.BoolVal(True), z3.BoolVal(False), z3.BoolVal(True)),
+        z3.And(z3.BoolVal(val=True), z3.BoolVal(val=False), z3.BoolVal(val=True)),
     )
     assert_equal(
         And(TRUE, TRUE, TRUE).z3expr(),
-        z3.And(z3.BoolVal(True), z3.BoolVal(True), z3.BoolVal(True)),
+        z3.And(z3.BoolVal(val=True), z3.BoolVal(val=True), z3.BoolVal(val=True)),
     )
-    assert_equal(And(TRUE, TRUE).z3expr(), z3.And(z3.BoolVal(True), z3.BoolVal(True)))
+    assert_equal(And(TRUE, TRUE).z3expr(), z3.And(z3.BoolVal(val=True), z3.BoolVal(val=True)))
 
 
 @pytest.mark.parametrize(["op", "ir_op"], [(And, ir.And), (Or, ir.Or)])
@@ -493,7 +493,7 @@ def test_and_or_to_ir(  # type: ignore[misc]
 ) -> None:
     assert op().to_ir(id_generator()) == ir.ComplexBoolExpr(
         [],
-        ir.BoolVal(True),
+        ir.BoolVal(value=True),
     )
     assert op(Variable("X", type_=rty.BOOLEAN)).to_ir(id_generator()) == ir.ComplexBoolExpr(
         [],
@@ -563,13 +563,13 @@ def test_or_simplified() -> None:
 def test_or_z3expr() -> None:
     assert_equal(
         Or(TRUE, FALSE, TRUE).z3expr(),
-        z3.Or(z3.BoolVal(True), z3.BoolVal(False), z3.BoolVal(True)),
+        z3.Or(z3.BoolVal(val=True), z3.BoolVal(val=False), z3.BoolVal(val=True)),
     )
     assert_equal(
         Or(TRUE, TRUE, TRUE).z3expr(),
-        z3.Or(z3.BoolVal(True), z3.BoolVal(True), z3.BoolVal(True)),
+        z3.Or(z3.BoolVal(val=True), z3.BoolVal(val=True), z3.BoolVal(val=True)),
     )
-    assert_equal(Or(TRUE, TRUE).z3expr(), z3.Or(z3.BoolVal(True), z3.BoolVal(True)))
+    assert_equal(Or(TRUE, TRUE).z3expr(), z3.Or(z3.BoolVal(val=True), z3.BoolVal(val=True)))
 
 
 def test_or_str() -> None:
@@ -1673,7 +1673,7 @@ def test_if_expr_ada_expr() -> None:
 
 def test_if_expr_z3expr() -> None:
     assert IfExpr([(TRUE, Variable("Y"))], Variable("Z")).z3expr() == z3.If(
-        z3.BoolVal(True), z3.Int("Y"), z3.Int("Z")
+        z3.BoolVal(val=True), z3.Int("Y"), z3.Int("Z")
     )
     with pytest.raises(Z3TypeError, match=r"^more than one condition$"):
         IfExpr(
@@ -1721,7 +1721,7 @@ def test_if_expr_to_ir() -> None:
     ).to_ir(id_generator()) == ir.ComplexIntExpr(
         [
             ir.VarDecl("T_0", rty.BOOLEAN),
-            ir.Assign("T_0", ir.And(ir.BoolVar("X"), ir.BoolVal(True)), rty.BOOLEAN),
+            ir.Assign("T_0", ir.And(ir.BoolVar("X"), ir.BoolVal(value=True)), rty.BOOLEAN),
         ],
         ir.IntIfExpr(
             ir.BoolVar("T_0"),
@@ -2288,7 +2288,7 @@ def test_call_to_ir() -> None:
         ir.BoolCall(
             "X",
             [
-                ir.And(ir.BoolVar("X"), ir.BoolVal(True)),
+                ir.And(ir.BoolVar("X"), ir.BoolVal(value=True)),
                 ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)),
             ],
             [rty.BOOLEAN, INT_TY],

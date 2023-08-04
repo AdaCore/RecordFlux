@@ -205,7 +205,7 @@ class Assign(Stmt):
         elif isinstance(self.expression, BoolExpr):
             target = BoolVar(self.target)
         else:
-            return z3.BoolVal(True)
+            return z3.BoolVal(val=True)
         return target.to_z3_expr() == self.expression.to_z3_expr()
 
     @property
@@ -248,7 +248,7 @@ class FieldAssign(Stmt):
         elif isinstance(self.expression, BoolExpr):
             target = z3.Bool(f"{self.message}.{self.field}")
         else:
-            return z3.BoolVal(True)
+            return z3.BoolVal(val=True)
         return target == self.expression.to_z3_expr()
 
     def _update_str(self) -> None:
@@ -274,7 +274,7 @@ class Append(Stmt):
         return self.expression.preconditions(variable_id)
 
     def to_z3_expr(self) -> z3.BoolRef:
-        return z3.BoolVal(True)
+        return z3.BoolVal(val=True)
 
     def _update_str(self) -> None:
         self._str = intern(f"{self.sequence}'Append ({self.expression})")
@@ -299,7 +299,7 @@ class Extend(Stmt):
         return self.expression.preconditions(variable_id)
 
     def to_z3_expr(self) -> z3.BoolRef:
-        return z3.BoolVal(True)
+        return z3.BoolVal(val=True)
 
     def _update_str(self) -> None:
         self._str = intern(f"{self.sequence}'Extend ({self.expression})")
@@ -324,7 +324,7 @@ class Reset(Stmt):
         return []
 
     def to_z3_expr(self) -> z3.BoolRef:
-        return z3.BoolVal(True)
+        return z3.BoolVal(val=True)
 
     def _update_str(self) -> None:
         parameter_values = " => ".join(f"{i} => {e}" for i, e in self.parameter_values.items())
@@ -350,7 +350,7 @@ class ChannelStmt(Stmt):
         return self.expression.preconditions(variable_id)
 
     def to_z3_expr(self) -> z3.BoolRef:
-        return z3.BoolVal(True)
+        return z3.BoolVal(val=True)
 
     def _update_str(self) -> None:
         self._str = intern(f"{self.channel}'{self.__class__.__name__} ({self.expression})")
@@ -595,7 +595,7 @@ class BoolVal(BasicBoolExpr):
         return self
 
     def to_z3_expr(self) -> z3.BoolRef:
-        return z3.BoolVal(self.value)
+        return z3.BoolVal(val=self.value)
 
     def _update_str(self) -> None:
         self._str = intern(str(self.value))
@@ -1408,7 +1408,7 @@ class Conversion(Expr):
         )
 
     def to_z3_expr(self) -> z3.ExprRef:
-        return z3.BoolVal(True)
+        return z3.BoolVal(val=True)
 
     def _update_str(self) -> None:
         self._str = intern(f"{self.identifier} ({self.argument})")

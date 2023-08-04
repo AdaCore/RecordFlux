@@ -117,7 +117,7 @@ class NamedType(Any):
 class Enumeration(NamedType):
     DESCRIPTIVE_NAME: ClassVar[str] = "enumeration type"
     literals: abc.Sequence[ID] = attr.ib()
-    always_valid: bool = attr.ib(False)
+    always_valid: bool = attr.ib(default=False)
     location: Optional[Location] = attr.ib(default=None, cmp=False)
 
     def __str__(self) -> str:
@@ -314,7 +314,7 @@ class Structure(Compound):
 class Message(Compound):
     DESCRIPTIVE_NAME = "message type"
     refinements: abc.Sequence[Refinement] = attr.ib(factory=list)
-    is_definite: bool = attr.ib(False)
+    is_definite: bool = attr.ib(default=False)
 
 
 @attr.s(frozen=True)
