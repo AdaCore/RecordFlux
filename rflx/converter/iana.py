@@ -67,7 +67,7 @@ def write_rflx_specification(
             + (
                 ""
                 if reproducible
-                else f"-- Generation date: {datetime.now().strftime('%Y-%m-%d')}\n"
+                else f"-- Generation date: {datetime.now().strftime('%Y-%m-%d')}\n"  # noqa: DTZ005
             )
         )
         if registry_title is not None:

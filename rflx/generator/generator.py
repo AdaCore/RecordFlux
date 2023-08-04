@@ -1407,7 +1407,7 @@ class Generator:
 
         filename = "license_header"
         self._check_template_file(filename)
-        today = date.today()
+        today = date.today()  # noqa: DTZ011
         return (
             self._template_dir.joinpath(filename)
             .read_text(encoding="utf-8")
