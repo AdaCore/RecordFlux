@@ -1,4 +1,4 @@
-# type: ignore
+# type: ignore # noqa: PGH003
 
 """RecordFlux support for GNAT Studio."""
 

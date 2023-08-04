@@ -18,13 +18,13 @@ else:
     from collections.abc import Callable
     from typing import Any, Optional, Union
 
-    class DBCMeta(abc.ABCMeta):  # type: ignore
+    class DBCMeta(abc.ABCMeta):  # type: ignore[no-redef]
         pass
 
-    class DBC(metaclass=DBCMeta):  # type: ignore
+    class DBC(metaclass=DBCMeta):  # type: ignore[no-redef]
         pass
 
-    class ViolationError(AssertionError):  # type: ignore
+    class ViolationError(AssertionError):  # type: ignore[no-redef]
         pass
 
     def require(  # type: ignore[no-redef,misc]

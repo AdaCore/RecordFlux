@@ -7,7 +7,7 @@ from collections.abc import Generator
 from pathlib import Path
 from time import perf_counter
 
-from tqdm import tqdm  # type: ignore
+from tqdm import tqdm  # type: ignore[import]
 
 from rflx.pyrflx import PyRFLX
 

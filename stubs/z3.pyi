@@ -6,8 +6,8 @@ from typing import Optional
 class Context: ...
 
 class ExprRef:
-    def __eq__(self, other: ExprRef) -> BoolRef: ...  # type: ignore
-    def __ne__(self, other: ExprRef) -> BoolRef: ...  # type: ignore
+    def __eq__(self, other: ExprRef) -> BoolRef: ...  # type: ignore[override]
+    def __ne__(self, other: ExprRef) -> BoolRef: ...  # type: ignore[override]
 
 class BoolRef(ExprRef):
     def __gt__(self, other: BoolRef) -> BoolRef: ...

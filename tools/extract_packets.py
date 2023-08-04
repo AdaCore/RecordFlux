@@ -18,8 +18,8 @@ from pathlib import Path
 from pydoc import locate
 from typing import Union
 
-import scapy.layers  # type: ignore
-from scapy.utils import hexdump, rdpcap  # type: ignore
+import scapy.layers  # type: ignore[import]
+from scapy.utils import hexdump, rdpcap  # type: ignore[import]
 
 
 def main(argv: Sequence[str]) -> Union[bool, str]:

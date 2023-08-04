@@ -16,7 +16,7 @@ def test_id_constructor() -> None:
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_id_invalid_type() -> None:
     with pytest.raises(AssertionError, match=r'^unexpected identifier type "int"$'):
-        ID(0)  # type: ignore
+        ID(0)  # type: ignore[arg-type]
 
 
 def test_id_invalid_empty() -> None:
