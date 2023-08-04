@@ -21,8 +21,8 @@ def format_repr(string: str) -> str:
         from black import FileMode, format_str
 
         return format_str(string, mode=FileMode(line_length=60))
-    else:
-        return string
+
+    return string
 
 
 STDIN = Path("<stdin>")

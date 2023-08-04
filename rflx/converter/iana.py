@@ -253,8 +253,7 @@ class EnumLiteral:
 def _normalize_name(description_text: str) -> str:
     t: dict[str, Union[int, str, None]] = {c: " " for c in string.punctuation + "\n"}
     name = description_text.translate(str.maketrans(t))
-    name = "_".join([s[0].upper() + s[1:] for s in name.split()])
-    return name
+    return "_".join([s[0].upper() + s[1:] for s in name.split()])
 
 
 def _normalize_value(value: str) -> tuple[str, int]:

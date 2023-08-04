@@ -2391,7 +2391,7 @@ class SessionGenerator:
             if isinstance(t, (rty.Integer, rty.Enumeration))
         ]
 
-        assign_to_message_aggregate = [
+        return [
             CallStatement(
                 target_type * "Reset",
                 [
@@ -2406,8 +2406,6 @@ class SessionGenerator:
                 target_context, message_aggregate, exception_handler, is_global
             ),
         ]
-
-        return assign_to_message_aggregate
 
     def _assign_to_delta_message_aggregate(
         self,
@@ -4006,18 +4004,18 @@ class SessionGenerator:
                         source_field,
                     ),
                 ]
-            else:
-                assert isinstance(source_message_type, rty.Structure)
-                return [
-                    self._set_opaque_field_to_message_field_from_structure(
-                        target_message_type.identifier,
-                        target_context,
-                        target_field,
-                        source_message_type.identifier,
-                        value.message,
-                        source_field,
-                    ),
-                ]
+
+            assert isinstance(source_message_type, rty.Structure)
+            return [
+                self._set_opaque_field_to_message_field_from_structure(
+                    target_message_type.identifier,
+                    target_context,
+                    target_field,
+                    source_message_type.identifier,
+                    value.message,
+                    source_field,
+                ),
+            ]
 
         if isinstance(value, ir.Opaque):
             target_context = message_context

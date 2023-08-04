@@ -922,14 +922,13 @@ def create_range(
             ]
         )
     size = create_math_expression(error, rangetype.f_size.f_value, filename)
-    result = model.UncheckedInteger(
+    return model.UncheckedInteger(
         identifier,
         create_math_expression(error, rangetype.f_first, filename),
         create_math_expression(error, rangetype.f_last, filename),
         size,
         type_location(identifier, rangetype),
     )
-    return result
 
 
 def create_null_message(
@@ -1638,8 +1637,8 @@ class Parser:
 
         if diagnostics_to_error(unit.diagnostics, error, filename):
             return None
-        else:
-            error.extend(style.check(filename))
+
+        error.extend(style.check(filename))
 
         if not unit.root:
             return None

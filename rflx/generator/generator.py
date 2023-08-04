@@ -364,7 +364,7 @@ class Generator:
         aspects = aspects if aspects else []
         configuration_pragmas = configuration_pragmas if configuration_pragmas else []
 
-        unit = PackageUnit(
+        return PackageUnit(
             [*configuration_pragmas, *const.CONFIGURATION_PRAGMAS, *declaration_context],
             PackageDeclaration(
                 self._prefix * identifier,
@@ -379,8 +379,6 @@ class Generator:
             PackageBody(self._prefix * identifier, aspects=[SparkMode()]),
         )
 
-        return unit
-
     @staticmethod
     def _create_instantiation_unit(
         context: list[ContextItem],
@@ -389,9 +387,7 @@ class Generator:
         for p in reversed(const.CONFIGURATION_PRAGMAS):
             context.insert(0, p)
 
-        unit = InstantiationUnit(context, instantiation)
-
-        return unit
+        return InstantiationUnit(context, instantiation)
 
     def _create_message(self, message: Message) -> dict[ID, Unit]:  # noqa: PLR0912
         units: dict[ID, Unit] = {}

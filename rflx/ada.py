@@ -590,8 +590,7 @@ class Call(Name):
         )
         if arguments:
             arguments = f" ({arguments})"
-        call = f"{self.identifier.ada_str}{arguments}"
-        return call
+        return f"{self.identifier.ada_str}{arguments}"
 
     def rflx_expr(self) -> expr.Call:
         assert not self.named_arguments

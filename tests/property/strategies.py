@@ -445,10 +445,9 @@ def boolean_relations(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> exp
 @st.composite
 def boolean_expressions(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
     operation = draw(st.sampled_from([expr.And, expr.Or]))
-    expression = draw(
+    return draw(
         st.one_of(
             relations(elements),
             st.builds(operation, boolean_expressions(elements), boolean_expressions(elements)),
         )
     )
-    return expression

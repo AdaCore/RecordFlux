@@ -2009,8 +2009,7 @@ class Call(Name):
         args = ", ".join(map(str, self.args))
         if args:
             args = f" ({args})"
-        call = f"{self.identifier}{args}"
-        return call
+        return f"{self.identifier}{args}"
 
     def ada_expr(self) -> ada.Expr:
         return ada.Call(self.identifier, [a.ada_expr() for a in self.args], {}, self.negative)

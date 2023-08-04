@@ -134,10 +134,10 @@ class Stmt(Base):
     def __str__(self) -> str:
         if self._str is not None:
             return self._str
-        else:
-            self._update_str()
-            assert self._str is not None
-            return self._str  # type: ignore[unreachable]
+
+        self._update_str()
+        assert self._str is not None
+        return self._str  # type: ignore[unreachable]
 
     @property
     def location(self) -> Optional[Location]:
@@ -409,10 +409,10 @@ class Expr(Base):
     def __str__(self) -> str:
         if self._str is not None:
             return self._str
-        else:
-            self._update_str()
-            assert self._str is not None
-            return self._str  # type: ignore[unreachable]
+
+        self._update_str()
+        assert self._str is not None
+        return self._str  # type: ignore[unreachable]
 
     @property
     @abstractmethod
@@ -1342,12 +1342,11 @@ class IfExpr(Expr):
 
     def to_z3_expr(self) -> z3.ExprRef:
         # TODO(eng/recordflux/RecordFlux#1339): Fix handling of complex expressions
-        if_expr = z3.If(
+        return z3.If(
             self.condition.to_z3_expr(),
             self.then_expr.expr.to_z3_expr(),
             self.else_expr.expr.to_z3_expr(),
         )
-        return if_expr
 
     def _update_str(self) -> None:
         self._str = intern(f"(if {self.condition} then {self.then_expr} else {self.else_expr})")
