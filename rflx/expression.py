@@ -3695,7 +3695,8 @@ class CaseExpr(Expr):
 
         for choice, expr in self.choices:
             e_stmts, e_expr = _to_ir_basic_expr(expr, variable_id)
-            assert not e_stmts  # TODO: add check for unsupported case expressions to model
+            # TODO(eng/recordflux/RecordFlux#633): Add check for unsupported case expressions to model
+            assert not e_stmts
             cs: list[ir.BasicExpr]
             if isinstance(self.expr.type_, rty.Enumeration):
                 assert all(isinstance(c, ID) for c in choice)
