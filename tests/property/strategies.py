@@ -345,8 +345,7 @@ def models(draw: Draw) -> Model:
     types_.append(refinement)
     for m in [refinement.sdu, refinement.pdu]:
         append_types(m)
-    for t in [*INTERNAL_TYPES.values(), *BUILTIN_TYPES.values()]:
-        types_.append(t)
+    types_.extend([*INTERNAL_TYPES.values(), *BUILTIN_TYPES.values()])
 
     return Model(list(reversed(types_)))
 

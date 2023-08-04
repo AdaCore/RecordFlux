@@ -186,21 +186,19 @@ def create_state(
                 )
             ]
         )
-    transitions = []
-    for t in state.f_body.f_conditional_transitions:
-        transitions.append(create_transition(error, t, filename))
+    transitions = [
+        create_transition(error, t, filename) for t in state.f_body.f_conditional_transitions
+    ]
     transitions.append(create_transition(error, state.f_body.f_final_transition, filename))
     exception_transition = (
         create_transition(error, state.f_body.f_exception_transition, filename)
         if state.f_body.f_exception_transition
         else None
     )
-    actions = []
-    for a in state.f_body.f_actions:
-        actions.append(create_statement(error, a, filename))
-    declarations = []
-    for d in state.f_body.f_declarations:
-        declarations.append(create_declaration(error, d, package, filename))
+    actions = [create_statement(error, a, filename) for a in state.f_body.f_actions]
+    declarations = [
+        create_declaration(error, d, package, filename) for d in state.f_body.f_declarations
+    ]
     description = create_description(state.f_description)
     return model.State(
         identifier=identifier,
@@ -647,15 +645,15 @@ def create_function_decl(
     assert isinstance(declaration, lang.FormalFunctionDecl)
     arguments = []
     if declaration.f_parameters:
-        for p in declaration.f_parameters.f_parameters:
-            arguments.append(
-                decl.Argument(
-                    create_id(error, p.f_identifier, filename),
-                    model.internal_type_identifier(
-                        create_id(error, p.f_type_identifier, filename), package
-                    ),
-                )
+        arguments = [
+            decl.Argument(
+                create_id(error, p.f_identifier, filename),
+                model.internal_type_identifier(
+                    create_id(error, p.f_type_identifier, filename), package
+                ),
             )
+            for p in declaration.f_parameters.f_parameters
+        ]
     return decl.FunctionDeclaration(
         create_id(error, declaration.f_identifier, filename),
         arguments,
@@ -1794,7 +1792,7 @@ def _check_for_dependency_cycles(
         for p, c in [(c.name, c) for c in spec.context_clauses]:
             try:
                 _check_for_dependency_cycle(p, c, [], specifications)
-            except RecordFluxError as e:
+            except RecordFluxError as e:  # noqa: PERF203
                 result = True
                 error.extend(e)
 

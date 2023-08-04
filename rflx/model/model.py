@@ -45,7 +45,7 @@ class UncheckedModel(Base):
                         error.extend(e)
                 else:
                     declarations.append(checked_declaration)
-            except RecordFluxError as e:
+            except RecordFluxError as e:  # noqa: PERF203
                 error.extend(e)
 
         error += _check_duplicates(declarations)
@@ -129,13 +129,11 @@ class Model(Base):
 
         for d in declarations:
             if isinstance(d, type_.Type):
-                for t in d.dependencies:
-                    result.append(t)
+                result.extend(d.dependencies)
                 result.append(d)
 
             if isinstance(d, session.Session):
-                for t in d.direct_dependencies.values():
-                    result.append(t)
+                result.extend(d.direct_dependencies.values())
                 result.append(d)
 
         return list(unique(result))

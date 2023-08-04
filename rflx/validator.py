@@ -152,17 +152,17 @@ class Validator:
                 structure.append(link)
                 continue
 
-            for condition in conditions:
-                structure.append(
-                    Link(
-                        link.source,
-                        link.target,
-                        condition,
-                        link.size,
-                        link.first,
-                        condition.location,
-                    )
+            structure.extend(
+                Link(
+                    link.source,
+                    link.target,
+                    condition,
+                    link.size,
+                    link.first,
+                    condition.location,
                 )
+                for condition in conditions
+            )
 
         types = {f: self._replace_messages(t, messages) for f, t in message.types.items()}
 
