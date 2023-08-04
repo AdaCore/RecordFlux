@@ -2040,7 +2040,7 @@ class SessionGenerator:
         assert action.location is not None
         return [CommentStatement(str(action.location)), *result]
 
-    def _declare(  # noqa: PLR0913, PLR0912
+    def _declare(  # noqa: PLR0912, PLR0913
         self,
         identifier: ID,
         type_: rty.Type,
@@ -3946,7 +3946,7 @@ class SessionGenerator:
             ]
         )
 
-    def _set_message_fields(  # noqa: PLR0913
+    def _set_message_fields(
         self,
         target_context: ID,
         message_aggregate: ir.MsgAgg,
