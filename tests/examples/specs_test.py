@@ -25,7 +25,7 @@ def test_spec(spec: Path, tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("registry_file", EX_IANA_REGISTRIES_DIR.glob("*.xml"))
 def test_iana_specs_synchronized(registry_file: Path) -> None:
-    registry = ElementTree.fromstring(registry_file.read_text(encoding="utf-8"))
+    registry = ElementTree.fromstring(registry_file.read_text(encoding="utf-8"))  # noqa: S314
     registry_last_updated = registry.find("iana:updated", iana.NAMESPACE)
     assert registry_last_updated is not None
     assert (

@@ -22,7 +22,8 @@ def convert(
     data: str, source: Path, always_valid: bool, output_dir: Path, reproducible: bool = False
 ) -> None:
     try:
-        root = ElementTree.fromstring(data)
+        # TODO(eng/recordflux/RecordFlux#1375): Prevent XML attacks by replacing xml by defusedxml
+        root = ElementTree.fromstring(data)  # noqa: S314
     except ParseError as e:
         fail(
             f"invalid XML document: {e}",
