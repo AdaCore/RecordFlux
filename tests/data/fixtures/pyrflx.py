@@ -57,7 +57,7 @@ def fixture_icmp_message_value(icmp_package: pyrflx.Package) -> pyrflx.MessageVa
 
 @pytest.fixture(name="icmp_message")
 def fixture_icmp_message(icmp_package: pyrflx.Package) -> model.Message:
-    return icmp_package.new_message("Message")._type
+    return icmp_package.new_message("Message")._type  # noqa: SLF001
 
 
 @pytest.fixture(name="icmp_checksum_message_value")

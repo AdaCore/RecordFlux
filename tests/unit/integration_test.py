@@ -113,7 +113,7 @@ def test_rfi_add_integration(rfi_content: str, match_error: str) -> None:
     error = RecordFluxError()
     integration = Integration()
     with pytest.raises(RecordFluxError, match=regex):
-        integration._add_integration_object(Path("test.rfi"), content, error)
+        integration._add_integration_object(Path("test.rfi"), content, error)  # noqa: SLF001
         error.propagate()
 
 
@@ -139,7 +139,7 @@ def test_rfi_get_size() -> None:
     }
     error = RecordFluxError()
 
-    integration._add_integration_object(Path("p.rfi"), session_object, error)
+    integration._add_integration_object(Path("p.rfi"), session_object, error)  # noqa: SLF001
     error.propagate()
     assert integration.get_size(ID("P::S"), None, None) == 1024
     assert integration.get_size(ID("P::S"), ID("X"), ID("S")) == 1024

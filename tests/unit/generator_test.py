@@ -381,7 +381,7 @@ def test_session_create_abstract_function(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
 
-    assert session_generator._create_abstract_function(parameter) == expected
+    assert session_generator._create_abstract_function(parameter) == expected  # noqa: SLF001
 
 
 class UnknownDeclaration(ir.FormalDecl):
@@ -479,7 +479,7 @@ def test_session_create_abstract_functions_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        session_generator._create_abstract_functions([parameter])
+        session_generator._create_abstract_functions([parameter])  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -692,10 +692,10 @@ def test_session_evaluate_declarations(
 ) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
 
-    allocator._allocation_slots[Location((1, 1))] = 1
+    allocator._allocation_slots[Location((1, 1))] = 1  # noqa: SLF001
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
     assert (
-        session_generator._evaluate_declarations(
+        session_generator._evaluate_declarations(  # noqa: SLF001
             [declaration], is_global=lambda _: False, session_global=session_global
         )
         == expected
@@ -957,10 +957,10 @@ def test_session_declare(
     loc: Location = Location((1, 1))
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
 
-    allocator._allocation_slots[loc] = 1
+    allocator._allocation_slots[loc] = 1  # noqa: SLF001
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
 
-    result = session_generator._declare(
+    result = session_generator._declare(  # noqa: SLF001
         ID("X"), type_, lambda _: False, loc, expression, constant, session_global
     )
     assert "\n".join(str(d) for d in result.global_declarations) == expected.global_declarations
@@ -1046,7 +1046,7 @@ def test_session_declare_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        session_generator._declare(  # pragma: no branch
+        session_generator._declare(  # pragma: no branch # noqa: SLF001
             ID("X", Location((10, 20))),
             type_,
             lambda _: False,
@@ -1238,11 +1238,11 @@ def test_session_state_action(action: ir.Stmt, expected: str) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
 
-    allocator._allocation_slots[Location((1, 1))] = 1
+    allocator._allocation_slots[Location((1, 1))] = 1  # noqa: SLF001
     assert (
         "\n".join(
             str(s)
-            for s in session_generator._state_action(
+            for s in session_generator._state_action(  # noqa: SLF001
                 ID("S"),
                 action,
                 ExceptionHandler(
@@ -1292,7 +1292,7 @@ def test_session_state_action_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        session_generator._state_action(  # pragma: no branch
+        session_generator._state_action(  # pragma: no branch # noqa: SLF001
             ID("S"),
             action,
             ExceptionHandler(
@@ -1660,10 +1660,10 @@ def test_session_assign_error(
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
     alloc_id = Location((1, 1))
 
-    allocator._allocation_slots[alloc_id] = 1
+    allocator._allocation_slots[alloc_id] = 1  # noqa: SLF001
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        session_generator._assign(
+        session_generator._assign(  # noqa: SLF001
             ID("X", Location((10, 20))),
             type_,
             expression,
@@ -1735,7 +1735,7 @@ def test_session_append_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        session_generator._append(
+        session_generator._append(  # noqa: SLF001
             append,
             ExceptionHandler(
                 ir.State(
@@ -1776,7 +1776,7 @@ def test_session_read_error(read: ir.Read, error_type: type[BaseError], error_ms
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        session_generator._read(  # pragma: no branch
+        session_generator._read(  # pragma: no branch # noqa: SLF001
             read,
             lambda _: False,
         )
@@ -1805,7 +1805,7 @@ def test_session_write_error(write: ir.Write, error_type: type[BaseError], error
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
-        session_generator._write(write)
+        session_generator._write(write)  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -1863,7 +1863,7 @@ def test_session_to_ada_expr(expression: ir.Expr, expected: ada.Expr) -> None:
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
 
-    assert session_generator._to_ada_expr(expression, lambda _: False) == expected
+    assert session_generator._to_ada_expr(expression, lambda _: False) == expected  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -1885,8 +1885,14 @@ def test_session_to_ada_expr_equality(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
 
-    assert session_generator._to_ada_expr(relation(left, right), lambda _: False) == expected
-    assert session_generator._to_ada_expr(relation(right, left), lambda _: False) == expected
+    assert (
+        session_generator._to_ada_expr(relation(left, right), lambda _: False)  # noqa: SLF001
+        == expected
+    )
+    assert (
+        session_generator._to_ada_expr(relation(right, left), lambda _: False)  # noqa: SLF001
+        == expected
+    )
 
 
 def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:

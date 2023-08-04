@@ -491,7 +491,7 @@ def test_unchecked_model_checked(
         for d in messages:
             cache.is_verified(d)
     else:
-        assert not cache._verified
+        assert not cache._verified  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -554,4 +554,4 @@ def test_unchecked_model_checked_error(
     with pytest.raises(RecordFluxError, match=expected):
         UncheckedModel(unchecked, RecordFluxError()).checked(cache=cache)
 
-    assert not cache._verified
+    assert not cache._verified  # noqa: SLF001

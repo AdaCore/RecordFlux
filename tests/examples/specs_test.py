@@ -44,7 +44,7 @@ def test_validate_spec(spec: Path) -> None:
     validator = Validator([spec], "examples.specs.checksum", skip_model_verification=True)
 
     # Eng/RecordFlux/RecordFlux#833
-    for package in validator._pyrflx:
+    for package in validator._pyrflx:  # noqa: SLF001
         for message_value in package:
             test_data_dir = (
                 EX_DATA_DIR

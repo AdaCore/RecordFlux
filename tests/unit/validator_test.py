@@ -441,7 +441,7 @@ def test_validate_message_original_and_parsed_not_equal() -> None:
         .package("Ethernet")
         .new_message("Frame")
     )
-    validation_result = validator._validate_message(
+    validation_result = validator._validate_message(  # noqa: SLF001
         Path(TEST_DIR / "ethernet/frame/invalid/ethernet_invalid_too_long.raw"),
         valid_original_message=True,
         message_value=ethernet_too_short_value,
@@ -459,7 +459,7 @@ def test_validate_message_parameterized_message() -> None:
         .package("Parameterized")
         .new_message("Message")
     )
-    validation_result = validator._validate_message(
+    validation_result = validator._validate_message(  # noqa: SLF001
         Path(TEST_DIR / "parameterized/message/valid/parameterized_message.raw"),
         valid_original_message=True,
         message_value=message,
@@ -606,7 +606,7 @@ def test_validate_message_parameterized_message() -> None:
     ],
 )
 def test_expand_expression(expression: expr.Expr, expected: Sequence[expr.Expr]) -> None:
-    assert Validator._expand_expression(expression) == expected
+    assert Validator._expand_expression(expression) == expected  # noqa: SLF001
 
 
 def test_parameterized_message_missing_parameter() -> None:
@@ -625,7 +625,7 @@ def test_parameterized_message_missing_parameter() -> None:
             r"$"
         ),
     ):
-        validator._validate_message(
+        validator._validate_message(  # noqa: SLF001
             Path(
                 TEST_DIR
                 / "parameterized/message/invalid/parameterized_message_missing_parameter.raw"
@@ -651,7 +651,7 @@ def test_parameterized_message_excess_parameter() -> None:
             r"$"
         ),
     ):
-        validator._validate_message(
+        validator._validate_message(  # noqa: SLF001
             Path(
                 TEST_DIR
                 / "parameterized/message/invalid/parameterized_message_excess_parameter.raw"

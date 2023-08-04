@@ -94,7 +94,7 @@ class ProofManager(Base):
 
     def check(self) -> list[ProofJob]:
         with ProcessPoolExecutor(max_workers=self._workers) as executor:
-            result = list(executor.map(ProofManager._check, self._jobs))
+            result = list(executor.map(ProofManager._check, self._jobs))  # noqa: SLF001
 
         self._jobs.clear()
 

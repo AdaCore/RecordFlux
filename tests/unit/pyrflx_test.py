@@ -1,3 +1,5 @@
+# ruff: noqa: SLF001
+
 from collections import abc
 from pathlib import Path
 
