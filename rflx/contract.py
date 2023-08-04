@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 if __debug__:  # pragma: no cover
     from icontract import (
         DBC as DBC,
