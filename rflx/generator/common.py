@@ -290,7 +290,7 @@ def substitution_facts(
             expr.Literal(l): type_conversion(expr.Call("To_Base_Integer", [expr.Variable(l)]))
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
-            for l in t.literals.keys()
+            for l in t.literals
         },
         **{
             expr.Literal(t.package * l): type_conversion(
@@ -298,7 +298,7 @@ def substitution_facts(
             )
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
-            for l in t.literals.keys()
+            for l in t.literals
         },
         # Eng/RecordFlux/RecordFlux#276
         **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},

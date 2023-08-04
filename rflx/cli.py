@@ -260,9 +260,8 @@ def main(  # noqa: PLR0915
     if args.quiet:
         logging.disable(logging.CRITICAL)
 
-    if not args.unsafe:
-        if args.no_verification:
-            return 'cli: error: unsafe option "--no-verification" given without "--unsafe"'
+    if not args.unsafe and args.no_verification:
+        return 'cli: error: unsafe option "--no-verification" given without "--unsafe"'
 
     ERROR_CONFIG.fail_after_value = args.max_errors
 

@@ -573,7 +573,7 @@ class SessionGenerator:
                     location=function.location,
                 )
             if any(
-                isinstance(field_type, rty.Sequence) and not field_type == rty.OPAQUE
+                isinstance(field_type, rty.Sequence) and field_type != rty.OPAQUE
                 for field_type in function.type_.types.values()
             ):
                 fail(
@@ -586,7 +586,7 @@ class SessionGenerator:
         self._session_context.referenced_types.append(function.return_type)
 
         for a in function.arguments:
-            if isinstance(a.type_, rty.Sequence) and not a.type_ == rty.OPAQUE:
+            if isinstance(a.type_, rty.Sequence) and a.type_ != rty.OPAQUE:
                 fail(
                     f'sequence as parameter of function "{function.identifier}" not yet supported',
                     Subsystem.GENERATOR,
@@ -2224,14 +2224,17 @@ class SessionGenerator:
                 target, expression, exception_handler, is_global
             )
 
-        if isinstance(target_type, rty.Message):
-            if isinstance(expression, ir.Var) and expression.identifier == target:
-                fail(
-                    f'referencing assignment target "{target}" of type message in expression'
-                    " not yet supported",
-                    Subsystem.GENERATOR,
-                    location=expression.location,
-                )
+        if (
+            isinstance(target_type, rty.Message)
+            and isinstance(expression, ir.Var)
+            and expression.identifier == target
+        ):
+            fail(
+                f'referencing assignment target "{target}" of type message in expression'
+                " not yet supported",
+                Subsystem.GENERATOR,
+                location=expression.location,
+            )
 
         if isinstance(expression, ir.FieldAccess):
             return self._assign_to_field_access(target, expression, exception_handler, is_global)

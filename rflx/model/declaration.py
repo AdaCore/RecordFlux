@@ -117,10 +117,7 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.VarDecl:
         assert isinstance(self.type_, rty.NamedType)
-        if self.expression:
-            expression = self.expression.to_ir(variable_id)
-        else:
-            expression = None
+        expression = self.expression.to_ir(variable_id) if self.expression else None
         return ir.VarDecl(
             self.identifier,
             self.type_,

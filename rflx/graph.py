@@ -96,10 +96,7 @@ def create_session_graph(session: AbstractSession, ignore: Optional[Sequence[str
     def _is_ignored(name: ID) -> bool:
         if not ignore:
             return False
-        for regex in ignore:
-            if re.search(regex, str(name), re.IGNORECASE):
-                return True
-        return False
+        return any(re.search(regex, str(name), re.IGNORECASE) for regex in ignore)
 
     result = _graph_with_defaults(str(session.identifier))
     for state in session.states:

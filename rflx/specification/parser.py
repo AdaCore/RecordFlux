@@ -1731,7 +1731,7 @@ class Parser:
                 identifier = model.internal_type_identifier(
                     create_id(error, t.f_identifier, filename), package_id
                 )
-                if not t.f_definition.kind_name == "MessageTypeDef" and t.f_parameters:
+                if t.f_definition.kind_name != "MessageTypeDef" and t.f_parameters:
                     error.extend(
                         [
                             (
@@ -1852,7 +1852,7 @@ def _sort_specs_topologically(
     """(Reverse) Topologically sort specifications using Kahn's algorithm."""
 
     result: list[ID] = []
-    incoming: dict[ID, set[ID]] = {f: set() for f in specifications.keys()}
+    incoming: dict[ID, set[ID]] = {f: set() for f in specifications}
     for package, spec_node in specifications.items():
         for c in spec_node.context_clauses:
             if c.name in incoming:

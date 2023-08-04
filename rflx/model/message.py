@@ -435,9 +435,11 @@ class AbstractMessage(mty.Type):
                 expression.type_ = rty.OPAQUE
             elif Field(expression.identifier) in types:
                 expression.type_ = types[Field(expression.identifier)].type_
-        if isinstance(expression, expr.Literal):
-            if expression.identifier in self._qualified_enum_literals:
-                expression.type_ = self._qualified_enum_literals[expression.identifier].type_
+        if (
+            isinstance(expression, expr.Literal)
+            and expression.identifier in self._qualified_enum_literals
+        ):
+            expression.type_ = self._qualified_enum_literals[expression.identifier].type_
         if isinstance(expression, expr.TypeName):
             expression.type_ = self._type_names[expression.identifier].type_
         return expression
@@ -1728,10 +1730,7 @@ class Message(AbstractMessage):
         def has_final(field: Field) -> bool:
             if field == FINAL:
                 return True
-            for o in self.outgoing(field):
-                if has_final(o.target):
-                    return True
-            return False
+            return any(has_final(o.target) for o in self.outgoing(field))
 
         for f in (INITIAL, *self.fields):
             if not has_final(f):
@@ -2690,44 +2689,43 @@ class Refinement(mty.Type):
     def _verify_condition(self) -> None:
         self.error.extend(self.condition.check_type(rty.Any()))
 
-        if not self.error.errors:
-            if self.condition != expr.TRUE:
-                for cond, val in [
-                    (expr.Equal(self.condition, expr.FALSE), "true"),
-                    (self.condition, "false"),
-                ]:
-                    proof = expr.TRUE.check(
+        if not self.error.errors and self.condition != expr.TRUE:
+            for cond, val in [
+                (expr.Equal(self.condition, expr.FALSE), "true"),
+                (self.condition, "false"),
+            ]:
+                proof = expr.TRUE.check(
+                    [
+                        *self.pdu.type_constraints(self.condition),
+                        *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
+                        self.pdu.path_condition(self.field),
+                        cond,
+                    ]
+                )
+                if proof.result == expr.ProofResult.UNSAT:
+                    self.error.extend(
                         [
-                            *self.pdu.type_constraints(self.condition),
-                            *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
-                            self.pdu.path_condition(self.field),
-                            cond,
+                            (
+                                f'condition "{self.condition}" in refinement of'
+                                f' "{self.pdu.identifier}" is always {val}',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                self.field.identifier.location,
+                            )
                         ]
                     )
-                    if proof.result == expr.ProofResult.UNSAT:
-                        self.error.extend(
-                            [
-                                (
-                                    f'condition "{self.condition}" in refinement of'
-                                    f' "{self.pdu.identifier}" is always {val}',
-                                    Subsystem.MODEL,
-                                    Severity.ERROR,
-                                    self.field.identifier.location,
-                                )
-                            ]
-                        )
-                    if proof.result == expr.ProofResult.UNKNOWN:
-                        self.error.extend(
-                            [
-                                (
-                                    f'condition "{self.condition}" in refinement of'
-                                    f' "{self.pdu.identifier}" might be always {val}',
-                                    Subsystem.MODEL,
-                                    Severity.WARNING,
-                                    self.field.identifier.location,
-                                )
-                            ]
-                        )
+                if proof.result == expr.ProofResult.UNKNOWN:
+                    self.error.extend(
+                        [
+                            (
+                                f'condition "{self.condition}" in refinement of'
+                                f' "{self.pdu.identifier}" might be always {val}',
+                                Subsystem.MODEL,
+                                Severity.WARNING,
+                                self.field.identifier.location,
+                            )
+                        ]
+                    )
 
     def __str__(self) -> str:
         condition = f"\n   if {self.condition}" if self.condition != expr.TRUE else ""
@@ -3014,25 +3012,23 @@ def substitute_variables(
     type_names: Iterable[ID],
     package: ID,
 ) -> expr.Expr:
-    if isinstance(expression, expr.Variable):
-        if expression.identifier in {
-            *unqualified_enum_literals,
-            *qualified_enum_literals,
-        }:
-            return expr.Literal(
-                package * expression.identifier
-                if expression.identifier in unqualified_enum_literals
-                else expression.identifier,
-                expression.type_,
-                location=expression.location,
-            )
-    if isinstance(expression, expr.Variable):
-        if expression.identifier in type_names:
-            return expr.TypeName(
-                package * expression.identifier
-                if expression.identifier in unqualified_enum_literals
-                else expression.identifier,
-                expression.type_,
-                location=expression.location,
-            )
+    if isinstance(expression, expr.Variable) and expression.identifier in {
+        *unqualified_enum_literals,
+        *qualified_enum_literals,
+    }:
+        return expr.Literal(
+            package * expression.identifier
+            if expression.identifier in unqualified_enum_literals
+            else expression.identifier,
+            expression.type_,
+            location=expression.location,
+        )
+    if isinstance(expression, expr.Variable) and expression.identifier in type_names:
+        return expr.TypeName(
+            package * expression.identifier
+            if expression.identifier in unqualified_enum_literals
+            else expression.identifier,
+            expression.type_,
+            location=expression.location,
+        )
     return expression

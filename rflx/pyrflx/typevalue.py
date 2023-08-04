@@ -595,7 +595,7 @@ class MessageValue(TypeValue):
         self._refinements = [*(self._refinements or []), refinement]
 
     def add_parameters(self, parameters: abc.Mapping[str, Union[bool, int, str]]) -> None:
-        expected = set(p.name for p in self._type.parameter_types.keys())
+        expected = set(p.name for p in self._type.parameter_types)
         added = set(p for p in parameters)
 
         if expected - added:
@@ -1346,18 +1346,21 @@ class MessageValue(TypeValue):
             if expression in self._parameters:
                 assert isinstance(expression, Name)
                 return self._parameters[expression]
-            if isinstance(expression, Variable) and expression.name in self.fields:
-                if self._fields[expression.identifier.flat].set:
-                    exp_value = self._fields[expression.identifier.flat].typeval.value
-                    if isinstance(exp_value, bytes):
-                        return Aggregate(*[Number(b) for b in exp_value])
-                    if (
-                        isinstance(exp_value, list)
-                        and len(exp_value) > 0
-                        and isinstance(exp_value[0], IntegerValue)
-                    ):
-                        return Aggregate(*[Number(e.value) for e in exp_value])
-                    raise NotImplementedError
+            if (
+                isinstance(expression, Variable)
+                and expression.name in self.fields
+                and self._fields[expression.identifier.flat].set
+            ):
+                exp_value = self._fields[expression.identifier.flat].typeval.value
+                if isinstance(exp_value, bytes):
+                    return Aggregate(*[Number(b) for b in exp_value])
+                if (
+                    isinstance(exp_value, list)
+                    and len(exp_value) > 0
+                    and isinstance(exp_value[0], IntegerValue)
+                ):
+                    return Aggregate(*[Number(e.value) for e in exp_value])
+                raise NotImplementedError
             return expression
 
         res = expr

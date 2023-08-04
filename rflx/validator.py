@@ -449,7 +449,7 @@ class OutputWriter:
     def __init__(self, file: Optional[Path]) -> None:
         if file is not None:
             try:
-                self.file = open(file, "w", encoding="utf-8")
+                self.file = open(file, "w", encoding="utf-8")  # noqa: SIM115
             except OSError as e:
                 raise ValidationError(f"cannot open output file {file}: {e}") from e
             self.file.write("[\n")

@@ -624,14 +624,9 @@ def test_number_eq() -> None:
     assert Number(1) == Number(1)
     assert Number(1, 10) == Number(1, 16)
     assert Number(42, 16) == Number(42, 10)
-    assert not Number(1) == Number(2)
-    assert not Number(1, 16) == Number(2, 16)
 
 
 def test_number_ne() -> None:
-    assert not Number(1) != Number(1)
-    assert not Number(1, 10) != Number(1, 16)
-    assert not Number(42, 16) != Number(42, 10)
     assert Number(1) != Number(2)
     assert Number(1, 16) != Number(2, 16)
 

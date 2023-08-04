@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import itertools
 from abc import abstractmethod
 from collections import defaultdict
@@ -827,7 +828,7 @@ class Session(AbstractSession):
                     ],
                 )
 
-    def _typify_variable(  # noqa: PLR0912
+    def _typify_variable(
         self, expression: expr.Expr, declarations: Mapping[ID, decl.Declaration]
     ) -> expr.Expr:
         if isinstance(
@@ -848,32 +849,28 @@ class Session(AbstractSession):
                 assert identifier not in self._enum_literals
                 if identifier in declarations:
                     expression.type_ = declarations[identifier].type_
-            if isinstance(expression, expr.Literal):
-                if identifier in self._enum_literals:
-                    expression.type_ = self._enum_literals[identifier].type_
+            if isinstance(expression, expr.Literal) and identifier in self._enum_literals:
+                expression.type_ = self._enum_literals[identifier].type_
             if isinstance(expression, expr.TypeName):
                 expression.type_ = self._type_names[identifier].type_
-            if isinstance(expression, expr.Call):
-                if identifier in declarations:
-                    expression.type_ = declarations[identifier].type_
-                    declaration = declarations[identifier]
-                    assert isinstance(declaration, decl.FunctionDeclaration)
-                    expression.argument_types = [a.type_ for a in declaration.arguments]
-            if isinstance(expression, expr.Conversion):
-                if identifier in self.types:
-                    expression.type_ = self.types[identifier].type_
-                    expression.argument_types = [
-                        t.pdu.type_
-                        for t in self.types.values()
-                        if isinstance(t, Refinement) and t.sdu.identifier == identifier
-                    ]
+            if isinstance(expression, expr.Call) and identifier in declarations:
+                expression.type_ = declarations[identifier].type_
+                declaration = declarations[identifier]
+                assert isinstance(declaration, decl.FunctionDeclaration)
+                expression.argument_types = [a.type_ for a in declaration.arguments]
+            if isinstance(expression, expr.Conversion) and identifier in self.types:
+                expression.type_ = self.types[identifier].type_
+                expression.argument_types = [
+                    t.pdu.type_
+                    for t in self.types.values()
+                    if isinstance(t, Refinement) and t.sdu.identifier == identifier
+                ]
             if isinstance(expression, expr.MessageAggregate):
                 type_identifier = mty.internal_type_identifier(identifier, self.package)
                 if type_identifier in self.types:
                     expression.type_ = self.types[type_identifier].type_
-            if isinstance(expression, expr.DeltaMessageAggregate):
-                if identifier in declarations:
-                    expression.type_ = declarations[identifier].type_
+            if isinstance(expression, expr.DeltaMessageAggregate) and identifier in declarations:
+                expression.type_ = declarations[identifier].type_
 
         return expression
 
@@ -882,10 +879,8 @@ class Session(AbstractSession):
         variables: Iterable[expr.Variable], declarations: Mapping[ID, decl.Declaration]
     ) -> None:
         for v in variables:
-            try:
+            with contextlib.suppress(KeyError):
                 declarations[v.identifier].reference()
-            except KeyError:
-                pass
 
     def _validate(self) -> None:
         self._validate_states()

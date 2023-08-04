@@ -188,9 +188,8 @@ def messages(  # noqa: PLR0915
     def size(pair: FieldPair) -> expr.Expr:
         max_size = 2**29 - 1
         if isinstance(pair.target_type, (Opaque, Sequence)):
-            if isinstance(pair.source_type, Integer):
-                if pair.source_type.last.value <= max_size:
-                    return expr.Mul(expr.Variable(pair.source.name), expr.Number(8))
+            if isinstance(pair.source_type, Integer) and pair.source_type.last.value <= max_size:
+                return expr.Mul(expr.Variable(pair.source.name), expr.Number(8))
             return expr.Number(
                 draw(st.integers(min_value=1, max_value=max_size).map(lambda x: x * 8))
             )

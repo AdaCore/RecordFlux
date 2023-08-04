@@ -537,9 +537,8 @@ class AssExpr(Expr):
                 (Greater, LessEqual),
                 (NotEqual, Equal),
             ]:
-                if isinstance(term, relation):
-                    if inverse_relation(term.left, term.right) in terms:
-                        return [FALSE if isinstance(self, And) else TRUE]
+                if isinstance(term, relation) and inverse_relation(term.left, term.right) in terms:
+                    return [FALSE if isinstance(self, And) else TRUE]
 
         if total != self.neutral_element():
             terms.append(TRUE if total else FALSE)
@@ -3569,24 +3568,23 @@ class CaseExpr(Expr):
 
         for i1, (_, e1) in enumerate(self.choices):
             for i2, (_, e2) in enumerate(self.choices):
-                if i1 < i2:
-                    if not e1.type_.is_compatible(e2.type_):
-                        error.extend(
-                            [
-                                (
-                                    f'dependent expression "{e1}" has incompatible {e1.type_}',
-                                    Subsystem.MODEL,
-                                    Severity.ERROR,
-                                    e1.location,
-                                ),
-                                (
-                                    f'conflicting with "{e2}" which has {e2.type_}',
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    e2.location,
-                                ),
-                            ]
-                        )
+                if i1 < i2 and not e1.type_.is_compatible(e2.type_):
+                    error.extend(
+                        [
+                            (
+                                f'dependent expression "{e1}" has incompatible {e1.type_}',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                e1.location,
+                            ),
+                            (
+                                f'conflicting with "{e2}" which has {e2.type_}',
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                e2.location,
+                            ),
+                        ]
+                    )
 
         error += self.expr.check_type_instance(rty.Any)
         error.propagate()

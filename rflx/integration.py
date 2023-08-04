@@ -151,8 +151,8 @@ class Integration:
     ) -> None:
         if integration.buffer_size.global_ is None:
             return
-        session_decl_vars = [str(x.name) for x in session.declarations.keys()]
-        for var_name in integration.buffer_size.global_.keys():
+        session_decl_vars = [str(x.name) for x in session.declarations]
+        for var_name in integration.buffer_size.global_:
             if var_name not in session_decl_vars:
                 error.extend(
                     [
@@ -194,8 +194,8 @@ class Integration:
                     ]
                 )
                 return
-            state_declaration_vars = [str(x.name) for x in state.declarations.keys()]
-            for var_name in state_entry.keys():
+            state_declaration_vars = [str(x.name) for x in state.declarations]
+            for var_name in state_entry:
                 if var_name not in state_declaration_vars:
                     error.extend(
                         [

@@ -4773,10 +4773,10 @@ def test_possibly_always_true_message_condition(
         },
     )
     captured = capsys.readouterr()
-    assert (
+    assert captured.out == (
         '<stdin>:10:20: model: warning: condition "Tag = TLV::Msg_Data"'
         ' on transition "Tag" -> "Final" might be always true\n'
-    ) == captured.out
+    )
 
 
 @pytest.mark.parametrize(
