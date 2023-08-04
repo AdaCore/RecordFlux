@@ -981,7 +981,7 @@ class Add(MathAssExpr):
         return ada.Add(*[t.ada_expr() for t in self.terms])
 
     def z3expr(self) -> z3.ArithRef:
-        terms = [t for t in map(lambda e: e.z3expr(), self.terms) if isinstance(t, z3.ArithRef)]
+        terms = [t for t in (e.z3expr() for e in self.terms) if isinstance(t, z3.ArithRef)]
         if len(terms) != len(self.terms):
             raise Z3TypeError("adding non-arithmetic terms")
         return z3.Sum(*terms)
@@ -1009,7 +1009,7 @@ class Mul(MathAssExpr):
         return ada.Mul(*[t.ada_expr() for t in self.terms])
 
     def z3expr(self) -> z3.ArithRef:
-        terms = [t for t in map(lambda e: e.z3expr(), self.terms) if isinstance(t, z3.ArithRef)]
+        terms = [t for t in (e.z3expr() for e in self.terms) if isinstance(t, z3.ArithRef)]
         if len(terms) != len(self.terms):
             raise Z3TypeError("multiplying non-arithmetic terms")
         return z3.Product(*terms)

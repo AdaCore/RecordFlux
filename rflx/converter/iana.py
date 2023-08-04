@@ -162,7 +162,7 @@ def _convert_registry_to_enum_type(
 
 def _get_name_tag(record: Element) -> Optional[str]:
     sub_elements = record.findall("*", NAMESPACE)
-    child_names = set(c.tag[c.tag.index("}") + 1 :] for c in sub_elements)
+    child_names = {c.tag[c.tag.index("}") + 1 :] for c in sub_elements}
     possible_name_tags = ["name", "code", "type", "description"]
     for tag in possible_name_tags:
         if tag in child_names:

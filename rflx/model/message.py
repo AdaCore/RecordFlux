@@ -1062,7 +1062,7 @@ class Message(AbstractMessage):
                 if not (
                     set(field_values)
                     - set(self.parameters)
-                    - set(l.target for l in path if l.target != FINAL)
+                    - {l.target for l in path if l.target != FINAL}
                 )
             ]
 

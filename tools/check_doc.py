@@ -366,7 +366,7 @@ def main() -> None:
     exclude = arguments.exclude or []
 
     try:
-        check_files(list(doc for doc in Path(arguments.dir).glob("**/*.rst") if doc not in exclude))
+        check_files([doc for doc in Path(arguments.dir).glob("**/*.rst") if doc not in exclude])
     except CheckDocError as e:
         sys.exit(f"{e}")
 

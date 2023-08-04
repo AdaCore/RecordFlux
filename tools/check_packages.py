@@ -30,7 +30,7 @@ def missing_init(dirs: Sequence[Path]) -> bool:
     missing = False
 
     for d in dirs:
-        files = set(f.name for f in d.glob("*.py"))
+        files = {f.name for f in d.glob("*.py")}
         if files and "__init__.py" not in files:
             print(f"missing __init__.py in {d}")
             missing = True
