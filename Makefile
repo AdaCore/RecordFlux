@@ -103,12 +103,9 @@ contrib/adasat:
 	$(VERBOSE)mkdir -p contrib
 	$(VERBOSE)git clone $(ADASAT_ORIGIN)/adasat.git contrib/adasat
 
-.PHONY: check check_packages check_dependencies check_contracts check_doc
+.PHONY: check check_dependencies check_contracts check_doc
 
-check: check_packages check_dependencies common_check check_contracts check_doc
-
-check_packages:
-	tools/check_packages.py $(PYTHON_PACKAGES)
+check: check_dependencies common_check check_contracts check_doc
 
 check_dependencies:
 	tools/check_dependencies.py
