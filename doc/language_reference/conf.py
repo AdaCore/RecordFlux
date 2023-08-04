@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 # -- Project information -----------------------------------------------------
 
 project = "RecordFlux"
-copyright = "2023, AdaCore"
+copyright = "2023, AdaCore"  # noqa: A001
 author = "AdaCore"
 recordflux_version = __version__
 version = recordflux_version

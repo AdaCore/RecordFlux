@@ -27,7 +27,7 @@ FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pyca
 
 
 class ConfigFile(BaseModel):
-    input: Optional[ty.Mapping[str, Optional[ty.Sequence[str]]]]
+    input: Optional[ty.Mapping[str, Optional[ty.Sequence[str]]]]  # noqa: A003
     output: Optional[ty.Sequence[str]]
     sequence: Optional[str]
     prove: Optional[ty.Sequence[str]]

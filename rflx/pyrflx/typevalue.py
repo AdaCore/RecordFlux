@@ -983,7 +983,7 @@ class MessageValue(TypeValue):
         self._update_simplified_mapping(message_size)
         check_outgoing_condition_satisfied()
 
-    def set(
+    def set(  # noqa: A003
         self,
         field_name: str,
         value: Union[bytes, int, str, abc.Sequence[TypeValue]],
@@ -1443,7 +1443,7 @@ class MessageValue(TypeValue):
             return NotImplemented
 
         @property
-        def set(self) -> bool:
+        def set(self) -> bool:  # noqa: A003
             return (
                 self.typeval.initialized
                 and isinstance(self.typeval.size, Number)

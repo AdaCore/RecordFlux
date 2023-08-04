@@ -108,7 +108,7 @@ class Model(Base):
             else:
                 pkg_name = d.package
                 pkgs.setdefault(pkg_name, Package(pkg_name)).declarations.append(d)
-        return {id: str(pkg) for id, pkg in pkgs.items()}
+        return {identifier: str(pkg) for identifier, pkg in pkgs.items()}
 
     def write_specification_files(self, output_dir: Path) -> None:
         """Write corresponding specification files (one per package) into given directory."""
