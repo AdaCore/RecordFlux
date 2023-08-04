@@ -160,7 +160,7 @@ def test_not_neg() -> None:
     assert -Not(Variable("X")) == Variable("X")
     assert -Variable("X") != Variable("X")
     y = Variable("Y")
-    assert y == y
+    assert y == y  # noqa: PLR0124
     assert y != -y
 
 

@@ -2788,7 +2788,7 @@ class UncheckedMessage(mty.UncheckedType):
                     )
                     arguments[type_identifier] = dict(type_arguments)
                 if field in message_types:
-                    error.extend(
+                    error.extend(  # pragma: no branch
                         [
                             (
                                 f'name conflict for "{field.identifier}"',
@@ -2800,7 +2800,7 @@ class UncheckedMessage(mty.UncheckedType):
                                 "conflicting name",
                                 Subsystem.MODEL,
                                 Severity.INFO,
-                                [f.identifier for f in message_types if f == field][0].location,
+                                next(f.identifier for f in message_types if f == field).location,
                             ),
                         ]
                     )

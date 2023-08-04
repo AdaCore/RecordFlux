@@ -295,7 +295,7 @@ def get_source_files():
 
 
 def run(files, mode, skip_verification=False, options=None):
-    assert mode == "check" or mode == "generate" or mode == "graph"
+    assert mode in ("check", "generate", "graph")
     options = options or []
 
     GPS.MDI.save_all(force=True)
@@ -367,9 +367,7 @@ def display_message_graph(filename):
     message_name = get_message_name(locations, name, line, column)
     if not message_name:
         GPS.MDI.dialog(
-            "No message found at {name}:{line}:{column}".format(
-                name=name, line=line, column=column
-            ),
+            f"No message found at {name}:{line}:{column}",
             "Error opening graph",
         )
         return

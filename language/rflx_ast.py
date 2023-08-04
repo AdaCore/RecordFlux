@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from langkit.dsl import ASTNode, Field, abstract
 
 
@@ -60,7 +62,7 @@ class Op(RFLXNode):
     """Operators for binary expressions."""
 
     enum_node = True
-    alternatives = [
+    alternatives: ClassVar[list[str]] = [
         "pow",
         "mul",
         "div",
@@ -180,7 +182,7 @@ class AttrStmt(RFLXNode):
     """Attribute statement kind."""
 
     enum_node = True
-    alternatives = [
+    alternatives: ClassVar[list[str]] = [
         "append",
         "extend",
         "read",
@@ -412,7 +414,7 @@ class ChecksumAspect(MessageAspect):
 
 class ByteOrderType(RFLXNode):
     enum_node = True
-    alternatives = [
+    alternatives: ClassVar[list[str]] = [
         "highorderfirst",
         "loworderfirst",
     ]
@@ -435,7 +437,7 @@ class Attr(RFLXNode):
     """Attribute kind."""
 
     enum_node = True
-    alternatives = [
+    alternatives: ClassVar[list[str]] = [
         "first",
         "size",
         "last",
@@ -494,7 +496,7 @@ class Quantifier(RFLXNode):
     """Quantifier kind."""
 
     enum_node = True
-    alternatives = [
+    alternatives: ClassVar[list[str]] = [
         "all",
         "some",
     ]

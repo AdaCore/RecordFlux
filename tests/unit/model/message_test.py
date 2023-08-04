@@ -4691,7 +4691,7 @@ def test_always_false_refinement(message: Message, condition: Expr) -> None:
 def test_always_true_message_condition(
     structure: abc.Sequence[Link], types: abc.Mapping[Field, Type]
 ) -> None:
-    link_to_final = [l for l in structure if l.target == FINAL][0]
+    link_to_final = next(l for l in structure if l.target == FINAL)  # pragma: no branch
     assert_message_model_error(
         structure,
         types,

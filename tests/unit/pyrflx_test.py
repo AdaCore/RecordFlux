@@ -632,10 +632,10 @@ def test_opaque_value_eq(enum_value: EnumValue) -> None:
     rangetype2 = Integer("Test::Int", expr.Number(0), expr.Number(100), expr.Number(16))
     rv2 = IntegerValue(rangetype2)
     rv3 = IntegerValue(rangetype2)
-    assert ov == ov
-    assert ev == ev
-    assert rv == rv
-    assert rv2 == rv2
+    assert ov == ov  # noqa: PLR0124
+    assert ev == ev  # noqa: PLR0124
+    assert rv == rv  # noqa: PLR0124
+    assert rv2 == rv2  # noqa: PLR0124
     assert ev != rv
     assert rv2 == rv3
     rv2.assign(2)

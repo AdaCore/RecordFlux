@@ -191,8 +191,7 @@ def _check_conflicts(
             and isinstance(e2, type_.Enumeration)
             and i1 < i2
             and (
-                e1.package == e2.package
-                or e1.package == const.BUILTINS_PACKAGE
+                e1.package in (e2.package, const.BUILTINS_PACKAGE)
                 or e2.package == const.BUILTINS_PACKAGE
             )
         )

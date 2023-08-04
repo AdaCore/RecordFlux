@@ -131,7 +131,7 @@ def assert_ast_files(  # type: ignore[misc]
 def assert_ast_string(string: str, expected: Mapping[str, Any]) -> None:  # type: ignore[misc]
     p = parser.Parser()
     p.parse_string(string)
-    assert to_dict(list(p.specifications.items())[0][1]) == expected
+    assert to_dict(next(iter(p.specifications.items()))[1]) == expected
 
 
 def assert_error_files(filenames: Sequence[str], regex: str) -> None:

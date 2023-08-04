@@ -440,7 +440,7 @@ class Enumeration(Scalar):
 
         prefixed_literals = {self.package * l: v for l, v in literals.items()}
         if self.package == const.BUILTINS_PACKAGE:
-            literals = literals
+            pass
         elif same_package:
             literals = {**literals, **prefixed_literals}
         else:

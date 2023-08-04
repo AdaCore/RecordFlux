@@ -161,7 +161,9 @@ def _check_indentation(error: RecordFluxError, line: str, row: int, spec_file: P
             )
 
 
-def _check_token_spacing(error: RecordFluxError, line: str, row: int, spec_file: Path) -> None:
+def _check_token_spacing(  # noqa: PLR0912
+    error: RecordFluxError, line: str, row: int, spec_file: Path
+) -> None:
     strings = [range(m.start(), m.end()) for m in re.finditer(r'"[^"]*"', line.split("--")[0])]
 
     for match in re.finditer(
