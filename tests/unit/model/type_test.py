@@ -368,7 +368,7 @@ def test_sequence_dependencies() -> None:
 
 
 @pytest.mark.parametrize(
-    "element_type, error",
+    ("element_type", "error"),
     [
         (
             Sequence("P::B", models.INTEGER, Location((3, 4))),
@@ -447,7 +447,7 @@ def test_sequence_unsupported_element_type() -> None:
 
 
 @pytest.mark.parametrize(
-    ["unchecked", "expected"],
+    ("unchecked", "expected"),
     [
         (
             UncheckedInteger(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2))),
@@ -494,7 +494,7 @@ def test_unchecked_type_checked(unchecked: UncheckedType, expected: Type) -> Non
 
 
 @pytest.mark.parametrize(
-    ["unchecked", "expected"],
+    ("unchecked", "expected"),
     [
         (
             UncheckedInteger(

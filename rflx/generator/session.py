@@ -3748,7 +3748,8 @@ class SessionGenerator:
 
     @_to_ada_expr.register
     def _(self, expression: ir.IfExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
-        assert expression.then_expr.is_expr() and expression.else_expr.is_expr()
+        assert expression.then_expr.is_expr()
+        assert expression.else_expr.is_expr()
         return ada.If(
             [
                 (

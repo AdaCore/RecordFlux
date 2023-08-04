@@ -401,7 +401,7 @@ KEYWORD_TESTS = [
 
 
 @pytest.mark.parametrize(
-    "text,rule",
+    ("text", "rule"),
     [(t, r) for _, t, r in KEYWORD_TESTS],
     ids=[f"{k}->{r[:-5]}" for (k, _, r) in KEYWORD_TESTS],
 )
@@ -417,7 +417,7 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "(case A is when V1 => 1, when V2 => 2)",

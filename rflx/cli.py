@@ -322,7 +322,8 @@ class Requirement:
 
         if match:
             groups = match.groups()
-            assert len(groups) == 2 and isinstance(groups[0], str)
+            assert len(groups) == 2
+            assert isinstance(groups[0], str)
             self.name = groups[0]
             self.extra = groups[1]
         else:

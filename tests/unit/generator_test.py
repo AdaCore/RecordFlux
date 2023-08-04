@@ -9,8 +9,6 @@ from typing import Optional
 
 import pytest
 import z3
-from _pytest.capture import CaptureFixture
-from _pytest.monkeypatch import MonkeyPatch
 from attr import define
 
 from rflx import ada, const as constants, expression as expr, ir, typing_ as rty
@@ -65,7 +63,7 @@ def test_unsupported_checksum(tmp_path: Path) -> None:
         Generator().generate(models.TLV_WITH_CHECKSUM_MODEL, Integration(), tmp_path)
 
 
-def test_ignore_unsupported_checksum(capsys: CaptureFixture[str], tmp_path: Path) -> None:
+def test_ignore_unsupported_checksum(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
     Generator(ignore_unsupported_checksum=True).generate(
         models.TLV_WITH_CHECKSUM_MODEL, Integration(), tmp_path
     )
@@ -83,7 +81,7 @@ def test_unexpected_type(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "debug, debug_expected",
+    ("debug", "debug_expected"),
     [
         (Debug.NONE, set()),
         (Debug.BUILTIN, set()),
@@ -91,7 +89,7 @@ def test_unexpected_type(tmp_path: Path) -> None:
     ],
 )
 @pytest.mark.parametrize(
-    "prefix, library_files, top_level_package, expected",
+    ("prefix", "library_files", "top_level_package", "expected"),
     [
         ("RFLX", True, True, {"rflx.ads"} | {f"rflx-{f}" for f in const.LIBRARY_FILES}),
         ("RFLX", True, False, {f"rflx-{f}" for f in const.LIBRARY_FILES}),
@@ -128,14 +126,16 @@ def test_generate(  # noqa: PLR0913
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_generate_missing_template_directory(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+def test_generate_missing_template_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setattr(const, "TEMPLATE_DIR", tmp_path / "non-existent directory")
     with pytest.raises(AssertionError, match="^template directory not found"):
         Generator().generate(Model(), Integration(), tmp_path)
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_generate_missing_template_files(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+def test_generate_missing_template_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(const, "TEMPLATE_DIR", tmp_path)
     with pytest.raises(AssertionError, match="^template file not found"):
         Generator().generate(Model(), Integration(), tmp_path)
@@ -165,7 +165,7 @@ def test_equality(model: Model, tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("embedded", [True, False])
 @pytest.mark.parametrize(
-    "left,right",
+    ("left", "right"),
     [
         (expr.Variable("Value"), expr.Aggregate(expr.Number(1), expr.Number(2))),
         (expr.Aggregate(expr.Number(1), expr.Number(2)), expr.Variable("Value")),
@@ -234,7 +234,7 @@ def test_substitution_relation_aggregate(
 
 
 @pytest.mark.parametrize(
-    "left,right,expected_left,expected_right",
+    ("left", "right", "expected_left", "expected_right"),
     [
         (
             expr.Variable("Value"),
@@ -264,7 +264,7 @@ def test_substitution_relation_boolean_literal(
 
 
 @pytest.mark.parametrize(
-    "expressions,expected",
+    ("expressions", "expected"),
     [
         (
             (expr.Variable("Length"), expr.Number(1)),
@@ -321,7 +321,7 @@ DUMMY_SESSION = ir.Session(
 
 
 @pytest.mark.parametrize(
-    "parameter, expected",
+    ("parameter", "expected"),
     [
         (
             ir.FuncDecl("F", [], "T", type_=rty.BOOLEAN, location=None),
@@ -394,7 +394,7 @@ class UnknownDeclaration(ir.FormalDecl):
 
 
 @pytest.mark.parametrize(
-    "parameter, error_type, error_msg",
+    ("parameter", "error_type", "error_msg"),
     [
         (
             ir.FuncDecl(
@@ -483,7 +483,7 @@ def test_session_create_abstract_functions_error(
 
 
 @pytest.mark.parametrize(
-    "declaration, session_global, expected",
+    ("declaration", "session_global", "expected"),
     [
         (
             ir.VarDecl("X", rty.BOOLEAN),
@@ -711,7 +711,7 @@ class EvaluatedDeclarationStr:
 
 
 @pytest.mark.parametrize(
-    "type_, expression, constant, session_global, expected",
+    ("type_", "expression", "constant", "session_global", "expected"),
     [
         (
             rty.Integer("T"),
@@ -973,7 +973,7 @@ def test_session_declare(
 
 
 @pytest.mark.parametrize(
-    "type_, expression, error_type, error_msg",
+    ("type_", "expression", "error_type", "error_msg"),
     [
         (
             rty.Integer("T"),
@@ -1068,7 +1068,7 @@ class UnknownStatement(ir.Stmt):
 
 
 @pytest.mark.parametrize(
-    "action, expected",
+    ("action", "expected"),
     [
         (
             # Eng/RecordFlux/RecordFlux#1069
@@ -1264,7 +1264,7 @@ def test_session_state_action(action: ir.Stmt, expected: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "action, error_type, error_msg",
+    ("action", "error_type", "error_msg"),
     [
         (
             ir.Extend(
@@ -1320,7 +1320,7 @@ class UnknownExpr(ir.Expr):
 
 
 @pytest.mark.parametrize(
-    "type_, expression, error_type, error_msg",
+    ("type_", "expression", "error_type", "error_msg"),
     [
         (
             rty.Sequence("A", rty.Integer("B")),
@@ -1685,7 +1685,7 @@ def test_session_assign_error(
 
 
 @pytest.mark.parametrize(
-    "append, error_type, error_msg",
+    ("append", "error_type", "error_msg"),
     [
         (
             ir.Append(
@@ -1753,7 +1753,7 @@ def test_session_append_error(
 
 
 @pytest.mark.parametrize(
-    "read, error_type, error_msg",
+    ("read", "error_type", "error_msg"),
     [
         (
             ir.Read(
@@ -1782,7 +1782,7 @@ def test_session_read_error(read: ir.Read, error_type: type[BaseError], error_ms
 
 
 @pytest.mark.parametrize(
-    "write, error_type, error_msg",
+    ("write", "error_type", "error_msg"),
     [
         (
             ir.Write(
@@ -1808,7 +1808,7 @@ def test_session_write_error(write: ir.Write, error_type: type[BaseError], error
 
 
 @pytest.mark.parametrize(
-    "expression, expected",
+    ("expression", "expected"),
     [
         (
             ir.IntIfExpr(
@@ -1866,7 +1866,7 @@ def test_session_to_ada_expr(expression: ir.Expr, expected: ada.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "relation, left, right, expected",
+    ("relation", "left", "right", "expected"),
     [
         (ir.Equal, ir.BoolVar("X"), ir.BoolVal(value=True), ada.Variable("X")),
         (ir.Equal, ir.BoolVar("X"), ir.BoolVal(value=False), ada.Not(ada.Variable("X"))),
@@ -1949,7 +1949,7 @@ def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "always_valid, expected",
+    ("always_valid", "expected"),
     [
         (
             False,

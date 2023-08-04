@@ -5,7 +5,6 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
-from _pytest.capture import CaptureFixture
 
 from rflx import expression as expr
 from rflx.identifier import ID
@@ -285,7 +284,7 @@ def test_validate_negative_output(tmp_path: Path) -> None:
     )
 
 
-def test_validate_coverage(capsys: CaptureFixture[str]) -> None:
+def test_validate_coverage(capsys: pytest.CaptureFixture[str]) -> None:
     validator = Validator(
         [SPEC_DIR / "ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
     )
@@ -325,7 +324,7 @@ TOTAL                                            10         10         100.00%
     assert capsys.readouterr().out == expected_output
 
 
-def test_coverage_threshold_missed(capsys: CaptureFixture[str]) -> None:
+def test_coverage_threshold_missed(capsys: pytest.CaptureFixture[str]) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
@@ -468,7 +467,7 @@ def test_validate_message_parameterized_message() -> None:
 
 
 @pytest.mark.parametrize(
-    "expression,expected",
+    ("expression", "expected"),
     [
         (
             expr.Or(

@@ -7,7 +7,7 @@ from tests.language.utils import parse
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("X", {"_kind": "UnqualifiedID", "_value": "X"}),
         ("X2", {"_kind": "UnqualifiedID", "_value": "X2"}),
@@ -21,7 +21,7 @@ def test_unqualified_identifier(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "X",
@@ -95,7 +95,7 @@ def test_qualified_identifier(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("1000", {"_kind": "NumericLiteral", "_value": "1000"}),
         ("1_000", {"_kind": "NumericLiteral", "_value": "1_000"}),
@@ -137,7 +137,7 @@ def test_expression_numeric_literal(string: str, expected: dict[str, str]) -> No
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "X",
@@ -169,7 +169,7 @@ def test_variable(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "X'First",
@@ -354,7 +354,7 @@ def test_expression_suffix(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "A - B * 2**3 - 1",
@@ -636,7 +636,7 @@ def test_expression_mathematical(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "X = Y",
@@ -778,7 +778,7 @@ def test_expression_relation(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "X and Y",
@@ -863,7 +863,7 @@ def test_expression_boolean(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "X + Y",
@@ -925,7 +925,7 @@ def test_mathematical_expression(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "X and Y",
@@ -987,7 +987,7 @@ def test_boolean_expression(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("42", {"_kind": "NumericLiteral", "_value": "42"}),
         ('"Foo Bar"', {"_kind": "StringLiteral", "_value": '"Foo Bar"'}),
@@ -1365,7 +1365,7 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "X'Valid = True",
@@ -2621,7 +2621,7 @@ def test_expression_complex(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "X : Channel with Readable",
@@ -2658,7 +2658,7 @@ def test_channel_declaration(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "with function X return Y",
@@ -2716,7 +2716,7 @@ def test_formal_function_declaration(string: str, expected: dict[str, str]) -> N
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "A : B",
@@ -2772,7 +2772,7 @@ def test_variable_declaration(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "A : B renames C.D",
@@ -2806,7 +2806,7 @@ def test_renaming_declaration(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "A := B",
@@ -2831,7 +2831,7 @@ def test_assignment_statement(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "A.B := C",
@@ -2857,7 +2857,7 @@ def test_message_field_assignment_statement(string: str, expected: dict[str, str
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "A'Append (B)",
@@ -2958,7 +2958,7 @@ def test_attribute_statement(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             """
@@ -3251,7 +3251,7 @@ def test_state(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             """
@@ -3425,7 +3425,7 @@ def test_session_declaration(string: str, expected: dict[str, str]) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "type T is mod 8",

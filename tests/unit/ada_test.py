@@ -579,7 +579,7 @@ def test_conversion_rflx_expr() -> None:
 
 
 @pytest.mark.parametrize(
-    "aspect, expected",
+    ("aspect", "expected"),
     [
         (ada.Precondition(ada.Variable("X")), "Pre =>\n  X"),
         (ada.Postcondition(ada.Variable("X")), "Post =>\n  X"),

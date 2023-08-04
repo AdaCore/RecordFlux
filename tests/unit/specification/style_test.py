@@ -86,7 +86,7 @@ def test_no_error(spec: str, tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "spec,error",
+    ("spec", "error"),
     [
         (
             "\npackage Test is end Test;",
@@ -157,7 +157,7 @@ def test_error(tmp_path: Path, spec: str, error: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "spec, disabled_checks",
+    ("spec", "disabled_checks"),
     [
         (
             "package Test is end Test;\n\n",

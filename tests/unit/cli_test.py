@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Optional
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 
 import rflx.specification
 from rflx import cli, generator, validator
@@ -67,19 +66,19 @@ def test_main_check_quiet() -> None:
     assert cli.main(["rflx", "--quiet", "check", MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]) == 0
 
 
-def test_main_check_parser_error(monkeypatch: MonkeyPatch) -> None:
+def test_main_check_parser_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "check", lambda _: raise_parser_error())
     assert "<stdin>:8:22: parser: error: TEST" in str(
         cli.main(["rflx", "check", MESSAGE_SPEC_FILE])
     )
 
 
-def test_main_check_model_error_parse(monkeypatch: MonkeyPatch) -> None:
+def test_main_check_model_error_parse(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "check", lambda _: raise_model_error())
     assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", MESSAGE_SPEC_FILE]))
 
 
-def test_main_check_model_error_create_model(monkeypatch: MonkeyPatch) -> None:
+def test_main_check_model_error_create_model(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(rflx.specification.Parser, "parse", lambda _x, _y: raise_parser_error())
     monkeypatch.setattr(rflx.specification.Parser, "create_model", lambda _: raise_model_error())
     assert "<stdin>:8:22: parser: error: TEST\n<stdin>:8:22: model: error: TEST" in str(
@@ -185,7 +184,7 @@ def test_main_generate_non_existent_directory() -> None:
 
 
 @pytest.mark.parametrize(
-    "args, expected",
+    ("args", "expected"),
     [
         ([], generator.Debug.NONE),
         (["--debug", "built-in"], generator.Debug.BUILTIN),
@@ -193,7 +192,7 @@ def test_main_generate_non_existent_directory() -> None:
     ],
 )
 def test_main_generate_debug(
-    args: list[str], expected: generator.Debug, monkeypatch: MonkeyPatch, tmp_path: Path
+    args: list[str], expected: generator.Debug, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     result = []
 
@@ -380,7 +379,7 @@ def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
     )
 
 
-def test_main_validate_non_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+def test_main_validate_non_fatal_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
     monkeypatch.setattr(
         validator.Validator, "validate", lambda _a, _b, _c, _d, _e, _f, _g, _h: raise_parser_error()
@@ -402,7 +401,7 @@ def test_main_validate_non_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path)
     )
 
 
-def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+def test_main_validate_validation_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
     monkeypatch.setattr(
         validator.Validator,
@@ -425,7 +424,7 @@ def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path
 
 @pytest.mark.parametrize("raise_error", [raise_unexpected_exception, raise_pyrflx_error])
 def test_main_validate_fatal_error(
-    monkeypatch: MonkeyPatch, tmp_path: Path, raise_error: Callable[[], None]
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, raise_error: Callable[[], None]
 ) -> None:
     monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
     monkeypatch.setattr(
@@ -445,7 +444,7 @@ def test_main_validate_fatal_error(
     )
 
 
-def test_main_unexpected_exception(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+def test_main_unexpected_exception(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
     assert re.fullmatch(
         r"\n-* RecordFlux Bug -*.*Traceback.*-*.*RecordFlux/issues.*",
@@ -509,7 +508,7 @@ def test_missing_unsafe_option() -> None:
     )
 
 
-def test_exception_in_unsafe_mode(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+def test_exception_in_unsafe_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
     assert re.fullmatch(
         r"\n-*\nEXCEPTION IN UNSAFE MODE, PLEASE RERUN WITHOUT UNSAFE OPTIONS\n-*\n"
@@ -531,7 +530,7 @@ def test_exception_in_unsafe_mode(monkeypatch: MonkeyPatch, tmp_path: Path) -> N
     )
 
 
-def test_main_convert_iana(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+def test_main_convert_iana(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     result = []
 
     def convert_mock(
@@ -561,7 +560,7 @@ def test_main_convert_iana(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize(
-    "requirement, name, extra",
+    ("requirement", "name", "extra"),
     [
         ("pydantic (<2,>=1)", "pydantic", None),
         ("pydantic<2,>=1", "pydantic", None),

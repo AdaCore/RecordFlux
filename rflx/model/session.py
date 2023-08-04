@@ -73,7 +73,8 @@ class State(Base):
         if transitions:
             assert transitions[-1].condition == expr.TRUE, "missing default transition"
         else:
-            assert not actions and not declarations
+            assert not actions
+            assert not declarations
 
         assert exception_transition.condition == expr.TRUE if exception_transition else True
 

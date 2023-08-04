@@ -1895,7 +1895,7 @@ def test_type_error_in_renaming_declaration() -> None:
 
 
 @pytest.mark.parametrize(
-    "declarations, actions, errors",
+    ("declarations", "actions", "errors"),
     [
         (
             [
@@ -2041,7 +2041,7 @@ def test_missing_exception_transition() -> None:
 
 
 @pytest.mark.parametrize(
-    "state, types, parameters",
+    ("state", "types", "parameters"),
     [
         (
             State(
@@ -2130,7 +2130,7 @@ def test_resolving_of_function_calls() -> None:
 
 
 @pytest.mark.parametrize(
-    "actions, normalized_actions",
+    ("actions", "normalized_actions"),
     [
         (
             [
@@ -2374,7 +2374,7 @@ def test_state_normalization(
 
 
 @pytest.mark.parametrize(
-    "state, optimized_state",
+    ("state", "optimized_state"),
     [
         (State("S"), State("S")),
         (
@@ -2797,7 +2797,7 @@ def test_message_assignment_from_function() -> None:
 
 
 @pytest.mark.parametrize(
-    ["unchecked", "expected"],
+    ("unchecked", "expected"),
     [
         (
             UncheckedSession(
@@ -2902,7 +2902,7 @@ def test_unchecked_session_checked(unchecked: UncheckedSession, expected: Sessio
 
 
 @pytest.mark.parametrize(
-    ["unchecked", "expected"],
+    ("unchecked", "expected"),
     [
         (
             UncheckedSession(

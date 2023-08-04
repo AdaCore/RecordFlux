@@ -695,7 +695,7 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "mode, action",
+    ("mode", "action"),
     [
         ("Readable", "Read"),
         ("Writable", "Write"),
@@ -729,7 +729,7 @@ def test_session_single_channel(mode: str, action: str, tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "debug, expected",
+    ("debug", "expected"),
     [
         (Debug.NONE, ""),
         (Debug.BUILTIN, "State: A\nState: B\nState: C\n"),
@@ -797,7 +797,7 @@ def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Pa
 
 
 @pytest.mark.parametrize(
-    "global_rel, local_rel",
+    ("global_rel", "local_rel"),
     [("Global", "Local"), ("Global = True", "Local = True"), ("Global = False", "Local = False")],
 )
 def test_session_boolean_relations(global_rel: str, local_rel: str, tmp_path: Path) -> None:

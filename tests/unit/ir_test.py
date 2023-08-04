@@ -363,7 +363,7 @@ def test_bool_val_to_z3_expr() -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute, expected",
+    ("attribute", "expected"),
     [
         (ir.Size("X", MSG_TY), "X'Size"),
         (ir.Size("X", MSG_TY, negative=True), "-X'Size"),
@@ -386,7 +386,7 @@ def test_attr_str(attribute: ir.Attr, expected: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute, expected",
+    ("attribute", "expected"),
     [
         (ir.Size("X", MSG_TY), rty.BIT_LENGTH),
         (ir.Size("X", ENUM_TY), rty.UniversalInteger()),
@@ -406,7 +406,7 @@ def test_attr_type(attribute: ir.Attr, expected: rty.Type) -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute, expected",
+    ("attribute", "expected"),
     [
         (ir.Size("X", MSG_TY), ir.Size("Y", MSG_TY)),
         (ir.Length("X", MSG_TY), ir.Length("Y", MSG_TY)),
@@ -433,7 +433,7 @@ def test_attr_substituted(attribute: ir.Attr, expected: ir.Attr) -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute, expected",
+    ("attribute", "expected"),
     [
         (ir.Size("X", MSG_TY), z3.Int("X'Size")),
         (ir.Length("X", MSG_TY), z3.Int("X'Length")),
@@ -451,7 +451,7 @@ def test_attr_z3_expr(attribute: ir.Attr, expected: z3.ExprRef) -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute, expected",
+    ("attribute", "expected"),
     [
         (ir.FieldValid("X", "Y", MSG_TY), "X.Y'Field_Valid"),
         (ir.FieldPresent("X", "Y", MSG_TY), "X.Y'Field_Present"),
@@ -463,7 +463,7 @@ def test_field_access_attr_str(attribute: ir.FieldAccessAttr, expected: str) -> 
 
 
 @pytest.mark.parametrize(
-    "attribute, expected",
+    ("attribute", "expected"),
     [
         (ir.FieldValid("X", "Y", MSG_TY), rty.BOOLEAN),
         (ir.FieldPresent("X", "Y", MSG_TY), rty.BOOLEAN),
@@ -479,7 +479,7 @@ def test_field_access_attr_field_type() -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute, expected",
+    ("attribute", "expected"),
     [
         (ir.FieldValid("X", "Y", MSG_TY), ir.FieldValid("Y", "Y", MSG_TY)),
         (ir.FieldPresent("X", "Y", MSG_TY), ir.FieldPresent("Y", "Y", MSG_TY)),
@@ -501,7 +501,7 @@ def test_field_access_attr_substituted(
 
 
 @pytest.mark.parametrize(
-    "attribute, expected",
+    ("attribute", "expected"),
     [
         (ir.FieldValid("X", "Y", MSG_TY), z3.Bool("X.Y'Field_Valid")),
         (ir.FieldPresent("X", "Y", MSG_TY), z3.Bool("X.Y'Field_Present")),

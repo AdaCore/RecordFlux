@@ -34,7 +34,7 @@ def assert_error_string(string: str, regex: str) -> None:
     assert " model: error: " in regex
     check_regex(regex)
     p = parser.Parser()
-    with pytest.raises(RecordFluxError, match=regex):
+    with pytest.raises(RecordFluxError, match=regex):  # noqa: PT012
         p.parse_string(string)
         p.create_model()
 
@@ -616,7 +616,7 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "rfi_content,match_error",
+    ("rfi_content", "match_error"),
     [
         (
             """Session:
@@ -782,6 +782,6 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
         p.create_model()
     else:
         regex = re.compile(rf"^test.rfi:0:0: parser: error: {match_error}$", re.DOTALL)
-        with pytest.raises(RecordFluxError, match=regex):
+        with pytest.raises(RecordFluxError, match=regex):  # noqa: PT012
             p.parse(test_spec)
             p.create_model()

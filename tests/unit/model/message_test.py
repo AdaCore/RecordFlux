@@ -5,8 +5,6 @@ from collections import abc
 from copy import deepcopy
 
 import pytest
-from _pytest.capture import CaptureFixture
-from _pytest.monkeypatch import MonkeyPatch
 
 from rflx import typing_ as rty
 from rflx.error import FatalError, Location, RecordFluxError
@@ -1137,6 +1135,7 @@ def test_sequence_aggregate_invalid_element_type() -> None:
 
 
 def test_opaque_not_byte_aligned() -> None:
+    o = Field(ID("O", location=Location((44, 3))))
     with pytest.raises(
         RecordFluxError,
         match=(
@@ -1144,7 +1143,6 @@ def test_opaque_not_byte_aligned() -> None:
             r" 8 bit boundary [(]P -> O[)]$"
         ),
     ):
-        o = Field(ID("O", location=Location((44, 3))))
         Message(
             "P::M",
             [Link(INITIAL, Field("P")), Link(Field("P"), o, size=Number(128)), Link(o, FINAL)],
@@ -1153,12 +1151,12 @@ def test_opaque_not_byte_aligned() -> None:
 
 
 def test_opaque_not_byte_aligned_dynamic() -> None:
+    o2 = Field(ID("O2", location=Location((44, 3))))
     with pytest.raises(
         RecordFluxError,
         match=r'^<stdin>:44:3: model: error: opaque field "O2" not aligned to'
         r" 8 bit boundary [(]L1 -> O1 -> L2 -> O2[)]",
     ):
-        o2 = Field(ID("O2", location=Location((44, 3))))
         Message(
             "P::M",
             [
@@ -1213,6 +1211,7 @@ def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
 
 
 def test_opaque_size_not_multiple_of_8() -> None:
+    o = Field("O")
     with pytest.raises(
         RecordFluxError,
         match=(
@@ -1220,7 +1219,6 @@ def test_opaque_size_not_multiple_of_8() -> None:
             " not multiple of 8 bit [(]O[)]$"
         ),
     ):
-        o = Field("O")
         Message(
             "P::M",
             [Link(INITIAL, o, size=Number(68, location=Location((44, 3)))), Link(o, FINAL)],
@@ -1229,12 +1227,12 @@ def test_opaque_size_not_multiple_of_8() -> None:
 
 
 def test_opaque_size_not_multiple_of_8_dynamic() -> None:
+    o = Field("O")
     with pytest.raises(
         RecordFluxError,
         match=r'^<stdin>:44:3: model: error: size of opaque field "O" not multiple of 8 bit'
         " [(]L -> O[)]",
     ):
-        o = Field("O")
         Message(
             "P::M",
             [
@@ -1534,7 +1532,7 @@ def test_no_valid_path() -> None:
     )
 
 
-def test_invalid_path_1(monkeypatch: MonkeyPatch) -> None:
+def test_invalid_path_1(monkeypatch: pytest.MonkeyPatch) -> None:
     f1 = Field(ID("F1", Location((20, 10))))
     structure = [
         Link(INITIAL, f1),
@@ -1555,7 +1553,7 @@ def test_invalid_path_1(monkeypatch: MonkeyPatch) -> None:
     )
 
 
-def test_invalid_path_2(monkeypatch: MonkeyPatch) -> None:
+def test_invalid_path_2(monkeypatch: pytest.MonkeyPatch) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), condition=Equal(Number(1), Number(2))),
@@ -1991,7 +1989,7 @@ def test_incongruent_overlay() -> None:
     )
 
 
-def test_field_coverage_1(monkeypatch: MonkeyPatch) -> None:
+def test_field_coverage_1(monkeypatch: pytest.MonkeyPatch) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), first=Add(First("Message"), Number(64))),
@@ -2011,7 +2009,7 @@ def test_field_coverage_1(monkeypatch: MonkeyPatch) -> None:
     )
 
 
-def test_field_coverage_2(monkeypatch: MonkeyPatch) -> None:
+def test_field_coverage_2(monkeypatch: pytest.MonkeyPatch) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
@@ -2046,7 +2044,7 @@ def test_field_coverage_2(monkeypatch: MonkeyPatch) -> None:
     )
 
 
-def test_field_after_message_start(monkeypatch: MonkeyPatch) -> None:
+def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), first=Sub(First("Message"), Number(1000))),
@@ -2766,7 +2764,7 @@ def test_discontiguous_optional_fields() -> None:
 
 
 @pytest.mark.parametrize(
-    "checksums,condition",
+    ("checksums", "condition"),
     [
         (
             {
@@ -2810,7 +2808,7 @@ def test_checksum(checksums: abc.Mapping[ID, abc.Sequence[Expr]], condition: Exp
 
 
 @pytest.mark.parametrize(
-    "checksums,condition,error",
+    ("checksums", "condition", "error"),
     [
         (
             {ID("X", location=Location((10, 20))): []},
@@ -4090,6 +4088,7 @@ def test_merge_message_with_message_last_attribute() -> None:
             {Field("O1"): INTEGER, Field("O2_I1"): INTEGER, Field("O2_I2"): OPAQUE},
         ),
     )
+    o1 = Field(ID("O1", location=Location((2, 10))))
     with pytest.raises(
         RecordFluxError,
         match=(
@@ -4101,7 +4100,6 @@ def test_merge_message_with_message_last_attribute() -> None:
             "$"
         ),
     ):
-        o1 = Field(ID("O1", location=Location((2, 10))))
         valid_outer = (
             UnprovenMessage(
                 "P::O",
@@ -4531,7 +4529,7 @@ def test_boolean_variable_as_condition() -> None:
 
 
 @pytest.mark.parametrize(
-    "message, condition",
+    ("message", "condition"),
     [
         (
             Message(
@@ -4590,7 +4588,7 @@ def test_always_true_refinement(message: Message, condition: Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "message, condition",
+    ("message", "condition"),
     [
         (
             Message(
@@ -4649,7 +4647,7 @@ def test_always_false_refinement(message: Message, condition: Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "structure, types",
+    ("structure", "types"),
     [
         (
             [
@@ -4717,7 +4715,7 @@ def test_not_always_true_message_condition_for_always_valid_enum(value: int) -> 
 
 
 def test_possibly_always_true_refinement(
-    monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     message = Message(
         "P::M",
@@ -4751,7 +4749,7 @@ def test_possibly_always_true_refinement(
 
 
 def test_possibly_always_true_message_condition(
-    monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
     monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)
@@ -4782,7 +4780,7 @@ def test_possibly_always_true_message_condition(
 
 
 @pytest.mark.parametrize(
-    ["unchecked", "expected"],
+    ("unchecked", "expected"),
     [
         (
             UncheckedMessage(
@@ -4851,7 +4849,7 @@ def test_unchecked_message_checked(unchecked: UncheckedMessage, expected: Messag
 
 
 @pytest.mark.parametrize(
-    ["unchecked", "expected"],
+    ("unchecked", "expected"),
     [
         (
             UncheckedMessage(

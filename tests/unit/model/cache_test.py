@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-from pytest import CaptureFixture
 
 from rflx import expression as expr, model
 from rflx.model import cache
@@ -21,7 +20,7 @@ def test_init_valid(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("content", ["invalid", "[]", "{A: B}"])
-def test_init_invalid(content: str, tmp_path: Path, capsys: CaptureFixture[str]) -> None:
+def test_init_invalid(content: str, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     file = tmp_path / "test.json"
     file.write_text(content)
     cache.Cache(file)

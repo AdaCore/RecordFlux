@@ -13,7 +13,7 @@ from rflx.integration import Integration
 
 
 @pytest.mark.parametrize(
-    "rfi_content,match_error",
+    ("rfi_content", "match_error"),
     [
         ("garbage", "expected dict not str"),
         ("Session: garbage", "Session.*value is not a valid dict"),
@@ -112,8 +112,8 @@ def test_rfi_add_integration(rfi_content: str, match_error: str) -> None:
     content = yaml.load(rfi_content)
     error = RecordFluxError()
     integration = Integration()
+    integration._add_integration_object(Path("test.rfi"), content, error)  # noqa: SLF001
     with pytest.raises(RecordFluxError, match=regex):
-        integration._add_integration_object(Path("test.rfi"), content, error)  # noqa: SLF001
         error.propagate()
 
 
@@ -153,7 +153,7 @@ def test_rfi_get_size() -> None:
 
 
 @pytest.mark.parametrize(
-    "content, error_msg, line, column",
+    ("content", "error_msg", "line", "column"),
     [
         ('"', ["while scanning a quoted scalar", "unexpected end of stream"], 1, 2),
         ("Session: 1, Session : 1", ["mapping values are not allowed here"], 1, 21),
@@ -178,8 +178,8 @@ def test_load_integration_file(
         regex += rf'.*in "{test_rfi}", line [0-9]+, column [0-9]+.*'
     regex += "$"
     compiled_regex = re.compile(regex, re.DOTALL)
+    integration.load_integration_file(test_rfi, error)
     with pytest.raises(RecordFluxError, match=compiled_regex):
-        integration.load_integration_file(test_rfi, error)
         error.propagate()
 
 
@@ -199,6 +199,6 @@ def test_load_integration_path(tmp_path: Path) -> None:
         ),
         re.DOTALL,
     )
+    integration.load_integration_file(tmp_path / "test.rflx", error)
     with pytest.raises(RecordFluxError, match=regex):
-        integration.load_integration_file(tmp_path / "test.rflx", error)
         error.propagate()

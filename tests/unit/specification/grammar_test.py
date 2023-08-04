@@ -101,7 +101,7 @@ def parse_id(data: str, rule: str) -> ID:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [("X", ID("X")), ("X2", ID("X2")), ("X_Y", ID("X_Y")), ("X_Y_3", ID("X_Y_3"))],
 )
 def test_unqualified_identifier(string: str, expected: ID) -> None:
@@ -111,7 +111,7 @@ def test_unqualified_identifier(string: str, expected: ID) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("X", ID("X")),
         ("X2", ID("X2")),
@@ -130,7 +130,7 @@ def test_qualified_identifier(string: str, expected: ID) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("1000", expr.Number(1000)),
         ("1_000", expr.Number(1000)),
@@ -149,7 +149,7 @@ def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected", [("X", expr.Variable("X")), ("X::Y", expr.Variable("X::Y"))]
+    ("string", "expected"), [("X", expr.Variable("X")), ("X::Y", expr.Variable("X::Y"))]
 )
 def test_variable(string: str, expected: decl.Declaration) -> None:
     actual = parse_expression(string, lang.GrammarRule.variable_rule)
@@ -158,7 +158,7 @@ def test_variable(string: str, expected: decl.Declaration) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("X'First", expr.First(expr.Variable("X"))),
         ("X'Last", expr.Last(expr.Variable("X"))),
@@ -179,7 +179,7 @@ def test_expression_suffix(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             "A - B * 2**3 - 1",
@@ -251,7 +251,7 @@ def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("X + Y", expr.Add(expr.Variable("X"), expr.Variable("Y"))),
         ("X + Y (Z)", expr.Add(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
@@ -264,7 +264,7 @@ def test_extended_mathematical_expression(string: str, expected: expr.Expr) -> N
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("X = Y", expr.Equal(expr.Variable("X"), expr.Variable("Y"))),
         ("X /= Y", expr.NotEqual(expr.Variable("X"), expr.Variable("Y"))),
@@ -285,7 +285,7 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("X and Y", expr.And(expr.Variable("X"), expr.Variable("Y"))),
         ("X and Y (Z)", expr.And(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
@@ -298,7 +298,7 @@ def test_extended_boolean_expression(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,error",
+    ("string", "error"),
     [
         ("42 > X", "<stdin>:1:1: parser: error: boolean expression in math context"),
         ("X and Y", "<stdin>:1:1: parser: error: boolean expression in math context"),
@@ -310,7 +310,7 @@ def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,error",
+    ("string", "error"),
     [
         ("42", "<stdin>:1:1: parser: error: math expression in boolean context"),
         ("X * 3", "<stdin>:1:1: parser: error: math expression in boolean context"),
@@ -322,7 +322,7 @@ def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("42", expr.Number(42)),
         ('"Foo Bar"', expr.String("Foo Bar")),
@@ -395,7 +395,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("X'Valid = True", expr.Equal(expr.Valid(expr.Variable("X")), expr.Variable("True"))),
         ("X::Y /= Z", expr.NotEqual(expr.Variable("X::Y"), expr.Variable("Z"))),
@@ -545,7 +545,7 @@ def test_expression_complex(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("X : Channel with Readable", decl.ChannelDeclaration("X", readable=True)),
         ("X : Channel with Writable", decl.ChannelDeclaration("X", writable=True)),
@@ -580,7 +580,7 @@ def test_formal_declaration(string: str, expected: decl.Declaration) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("A : B", decl.VariableDeclaration("A", "Package::B")),
         ("A : B := C", decl.VariableDeclaration("A", "Package::B", expr.Variable("C"))),
@@ -601,7 +601,7 @@ def test_renaming_declaration() -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("A := B", stmt.VariableAssignment("A", expr.Variable("B"))),
         ("A.B := C", stmt.MessageFieldAssignment("A", "B", expr.Variable("C"))),
@@ -614,7 +614,7 @@ def test_assignment_statement(string: str, expected: stmt.Statement) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         ("A'Append (B)", stmt.Append("A", expr.Variable("B"))),
         ("A'Extend (B)", stmt.Extend("A", expr.Variable("B"))),
@@ -634,7 +634,7 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
 
 
 @pytest.mark.parametrize(
-    "string,expected",
+    ("string", "expected"),
     [
         (
             """
@@ -830,7 +830,7 @@ def test_parse_session() -> None:
 
 
 @pytest.mark.parametrize(
-    "string,error",
+    ("string", "error"),
     [
         (
             """

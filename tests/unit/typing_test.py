@@ -59,7 +59,7 @@ ENUMERATION_B = Enumeration("B", [ID("BE1"), ID("BE2"), ID("BE3")])
 
 
 @pytest.mark.parametrize(
-    "enumeration,other,expected",
+    ("enumeration", "other", "expected"),
     [
         (ENUMERATION_A, Any(), ENUMERATION_A),
         (ENUMERATION_A, ENUMERATION_A, ENUMERATION_A),
@@ -74,7 +74,7 @@ def test_enumeration_common_type(enumeration: Type, other: Type, expected: Type)
 
 
 @pytest.mark.parametrize(
-    "enumeration,other,expected",
+    ("enumeration", "other", "expected"),
     [
         (ENUMERATION_A, Any(), True),
         (ENUMERATION_A, ENUMERATION_A, True),
@@ -89,7 +89,7 @@ def test_enumeration_is_compatible(enumeration: Type, other: Type, expected: boo
 
 
 @pytest.mark.parametrize(
-    "any_integer,other,expected",
+    ("any_integer", "other", "expected"),
     [
         (AnyInteger(), Any(), AnyInteger()),
         (AnyInteger(), AnyInteger(), AnyInteger()),
@@ -118,7 +118,7 @@ def test_any_integer_common_type(any_integer: Type, other: Type, expected: Type)
 
 
 @pytest.mark.parametrize(
-    "any_integer,other,expected",
+    ("any_integer", "other", "expected"),
     [
         (AnyInteger(), Any(), True),
         (AnyInteger(), AnyInteger(), True),
@@ -147,7 +147,7 @@ def test_any_integer_is_compatible(any_integer: Type, other: Type, expected: boo
 
 
 @pytest.mark.parametrize(
-    "undefined_integer,other,expected",
+    ("undefined_integer", "other", "expected"),
     [
         (UndefinedInteger(), Any(), UndefinedInteger()),
         (UndefinedInteger(), AnyInteger(), UndefinedInteger()),
@@ -174,7 +174,7 @@ def test_undefined_integer_common_type(
 
 
 @pytest.mark.parametrize(
-    "undefined_integer,other,expected",
+    ("undefined_integer", "other", "expected"),
     [
         (UndefinedInteger(), Any(), True),
         (UndefinedInteger(), AnyInteger(), True),
@@ -201,7 +201,7 @@ def test_undefined_integer_is_compatible(
 
 
 @pytest.mark.parametrize(
-    "universal_integer,other,expected",
+    ("universal_integer", "other", "expected"),
     [
         (UniversalInteger(), Any(), UniversalInteger()),
         (UniversalInteger(), AnyInteger(), UniversalInteger()),
@@ -233,7 +233,7 @@ def test_universal_integer_common_type(
 
 
 @pytest.mark.parametrize(
-    "universal_integer,other,expected",
+    ("universal_integer", "other", "expected"),
     [
         (UniversalInteger(), Any(), True),
         (UniversalInteger(), AnyInteger(), True),
@@ -260,7 +260,7 @@ def test_universal_integer_is_compatible(
 
 
 @pytest.mark.parametrize(
-    "integer,other,expected",
+    ("integer", "other", "expected"),
     [
         (Integer("A"), Any(), Integer("A")),
         (Integer("A"), AnyInteger(), Integer("A")),
@@ -306,7 +306,7 @@ def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None
 
 
 @pytest.mark.parametrize(
-    "integer,other,expected",
+    ("integer", "other", "expected"),
     [
         (Integer("A"), Any(), True),
         (Integer("A"), AnyInteger(), True),
@@ -357,7 +357,7 @@ def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> No
 
 
 @pytest.mark.parametrize(
-    "integer,other,expected",
+    ("integer", "other", "expected"),
     [
         (Integer("A"), Any(), True),
         (Integer("A"), AnyInteger(), True),
@@ -408,7 +408,7 @@ def test_integer_is_compatible_strong(integer: Type, other: Type, expected: bool
 
 
 @pytest.mark.parametrize(
-    "aggregate,other,expected",
+    ("aggregate", "other", "expected"),
     [
         (
             Aggregate(Integer("A")),
@@ -448,7 +448,7 @@ def test_aggregate_common_type(aggregate: Type, other: Type, expected: Type) -> 
 
 
 @pytest.mark.parametrize(
-    "aggregate,other,expected",
+    ("aggregate", "other", "expected"),
     [
         (
             Aggregate(Integer("A")),
@@ -488,7 +488,7 @@ def test_aggregate_is_compatible(aggregate: Type, other: Type, expected: bool) -
 
 
 @pytest.mark.parametrize(
-    "composite,other,expected",
+    ("composite", "other", "expected"),
     [
         (
             Sequence("A", Integer("B")),
@@ -543,7 +543,7 @@ def test_composite_common_type(composite: Type, other: Type, expected: Type) -> 
 
 
 @pytest.mark.parametrize(
-    "composite,other,expected",
+    ("composite", "other", "expected"),
     [
         (
             Sequence("A", Integer("B")),
@@ -603,7 +603,7 @@ def test_composite_is_compatible(composite: Type, other: Type, expected: bool) -
 
 
 @pytest.mark.parametrize(
-    "message,other,expected",
+    ("message", "other", "expected"),
     [
         (Message("A"), Any(), Message("A")),
         (Message("A"), Message("A"), Message("A")),
@@ -618,7 +618,7 @@ def test_message_common_type(message: Type, other: Type, expected: Type) -> None
 
 
 @pytest.mark.parametrize(
-    "message,other,expected",
+    ("message", "other", "expected"),
     [
         (Message("A"), Any(), True),
         (Message("A"), Message("A"), True),
@@ -633,7 +633,7 @@ def test_message_is_compatible(message: Type, other: Type, expected: bool) -> No
 
 
 @pytest.mark.parametrize(
-    "channel,other,expected",
+    ("channel", "other", "expected"),
     [
         (Channel(readable=True, writable=False), Any(), Channel(readable=True, writable=False)),
         (
@@ -660,7 +660,7 @@ def test_channel_common_type(channel: Type, other: Type, expected: Type) -> None
 
 
 @pytest.mark.parametrize(
-    "channel,other,expected",
+    ("channel", "other", "expected"),
     [
         (Channel(readable=True, writable=False), Any(), True),
         (Any(), Channel(readable=True, writable=False), True),
@@ -680,7 +680,7 @@ def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> No
 
 
 @pytest.mark.parametrize(
-    "types,expected",
+    ("types", "expected"),
     [
         (
             [],
@@ -734,7 +734,7 @@ def test_common_type(types: abc.Sequence[Type], expected: Type) -> None:
 
 
 @pytest.mark.parametrize(
-    "actual,expected",
+    ("actual", "expected"),
     [
         (
             Any(),
@@ -747,7 +747,7 @@ def test_check_type(actual: Type, expected: Type) -> None:
 
 
 @pytest.mark.parametrize(
-    "actual,expected,match",
+    ("actual", "expected", "match"),
     [
         (
             Message("A"),
@@ -774,7 +774,7 @@ def test_check_type_error(actual: Type, expected: Type, match: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "actual,expected",
+    ("actual", "expected"),
     [
         (
             Any(),
@@ -789,7 +789,7 @@ def test_check_type_instance(
 
 
 @pytest.mark.parametrize(
-    "actual,expected,match",
+    ("actual", "expected", "match"),
     [
         (
             Message("M"),

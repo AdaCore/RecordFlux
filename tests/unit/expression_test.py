@@ -487,7 +487,7 @@ def test_and_z3expr() -> None:
     assert_equal(And(TRUE, TRUE).z3expr(), z3.And(z3.BoolVal(val=True), z3.BoolVal(val=True)))
 
 
-@pytest.mark.parametrize(["op", "ir_op"], [(And, ir.And), (Or, ir.Or)])
+@pytest.mark.parametrize(("op", "ir_op"), [(And, ir.And), (Or, ir.Or)])
 def test_and_or_to_ir(  # type: ignore[misc]
     op: Callable[..., Expr], ir_op: Callable[[ir.BoolExpr, ir.BoolExpr], ir.BoolExpr]
 ) -> None:
@@ -775,7 +775,7 @@ def test_add_z3expr() -> None:
     )
 
 
-@pytest.mark.parametrize(["op", "ir_op"], [(Add, ir.Add), (Mul, ir.Mul)])
+@pytest.mark.parametrize(("op", "ir_op"), [(Add, ir.Add), (Mul, ir.Mul)])
 def test_add_mul_to_ir(  # type: ignore[misc]
     op: Callable[..., Expr], ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr]
 ) -> None:
@@ -868,7 +868,7 @@ def test_sub_z3expr() -> None:
 
 
 @pytest.mark.parametrize(
-    ["op", "ir_op"], [(Sub, ir.Sub), (Div, ir.Div), (Pow, ir.Pow), (Mod, ir.Mod)]
+    ("op", "ir_op"), [(Sub, ir.Sub), (Div, ir.Div), (Pow, ir.Pow), (Mod, ir.Mod)]
 )
 def test_sub_div_pow_mod_to_ir(  # type: ignore[misc]
     op: Callable[..., Expr], ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr]
@@ -1053,7 +1053,7 @@ def test_attribute() -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute,expr,expected",
+    ("attribute", "expr", "expected"),
     [
         (Size, Variable("X", type_=rty.AnyInteger()), rty.UniversalInteger()),
         (Length, Variable("X", type_=rty.AnyInteger()), rty.UniversalInteger()),
@@ -1100,7 +1100,7 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
 
 
 @pytest.mark.parametrize(
-    "expr,match",
+    ("expr", "match"),
     [
         (
             Present(Variable("X", location=Location((10, 30)))),
@@ -1190,7 +1190,7 @@ def test_attribute_variables() -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute,z3name",
+    ("attribute", "z3name"),
     [
         (Size("X"), "X'Size"),
         (Length("X"), "X'Length"),
@@ -1209,7 +1209,7 @@ def test_attribute_z3expr_error() -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute, ir_attribute",
+    ("attribute", "ir_attribute"),
     [
         (Size(Variable("X", type_=MSG_TY)), ir.Size("X", MSG_TY)),
         (Length(Variable("X", type_=MSG_TY)), ir.Length("X", MSG_TY)),
@@ -1224,7 +1224,7 @@ def test_attribute_to_ir_int(attribute: Expr, ir_attribute: ir.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    "attribute, ir_attribute",
+    ("attribute", "ir_attribute"),
     [
         (ValidChecksum(Variable("X", type_=MSG_TY)), ir.ValidChecksum("X", MSG_TY)),
         (Valid(Variable("X", type_=MSG_TY)), ir.Valid("X", MSG_TY)),
@@ -1476,7 +1476,7 @@ def test_relation_z3expr_error(relation: Callable[[Expr, Expr], Expr]) -> None:
 
 
 @pytest.mark.parametrize(
-    ["relation", "ir_relation"],
+    ("relation", "ir_relation"),
     [
         (Less, ir.Less),
         (LessEqual, ir.LessEqual),
@@ -1800,7 +1800,7 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
 
 @pytest.mark.parametrize("expr", [ForAllIn, ForSomeIn])
 @pytest.mark.parametrize(
-    "iterable,predicate,match",
+    ("iterable", "predicate", "match"),
     [
         (
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
@@ -2109,7 +2109,7 @@ def test_selected_type() -> None:
 
 
 @pytest.mark.parametrize(
-    "expr,match",
+    ("expr", "match"),
     [
         (
             Selected(Variable("X", type_=rty.BOOLEAN, location=Location((10, 20))), "Y"),
@@ -2499,7 +2499,7 @@ def test_comprehension_to_ir() -> None:
 
 
 @pytest.mark.parametrize(
-    "field_values,type_",
+    ("field_values", "type_"),
     [
         (
             {"X": Variable("A", type_=rty.Integer("A")), "Y": Variable("B", type_=rty.BOOLEAN)},
@@ -2547,7 +2547,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
 
 
 @pytest.mark.parametrize(
-    "field_values,type_,match",
+    ("field_values", "type_", "match"),
     [
         (
             {
@@ -2700,7 +2700,7 @@ def test_message_aggregate_variables() -> None:
 
 
 @pytest.mark.parametrize(
-    ["agg", "ir_agg"], [(MessageAggregate, ir.MsgAgg), (DeltaMessageAggregate, ir.DeltaMsgAgg)]
+    ("agg", "ir_agg"), [(MessageAggregate, ir.MsgAgg), (DeltaMessageAggregate, ir.DeltaMsgAgg)]
 )
 def test_message_aggregate_to_ir(  # type: ignore[misc]
     agg: Callable[..., Expr], ir_agg: Callable[..., ir.Expr]
@@ -2733,7 +2733,7 @@ def test_message_aggregate_to_ir(  # type: ignore[misc]
 
 
 @pytest.mark.parametrize(
-    "field_values,type_",
+    ("field_values", "type_"),
     [
         (
             {"Y": Variable("A", type_=rty.Integer("A")), "Z": Variable("B", type_=rty.BOOLEAN)},
@@ -2782,7 +2782,7 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
 
 
 @pytest.mark.parametrize(
-    "field_values,type_,match",
+    ("field_values", "type_", "match"),
     [
         (
             {

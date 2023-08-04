@@ -1143,9 +1143,8 @@ class MessageValue(TypeValue):
         arguments: dict[str, Union[str, int, bytes, tuple[int, int], list[int]]] = {}
         for expr_tuple in checksum.parameters:
             if isinstance(expr_tuple.evaluated_expression, ValueRange):
-                assert isinstance(expr_tuple.evaluated_expression.lower, Number) and isinstance(
-                    expr_tuple.evaluated_expression.upper, Number
-                )
+                assert isinstance(expr_tuple.evaluated_expression.lower, Number)
+                assert isinstance(expr_tuple.evaluated_expression.upper, Number)
                 arguments[str(expr_tuple.expression)] = (
                     expr_tuple.evaluated_expression.lower.value,
                     expr_tuple.evaluated_expression.upper.value,

@@ -25,7 +25,8 @@ log = logging.getLogger(__name__)
 
 
 def node_location(node: lang.RFLXNode, filename: Path, end_location: bool = False) -> Location:
-    assert node.token_start and node.token_end
+    assert node.token_start
+    assert node.token_end
     start = node.token_start.sloc_range
     end = node.token_end.sloc_range
     return Location(

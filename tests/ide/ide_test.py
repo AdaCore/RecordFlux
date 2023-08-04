@@ -14,7 +14,7 @@ from tests.const import IDE_DIR
 
 def assert_error(filename: pathlib.Path, expected: Sequence[str]) -> None:
     p = specification.Parser()
-    with pytest.raises(RecordFluxError) as excinfo:
+    with pytest.raises(RecordFluxError) as excinfo:  # noqa: PT012
         error = RecordFluxError()
 
         try:

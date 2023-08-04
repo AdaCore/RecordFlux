@@ -847,11 +847,13 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
         first_arg = kwargs.get("Message'First .. Checksum'First - 1")
     assert isinstance(first_arg, tuple)
     tag_first, checksum_first_minus_one = first_arg
-    assert tag_first == 0 and checksum_first_minus_one == 15
+    assert tag_first == 0
+    assert checksum_first_minus_one == 15
     second_arg = kwargs.get("Checksum'Last + 1 .. Message'Last")
     assert isinstance(second_arg, tuple)
     checksum_last_plus_one, data_last = second_arg
-    assert checksum_last_plus_one == 32 and data_last == 511
+    assert checksum_last_plus_one == 32
+    assert data_last == 511
     checksum_size = kwargs.get("Checksum'Size")
     assert isinstance(checksum_size, int)
     assert checksum_size == 16
@@ -1229,7 +1231,7 @@ def test_set_checksum_to_pyrflx_message_not_found(
 
 
 @pytest.mark.parametrize(
-    "data, f1, f2, f3",
+    ("data", "f1", "f2", "f3"),
     [
         (b"\x00\x00\x00\x00", 0, 0, 0),
         (b"\x11\x11\x11\x11", 0x8, 0x44, 0x11111),

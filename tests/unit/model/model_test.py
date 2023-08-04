@@ -171,7 +171,7 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
 
 
 @pytest.mark.parametrize(
-    "types,model",
+    ("types", "model"),
     [
         ([models.TLV_MESSAGE], models.TLV_MODEL),
         ([models.TLV_WITH_CHECKSUM_MESSAGE], models.TLV_WITH_CHECKSUM_MODEL),
@@ -402,7 +402,7 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    ["unchecked", "expected"],
+    ("unchecked", "expected"),
     [
         ([], []),
         (
@@ -495,7 +495,7 @@ def test_unchecked_model_checked(
 
 
 @pytest.mark.parametrize(
-    ["unchecked", "expected"],
+    ("unchecked", "expected"),
     [
         (
             [mty.UncheckedInteger(ID("P::T"), Number(0), Number(128), Number(2), Location((1, 2)))],

@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 
 from rflx import expression as expr, model
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
@@ -138,14 +137,13 @@ def assert_error_files(filenames: Sequence[str], regex: str) -> None:
     check_regex(regex)
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=regex):
-        for filename in filenames:
-            p.parse(Path(filename))
+        p.parse(*[Path(f) for f in filenames])
 
 
 def assert_error_string(string: str, regex: str) -> None:
     check_regex(regex)
     p = parser.Parser()
-    with pytest.raises(RecordFluxError, match=regex):
+    with pytest.raises(RecordFluxError, match=regex):  # noqa: PT012
         p.parse_string(string)
         p.create_model()
 
@@ -188,7 +186,7 @@ def raise_parser_error() -> None:
 
 
 # This test must fail to get full coverage of assert_error_files.
-@pytest.mark.xfail
+@pytest.mark.xfail()
 def test_assert_error_files() -> None:
     assert_error_files([], "^ parser: error: $")
 
@@ -1865,10 +1863,10 @@ def test_parse_error_incorrect_specification() -> None:
     )
 
 
-def test_parse_error_unexpected_exception_in_parser(monkeypatch: MonkeyPatch) -> None:
+def test_parse_error_unexpected_exception_in_parser(monkeypatch: pytest.MonkeyPatch) -> None:
     p = parser.Parser()
+    monkeypatch.setattr(parser, "check_naming", lambda _x, _e, _o: raise_parser_error())
     with pytest.raises(RecordFluxError, match=r"^parser: error: TEST$"):
-        monkeypatch.setattr(parser, "check_naming", lambda _x, _e, _o: raise_parser_error())
         p.parse_string(
             """\
             package Test is
@@ -2497,7 +2495,7 @@ def test_create_model_checksum() -> None:
 
 
 @pytest.mark.parametrize(
-    "spec,byte_order",
+    ("spec", "byte_order"),
     [
         (
             """\
@@ -2731,7 +2729,7 @@ def test_message_field_size(spec: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "field_a, link, field_b",
+    ("field_a", "link", "field_b"),
     [
         ("", "with First => A'First, Size => 8 if A > 10 and A < 100", ""),
         ("if A > 10", "with First => A'First, Size => 8 if A < 100", ""),
@@ -2852,7 +2850,7 @@ def test_parameterized_messages() -> None:
 
 
 @pytest.mark.parametrize(
-    "parameters, error",
+    ("parameters", "error"),
     [
         (
             "",
@@ -2932,7 +2930,7 @@ def test_parse_error_invalid_range_aspect() -> None:
 
 
 @pytest.mark.parametrize(
-    "spec, error",
+    ("spec", "error"),
     [
         (
             """\
@@ -3447,7 +3445,7 @@ def test_parse_non_existent_dependencies(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "expression,message",
+    ("expression", "message"),
     [
         ("A + 1", r"^<stdin>:7:19: parser: error: math expression in boolean context$"),
         ("42", r"^<stdin>:7:19: parser: error: math expression in boolean context$"),
@@ -3471,7 +3469,7 @@ def test_parse_error_math_expression_in_bool_context(expression: str, message: s
 
 
 @pytest.mark.parametrize(
-    "expression,message",
+    ("expression", "message"),
     [
         ("True", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),
         ("3 < 4", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),

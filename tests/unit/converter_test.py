@@ -25,7 +25,7 @@ def test_convert_iana_invalid_xml(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "xml_str,error",
+    ("xml_str", "error"),
     [
         pytest.param(
             """\
@@ -93,7 +93,7 @@ def test_convert_iana_invalid_no_registry_id(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "xml_str,rflx_str",
+    ("xml_str", "rflx_str"),
     [
         pytest.param(
             """
