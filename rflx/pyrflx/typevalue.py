@@ -259,8 +259,8 @@ class EnumValue(ScalarValue):
                 .substituted(
                     mapping={
                         **self.literals,
-                        **{Variable("__VALUE__"): self._type.literals[prefixed_value.name]},
-                        **{Size("__VALUE__"): self._type.size},
+                        Variable("__VALUE__"): self._type.literals[prefixed_value.name],
+                        Size("__VALUE__"): self._type.size,
                     }
                 )
                 .simplified()

@@ -272,9 +272,9 @@ def substitution_facts(
         return expr.Call(target_type, [expression]) if target_type else expression
 
     return {
-        **{expr.First("Message"): type_conversion(first)},
-        **{expr.Last("Message"): type_conversion(last)},
-        **{expr.Size("Message"): type_conversion(expr.Add(last, -first, expr.Number(1)))},
+        expr.First("Message"): type_conversion(first),
+        expr.Last("Message"): type_conversion(last),
+        expr.Size("Message"): type_conversion(expr.Add(last, -first, expr.Number(1))),
         **{expr.First(f.name): type_conversion(field_first(f)) for f in message.fields},
         **{expr.Last(f.name): type_conversion(field_last(f)) for f in message.fields},
         **{expr.Size(f.name): type_conversion(field_size(f)) for f in message.fields},

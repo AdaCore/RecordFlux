@@ -2247,11 +2247,9 @@ def test_create_model_message_type_message() -> None:
 
     types = {
         **simple_types,
-        **{
-            model.Field("Foo"): model.Integer(
-                "Message_Type::T", expr.Number(0), expr.Number(255), expr.Number(8)
-            )
-        },
+        model.Field("Foo"): model.Integer(
+            "Message_Type::T", expr.Number(0), expr.Number(255), expr.Number(8)
+        ),
     }
 
     message = model.Message("Message_Type::PDU", structure, types)
