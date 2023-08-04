@@ -739,7 +739,7 @@ class NotIn(Relation):
         return " not in "
 
 
-def If(
+def If(  # noqa: N802
     condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Optional[Expr] = None
 ) -> Expr:
     if len(condition_expressions) == 0 and else_expression is not None:
@@ -795,7 +795,9 @@ class IfExpr(Expr):
         )
 
 
-def Case(control_expression: Expr, case_expressions: Sequence[tuple[Expr, Expr]]) -> Expr:
+def Case(  # noqa: N802
+    control_expression: Expr, case_expressions: Sequence[tuple[Expr, Expr]]
+) -> Expr:
     if len(case_expressions) == 1 and case_expressions[0][0] == Variable("others"):
         return case_expressions[0][1]
     return CaseExpr(control_expression, case_expressions)

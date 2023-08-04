@@ -34,16 +34,23 @@ class ConfigFile(BaseModel):
 
     @validator("input")
     def initialize_input_if_present(
-        cls, value: Optional[ty.Mapping[str, ty.Sequence[str]]]
+        cls,  # noqa: N805
+        value: Optional[ty.Mapping[str, ty.Sequence[str]]],
     ) -> ty.Mapping[str, ty.Sequence[str]]:
         return value if value is not None else {}
 
     @validator("output")
-    def initialize_output_if_present(cls, value: Optional[ty.Sequence[str]]) -> ty.Sequence[str]:
+    def initialize_output_if_present(
+        cls,  # noqa: N805
+        value: Optional[ty.Sequence[str]],
+    ) -> ty.Sequence[str]:
         return value if value is not None else []
 
     @validator("prove")
-    def initialize_prove_if_present(cls, value: Optional[ty.Sequence[str]]) -> ty.Sequence[str]:
+    def initialize_prove_if_present(
+        cls,  # noqa: N805
+        value: Optional[ty.Sequence[str]],
+    ) -> ty.Sequence[str]:
         return value if value is not None else []
 
 
