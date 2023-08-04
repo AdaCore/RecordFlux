@@ -2009,7 +2009,7 @@ class SessionGenerator:
             )
 
         elif isinstance(action, ir.Append):
-            result = self._append(action, exception_handler, is_global, state)
+            result = self._append(action, exception_handler, is_global)
 
         elif isinstance(action, ir.Extend):
             fail(
@@ -2140,7 +2140,7 @@ class SessionGenerator:
                 self._declare_context(
                     identifier,
                     type_identifier,
-                    (lambda x: False) if session_global else is_global,
+                    (lambda _: False) if session_global else is_global,
                 )
             )
             result.initialization_declarations.append(self._declare_buffer(identifier))
@@ -2211,12 +2211,12 @@ class SessionGenerator:
     ) -> Sequence[Statement]:
         if isinstance(expression, ir.DeltaMsgAgg):
             return self._assign_to_delta_message_aggregate(
-                target, expression, exception_handler, is_global, state
+                target, expression, exception_handler, is_global
             )
 
         if isinstance(expression, ir.MsgAgg):
             return self._assign_to_message_aggregate(
-                target, expression, exception_handler, is_global, state
+                target, expression, exception_handler, is_global
             )
 
         if isinstance(target_type, rty.Message):
@@ -2371,7 +2371,6 @@ class SessionGenerator:
         message_aggregate: ir.MsgAgg,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-        state: ID,
     ) -> Sequence[Statement]:
         assert isinstance(message_aggregate.type_, rty.Message)
 
@@ -2399,7 +2398,7 @@ class SessionGenerator:
                 },
             ),
             *self._set_message_fields(
-                target_context, message_aggregate, exception_handler, is_global, state
+                target_context, message_aggregate, exception_handler, is_global
             ),
         ]
 
@@ -2411,7 +2410,6 @@ class SessionGenerator:
         delta_message_aggregate: ir.DeltaMsgAgg,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-        state: ID,
     ) -> Sequence[Statement]:
         assert isinstance(delta_message_aggregate.type_, rty.Message)
 
@@ -3282,7 +3280,6 @@ class SessionGenerator:
         append: ir.Append,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-        state: ID,
     ) -> Sequence[Statement]:
         assert isinstance(append.type_, rty.Sequence)
 
@@ -3386,8 +3383,6 @@ class SessionGenerator:
                                 append.expression,
                                 local_exception_handler,
                                 is_global,
-                                state,
-                                size_check=False,
                             )
                             if isinstance(append.expression, ir.MsgAgg)
                             else []
@@ -3474,7 +3469,7 @@ class SessionGenerator:
         return Variable(variable_id(expression.identifier, is_global), expression.negative)
 
     @_to_ada_expr.register
-    def _(self, expression: ir.EnumLit, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.EnumLit, _is_global: ty.Callable[[ID], bool]) -> Expr:
         literal = Literal(expression.identifier)
 
         if expression.type_.always_valid:
@@ -3483,11 +3478,11 @@ class SessionGenerator:
         return literal
 
     @_to_ada_expr.register
-    def _(self, expression: ir.IntVal, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntVal, _is_global: ty.Callable[[ID], bool]) -> Expr:
         return Number(expression.value)
 
     @_to_ada_expr.register
-    def _(self, expression: ir.BoolVal, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.BoolVal, _is_global: ty.Callable[[ID], bool]) -> Expr:
         return Literal(str(expression.value))
 
     @_to_ada_expr.register
@@ -3605,7 +3600,7 @@ class SessionGenerator:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Head, is_global: ty.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Head, _is_global: ty.Callable[[ID], bool]) -> Expr:
         _unsupported_expression(expression, "in expression")
 
     @_to_ada_expr.register
@@ -3957,8 +3952,6 @@ class SessionGenerator:
         message_aggregate: ir.MsgAgg,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-        state: ID,
-        size_check: bool = True,
     ) -> Sequence[Statement]:
         assert isinstance(message_aggregate.type_, rty.Message)
 

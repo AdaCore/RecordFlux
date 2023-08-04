@@ -696,7 +696,7 @@ def test_session_evaluate_declarations(
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
     assert (
         session_generator._evaluate_declarations(
-            [declaration], is_global=lambda x: False, session_global=session_global
+            [declaration], is_global=lambda _: False, session_global=session_global
         )
         == expected
     )
@@ -961,7 +961,7 @@ def test_session_declare(
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
 
     result = session_generator._declare(
-        ID("X"), type_, lambda x: False, loc, expression, constant, session_global
+        ID("X"), type_, lambda _: False, loc, expression, constant, session_global
     )
     assert "\n".join(str(d) for d in result.global_declarations) == expected.global_declarations
     assert (
@@ -1049,7 +1049,7 @@ def test_session_declare_error(
         session_generator._declare(  # pragma: no branch
             ID("X", Location((10, 20))),
             type_,
-            lambda x: False,
+            lambda _: False,
             expression=expression,
             alloc_id=None,
         )
@@ -1257,7 +1257,7 @@ def test_session_state_action(action: ir.Stmt, expected: str) -> None:
                     [ada.PragmaStatement("Finalization", [])],
                     lambda: None,
                 ),
-                lambda x: False,
+                lambda _: False,
             )
         )
         == expected
@@ -1300,7 +1300,7 @@ def test_session_state_action_error(
                 [],
                 lambda: None,
             ),
-            lambda x: False,
+            lambda _: False,
         )
 
 
@@ -1679,7 +1679,7 @@ def test_session_assign_error(
                 [],
                 lambda: None,
             ),
-            lambda x: False,
+            lambda _: False,
             ID("State"),
             alloc_id=alloc_id,
         )
@@ -1749,8 +1749,7 @@ def test_session_append_error(
                 [],
                 lambda: None,
             ),
-            lambda x: False,
-            ID("State"),
+            lambda _: False,
         )
 
 
@@ -1779,7 +1778,7 @@ def test_session_read_error(read: ir.Read, error_type: type[BaseError], error_ms
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
         session_generator._read(  # pragma: no branch
             read,
-            lambda x: False,
+            lambda _: False,
         )
 
 
@@ -1864,7 +1863,7 @@ def test_session_to_ada_expr(expression: ir.Expr, expected: ada.Expr) -> None:
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
 
-    assert session_generator._to_ada_expr(expression, lambda x: False) == expected
+    assert session_generator._to_ada_expr(expression, lambda _: False) == expected
 
 
 @pytest.mark.parametrize(
@@ -1886,8 +1885,8 @@ def test_session_to_ada_expr_equality(
         DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
     )
 
-    assert session_generator._to_ada_expr(relation(left, right), lambda x: False) == expected
-    assert session_generator._to_ada_expr(relation(right, left), lambda x: False) == expected
+    assert session_generator._to_ada_expr(relation(left, right), lambda _: False) == expected
+    assert session_generator._to_ada_expr(relation(right, left), lambda _: False) == expected
 
 
 def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:

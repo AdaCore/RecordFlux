@@ -68,20 +68,20 @@ def test_main_check_quiet() -> None:
 
 
 def test_main_check_parser_error(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(cli, "check", lambda x: raise_parser_error())
+    monkeypatch.setattr(cli, "check", lambda _: raise_parser_error())
     assert "<stdin>:8:22: parser: error: TEST" in str(
         cli.main(["rflx", "check", MESSAGE_SPEC_FILE])
     )
 
 
 def test_main_check_model_error_parse(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(cli, "check", lambda x: raise_model_error())
+    monkeypatch.setattr(cli, "check", lambda _: raise_model_error())
     assert "<stdin>:8:22: model: error: TEST" in str(cli.main(["rflx", "check", MESSAGE_SPEC_FILE]))
 
 
 def test_main_check_model_error_create_model(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(rflx.specification.Parser, "parse", lambda x, y: raise_parser_error())
-    monkeypatch.setattr(rflx.specification.Parser, "create_model", lambda x: raise_model_error())
+    monkeypatch.setattr(rflx.specification.Parser, "parse", lambda _x, _y: raise_parser_error())
+    monkeypatch.setattr(rflx.specification.Parser, "create_model", lambda _: raise_model_error())
     assert "<stdin>:8:22: parser: error: TEST\n<stdin>:8:22: model: error: TEST" in str(
         cli.main(["rflx", "check", MESSAGE_SPEC_FILE])
     )
@@ -198,12 +198,12 @@ def test_main_generate_debug(
     result = []
 
     def generator_mock(
-        self: object,
-        prefix: str,
-        workers: int,
-        reproducible: bool,
+        self: object,  # noqa: ARG001
+        prefix: str,  # noqa: ARG001
+        workers: int,  # noqa: ARG001
+        reproducible: bool,  # noqa: ARG001
         debug: generator.Debug,
-        ignore_unsupported_checksum: bool,
+        ignore_unsupported_checksum: bool,  # noqa: ARG001
     ) -> None:
         result.append(debug)
 
@@ -211,7 +211,7 @@ def test_main_generate_debug(
     monkeypatch.setattr(
         generator.Generator,
         "generate",
-        lambda self, model, integration, directory, library_files, top_level_package: None,
+        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005
     )
     assert (
         cli.main(
@@ -381,9 +381,9 @@ def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
 
 
 def test_main_validate_non_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d, e: None)
+    monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
     monkeypatch.setattr(
-        validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_parser_error()
+        validator.Validator, "validate", lambda _a, _b, _c, _d, _e, _f, _g, _h: raise_parser_error()
     )
     assert (
         cli.main(
@@ -403,9 +403,11 @@ def test_main_validate_non_fatal_error(monkeypatch: MonkeyPatch, tmp_path: Path)
 
 
 def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d, e: None)
+    monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
     monkeypatch.setattr(
-        validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_validation_error()
+        validator.Validator,
+        "validate",
+        lambda _a, _b, _c, _d, _e, _f, _g, _h: raise_validation_error(),
     )
     assert "validator: error: TEST" in str(
         cli.main(
@@ -425,9 +427,9 @@ def test_main_validate_validation_error(monkeypatch: MonkeyPatch, tmp_path: Path
 def test_main_validate_fatal_error(
     monkeypatch: MonkeyPatch, tmp_path: Path, raise_error: Callable[[], None]
 ) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda a, b, c, d, e: None)
+    monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
     monkeypatch.setattr(
-        validator.Validator, "validate", lambda a, b, c, d, e, f, g, h: raise_error()
+        validator.Validator, "validate", lambda _a, _b, _c, _d, _e, _f, _g, _h: raise_error()
     )
     assert "RecordFlux Bug" in str(
         cli.main(
@@ -444,7 +446,7 @@ def test_main_validate_fatal_error(
 
 
 def test_main_unexpected_exception(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(cli, "generate", lambda x: raise_fatal_error())
+    monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
     assert re.fullmatch(
         r"\n-* RecordFlux Bug -*.*Traceback.*-*.*RecordFlux/issues.*",
         str(
@@ -508,7 +510,7 @@ def test_missing_unsafe_option() -> None:
 
 
 def test_exception_in_unsafe_mode(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(cli, "generate", lambda x: raise_fatal_error())
+    monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
     assert re.fullmatch(
         r"\n-*\nEXCEPTION IN UNSAFE MODE, PLEASE RERUN WITHOUT UNSAFE OPTIONS\n-*\n"
         r"Traceback.*\n-*$",

@@ -80,10 +80,10 @@ class Type:
 class Undefined(Type):
     DESCRIPTIVE_NAME: ClassVar[str] = "undefined type"
 
-    def is_compatible(self, other: Type) -> bool:
+    def is_compatible(self, _other: Type) -> bool:
         return False
 
-    def common_type(self, other: Type) -> Type:
+    def common_type(self, _other: Type) -> Type:
         return self
 
 

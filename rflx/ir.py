@@ -169,7 +169,7 @@ class VarDecl(Stmt):
     expression: Optional[ComplexExpr] = None
     origin: Optional[Origin] = None
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     def to_z3_expr(self) -> z3.BoolRef:
@@ -320,7 +320,7 @@ class Reset(Stmt):
             self.origin,
         )
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     def to_z3_expr(self) -> z3.BoolRef:
@@ -436,7 +436,7 @@ class Expr(Base):
     def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     @abstractmethod
@@ -557,7 +557,7 @@ class EnumLit(BasicExpr):
     def type_(self) -> rty.Enumeration:
         return self.enum_type
 
-    def substituted(self, mapping: Mapping[ID, ID]) -> EnumLit:
+    def substituted(self, _mapping: Mapping[ID, ID]) -> EnumLit:
         return self
 
     def to_z3_expr(self) -> z3.ArithRef:
@@ -576,7 +576,7 @@ class IntVal(BasicIntExpr):
     def type_(self) -> rty.UniversalInteger:
         return rty.UniversalInteger(rty.Bounds(self.value, self.value))
 
-    def substituted(self, mapping: Mapping[ID, ID]) -> IntVal:
+    def substituted(self, _mapping: Mapping[ID, ID]) -> IntVal:
         return self
 
     def to_z3_expr(self) -> z3.ArithRef:
@@ -591,7 +591,7 @@ class BoolVal(BasicBoolExpr):
     value: bool
     origin: Optional[Origin] = None
 
-    def substituted(self, mapping: Mapping[ID, ID]) -> BoolVal:
+    def substituted(self, _mapping: Mapping[ID, ID]) -> BoolVal:
         return self
 
     def to_z3_expr(self) -> z3.BoolRef:
@@ -924,7 +924,7 @@ class Sub(BinaryIntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return self.left.to_z3_expr() - self.right.to_z3_expr()
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Left >= Right
             Cond(GreaterEqual(self.left, self.right)),
@@ -983,7 +983,7 @@ class Div(BinaryIntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return self.left.to_z3_expr() / self.right.to_z3_expr()
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Right /= 0
             Cond(NotEqual(self.right, IntVal(0)))
@@ -1031,7 +1031,7 @@ class Mod(BinaryIntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return self.left.to_z3_expr() % self.right.to_z3_expr()
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Right /= 0
             Cond(NotEqual(self.right, IntVal(0)))
@@ -1162,7 +1162,7 @@ class Call(Expr):
     origin: Optional[Origin] = None
     _preconditions: list[Cond] = field(init=False, factory=list)
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return self._preconditions
 
     def set_preconditions(self, preconditions: list[Cond]) -> None:
@@ -1456,7 +1456,7 @@ class Comprehension(Expr):
             self.origin,
         )
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -1495,7 +1495,7 @@ class Find(Expr):
             self.origin,
         )
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -1522,7 +1522,7 @@ class Agg(Expr):
             origin=self.origin,
         )
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -1573,10 +1573,10 @@ class Str(Expr):
     def type_(self) -> rty.Sequence:
         return rty.OPAQUE
 
-    def substituted(self, mapping: Mapping[ID, ID]) -> Str:
+    def substituted(self, _mapping: Mapping[ID, ID]) -> Str:
         return self
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -1601,7 +1601,7 @@ class MsgAgg(Expr):
             origin=self.origin,
         )
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -1631,7 +1631,7 @@ class DeltaMsgAgg(Expr):
             origin=self.origin,
         )
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -1667,7 +1667,7 @@ class CaseExpr(Expr):
             self.origin,
         )
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
     def to_z3_expr(self) -> z3.ExprRef:

@@ -251,7 +251,7 @@ class Integer(Scalar):
         return self._last_expr
 
     def constraints(
-        self, name: str, proof: bool = False, same_package: bool = True
+        self, name: str, proof: bool = False, same_package: bool = True  # noqa: ARG002
     ) -> abc.Sequence[expr.Expr]:
         return [
             expr.GreaterEqual(
@@ -623,7 +623,7 @@ class UncheckedInteger(UncheckedType):
     size: expr.Expr
     location: Optional[Location]
 
-    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Integer:
+    def checked(self, _declarations: ty.Sequence[TopLevelDeclaration]) -> Integer:
         return Integer(self.identifier, self.first, self.last, self.size, self.location)
 
 
@@ -635,7 +635,7 @@ class UncheckedEnumeration(UncheckedType):
     always_valid: bool
     location: Optional[Location]
 
-    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Enumeration:
+    def checked(self, _declarations: ty.Sequence[TopLevelDeclaration]) -> Enumeration:
         return Enumeration(
             self.identifier, self.literals, self.size, self.always_valid, self.location
         )
@@ -671,7 +671,7 @@ class UncheckedOpaque(UncheckedType):
     identifier: ID
     location: Optional[Location]
 
-    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Opaque:
+    def checked(self, _declarations: ty.Sequence[TopLevelDeclaration]) -> Opaque:
         return Opaque(location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)))
 
 

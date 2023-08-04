@@ -17,7 +17,7 @@ VERSION = sys.argv[2]
 
 
 class Manage(ManageScript):  # type: ignore[misc]
-    def create_context(self, args: object) -> CompileCtx:
+    def create_context(self, _args: object) -> CompileCtx:
         return CompileCtx(lang_name="Rflx", lexer=lexer, grammar=grammar)
 
 

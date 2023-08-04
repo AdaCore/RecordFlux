@@ -187,7 +187,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
     def variables(self) -> Sequence[Variable]:
         return self.expression.variables()
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.VarDecl:
+    def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.VarDecl:
         fail(
             "renaming declarations not yet supported",
             Subsystem.MODEL,
@@ -249,7 +249,7 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         )
 
     def check_type(
-        self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+        self, declaration_type: rty.Type, _typify_variable: Callable[[Expr], Expr]
     ) -> RecordFluxError:
         self.type_ = declaration_type
         return RecordFluxError()

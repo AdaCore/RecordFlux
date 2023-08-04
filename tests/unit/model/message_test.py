@@ -1543,7 +1543,7 @@ def test_invalid_path_1(monkeypatch: MonkeyPatch) -> None:
     types = {
         Field("F1"): INTEGER,
     }
-    monkeypatch.setattr(Message, "_prove_reachability", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)
     assert_message_model_error(
         structure,
         types,
@@ -1565,7 +1565,7 @@ def test_invalid_path_2(monkeypatch: MonkeyPatch) -> None:
         Field("F1"): INTEGER,
         Field("F2"): INTEGER,
     }
-    monkeypatch.setattr(Message, "_prove_reachability", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)
     assert_message_model_error(
         structure,
         types,
@@ -1999,7 +1999,7 @@ def test_field_coverage_1(monkeypatch: MonkeyPatch) -> None:
     ]
 
     types = {Field("F1"): INTEGER, Field("F2"): INTEGER}
-    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_expressions", lambda _: None)
     assert_message_model_error(
         structure,
         types,
@@ -2032,7 +2032,7 @@ def test_field_coverage_2(monkeypatch: MonkeyPatch) -> None:
         Field("F3"): INTEGER,
         Field("F4"): INTEGER,
     }
-    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_expressions", lambda _: None)
     assert_message_model_error(
         structure,
         types,
@@ -2054,7 +2054,7 @@ def test_field_after_message_start(monkeypatch: MonkeyPatch) -> None:
     ]
 
     types = {Field("F1"): INTEGER, Field("F2"): INTEGER}
-    monkeypatch.setattr(Message, "_verify_expressions", lambda x: None)
+    monkeypatch.setattr(Message, "_verify_expressions", lambda _: None)
     assert_message_model_error(
         structure,
         types,
@@ -4754,12 +4754,12 @@ def test_possibly_always_true_message_condition(
     monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
 ) -> None:
     monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
-    monkeypatch.setattr(Message, "_prove_reachability", lambda x: None)
-    monkeypatch.setattr(Message, "_prove_contradictions", lambda x: None)
-    monkeypatch.setattr(Message, "_prove_coverage", lambda x: None)
-    monkeypatch.setattr(Message, "_prove_overlays", lambda x: None)
-    monkeypatch.setattr(Message, "_prove_field_positions", lambda x: None)
-    monkeypatch.setattr(Message, "_prove_message_size", lambda x: None)
+    monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)
+    monkeypatch.setattr(Message, "_prove_contradictions", lambda _: None)
+    monkeypatch.setattr(Message, "_prove_coverage", lambda _: None)
+    monkeypatch.setattr(Message, "_prove_overlays", lambda _: None)
+    monkeypatch.setattr(Message, "_prove_field_positions", lambda _: None)
+    monkeypatch.setattr(Message, "_prove_message_size", lambda _: None)
     Message(
         "P::M",
         [

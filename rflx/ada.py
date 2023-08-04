@@ -458,7 +458,10 @@ class UnrestrictedAccess(Attribute):
 
 class AttributeExpr(Attribute):
     def __init__(
-        self, prefix: Union[StrID, Expr], expression: Expr, negative: bool = False
+        self,
+        prefix: Union[StrID, Expr],
+        expression: Expr,
+        negative: bool = False,  # noqa: ARG002
     ) -> None:
         self.expression = expression
         super().__init__(prefix)
@@ -481,9 +484,7 @@ class Succ(AttributeExpr):
 
 
 class BinAttributeExpr(Attribute):
-    def __init__(
-        self, prefix: Union[StrID, Expr], left: Expr, right: Expr, negative: bool = False
-    ) -> None:
+    def __init__(self, prefix: Union[StrID, Expr], left: Expr, right: Expr) -> None:
         self.left = left
         self.right = right
         super().__init__(prefix)

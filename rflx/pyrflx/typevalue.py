@@ -271,7 +271,7 @@ class EnumValue(ScalarValue):
         assert r == TRUE
         self._value = (str(prefixed_value), self._type.literals[prefixed_value.name])
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: Union[Bitstring, bytes], _check: bool = True) -> None:
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         value_as_number = Number(int(value))
@@ -813,7 +813,7 @@ class MessageValue(TypeValue):
     def assign(self, value: bytes, check: bool = True) -> None:
         raise NotImplementedError
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: Union[Bitstring, bytes], _check: bool = True) -> None:
         assert not self._skip_verification
         self._path.clear()
         if isinstance(value, bytes):

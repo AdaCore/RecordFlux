@@ -741,7 +741,7 @@ def test_sequence_parse_from_bytes(
     sequence_type_foo_value.parse(b"\x03\x05\x06\x07")
     assert sequence_type_foo_value.bytestring == b"\x03\x05\x06\x07"
     sequence_message_value = message_sequence_value.clone()
-    sequence_message_value.parse(b"\x02\x05\x06", check=False)
+    sequence_message_value.parse(b"\x02\x05\x06")
     assert sequence_message_value.bytestring == b"\x02\x05\x06"
 
 
@@ -1077,7 +1077,7 @@ def fixture_tlv_checksum_message(tlv_checksum_package: Package) -> Message:
 
 def test_checksum_is_checksum_settable(tlv_checksum_message: Message) -> None:
     tlv_msg = MessageValue(tlv_checksum_message)
-    tlv_msg.set_checksum_function({"Checksum": lambda message, **kwargs: 0})
+    tlv_msg.set_checksum_function({"Checksum": lambda message, **kwargs: 0})  # noqa: ARG005
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
     tlv_msg.set("Tag", "Msg_Data")
     assert not tlv_msg._is_checksum_settable(tlv_msg._checksums["Checksum"])
@@ -1115,11 +1115,11 @@ def test_checksum_value_range(no_conditionals_message: Message) -> None:
     assert not msg._is_checksum_settable(msg._checksums["Checksum"])
 
 
-def checksum_function_zero(message: bytes, **_kwargs: object) -> int:
+def checksum_function_zero(message: bytes, **_kwargs: object) -> int:  # noqa: ARG001
     return 0
 
 
-def checksum_function_255(message: bytes, **_kwargs: object) -> int:
+def checksum_function_255(message: bytes, **_kwargs: object) -> int:  # noqa: ARG001
     return 0xFF
 
 

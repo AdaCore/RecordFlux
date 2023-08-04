@@ -871,7 +871,7 @@ class Number(Expr):
     def z3expr(self) -> z3.ArithRef:
         return z3.IntVal(self.value)
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
+    def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
         return ir.ComplexIntExpr([], ir.IntVal(self.value, origin=self))
 
 
@@ -1295,7 +1295,7 @@ class Literal(Name):
             return z3.BoolVal(val=False)
         return z3.Int(self.name)
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
+    def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         assert isinstance(self.type_, rty.Enumeration)
 
         if self.type_ == rty.BOOLEAN:
@@ -1371,7 +1371,7 @@ class Variable(Name):
             return -z3.Int(self.name)
         return z3.Int(self.name)
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
+    def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         if self.type_ == rty.BOOLEAN:
             return ir.ComplexBoolExpr([], ir.BoolVar(self.name, origin=self))
         if isinstance(self.type_, rty.Integer):
@@ -1736,7 +1736,7 @@ class Val(Attribute):
     """Only used by code generator and therefore provides minimum functionality."""
 
     def __init__(
-        self, prefix: Union[StrID, Expr], expression: Expr, negative: bool = False
+        self, prefix: Union[StrID, Expr], expression: Expr, _negative: bool = False
     ) -> None:
         self.expression = expression
         super().__init__(prefix)
@@ -1755,8 +1755,8 @@ class Val(Attribute):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Optional[Callable[[Expr], Expr]] = None,  # noqa: ARG002
+        mapping: Optional[Mapping[Name, Expr]] = None,  # noqa: ARG002
     ) -> Expr:
         return self
 
@@ -2784,7 +2784,7 @@ class QuantifiedExpr(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
+    def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         fail(
             "quantified expressions not yet supported",
             Subsystem.MODEL,

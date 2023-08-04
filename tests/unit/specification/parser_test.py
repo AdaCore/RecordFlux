@@ -1868,7 +1868,7 @@ def test_parse_error_incorrect_specification() -> None:
 def test_parse_error_unexpected_exception_in_parser(monkeypatch: MonkeyPatch) -> None:
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=r"^parser: error: TEST$"):
-        monkeypatch.setattr(parser, "check_naming", lambda x, e, o: raise_parser_error())
+        monkeypatch.setattr(parser, "check_naming", lambda _x, _e, _o: raise_parser_error())
         p.parse_string(
             """\
             package Test is

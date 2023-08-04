@@ -61,7 +61,7 @@ class StyleChecker:
         self._previous: Optional[tuple[int, str]] = None
         self._headings_re = re.compile(r"^(=+|-+|~+|\^+|\*+|\"+)$")
 
-    def _skip(self, line: str, lineno: int, previous_line: str, previous_lineno: int) -> bool:
+    def _skip(self, line: str, previous_line: str, previous_lineno: int) -> bool:
         # Headings
         if self._headings_re.match(line):
             if re.match(r"^$", previous_line):
@@ -103,7 +103,7 @@ class StyleChecker:
         if re.match(r".* $", previous_line) is not None:
             raise CheckDocError(f"{self._filename}:{previous_lineno}: trailing whitespace")
 
-        if self._skip(line, lineno, previous_line, previous_lineno):
+        if self._skip(line, previous_line, previous_lineno):
             return
 
         # Trailing punctuations

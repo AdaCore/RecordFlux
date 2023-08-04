@@ -928,7 +928,7 @@ class Message(AbstractMessage):
             skip_proof=self._skip_proof,
         )
 
-    def proven(self, skip_proof: bool = False, workers: int = 1) -> Message:
+    def proven(self, _skip_proof: bool = False, _workers: int = 1) -> Message:
         return copy(self)
 
     def is_possibly_empty(self, field: Field) -> bool:
@@ -2198,7 +2198,7 @@ class DerivedMessage(Message):
             location if location else self.location,
         )
 
-    def proven(self, skip_proof: bool = False, workers: int = 1) -> DerivedMessage:
+    def proven(self, _skip_proof: bool = False, _workers: int = 1) -> DerivedMessage:
         return copy(self)
 
 
@@ -2573,7 +2573,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
             location if location else self.location,
         )
 
-    def proven(self, skip_proof: bool = False, workers: int = 1) -> DerivedMessage:
+    def proven(self, _skip_proof: bool = False, _workers: int = 1) -> DerivedMessage:
         return DerivedMessage(
             self.identifier,
             self.base if isinstance(self.base, Message) else self.base.proven(),
