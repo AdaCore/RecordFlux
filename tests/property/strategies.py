@@ -305,7 +305,7 @@ def messages(  # noqa: PLR0915
                 )
             ],
         )
-        raise e
+        raise
 
 
 def non_null_messages(

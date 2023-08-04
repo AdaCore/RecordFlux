@@ -62,7 +62,7 @@ class Cache:
                 ):
                     self._verified = cache
                 else:
-                    raise TypeError
+                    raise TypeError  # noqa: TRY301
         except (json.JSONDecodeError, TypeError):
             warn("verification cache will be ignored due to invalid format", Subsystem.PARSER)
         except FileNotFoundError:

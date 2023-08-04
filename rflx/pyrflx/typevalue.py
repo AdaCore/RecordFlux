@@ -969,7 +969,7 @@ class MessageValue(TypeValue):
                 elif isinstance(value, field.typeval.accepted_type):
                     field.typeval.assign(value)
                 else:
-                    raise PyRFLXError(
+                    raise PyRFLXError(  # noqa: TRY301
                         f"cannot assign different types: {field.typeval.accepted_type.__name__}"
                         f" != {type(value).__name__}"
                     )
