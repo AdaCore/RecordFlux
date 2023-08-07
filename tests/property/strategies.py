@@ -117,7 +117,7 @@ def enumerations(
                     st.integers(min_value=0, max_value=min(2**size - 1, 2**63 - 1)),
                 ),
             ),
-            unique_by=(lambda x: x[0], lambda x: x[1]),  # type: ignore[no-any-return]
+            unique_by=(lambda x: x[0], lambda x: x[1]),
             min_size=1,
             max_size=2**size,
         ),
