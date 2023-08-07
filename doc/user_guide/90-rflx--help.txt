@@ -1,17 +1,18 @@
 usage: rflx [-h] [-q] [--version] [--no-verification] [--max-errors NUM]
             [--workers NUM] [--unsafe]
-            {check,generate,graph,validate,setup_ide,convert} ...
+            {check,generate,graph,validate,install,convert,run_ls} ...
 
 positional arguments:
-  {check,generate,graph,validate,setup_ide,convert}
+  {check,generate,graph,validate,install,convert,run_ls}
     check               check specification
     generate            generate code
     graph               generate graphs
     validate            validate specification against a set of known valid or
                         invalid messages
-    setup_ide           set up RecordFlux IDE integration (GNAT Studio)
+    install             set up RecordFlux IDE integration
     convert             convert foreign specifications into RecordFlux
                         specifications
+    run_ls              run language server
 
 options:
   -h, --help            show this help message and exit
@@ -19,6 +20,6 @@ options:
   --version
   --no-verification     skip time-consuming verification of model
   --max-errors NUM      exit after at most NUM errors
-  --workers NUM         parallelize proofs among NUM workers (default: 8)
+  --workers NUM         parallelize proofs among NUM workers (default: 20)
   --unsafe              allow unsafe options (WARNING: may lead to erronous
                         behavior)

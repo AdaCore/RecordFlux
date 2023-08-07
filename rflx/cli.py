@@ -9,14 +9,18 @@ import shutil
 import sys
 import traceback
 from collections.abc import Sequence
+from enum import Enum
 from importlib import metadata
 from multiprocessing import cpu_count
 from pathlib import Path
+from subprocess import run
 from typing import Optional, Union
 
 import importlib_resources
+from importlib_resources.abc import Traversable
 
 from rflx import __version__
+from rflx.common import assert_never
 from rflx.converter import iana
 from rflx.error import (
     ERROR_CONFIG,
@@ -40,6 +44,21 @@ from rflx.validator import ValidationError, Validator
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 DEFAULT_PREFIX = "RFLX"
+
+
+class IDE(Enum):
+    GNATSTUDIO = "gnatstudio"
+    VSCODE = "vscode"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @staticmethod
+    def ide(string: str) -> IDE:
+        try:
+            return IDE[string.upper()]
+        except KeyError:
+            raise ValueError from None
 
 
 def main(  # noqa: PLR0915
@@ -242,18 +261,20 @@ def main(  # noqa: PLR0915
     )
     parser_validate.set_defaults(func=validate)
 
-    parser_setup = subparsers.add_parser(
-        "setup_ide",
-        help="set up RecordFlux IDE integration (GNAT Studio)",
+    parser_install = subparsers.add_parser("install", help="set up RecordFlux IDE integration")
+    parser_install.add_argument(
+        "ide",
+        type=IDE.ide,
+        choices=[ide for ide in IDE if ide != IDE.VSCODE or vscode_extension().is_file()],
     )
-    parser_setup.add_argument(
+    parser_install.add_argument(
         "--gnat-studio-dir",
         dest="gnat_studio_dir",
         type=Path,
         help="path to the GNAT Studio settings directory (default: $HOME/.gnatstudio)",
         default=Path.home() / ".gnatstudio",
     )
-    parser_setup.set_defaults(func=setup)
+    parser_install.set_defaults(func=install)
 
     parser_convert = subparsers.add_parser(
         "convert",
@@ -515,14 +536,22 @@ def validate(args: argparse.Namespace) -> None:
         raise fatal_error from e
 
 
-def setup(args: argparse.Namespace) -> None:
-    # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
-    gnatstudio_dir = importlib_resources.files("rflx_ide") / "gnatstudio"
-    plugins_dir = args.gnat_studio_dir / "plug-ins"
-    if not plugins_dir.exists():
-        plugins_dir.mkdir(parents=True, exist_ok=True)
-    print(f'Installing RecordFlux plugin into "{plugins_dir}"')  # noqa: T201
-    shutil.copy(Path(gnatstudio_dir) / "recordflux.py", plugins_dir)
+def install(args: argparse.Namespace) -> None:
+    if args.ide is IDE.GNATSTUDIO:
+        # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
+        gnatstudio_dir = importlib_resources.files("rflx_ide") / "gnatstudio"
+        plugins_dir = args.gnat_studio_dir / "plug-ins"
+        if not plugins_dir.exists():
+            plugins_dir.mkdir(parents=True, exist_ok=True)
+        print(f'Installing RecordFlux plugin into "{plugins_dir}"')  # noqa: T201
+        shutil.copy(Path(gnatstudio_dir) / "recordflux.py", plugins_dir)
+
+    elif args.ide is IDE.VSCODE:
+        with importlib_resources.as_file(vscode_extension()) as extension:
+            run(["code", "--install-extension", extension, "--force"])
+
+    else:
+        assert_never(args.ide)  # pragma: no cover
 
 
 def convert_iana(args: argparse.Namespace) -> None:
@@ -539,3 +568,10 @@ def convert_iana(args: argparse.Namespace) -> None:
 def run_language_server(args: argparse.Namespace) -> None:
     server.workers = args.workers
     server.start_io()
+
+
+def vscode_extension() -> Traversable:
+    # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
+    path = importlib_resources.files("rflx_ide") / "vscode" / "recordflux.vsix"
+    assert isinstance(path, Traversable)
+    return path

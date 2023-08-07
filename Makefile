@@ -11,6 +11,7 @@ LANGKIT_ORIGIN ?= https://github.com/AdaCore
 ADASAT_ORIGIN?= https://github.com/AdaCore
 VERSION ?= $(shell python3 -c "import setuptools_scm; print(setuptools_scm.get_version())")
 SDIST ?= dist/RecordFlux-$(VERSION).tar.gz
+VSIX ?= ide/vscode/recordflux.vsix
 
 GENERATED_DIR = generated
 BUILD_GENERATED_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/$(GENERATED_DIR)
@@ -179,7 +180,7 @@ test_installation: $(SDIST)
 	python3 -m venv $(BUILD_DIR)/venv
 	$(BUILD_DIR)/venv/bin/pip install $(SDIST)
 	$(BUILD_DIR)/venv/bin/rflx --version
-	HOME=$(BUILD_DIR)/test_installation $(BUILD_DIR)/venv/bin/rflx setup_ide
+	HOME=$(BUILD_DIR)/test_installation $(BUILD_DIR)/venv/bin/rflx install gnatstudio
 	test -f $(BUILD_DIR)/test_installation/.gnatstudio/plug-ins/recordflux.py
 
 .PHONY: prove prove_tests prove_python_tests prove_apps prove_property_tests
@@ -283,7 +284,7 @@ build_pdf_doc_user_guide:
 
 dist: $(SDIST)
 
-$(SDIST): $(GENERATED_DIR)/python/librflxlang pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
+$(SDIST): $(GENERATED_DIR)/python/librflxlang $(VSIX) pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
 	python3 -m build --sdist
 
 $(GENERATED_DIR)/python/librflxlang: export PYTHONPATH=$(MAKEFILE_DIR)
@@ -295,6 +296,10 @@ $(GENERATED_DIR)/python/librflxlang: $(wildcard language/*.py)
 	cp -a $(MAKEFILE_DIR)/contrib/adasat $(BUILD_GENERATED_DIR)/
 	rm -rf $(GENERATED_DIR)
 	mv $(BUILD_GENERATED_DIR) $(GENERATED_DIR)
+
+$(VSIX):
+	@echo $(VSIX)
+	$(MAKE) -C ide/vscode dist
 
 .PHONY: parser
 

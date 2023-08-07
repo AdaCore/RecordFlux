@@ -18,8 +18,9 @@ HELP_FILES = \
    90-rflx-generate--help.txt \
    90-rflx-graph--help.txt \
    90-rflx-validate--help.txt \
-   90-rflx-setup_ide--help.txt \
-   90-rflx-convert--help.txt
+   90-rflx-install--help.txt \
+   90-rflx-convert--help.txt \
+   90-rflx-run_ls--help.txt
 
 90-rflx-%--help.txt::
 	@rflx $* --help > $@

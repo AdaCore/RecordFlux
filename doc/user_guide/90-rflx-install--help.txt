@@ -1,7 +1,10 @@
-usage: rflx setup_ide [-h] [--gnat-studio-dir GNAT_STUDIO_DIR]
+usage: rflx install [-h] [--gnat-studio-dir GNAT_STUDIO_DIR] {gnatstudio}
+
+positional arguments:
+  {gnatstudio}
 
 options:
   -h, --help            show this help message and exit
   --gnat-studio-dir GNAT_STUDIO_DIR
                         path to the GNAT Studio settings directory (default:
-                        /home/senier/.gnatstudio)
+                        $HOME/.gnatstudio)

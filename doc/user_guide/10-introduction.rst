@@ -165,6 +165,17 @@ To check whether the installation was successful and the RecordFlux executable i
    RecordFlux-parser 0.13.0
    ...
 
+VS Code Extension
+~~~~~~~~~~~~~~~~~
+
+The VS Code extension adds support for the RecordFlux language to VS Code.
+After the installation of RecordFlux, the extension can be installed using the CLI:
+
+.. code:: console
+
+   $ rflx install vscode
+
+
 GNAT Studio Modeller Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -173,7 +184,7 @@ After installation of RecordFlux, run the installation procedure on the command 
 
 .. code:: console
 
-   $ rflx setup_ide
+   $ rflx install gnatstudio
 
 Should your GNAT Studio settings directory be different from `$HOME/.gnatstudio`, the installation path can be changed using the parameter `--gnat-studio-dir`.
 

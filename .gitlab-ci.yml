@@ -92,6 +92,7 @@ setup:
     - git fetch --unshallow
     - *setup_alire
     - *setup_gnat
+    - *setup_nvm
     - export PYTHON_VERSION=3.8
     - *setup_python_venv
     - make clean

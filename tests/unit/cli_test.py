@@ -493,10 +493,10 @@ def test_fail_fast() -> None:
     )
 
 
-def test_setup_gnat_studio_plugin(tmp_path: Path) -> None:
+def test_install_gnatstudio_plugin(tmp_path: Path) -> None:
     gnat_studio_dir = tmp_path / ".gnatstudio"
     gnat_studio_dir.mkdir(parents=True, exist_ok=True)
-    args = ["rflx", "setup_ide", "--gnat-studio-dir", str(gnat_studio_dir)]
+    args = ["rflx", "install", "gnatstudio", "--gnat-studio-dir", str(gnat_studio_dir)]
 
     # Install plugin into empty dir
     cli.main(args)
@@ -509,6 +509,30 @@ def test_setup_gnat_studio_plugin(tmp_path: Path) -> None:
     cli.main(args)
     assert plugin.exists()
     assert plugin.is_file()
+
+
+def test_install_vscode_extension(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    run_called = []
+    vscode_extension = tmp_path / "recordflux.vsix"
+
+    monkeypatch.setattr(cli, "run", lambda x: run_called.append(x))
+    monkeypatch.setattr(cli, "vscode_extension", lambda: vscode_extension)
+
+    with pytest.raises(SystemExit, match=r"^2$"):
+        cli.main(["rflx", "install", "vscode"])
+
+    vscode_extension.touch()
+
+    cli.main(["rflx", "install", "vscode"])
+
+    assert run_called == [["code", "--install-extension", vscode_extension, "--force"]]
+
+
+def test_install_invalid() -> None:
+    args = ["rflx", "install", "invalid"]
+
+    with pytest.raises(SystemExit, match=r"^2$"):
+        cli.main(args)
 
 
 def test_missing_unsafe_option() -> None:

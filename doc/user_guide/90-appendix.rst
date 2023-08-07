@@ -29,14 +29,19 @@ The `rflx validate` subcommand has the following options:
 .. literalinclude:: 90-rflx-validate--help.txt
    :language: none
 
-The `rflx setup_ide` subcommand has the following options:
+The `rflx install` subcommand has the following options:
 
-.. literalinclude:: 90-rflx-setup_ide--help.txt
+.. literalinclude:: 90-rflx-install--help.txt
    :language: none
 
 The `rflx convert` subcommand has the following options:
 
 .. literalinclude:: 90-rflx-convert--help.txt
+   :language: none
+
+The `rflx run_ls` subcommand has the following options:
+
+.. literalinclude:: 90-rflx-run_ls--help.txt
    :language: none
 
 Reporting Errors

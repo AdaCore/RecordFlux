@@ -4,6 +4,7 @@ exclude .git* defaults* Makefile MANIFEST.in
 graft bin
 graft ide/gnatstudio
 graft rflx
+include ide/vscode/*.vsix
 include generated/librflxlang.gpr
 recursive-include generated/src *.ad? *.c *.h
 recursive-include generated/gnatcoll-bindings/iconv *.ad? *.gpr *.c
