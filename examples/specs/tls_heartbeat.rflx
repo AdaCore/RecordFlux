@@ -1,14 +1,15 @@
+with Tls_Parameters;
+
 package TLS_Heartbeat is
 
    -- RFC 6520
 
-   type Message_Type is (HEARTBEAT_REQUEST => 1, HEARTBEAT_RESPONSE => 2) with Size => 8;
    type Length is range 0 .. 2 ** 14 - 20 with Size => 16;
    type TLS_Plaintext_Length is range 3 .. 2 ** 14 with Size => 16;
 
    type Heartbeat_Message (TLS_Plaintext_Length : TLS_Plaintext_Length) is
       message
-         Message_Type : Message_Type;
+         Message_Type : Tls_Parameters::TLS_Heartbeat_Message_Types;
          Payload_Length : Length;
          Payload : Opaque
             with Size => Payload_Length * 8

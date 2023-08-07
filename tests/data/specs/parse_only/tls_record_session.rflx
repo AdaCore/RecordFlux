@@ -441,7 +441,7 @@ package TLS_Record_Session is
 
       state Error_Bad_Record_MAC is
       begin
-         Error := TLS_Alert::Bad_Record_MAC;
+         Error := TLS_Alert::Bad_Record_Mac;
       transition
          goto Error_Send_Local
       end Error_Bad_Record_MAC;

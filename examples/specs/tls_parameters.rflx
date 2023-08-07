@@ -2287,7 +2287,7 @@ package Tls_Parameters is
        -- dtls = Y
        -- rec = N
        -- Ref: draft-kwiatkowski-tls-ecdhe-kyber-01
-       -- comment = Combining secp256r1 ECDH with pre-standards version of Kyber768
+       -- comment = Combining Secp256r1 ECDH with pre-standards version of Kyber768
        SecP256r1Kyber768Draft00 => 25498,
 
        -- dtls = Y

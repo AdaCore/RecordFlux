@@ -11,7 +11,7 @@ package TLS_Handshake is
        HT_Certificate_Verify     =>  15,
        HT_Finished               =>  20,
        HT_Key_Update             =>  24,
-       HT_Compressed_Certificate =>  25,  -- draft-ietf-tls-certificate-compression
+       HT_Compressed_Certificate =>  25,  -- draft-ietf-tls-Certificate-compression
        HT_Message_Hash           => 254)
    with Size => 8;
 
@@ -242,7 +242,7 @@ package TLS_Handshake is
        RSA_PKCS1_SHA256       => 16#0401#,
        RSA_PKCS1_SHA384       => 16#0501#,
        RSA_PKCS1_SHA512       => 16#0601#,
-       -- ECDSA algorithms
+       -- Ecdsa algorithms
        ECDSA_SECP256R1_SHA256 => 16#0403#,
        ECDSA_SECP384R1_SHA384 => 16#0503#,
        ECDSA_SECP521R1_SHA512 => 16#0603#,
@@ -499,14 +499,14 @@ package TLS_Handshake is
 
    type Filters is sequence of Filter;
 
-   type OID_Filters is
+   type Oid_Filters is
       message
          Length : Filters_Length;
          Filters : Filters
             with Size => 8 * Length;
       end message;
 
-   for CR_Extension use (Data => OID_Filters)
+   for CR_Extension use (Data => Oid_Filters)
       if Tag = ET_OID_Filters;
 
    -- Post-Handshake Client Authentication Extension
@@ -522,17 +522,17 @@ package TLS_Handshake is
 
    type Named_Group is
       (-- Elliptic Curve Groups (ECDHE)
-       SECP256R1 => 16#0017#,
-       SECP384R1 => 16#0018#,
-       SECP521R1 => 16#0019#,
+       Secp256r1 => 16#0017#,
+       Secp384r1 => 16#0018#,
+       Secp521r1 => 16#0019#,
        X25519    => 16#001D#,
        X448      => 16#001E#,
        -- Finite Field Groups (DHE)
-       FFDHE2048 => 16#0100#,
-       FFDHE3072 => 16#0101#,
-       FFDHE4096 => 16#0102#,
-       FFDHE6144 => 16#0103#,
-       FFDHE8192 => 16#0104#)
+       Ffdhe2048 => 16#0100#,
+       Ffdhe3072 => 16#0101#,
+       Ffdhe4096 => 16#0102#,
+       Ffdhe6144 => 16#0103#,
+       Ffdhe8192 => 16#0104#)
    with Size => 16, Always_Valid;
 
    type Named_Groups is sequence of Named_Group;
@@ -591,20 +591,20 @@ package TLS_Handshake is
    type PSK_Key_Exchange_Modes_Length is range 1 .. 255 with Size => 8;
 
    type Key_Exchange_Mode is
-      (PSK_KE     => 0,
-       PSK_DHE_KE => 1)
+      (Psk_Ke     => 0,
+       Psk_Dhe_Ke => 1)
    with Size => 8, Always_Valid;
 
    type Key_Exchange_Modes is sequence of Key_Exchange_Mode;
 
-   type PSK_Key_Exchange_Modes is
+   type Psk_Key_Exchange_Modes is
       message
          Length : PSK_Key_Exchange_Modes_Length;
          Modes : Key_Exchange_Modes
             with Size => 8 * Length;
       end message;
 
-   for CH_Extension use (Data => PSK_Key_Exchange_Modes)
+   for CH_Extension use (Data => Psk_Key_Exchange_Modes)
       if Tag = ET_PSK_Key_Exchange_Modes;
 
    -- Early Data Indication Extension

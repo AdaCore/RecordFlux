@@ -1,114 +1,484 @@
+with Tls_Common;
+with Tls_Parameters;
+with Tls_Extensiontype_Values;
+
 package TLS_Handshake is
 
-   -- RFC 8446
-
-   type Handshake_Type is
-      (HT_CLIENT_HELLO           =>   1,
-       HT_SERVER_HELLO           =>   2,
-       HT_NEW_SESSION_TICKET     =>   4,
-       HT_END_OF_EARLY_DATA      =>   5,
-       HT_ENCRYPTED_EXTENSIONS   =>   8,
-       HT_CERTIFICATE            =>  11,
-       HT_CERTIFICATE_REQUEST    =>  13,
-       HT_CERTIFICATE_VERIFY     =>  15,
-       HT_FINISHED               =>  20,
-       HT_KEY_UPDATE             =>  24,
-       HT_COMPRESSED_CERTIFICATE =>  25,  -- draft-ietf-tls-certificate-compression
-       HT_MESSAGE_HASH           => 254)
-   with Size => 8;
+   -- The current specification models a subset of TLS 1.3 (RFC 8446) and DTLS
+   -- 1.3 (RFC 9147). The two standards are closely related and share a lot of
+   -- the message structure and logic.
+   --
+   -- NOTE: The messages in the 1.3 versions of both of these standards are
+   -- generally backwards compatible with the 1.2 versions of the respective
+   -- standards. However, the usage of extensions is more restricted in the 1.3
+   -- versions of the standards than in the earlier versions. The current
+   -- specification enforces the version 1.3 constraints on extensions. However,
+   -- this specification could potentially still be used for older versions of
+   -- TLS / DTLS provided that these constraints have been met.
 
    type Length is range 0 .. 2 ** 24 - 1 with Size => 24;
 
-   type Handshake is
+   -- DTLS 1.3 (RFC 9147)
+   type Message_Seq is range 0 .. 2 ** 16 - 1 with Size => 16;
+
+   type TLS_Handshake is
       message
-         Tag : Handshake_Type;
+         Tag : Tls_Parameters::TLS_HandshakeType;
          Length : Length;
          Payload : Opaque
             with Size => Length * 8;
       end message;
 
-   -- Extensions
+   -- TODO(eng/recordflux/RecordFlux#786): This type is an extension of the
+   -- TLS_Handshake type. To merge these two types we would need to pass in the
+   -- protocol version field as a message parameter. However, currently it is
+   -- not possible due to the referenced issue. Merging these types would be
+   -- useful as it would also reduce the number of type refinements needed below.
+   type DTLS_Handshake is
+      message
+         Tag : Tls_Parameters::TLS_HandshakeType;
+         Length : Length;
+         Message_Seq : Message_Seq;
+         Fragment_Offset : Length;
+         Fragment_Length : Length
+            --  The condition below follows indirectly from RFC 9147.
+            if Fragment_Length <= Length
+               and Fragment_Offset <= Length - Fragment_Length;
+         Payload : Opaque
+            with Size => Fragment_Length * 8;
+      end message;
 
-   type Extension_Type is
-      (ET_SERVER_NAME                            =>  0,
-       ET_MAX_FRAGMENT_LENGTH                    =>  1,
-       ET_STATUS_REQUEST                         =>  5,  -- unsupported
-       ET_SUPPORTED_GROUPS                       => 10,
-       ET_SIGNATURE_ALGORITHMS                   => 13,
-       ET_USE_SRTP                               => 14,  -- unsupported
-       ET_HEARTBEAT                              => 15,
-       ET_APPLICATION_LAYER_PROTOCOL_NEGOTIATION => 16,
-       ET_SIGNED_CERTIFICATE_TIMESTAMP           => 18,  -- unsupported
-       ET_CLIENT_CERTIFICATE_TYPE                => 19,  -- unsupported
-       ET_SERVER_CERTIFICATE_TYPE                => 20,  -- unsupported
-       ET_PADDING                                => 21,  -- unsupported
-       ET_PRE_SHARED_KEY                         => 41,
-       ET_EARLY_DATA                             => 42,
-       ET_SUPPORTED_VERSIONS                     => 43,
-       ET_COOKIE                                 => 44,
-       ET_PSK_KEY_EXCHANGE_MODES                 => 45,
-       ET_CERTIFICATE_AUTHORITIES                => 47,
-       ET_OID_FILTERS                            => 48,
-       ET_POST_HANDSHAKE_AUTH                    => 49,
-       ET_SIGNATURE_ALGORITHMS_CERT              => 50,
-       ET_KEY_SHARE                              => 51)
-   with Size => 16, Always_Valid;
+   -- Extensions
+   --
+   -- The TLS and DTLS messages provide some data in the form of extensions that
+   -- are added to the main messages. However, there are context-specific
+   -- restrictions that must be taken into account:
+   --
+   -- 1. Some of the extensions are only applicable to DTLS. These must not be
+   --    accepted in TLS messages.
+   --
+   -- 2. In TLS 1.3 and DTLS 1.3 several previously defined extensions have been
+   --    either excluded or restricted to the context of certain "parent
+   --    message" only. However, it is important to note that for compatibility
+   --    reasons in TLS 1.3 and DTLS 1.3 the message headers indicate either TLS
+   --    1.2 or DTLS 1.2 in the Legacy_Version field. The value of that field is
+   --    passed to the Protocol_Version parameter in the current message. Hence,
+   --    this parameter can only be used for determining whether the protocol is
+   --    TLS or DTLS. But, not for the exact version. Instead, in this
+   --    specification it is assumed that the intended protocol version is
+   --    either TLS 1.3 or DTLS 1.3 and the respective restrictions are imposed.
+   --    Nonetheless, messages from eariler TLS or DTLS versions can still also
+   --    be accepted by the current specification if they comply to the same
+   --    restrictions.
+   --
+   -- The concrete restrictions for the extension types defined below have been
+   -- derived semi-automatically from the IANA TLS_ExtensionType_Values
+   -- registry.
 
    type Data_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
-   type Extension is
+   -- TODO(eng/recordflux/RecordFlux#1440): See the referenced ticket for a
+   -- potential way to slightly reduce the copyied contents of the extension
+   -- types below.
+
+   -- TODO(eng/recordflux/RecordFlux#1439): There are minor differences in the
+   -- constraints for the TLS and DTLS extensions. To specify them within the
+   -- same type we would need to pass in the protocol version field as a message
+   -- parameter. However, currently it is not possible due to the referenced
+   -- issue. The currently affected extensions are CH, SH and HRR.
+
+   -- Extensions for the CH (ClientHello) message
+   type CH_Extension_TLS is
       message
-         Tag : Extension_Type;
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- dtls-only = N
+               -- tls13 = .*CH.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag /= Tls_Extensiontype_Values::Client_Certificate_Url and
+               Tag /= Tls_Extensiontype_Values::Trusted_Ca_Keys and
+               Tag /= Tls_Extensiontype_Values::Truncated_Hmac and
+               Tag /= Tls_Extensiontype_Values::User_Mapping and
+               Tag /= Tls_Extensiontype_Values::Client_Authz and
+               Tag /= Tls_Extensiontype_Values::Server_Authz and
+               Tag /= Tls_Extensiontype_Values::Cert_Type and
+               Tag /= Tls_Extensiontype_Values::Ec_Point_Formats and
+               Tag /= Tls_Extensiontype_Values::Srp and
+               Tag /= Tls_Extensiontype_Values::Status_Request_V2 and
+               Tag /= Tls_Extensiontype_Values::Encrypt_Then_Mac and
+               Tag /= Tls_Extensiontype_Values::Extended_Master_Secret and
+               Tag /= Tls_Extensiontype_Values::Token_Binding and
+               Tag /= Tls_Extensiontype_Values::Cached_Info and
+               Tag /= Tls_Extensiontype_Values::Tls_Lts and
+               Tag /= Tls_Extensiontype_Values::Session_Ticket_Renamed_From_SessionTicket_TLS and
+               Tag /= Tls_Extensiontype_Values::TLMSP and
+               Tag /= Tls_Extensiontype_Values::TLMSP_Proxying and
+               Tag /= Tls_Extensiontype_Values::TLMSP_Delegate and
+               Tag /= Tls_Extensiontype_Values::Oid_Filters and
+               Tag /= Tls_Extensiontype_Values::Connection_Id_Deprecated and
+               Tag /= Tls_Extensiontype_Values::Connection_Id and
+               Tag /= Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms and
+               Tag /= Tls_Extensiontype_Values::Renegotiation_Info
+            );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
       end message;
 
-   type Extensions is sequence of Extension;
+   type CH_Extensions_TLS is sequence of CH_Extension_TLS;
 
-   type CH_Extension is new Extension;
-   type CH_Extensions is sequence of CH_Extension;
+   type CH_Extension_DTLS is
+      message
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- tls13 = .*CH.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag /= Tls_Extensiontype_Values::Client_Certificate_Url and
+               Tag /= Tls_Extensiontype_Values::Trusted_Ca_Keys and
+               Tag /= Tls_Extensiontype_Values::Truncated_Hmac and
+               Tag /= Tls_Extensiontype_Values::User_Mapping and
+               Tag /= Tls_Extensiontype_Values::Client_Authz and
+               Tag /= Tls_Extensiontype_Values::Server_Authz and
+               Tag /= Tls_Extensiontype_Values::Cert_Type and
+               Tag /= Tls_Extensiontype_Values::Ec_Point_Formats and
+               Tag /= Tls_Extensiontype_Values::Srp and
+               Tag /= Tls_Extensiontype_Values::Status_Request_V2 and
+               Tag /= Tls_Extensiontype_Values::Encrypt_Then_Mac and
+               Tag /= Tls_Extensiontype_Values::Extended_Master_Secret and
+               Tag /= Tls_Extensiontype_Values::Token_Binding and
+               Tag /= Tls_Extensiontype_Values::Cached_Info and
+               Tag /= Tls_Extensiontype_Values::Tls_Lts and
+               Tag /= Tls_Extensiontype_Values::Session_Ticket_Renamed_From_SessionTicket_TLS and
+               Tag /= Tls_Extensiontype_Values::TLMSP and
+               Tag /= Tls_Extensiontype_Values::TLMSP_Proxying and
+               Tag /= Tls_Extensiontype_Values::TLMSP_Delegate and
+               Tag /= Tls_Extensiontype_Values::Oid_Filters and
+               Tag /= Tls_Extensiontype_Values::Connection_Id_Deprecated and
+               Tag /= Tls_Extensiontype_Values::Renegotiation_Info
+            );
+         Data_Length : Data_Length;
+         Data : Opaque
+            with Size => 8 * Data_Length;
+      end message;
 
-   type SH_Extension is new Extension;
-   type SH_Extensions is sequence of SH_Extension;
+   type CH_Extensions_DTLS is sequence of CH_Extension_DTLS;
 
-   type HRR_Extension is new Extension;
-   type HRR_Extensions is sequence of HRR_Extension;
+   -- Extensions for the SH (ServerHello) message
+   type SH_Extension_TLS is
+      message
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- dtls-only = N
+               -- tls13 = .*SH.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag = Tls_Extensiontype_Values::Password_Salt or
+               Tag = Tls_Extensiontype_Values::Tls_Cert_With_Extern_Psk or
+               Tag = Tls_Extensiontype_Values::Pre_Shared_Key or
+               Tag = Tls_Extensiontype_Values::Supported_Versions or
+               Tag = Tls_Extensiontype_Values::Key_Share
+            );
+         Data_Length : Data_Length;
+         Data : Opaque
+            with Size => 8 * Data_Length;
+      end message;
 
-   type EE_Extension is new Extension;
+   type SH_Extensions_TLS is sequence of SH_Extension_TLS;
+
+   type SH_Extension_DTLS is
+      message
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- tls13 = .*SH.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag = Tls_Extensiontype_Values::Password_Salt or
+               Tag = Tls_Extensiontype_Values::Tls_Cert_With_Extern_Psk or
+               Tag = Tls_Extensiontype_Values::Pre_Shared_Key or
+               Tag = Tls_Extensiontype_Values::Supported_Versions or
+               Tag = Tls_Extensiontype_Values::Key_Share or
+               Tag = Tls_Extensiontype_Values::Connection_Id or
+               Tag = Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms
+            );
+         Data_Length : Data_Length;
+         Data : Opaque
+            with Size => 8 * Data_Length;
+      end message;
+
+   type SH_Extensions_DTLS is sequence of SH_Extension_DTLS;
+
+   -- Extensions for the HRR (HelloRetryRequest) message
+   type HRR_Extension_TLS is
+      message
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- dtls-only = N
+               -- tls13 = .*HRR.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag = Tls_Extensiontype_Values::Password_Salt or
+               Tag = Tls_Extensiontype_Values::Supported_Versions or
+               Tag = Tls_Extensiontype_Values::Cookie or
+               Tag = Tls_Extensiontype_Values::Key_Share
+            );
+         Data_Length : Data_Length;
+         Data : Opaque
+            with Size => 8 * Data_Length;
+      end message;
+
+   type HRR_Extensions_TLS is sequence of HRR_Extension_TLS;
+
+   type HRR_Extension_DTLS is
+      message
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- tls13 = .*HRR.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag = Tls_Extensiontype_Values::Password_Salt or
+               Tag = Tls_Extensiontype_Values::Supported_Versions or
+               Tag = Tls_Extensiontype_Values::Cookie or
+               Tag = Tls_Extensiontype_Values::Key_Share or
+               Tag = Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms
+            );
+         Data_Length : Data_Length;
+         Data : Opaque
+            with Size => 8 * Data_Length;
+      end message;
+
+   type HRR_Extensions_DTLS is sequence of HRR_Extension_DTLS;
+
+   -- Extensions for the EE (EncryptedExtensions) message
+   type EE_Extension is
+      message
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- tls13 = .*EE.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag = Tls_Extensiontype_Values::Server_Name or
+               Tag = Tls_Extensiontype_Values::Max_Fragment_Length or
+               Tag = Tls_Extensiontype_Values::Supported_Groups_Renamed_From_Elliptic_Curves or
+               Tag = Tls_Extensiontype_Values::Use_Srtp or
+               Tag = Tls_Extensiontype_Values::Heartbeat or
+               Tag = Tls_Extensiontype_Values::Application_Layer_Protocol_Negotiation or
+               Tag = Tls_Extensiontype_Values::Client_Certificate_Type or
+               Tag = Tls_Extensiontype_Values::Server_Certificate_Type or
+               Tag = Tls_Extensiontype_Values::Record_Size_Limit or
+               Tag = Tls_Extensiontype_Values::Ticket_Pinning or
+               Tag = Tls_Extensiontype_Values::Supported_Ekt_Ciphers or
+               Tag = Tls_Extensiontype_Values::Early_Data or
+               Tag = Tls_Extensiontype_Values::External_Id_Hash or
+               Tag = Tls_Extensiontype_Values::External_Session_Id or
+               Tag = Tls_Extensiontype_Values::Quic_Transport_Parameters or
+               Tag = Tls_Extensiontype_Values::Ticket_Request
+            );
+         Data_Length : Data_Length;
+         Data : Opaque
+            with Size => 8 * Data_Length;
+      end message;
+
    type EE_Extensions is sequence of EE_Extension;
 
-   type CT_Extension is new Extension;
-   type CT_Extensions is sequence of CT_Extension;
+   -- Extensions for the CR (CertificateRequest) message
+   type CR_Extension is
+      message
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- tls13 = .*CR.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag = Tls_Extensiontype_Values::Server_Name or
+               Tag = Tls_Extensiontype_Values::Status_Request or
+               Tag = Tls_Extensiontype_Values::Signature_Algorithms or
+               Tag = Tls_Extensiontype_Values::Signed_Certificate_Timestamp or
+               Tag = Tls_Extensiontype_Values::Compress_Certificate or
+               Tag = Tls_Extensiontype_Values::Delegated_Credential or
+               Tag = Tls_Extensiontype_Values::Certificate_Authorities or
+               Tag = Tls_Extensiontype_Values::Oid_Filters or
+               Tag = Tls_Extensiontype_Values::Signature_Algorithms_Cert or
+               Tag = Tls_Extensiontype_Values::Transparency_Info
+            );
+         Data_Length : Data_Length;
+         Data : Opaque
+            with Size => 8 * Data_Length;
+      end message;
 
-   type CR_Extension is new Extension;
    type CR_Extensions is sequence of CR_Extension;
 
-   type NST_Extension is new Extension;
+   -- Extensions for the CT (CertificateEntry) message
+   type CT_Extension is
+      message
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- tls13 = .*CT.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag = Tls_Extensiontype_Values::Status_Request or
+               Tag = Tls_Extensiontype_Values::Signed_Certificate_Timestamp or
+               Tag = Tls_Extensiontype_Values::Delegated_Credential or
+               Tag = Tls_Extensiontype_Values::Transparency_Info or
+               Tag = Tls_Extensiontype_Values::Dnssec_Chain
+            );
+         Data_Length : Data_Length;
+         Data : Opaque
+            with Size => 8 * Data_Length;
+      end message;
+
+   type CT_Extensions is sequence of CT_Extension;
+
+   -- Extensions for the NST (NewSessionTicket) message
+   type NST_Extension is
+      message
+         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+            if
+            -- Message type specific constraints
+            (
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- tls13 = .*NST.*
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Tag = Tls_Extensiontype_Values::Early_Data
+            );
+         Data_Length : Data_Length;
+         Data : Opaque
+            with Size => 8 * Data_Length;
+      end message;
+
    type NST_Extensions is sequence of NST_Extension;
 
    -- Key Exchange Messages
 
-   type Protocol_Version is
-      (TLS_1_0 => 16#0301#,
-       TLS_1_1 => 16#0302#,
-       TLS_1_2 => 16#0303#,
-       TLS_1_3 => 16#0304#)
-   with Size => 16, Always_Valid;
-
    type Legacy_Session_ID_Length is range 0 .. 32 with Size => 8;
+
+   -- DTLS 1.3 (RFC 9147)
+   type Legacy_Cookie_Length is range 0 .. 2 ** 8 - 1 with Size => 8;
 
    type Cipher_Suites_Length is range 2 .. 2 ** 16 - 2 with Size => 16;
 
-   type Cipher_Suite is
-      (TLS_AES_128_GCM_SHA256       => 16#1301#,
-       TLS_AES_256_GCM_SHA384       => 16#1302#,
-       TLS_CHACHA20_POLY1305_SHA256 => 16#1303#,
-       TLS_AES_128_CCM_SHA256       => 16#1304#,
-       TLS_AES_128_CCM_8_SHA256     => 16#1305#)
-   with Size => 16, Always_Valid;
+   -- All the cipher suites that are currently defined in the IANA registry are
+   -- accepted in TLS 1.3
+   type Cipher_Suite_TLS is
+      message
+         Suite : Tls_Parameters::TLS_Cipher_Suites;
+      end message;
 
-   type Cipher_Suites is sequence of Cipher_Suite;
+   type Cipher_Suites_TLS is sequence of Cipher_Suite_TLS;
+
+   -- The IANA registry prohibits the usage of some cipher suites for DTLS
+   type Cipher_Suite_DTLS is
+      message
+         Suite : Tls_Parameters::TLS_Cipher_Suites
+            then null
+            if
+            --
+            -- Automatically generated condition that selects the enum literals having
+            -- the following properties:
+            --
+            -- dtls = Y
+            --
+            -- NOTE: Remove or amend this comment when the condition below is modified.
+            --
+            Suite /= Tls_Parameters::TLS_RSA_EXPORT_WITH_RC4_40_MD5 and
+            Suite /= Tls_Parameters::TLS_RSA_WITH_RC4_128_MD5 and
+            Suite /= Tls_Parameters::TLS_RSA_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_DH_Anon_EXPORT_WITH_RC4_40_MD5 and
+            Suite /= Tls_Parameters::TLS_DH_Anon_WITH_RC4_128_MD5 and
+            Suite /= Tls_Parameters::TLS_KRB5_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_KRB5_WITH_RC4_128_MD5 and
+            Suite /= Tls_Parameters::TLS_KRB5_EXPORT_WITH_RC4_40_SHA and
+            Suite /= Tls_Parameters::TLS_KRB5_EXPORT_WITH_RC4_40_MD5 and
+            Suite /= Tls_Parameters::TLS_PSK_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_DHE_PSK_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_RSA_PSK_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_SM4_GCM_SM3 and
+            Suite /= Tls_Parameters::TLS_SM4_CCM_SM3 and
+            Suite /= Tls_Parameters::TLS_ECDH_ECDSA_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_ECDHE_ECDSA_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_ECDH_RSA_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_ECDHE_RSA_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_ECDH_Anon_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_ECDHE_PSK_WITH_RC4_128_SHA and
+            Suite /= Tls_Parameters::TLS_DHE_RSA_WITH_AES_256_CCM_8 and
+            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC and
+            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC and
+            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_28147_CNT_IMIT and
+            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_L and
+            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_MAGMA_MGM_L and
+            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_S and
+            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_MAGMA_MGM_S;
+      end message;
+
+   type Cipher_Suites_DTLS is sequence of Cipher_Suite_DTLS;
 
    type Legacy_Compression_Methods_Length is range 1 .. 1 with Size => 8;
 
@@ -116,65 +486,194 @@ package TLS_Handshake is
 
    type Client_Hello is
       message
-         Legacy_Version : Protocol_Version
-            if Legacy_Version = TLS_1_2;
+         Legacy_Version : TLS_Common::Protocol_Version
+            -- For compatibility reasons both TLS 1.3 and DTLS 1.3 require
+            -- indicating the version 1.2 here.
+            if (Legacy_Version = Tls_Common::TLS_1_2
+               or Legacy_Version = Tls_Common::DTLS_1_2);
          Random : Opaque
             with Size => 32 * 8;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length;
          Legacy_Session_ID : Opaque
-            with Size => Legacy_Session_ID_Length * 8;
-         Cipher_Suites_Length : Cipher_Suites_Length;
-         Cipher_Suites : Cipher_Suites
+            with Size => Legacy_Session_ID_Length * 8
+            -- TLS
+            then Cipher_Suites_Length
+               if Legacy_Version = Tls_Common::TLS_1_0
+                  or Legacy_Version = Tls_Common::TLS_1_1
+                  or Legacy_Version = Tls_Common::TLS_1_2
+                  or Legacy_Version = Tls_Common::TLS_1_3
+            -- DTLS
+            then Legacy_Cookie_Length
+               if Legacy_Version /= Tls_Common::TLS_1_0
+                  and Legacy_Version /= Tls_Common::TLS_1_1
+                  and Legacy_Version /= Tls_Common::TLS_1_2
+                  and Legacy_Version /= Tls_Common::TLS_1_3;
+         Legacy_Cookie_Length : Legacy_Cookie_Length;
+         Legacy_Cookie : Opaque
+            with Size => Legacy_Cookie_Length * 8;
+         Cipher_Suites_Length : Cipher_Suites_Length
+            -- TLS
+            then Cipher_Suites_TLS
+               if Legacy_Version = Tls_Common::TLS_1_0
+                  or Legacy_Version = Tls_Common::TLS_1_1
+                  or Legacy_Version = Tls_Common::TLS_1_2
+                  or Legacy_Version = Tls_Common::TLS_1_3
+            -- DTLS
+            then Cipher_Suites_DTLS
+               if Legacy_Version /= Tls_Common::TLS_1_0
+                  and Legacy_Version /= Tls_Common::TLS_1_1
+                  and Legacy_Version /= Tls_Common::TLS_1_2
+                  and Legacy_Version /= Tls_Common::TLS_1_3;
+         -- TLS
+         Cipher_Suites_TLS : Cipher_Suites_TLS
+            with Size => Cipher_Suites_Length * 8
+            then Legacy_Compression_Methods_Length;
+         -- DTLS
+         Cipher_Suites_DTLS : Cipher_Suites_DTLS
             with Size => Cipher_Suites_Length * 8;
+         -- TLS and DTLS
          Legacy_Compression_Methods_Length : Legacy_Compression_Methods_Length;
          Legacy_Compression_Methods : Opaque
-            with Size => Legacy_Compression_Methods_Length * 8
-            then null
-               if Message'Last / 8 = Legacy_Compression_Methods'Last / 8
-            then Extensions_Length
-               if Message'Last / 8 /= Legacy_Compression_Methods'Last / 8;
-         Extensions_Length : Client_Hello_Extensions_Length;
-         Extensions : CH_Extensions
+            with Size => Legacy_Compression_Methods_Length * 8;
+            -- TODO(eng/recordflux/RecordFlux#1317): Enhance field conditions
+            -- The following field conditions trigger currently the referenced
+            -- issue. They have been commented out. I.e., Client_Hello messages
+            -- without extensions are not accepted. This is actually fine for
+            -- TLS 1.3 and DTLS 1.3) because they always have at least one
+            -- extension: Supported_Versions.
+            --
+            -- then null
+            --    if Message'Last / 8 = Legacy_Compression_Methods'Last / 8
+            -- then Extensions_Length
+            --    if Message'Last / 8 /= Legacy_Compression_Methods'Last / 8;
+         Extensions_Length : Client_Hello_Extensions_Length
+            -- TLS
+            then Extensions_TLS
+               if Legacy_Version = Tls_Common::TLS_1_0
+                  or Legacy_Version = Tls_Common::TLS_1_1
+                  or Legacy_Version = Tls_Common::TLS_1_2
+                  or Legacy_Version = Tls_Common::TLS_1_3
+            -- DTLS
+            then Extensions_DTLS
+               if Legacy_Version /= Tls_Common::TLS_1_0
+                  and Legacy_Version /= Tls_Common::TLS_1_1
+                  and Legacy_Version /= Tls_Common::TLS_1_2
+                  and Legacy_Version /= Tls_Common::TLS_1_3;
+         Extensions_TLS : CH_Extensions_TLS
+            with Size => Extensions_Length * 8
+            then null;
+         Extensions_DTLS : CH_Extensions_DTLS
             with Size => Extensions_Length * 8;
       end message;
 
-   for Handshake use (Payload => Client_Hello)
-      if Tag = HT_CLIENT_HELLO;
+   for TLS_Handshake use (Payload => Client_Hello)
+      if Tag = Tls_Parameters::Client_Hello;
+
+   for DTLS_Handshake use (Payload => Client_Hello)
+      if Tag = Tls_Parameters::Client_Hello;
 
    type Legacy_Compression_Method is range 0 .. 0 with Size => 8;
    type Server_Hello_Extensions_Length is range 6 .. 2 ** 16 - 1 with Size => 16;
 
    type Server_Hello is
       message
-         Legacy_Version : Protocol_Version
-            if Legacy_Version = TLS_1_2;
+         Legacy_Version : TLS_Common::Protocol_Version
+            -- For compatibility reasons both TLS 1.3 and DTLS 1.3 require
+            -- indicating the version 1.2 here.
+            if (Legacy_Version = Tls_Common::TLS_1_2
+               or Legacy_Version = Tls_Common::DTLS_1_2);
          Random : Opaque
             with Size => 32 * 8;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length;
          Legacy_Session_ID : Opaque
-            with Size => Legacy_Session_ID_Length * 8;
-         Cipher_Suite : Cipher_Suite;
+            with Size => Legacy_Session_ID_Length * 8
+            -- TLS
+            then Cipher_Suite_TLS
+               if Legacy_Version = Tls_Common::TLS_1_0
+                  or Legacy_Version = Tls_Common::TLS_1_1
+                  or Legacy_Version = Tls_Common::TLS_1_2
+                  or Legacy_Version = Tls_Common::TLS_1_3
+            -- DTLS
+            then Cipher_Suite_DTLS
+               if Legacy_Version /= Tls_Common::TLS_1_0
+                  and Legacy_Version /= Tls_Common::TLS_1_1
+                  and Legacy_Version /= Tls_Common::TLS_1_2
+                  and Legacy_Version /= Tls_Common::TLS_1_3;
+         -- TLS
+         Cipher_Suite_TLS : Cipher_Suite_TLS
+            then Legacy_Compression_Method;
+         -- DTLS
+         Cipher_Suite_DTLS : Cipher_Suite_DTLS;
+         -- TLS and DTLS
          Legacy_Compression_Method : Legacy_Compression_Method;
          Extensions_Length : Server_Hello_Extensions_Length
-            then Extensions
+            -- Per RFC 8446 section 4.1.3 the HelloRetryRequest message uses the
+            -- same structure as the ServerHello, but with Random set to the
+            -- special value below.
+            then Extensions_TLS
                with Size => Extensions_Length * 8
-               if Random /= [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#,
+               if (Random /= [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#,
                              16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#,
                              16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#,
-                             16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#]
-            then HRR_Extensions
+                             16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#])
+                  and
+                  -- TLS
+                  (Legacy_Version = Tls_Common::TLS_1_0
+                  or Legacy_Version = Tls_Common::TLS_1_1
+                  or Legacy_Version = Tls_Common::TLS_1_2
+                  or Legacy_Version = Tls_Common::TLS_1_3)
+            then Extensions_DTLS
                with Size => Extensions_Length * 8
-               if Random = [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#,
+               if (Random /= [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#,
+                             16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#,
+                             16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#,
+                             16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#])
+                  and
+                  -- DTLS
+                  (Legacy_Version /= Tls_Common::TLS_1_0
+                  and Legacy_Version /= Tls_Common::TLS_1_1
+                  and Legacy_Version /= Tls_Common::TLS_1_2
+                  and Legacy_Version /= Tls_Common::TLS_1_3)
+
+            then HRR_Extensions_TLS
+               with Size => Extensions_Length * 8
+               if (Random = [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#,
+                             16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#,
+                             16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#,
+                             16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#])
+                  and
+                  -- TLS
+                  (Legacy_Version = Tls_Common::TLS_1_0
+                  or Legacy_Version = Tls_Common::TLS_1_1
+                  or Legacy_Version = Tls_Common::TLS_1_2
+                  or Legacy_Version = Tls_Common::TLS_1_3)
+
+            then HRR_Extensions_DTLS
+               with Size => Extensions_Length * 8
+               if (Random = [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#,
                             16#1D#, 16#8C#, 16#02#, 16#1E#, 16#65#, 16#B8#, 16#91#, 16#C2#, 16#A2#,
                             16#11#, 16#16#, 16#7A#, 16#BB#, 16#8C#, 16#5E#, 16#07#, 16#9E#, 16#09#,
-                            16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#];
-         Extensions : SH_Extensions
+                            16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#])
+                  and
+                  -- DTLS
+                  (Legacy_Version /= Tls_Common::TLS_1_0
+                  and Legacy_Version /= Tls_Common::TLS_1_1
+                  and Legacy_Version /= Tls_Common::TLS_1_2
+                  and Legacy_Version /= Tls_Common::TLS_1_3);
+         Extensions_TLS : SH_Extensions_TLS
             then null;
-         HRR_Extensions : HRR_Extensions;
+         Extensions_DTLS : SH_Extensions_DTLS
+            then null;
+         HRR_Extensions_TLS : HRR_Extensions_TLS
+            then null;
+         HRR_Extensions_DTLS : HRR_Extensions_DTLS;
       end message;
 
-   for Handshake use (Payload => Server_Hello)
-      if Tag = HT_SERVER_HELLO;
+   for TLS_Handshake use (Payload => Server_Hello)
+      if Tag = TLS_Parameters::Server_Hello;
+
+   for DTLS_Handshake use (Payload => Server_Hello)
+      if Tag = TLS_Parameters::Server_Hello;
 
    -- Server Parameters
 
@@ -187,8 +686,11 @@ package TLS_Handshake is
             with Size => Length * 8;
       end message;
 
-   for Handshake use (Payload => Encrypted_Extensions)
-      if Tag = HT_ENCRYPTED_EXTENSIONS;
+   for TLS_Handshake use (Payload => Encrypted_Extensions)
+      if Tag = TLS_Parameters::Encrypted_Extensions;
+
+   for DTLS_Handshake use (Payload => Encrypted_Extensions)
+      if Tag = TLS_Parameters::Encrypted_Extensions;
 
    type Certificate_Request_Context_Length is range 0 .. 2 ** 8 - 1 with Size => 8;
    type Certificate_Request_Extensions_Length is range 2 .. 2 ** 16 - 1 with Size => 16;
@@ -203,12 +705,14 @@ package TLS_Handshake is
             with Size => Extensions_Length * 8;
       end message;
 
-   for Handshake use (Payload => Certificate_Request)
-      if Tag = HT_CERTIFICATE_REQUEST;
+   for TLS_Handshake use (Payload => Certificate_Request)
+      if Tag = TLS_Parameters::Certificate_Request;
+
+   for DTLS_Handshake use (Payload => Certificate_Request)
+      if Tag = TLS_Parameters::Certificate_Request;
 
    -- Authentication Messages
 
-   type Certificate_Type is (X509 => 0, RAW_PUBLIC_KEY => 2) with Size => 8;
    type ASN1_Subject_Public_Key_Info_Length is range 1 .. 2 ** 24 - 1 with Size => 24;
    type Cert_Data_Length is range 1 .. 2 ** 24 - 1 with Size => 24;
    type Certificate_Extensions_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
@@ -236,46 +740,27 @@ package TLS_Handshake is
             with Size => Certificate_List_Length * 8;
       end message;
 
-   for Handshake use (Payload => Certificate)
-      if Tag = HT_CERTIFICATE;
+   for TLS_Handshake use (Payload => Certificate)
+      if Tag = TLS_Parameters::Certificate;
 
-   type Signature_Scheme is
-      (-- RSASSA-PKCS1-v1_5 algorithms
-       RSA_PKCS1_SHA256       => 16#0401#,
-       RSA_PKCS1_SHA384       => 16#0501#,
-       RSA_PKCS1_SHA512       => 16#0601#,
-       -- ECDSA algorithms
-       ECDSA_SECP256R1_SHA256 => 16#0403#,
-       ECDSA_SECP384R1_SHA384 => 16#0503#,
-       ECDSA_SECP521R1_SHA512 => 16#0603#,
-       -- RSASSA-PSS algorithms with public key OID rsaEncryption
-       RSA_PSS_RSAE_SHA256    => 16#0804#,
-       RSA_PSS_RSAE_SHA384    => 16#0805#,
-       RSA_PSS_RSAE_SHA512    => 16#0806#,
-       -- EdDSA algorithms
-       ED25519                => 16#0807#,
-       ED448                  => 16#0808#,
-       -- RSASSA-PSS algorithms with public key OID RSASSA-PSS
-       RSA_PSS_PSS_SHA256     => 16#0809#,
-       RSA_PSS_PSS_SHA384     => 16#080A#,
-       RSA_PSS_PSS_SHA512     => 16#080B#,
-       -- Legacy algorithms
-       RSA_PKCS1_SHA1         => 16#0201#,
-       ECDSA_SHA1             => 16#0203#)
-   with Size => 16, Always_Valid;
+   for DTLS_Handshake use (Payload => Certificate)
+      if Tag = TLS_Parameters::Certificate;
 
    type Signature_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
    type Certificate_Verify is
       message
-         Algorithm : Signature_Scheme;
+         Algorithm : Tls_Parameters::TLS_SignatureScheme;
          Signature_Length : Signature_Length;
          Signature : Opaque
             with Size => Signature_Length * 8;
       end message;
 
-   for Handshake use (Payload => Certificate_Verify)
-      if Tag = HT_CERTIFICATE_VERIFY;
+   for TLS_Handshake use (Payload => Certificate_Verify)
+      if Tag = TLS_Parameters::Certificate_Verify;
+
+   for DTLS_Handshake use (Payload => Certificate_Verify)
+      if Tag = TLS_Parameters::Certificate_Verify;
 
    type Finished is
       message
@@ -283,17 +768,23 @@ package TLS_Handshake is
             with Size => Message'Size;
       end message;
 
-   for Handshake use (Payload => Finished)
-      if Tag = HT_FINISHED;
+   for TLS_Handshake use (Payload => Finished)
+      if Tag = TLS_Parameters::Finished;
+
+   for DTLS_Handshake use (Payload => Finished)
+      if Tag = TLS_Parameters::Finished;
 
    -- End of Early Data
 
    type End_Of_Early_Data is null message;
 
-   for Handshake use (Payload => End_Of_Early_Data)
-      if Tag = HT_END_OF_EARLY_DATA;
+   for TLS_Handshake use (Payload => End_Of_Early_Data)
+      if Tag = TLS_Parameters::End_Of_Early_Data;
 
-   -- Post-Handshake Messages
+   for DTLS_Handshake use (Payload => End_Of_Early_Data)
+      if Tag = TLS_Parameters::End_Of_Early_Data;
+
+   -- Post-TLS_Handshake Messages
 
    type Ticket_Lifetime is range 0 .. 2 ** 32 - 1 with Size => 32;
    type Ticket_Age_Add is range 0 .. 2 ** 32 - 1 with Size => 32;
@@ -316,22 +807,31 @@ package TLS_Handshake is
             with Size => Extensions_Length * 8;
       end message;
 
-   for Handshake use (Payload => New_Session_Ticket)
-      if Tag = HT_NEW_SESSION_TICKET;
+   for TLS_Handshake use (Payload => New_Session_Ticket)
+      if Tag = TLS_Parameters::New_Session_Ticket_Renamed_From_NewSessionTicket;
 
-   type Key_Update_Request is (UPDATE_NOT_REQUESTED => 0, UPDATE_REQUESTED => 1) with Size => 8;
+   for DTLS_Handshake use (Payload => New_Session_Ticket)
+      if Tag = TLS_Parameters::New_Session_Ticket_Renamed_From_NewSessionTicket;
+
+   type Key_Update_Request is (
+      Update_Not_Requested => 0,
+      Update_Requested => 1)
+   with Size => 8;
 
    type Key_Update is
       message
          Request_Update : Key_Update_Request;
       end message;
 
-   for Handshake use (Payload => Key_Update)
-      if Tag = HT_KEY_UPDATE;
+   for TLS_Handshake use (Payload => Key_Update)
+      if Tag = TLS_Parameters::Key_Update;
+
+   for DTLS_Handshake use (Payload => Key_Update)
+      if Tag = TLS_Parameters::Key_Update;
 
    -- Server Name Indication Extension
 
-   type Name_Type is (HOST_NAME => 0) with Size => 8;
+   type Name_Type is (Host_Name => 0) with Size => 8;
    type Name_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
 
    type Server_Name is
@@ -352,10 +852,12 @@ package TLS_Handshake is
             with Size => 8 * Length;
       end message;
 
-   for CH_Extension use (Data => Server_Name_List)
-      if Tag = ET_SERVER_NAME;
+   for CH_Extension_TLS use (Data => Server_Name_List)
+      if Tag = TLS_ExtensionType_Values::Server_Name;
+   for CH_Extension_DTLS use (Data => Server_Name_List)
+      if Tag = TLS_ExtensionType_Values::Server_Name;
    for EE_Extension use (Data => Server_Name_List)
-      if Tag = ET_SERVER_NAME;
+      if Tag = TLS_ExtensionType_Values::Server_Name;
 
    -- Max Fragment Length
 
@@ -371,15 +873,17 @@ package TLS_Handshake is
          Max_Fragment_Length : Max_Fragment_Length_Value;
       end message;
 
-   for CH_Extension use (Data => Max_Fragment_Length)
-      if Tag = ET_MAX_FRAGMENT_LENGTH;
+   for CH_Extension_TLS use (Data => Max_Fragment_Length)
+      if Tag = TLS_ExtensionType_Values::Max_Fragment_Length;
+   for CH_Extension_DTLS use (Data => Max_Fragment_Length)
+      if Tag = TLS_ExtensionType_Values::Max_Fragment_Length;
    for EE_Extension use (Data => Max_Fragment_Length)
-      if Tag = ET_MAX_FRAGMENT_LENGTH;
+      if Tag = TLS_ExtensionType_Values::Max_Fragment_Length;
 
    -- Supported Versions Extension
 
    type Supported_Versions_Length is range 2 .. 254 with Size => 8;
-   type Protocol_Versions is sequence of Protocol_Version;
+   type Protocol_Versions is sequence of TLS_Common::Protocol_Version;
 
    type Supported_Versions is
       message
@@ -390,15 +894,21 @@ package TLS_Handshake is
 
    type Supported_Version is
       message
-         Version : Protocol_Version;
+         Version : TLS_Common::Protocol_Version;
       end message;
 
-   for CH_Extension use (Data => Supported_Versions)
-      if Tag = ET_SUPPORTED_VERSIONS;
-   for SH_Extension use (Data => Supported_Version)
-      if Tag = ET_SUPPORTED_VERSIONS;
-   for HRR_Extension use (Data => Supported_Version)
-      if Tag = ET_SUPPORTED_VERSIONS;
+   for CH_Extension_TLS use (Data => Supported_Versions)
+      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+   for CH_Extension_DTLS use (Data => Supported_Versions)
+      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+   for SH_Extension_TLS use (Data => Supported_Version)
+      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+   for SH_Extension_DTLS use (Data => Supported_Version)
+      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+   for HRR_Extension_TLS use (Data => Supported_Version)
+      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+   for HRR_Extension_DTLS use (Data => Supported_Version)
+      if Tag = TLS_ExtensionType_Values::Supported_Versions;
 
    -- Cookie Extension
 
@@ -411,15 +921,19 @@ package TLS_Handshake is
             with Size => 8 * Length;
       end message;
 
-   for CH_Extension use (Data => Cookie)
-      if Tag = ET_COOKIE;
-   for HRR_Extension use (Data => Cookie)
-      if Tag = ET_COOKIE;
+   for CH_Extension_TLS use (Data => Cookie)
+      if Tag = TLS_ExtensionType_Values::Cookie;
+   for CH_Extension_DTLS use (Data => Cookie)
+      if Tag = TLS_ExtensionType_Values::Cookie;
+   for HRR_Extension_TLS use (Data => Cookie)
+      if Tag = TLS_ExtensionType_Values::Cookie;
+   for HRR_Extension_DTLS use (Data => Cookie)
+      if Tag = TLS_ExtensionType_Values::Cookie;
 
    -- Signature Algorithms Extension
 
    type Signature_Algorithms_Length is range 2 .. 2 ** 16 - 2 with Size => 16;
-   type Signature_Schemes is sequence of Signature_Scheme;
+   type Signature_Schemes is sequence of Tls_Parameters::TLS_SignatureScheme;
 
    type Signature_Algorithms is
       message
@@ -428,10 +942,12 @@ package TLS_Handshake is
             with Size => 8 * Length;
       end message;
 
-   for CH_Extension use (Data => Signature_Algorithms)
-      if Tag = ET_SIGNATURE_ALGORITHMS;
+   for CH_Extension_TLS use (Data => Signature_Algorithms)
+      if Tag = TLS_ExtensionType_Values::Signature_Algorithms;
+   for CH_Extension_DTLS use (Data => Signature_Algorithms)
+      if Tag = TLS_ExtensionType_Values::Signature_Algorithms;
    for CR_Extension use (Data => Signature_Algorithms)
-      if Tag = ET_SIGNATURE_ALGORITHMS;
+      if Tag = TLS_ExtensionType_Values::Signature_Algorithms;
 
    type Signature_Algorithms_Cert is
       message
@@ -440,18 +956,18 @@ package TLS_Handshake is
             with Size => 8 * Length;
       end message;
 
-   for CH_Extension use (Data => Signature_Algorithms_Cert)
-      if Tag = ET_SIGNATURE_ALGORITHMS_CERT;
+   for CH_Extension_TLS use (Data => Signature_Algorithms_Cert)
+      if Tag = TLS_ExtensionType_Values::Signature_Algorithms_Cert;
+   for CH_Extension_DTLS use (Data => Signature_Algorithms_Cert)
+      if Tag = TLS_ExtensionType_Values::Signature_Algorithms_Cert;
    for CR_Extension use (Data => Signature_Algorithms_Cert)
-      if Tag = ET_SIGNATURE_ALGORITHMS_CERT;
+      if Tag = TLS_ExtensionType_Values::Signature_Algorithms_Cert;
 
    -- Heartbeat Extension
 
-   type Heartbeat_Mode is (PEER_ALLOWED_TO_SEND => 1, PEER_NOT_ALLOWED_TO_SEND => 2) with Size => 8;
-
    type Heartbeat is
       message
-         Mode : Heartbeat_Mode;
+         Mode : Tls_Parameters::TLS_Heartbeat_Modes;
       end message;
 
    -- Certificate Authorities Extension
@@ -475,10 +991,12 @@ package TLS_Handshake is
             with Size => 8 * Length;
       end message;
 
-   for CH_Extension use (Data => Certificate_Authorities)
-      if Tag = ET_CERTIFICATE_AUTHORITIES;
+   for CH_Extension_TLS use (Data => Certificate_Authorities)
+      if Tag = TLS_ExtensionType_Values::Certificate_Authorities;
+   for CH_Extension_DTLS use (Data => Certificate_Authorities)
+      if Tag = TLS_ExtensionType_Values::Certificate_Authorities;
    for CR_Extension use (Data => Certificate_Authorities)
-      if Tag = ET_CERTIFICATE_AUTHORITIES;
+      if Tag = TLS_ExtensionType_Values::Certificate_Authorities;
 
    -- OID Filters Extension
 
@@ -506,35 +1024,22 @@ package TLS_Handshake is
       end message;
 
    for CR_Extension use (Data => OID_Filters)
-      if Tag = ET_OID_FILTERS;
+      if Tag = TLS_ExtensionType_Values::Oid_Filters;
 
-   -- Post-Handshake Client Authentication Extension
+   -- Post-TLS_Handshake Client Authentication Extension
 
    type Post_Handshake_Auth is null message;
 
-   for CH_Extension use (Data => Post_Handshake_Auth)
-      if Tag = ET_POST_HANDSHAKE_AUTH;
+   for CH_Extension_TLS use (Data => Post_Handshake_Auth)
+      if Tag = TLS_ExtensionType_Values::Post_Handshake_Auth;
+   for CH_Extension_DTLS use (Data => Post_Handshake_Auth)
+      if Tag = TLS_ExtensionType_Values::Post_Handshake_Auth;
 
    -- Supported Groups Extension
 
    type Supported_Groups_Length is range 2 .. 2 ** 16 - 1 with Size => 16;
 
-   type Named_Group is
-      (-- Elliptic Curve Groups (ECDHE)
-       SECP256R1 => 16#0017#,
-       SECP384R1 => 16#0018#,
-       SECP521R1 => 16#0019#,
-       X25519    => 16#001D#,
-       X448      => 16#001E#,
-       -- Finite Field Groups (DHE)
-       FFDHE2048 => 16#0100#,
-       FFDHE3072 => 16#0101#,
-       FFDHE4096 => 16#0102#,
-       FFDHE6144 => 16#0103#,
-       FFDHE8192 => 16#0104#)
-   with Size => 16, Always_Valid;
-
-   type Named_Groups is sequence of Named_Group;
+   type Named_Groups is sequence of Tls_Parameters::TLS_Supported_Groups;
 
    type Supported_Groups is
       message
@@ -543,10 +1048,12 @@ package TLS_Handshake is
             with Size => 8 * Length;
       end message;
 
-   for CH_Extension use (Data => Supported_Groups)
-      if Tag = ET_SUPPORTED_GROUPS;
+   for CH_Extension_TLS use (Data => Supported_Groups)
+      if Tag = TLS_ExtensionType_Values::Supported_Groups_Renamed_From_Elliptic_Curves;
+   for CH_Extension_DTLS use (Data => Supported_Groups)
+      if Tag = TLS_ExtensionType_Values::Supported_Groups_Renamed_From_Elliptic_Curves;
    for EE_Extension use (Data => Supported_Groups)
-      if Tag = ET_SUPPORTED_GROUPS;
+      if Tag = TLS_ExtensionType_Values::Supported_Groups_Renamed_From_Elliptic_Curves;
 
    -- Key Share Extension
 
@@ -554,7 +1061,7 @@ package TLS_Handshake is
 
    type Key_Share_Entry is
       message
-         Group : Named_Group;
+         Group : Tls_Parameters::TLS_Supported_Groups;
          Length : Key_Exchange_Length;
          Key_Exchange : Opaque
             with Size => 8 * Length;
@@ -575,36 +1082,39 @@ package TLS_Handshake is
 
    type Key_Share_HRR is
       message
-         Selected_Group : Named_Group;
+         Selected_Group : Tls_Parameters::TLS_Supported_Groups;
       end message;
 
-   for CH_Extension use (Data => Key_Share_CH)
-      if Tag = ET_KEY_SHARE;
-   for SH_Extension use (Data => Key_Share_SH)
-      if Tag = ET_KEY_SHARE;
-   for HRR_Extension use (Data => Key_Share_HRR)
-      if Tag = ET_KEY_SHARE;
+   for CH_Extension_TLS use (Data => Key_Share_CH)
+      if Tag = TLS_ExtensionType_Values::Key_Share;
+   for CH_Extension_DTLS use (Data => Key_Share_CH)
+      if Tag = TLS_ExtensionType_Values::Key_Share;
+   for SH_Extension_TLS use (Data => Key_Share_SH)
+      if Tag = TLS_ExtensionType_Values::Key_Share;
+   for SH_Extension_DTLS use (Data => Key_Share_SH)
+      if Tag = TLS_ExtensionType_Values::Key_Share;
+   for HRR_Extension_TLS use (Data => Key_Share_HRR)
+      if Tag = TLS_ExtensionType_Values::Key_Share;
+   for HRR_Extension_DTLS use (Data => Key_Share_HRR)
+      if Tag = TLS_ExtensionType_Values::Key_Share;
 
    -- Pre-Shared Key Exchange Modes Extension
 
    type PSK_Key_Exchange_Modes_Length is range 1 .. 255 with Size => 8;
 
-   type Key_Exchange_Mode is
-      (PSK_KE     => 0,
-       PSK_DHE_KE => 1)
-   with Size => 8, Always_Valid;
+   type Key_Exchange_Modes is sequence of TLS_Parameters::TLS_PskKeyExchangeMode;
 
-   type Key_Exchange_Modes is sequence of Key_Exchange_Mode;
-
-   type PSK_Key_Exchange_Modes is
+   type Psk_Key_Exchange_Modes is
       message
          Length : PSK_Key_Exchange_Modes_Length;
          Modes : Key_Exchange_Modes
             with Size => 8 * Length;
       end message;
 
-   for CH_Extension use (Data => PSK_Key_Exchange_Modes)
-      if Tag = ET_PSK_KEY_EXCHANGE_MODES;
+   for CH_Extension_TLS use (Data => Psk_Key_Exchange_Modes)
+      if Tag = TLS_ExtensionType_Values::Psk_Key_Exchange_Modes;
+   for CH_Extension_DTLS use (Data => Psk_Key_Exchange_Modes)
+      if Tag = TLS_ExtensionType_Values::Psk_Key_Exchange_Modes;
 
    -- Early Data Indication Extension
 
@@ -617,12 +1127,14 @@ package TLS_Handshake is
 
    type Early_Data is null message;
 
-   for CH_Extension use (Data => Early_Data)
-      if Tag = ET_EARLY_DATA;
+   for CH_Extension_TLS use (Data => Early_Data)
+      if Tag = TLS_ExtensionType_Values::Early_Data;
+   for CH_Extension_DTLS use (Data => Early_Data)
+      if Tag = TLS_ExtensionType_Values::Early_Data;
    for EE_Extension use (Data => Early_Data)
-      if Tag = ET_EARLY_DATA;
+      if Tag = TLS_ExtensionType_Values::Early_Data;
    for NST_Extension use (Data => Early_Data_Indication)
-      if Tag = ET_EARLY_DATA;
+      if Tag = TLS_ExtensionType_Values::Early_Data;
 
    -- Pre-Shared Key Extension
 
@@ -670,10 +1182,14 @@ package TLS_Handshake is
          Selected_Identity : Identity_Index;
       end message;
 
-   for CH_Extension use (Data => Pre_Shared_Key_CH)
-      if Tag = ET_PRE_SHARED_KEY;
-   for SH_Extension use (Data => Pre_Shared_Key_SH)
-      if Tag = ET_PRE_SHARED_KEY;
+   for CH_Extension_TLS use (Data => Pre_Shared_Key_CH)
+      if Tag = TLS_ExtensionType_Values::Pre_Shared_Key;
+   for CH_Extension_DTLS use (Data => Pre_Shared_Key_CH)
+      if Tag = TLS_ExtensionType_Values::Pre_Shared_Key;
+   for SH_Extension_TLS use (Data => Pre_Shared_Key_SH)
+      if Tag = TLS_ExtensionType_Values::Pre_Shared_Key;
+   for SH_Extension_DTLS use (Data => Pre_Shared_Key_SH)
+      if Tag = TLS_ExtensionType_Values::Pre_Shared_Key;
 
    -- Application-Layer Protocol Negotiation Extension
 
@@ -696,9 +1212,11 @@ package TLS_Handshake is
             with Size => 8 * Length;
       end message;
 
-   for CH_Extension use (Data => Protocol_Name_List)
-      if Tag = ET_APPLICATION_LAYER_PROTOCOL_NEGOTIATION;
+   for CH_Extension_TLS use (Data => Protocol_Name_List)
+      if Tag = TLS_ExtensionType_Values::Application_Layer_Protocol_Negotiation;
+   for CH_Extension_DTLS use (Data => Protocol_Name_List)
+      if Tag = TLS_ExtensionType_Values::Application_Layer_Protocol_Negotiation;
    for EE_Extension use (Data => Protocol_Name_List)
-      if Tag = ET_APPLICATION_LAYER_PROTOCOL_NEGOTIATION;
+      if Tag = TLS_ExtensionType_Values::Application_Layer_Protocol_Negotiation;
 
 end TLS_Handshake;

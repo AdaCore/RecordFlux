@@ -72,7 +72,7 @@ package TLS_Handshake_Session is
       Keystore_Message : GreenTLS::Keystore_Message;
       Max_Fragment_Length : TLS_Handshake::Max_Fragment_Length_Value;
       Max_Fragment_Length_Received : Boolean := False;
-      OID_Filters : TLS_Handshake::OID_Filters;
+      Oid_Filters : TLS_Handshake::Oid_Filters;
       OID_Filters_Received : Boolean := False;
       PSK_Identities : TLS_Handshake::PSK_Identities;
       PSKs : GreenTLS::PSKs;
@@ -160,9 +160,9 @@ package TLS_Handshake_Session is
          goto Start_Post_Handshake_Auth_Extension
             if Configuration.Post_Handshake_Auth_Enabled = True
          goto Start_DHE
-            if TLS_Handshake::PSK_DHE_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+            if TLS_Handshake::Psk_Dhe_Ke in Configuration.PSK_Key_Exchange_Modes_Modes
          goto Start_PSK
-            if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+            if TLS_Handshake::Psk_Ke in Configuration.PSK_Key_Exchange_Modes_Modes
          goto Error_Internal_Error
       exception
          goto Error_Internal_Error
@@ -175,9 +175,9 @@ package TLS_Handshake_Session is
          goto Error_Internal_Error
             if Extensions_List'Valid = False
          goto Start_DHE
-            if TLS_Handshake::PSK_DHE_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+            if TLS_Handshake::Psk_Dhe_Ke in Configuration.PSK_Key_Exchange_Modes_Modes
          goto Start_PSK
-            if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+            if TLS_Handshake::Psk_Ke in Configuration.PSK_Key_Exchange_Modes_Modes
          goto Error_Internal_Error
       exception
          goto Error_Internal_Error
@@ -198,7 +198,7 @@ package TLS_Handshake_Session is
             with Desc => "rfc8446.txt+2259:43-2261:36"
             if Configuration.Server_Authentication_Enabled = True
          goto Start_PSK
-            if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+            if TLS_Handshake::Psk_Ke in Configuration.PSK_Key_Exchange_Modes_Modes
          goto Start_Send
       exception
          goto Error_Internal_Error
@@ -212,7 +212,7 @@ package TLS_Handshake_Session is
          goto Error_Internal_Error
             if Extensions_List'Valid = False
          goto Start_PSK
-            if TLS_Handshake::PSK_KE in Configuration.PSK_Key_Exchange_Modes_Modes
+            if TLS_Handshake::Psk_Ke in Configuration.PSK_Key_Exchange_Modes_Modes
          goto Start_Send
       exception
          goto Error_Internal_Error
@@ -228,7 +228,7 @@ package TLS_Handshake_Session is
                or Keystore_Message.Tag /= GreenTLS::Keystore_Response
                or Keystore_Message.Request /= GreenTLS::Keystore_Request_PSKs
                or (Keystore_Message.Length = 0
-                   and TLS_Handshake::PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes_Modes)
+                   and TLS_Handshake::Psk_Dhe_Ke not in Configuration.PSK_Key_Exchange_Modes_Modes)
          goto Start_Send
             if Keystore_Message.Length = 0
          goto Start_PSK_Extension_Check
@@ -264,7 +264,7 @@ package TLS_Handshake_Session is
          Client_Hello_Hash : Hash_Context;
       begin
          Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_PSK_Key_Exchange_Modes, Data_Length => Modes'Size, Data => Modes)
-            where Modes = TLS_Handshake::PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes_Modes));
+            where Modes = TLS_Handshake::Psk_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes_Modes));
          Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Pre_Shared_Key, Data_Length => Pre_Shared_Key_CH'Size, Data => Pre_Shared_Key_CH));
          Client_Hello_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Client_Hello, Length => CH'Size, Payload => CH)
             where CH = TLS_Handshake::Client_Hello'(Legacy_Version => TLS_Handshake::TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Legacy_Session_ID => [], Cipher_Suites_Length => Configuration.Cipher_Suites'Size, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Legacy_Compression_Methods => [], Extensions_Length => Extensions_List'Size, Extensions => Extensions_List);
@@ -352,7 +352,7 @@ package TLS_Handshake_Session is
                    E.Tag not in [for E in Client_Hello_Message.Extensions => E.Tag])
          goto Error_Illegal_Parameter
             with Desc => "rfc8446.txt+2770:46-2771:59"
-            if TLS_Handshake::PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes_Modes
+            if TLS_Handshake::Psk_Dhe_Ke not in Configuration.PSK_Key_Exchange_Modes_Modes
                and (for some E in Server_Hello_Message.Extensions =>
                        E.Tag = TLS_Handshake::ET_Key_Share)
          goto Wait_SH_Parse_HRR
@@ -541,7 +541,7 @@ package TLS_Handshake_Session is
                or Keystore_Message.Tag /= GreenTLS::Keystore_Response
                or Keystore_Message.Request /= GreenTLS::Keystore_Request_PSKs
                or (Keystore_Message.Length = 0
-                   and TLS_Handshake::PSK_DHE_KE not in Configuration.PSK_Key_Exchange_Modes_Modes)
+                   and TLS_Handshake::Psk_Dhe_Ke not in Configuration.PSK_Key_Exchange_Modes_Modes)
                or GreenTLS::PSK_Message (Keystore_Message.Payload)'Valid = False
          goto Wait_SH_No_PSK_Extension
             if Keystore_Message.Length = 0
@@ -566,7 +566,7 @@ package TLS_Handshake_Session is
          Client_Hello_Hash : Hash_Context;
       begin
          Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_PSK_Key_Exchange_Modes, Data_Length => Modes'Size, Data => Modes)
-            where Modes = TLS_Handshake::PSK_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes_Modes));
+            where Modes = TLS_Handshake::Psk_Key_Exchange_Modes'(Length => Configuration.PSK_Key_Exchange_Modes_Length, Modes => Configuration.PSK_Key_Exchange_Modes_Modes));
          Extensions_List'Append (TLS_Handshake::CH_Extension'(Tag => TLS_Handshake::ET_Pre_Shared_Key, Data_Length => Pre_Shared_Key_CH'Size, Data => Pre_Shared_Key_CH));
          Client_Hello_Handshake_Message := TLS_Handshake::Handshake'(Tag => TLS_Handshake::HT_Client_Hello, Length => CH'Size, Payload => CH)
             where CH = TLS_Handshake::Client_Hello'(Legacy_Version => TLS_Handshake::TLS_1_2, Random => Random_Message.Data, Legacy_Session_ID_Length => 0, Legacy_Session_ID => [], Cipher_Suites_Length => Configuration.Cipher_Suites'Size, Cipher_Suites => Configuration.Cipher_Suites, Legacy_Compression_Methods_Length => 0, Legacy_Compression_Methods => [], Extensions_Length => Extensions_List'Size, Extensions => Extensions_List);
@@ -768,7 +768,7 @@ package TLS_Handshake_Session is
          Extensions : TLS_Handshake::EE_Extensions := [for E in Encrypted_Extensions_Message.Extensions if E.Tag = TLS_Handshake::ET_Heartbeat => E];
       begin
          Server_Heartbeat_Mode := TLS_Handshake::Heartbeat (Extensions'Head.Data).Mode;
-         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::HEARTBEAT, Length => Data'Size, Data => Data)
+         Record_Control_Channel'Write (GreenTLS::Control_Message'(Tag => GreenTLS::Heartbeat, Length => Data'Size, Data => Data)
             where Data = GreenTLS::Heartbeat_Control_Message'(Local => Configuration.Heartbeat_Mode, Remote => Server_Heartbeat_Mode));
          Heartbeat_Received := True;
       transition
@@ -851,7 +851,7 @@ package TLS_Handshake_Session is
       begin
          Record_Data_Channel'Read (CCR_Handshake_Message);
          Certificate_Authorities := TLS_Handshake::Certificate_Authorities'(Length => 0, Authorities => []);
-         OID_Filters := TLS_Handshake::OID_Filters'(Length => 0, Filters => []);
+         Oid_Filters := TLS_Handshake::Oid_Filters'(Length => 0, Filters => []);
          Signature_Algorithms := TLS_Handshake::Signature_Algorithms'(Length => 0, Algorithms => []);
          Signature_Algorithms_Cert := TLS_Handshake::Signature_Algorithms_Cert'(Length => 0, Algorithms => []);
       transition
@@ -914,7 +914,7 @@ package TLS_Handshake_Session is
          Extensions : TLS_Handshake::CR_Extensions := [for E in Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_OID_Filters => E];
       begin
          OID_Filters_Received := True;
-         OID_Filters := TLS_Handshake::OID_Filters (Extensions'Head.Data);
+         Oid_Filters := TLS_Handshake::Oid_Filters (Extensions'Head.Data);
       transition
          goto Parse_CR_Extensions
       end Parse_CR_Parse_OID_Filters;
@@ -1069,7 +1069,7 @@ package TLS_Handshake_Session is
       state Query_Certificates is
       begin
          Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_Certificates, Length => Query'Size, Payload => Query)
-            where Query = GreenTLS::Certificate_Query'(Certificate_Authorities_Length => Certificate_Authorities.Length, Certificate_Authorities_Authorities => Certificate_Authorities.Authorities, OID_Filters_Length => OID_Filters.Length, OID_Filters_Filters => OID_Filters.Filters, Signature_Algorithms_Length => Signature_Algorithms.Length, Signature_Algorithms_Algorithms => Signature_Algorithms.Algorithms, Signature_Algorithms_Cert_Length => Signature_Algorithms_Cert.Length, Signature_Algorithms_Cert_Algorithms => Signature_Algorithms_Cert.Algorithms));
+            where Query = GreenTLS::Certificate_Query'(Certificate_Authorities_Length => Certificate_Authorities.Length, Certificate_Authorities_Authorities => Certificate_Authorities.Authorities, OID_Filters_Length => Oid_Filters.Length, OID_Filters_Filters => Oid_Filters.Filters, Signature_Algorithms_Length => Signature_Algorithms.Length, Signature_Algorithms_Algorithms => Signature_Algorithms.Algorithms, Signature_Algorithms_Cert_Length => Signature_Algorithms_Cert.Length, Signature_Algorithms_Cert_Algorithms => Signature_Algorithms_Cert.Algorithms));
          Keystore_Channel'Read (Keystore_Message);
       transition
          goto Error_Internal_Error
@@ -1273,7 +1273,7 @@ package TLS_Handshake_Session is
          Extensions : TLS_Handshake::CR_Extensions := [for E in PHA_Certificate_Request_Message.Extensions if E.Tag = TLS_Handshake::ET_OID_Filters => E];
       begin
          OID_Filters_Received := True;
-         OID_Filters := TLS_Handshake::OID_Filters (Extensions'Head.Data);
+         Oid_Filters := TLS_Handshake::Oid_Filters (Extensions'Head.Data);
       transition
          goto Connected_PHA_Parse_CR_Extensions
       end Connected_PHA_Parse_CR_Parse_OID_Filters;
@@ -1314,7 +1314,7 @@ package TLS_Handshake_Session is
       state Connected_PHA_Query_Certificates is
       begin
          Keystore_Channel'Write (GreenTLS::Keystore_Message'(Tag => GreenTLS::Keystore_Request, Request => GreenTLS::Keystore_Request_Certificates, Length => Query'Size, Payload => Query)
-            where Query = GreenTLS::Certificate_Query'(Certificate_Authorities_Length => Certificate_Authorities.Length, Certificate_Authorities_Authorities => Certificate_Authorities.Authorities, OID_Filters_Length => OID_Filters.Length, OID_Filters_Filters => OID_Filters.Filters, Signature_Algorithms_Length => Signature_Algorithms.Length, Signature_Algorithms_Algorithms => Signature_Algorithms.Algorithms, Signature_Algorithms_Cert_Length => Signature_Algorithms_Cert.Length, Signature_Algorithms_Cert_Algorithms => Signature_Algorithms_Cert.Algorithms));
+            where Query = GreenTLS::Certificate_Query'(Certificate_Authorities_Length => Certificate_Authorities.Length, Certificate_Authorities_Authorities => Certificate_Authorities.Authorities, OID_Filters_Length => Oid_Filters.Length, OID_Filters_Filters => Oid_Filters.Filters, Signature_Algorithms_Length => Signature_Algorithms.Length, Signature_Algorithms_Algorithms => Signature_Algorithms.Algorithms, Signature_Algorithms_Cert_Length => Signature_Algorithms_Cert.Length, Signature_Algorithms_Cert_Algorithms => Signature_Algorithms_Cert.Algorithms));
          Keystore_Channel'Read (Keystore_Message);
       transition
          goto Error_Internal_Error

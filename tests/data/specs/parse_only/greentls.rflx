@@ -116,8 +116,8 @@ package GreenTLS is
 
    type Configuration is
       message
-         -- FIXME: PSK_Key_Exchange_Modes must only contain PSK_KE and/or PSK_DHE_KE
-         PSK_Key_Exchange_Modes : TLS_Handshake::PSK_Key_Exchange_Modes;
+         -- FIXME: Psk_Key_Exchange_Modes must only contain Psk_Ke and/or Psk_Dhe_Ke
+         Psk_Key_Exchange_Modes : TLS_Handshake::Psk_Key_Exchange_Modes;
          Cipher_Suites_Length : TLS_Handshake::Cipher_Suites_Length
             then Cipher_Suites
                with Size => Cipher_Suites_Length * 8;
@@ -210,7 +210,7 @@ package GreenTLS is
    type Certificate_Query is
       message
          Certificate_Authorities : TLS_Handshake::Certificate_Authorities;
-         OID_Filters : TLS_Handshake::OID_Filters;
+         Oid_Filters : TLS_Handshake::Oid_Filters;
          Signature_Algorithms : TLS_Handshake::Signature_Algorithms;
          Signature_Algorithms_Cert : TLS_Handshake::Signature_Algorithms_Cert;
       end message;

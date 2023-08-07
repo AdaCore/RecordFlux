@@ -5,7 +5,7 @@ package TLS_Alert is
    type Alert_Description is
       (Close_Notify                    =>   0,
        Unexpected_Message              =>  10,
-       Bad_Record_MAC                  =>  20,
+       Bad_Record_Mac                  =>  20,
        Record_Overflow                 =>  22,
        Handshake_Failure               =>  40,
        Bad_Certificate                 =>  42,
@@ -14,7 +14,7 @@ package TLS_Alert is
        Certificate_Expired             =>  45,
        Certificate_Unknown             =>  46,
        Illegal_Parameter               =>  47,
-       Unknown_CA                      =>  48,
+       Unknown_Ca                      =>  48,
        Access_Denied                   =>  49,
        Decode_Error                    =>  50,
        Decrypt_Error                   =>  51,
@@ -27,7 +27,7 @@ package TLS_Alert is
        Unsupported_Extension           => 110,
        Unrecognized_Name               => 112,
        Bad_Certificate_Status_Response => 113,
-       Unknown_PSK_Identity            => 115,
+       Unknown_Psk_Identity            => 115,
        Certificate_Required            => 116,
        No_Application_Protocol         => 120)
    with Size => 8;
