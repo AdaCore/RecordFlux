@@ -280,12 +280,15 @@ build_pdf_doc_language_reference:
 build_pdf_doc_user_guide:
 	$(MAKE) -C doc/user_guide latexpdf
 
-.PHONY: dist
+.PHONY: dist anod_dist
 
 dist: $(SDIST)
 
 $(SDIST): $(GENERATED_DIR)/python/librflxlang $(VSIX) pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
 	python3 -m build --sdist
+
+anod_dist: $(GENERATED_DIR)/python/librflxlang pyproject.toml setup.py MANIFEST.in $(wildcard bin/*) $(wildcard rflx/*)
+	python3 -m build
 
 $(GENERATED_DIR)/python/librflxlang: export PYTHONPATH=$(MAKEFILE_DIR)
 $(GENERATED_DIR)/python/librflxlang: $(wildcard language/*.py)
