@@ -64,7 +64,8 @@ Make targets for common development tasks are:
 - ``install_devel`` Install project in editable mode
 - ``doc`` Generate HTML documentation
 - ``dist`` Create Python package
-- ``clean`` Remove all generated files (note: this will also remove the editable installation, so the project must be reinstalled using ``install_devel`` afterwards)
+- ``clean`` Remove all generated files
+- ``clean_all`` Remove all generated files and editable installations
 
 Additional tools can be found in ``tools/``.
 

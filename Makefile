@@ -318,7 +318,7 @@ $(GENERATED_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | 
 		-XLIBRFLXLANG_STANDALONE=encapsulated
 	cp $(GENERATED_DIR)/lib/relocatable/dev/librflxlang.so $@
 
-.PHONY: clean
+.PHONY: clean clean_all
 
 clean:
 	rm -rf $(BUILD_DIR)/[^_]* $(GENERATED_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
@@ -327,3 +327,6 @@ clean:
 	$(MAKE) -C doc/language_reference clean
 	$(MAKE) -C doc/user_guide clean
 	$(MAKE) -C ide/vscode clean
+
+clean_all: clean
+	rm -rf $(BUILD_DIR)/*
