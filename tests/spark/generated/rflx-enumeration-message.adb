@@ -17,7 +17,7 @@ is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_Priority => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_Priority => (State => S_Invalid, Predecessor => F_Initial, others => <>), others => (State => S_Invalid, Predecessor => F_Final, others => <>)));
       Buffer := null;
    end Initialize;
 
@@ -28,7 +28,7 @@ is
 
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
    begin
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_Priority => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_Priority => (State => S_Invalid, Predecessor => F_Initial, others => <>), others => (State => S_Invalid, Predecessor => F_Final, others => <>)));
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
@@ -117,7 +117,7 @@ is
                      and Field_Size (Ctx, Fld) = Size);
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
-      Ctx.Cursors (Fld) := (S_Invalid, Ctx.Cursors (Fld).Predecessor);
+      Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => Ctx.Cursors (Fld).Predecessor, others => <>);
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
    end Reset_Dependent_Fields;
@@ -160,10 +160,10 @@ is
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);
                Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
             else
-               Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
+               Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final, others => <>);
             end if;
          else
-            Ctx.Cursors (Fld) := (State => S_Incomplete, Predecessor => F_Final);
+            Ctx.Cursors (Fld) := (State => S_Incomplete, Predecessor => F_Final, others => <>);
          end if;
       end if;
    end Verify;
@@ -232,7 +232,7 @@ is
       else
          Ctx.Cursors (Fld) := (State => S_Well_Formed, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       end if;
-      Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+      Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld, others => <>);
       pragma Assert (Last = (Field_First (Ctx, Fld) + Size) - 1);
    end Set;
 

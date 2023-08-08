@@ -17,7 +17,7 @@ is
       Buffer_First : constant RFLX_Types.Index := Buffer'First;
       Buffer_Last : constant RFLX_Types.Index := Buffer'Last;
    begin
-      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_Message_Type => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Buffer_First, Buffer_Last, First, Last, First - 1, (if Written_Last = 0 then First - 1 else Written_Last), Buffer, (F_Message_Type => (State => S_Invalid, Predecessor => F_Initial, others => <>), others => (State => S_Invalid, Predecessor => F_Final, others => <>)));
       Buffer := null;
    end Initialize;
 
@@ -28,7 +28,7 @@ is
 
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) is
    begin
-      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_Message_Type => (State => S_Invalid, Predecessor => F_Initial), others => (State => S_Invalid, Predecessor => F_Final)));
+      Ctx := (Ctx.Buffer_First, Ctx.Buffer_Last, First, Last, First - 1, First - 1, Ctx.Buffer, (F_Message_Type => (State => S_Invalid, Predecessor => F_Initial, others => <>), others => (State => S_Invalid, Predecessor => F_Final, others => <>)));
    end Reset;
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) is
@@ -188,7 +188,7 @@ is
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
       for Fld_Loop in reverse Field'Succ (Fld) .. Field'Last loop
-         Ctx.Cursors (Fld_Loop) := (S_Invalid, F_Final);
+         Ctx.Cursors (Fld_Loop) := (State => S_Invalid, Predecessor => F_Final, others => <>);
          pragma Loop_Invariant (Field_First (Ctx, Fld) = First
                                 and Field_Size (Ctx, Fld) = Size);
          pragma Loop_Invariant ((for all F in Field =>
@@ -196,7 +196,7 @@ is
       end loop;
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
-      Ctx.Cursors (Fld) := (S_Invalid, Ctx.Cursors (Fld).Predecessor);
+      Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => Ctx.Cursors (Fld).Predecessor, others => <>);
       pragma Assert (Field_First (Ctx, Fld) = First
                      and Field_Size (Ctx, Fld) = Size);
    end Reset_Dependent_Fields;
@@ -261,12 +261,12 @@ is
                else
                   Ctx.Cursors (Fld) := (State => S_Valid, First => Field_First (Ctx, Fld), Last => Field_Last (Ctx, Fld), Value => Value, Predecessor => Ctx.Cursors (Fld).Predecessor);
                end if;
-               Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+               Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld, others => <>);
             else
-               Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final);
+               Ctx.Cursors (Fld) := (State => S_Invalid, Predecessor => F_Final, others => <>);
             end if;
          else
-            Ctx.Cursors (Fld) := (State => S_Incomplete, Predecessor => F_Final);
+            Ctx.Cursors (Fld) := (State => S_Incomplete, Predecessor => F_Final, others => <>);
          end if;
       end if;
    end Verify;
@@ -451,7 +451,7 @@ is
       else
          Ctx.Cursors (Fld) := (State => S_Well_Formed, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       end if;
-      Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld);
+      Ctx.Cursors (Successor (Ctx, Fld)) := (State => S_Invalid, Predecessor => Fld, others => <>);
       pragma Assert (Last = (Field_First (Ctx, Fld) + Size) - 1);
    end Set;
 
@@ -653,7 +653,7 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Data).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data);
+      Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, Predecessor => F_Data, others => <>);
    end Initialize_Data_Private;
 
    procedure Initialize_Data (Ctx : in out Context; Length : RFLX_Types.Length) is
@@ -696,7 +696,7 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Option_Types) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Option_Types)) := (State => S_Invalid, Predecessor => F_Option_Types);
+      Ctx.Cursors (Successor (Ctx, F_Option_Types)) := (State => S_Invalid, Predecessor => F_Option_Types, others => <>);
    end Initialize_Option_Types_Private;
 
    procedure Initialize_Option_Types (Ctx : in out Context) is
@@ -737,7 +737,7 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Options) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Options).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
+      Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options, others => <>);
    end Initialize_Options_Private;
 
    procedure Initialize_Options (Ctx : in out Context; Length : RFLX_Types.Length) is
@@ -777,7 +777,7 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Values) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Values).Predecessor);
-      Ctx.Cursors (Successor (Ctx, F_Values)) := (State => S_Invalid, Predecessor => F_Values);
+      Ctx.Cursors (Successor (Ctx, F_Values)) := (State => S_Invalid, Predecessor => F_Values, others => <>);
    end Initialize_Values_Private;
 
    procedure Initialize_Values (Ctx : in out Context) is
@@ -815,7 +815,7 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Option_Types) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
-         Ctx.Cursors (Successor (Ctx, F_Option_Types)) := (State => S_Invalid, Predecessor => F_Option_Types);
+         Ctx.Cursors (Successor (Ctx, F_Option_Types)) := (State => S_Invalid, Predecessor => F_Option_Types, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
@@ -834,7 +834,7 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Options) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Options).Predecessor);
-         Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options);
+         Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, Predecessor => F_Options, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
@@ -853,7 +853,7 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Values) := (State => S_Well_Formed, First => First, Last => Last, Value => 0, Predecessor => Ctx.Cursors (F_Values).Predecessor);
-         Ctx.Cursors (Successor (Ctx, F_Values)) := (State => S_Invalid, Predecessor => F_Values);
+         Ctx.Cursors (Successor (Ctx, F_Values)) := (State => S_Invalid, Predecessor => F_Values, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
@@ -871,7 +871,7 @@ is
          Ctx.Cursors (F_Option_Types) := (State => S_Valid, First => Ctx.Cursors (F_Option_Types).First, Last => Ctx.Cursors (F_Option_Types).Last, Value => Ctx.Cursors (F_Option_Types).Value, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
       else
          Reset_Dependent_Fields (Ctx, F_Option_Types);
-         Ctx.Cursors (F_Option_Types) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor);
+         Ctx.Cursors (F_Option_Types) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Option_Types).Predecessor, others => <>);
       end if;
    end Update_Option_Types;
 
@@ -885,7 +885,7 @@ is
          Ctx.Cursors (F_Options) := (State => S_Valid, First => Ctx.Cursors (F_Options).First, Last => Ctx.Cursors (F_Options).Last, Value => Ctx.Cursors (F_Options).Value, Predecessor => Ctx.Cursors (F_Options).Predecessor);
       else
          Reset_Dependent_Fields (Ctx, F_Options);
-         Ctx.Cursors (F_Options) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Options).Predecessor);
+         Ctx.Cursors (F_Options) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Options).Predecessor, others => <>);
       end if;
    end Update_Options;
 
@@ -899,7 +899,7 @@ is
          Ctx.Cursors (F_Values) := (State => S_Valid, First => Ctx.Cursors (F_Values).First, Last => Ctx.Cursors (F_Values).Last, Value => Ctx.Cursors (F_Values).Value, Predecessor => Ctx.Cursors (F_Values).Predecessor);
       else
          Reset_Dependent_Fields (Ctx, F_Values);
-         Ctx.Cursors (F_Values) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Values).Predecessor);
+         Ctx.Cursors (F_Values) := (State => S_Invalid, Predecessor => Ctx.Cursors (F_Values).Predecessor, others => <>);
       end if;
    end Update_Values;
 

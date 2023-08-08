@@ -46,13 +46,9 @@ is
 
    subtype Field is Virtual_Field range F_Tag .. F_Value;
 
-   type Field_Cursor is private with
-     Default_Initial_Condition =>
-       False;
+   type Field_Cursor is private;
 
-   type Field_Cursors is private with
-     Default_Initial_Condition =>
-       False;
+   type Field_Cursors is private;
 
    type Context (Buffer_First, Buffer_Last : RFLX_Types.Index := RFLX_Types.Index'First; First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First; Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First) is private with
      Default_Initial_Condition =>
@@ -610,17 +606,13 @@ private
 
    type Cursor_State is (S_Valid, S_Well_Formed, S_Invalid, S_Incomplete);
 
-   type Field_Cursor (State : Cursor_State := S_Invalid) is
+   type Field_Cursor is
       record
          Predecessor : Virtual_Field := F_Final;
-         case State is
-            when S_Valid | S_Well_Formed =>
-               First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
-               Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
-               Value : RFLX_Types.Base_Integer := 0;
-            when S_Invalid | S_Incomplete =>
-               null;
-         end case;
+         State : Cursor_State := S_Invalid;
+         First : RFLX_Types.Bit_Index := RFLX_Types.Bit_Index'First;
+         Last : RFLX_Types.Bit_Length := RFLX_Types.Bit_Length'First;
+         Value : RFLX_Types.Base_Integer := 0;
       end record;
 
    type Field_Cursors is array (Virtual_Field) of Field_Cursor;
@@ -709,7 +701,7 @@ private
          Verified_Last : RFLX_Types.Bit_Length := First - 1;
          Written_Last : RFLX_Types.Bit_Length := First - 1;
          Buffer : RFLX_Types.Bytes_Ptr := null;
-         Cursors : Field_Cursors := (others => (State => S_Invalid, Predecessor => F_Final));
+         Cursors : Field_Cursors := (others => <>);
       end record with
      Dynamic_Predicate =>
        Valid_Context (Context.Buffer_First, Context.Buffer_Last, Context.First, Context.Last, Context.Verified_Last, Context.Written_Last, Context.Buffer, Context.Cursors);
