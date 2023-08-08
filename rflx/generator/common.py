@@ -854,6 +854,7 @@ def initialize_field_statements(
             NamedAggregate(
                 ("State", Variable("S_Invalid")),
                 ("Predecessor", Variable(field.affixed_name)),
+                ("others", Variable("<>")),
             ),
         ),
     ]
@@ -1169,6 +1170,7 @@ def context_cursors_initialization(message: model.Message) -> Expr:
                     "Predecessor",
                     Variable(model.INITIAL.affixed_name),
                 ),
+                ("others", Variable("<>")),
             ),
         ),
         (
@@ -1179,6 +1181,7 @@ def context_cursors_initialization(message: model.Message) -> Expr:
                     "Predecessor",
                     Variable(model.FINAL.affixed_name),
                 ),
+                ("others", Variable("<>")),
             ),
         ),
     )

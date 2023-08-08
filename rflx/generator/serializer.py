@@ -372,6 +372,7 @@ class SerializerGenerator:
                             NamedAggregate(
                                 ("State", Variable("S_Invalid")),
                                 ("Predecessor", Variable("Fld")),
+                                ("others", Variable("<>")),
                             ),
                         ),
                         PragmaStatement(

@@ -363,6 +363,7 @@ class ParserGenerator:
                         NamedAggregate(
                             ("State", Variable("S_Invalid")),
                             ("Predecessor", Variable("Fld")),
+                            ("others", Variable("<>")),
                         ),
                     ),
                 ]
@@ -476,6 +477,7 @@ class ParserGenerator:
                                                                                 FINAL.affixed_name,
                                                                             ),
                                                                         ),
+                                                                        ("others", Variable("<>")),
                                                                     ),
                                                                 ),
                                                             ],
@@ -495,6 +497,7 @@ class ParserGenerator:
                                                             "Predecessor",
                                                             Variable(FINAL.affixed_name),
                                                         ),
+                                                        ("others", Variable("<>")),
                                                     ),
                                                 ),
                                             ],

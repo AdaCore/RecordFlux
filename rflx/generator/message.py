@@ -53,7 +53,6 @@ from rflx.ada import (
     NamedAggregate,
     Not,
     NotEqual,
-    NullComponent,
     Number,
     ObjectDeclaration,
     Old,
@@ -83,8 +82,6 @@ from rflx.ada import (
     UseTypeClause,
     ValueRange,
     Variable,
-    Variant,
-    VariantPart,
 )
 from rflx.identifier import ID
 from rflx.model import (
@@ -208,12 +205,10 @@ def create_state_type() -> UnitPart:
 
 
 def create_cursor_type() -> UnitPart:
-    discriminants = [Discriminant(["State"], "Cursor_State", Variable("S_Invalid"))]
-
     return UnitPart(
         [
-            PrivateType("Field_Cursor", aspects=[DefaultInitialCondition(FALSE)]),
-            PrivateType("Field_Cursors", aspects=[DefaultInitialCondition(FALSE)]),
+            PrivateType("Field_Cursor"),
+            PrivateType("Field_Cursors"),
         ],
         private=[
             RecordType(
@@ -224,37 +219,27 @@ def create_cursor_type() -> UnitPart:
                         "Virtual_Field",
                         Variable(FINAL.affixed_name),
                     ),
+                    Component(
+                        "State",
+                        "Cursor_State",
+                        Variable("S_Invalid"),
+                    ),
+                    Component(
+                        "First",
+                        const.TYPES_BIT_INDEX,
+                        First(const.TYPES_BIT_INDEX),
+                    ),
+                    Component(
+                        "Last",
+                        const.TYPES_BIT_LENGTH,
+                        First(const.TYPES_BIT_LENGTH),
+                    ),
+                    Component(
+                        "Value",
+                        const.TYPES_BASE_INT,
+                        Number(0),
+                    ),
                 ],
-                discriminants,
-                VariantPart(
-                    "State",
-                    [
-                        Variant(
-                            [Variable("S_Valid"), Variable("S_Well_Formed")],
-                            [
-                                Component(
-                                    "First",
-                                    const.TYPES_BIT_INDEX,
-                                    First(const.TYPES_BIT_INDEX),
-                                ),
-                                Component(
-                                    "Last",
-                                    const.TYPES_BIT_LENGTH,
-                                    First(const.TYPES_BIT_LENGTH),
-                                ),
-                                Component(
-                                    "Value",
-                                    const.TYPES_BASE_INT,
-                                    Number(0),
-                                ),
-                            ],
-                        ),
-                        Variant(
-                            [Variable("S_Invalid"), Variable("S_Incomplete")],
-                            [NullComponent()],
-                        ),
-                    ],
-                ),
             ),
             ArrayType("Field_Cursors", "Virtual_Field", "Field_Cursor"),
         ],
@@ -423,13 +408,7 @@ def create_context_type(message: Message) -> UnitPart:
                         NamedAggregate(
                             (
                                 "others",
-                                NamedAggregate(
-                                    ("State", Variable("S_Invalid")),
-                                    (
-                                        "Predecessor",
-                                        Variable(FINAL.affixed_name),
-                                    ),
-                                ),
+                                Variable("<>"),
                             ),
                         ),
                     ),
@@ -2559,9 +2538,10 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
                                             Variable("Ctx.Cursors"),
                                             Variable("Fld_Loop"),
                                         ),
-                                        Aggregate(
-                                            Variable("S_Invalid"),
-                                            Variable(FINAL.affixed_name),
+                                        NamedAggregate(
+                                            ("State", Variable("S_Invalid")),
+                                            ("Predecessor", Variable(FINAL.affixed_name)),
+                                            ("others", Variable("<>")),
                                         ),
                                     ),
                                     PragmaStatement("Loop_Invariant", [field_location_invariant]),
@@ -2585,15 +2565,19 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
                             Variable("Ctx.Cursors"),
                             Variable("Fld"),
                         ),
-                        Aggregate(
-                            Variable("S_Invalid"),
-                            Selected(
-                                Indexed(
-                                    Variable("Ctx.Cursors"),
-                                    Variable("Fld"),
-                                ),
+                        NamedAggregate(
+                            ("State", Variable("S_Invalid")),
+                            (
                                 "Predecessor",
+                                Selected(
+                                    Indexed(
+                                        Variable("Ctx.Cursors"),
+                                        Variable("Fld"),
+                                    ),
+                                    "Predecessor",
+                                ),
                             ),
+                            ("others", Variable("<>")),
                         ),
                     ),
                     PragmaStatement("Assert", [field_location_invariant]),
@@ -3130,6 +3114,7 @@ def create_update_procedures(
                                             "Predecessor",
                                         ),
                                     ),
+                                    ("others", Variable("<>")),
                                 ),
                             ),
                         ],
