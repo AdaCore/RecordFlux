@@ -215,7 +215,10 @@ def test_parse_string_error() -> None:
             r"$"
         ),
     ):
-        p.parse_string("package A is end A;", filename=Path("a/b.rflx"))
+        p.parse_string(
+            "package A is\ntype T is range 0 .. 0 with Size => 1;\nend A;",
+            filename=Path("a/b.rflx"),
+        )
 
 
 def test_parse_string_empty() -> None:

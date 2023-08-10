@@ -1683,7 +1683,6 @@ class Parser:
         unit = lang.AnalysisContext().get_from_buffer(str(filename), string, rule=rule)
 
         if not diagnostics_to_error(unit.diagnostics, error, filename):
-            error.extend(style.check_string(string, filename))
             if unit.root is not None:
                 assert isinstance(unit.root, lang.Specification)
                 spec = SpecificationFile.create(error, unit.root, filename)
@@ -1694,6 +1693,8 @@ class Parser:
                 self._specifications = _sort_specs_topologically(
                     {**self._specifications, spec.package: spec},
                 )
+
+            error.extend(style.check_string(string, filename))
 
         error.propagate()
 
