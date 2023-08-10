@@ -61,6 +61,74 @@ class IDE(Enum):
             raise ValueError from None
 
 
+class UniqueStore(argparse.Action):
+    """
+    Action which allows at most one occurrence of the given option-value pair.
+
+    The argparse module doesn't check for duplicate optional arguments having action 'store' (the
+    default). However, such usage doesn't make sense (the value of the last matching argument
+    remains, others are overwritten and ignored). This custom action class mimics the 'store' action
+    in every other respect, but additionally prohibits such usage.
+
+    Note: In argparse the 'store' action logic is implemented in argparse._StoreAction. However,
+    since that is a protected class we can't directly inherit from it.
+    """
+
+    def __init__(  # type: ignore[no-untyped-def] # noqa: PLR0913
+        self,
+        option_strings,
+        dest,
+        nargs=None,
+        const=None,
+        default=None,
+        type=None,  # noqa: A002
+        choices=None,
+        required=False,
+        help=None,  # noqa: A002
+        metavar=None,
+    ):
+        # Keep track whether the option has been set already
+        self.is_set = False
+        # Perform the 'store' action-related checks.
+        # Note: This should be equivalent to the logic in argparse._StoreAction__init__(..).
+        if nargs == 0:
+            raise ValueError(
+                "nargs for store actions must be != 0; if you "
+                "have nothing to store, actions such as store "
+                "true or store const may be more appropriate",
+            )
+        if const is not None and nargs != argparse.OPTIONAL:
+            raise ValueError("nargs must be %r to supply const" % argparse.OPTIONAL)
+
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=default,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar,
+        )
+
+    def __call__(  # type: ignore [no-untyped-def]
+        self,
+        parser,
+        namespace,
+        values,
+        option_string=None,
+    ):
+        if self.is_set:
+            parser.error(f"{option_string} appears several times")
+        else:
+            self.is_set = True
+            # Perform the 'store' action.
+            # Note: This should be equivalent to the logic in argparse._StoreAction__call__(..).
+            setattr(namespace, self.dest, values)
+
+
 def main(  # noqa: PLR0915
     argv: Sequence[str],
 ) -> Union[int, str]:
@@ -79,6 +147,7 @@ def main(  # noqa: PLR0915
     )
     parser.add_argument(
         "--max-errors",
+        action=UniqueStore,
         type=int,
         default=0,
         metavar=("NUM"),
@@ -86,6 +155,7 @@ def main(  # noqa: PLR0915
     )
     parser.add_argument(
         "--workers",
+        action=UniqueStore,
         type=int,
         default=cpu_count(),
         metavar=("NUM"),
@@ -113,6 +183,7 @@ def main(  # noqa: PLR0915
     parser_generate.add_argument(
         "-p",
         "--prefix",
+        action=UniqueStore,
         type=str,
         default=DEFAULT_PREFIX,
         help="add prefix to generated packages (default: %(default)s)",
@@ -125,6 +196,7 @@ def main(  # noqa: PLR0915
     )
     parser_generate.add_argument(
         "-d",
+        action=UniqueStore,
         dest="output_directory",
         type=Path,
         default=".",
@@ -132,6 +204,7 @@ def main(  # noqa: PLR0915
     )
     parser_generate.add_argument(
         "--debug",
+        action=UniqueStore,
         default=None,
         choices=["built-in", "external"],
         help="enable adding of debug output to generated code",
@@ -143,6 +216,7 @@ def main(  # noqa: PLR0915
     )
     parser_generate.add_argument(
         "--integration-files-dir",
+        action=UniqueStore,
         help="directory for the .rfi files",
         type=Path,
     )
@@ -159,6 +233,7 @@ def main(  # noqa: PLR0915
     parser_graph.add_argument(
         "-f",
         "--format",
+        action=UniqueStore,
         type=str,
         default="svg",
         choices=["dot", "jpg", "pdf", "png", "raw", "svg"],
@@ -181,6 +256,7 @@ def main(  # noqa: PLR0915
     )
     parser_graph.add_argument(
         "-d",
+        action=UniqueStore,
         dest="output_directory",
         type=Path,
         default=".",
@@ -211,6 +287,7 @@ def main(  # noqa: PLR0915
     )
     parser_validate.add_argument(
         "-v",
+        action=UniqueStore,
         dest="valid_samples_directory",
         type=Path,
         help="path to the directory containing known valid samples",
@@ -218,6 +295,7 @@ def main(  # noqa: PLR0915
     )
     parser_validate.add_argument(
         "-i",
+        action=UniqueStore,
         dest="invalid_samples_directory",
         type=Path,
         help="path to the directory containing known valid samples",
@@ -225,6 +303,7 @@ def main(  # noqa: PLR0915
     )
     parser_validate.add_argument(
         "-c",
+        action=UniqueStore,
         dest="checksum_module",
         type=Path,
         help="name of the module containing the checksum functions",
@@ -232,6 +311,7 @@ def main(  # noqa: PLR0915
     )
     parser_validate.add_argument(
         "-o",
+        action=UniqueStore,
         dest="output_file",
         type=Path,
         help="path to output file for validation report in JSON format (file must not exist)",
@@ -254,6 +334,7 @@ def main(  # noqa: PLR0915
     )
     parser_validate.add_argument(
         "--target-coverage",
+        action=UniqueStore,
         metavar="PERCENTAGE",
         type=float,
         default=0,
@@ -269,6 +350,7 @@ def main(  # noqa: PLR0915
     )
     parser_install.add_argument(
         "--gnat-studio-dir",
+        action=UniqueStore,
         dest="gnat_studio_dir",
         type=Path,
         help="path to the GNAT Studio settings directory (default: $HOME/.gnatstudio)",
@@ -297,6 +379,7 @@ def main(  # noqa: PLR0915
     )
     parser_iana.add_argument(
         "-d",
+        action=UniqueStore,
         dest="output_directory",
         type=Path,
         default=".",

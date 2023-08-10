@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import argparse
 import re
+from argparse import ArgumentParser
 from collections.abc import Callable
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Optional
+from typing import ClassVar, Optional
 
 import pytest
 
@@ -629,3 +631,135 @@ def test_requirement_error() -> None:
         match=r'^cli: error: failed parsing requirement "\(<2,>=1\) pydantic"$',
     ):
         cli.Requirement("(<2,>=1) pydantic")
+
+
+class TestDuplicateArgs:
+    """
+    Test the rejection of duplicate options in the CLI.
+
+    Concretely, such options that have action 'store' (the default action) are tested here. The test
+    data consists of a full list of call arguments (optionally split to prefix and suffix) and the
+    duplicate options. The actual values for the arguments do not matter in these tests, but must
+    have the expected data type.
+    """
+
+    call_main_prefix: ClassVar[list[str]] = [
+        "rflx",
+        "--max-errors",
+        "0",
+        "--workers",
+        "3",
+    ]
+    # Note: 'check' is used below as a concrete rflx subcommand. However, the focus in this set of
+    # test data is on the rflx common arguments.
+    call_main_suffix: ClassVar[list[str]] = [
+        "check",
+        "SPECIFICATION_FILE",
+    ]
+    call_generate: ClassVar[list[str]] = [
+        "rflx",
+        "generate",
+        "SPECIFICATION_FILE",
+        "-p",
+        "PREFIX",
+        "-d",
+        "OUTPUT_DIRECTORY",
+        "--debug",
+        "built-in",
+        "--integration-files-dir",
+        "INTEGRATION_FILES_DIR",
+    ]
+    call_graph: ClassVar[list[str]] = [
+        "rflx",
+        "graph",
+        "SPECIFICATION_FILE",
+        "-f",
+        "jpg",
+        "-d",
+        "OUTPUT_DIRECTORY",
+    ]
+    call_validate: ClassVar[list[str]] = [
+        "rflx",
+        "validate",
+        "SPECIFICATION_FILE",
+        "MESSAGE_IDENTIFIER",
+        "-v",
+        "VALID_SAMPLES_DIRECTORY",
+        "-i",
+        "INVALID_SAMPLES_DIRECTORY",
+        "-c",
+        "CHECKSUM_MODULE",
+        "-o",
+        "OUTPUT_FILE",
+        "--target-coverage",
+        "50",
+    ]
+    call_install: ClassVar[list[str]] = [
+        "rflx",
+        "install",
+        "gnatstudio",
+        "--gnat-studio-dir",
+        "GNAT_STUDIO_DIR",
+    ]
+    call_convert_iana: ClassVar[list[str]] = [
+        "rflx",
+        "convert",
+        "iana",
+        "-d",
+        "SOME_PATH",
+    ]
+
+    class ArgParseError(Exception):
+        """Used to mock the command line parsing error in argparse."""
+
+    def raise_argparse_error(self, message: str) -> None:
+        raise self.ArgParseError(message)
+
+    @pytest.mark.parametrize(
+        ("call_prefix", "duplicate_option", "duplicate_option_value", "call_suffix"),
+        [
+            (call_main_prefix, "--max-errors", "5", call_main_suffix),
+            (call_main_prefix, "--workers", "10", call_main_suffix),
+            (call_generate, "-p", "OTHER_STR", []),
+            (call_generate, "-d", "OTHER_STR", []),
+            (call_generate, "--debug", "external", []),
+            (call_generate, "--integration-files-dir", "OTHER_STR", []),
+            (call_graph, "-f", "png", []),
+            (call_graph, "-d", "OTHER_STR", []),
+            (call_validate, "-v", "OTHER_STR", []),
+            (call_validate, "-i", "OTHER_STR", []),
+            (call_validate, "-c", "OTHER_STR", []),
+            (call_validate, "-o", "OTHER_STR", []),
+            (call_validate, "--target-coverage", "75", []),
+            (call_install, "--gnat-studio-dir", "OTHER_STR", []),
+            (call_convert_iana, "-d", "OTHER_STR", []),
+        ],
+    )
+    def test_duplicate_args(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        call_prefix: list[str],
+        duplicate_option: str,
+        duplicate_option_value: str,
+        call_suffix: list[str],
+    ) -> None:
+        monkeypatch.setattr(ArgumentParser, "error", lambda _s, m: self.raise_argparse_error(m))
+        args = [*call_prefix, duplicate_option, duplicate_option_value, *call_suffix]
+        with pytest.raises(self.ArgParseError, match=f"^{duplicate_option} appears several times$"):
+            cli.main(args)
+
+    def test_uniquestore_nargs_is_0(self) -> None:
+        parser = argparse.ArgumentParser()
+        message = (
+            "nargs for store actions must be != 0; if you "
+            "have nothing to store, actions such as store "
+            "true or store const may be more appropriate"
+        )
+        with pytest.raises(ValueError, match=f"^{message}$"):
+            parser.add_argument("-x", action=cli.UniqueStore, nargs=0)
+
+    def test_uniquestore_bad_const(self) -> None:
+        parser = argparse.ArgumentParser()
+        message = "nargs must be '\\?' to supply const"
+        with pytest.raises(ValueError, match=f"^{message}$"):
+            parser.add_argument("-x", action=cli.UniqueStore, const=0)
