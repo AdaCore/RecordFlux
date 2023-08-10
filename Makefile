@@ -1,4 +1,5 @@
 -include devutils/Makefile.common
+include Makefile.common
 
 .DEFAULT_GOAL := all
 
@@ -11,9 +12,7 @@ ADASAT_ORIGIN?= https://github.com/AdaCore
 VERSION ?= $(shell python3 -c "import setuptools_scm; print(setuptools_scm.get_version())")
 SDIST ?= dist/RecordFlux-$(VERSION).tar.gz
 
-BUILD_DIR = build
 GENERATED_DIR = generated
-MAKEFILE_DIR := $(dir $(abspath Makefile))
 BUILD_GENERATED_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/$(GENERATED_DIR)
 PYTHON_PACKAGES = bin doc/language_reference/conf.py doc/user_guide/conf.py examples/apps ide language rflx tests tools stubs setup.py
 DEVUTILS_HEAD = 7f4319741b23b926aca093467e097005d4a1f642
@@ -24,14 +23,6 @@ ADASAT_HEAD = f948e2271aec51f9313fa41ff3c00230a483f9e8
 SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
 
-# Use GNATprove's file-based caching by default and ensure the directory exists.
-GNATPROVE_CACHE ?= file:$(MAKEFILE_DIR)/$(BUILD_DIR)/gnatprove_cache
-
-ifneq (,$(findstring file:,$(GNATPROVE_CACHE)))
-GNATPROVE_CACHE_DIR = $(subst file:,,$(GNATPROVE_CACHE))
-endif
-
-export GNATPROVE_CACHE := $(GNATPROVE_CACHE)
 export PYTHONPATH := $(MAKEFILE_DIR)
 
 # Switch to a specific revision of the git repository.
@@ -209,9 +200,6 @@ prove_apps: $(GNATPROVE_CACHE_DIR)
 
 prove_property_tests: $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/property_verification
-
-$(GNATPROVE_CACHE_DIR):
-	mkdir -p $(GNATPROVE_CACHE_DIR)
 
 .PHONY: install_build_deps install install_devel upgrade_devel install_devel_edge install_git_hooks install_gnat printenv_gnat
 

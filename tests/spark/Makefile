@@ -1,4 +1,4 @@
-GNATPROVE = ../../tools/gnatprove
+include ../../Makefile.common
 
 project := test
 ifdef TEST
@@ -28,7 +28,7 @@ test_optimized: $(test_files)
 build_strict: $(test_files)
 	gprbuild -P$(project) -Xgnat=$(GNAT) -Xmode=strict
 
-prove: $(proof_sessions) $(test_files)
+prove: $(GNATPROVE_CACHE_DIR) $(proof_sessions) $(test_files)
 	$(GNATPROVE) -P$(project) -Xtest=$(TEST)
 
 clean:

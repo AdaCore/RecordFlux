@@ -1,0 +1,15 @@
+BUILD_DIR = build
+MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+GNATPROVE = $(MAKEFILE_DIR)tools/gnatprove
+
+# Use GNATprove's file-based caching by default and ensure the directory exists.
+GNATPROVE_CACHE ?= file:$(MAKEFILE_DIR)$(BUILD_DIR)/gnatprove_cache
+
+ifneq (,$(findstring file:,$(GNATPROVE_CACHE)))
+GNATPROVE_CACHE_DIR = $(subst file:,,$(GNATPROVE_CACHE))
+endif
+
+export GNATPROVE_CACHE := $(GNATPROVE_CACHE)
+
+$(GNATPROVE_CACHE_DIR):
+	mkdir -p $(GNATPROVE_CACHE_DIR)

@@ -1,4 +1,4 @@
-GNATPROVE = ../../../tools/gnatprove
+include ../../../Makefile.common
 
 specs = $(wildcard specs/*.rflx)
 src = generated/rflx.ads
@@ -16,7 +16,7 @@ test_spark: $(bin)
 
 build: $(bin)
 
-prove: $(src)
+prove: $(GNATPROVE_CACHE_DIR) $(src)
 	$(GNATPROVE) -Pping
 
 generate: $(src)
