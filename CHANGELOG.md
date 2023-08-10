@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Prevent unnecessary runtime checks in generated code (eng/recordflux/RecordFlux#1204)
+- Removal of discriminant in `Field_Cursor` type (eng/recordflux/RecordFlux#1377)
 
 ### Fixed
 
