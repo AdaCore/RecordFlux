@@ -60,8 +60,9 @@ def verbose_repr(obj: object, attributes: Sequence[str]) -> str:
     args = "".join(f"{a}={getattr(obj, a)!r},\n" for a in attributes)
     return format_repr(
         indent_next(
-            f"\n{obj.__class__.__name__}({indent_next(args, indentation)}\n){prefixed_str(obj)}", 4
-        )
+            f"\n{obj.__class__.__name__}({indent_next(args, indentation)}\n){prefixed_str(obj)}",
+            4,
+        ),
     )
 
 

@@ -35,5 +35,5 @@ manage.run(
         "--relative-project",
         "--disable-warning",
         "undocumented-nodes",
-    ]
+    ],
 )

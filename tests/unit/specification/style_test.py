@@ -226,7 +226,9 @@ def test_error(tmp_path: Path, spec: str, error: str) -> None:
     ],
 )
 def test_deactivation_of_checks_on_file_level(
-    spec: str, disabled_checks: str, tmp_path: Path
+    spec: str,
+    disabled_checks: str,
+    tmp_path: Path,
 ) -> None:
     spec_file = tmp_path / "test.rflx"
     spec_file.write_text(f"-- style: disable = {disabled_checks}\n\n{spec}")

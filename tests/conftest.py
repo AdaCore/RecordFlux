@@ -10,10 +10,15 @@ from rflx import expression as expr, ir, model
 from tests.const import FIXTURE_DIR
 
 hypothesis.settings.register_profile(
-    "default", max_examples=100, verbosity=hypothesis.Verbosity.verbose
+    "default",
+    max_examples=100,
+    verbosity=hypothesis.Verbosity.verbose,
 )
 hypothesis.settings.register_profile(
-    "ci", deadline=None, max_examples=200, verbosity=hypothesis.Verbosity.verbose
+    "ci",
+    deadline=None,
+    max_examples=200,
+    verbosity=hypothesis.Verbosity.verbose,
 )
 
 hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default"))

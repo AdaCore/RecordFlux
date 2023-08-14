@@ -12,7 +12,9 @@ SEQ_TY = rty.Sequence("S", rty.Message("M"))
 
 def test_variable_assignment_to_ir() -> None:
     assert stmt.VariableAssignment(
-        "X", expr.Add(expr.Variable("Y", type_=INT_TY), expr.Number(1)), INT_TY
+        "X",
+        expr.Add(expr.Variable("Y", type_=INT_TY), expr.Number(1)),
+        INT_TY,
     ).to_ir(id_generator()) == [
         ir.Assign("X", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
     ]
@@ -38,14 +40,19 @@ def test_message_field_assignment_to_ir() -> None:
         "X",
         "Y",
         expr.Add(
-            expr.Variable("Y", type_=INT_TY), expr.Variable("Z", type_=INT_TY), expr.Number(1)
+            expr.Variable("Y", type_=INT_TY),
+            expr.Variable("Z", type_=INT_TY),
+            expr.Number(1),
         ),
         MSG_TY,
     ).to_ir(id_generator()) == [
         ir.VarDecl("T_0", rty.BASE_INTEGER),
         ir.Assign("T_0", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
         ir.FieldAssign(
-            "X", "Y", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)), MSG_TY
+            "X",
+            "Y",
+            ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
+            MSG_TY,
         ),
     ]
 
@@ -57,7 +64,9 @@ def test_append_to_ir() -> None:
     assert stmt.Append(
         "X",
         expr.Add(
-            expr.Variable("Y", type_=INT_TY), expr.Variable("Z", type_=INT_TY), expr.Number(1)
+            expr.Variable("Y", type_=INT_TY),
+            expr.Variable("Z", type_=INT_TY),
+            expr.Number(1),
         ),
         SEQ_TY,
     ).to_ir(id_generator()) == [
@@ -93,10 +102,12 @@ def test_reset_check_type_error_undefined_argument_type() -> None:
         return expression
 
     reset = stmt.Reset(
-        "X", {ID("Y"): expr.Selected(expr.Variable("M", location=Location((1, 2))), "F")}
+        "X",
+        {ID("Y"): expr.Selected(expr.Variable("M", location=Location((1, 2))), "F")},
     )
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:1:2: model: error: undefined variable "M"$'
+        RecordFluxError,
+        match=r'^<stdin>:1:2: model: error: undefined variable "M"$',
     ):
         reset.check_type(
             rty.Message("T", parameter_types={ID("Y"): INT_TY}),
@@ -137,7 +148,8 @@ def test_reset_check_type_error_unexpected_arguments() -> None:
         return expression
 
     reset = stmt.Reset(
-        "X", {ID("Z"): expr.Selected(expr.Variable("M"), "F", location=Location((1, 2)))}
+        "X",
+        {ID("Z"): expr.Selected(expr.Variable("M"), "F", location=Location((1, 2)))},
     )
     with pytest.raises(
         RecordFluxError,
@@ -157,7 +169,9 @@ def test_reset_to_ir() -> None:
         ir.Reset("X", {ID("Y"): ir.IntVal(1)}, MSG_TY),
     ]
     assert stmt.Reset(
-        "X", {ID("Y"): expr.Add(expr.Variable("Z", type_=INT_TY), expr.Number(1))}, MSG_TY
+        "X",
+        {ID("Y"): expr.Add(expr.Variable("Z", type_=INT_TY), expr.Number(1))},
+        MSG_TY,
     ).to_ir(id_generator()) == [
         ir.Reset("X", {ID("Y"): ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1))}, MSG_TY),
     ]

@@ -276,7 +276,10 @@ def test_invalid_parameter_type_composite(parameter_type: Type) -> None:
 
 def test_invalid_parameter_type_always_valid_enum() -> None:
     always_valid_enum = Enumeration(
-        "P::E", [("A", Number(1)), ("B", Number(3))], Number(8), always_valid=True
+        "P::E",
+        [("A", Number(1)), ("B", Number(3))],
+        Number(8),
+        always_valid=True,
     )
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
     types = {Field(ID("P", Location((1, 2)))): always_valid_enum, Field("X"): INTEGER}
@@ -567,7 +570,7 @@ def test_incoming() -> None:
                     GreaterEqual(Div(Size("Payload"), Number(8)), Number(46)),
                     LessEqual(Div(Size("Payload"), Number(8)), Number(1500)),
                 ),
-            )
+            ),
         ],
     )
 
@@ -791,11 +794,15 @@ def test_unused_parameter() -> None:
     ],
 )
 def test_undefined_variable(
-    operation: abc.Callable[[Expr, Expr], Expr], condition: tuple[Expr, Expr]
+    operation: abc.Callable[[Expr, Expr], Expr],
+    condition: tuple[Expr, Expr],
 ) -> None:
     mod_type = Integer("P::MT", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     enum_type = Enumeration(
-        "P::ET", [("Val1", Number(0)), ("Val2", Number(1))], Number(8), always_valid=True
+        "P::ET",
+        [("Val1", Number(0)), ("Val2", Number(1))],
+        Number(8),
+        always_valid=True,
     )
 
     structure = [
@@ -827,7 +834,9 @@ def test_undefined_variable_boolean_condition_value() -> None:
     types = {Field("F1"): mod_type, Field("F2"): mod_type}
 
     assert_message_model_error(
-        structure, types, r'^<stdin>:10:20: model: error: undefined variable "X"$'
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: undefined variable "X"$',
     )
 
 
@@ -841,7 +850,9 @@ def test_undefined_variable_size() -> None:
     types = {Field("F1"): mod_type, Field("F2"): OPAQUE}
 
     assert_message_model_error(
-        structure, types, r'^<stdin>:10:20: model: error: undefined variable "Field_Size"$'
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: undefined variable "Field_Size"$',
     )
 
 
@@ -855,7 +866,9 @@ def test_undefined_variable_first() -> None:
     types = {Field("F1"): mod_type, Field("F2"): OPAQUE}
 
     assert_message_model_error(
-        structure, types, r'^<stdin>:10:20: model: error: undefined variable "Field_First"$'
+        structure,
+        types,
+        r'^<stdin>:10:20: model: error: undefined variable "Field_First"$',
     )
 
 
@@ -937,7 +950,9 @@ def test_reference_to_optional_field_2() -> None:
             Field("Any"),
             Field("Data"),
             size=Mul(
-                Variable("Opt", location=Location((10, 30))), Number(8), location=Location((10, 20))
+                Variable("Opt", location=Location((10, 30))),
+                Number(8),
+                location=Location((10, 20)),
             ),
         ),
         Link(Field("Data"), FINAL),
@@ -1086,7 +1101,10 @@ def test_sequence_aggregate_out_of_range() -> None:
     ]
 
     types = {
-        Field("F"): Sequence("P::Sequence", Integer("P::Element", Number(0), Number(63), Number(8)))
+        Field("F"): Sequence(
+            "P::Sequence",
+            Integer("P::Element", Number(0), Number(63), Number(8)),
+        ),
     }
 
     assert_message_model_error(
@@ -1373,7 +1391,9 @@ def test_exclusive_conflict() -> None:
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), FINAL, condition=Greater(Variable("F1"), Number(50), Location((10, 5)))),
         Link(
-            Field("F1"), Field("F2"), condition=Less(Variable("F1"), Number(80), Location((11, 7)))
+            Field("F1"),
+            Field("F2"),
+            condition=Less(Variable("F1"), Number(80), Location((11, 7))),
         ),
         Link(Field("F2"), FINAL),
     ]
@@ -1712,7 +1732,8 @@ def test_tlv_valid_enum() -> None:
             Field("V"),
             size=Mul(Number(8), Variable("L")),
             condition=And(
-                NotEqual(Variable("T"), Variable("Two")), LessEqual(Variable("L"), Number(8192))
+                NotEqual(Variable("T"), Variable("Two")),
+                LessEqual(Variable("L"), Number(8192)),
             ),
         ),
         Link(Field("V"), FINAL),
@@ -1778,7 +1799,9 @@ def test_invalid_first_is_expression() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(
-            Field("F1"), Field("F2"), first=Add(First("F1"), Number(8), location=Location((5, 14)))
+            Field("F1"),
+            Field("F2"),
+            first=Add(First("F1"), Number(8), location=Location((5, 14))),
         ),
         Link(Field("F2"), FINAL),
     ]
@@ -1942,7 +1965,9 @@ def test_payload_no_size() -> None:
         Field("F2"): OPAQUE,
     }
     assert_message_model_error(
-        structure, types, r'^model: error: unconstrained field "F1" without size aspect$'
+        structure,
+        types,
+        r'^model: error: unconstrained field "F1" without size aspect$',
     )
 
 
@@ -1957,7 +1982,9 @@ def test_sequence_no_size() -> None:
         Field("F2"): SEQUENCE_INTEGER_VECTOR,
     }
     assert_message_model_error(
-        structure, types, '^model: error: unconstrained field "F1" without size aspect$'
+        structure,
+        types,
+        '^model: error: unconstrained field "F1" without size aspect$',
     )
 
 
@@ -2100,7 +2127,9 @@ def test_message_with_implicit_size_single_field(size: Expr, condition: Expr, ty
 )
 @pytest.mark.parametrize("type_", [OPAQUE, SEQUENCE_INTEGER_VECTOR])
 def test_message_with_implicit_size_multiple_fields(
-    size: Expr, condition: Expr, type_: Type
+    size: Expr,
+    condition: Expr,
+    type_: Type,
 ) -> None:
     x = Field("X")
     y = Field("Y")
@@ -2166,7 +2195,9 @@ def test_no_path_to_final() -> None:
         Field("F4"): INTEGER,
     }
     assert_message_model_error(
-        structure, types, '^model: error: no path to FINAL for field "F4" in "P::M"$'
+        structure,
+        types,
+        '^model: error: no path to FINAL for field "F4" in "P::M"$',
     )
 
 
@@ -2506,7 +2537,9 @@ def test_size_aspect_final() -> None:
         Field("F2"): INTEGER,
     }
     assert_message_model_error(
-        structure, types, '^<stdin>:4:12: model: error: size aspect for final field in "P::M"$'
+        structure,
+        types,
+        '^<stdin>:4:12: model: error: size aspect for final field in "P::M"$',
     )
 
 
@@ -2629,7 +2662,8 @@ def test_aggregate_equal_sequence_valid_size() -> None:
     ]
     types = {
         Field("Magic"): Sequence(
-            "P::Arr", Integer("P::Integer", Number(0), Number(127), Number(8))
+            "P::Arr",
+            Integer("P::Integer", Number(0), Number(127), Number(8)),
         ),
     }
     Message("P::M", structure, types)
@@ -2643,7 +2677,9 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
             magic,
             FINAL,
             condition=NotEqual(
-                Variable("Magic"), Aggregate(Number(1), Number(2)), Location((17, 3))
+                Variable("Magic"),
+                Aggregate(Number(1), Number(2)),
+                Location((17, 3)),
             ),
         ),
     ]
@@ -2677,13 +2713,19 @@ def test_aggregate_equal_invalid_size_field() -> None:
             magic,
             FINAL,
             condition=Equal(
-                Variable("Magic"), Aggregate(Number(1), Number(2)), location=Location((10, 5))
+                Variable("Magic"),
+                Aggregate(Number(1), Number(2)),
+                location=Location((10, 5)),
             ),
         ),
     ]
     types = {
         Field("Length"): Integer(
-            "P::Length_Type", Number(10), Number(100), Number(8), Location((5, 10))
+            "P::Length_Type",
+            Number(10),
+            Number(100),
+            Number(8),
+            Location((5, 10)),
         ),
         Field(ID("Magic", Location((17, 3)))): OPAQUE,
     }
@@ -2773,7 +2815,7 @@ def test_discontiguous_optional_fields() -> None:
                     Variable("F2"),
                     ValueRange(Add(Last("F1"), Number(1)), Sub(First("F3"), Number(1))),
                     ValueRange(First("F3"), Last("F3")),
-                ]
+                ],
             },
             ValidChecksum("F3"),
         ),
@@ -2786,7 +2828,7 @@ def test_discontiguous_optional_fields() -> None:
                 ID("F3"): [
                     ValueRange(First("Message"), Sub(First("F3"), Number(1))),
                     ValueRange(First("F3"), Last("Message")),
-                ]
+                ],
             },
             ValidChecksum("F3"),
         ),
@@ -2847,7 +2889,9 @@ def test_checksum(checksums: abc.Mapping[ID, abc.Sequence[Expr]], condition: Exp
     ],
 )
 def test_checksum_error(
-    checksums: abc.Mapping[ID, abc.Sequence[Expr]], condition: Expr, error: str
+    checksums: abc.Mapping[ID, abc.Sequence[Expr]],
+    condition: Expr,
+    error: str,
 ) -> None:
     f1 = Field("F1")
     f2 = Field("F2")
@@ -3005,31 +3049,32 @@ def test_size() -> None:
             Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Number(4),
             Field("Value"): Aggregate(*[Number(0)] * 4),
-        }
+        },
     ) == Number(56)
     assert TLV_MESSAGE.size(
         {
             Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Div(Add(Size("Tag"), Size("TLV::Length")), Number(8)),
             Field("Value"): Aggregate(*[Number(0)] * 3),
-        }
+        },
     ) == Number(48)
     assert TLV_MESSAGE.size(
         {
             Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Add(Div(Size("X"), Number(8)), Variable("Y")),
             Field("Value"): Variable("Z"),
-        }
+        },
     ) == Add(Size("Z"), Number(24))
     assert TLV_MESSAGE.size(
         {
             Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Div(Size("Msg_Data"), Number(8)),
             Field("Value"): Opaque("Msg_Data"),
-        }
+        },
     ) == Add(Mul(Div(Size("Msg_Data"), Number(8)), Number(8)), Number(24))
     assert TLV_MESSAGE.size({Field("Tag"): Variable("X"), Field("Length"): Variable("Y")}) == Add(
-        Mul(Variable("Y"), Number(8)), Number(24)
+        Mul(Variable("Y"), Number(8)),
+        Number(24),
     )
 
     assert ETHERNET_FRAME.size(
@@ -3039,7 +3084,7 @@ def test_size() -> None:
             Field("Type_Length_TPID"): Number(46),
             Field("Type_Length"): Number(46),
             Field("Payload"): Aggregate(*[Number(0)] * 46),
-        }
+        },
     ) == Number(480)
     assert ETHERNET_FRAME.size(
         {
@@ -3050,7 +3095,7 @@ def test_size() -> None:
             Field("TCI"): Number(0),
             Field("Type_Length"): Number(46),
             Field("Payload"): Aggregate(*[Number(0)] * 46),
-        }
+        },
     ) == Number(512)
     assert ETHERNET_FRAME.size(
         {
@@ -3059,7 +3104,7 @@ def test_size() -> None:
             Field("Type_Length_TPID"): Number(1536),
             Field("Type_Length"): Number(1536),
             Field("Payload"): Aggregate(*[Number(0)] * 46),
-        }
+        },
     ) == Number(480)
     assert ETHERNET_FRAME.size(
         {
@@ -3068,7 +3113,7 @@ def test_size() -> None:
             Field("Type_Length_TPID"): Number(1536),
             Field("Type_Length"): Number(1536),
             Field("Payload"): Variable("Payload"),
-        }
+        },
     ) == Add(Size("Payload"), Number(112))
 
     variable_field_value = Message(
@@ -3103,14 +3148,14 @@ def test_size() -> None:
             Field("Has_Data"): Variable("X"),
             Field("Length"): Variable("Y"),
             Field("Data"): Selected(Variable("M"), "F"),
-        }
+        },
     ) == Add(
         IfExpr(
             [
                 (
                     Or(Equal(Variable("X"), FALSE), Equal(Variable("X"), TRUE)),
                     Size(Selected(Variable("M"), "F")),
-                )
+                ),
             ],
             Number(0),
         ),
@@ -3121,7 +3166,7 @@ def test_size() -> None:
             Field("Has_Data"): Variable("X"),
             Field("Length"): Variable("Y"),
             Field("Data"): Variable("Z"),
-        }
+        },
     ) == Add(
         IfExpr(
             [(Or(Equal(Variable("X"), FALSE), Equal(Variable("X"), TRUE)), Size(Variable("Z")))],
@@ -3159,13 +3204,13 @@ def test_size() -> None:
         {
             Field("A"): Number(0),
             Field("B"): Number(0),
-        }
+        },
     ) == Number(16)
     assert optional_overlayed_field.size(
         {
             Field("A"): Number(1),
             Field("B"): Number(2),
-        }
+        },
     ) == Number(32)
     assert optional_overlayed_field.size() == Add(
         IfExpr(
@@ -3173,7 +3218,7 @@ def test_size() -> None:
                 (
                     And(Greater(Variable("A"), Number(0)), NotEqual(Variable("A"), Number(0))),
                     Number(16),
-                )
+                ),
             ],
             Number(0),
         ),
@@ -3210,7 +3255,7 @@ def test_size() -> None:
         },
     )
     assert path_dependent_fields.size({Field("A"): Variable("X"), Field("B"): Number(0)}) == Number(
-        32
+        32,
     )
     assert path_dependent_fields.size({Field("A"): Variable("X")}) == Add(
         IfExpr(
@@ -3393,7 +3438,7 @@ def test_size_subpath() -> None:
                         Equal(Selected(Variable("X"), "Has_Data"), TRUE),
                     ),
                     Size(Selected(Variable("M"), "F")),
-                )
+                ),
             ],
             Number(0),
         ),
@@ -3415,7 +3460,7 @@ def test_size_subpath() -> None:
                         Equal(Selected(Variable("X"), "Has_Data"), TRUE),
                     ),
                     Size(Variable("Z")),
-                )
+                ),
             ],
             Number(0),
         ),
@@ -3472,7 +3517,7 @@ def test_size_subpath() -> None:
             (
                 And(Greater(Variable("A"), Number(0)), NotEqual(Variable("A"), Number(0))),
                 Number(16),
-            )
+            ),
         ],
         Number(0),
     )
@@ -4289,7 +4334,7 @@ def test_normalization() -> None:
             Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("TLV::Msg_Error"))),
             Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
             Link(Field("Value"), FINAL),
-        ]
+        ],
     )
 
 
@@ -4304,20 +4349,26 @@ def test_set_refinements() -> None:
         rty.Refinement(
             "F",
             rty.Message(
-                "P::M", {("F",)}, {}, {ID("F"): rty.OPAQUE}, refinements=[], is_definite=True
+                "P::M",
+                {("F",)},
+                {},
+                {ID("F"): rty.OPAQUE},
+                refinements=[],
+                is_definite=True,
             ),
             "In_Message",
-        )
+        ),
     ]
 
 
 def test_set_refinements_error() -> None:
     message = MESSAGE.copy()
     with pytest.raises(
-        FatalError, match=r"^model: error: setting refinements for different message$"
+        FatalError,
+        match=r"^model: error: setting refinements for different message$",
     ):
         message.set_refinements(
-            [REFINEMENT, Refinement("In_Message", TLV_MESSAGE, Field("Value"), MESSAGE)]
+            [REFINEMENT, Refinement("In_Message", TLV_MESSAGE, Field("Value"), MESSAGE)],
         )
 
 
@@ -4373,7 +4424,7 @@ def test_message_str() -> None:
                   O : P::Integer
                      then null;
                   P : P::Integer;
-               end message"""
+               end message""",
         ),
     )
 
@@ -4687,7 +4738,8 @@ def test_always_false_refinement(message: Message, condition: Expr) -> None:
     ],
 )
 def test_always_true_message_condition(
-    structure: abc.Sequence[Link], types: abc.Mapping[Field, Type]
+    structure: abc.Sequence[Link],
+    types: abc.Mapping[Field, Type],
 ) -> None:
     link_to_final = next(l for l in structure if l.target == FINAL)  # pragma: no branch
     assert_message_model_error(
@@ -4715,7 +4767,8 @@ def test_not_always_true_message_condition_for_always_valid_enum(value: int) -> 
 
 
 def test_possibly_always_true_refinement(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     message = Message(
         "P::M",
@@ -4749,7 +4802,8 @@ def test_possibly_always_true_refinement(
 
 
 def test_possibly_always_true_message_condition(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
     monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)

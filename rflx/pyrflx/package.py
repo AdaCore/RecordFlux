@@ -20,7 +20,9 @@ class Package(Base):
         return self._name
 
     def new_message(
-        self, key: StrID, parameters: Optional[Mapping[str, Union[bool, int, str]]] = None
+        self,
+        key: StrID,
+        parameters: Optional[Mapping[str, Union[bool, int, str]]] = None,
     ) -> MessageValue:
         message = self._messages[str(key)].clone()
         if parameters:
@@ -34,7 +36,8 @@ class Package(Base):
         return self._messages.values().__iter__()
 
     def set_checksum_functions(
-        self, functions: Mapping[StrID, Mapping[str, ChecksumFunction]]
+        self,
+        functions: Mapping[StrID, Mapping[str, ChecksumFunction]],
     ) -> None:
         for message_name, field_name_to_function_mapping in functions.items():
             name = str(message_name)

@@ -77,7 +77,7 @@ html_baseurl = ""
 # -- Options for PDF output --------------------------------------------------
 
 latex_documents = [
-    ("index", "language_reference.tex", "RecordFlux Language Reference", author, "howto", True)
+    ("index", "language_reference.tex", "RecordFlux Language Reference", author, "howto", True),
 ]
 
 # -- Extension configuration -------------------------------------------------

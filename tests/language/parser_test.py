@@ -432,7 +432,7 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "V1"},
                                 "package": None,
-                            }
+                            },
                         ],
                     },
                     {
@@ -443,7 +443,7 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "V2"},
                                 "package": None,
-                            }
+                            },
                         ],
                     },
                 ],
@@ -470,7 +470,7 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "V1"},
                                 "package": {"_kind": "UnqualifiedID", "_value": "T"},
-                            }
+                            },
                         ],
                     },
                     {
@@ -481,7 +481,7 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "V2"},
                                 "package": {"_kind": "UnqualifiedID", "_value": "T"},
-                            }
+                            },
                         ],
                     },
                 ],
@@ -626,7 +626,7 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "V1"},
                                 "package": None,
-                            }
+                            },
                         ],
                     },
                     {
@@ -649,7 +649,7 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "V2"},
                                 "package": None,
-                            }
+                            },
                         ],
                     },
                 ],
@@ -683,7 +683,7 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "True"},
                                 "package": None,
-                            }
+                            },
                         ],
                     },
                     {
@@ -713,7 +713,7 @@ def test_keyword_identifiers(text: str, rule: str) -> None:
                                 "_kind": "ID",
                                 "name": {"_kind": "UnqualifiedID", "_value": "False"},
                                 "package": None,
-                            }
+                            },
                         ],
                     },
                 ],

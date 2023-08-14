@@ -26,8 +26,8 @@ def test_parse_no_subsequent_errors_caused_by_style_errors(tmp_path: Path) -> No
         for M use (P => B::M);
 
         end A;
-        """
-        )
+        """,
+        ),
     )
 
     b = tmp_path / "b.rflx"
@@ -46,8 +46,8 @@ def test_parse_no_subsequent_errors_caused_by_style_errors(tmp_path: Path) -> No
               end message;
 
         end B;
-        """
-        )
+        """,
+        ),
     )
 
     with pytest.raises(

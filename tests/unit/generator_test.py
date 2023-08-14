@@ -65,7 +65,9 @@ def test_unsupported_checksum(tmp_path: Path) -> None:
 
 def test_ignore_unsupported_checksum(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
     Generator(ignore_unsupported_checksum=True).generate(
-        models.TLV_WITH_CHECKSUM_MODEL, Integration(), tmp_path
+        models.TLV_WITH_CHECKSUM_MODEL,
+        Integration(),
+        tmp_path,
     )
     captured = capsys.readouterr()
     assert "generator: warning: unsupported checksum ignored" in captured.out
@@ -111,7 +113,11 @@ def test_generate(  # noqa: PLR0913
     tmp_path: Path,
 ) -> None:
     Generator(prefix, reproducible=True, debug=debug).generate(
-        Model(), Integration(), tmp_path, library_files, top_level_package
+        Model(),
+        Integration(),
+        tmp_path,
+        library_files,
+        top_level_package,
     )
     present = {f.name for f in tmp_path.glob("*.ad?")}
     assert present == expected | (
@@ -127,7 +133,8 @@ def test_generate(  # noqa: PLR0913
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_generate_missing_template_directory(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(const, "TEMPLATE_DIR", tmp_path / "non-existent directory")
     with pytest.raises(AssertionError, match="^template directory not found"):
@@ -197,7 +204,7 @@ def test_substitution_relation_aggregate(
                                     expr.Variable("F_Value"),
                                 ),
                                 "First",
-                            )
+                            ),
                         ],
                     ),
                     expr.Call(
@@ -209,7 +216,7 @@ def test_substitution_relation_aggregate(
                                     expr.Variable("F_Value"),
                                 ),
                                 "Last",
-                            )
+                            ),
                         ],
                     ),
                 ),
@@ -259,7 +266,7 @@ def test_substitution_relation_boolean_literal(
     expected_right: expr.Expr,
 ) -> None:
     assert relation(left, right).substituted(
-        common.substitution(models.TLV_MESSAGE, "")
+        common.substitution(models.TLV_MESSAGE, ""),
     ) == relation(expected_left, expected_right)
 
 
@@ -288,7 +295,7 @@ def test_substitution_relation_scalar(
 ) -> None:
     assert_equal(
         relation(*expressions).substituted(
-            common.substitution(models.TLV_MESSAGE, "", public=True)
+            common.substitution(models.TLV_MESSAGE, "", public=True),
         ),
         relation(*expected),
     )
@@ -310,7 +317,7 @@ DUMMY_SESSION = ir.Session(
             [],
             None,
             None,
-        )
+        ),
     ],
     declarations=[],
     parameters=[],
@@ -345,7 +352,9 @@ DUMMY_SESSION = ir.Session(
                     ir.Argument("P1", "Boolean", type_=rty.BOOLEAN),
                     ir.Argument("P2", "T2", type_=rty.OPAQUE),
                     ir.Argument(
-                        "P3", "T3", type_=rty.Enumeration("T4", [ID("E1")], always_valid=True)
+                        "P3",
+                        "T3",
+                        type_=rty.Enumeration("T4", [ID("E1")], always_valid=True),
                     ),
                     ir.Argument("P4", "T4", type_=rty.Integer("T2")),
                     ir.Argument("P5", "T5", type_=rty.Message("T5", is_definite=True)),
@@ -375,10 +384,13 @@ DUMMY_SESSION = ir.Session(
     ],
 )
 def test_session_create_abstract_function(
-    parameter: ir.FuncDecl, expected: Sequence[ada.SubprogramDeclaration]
+    parameter: ir.FuncDecl,
+    expected: Sequence[ada.SubprogramDeclaration],
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
+        DUMMY_SESSION,
+        AllocatorGenerator(DUMMY_SESSION, Integration()),
+        debug=Debug.BUILTIN,
     )
 
     assert session_generator._create_abstract_function(parameter) == expected  # noqa: SLF001
@@ -446,7 +458,10 @@ class UnknownDeclaration(ir.FormalDecl):
                 [],
                 "T",
                 rty.Message(
-                    "M", {("F",)}, {ID("F"): rty.Sequence("A", rty.Integer("B"))}, is_definite=True
+                    "M",
+                    {("F",)},
+                    {ID("F"): rty.Sequence("A", rty.Integer("B"))},
+                    is_definite=True,
                 ),
                 Location((10, 20)),
             ),
@@ -472,10 +487,14 @@ class UnknownDeclaration(ir.FormalDecl):
     ],
 )
 def test_session_create_abstract_functions_error(
-    parameter: ir.FormalDecl, error_type: type[BaseError], error_msg: str
+    parameter: ir.FormalDecl,
+    error_type: type[BaseError],
+    error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
+        DUMMY_SESSION,
+        AllocatorGenerator(DUMMY_SESSION, Integration()),
+        debug=Debug.BUILTIN,
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -494,7 +513,7 @@ def test_session_create_abstract_functions_error(
             ir.VarDecl("X", rty.Integer("T"), ir.ComplexIntExpr([], ir.IntVal(1))),
             False,
             EvaluatedDeclaration(
-                global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))]
+                global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))],
             ),
         ),
         (
@@ -516,7 +535,9 @@ def test_session_create_abstract_functions_error(
         ),
         (
             ir.VarDecl(
-                "X", rty.Message("T"), origin=ir.ConstructedOrigin("X : T", Location((1, 1)))
+                "X",
+                rty.Message("T"),
+                origin=ir.ConstructedOrigin("X : T", Location((1, 1))),
             ),
             False,
             EvaluatedDeclaration(
@@ -547,7 +568,8 @@ def test_session_create_abstract_functions_error(
                         ],
                     ),
                     ada.CallStatement(
-                        "P.T.Initialize", [ada.Variable("X_Ctx"), ada.Variable("X_Buffer")]
+                        "P.T.Initialize",
+                        [ada.Variable("X_Ctx"), ada.Variable("X_Buffer")],
                     ),
                 ],
                 finalization=[
@@ -556,7 +578,7 @@ def test_session_create_abstract_functions_error(
                         [
                             ada.Variable("Off"),
                             ada.String(
-                                '"X_Ctx" is set by "Take_Buffer" but not used after the call'
+                                '"X_Ctx" is set by "Take_Buffer" but not used after the call',
                             ),
                         ],
                     ),
@@ -572,7 +594,7 @@ def test_session_create_abstract_functions_error(
                         [
                             ada.Variable("On"),
                             ada.String(
-                                '"X_Ctx" is set by "Take_Buffer" but not used after the call'
+                                '"X_Ctx" is set by "Take_Buffer" but not used after the call',
                             ),
                         ],
                     ),
@@ -581,17 +603,20 @@ def test_session_create_abstract_functions_error(
                         [ada.Equal(ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null"))],
                     ),
                     ada.PragmaStatement(
-                        "Assert", [ada.NotEqual(ada.Variable("X_Buffer"), ada.Variable("null"))]
+                        "Assert",
+                        [ada.NotEqual(ada.Variable("X_Buffer"), ada.Variable("null"))],
                     ),
                     ada.Assignment(
-                        ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("X_Buffer")
+                        ada.Variable("Ctx.P.Slots.Slot_Ptr_1"),
+                        ada.Variable("X_Buffer"),
                     ),
                     ada.PragmaStatement(
                         "Assert",
                         [
                             ada.NotEqual(
-                                ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null")
-                            )
+                                ada.Variable("Ctx.P.Slots.Slot_Ptr_1"),
+                                ada.Variable("null"),
+                            ),
                         ],
                     ),
                 ],
@@ -599,7 +624,9 @@ def test_session_create_abstract_functions_error(
         ),
         (
             ir.VarDecl(
-                "X", rty.Message("T"), origin=ir.ConstructedOrigin("X : T", Location((1, 1)))
+                "X",
+                rty.Message("T"),
+                origin=ir.ConstructedOrigin("X : T", Location((1, 1))),
             ),
             True,
             EvaluatedDeclaration(
@@ -634,7 +661,8 @@ def test_session_create_abstract_functions_error(
                         ],
                     ),
                     ada.CallStatement(
-                        "P.T.Initialize", [ada.Variable("Ctx.P.X_Ctx"), ada.Variable("X_Buffer")]
+                        "P.T.Initialize",
+                        [ada.Variable("Ctx.P.X_Ctx"), ada.Variable("X_Buffer")],
                     ),
                 ],
                 finalization=[
@@ -643,7 +671,7 @@ def test_session_create_abstract_functions_error(
                         [
                             ada.Variable("Off"),
                             ada.String(
-                                '"Ctx.P.X_Ctx" is set by "Take_Buffer" but not used after the call'
+                                '"Ctx.P.X_Ctx" is set by "Take_Buffer" but not used after the call',
                             ),
                         ],
                     ),
@@ -659,7 +687,7 @@ def test_session_create_abstract_functions_error(
                         [
                             ada.Variable("On"),
                             ada.String(
-                                '"Ctx.P.X_Ctx" is set by "Take_Buffer" but not used after the call'
+                                '"Ctx.P.X_Ctx" is set by "Take_Buffer" but not used after the call',
                             ),
                         ],
                     ),
@@ -668,17 +696,20 @@ def test_session_create_abstract_functions_error(
                         [ada.Equal(ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null"))],
                     ),
                     ada.PragmaStatement(
-                        "Assert", [ada.NotEqual(ada.Variable("X_Buffer"), ada.Variable("null"))]
+                        "Assert",
+                        [ada.NotEqual(ada.Variable("X_Buffer"), ada.Variable("null"))],
                     ),
                     ada.Assignment(
-                        ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("X_Buffer")
+                        ada.Variable("Ctx.P.Slots.Slot_Ptr_1"),
+                        ada.Variable("X_Buffer"),
                     ),
                     ada.PragmaStatement(
                         "Assert",
                         [
                             ada.NotEqual(
-                                ada.Variable("Ctx.P.Slots.Slot_Ptr_1"), ada.Variable("null")
-                            )
+                                ada.Variable("Ctx.P.Slots.Slot_Ptr_1"),
+                                ada.Variable("null"),
+                            ),
                         ],
                     ),
                     ada.CallStatement("P.S_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
@@ -688,7 +719,9 @@ def test_session_create_abstract_functions_error(
     ],
 )
 def test_session_evaluate_declarations(
-    declaration: ir.VarDecl, session_global: bool, expected: EvaluatedDeclaration
+    declaration: ir.VarDecl,
+    session_global: bool,
+    expected: EvaluatedDeclaration,
 ) -> None:
     allocator = AllocatorGenerator(DUMMY_SESSION, Integration())
 
@@ -696,7 +729,9 @@ def test_session_evaluate_declarations(
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
     assert (
         session_generator._evaluate_declarations(  # noqa: SLF001
-            [declaration], is_global=lambda _: False, session_global=session_global
+            [declaration],
+            is_global=lambda _: False,
+            session_global=session_global,
         )
         == expected
     )
@@ -961,7 +996,13 @@ def test_session_declare(
     session_generator = SessionGenerator(DUMMY_SESSION, allocator, debug=Debug.BUILTIN)
 
     result = session_generator._declare(  # noqa: SLF001
-        ID("X"), type_, lambda _: False, loc, expression, constant, session_global
+        ID("X"),
+        type_,
+        lambda _: False,
+        loc,
+        expression,
+        constant,
+        session_global,
     )
     assert "\n".join(str(d) for d in result.global_declarations) == expected.global_declarations
     assert (
@@ -995,7 +1036,9 @@ def test_session_declare(
             ir.ComplexExpr(
                 [ir.Assign("X", ir.IntVal(0), rty.Integer("T"))],
                 ir.IntVar(
-                    "X", rty.Integer("T"), origin=ir.ConstructedOrigin("X", Location((10, 20)))
+                    "X",
+                    rty.Integer("T"),
+                    origin=ir.ConstructedOrigin("X", Location((10, 20))),
                 ),
             ),
             RecordFluxError,
@@ -1042,7 +1085,9 @@ def test_session_declare_error(
     error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
+        DUMMY_SESSION,
+        AllocatorGenerator(DUMMY_SESSION, Integration()),
+        debug=Debug.BUILTIN,
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -1091,7 +1136,8 @@ class UnknownStatement(ir.Stmt):
                         "Universal::Message",
                         field_types={
                             ID("Message_Type"): rty.Enumeration(
-                                "Universal::Message_Type", [ID("Universal::MT_Data")]
+                                "Universal::Message_Type",
+                                [ID("Universal::MT_Data")],
                             ),
                             ID("Length"): rty.Integer("Universal::Length"),
                             ID("Data"): rty.OPAQUE,
@@ -1284,10 +1330,14 @@ def test_session_state_action(action: ir.Stmt, expected: str) -> None:
     ],
 )
 def test_session_state_action_error(
-    action: ir.Stmt, error_type: type[BaseError], error_msg: str
+    action: ir.Stmt,
+    error_type: type[BaseError],
+    error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
+        DUMMY_SESSION,
+        AllocatorGenerator(DUMMY_SESSION, Integration()),
+        debug=Debug.BUILTIN,
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -1365,7 +1415,8 @@ class UnknownExpr(ir.Expr):
                     "Universal::Message",
                     field_types={
                         ID("Message_Type"): rty.Enumeration(
-                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                            "Universal::Message_Type",
+                            [ID("Universal::MT_Data")],
                         ),
                         ID("Length"): rty.Integer("Universal::Length"),
                         ID("Data"): rty.OPAQUE,
@@ -1400,7 +1451,8 @@ class UnknownExpr(ir.Expr):
                     "Universal::Message",
                     field_types={
                         ID("Message_Type"): rty.Enumeration(
-                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                            "Universal::Message_Type",
+                            [ID("Universal::MT_Data")],
                         ),
                         ID("Length"): rty.Integer("Universal::Length"),
                         ID("Data"): rty.OPAQUE,
@@ -1431,7 +1483,8 @@ class UnknownExpr(ir.Expr):
                     "Universal::Message",
                     field_types={
                         ID("Message_Type"): rty.Enumeration(
-                            "Universal::Message_Type", [ID("Universal::MT_Data")]
+                            "Universal::Message_Type",
+                            [ID("Universal::MT_Data")],
                         ),
                         ID("Length"): rty.Integer("Universal::Length"),
                         ID("Data"): rty.OPAQUE,
@@ -1727,10 +1780,14 @@ def test_session_assign_error(
     ],
 )
 def test_session_append_error(
-    append: ir.Append, error_type: type[BaseError], error_msg: str
+    append: ir.Append,
+    error_type: type[BaseError],
+    error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
+        DUMMY_SESSION,
+        AllocatorGenerator(DUMMY_SESSION, Integration()),
+        debug=Debug.BUILTIN,
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -1771,7 +1828,9 @@ def test_session_append_error(
 )
 def test_session_read_error(read: ir.Read, error_type: type[BaseError], error_msg: str) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
+        DUMMY_SESSION,
+        AllocatorGenerator(DUMMY_SESSION, Integration()),
+        debug=Debug.BUILTIN,
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -1800,7 +1859,9 @@ def test_session_read_error(read: ir.Read, error_type: type[BaseError], error_ms
 )
 def test_session_write_error(write: ir.Write, error_type: type[BaseError], error_msg: str) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
+        DUMMY_SESSION,
+        AllocatorGenerator(DUMMY_SESSION, Integration()),
+        debug=Debug.BUILTIN,
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
@@ -1859,7 +1920,9 @@ def test_session_write_error(write: ir.Write, error_type: type[BaseError], error
 )
 def test_session_to_ada_expr(expression: ir.Expr, expected: ada.Expr) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
+        DUMMY_SESSION,
+        AllocatorGenerator(DUMMY_SESSION, Integration()),
+        debug=Debug.BUILTIN,
     )
 
     assert session_generator._to_ada_expr(expression, lambda _: False) == expected  # noqa: SLF001
@@ -1881,7 +1944,9 @@ def test_session_to_ada_expr_equality(
     expected: ada.Expr,
 ) -> None:
     session_generator = SessionGenerator(
-        DUMMY_SESSION, AllocatorGenerator(DUMMY_SESSION, Integration()), debug=Debug.BUILTIN
+        DUMMY_SESSION,
+        AllocatorGenerator(DUMMY_SESSION, Integration()),
+        debug=Debug.BUILTIN,
     )
 
     assert (
@@ -1900,13 +1965,18 @@ def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
             "P::T",
             first=expr.Number(0),
             last=expr.Sub(
-                expr.Pow(expr.Number(2), expr.Number(constants.MAX_SCALAR_SIZE)), expr.Number(1)
+                expr.Pow(expr.Number(2), expr.Number(constants.MAX_SCALAR_SIZE)),
+                expr.Number(1),
             ),
             size=expr.Number(constants.MAX_SCALAR_SIZE),
-        )
+        ),
     ]
     Generator(reproducible=True).generate(
-        Model(types), Integration(), tmp_path, library_files=False, top_level_package=False
+        Model(types),
+        Integration(),
+        tmp_path,
+        library_files=False,
+        top_level_package=False,
     )
     assert (tmp_path / "p.ads").exists()
     assert (tmp_path / "p.ads").read_text() == textwrap.dedent(
@@ -1944,7 +2014,7 @@ def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
                Valid_T (Val);
 
         end P;
-        '''
+        ''',
     )
 
 
@@ -2053,7 +2123,9 @@ def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
     ],
 )
 def test_generate_enumeration_base_type_use(
-    always_valid: bool, expected: str, tmp_path: Path
+    always_valid: bool,
+    expected: str,
+    tmp_path: Path,
 ) -> None:
     types = [
         mty.Enumeration(
@@ -2061,10 +2133,14 @@ def test_generate_enumeration_base_type_use(
             literals=[("E1", expr.Number(1))],
             size=expr.Number(constants.MAX_SCALAR_SIZE),
             always_valid=always_valid,
-        )
+        ),
     ]
     Generator(reproducible=True).generate(
-        Model(types), Integration(), tmp_path, library_files=False, top_level_package=False
+        Model(types),
+        Integration(),
+        tmp_path,
+        library_files=False,
+        top_level_package=False,
     )
     assert (tmp_path / "p.ads").exists()
     assert (tmp_path / "p.ads").read_text() == textwrap.dedent(expected)
@@ -2096,7 +2172,7 @@ def test_generate_field_size_optimization() -> None:
             specification=ada.FunctionSpecification(
                 identifier=ID("Field_Size_Length"),
                 parameters=[
-                    ada.Parameter(identifiers=[ID("Struct")], type_identifier=ID("Structure"))
+                    ada.Parameter(identifiers=[ID("Struct")], type_identifier=ID("Structure")),
                 ],
                 return_type=ID("RFLX_Types::Bit_Length"),
             ),
@@ -2109,5 +2185,7 @@ def test_generate_field_size_optimization() -> None:
 def test_generate_string_substitution() -> None:
     subst = common.substitution(models.DEFINITE_MESSAGE, "")
     assert subst(expr.String("abc")) == expr.Aggregate(
-        expr.Number(97), expr.Number(98), expr.Number(99)
+        expr.Number(97),
+        expr.Number(98),
+        expr.Number(99),
     )

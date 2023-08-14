@@ -31,7 +31,8 @@ def test_type_name() -> None:
     assert t.name == "Type_Name"
     assert t.package == ID("Package")
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:10:20: model: error: invalid format for identifier "X"$'
+        RecordFluxError,
+        match=r'^<stdin>:10:20: model: error: invalid format for identifier "X"$',
     ):
         Integer(ID("X", Location((10, 20))), Number(0), Number(255), Number(8))
     with pytest.raises(
@@ -75,7 +76,10 @@ def test_integer_value_count() -> None:
 
 def test_integer_first() -> None:
     integer = Integer(
-        "P::T", Pow(Number(2), Number(4)), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32)
+        "P::T",
+        Pow(Number(2), Number(4)),
+        Sub(Pow(Number(2), Number(32)), Number(1)),
+        Number(32),
     )
     assert integer.first == Number(16)
     assert integer.first_expr == Pow(Number(2), Number(4))
@@ -83,7 +87,10 @@ def test_integer_first() -> None:
 
 def test_integer_last() -> None:
     integer = Integer(
-        "P::T", Pow(Number(2), Number(4)), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32)
+        "P::T",
+        Pow(Number(2), Number(4)),
+        Sub(Pow(Number(2), Number(32)), Number(1)),
+        Number(32),
     )
     assert integer.last == Number(2**32 - 1)
     assert integer.last_expr == Sub(Pow(Number(2), Number(32)), Number(1))
@@ -91,49 +98,56 @@ def test_integer_last() -> None:
 
 def test_integer_invalid_first_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:5:3: model: error: first of "T" contains variable$'
+        RecordFluxError,
+        match=r'^<stdin>:5:3: model: error: first of "T" contains variable$',
     ):
         Integer("P::T", Add(Number(1), Variable("X")), Number(15), Number(4), Location((5, 3)))
 
 
 def test_integer_invalid_last_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:80:6: model: error: last of "T" contains variable$'
+        RecordFluxError,
+        match=r'^<stdin>:80:6: model: error: last of "T" contains variable$',
     ):
         Integer("P::T", Number(1), Add(Number(1), Variable("X")), Number(4), Location((80, 6)))
 
 
 def test_integer_invalid_last_exceeds_limit() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$'
+        RecordFluxError,
+        match=r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$',
     ):
         Integer("P::T", Number(1), Pow(Number(2), Number(63)), Number(64))
 
 
 def test_integer_invalid_first_negative() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:6:4: model: error: first of "T" negative$'
+        RecordFluxError,
+        match=r'^<stdin>:6:4: model: error: first of "T" negative$',
     ):
         Integer("P::T", Number(-1), Number(0), Number(1), Location((6, 4)))
 
 
 def test_integer_invalid_range() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:10:5: model: error: range of "T" negative$'
+        RecordFluxError,
+        match=r'^<stdin>:10:5: model: error: range of "T" negative$',
     ):
         Integer("P::T", Number(1), Number(0), Number(1), Location((10, 5)))
 
 
 def test_integer_invalid_size_variable() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:22:4: model: error: size of "T" contains variable$'
+        RecordFluxError,
+        match=r'^<stdin>:22:4: model: error: size of "T" contains variable$',
     ):
         Integer("P::T", Number(0), Number(256), Add(Number(8), Variable("X")), Location((22, 4)))
 
 
 def test_integer_invalid_size_too_small() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:10:4: model: error: size of "T" too small$'
+        RecordFluxError,
+        match=r'^<stdin>:10:4: model: error: size of "T" too small$',
     ):
         Integer("P::T", Number(0), Number(256), Number(8), Location((10, 4)))
 
@@ -231,7 +245,11 @@ def test_enumeration_invalid_size_too_small() -> None:
         match=r'^<stdin>:10:5: model: error: size of "T" too small$',
     ):
         Enumeration(
-            "P::T", [("A", Number(256))], Number(8), always_valid=False, location=Location((10, 5))
+            "P::T",
+            [("A", Number(256))],
+            Number(8),
+            always_valid=False,
+            location=Location((10, 5)),
         )
 
 
@@ -251,25 +269,39 @@ def test_enumeration_invalid_size_exceeds_limit() -> None:
 
 def test_enumeration_invalid_always_valid_aspect() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^model: error: unnecessary always-valid aspect on "T"$'
+        RecordFluxError,
+        match=r'^model: error: unnecessary always-valid aspect on "T"$',
     ):
         Enumeration(
-            "P::T", [("A", Number(0)), ("B", Number(1))], Number(1), always_valid=True
+            "P::T",
+            [("A", Number(0)), ("B", Number(1))],
+            Number(1),
+            always_valid=True,
         ).error.propagate()
 
 
 def test_enumeration_invalid_literal() -> None:
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$'
+        RecordFluxError,
+        match=r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$',
     ):
         Enumeration(
-            "P::T", [("A B", Number(1))], Number(8), always_valid=False, location=Location((1, 2))
+            "P::T",
+            [("A B", Number(1))],
+            Number(8),
+            always_valid=False,
+            location=Location((1, 2)),
         )
     with pytest.raises(
-        RecordFluxError, match=r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$'
+        RecordFluxError,
+        match=r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$',
     ):
         Enumeration(
-            "P::T", [("A.B", Number(1))], Number(8), always_valid=False, location=Location((6, 4))
+            "P::T",
+            [("A.B", Number(1))],
+            Number(8),
+            always_valid=False,
+            location=Location((6, 4)),
         )
 
 
@@ -324,7 +356,7 @@ def test_enumeration_str() -> None:
                 [("A", Number(1))],
                 Pow(Number(2), Number(5)),
                 always_valid=False,
-            )
+            ),
         )
         == "type T is (A => 1) with Size => 2 ** 5"
     )
@@ -341,7 +373,7 @@ def test_enumeration_str() -> None:
             ],
             Pow(Number(2), Number(4)),
             always_valid=True,
-        )
+        ),
     ) == (
         "type T is\n"
         "   (A => 4,\n"
@@ -487,7 +519,7 @@ def test_sequence_unsupported_element_type() -> None:
 def test_unchecked_type_checked(unchecked: UncheckedType, expected: Type) -> None:
     assert (
         unchecked.checked(
-            [Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))]
+            [Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))],
         )
         == expected
     )
@@ -498,7 +530,11 @@ def test_unchecked_type_checked(unchecked: UncheckedType, expected: Type) -> Non
     [
         (
             UncheckedInteger(
-                ID("T", Location((2, 3))), Number(0), Number(128), Number(8), Location((1, 2))
+                ID("T", Location((2, 3))),
+                Number(0),
+                Number(128),
+                Number(8),
+                Location((1, 2)),
             ),
             r'^<stdin>:2:3: model: error: invalid format for identifier "T"$',
         ),

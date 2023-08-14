@@ -11,7 +11,7 @@ from tests.property import strategies
                 strategies.numbers(),
                 strategies.variables(strategies.identifiers()),
                 strategies.attributes(strategies.identifiers()),
-            )
+            ),
         ),
         strategies.boolean_relations(
             st.one_of(strategies.aggregates(strategies.numbers()), strategies.strings()),
@@ -23,27 +23,27 @@ from tests.property import strategies
                         strategies.numbers(),
                         strategies.variables(strategies.identifiers()),
                         strategies.attributes(strategies.identifiers()),
-                    )
-                )
-            )
+                    ),
+                ),
+            ),
         ),
         strategies.calls(
             st.one_of(
                 strategies.numbers(),
                 strategies.variables(strategies.identifiers()),
                 strategies.attributes(strategies.identifiers()),
-            )
+            ),
         ),
         strategies.quantified_expressions(
             st.one_of(
                 strategies.numbers(),
                 strategies.variables(strategies.identifiers()),
                 strategies.attributes(strategies.identifiers()),
-            )
+            ),
         ),
         strategies.strings(),
         strategies.aggregates(strategies.numbers()),
-    )
+    ),
 )
 @settings(deadline=None)
 def test_conversion(expression: expr.Expr) -> None:

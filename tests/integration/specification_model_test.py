@@ -357,7 +357,7 @@ def test_message_with_two_size_fields() -> None:
                  Payload : Opaque;
               end message;
         end Test;
-        """
+        """,
     )
     p.create_model()
 
@@ -378,7 +378,7 @@ def test_message_same_field_and_type_name_with_different_size() -> None:
               end message;
 
         end Test;
-        """
+        """,
     )
     p.create_model()
 
@@ -771,7 +771,7 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
               end Next;
            end Session;
         end Test;
-"""
+""",
     )
     test_spec = tmp_path / "test.rflx"
     test_rfi = tmp_path / "test.rfi"

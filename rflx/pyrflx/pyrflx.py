@@ -37,7 +37,7 @@ class PyRFLX:
 
         for r in model.refinements:
             messages[r.pdu.identifier].add_refinement(
-                RefinementValue(r, messages[r.sdu.identifier])
+                RefinementValue(r, messages[r.sdu.identifier]),
             )
 
         self.set_checksum_functions(checksum_functions or {})
@@ -59,7 +59,8 @@ class PyRFLX:
         return cls(model, None, skip_message_verification)
 
     def set_checksum_functions(
-        self, functions: Mapping[StrID, Mapping[str, ChecksumFunction]]
+        self,
+        functions: Mapping[StrID, Mapping[str, ChecksumFunction]],
     ) -> None:
         for identifier, checksum_field_function in functions.items():
             identifier_str = str(identifier)

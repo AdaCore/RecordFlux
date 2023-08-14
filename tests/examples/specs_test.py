@@ -32,7 +32,7 @@ def test_iana_specs_synchronized(registry_file: Path) -> None:
         re.search(
             f"Registry last updated on {registry_last_updated.text}",
             (EX_SPEC_DIR / f"{registry_file.stem}.rflx".replace("-", "_")).read_text(
-                encoding="utf-8"
+                encoding="utf-8",
             ),
         )
         is not None

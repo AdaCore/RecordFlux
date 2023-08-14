@@ -207,9 +207,9 @@ class Generator:
                             l.format(prefix=prefix)
                             for l in template_file.split("\n")
                             if "/Workarounds#" not in l
-                        ]
+                        ],
                     ),
-                )
+                ),
             )
 
         if self._debug == common.Debug.EXTERNAL:
@@ -229,8 +229,8 @@ class Generator:
                                         [
                                             Parameter(["Message"], "String"),
                                         ],
-                                    )
-                                )
+                                    ),
+                                ),
                             ],
                             aspects=[
                                 SparkMode(),
@@ -239,7 +239,7 @@ class Generator:
                         [],
                         PackageBody(debug_package_id),
                     ).ads,
-                )
+                ),
             )
 
         return files
@@ -252,7 +252,7 @@ class Generator:
                 File(
                     Path(directory) / Path(file_name(self._prefix) + ".ads"),
                     self._license_header() + f"package {self._prefix} is\n\nend {self._prefix};",
-                )
+                ),
             )
 
         return files
@@ -262,12 +262,12 @@ class Generator:
 
         for unit in units.values():
             files.append(
-                File(directory / Path(unit.name + ".ads"), self._license_header() + unit.ads)
+                File(directory / Path(unit.name + ".ads"), self._license_header() + unit.ads),
             )
 
             if unit.adb:
                 files.append(
-                    File(directory / Path(unit.name + ".adb"), self._license_header() + unit.adb)
+                    File(directory / Path(unit.name + ".adb"), self._license_header() + unit.adb),
                 )
 
         return files
@@ -299,7 +299,9 @@ class Generator:
                         )
                     else:
                         warn(
-                            "unsupported checksum ignored", Subsystem.GENERATOR, location=c.location
+                            "unsupported checksum ignored",
+                            Subsystem.GENERATOR,
+                            location=c.location,
                         )
 
                 units.update(self._create_message(t))
@@ -335,7 +337,10 @@ class Generator:
             units[allocator_generator.unit_identifier] = unit
 
         session_generator = SessionGenerator(
-            session.to_ir(), allocator_generator, self._prefix, debug=self._debug
+            session.to_ir(),
+            allocator_generator,
+            self._prefix,
+            debug=self._debug,
         )
         unit = self._create_unit(
             session_generator.unit_identifier,
@@ -404,7 +409,7 @@ class Generator:
                     WithClause(self._prefix * const.BUILTIN_TYPES_PACKAGE),
                     WithClause(self._prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                     UsePackageClause(self._prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
-                ]
+                ],
             )
 
         if any(isinstance(field_type, Scalar) for field_type in message.field_types.values()):
@@ -419,7 +424,7 @@ class Generator:
                     [
                         WithClause(self._prefix * field_type.package),
                         UsePackageClause(self._prefix * field_type.package),
-                    ]
+                    ],
                 )
 
             elif isinstance(field_type, Sequence):
@@ -472,45 +477,67 @@ class Generator:
             self._executor.submit(message_generator.create_context_type, message),
             self._executor.submit(message_generator.create_initialize_procedure, message),
             self._executor.submit(
-                message_generator.create_restricted_initialize_procedure, message
+                message_generator.create_restricted_initialize_procedure,
+                message,
             ),
             self._executor.submit(
-                message_generator.create_initialized_function, self._prefix, message
+                message_generator.create_initialized_function,
+                self._prefix,
+                message,
             ),
             self._executor.submit(message_generator.create_reset_procedure, self._prefix, message),
             self._executor.submit(
-                message_generator.create_restricted_reset_procedure, self._prefix, message
+                message_generator.create_restricted_reset_procedure,
+                self._prefix,
+                message,
             ),
             self._executor.submit(
-                message_generator.create_take_buffer_procedure, self._prefix, message
+                message_generator.create_take_buffer_procedure,
+                self._prefix,
+                message,
             ),
             self._executor.submit(message_generator.create_copy_procedure, self._prefix, message),
             self._executor.submit(message_generator.create_read_function, self._prefix, message),
             self._executor.submit(
-                message_generator.create_generic_read_procedure, self._prefix, message
+                message_generator.create_generic_read_procedure,
+                self._prefix,
+                message,
             ),
             self._executor.submit(
-                message_generator.create_generic_write_procedure, self._prefix, message
+                message_generator.create_generic_write_procedure,
+                self._prefix,
+                message,
             ),
             self._executor.submit(message_generator.create_has_buffer_function),
             self._executor.submit(
-                message_generator.create_buffer_length_function, self._prefix, message
+                message_generator.create_buffer_length_function,
+                self._prefix,
+                message,
             ),
             self._executor.submit(message_generator.create_size_function),
             self._executor.submit(message_generator.create_byte_size_function),
             self._executor.submit(
-                message_generator.create_message_last_function, self._prefix, message
+                message_generator.create_message_last_function,
+                self._prefix,
+                message,
             ),
             self._executor.submit(message_generator.create_written_last_function),
             self._executor.submit(message_generator.create_data_procedure, self._prefix, message),
             self._executor.submit(
-                message_generator.create_valid_value_function, self._prefix, message, scalar_fields
+                message_generator.create_valid_value_function,
+                self._prefix,
+                message,
+                scalar_fields,
             ),
             self._executor.submit(
-                message_generator.create_path_condition_function, self._prefix, message
+                message_generator.create_path_condition_function,
+                self._prefix,
+                message,
             ),
             self._executor.submit(
-                message_generator.create_field_condition_function, self._prefix, message
+                message_generator.create_field_condition_function,
+                self._prefix,
+                message,
             ),
             self._executor.submit(
                 message_generator.create_field_size_function,
@@ -520,7 +547,9 @@ class Generator:
                 composite_fields,
             ),
             self._executor.submit(
-                message_generator.create_field_first_function, self._prefix, message
+                message_generator.create_field_first_function,
+                self._prefix,
+                message,
             ),
             self._executor.submit(
                 message_generator.create_field_last_function,
@@ -531,7 +560,9 @@ class Generator:
             ),
             self._executor.submit(message_generator.create_predecessor_function),
             self._executor.submit(
-                message_generator.create_successor_function, self._prefix, message
+                message_generator.create_successor_function,
+                self._prefix,
+                message,
             ),
             self._executor.submit(
                 message_generator.create_valid_predecessor_function,
@@ -541,13 +572,19 @@ class Generator:
             self._executor.submit(message_generator.create_invalid_successor_function, message),
             self._executor.submit(message_generator.create_valid_next_function),
             self._executor.submit(
-                message_generator.create_available_space_function, self._prefix, message
+                message_generator.create_available_space_function,
+                self._prefix,
+                message,
             ),
             self._executor.submit(
-                message_generator.create_sufficient_space_function, self._prefix, message
+                message_generator.create_sufficient_space_function,
+                self._prefix,
+                message,
             ),
             self._executor.submit(
-                message_generator.create_sufficient_buffer_length_function, self._prefix, message
+                message_generator.create_sufficient_buffer_length_function,
+                self._prefix,
+                message,
             ),
             *(
                 [
@@ -557,13 +594,15 @@ class Generator:
                         message,
                         scalar_fields,
                         composite_fields,
-                    )
+                    ),
                 ]
                 if composite_fields
                 else []
             ),
             self._executor.submit(
-                message_generator.create_reset_dependent_fields_procedure, self._prefix, message
+                message_generator.create_reset_dependent_fields_procedure,
+                self._prefix,
+                message,
             ),
             *(
                 [
@@ -571,18 +610,27 @@ class Generator:
                         message_generator.create_composite_field_function,
                         scalar_fields,
                         composite_fields,
-                    )
+                    ),
                 ]
                 if self._requires_composite_field_function(
-                    message, scalar_fields, composite_fields, sequence_fields
+                    message,
+                    scalar_fields,
+                    composite_fields,
+                    sequence_fields,
                 )
                 else []
             ),
             self._executor.submit(
-                parser_generator.create_get_function, message, scalar_fields, composite_fields
+                parser_generator.create_get_function,
+                message,
+                scalar_fields,
+                composite_fields,
             ),
             self._executor.submit(
-                parser_generator.create_verify_procedure, message, scalar_fields, composite_fields
+                parser_generator.create_verify_procedure,
+                message,
+                scalar_fields,
+                composite_fields,
             ),
             self._executor.submit(parser_generator.create_verify_message_procedure, message),
             self._executor.submit(parser_generator.create_present_function),
@@ -594,30 +642,46 @@ class Generator:
             self._executor.submit(parser_generator.create_valid_message_function, message),
             self._executor.submit(parser_generator.create_incomplete_message_function),
             self._executor.submit(
-                parser_generator.create_scalar_getter_functions, message, scalar_fields
+                parser_generator.create_scalar_getter_functions,
+                message,
+                scalar_fields,
             ),
             self._executor.submit(
-                parser_generator.create_opaque_getter_functions, message, opaque_fields
+                parser_generator.create_opaque_getter_functions,
+                message,
+                opaque_fields,
             ),
             self._executor.submit(
-                parser_generator.create_opaque_getter_procedures, message, opaque_fields
+                parser_generator.create_opaque_getter_procedures,
+                message,
+                opaque_fields,
             ),
             self._executor.submit(
-                parser_generator.create_generic_opaque_getter_procedures, message, opaque_fields
+                parser_generator.create_generic_opaque_getter_procedures,
+                message,
+                opaque_fields,
             ),
             self._executor.submit(serializer_generator.create_valid_size_function, message),
             self._executor.submit(serializer_generator.create_valid_length_function, message),
             self._executor.submit(
-                serializer_generator.create_set_procedure, message, scalar_fields, composite_fields
+                serializer_generator.create_set_procedure,
+                message,
+                scalar_fields,
+                composite_fields,
             ),
             self._executor.submit(
-                serializer_generator.create_scalar_setter_procedures, message, scalar_fields
+                serializer_generator.create_scalar_setter_procedures,
+                message,
+                scalar_fields,
             ),
             self._executor.submit(
-                serializer_generator.create_composite_setter_empty_procedures, message
+                serializer_generator.create_composite_setter_empty_procedures,
+                message,
             ),
             self._executor.submit(
-                serializer_generator.create_sequence_setter_procedures, message, sequence_fields
+                serializer_generator.create_sequence_setter_procedures,
+                message,
+                sequence_fields,
             ),
             self._executor.submit(
                 serializer_generator.create_composite_initialize_procedures,
@@ -627,16 +691,26 @@ class Generator:
             ),
             self._executor.submit(serializer_generator.create_opaque_setter_procedures, message),
             self._executor.submit(
-                serializer_generator.create_generic_opaque_setter_procedures, message
+                serializer_generator.create_generic_opaque_setter_procedures,
+                message,
             ),
             self._executor.submit(
-                message_generator.create_switch_procedures, self._prefix, message, sequence_fields
+                message_generator.create_switch_procedures,
+                self._prefix,
+                message,
+                sequence_fields,
             ),
             self._executor.submit(
-                message_generator.create_complete_functions, self._prefix, message, sequence_fields
+                message_generator.create_complete_functions,
+                self._prefix,
+                message,
+                sequence_fields,
             ),
             self._executor.submit(
-                message_generator.create_update_procedures, self._prefix, message, sequence_fields
+                message_generator.create_update_procedures,
+                self._prefix,
+                message,
+                sequence_fields,
             ),
             self._executor.submit(message_generator.create_cursor_function),
             self._executor.submit(message_generator.create_cursors_function),
@@ -659,11 +733,13 @@ class Generator:
         return bool(
             (scalar_fields and composite_fields)
             or any(message.is_possibly_empty(f) for f in composite_fields)
-            or sequence_fields
+            or sequence_fields,
         )
 
     def _create_refinement(
-        self, refinement: Refinement, units: abc.Mapping[ID, Unit]
+        self,
+        refinement: Refinement,
+        units: abc.Mapping[ID, Unit],
     ) -> dict[ID, Unit]:
         result: dict[ID, Unit] = {}
         identifier = refinement.package * const.REFINEMENT_PACKAGE
@@ -695,12 +771,12 @@ class Generator:
                     [
                         WithClause(self._prefix * l.identifier.parent),
                         UsePackageClause(self._prefix * l.identifier.parent),
-                    ]
+                    ],
                 )
 
         if not null_sdu:
             unit += UnitPart(
-                [UseTypeClause(const.TYPES_INDEX), UseTypeClause(const.TYPES_BIT_INDEX)]
+                [UseTypeClause(const.TYPES_INDEX), UseTypeClause(const.TYPES_BIT_INDEX)],
             )
 
         if refinement.pdu.package != refinement.package:
@@ -714,7 +790,7 @@ class Generator:
                 [
                     WithClause(self._prefix * pdu_package),
                     UsePackageClause(self._prefix * pdu_package),
-                ]
+                ],
             )
 
         pdu_identifier = self._prefix * refinement.pdu.identifier
@@ -726,7 +802,7 @@ class Generator:
             unit.declaration_context.extend(
                 [
                     WithClause(sdu_identifier),
-                ]
+                ],
             )
 
         condition_fields = {
@@ -740,7 +816,7 @@ class Generator:
             unit += UnitPart(
                 [
                     UseTypeClause(f"{pdu_identifier}.Field_Cursors"),
-                ]
+                ],
             )
             unit += self._create_switch_procedure(refinement, condition_fields)
             unit += self._create_copy_refined_field_procedure(refinement, condition_fields)
@@ -748,7 +824,10 @@ class Generator:
         return result
 
     def _create_type(
-        self, field_type: Type, message_package: ID, units: abc.Mapping[ID, Unit]
+        self,
+        field_type: Type,
+        message_package: ID,
+        units: abc.Mapping[ID, Unit],
     ) -> dict[ID, Unit]:
         assert field_type.package != BUILTINS_PACKAGE
 
@@ -796,7 +875,7 @@ class Generator:
                     ),
                 ],
                 package,
-            )
+            ),
         }
 
     def _integer_functions(self, integer: Integer) -> UnitPart:
@@ -827,13 +906,13 @@ class Generator:
                         "Warnings",
                         [Variable("Off"), String('formal parameter "Val" is not referenced')],
                     ),
-                ]
+                ],
             )
         else:
             specification.append(UseTypeClause(self._prefix * const.TYPES_BASE_INT))
 
         specification.append(
-            self._type_validation_function(integer.name, "Val", constraints.ada_expr())
+            self._type_validation_function(integer.name, "Val", constraints.ada_expr()),
         )
 
         if constraints == expr.TRUE:
@@ -844,7 +923,7 @@ class Generator:
                         [Variable("On"), String('formal parameter "Val" is not referenced')],
                     ),
                     Pragma("Warnings", [Variable("On"), String('unused variable "Val"')]),
-                ]
+                ],
             )
 
         specification.extend(self._integer_conversion_functions(integer))
@@ -864,7 +943,8 @@ class Generator:
             )
             if enum.always_valid
             else In(
-                Variable("Val"), ChoiceList(*[value.ada_expr() for value in enum.literals.values()])
+                Variable("Val"),
+                ChoiceList(*[value.ada_expr() for value in enum.literals.values()]),
             )
         )
 
@@ -876,7 +956,7 @@ class Generator:
                 enum.name,
                 "Val" if validation_expression != TRUE else "Unused_Val",
                 validation_expression,
-            )
+            ),
         )
 
         if enum.always_valid:
@@ -897,7 +977,7 @@ class Generator:
                             ),
                         ),
                     ),
-                )
+                ),
             )
 
         specification.append(
@@ -914,14 +994,14 @@ class Generator:
                                 if enum.always_valid
                                 else enum.identifier
                             ),
-                        )
+                        ),
                     ],
                 ),
                 Case(
                     Variable("Enum"),
                     [(Variable(key), value.ada_expr()) for key, value in enum.literals.items()],
                 ),
-            )
+            ),
         )
 
         conversion_function = FunctionSpecification(
@@ -941,7 +1021,7 @@ class Generator:
                         [Parameter(["Enum"], common.enum_name(enum))],
                     ),
                     Aggregate(TRUE, Variable("Enum")),
-                )
+                ),
             )
 
             conversion_cases.extend(
@@ -949,13 +1029,15 @@ class Generator:
                 for key, value in enum.literals.items()
             )
             conversion_cases.append(
-                (Variable("others"), Aggregate(Variable("False"), Variable("Val")))
+                (Variable("others"), Aggregate(Variable("False"), Variable("Val"))),
             )
 
             specification.append(
                 ExpressionFunctionDeclaration(
-                    conversion_function, Case(Variable("Val"), conversion_cases), [precondition]
-                )
+                    conversion_function,
+                    Case(Variable("Val"), conversion_cases),
+                    [precondition],
+                ),
             )
 
             specification.append(
@@ -969,7 +1051,7 @@ class Generator:
                         [(Variable("Val.Known"), Call("To_Base_Integer", [Variable("Val.Enum")]))],
                         Variable("Val.Raw"),
                     ),
-                )
+                ),
             )
         else:
             conversion_cases.extend(
@@ -980,17 +1062,19 @@ class Generator:
                         if incomplete
                         else []
                     ),
-                ]
+                ],
             )
 
             specification.extend(
                 [
                     Pragma("Warnings", [Variable("Off"), String("unreachable branch")]),
                     ExpressionFunctionDeclaration(
-                        conversion_function, Case(Variable("Val"), conversion_cases), [precondition]
+                        conversion_function,
+                        Case(Variable("Val"), conversion_cases),
+                        [precondition],
                     ),
                     Pragma("Warnings", [Variable("On"), String("unreachable branch")]),
-                ]
+                ],
             )
 
         return UnitPart(specification)
@@ -1007,7 +1091,8 @@ class Generator:
             if isinstance(t, Enumeration) and t.always_valid:
                 condition = expr.AndThen(
                     expr.Selected(
-                        expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]), "Known"
+                        expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]),
+                        "Known",
                     ),
                     condition,
                 )
@@ -1015,17 +1100,18 @@ class Generator:
             condition.substituted(
                 mapping={
                     expr.Variable(f.name): expr.Selected(
-                        expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]), "Enum"
+                        expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]),
+                        "Enum",
                     )
                     if isinstance(t, Enumeration) and t.always_valid
                     else expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")])
                     for f, t in condition_fields.items()
-                }
+                },
             )
             .substituted(
                 lambda e: e.copy(identifier=self._prefix * e.identifier)
                 if isinstance(e, expr.Literal) and e.identifier not in BOOLEAN.literals
-                else e
+                else e,
             )
             .simplified()
         )
@@ -1046,12 +1132,14 @@ class Generator:
                     )
                     .simplified()
                     .ada_expr(),
-                )
-            ]
+                ),
+            ],
         )
 
     def _create_switch_procedure(
-        self, refinement: Refinement, condition_fields: abc.Mapping[Field, Type]
+        self,
+        refinement: Refinement,
+        condition_fields: abc.Mapping[Field, Type],
     ) -> UnitPart:
         pdu_identifier = self._prefix * refinement.pdu.identifier
         sdu_identifier = self._prefix * refinement.sdu.identifier
@@ -1079,7 +1167,10 @@ class Generator:
                                 *[
                                     c.ada_expr()
                                     for c in self._refinement_conditions(
-                                        refinement, pdu_context, condition_fields, null_sdu=False
+                                        refinement,
+                                        pdu_context,
+                                        condition_fields,
+                                        null_sdu=False,
                                     )
                                 ],
                                 Call(
@@ -1089,7 +1180,7 @@ class Generator:
                                     * contains_function_name(refinement),
                                     [Variable(pdu_context)],
                                 ),
-                            )
+                            ),
                         ),
                         Postcondition(
                             And(
@@ -1136,7 +1227,7 @@ class Generator:
                                         ),
                                     ]
                                 ],
-                            )
+                            ),
                         ),
                     ],
                 ),
@@ -1195,12 +1286,14 @@ class Generator:
                             [Variable("On"), String('unused assignment to "Buffer"')],
                         ),
                     ],
-                )
+                ),
             ],
         )
 
     def _create_copy_refined_field_procedure(
-        self, refinement: Refinement, condition_fields: abc.Mapping[Field, Type]
+        self,
+        refinement: Refinement,
+        condition_fields: abc.Mapping[Field, Type],
     ) -> UnitPart:
         pdu_identifier = self._prefix * refinement.pdu.identifier
         sdu_identifier = self._prefix * refinement.sdu.identifier
@@ -1228,7 +1321,10 @@ class Generator:
                                 *[
                                     c.ada_expr()
                                     for c in self._refinement_conditions(
-                                        refinement, pdu_context, condition_fields, null_sdu=False
+                                        refinement,
+                                        pdu_context,
+                                        condition_fields,
+                                        null_sdu=False,
                                     )
                                 ],
                                 Call(
@@ -1275,7 +1371,7 @@ class Generator:
                                     ),
                                     Last(const.TYPES_BIT_INDEX),
                                 ),
-                            )
+                            ),
                         ),
                         Postcondition(
                             And(
@@ -1289,7 +1385,7 @@ class Generator:
                                         Selected(Variable(sdu_context), "Buffer_Last"),
                                     ]
                                 ],
-                            )
+                            ),
                         ),
                     ],
                 ),
@@ -1328,7 +1424,7 @@ class Generator:
                                 Variable("Off"),
                                 String(
                                     f'"{sdu_context.ada_str}" is set by "Take_Buffer"'
-                                    " but not used after the call"
+                                    " but not used after the call",
                                 ),
                             ],
                         ),
@@ -1342,7 +1438,7 @@ class Generator:
                                 Variable("On"),
                                 String(
                                     f'"{sdu_context.ada_str}" is set by "Take_Buffer"'
-                                    " but not used after the call"
+                                    " but not used after the call",
                                 ),
                             ],
                         ),
@@ -1388,13 +1484,13 @@ class Generator:
                             ],
                         ),
                     ],
-                )
+                ),
             ],
         )
 
     def _check_template_file(self, filename: str) -> None:
         assert self._template_dir.joinpath(
-            filename
+            filename,
         ).is_file(), f'template file not found: "{filename}"'
 
     def _license_header(self) -> str:
@@ -1415,7 +1511,10 @@ class Generator:
         )
 
     def _type_validation_function(
-        self, type_name: str, enum_value: str, validation_expression: Expr
+        self,
+        type_name: str,
+        enum_value: str,
+        validation_expression: Expr,
     ) -> Subprogram:
         return ExpressionFunctionDeclaration(
             FunctionSpecification(
@@ -1457,7 +1556,7 @@ class Generator:
         pdu_identifier = self._prefix * refinement.pdu.identifier
 
         conditions: list[expr.Expr] = [
-            expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)])
+            expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)]),
         ]
 
         if null_sdu:
@@ -1477,9 +1576,9 @@ class Generator:
                                 expr.Variable(pdu_context),
                                 expr.Variable(pdu_identifier * refinement.field.affixed_name),
                             ],
-                        )
+                        ),
                     ),
-                ]
+                ],
             )
         else:
             conditions.append(
@@ -1489,7 +1588,7 @@ class Generator:
                         expr.Variable(pdu_context),
                         expr.Variable(pdu_identifier * refinement.field.affixed_name),
                     ],
-                )
+                ),
             )
 
         conditions.extend(
@@ -1502,7 +1601,7 @@ class Generator:
                     ],
                 )
                 for f in condition_fields
-            ]
+            ],
         )
 
         return conditions
@@ -1527,7 +1626,7 @@ def enumeration_types(enum: Enumeration) -> list[Declaration]:
             common.enum_name(enum) if enum.always_valid else enum.name,
             {k: Number(v.value) for k, v in enum.literals.items()},
             enum.size_expr.ada_expr(),
-        )
+        ),
     )
     if enum.always_valid:
         types.append(
@@ -1542,7 +1641,7 @@ def enumeration_types(enum: Enumeration) -> list[Declaration]:
                         Variant([FALSE], [Component("Raw", const.TYPES_BASE_INT)]),
                     ],
                 ),
-            )
+            ),
         )
 
     return types

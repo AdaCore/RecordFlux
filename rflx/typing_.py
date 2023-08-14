@@ -425,7 +425,7 @@ def _undefined_type(location: Optional[Location], description: str = "") -> Reco
                 Subsystem.MODEL,
                 Severity.ERROR,
                 location,
-            )
+            ),
         ],
     )
     return error

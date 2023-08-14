@@ -171,7 +171,7 @@ def test_not_findall() -> None:
 def test_not_substituted() -> None:
     assert_equal(
         Not(Variable("X")).substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
         ),
         Not(Variable("P_X")),
     )
@@ -228,10 +228,11 @@ def test_not_z3expr() -> None:
 def test_not_to_ir() -> None:
     assert Not(TRUE).to_ir(id_generator()) == ir.ComplexBoolExpr([], ir.Not(ir.BoolVal(value=True)))
     assert Not(Variable("X", type_=rty.BOOLEAN)).to_ir(id_generator()) == ir.ComplexBoolExpr(
-        [], ir.Not(ir.BoolVar("X"))
+        [],
+        ir.Not(ir.BoolVar("X")),
     )
     assert Not(Less(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY))).to_ir(
-        id_generator()
+        id_generator(),
     ) == ir.ComplexBoolExpr(
         [
             ir.VarDecl("T_0", rty.BOOLEAN),
@@ -248,13 +249,13 @@ def test_bin_expr_findall() -> None:
 def test_bin_expr_substituted() -> None:
     assert_equal(
         Less(Variable("X"), Number(1)).substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
         ),
         Less(Variable("P_X"), Number(1)),
     )
     assert_equal(
         Sub(Variable("X"), Number(1)).substituted(
-            lambda x: Variable("Y") if x == Sub(Variable("X"), Number(1)) else x
+            lambda x: Variable("Y") if x == Sub(Variable("X"), Number(1)) else x,
         ),
         Variable("Y"),
     )
@@ -262,7 +263,7 @@ def test_bin_expr_substituted() -> None:
         NotEqual(Variable("X"), Number(1)).substituted(
             lambda x: Variable(f"P_{x}")
             if isinstance(x, Variable)
-            else (Equal(x.left, x.right) if isinstance(x, NotEqual) else x)
+            else (Equal(x.left, x.right) if isinstance(x, NotEqual) else x),
         ),
         Equal(Variable("P_X"), Number(1)),
     )
@@ -280,7 +281,7 @@ def test_ass_expr_str() -> None:
                 Number(1),
                 IfExpr([(Variable("A"), Variable("B"))], Variable("C")),
                 IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")),
-            )
+            ),
         )
         == "1 + (if A then B else C) + (if X then Y else Z)"
     )
@@ -289,7 +290,7 @@ def test_ass_expr_str() -> None:
 def test_ass_expr_findall() -> None:
     assert_equal(
         And(Equal(Variable("X"), Number(1)), Less(Variable("Y"), Number(2))).findall(
-            lambda x: isinstance(x, Number)
+            lambda x: isinstance(x, Number),
         ),
         [Number(1), Number(2)],
     )
@@ -308,7 +309,7 @@ def test_ass_expr_simplified() -> None:
                             Equal(Variable("D"), TRUE),
                         ),
                         Variable("X"),
-                    )
+                    ),
                 ],
                 Variable("Y"),
             ),
@@ -322,7 +323,7 @@ def test_ass_expr_simplified() -> None:
                             Equal(Variable("D"), FALSE),
                         ),
                         Variable("X"),
-                    )
+                    ),
                 ],
                 Variable("Y"),
             ),
@@ -345,7 +346,7 @@ def test_ass_expr_simplified() -> None:
                             ),
                         ),
                         Variable("X"),
-                    )
+                    ),
                 ],
                 Variable("Y"),
             ),
@@ -357,13 +358,13 @@ def test_ass_expr_simplified() -> None:
 def test_ass_expr_substituted() -> None:
     assert_equal(
         And(Equal(Variable("X"), Number(1)), Variable("Y")).substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
         ),
         And(Equal(Variable("P_X"), Number(1)), Variable("P_Y")),
     )
     assert_equal(
         Mul(Variable("X"), Number(1)).substituted(
-            lambda x: Variable("Y") if x == Mul(Variable("X"), Number(1)) else x
+            lambda x: Variable("Y") if x == Mul(Variable("X"), Number(1)) else x,
         ),
         Variable("Y"),
     )
@@ -371,7 +372,7 @@ def test_ass_expr_substituted() -> None:
         And(Equal(Variable("X"), Number(1)), Variable("Y")).substituted(
             lambda x: Variable(f"P_{x}")
             if isinstance(x, Variable)
-            else (Or(*x.terms) if isinstance(x, And) else x)
+            else (Or(*x.terms) if isinstance(x, And) else x),
         ),
         Or(Equal(Variable("P_X"), Number(1)), Variable("P_Y")),
     )
@@ -379,7 +380,9 @@ def test_ass_expr_substituted() -> None:
 
 def test_ass_expr_substituted_location() -> None:
     expr = And(
-        Equal(Variable("X"), Number(1)), Variable("Y"), location=Location((1, 2))
+        Equal(Variable("X"), Number(1)),
+        Variable("Y"),
+        location=Location((1, 2)),
     ).substituted(lambda x: x)
     assert expr.location
 
@@ -392,7 +395,7 @@ def test_bool_expr_str() -> None:
             A
             and (B
                  or C)
-            and D"""
+            and D""",
         ),
     )
     assert_equal(
@@ -402,7 +405,7 @@ def test_bool_expr_str() -> None:
             A
             and then (B
                       or else C)
-            and then D"""
+            and then D""",
         ),
     )
 
@@ -466,12 +469,15 @@ def test_and_simplified() -> None:
     assert And(FALSE, EXPR).simplified() == FALSE
     assert (
         And(
-            Equal(Variable("X"), Number(0)), NotEqual(Variable("X"), Number(0)), Variable("Y")
+            Equal(Variable("X"), Number(0)),
+            NotEqual(Variable("X"), Number(0)),
+            Variable("Y"),
         ).simplified()
         == FALSE
     )
     assert And(
-        Equal(Variable("X"), Number(0)), Equal(Variable("X"), Number(0))
+        Equal(Variable("X"), Number(0)),
+        Equal(Variable("X"), Number(0)),
     ).simplified() == Equal(Variable("X"), Number(0))
 
 
@@ -489,7 +495,8 @@ def test_and_z3expr() -> None:
 
 @pytest.mark.parametrize(("op", "ir_op"), [(And, ir.And), (Or, ir.Or)])
 def test_and_or_to_ir(  # type: ignore[misc]
-    op: Callable[..., Expr], ir_op: Callable[[ir.BoolExpr, ir.BoolExpr], ir.BoolExpr]
+    op: Callable[..., Expr],
+    ir_op: Callable[[ir.BoolExpr, ir.BoolExpr], ir.BoolExpr],
 ) -> None:
     assert op().to_ir(id_generator()) == ir.ComplexBoolExpr(
         [],
@@ -551,12 +558,15 @@ def test_or_simplified() -> None:
     assert Or(EXPR, TRUE).simplified() == TRUE
     assert (
         Or(
-            Equal(Variable("X"), Number(0)), NotEqual(Variable("X"), Number(0)), Variable("Y")
+            Equal(Variable("X"), Number(0)),
+            NotEqual(Variable("X"), Number(0)),
+            Variable("Y"),
         ).simplified()
         == TRUE
     )
     assert Or(
-        Equal(Variable("X"), Number(0)), Equal(Variable("X"), Number(0))
+        Equal(Variable("X"), Number(0)),
+        Equal(Variable("X"), Number(0)),
     ).simplified() == Equal(Variable("X"), Number(0))
 
 
@@ -719,10 +729,11 @@ def test_add_simplified() -> None:
     assert Add(Variable("X"), Number(0)).simplified() == Variable("X")
     assert Add(Number(2), Number(3), Number(5)).simplified() == Number(10)
     assert Add(Variable("X"), Variable("Y"), Variable("X", negative=True)).simplified() == Variable(
-        "Y"
+        "Y",
     )
     assert Add(Variable("X"), Variable("Y"), Variable("X"), -Variable("X")).simplified() == Add(
-        Variable("X"), Variable("Y")
+        Variable("X"),
+        Variable("Y"),
     )
 
 
@@ -772,7 +783,8 @@ def test_add_z3expr() -> None:
 
 @pytest.mark.parametrize(("op", "ir_op"), [(Add, ir.Add), (Mul, ir.Mul)])
 def test_add_mul_to_ir(  # type: ignore[misc]
-    op: Callable[..., Expr], ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr]
+    op: Callable[..., Expr],
+    ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr],
 ) -> None:
     assert op().to_ir(id_generator()) == ir.ComplexIntExpr(
         [],
@@ -863,10 +875,12 @@ def test_sub_z3expr() -> None:
 
 
 @pytest.mark.parametrize(
-    ("op", "ir_op"), [(Sub, ir.Sub), (Div, ir.Div), (Pow, ir.Pow), (Mod, ir.Mod)]
+    ("op", "ir_op"),
+    [(Sub, ir.Sub), (Div, ir.Div), (Pow, ir.Pow), (Mod, ir.Mod)],
 )
 def test_sub_div_pow_mod_to_ir(  # type: ignore[misc]
-    op: Callable[..., Expr], ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr]
+    op: Callable[..., Expr],
+    ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr],
 ) -> None:
     assert op(
         Variable("X", type_=INT_TY),
@@ -911,7 +925,8 @@ def test_div_z3expr() -> None:
 def test_pow_simplified() -> None:
     assert Pow(Variable("X"), Number(1)).simplified() == Pow(Variable("X"), Number(1))
     assert Pow(Variable("X"), Add(Number(1), Number(1))).simplified() == Pow(
-        Variable("X"), Number(2)
+        Variable("X"),
+        Number(2),
     )
     assert Pow(Number(6), Number(2)).simplified() == Number(36)
 
@@ -927,7 +942,8 @@ def test_pow_z3expr() -> None:
 def test_mod_simplified() -> None:
     assert Mod(Variable("X"), Number(1)).simplified() == Mod(Variable("X"), Number(1))
     assert Mod(Variable("X"), Add(Number(1), Number(1))).simplified() == Mod(
-        Variable("X"), Number(2)
+        Variable("X"),
+        Number(2),
     )
     assert Mod(Number(6), Number(2)).simplified() == Number(0)
 
@@ -949,7 +965,9 @@ def test_mod_z3expr_error() -> None:
 def test_term_simplified() -> None:
     assert_equal(
         Add(
-            Mul(Number(1), Number(6)), Sub(Variable("X"), Number(10)), Add(Number(1), Number(3))
+            Mul(Number(1), Number(6)),
+            Sub(Variable("X"), Number(10)),
+            Add(Number(1), Number(3)),
         ).simplified(),
         Variable("X"),
     )
@@ -957,7 +975,8 @@ def test_term_simplified() -> None:
 
 def test_literal_to_ir() -> None:
     assert Literal("X", type_=ENUM_TY).to_ir(id_generator()) == ir.ComplexExpr(
-        [], ir.EnumLit("X", ENUM_TY)
+        [],
+        ir.EnumLit("X", ENUM_TY),
     )
 
 
@@ -995,7 +1014,8 @@ def test_variable_variables() -> None:
 
 def test_variable_substituted() -> None:
     assert_equal(
-        Variable("X").substituted(lambda x: Number(42) if x == Variable("X") else x), Number(42)
+        Variable("X").substituted(lambda x: Number(42) if x == Variable("X") else x),
+        Number(42),
     )
 
 
@@ -1021,19 +1041,24 @@ def test_variable_z3expr() -> None:
 
 def test_variable_to_ir() -> None:
     assert Variable("X", type_=rty.BOOLEAN).to_ir(id_generator()) == ir.ComplexBoolExpr(
-        [], ir.BoolVar("X")
+        [],
+        ir.BoolVar("X"),
     )
     assert Variable("X", type_=INT_TY).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [], ir.IntVar("X", INT_TY)
+        [],
+        ir.IntVar("X", INT_TY),
     )
     assert Variable("X", type_=INT_TY, negative=True).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [], ir.IntVar("X", INT_TY, negative=True)
+        [],
+        ir.IntVar("X", INT_TY, negative=True),
     )
     assert Variable("X", type_=MSG_TY).to_ir(id_generator()) == ir.ComplexExpr(
-        [], ir.ObjVar("X", MSG_TY)
+        [],
+        ir.ObjVar("X", MSG_TY),
     )
     assert Variable("X", type_=SEQ_TY).to_ir(id_generator()) == ir.ComplexExpr(
-        [], ir.ObjVar("X", SEQ_TY)
+        [],
+        ir.ObjVar("X", SEQ_TY),
     )
 
 
@@ -1059,7 +1084,8 @@ def test_attribute() -> None:
         (
             Present,
             Selected(
-                Variable("X", type_=rty.Message("M", {("F",)}, {ID("F"): rty.Integer("A")})), "F"
+                Variable("X", type_=rty.Message("M", {("F",)}, {ID("F"): rty.Integer("A")})),
+                "F",
             ),
             rty.BOOLEAN,
         ),
@@ -1105,9 +1131,11 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
             Head(
                 Opaque(
                     Variable(
-                        "X", type_=rty.Sequence("A", rty.Integer("B")), location=Location((10, 30))
+                        "X",
+                        type_=rty.Sequence("A", rty.Integer("B")),
+                        location=Location((10, 30)),
                     ),
-                )
+                ),
             ),
             r"^<stdin>:10:30: model: error: prefix of attribute "
             r"Head must be a name or comprehension$",
@@ -1115,7 +1143,9 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
         (
             Opaque(
                 Call(
-                    "X", [Variable("Y", location=Location((10, 30)))], location=Location((10, 20))
+                    "X",
+                    [Variable("Y", location=Location((10, 30)))],
+                    location=Location((10, 20)),
                 ),
             ),
             r'^<stdin>:10:30: model: error: undefined variable "Y"\n'
@@ -1141,7 +1171,8 @@ def test_attributes_findall() -> None:
 def test_attribute_substituted() -> None:
     assert_equal(First("X").substituted(lambda x: Number(42) if x == First("X") else x), Number(42))
     assert_equal(
-        -First("X").substituted(lambda x: Number(42) if x == First("X") else x), Number(-42)
+        -First("X").substituted(lambda x: Number(42) if x == First("X") else x),
+        Number(-42),
     )
     assert_equal(
         First("X").substituted(lambda x: Call("Y") if x == Variable("X") else x),
@@ -1155,7 +1186,7 @@ def test_attribute_substituted() -> None:
         -First("X").substituted(
             lambda x: Variable(f"P_{x}")
             if isinstance(x, Variable)
-            else (Last(x.prefix) if isinstance(x, First) else x)
+            else (Last(x.prefix) if isinstance(x, First) else x),
         ),
         -Last(Variable("P_X")),
     )
@@ -1237,13 +1268,13 @@ def test_attribute_to_ir_bool(attribute: Expr, ir_attribute: ir.Expr) -> None:
 def test_val_substituted() -> None:
     assert_equal(  # pragma: no branch
         Val("X", Variable("Y")).substituted(
-            lambda x: Number(42) if x == Val("X", Variable("Y")) else x
+            lambda x: Number(42) if x == Val("X", Variable("Y")) else x,
         ),
         Val("X", Variable("Y")),
     )
     assert_equal(  # pragma: no branch
         -Val("X", Variable("Y")).substituted(
-            lambda x: Number(42) if x == Val("X", Variable("Y")) else x
+            lambda x: Number(42) if x == Val("X", Variable("Y")) else x,
         ),
         -Val("X", Variable("Y")),
     )
@@ -1267,7 +1298,7 @@ def test_aggregate_type() -> None:
 def test_aggregate_substituted() -> None:
     assert_equal(
         Aggregate(First("X")).substituted(
-            lambda x: Number(42) if x == Aggregate(First("X")) else x
+            lambda x: Number(42) if x == Aggregate(First("X")) else x,
         ),
         Number(42),
     )
@@ -1279,7 +1310,7 @@ def test_aggregate_substituted() -> None:
         Aggregate(Variable("X")).substituted(
             lambda x: Variable(f"P_{x}")
             if isinstance(x, Variable)
-            else (Aggregate(*([*x.elements, Variable("Y")])) if isinstance(x, Aggregate) else x)
+            else (Aggregate(*([*x.elements, Variable("Y")])) if isinstance(x, Aggregate) else x),
         ),
         Aggregate(Variable("P_X"), Variable("P_Y")),
     )
@@ -1309,14 +1340,16 @@ def test_aggregate_z3expr() -> None:
 
 def test_aggregate_to_ir() -> None:
     assert Aggregate(Add(First(Variable("X", type_=INT_TY)), Number(1)), Number(2)).to_ir(
-        id_generator()
+        id_generator(),
     ) == ir.ComplexExpr(
         [
             ir.VarDecl("T_0", rty.BASE_INTEGER),
             ir.Assign("T_0", ir.First("X", INT_TY), rty.BASE_INTEGER),
             ir.VarDecl("T_1", rty.BASE_INTEGER),
             ir.Assign(
-                "T_1", ir.Add(ir.IntVar("T_0", rty.BASE_INTEGER), ir.IntVal(1)), rty.BASE_INTEGER
+                "T_1",
+                ir.Add(ir.IntVar("T_0", rty.BASE_INTEGER), ir.IntVal(1)),
+                rty.BASE_INTEGER,
             ),
         ],
         ir.Agg([ir.IntVar("T_1", rty.BASE_INTEGER), ir.IntVal(2)]),
@@ -1380,19 +1413,19 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
 def test_relation_substituted() -> None:
     assert_equal(
         Equal(Variable("X"), Variable("Y")).substituted(
-            lambda x: Number(1) if x == Variable("X") else x
+            lambda x: Number(1) if x == Variable("X") else x,
         ),
         Equal(Number(1), Variable("Y")),
     )
     assert_equal(
         Equal(Variable("X"), Variable("Y")).substituted(
-            lambda x: Number(1) if x == Variable("Y") else x
+            lambda x: Number(1) if x == Variable("Y") else x,
         ),
         Equal(Variable("X"), Number(1)),
     )
     assert_equal(
         Equal(Variable("X"), Variable("Y")).substituted(
-            lambda x: Number(1) if x == Equal(Variable("X"), Variable("Y")) else x
+            lambda x: Number(1) if x == Equal(Variable("X"), Variable("Y")) else x,
         ),
         Number(1),
     )
@@ -1423,13 +1456,15 @@ def test_relation_simplified() -> None:
     )
     assert_equal(
         Equal(
-            Aggregate(Number(0), Number(1), Number(2)), Aggregate(Number(0), Number(1), Number(2))
+            Aggregate(Number(0), Number(1), Number(2)),
+            Aggregate(Number(0), Number(1), Number(2)),
         ).simplified(),
         TRUE,
     )
     assert_equal(
         Equal(
-            Aggregate(Number(1), Number(2), Number(3)), Aggregate(Number(4), Number(5), Number(6))
+            Aggregate(Number(1), Number(2), Number(3)),
+            Aggregate(Number(4), Number(5), Number(6)),
         ).simplified(),
         FALSE,
     )
@@ -1452,7 +1487,8 @@ def test_relation_simplified() -> None:
     assert NotEqual(Variable("X"), Variable("X")).simplified() == FALSE
     assert Equal(Variable("X"), Variable("Y")).simplified() == Equal(Variable("X"), Variable("Y"))
     assert NotEqual(Variable("X"), Variable("Y")).simplified() == NotEqual(
-        Variable("X"), Variable("Y")
+        Variable("X"),
+        Variable("Y"),
     )
 
 
@@ -1482,10 +1518,11 @@ def test_relation_z3expr_error(relation: Callable[[Expr, Expr], Expr]) -> None:
     ],
 )
 def test_relation_to_ir(  # type: ignore[misc]
-    relation: Callable[..., Expr], ir_relation: Callable[[ir.IntExpr, ir.IntExpr], ir.BoolExpr]
+    relation: Callable[..., Expr],
+    ir_relation: Callable[[ir.IntExpr, ir.IntExpr], ir.BoolExpr],
 ) -> None:
     assert relation(Variable("X", type_=INT_TY), Number(10)).to_ir(
-        id_generator()
+        id_generator(),
     ) == ir.ComplexBoolExpr([], ir_relation(ir.IntVar("X", INT_TY), ir.IntVal(10)))
 
 
@@ -1621,7 +1658,7 @@ def test_if_expr_str() -> None:
     assert str(IfExpr([(Variable("X"), Variable("Y"))], Variable("Z"))) == "(if X then Y else Z)"
     assert str(IfExpr([(Variable("X"), Variable("Y"))])) == "(if X then Y)"
     assert str(
-        IfExpr([(Variable("X" * 30), Variable("Y" * 30))], Variable("Z" * 30))
+        IfExpr([(Variable("X" * 30), Variable("Y" * 30))], Variable("Z" * 30)),
     ) == textwrap.dedent(
         """\
         (if
@@ -1629,23 +1666,23 @@ def test_if_expr_str() -> None:
          then
             YYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
          else
-            ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ)"""
+            ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ)""",
     )
     assert str(IfExpr([(Variable("X" * 50), Variable("Y" * 50))])) == textwrap.dedent(
         """\
         (if
             XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
          then
-            YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY)"""
+            YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY)""",
     )
 
 
 def test_if_expr_substituted() -> None:
     assert IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).substituted(
-        lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+        lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
     ) == IfExpr([(Variable("P_X"), Variable("P_Y"))], Variable("P_Z"))
     assert IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).substituted(
-        lambda x: Variable("X") if isinstance(x, IfExpr) else x
+        lambda x: Variable("X") if isinstance(x, IfExpr) else x,
     ) == Variable("X")
 
 
@@ -1654,25 +1691,31 @@ def test_if_expr_simplified() -> None:
     assert IfExpr([(FALSE, Variable("X"))], Variable("Y")).simplified() == Variable("Y")
     assert IfExpr([(Variable("X"), Variable("Y"))], Variable("Y")).simplified() == Variable("Y")
     assert IfExpr(
-        [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))], Variable("Z")
+        [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))],
+        Variable("Z"),
     ).simplified() == IfExpr(
-        [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))], Variable("Z")
+        [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))],
+        Variable("Z"),
     )
 
 
 def test_if_expr_ada_expr() -> None:
     assert IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).ada_expr() == ada.IfExpr(
-        [(ada.Variable("X"), ada.Variable("Y"))], ada.Variable("Z")
+        [(ada.Variable("X"), ada.Variable("Y"))],
+        ada.Variable("Z"),
     )
 
 
 def test_if_expr_z3expr() -> None:
     assert IfExpr([(TRUE, Variable("Y"))], Variable("Z")).z3expr() == z3.If(
-        z3.BoolVal(val=True), z3.Int("Y"), z3.Int("Z")
+        z3.BoolVal(val=True),
+        z3.Int("Y"),
+        z3.Int("Z"),
     )
     with pytest.raises(Z3TypeError, match=r"^more than one condition$"):
         IfExpr(
-            [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))], Variable("Z")
+            [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))],
+            Variable("Z"),
         ).z3expr()
     with pytest.raises(Z3TypeError, match=r"^missing else expression$"):
         IfExpr([(Variable("X"), Variable("Y"))]).z3expr()
@@ -1710,7 +1753,7 @@ def test_if_expr_to_ir() -> None:
             (
                 And(Variable("X", type_=rty.BOOLEAN), TRUE),
                 Add(Variable("Y", type_=INT_TY), Number(1)),
-            )
+            ),
         ],
         Sub(Variable("Z", type_=INT_TY), Number(2)),
     ).to_ir(id_generator()) == ir.ComplexIntExpr(
@@ -1769,7 +1812,7 @@ def test_value_range_substituted() -> None:
 
     assert_equal(
         ValueRange(lower=Variable("X"), upper=Variable("Y")).substituted(
-            lambda x: Variable("Z") if isinstance(x, ValueRange) else x
+            lambda x: Variable("Z") if isinstance(x, ValueRange) else x,
         ),
         Variable("Z"),
     )
@@ -1777,7 +1820,8 @@ def test_value_range_substituted() -> None:
 
 def test_value_range_ada_expr() -> None:
     assert ValueRange(Variable("X"), Variable("Y")).ada_expr() == ada.ValueRange(
-        ada.Variable("X"), ada.Variable("Y")
+        ada.Variable("X"),
+        ada.Variable("Y"),
     )
 
 
@@ -1820,7 +1864,10 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
     ],
 )
 def test_quantified_expression_type_error(
-    expr: Callable[[str, Expr, Expr, Location], Expr], iterable: Expr, predicate: Expr, match: str
+    expr: Callable[[str, Expr, Expr, Location], Expr],
+    iterable: Expr,
+    predicate: Expr,
+    match: str,
 ) -> None:
     assert_type_error(
         expr(
@@ -1836,7 +1883,7 @@ def test_quantified_expression_type_error(
 def test_quantified_expression_substituted() -> None:
     assert_equal(
         ForAllOf("X", Variable("Y"), Add(Last("Z"), Add(Number(21), Number(21)))).substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
         ),
         ForAllOf("X", Variable("P_Y"), Add(Last("P_Z"), Add(Number(21), Number(21)))),
     )
@@ -1857,7 +1904,9 @@ def test_quantified_expression_simplified() -> None:
 def test_quantified_expression_variables() -> None:
     assert_equal(
         ForAllOf(
-            "A", Variable("List"), Add(Variable("X"), Add(Variable("Y"), Variable("Z")))
+            "A",
+            Variable("List"),
+            Add(Variable("X"), Add(Variable("Y"), Variable("Z"))),
         ).variables(),
         [Variable("List"), Variable("X"), Variable("Y"), Variable("Z")],
     )
@@ -1878,7 +1927,9 @@ def test_quantified_expression_ada_expr(expression: Callable[[str, Expr, Expr], 
 
 def test_for_all_in_variables() -> None:
     result = ForAllIn(
-        "Q", Variable("List"), Equal(Selected(Variable("Q"), "Fld"), Variable("X"))
+        "Q",
+        Variable("List"),
+        Equal(Selected(Variable("Q"), "Fld"), Variable("X")),
     ).variables()
     expected = [Variable("List"), Variable("X")]
     assert result == expected
@@ -1886,7 +1937,9 @@ def test_for_all_in_variables() -> None:
 
 def test_for_some_in_variables() -> None:
     result = ForSomeIn(
-        "Q", Variable("List"), Equal(Selected(Variable("Q"), "Fld"), Variable("X"))
+        "Q",
+        Variable("List"),
+        Equal(Selected(Variable("Q"), "Fld"), Variable("X")),
     ).variables()
     expected = [Variable("List"), Variable("X")]
     assert result == expected
@@ -1894,41 +1947,49 @@ def test_for_some_in_variables() -> None:
 
 def test_expr_contains() -> None:
     assert Variable("X") in Or(
-        Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
+        Greater(Variable("Y"), Number(42)),
+        And(TRUE, Less(Variable("X"), Number(42))),
     )
     assert Variable("Z") not in Or(
-        Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
+        Greater(Variable("Y"), Number(42)),
+        And(TRUE, Less(Variable("X"), Number(42))),
     )
     assert Less(Variable("X"), Number(42)) in Or(
-        Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
+        Greater(Variable("Y"), Number(42)),
+        And(TRUE, Less(Variable("X"), Number(42))),
     )
     assert Less(Variable("Z"), Number(42)) not in Or(
-        Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(1)))
+        Greater(Variable("Y"), Number(42)),
+        And(TRUE, Less(Variable("X"), Number(1))),
     )
 
 
 def test_expr_variables() -> None:
     assert_equal(
         Or(
-            Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
+            Greater(Variable("Y"), Number(42)),
+            And(TRUE, Less(Variable("X"), Number(42))),
         ).variables(),
         [Variable("Y"), Variable("X")],
     )
     assert_equal(
         Or(
-            Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
+            Greater(Variable("Y"), Number(42)),
+            And(TRUE, Less(Variable("X"), Number(42))),
         ).variables(),
         [Variable("Y"), Variable("X")],
     )
     assert_equal(
         Or(
-            Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(42)))
+            Greater(Variable("Y"), Number(42)),
+            And(TRUE, Less(Variable("X"), Number(42))),
         ).variables(),
         [Variable("Y"), Variable("X")],
     )
     assert_equal(
         Or(
-            Greater(Variable("Y"), Number(42)), And(TRUE, Less(Variable("X"), Number(1)))
+            Greater(Variable("Y"), Number(42)),
+            And(TRUE, Less(Variable("X"), Number(1))),
         ).variables(),
         [Variable("Y"), Variable("X")],
     )
@@ -1955,7 +2016,8 @@ def test_expr_variables_duplicates() -> None:
     assert_equal(Div(Variable("X"), Variable("X")).variables(), [Variable("X")])
     assert_equal(
         Or(
-            Greater(Variable("X"), Number(42)), And(TRUE, Less(Variable("X"), Number(1)))
+            Greater(Variable("X"), Number(42)),
+            And(TRUE, Less(Variable("X"), Number(1))),
         ).variables(),
         [Variable("X")],
     )
@@ -1977,13 +2039,17 @@ def test_expr_substituted_pre() -> None:
         Call("Sub").substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
         ForAllOf("X", Variable("Y"), Variable("Z")).substituted(  # pragma: no branch
-            lambda x: x, {}
+            lambda x: x,
+            {},
         )
     with pytest.raises(AssertionError):
         Conversion("X", Variable("Y")).substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
         Comprehension(  # pragma: no branch
-            "X", Variable("Y"), Variable("Z"), Variable("A")
+            "X",
+            Variable("Y"),
+            Variable("Z"),
+            Variable("A"),
         ).substituted(lambda x: x, {})
     with pytest.raises(AssertionError):
         MessageAggregate("X", {"A": Number(5)}).substituted(lambda x: x, {})  # pragma: no branch
@@ -2079,7 +2145,7 @@ def test_string_simplified() -> None:
 
 def test_string_substituted() -> None:
     assert String("Test").substituted(
-        lambda x: String("TestSub") if x == String("Test") else x
+        lambda x: String("TestSub") if x == String("Test") else x,
     ) == String("TestSub")
 
 
@@ -2150,13 +2216,13 @@ def test_selected_type_error(expr: Expr, match: str) -> None:
 def test_selected_substituted() -> None:
     assert_equal(
         Selected(Variable("X"), "Y").substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
         ),
         Selected(Variable("P_X"), "Y"),
     )
     assert_equal(
         Selected(Variable("X"), "Y").substituted(
-            lambda x: Variable("Z") if isinstance(x, Selected) else x
+            lambda x: Variable("Z") if isinstance(x, Selected) else x,
         ),
         Variable("Z"),
     )
@@ -2180,16 +2246,16 @@ def test_selected_z3expr() -> None:
 
 def test_selected_to_ir() -> None:
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=rty.BOOLEAN).to_ir(
-        id_generator()
+        id_generator(),
     ) == ir.ComplexExpr([], ir.BoolFieldAccess("X", "Y", MSG_TY))
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY).to_ir(
-        id_generator()
+        id_generator(),
     ) == ir.ComplexExpr([], ir.IntFieldAccess("X", "Y", MSG_TY))
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", negative=True, type_=INT_TY).to_ir(
-        id_generator()
+        id_generator(),
     ) == ir.ComplexExpr([], ir.IntFieldAccess("X", "Y", MSG_TY, negative=True))
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=SEQ_TY).to_ir(
-        id_generator()
+        id_generator(),
     ) == ir.ComplexExpr([], ir.ObjFieldAccess("X", "Y", MSG_TY))
 
 
@@ -2269,7 +2335,8 @@ def test_call_to_ir() -> None:
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=rty.BOOLEAN)],
         type_=rty.BOOLEAN,
     ).to_ir(id_generator()) == ir.ComplexExpr(
-        [], ir.BoolCall("X", [ir.BoolVar("Y"), ir.BoolVar("Z")], [rty.BOOLEAN, rty.BOOLEAN])
+        [],
+        ir.BoolCall("X", [ir.BoolVar("Y"), ir.BoolVar("Z")], [rty.BOOLEAN, rty.BOOLEAN]),
     )
     assert Call(
         "X",
@@ -2331,13 +2398,13 @@ def test_conversion_simplified() -> None:
 def test_conversion_substituted() -> None:
     assert_equal(
         Conversion("X", Variable("Y")).substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
         ),
         Conversion("X", Variable("P_Y")),
     )
     assert_equal(
         Conversion("X", Variable("Y")).substituted(
-            lambda x: Variable("Z") if isinstance(x, Conversion) else x
+            lambda x: Variable("Z") if isinstance(x, Conversion) else x,
         ),
         Variable("Z"),
     )
@@ -2360,13 +2427,14 @@ def test_conversion_ada_expr() -> None:
 
 def test_conversion_to_ir() -> None:
     assert Conversion("X", Variable("Y", type_=rty.BOOLEAN), type_=INT_TY).to_ir(
-        id_generator()
+        id_generator(),
     ) == ir.ComplexExpr([], ir.Conversion("X", ir.BoolVar("Y"), INT_TY))
 
 
 def test_qualified_expr_simplified() -> None:
     assert QualifiedExpr("X", Add(Number(21), Number(21))).simplified() == QualifiedExpr(
-        "X", Number(42)
+        "X",
+        Number(42),
     )
 
 
@@ -2391,7 +2459,9 @@ def test_comprehension_type() -> None:
                 Variable(
                     "Y",
                     type_=rty.Message(
-                        "M", {("F",)}, {ID("F"): rty.Sequence("A", rty.Integer("B"))}
+                        "M",
+                        {("F",)},
+                        {ID("F"): rty.Sequence("A", rty.Integer("B"))},
                     ),
                 ),
                 "F",
@@ -2417,20 +2487,23 @@ def test_comprehension_type_error() -> None:
 
 def test_comprehension_simplified() -> None:
     assert Comprehension(
-        "X", Variable("Y"), Add(Number(1), Number(2)), TRUE
+        "X",
+        Variable("Y"),
+        Add(Number(1), Number(2)),
+        TRUE,
     ).simplified() == Comprehension("X", Variable("Y"), Number(3), TRUE)
 
 
 def test_comprehension_substituted() -> None:
     assert_equal(
         Comprehension("X", Variable("Y"), Variable("Z"), TRUE).substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
         ),
         Comprehension("X", Variable("P_Y"), Variable("P_Z"), TRUE),
     )
     assert_equal(
         Comprehension("X", Variable("Y"), Variable("Z"), TRUE).substituted(
-            lambda x: Variable("Z") if isinstance(x, Comprehension) else x
+            lambda x: Variable("Z") if isinstance(x, Comprehension) else x,
         ),
         Variable("Z"),
     )
@@ -2438,7 +2511,11 @@ def test_comprehension_substituted() -> None:
 
 def test_comprehension_substituted_location() -> None:
     expr = Comprehension(
-        "X", Variable("Y"), Variable("Z"), TRUE, location=Location((1, 2))
+        "X",
+        Variable("Y"),
+        Variable("Z"),
+        TRUE,
+        location=Location((1, 2)),
     ).substituted(lambda x: x)
     assert expr.location
 
@@ -2650,7 +2727,9 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
     ],
 )
 def test_message_aggregate_type_error(
-    field_values: Mapping[StrID, Expr], type_: rty.Type, match: str
+    field_values: Mapping[StrID, Expr],
+    type_: rty.Type,
+    match: str,
 ) -> None:
     assert_type_error(
         MessageAggregate("X", field_values, type_=type_, location=Location((10, 20))),
@@ -2660,20 +2739,21 @@ def test_message_aggregate_type_error(
 
 def test_message_aggregate_simplified() -> None:
     assert MessageAggregate(
-        "X", {"Y": Add(Number(1), Number(2)), "Z": Variable("B")}
+        "X",
+        {"Y": Add(Number(1), Number(2)), "Z": Variable("B")},
     ).simplified() == MessageAggregate("X", {"Y": Number(3), "Z": Variable("B")})
 
 
 def test_message_aggregate_substituted() -> None:
     assert_equal(
         MessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
         ),
         MessageAggregate("X", {"Y": Variable("P_A"), "Z": Variable("P_B")}),
     )
     assert_equal(
         MessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
-            lambda x: Variable("Z") if isinstance(x, MessageAggregate) else x
+            lambda x: Variable("Z") if isinstance(x, MessageAggregate) else x,
         ),
         Variable("Z"),
     )
@@ -2681,24 +2761,29 @@ def test_message_aggregate_substituted() -> None:
 
 def test_message_aggregate_substituted_location() -> None:
     expr = MessageAggregate(
-        "X", {"Y": Variable("A"), "Z": Variable("B")}, location=Location((1, 2))
+        "X",
+        {"Y": Variable("A"), "Z": Variable("B")},
+        location=Location((1, 2)),
     ).substituted(lambda x: x)
     assert expr.location
 
 
 def test_message_aggregate_variables() -> None:
     result = MessageAggregate(
-        "Aggr", {"X": Variable("A"), "Y": Variable("B"), "Baz": Variable("C")}
+        "Aggr",
+        {"X": Variable("A"), "Y": Variable("B"), "Baz": Variable("C")},
     ).variables()
     expected = [Variable("A"), Variable("B"), Variable("C")]
     assert result == expected
 
 
 @pytest.mark.parametrize(
-    ("agg", "ir_agg"), [(MessageAggregate, ir.MsgAgg), (DeltaMessageAggregate, ir.DeltaMsgAgg)]
+    ("agg", "ir_agg"),
+    [(MessageAggregate, ir.MsgAgg), (DeltaMessageAggregate, ir.DeltaMsgAgg)],
 )
 def test_message_aggregate_to_ir(  # type: ignore[misc]
-    agg: Callable[..., Expr], ir_agg: Callable[..., ir.Expr]
+    agg: Callable[..., Expr],
+    ir_agg: Callable[..., ir.Expr],
 ) -> None:
     assert agg(
         "X",
@@ -2848,7 +2933,9 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
     ],
 )
 def test_delta_message_aggregate_type_error(
-    field_values: Mapping[StrID, Expr], type_: rty.Type, match: str
+    field_values: Mapping[StrID, Expr],
+    type_: rty.Type,
+    match: str,
 ) -> None:
     assert_type_error(
         DeltaMessageAggregate("T", field_values, type_=type_, location=Location((10, 20))),
@@ -2859,13 +2946,13 @@ def test_delta_message_aggregate_type_error(
 def test_delta_message_aggregate_substituted() -> None:
     assert_equal(
         DeltaMessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
-            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
         ),
         DeltaMessageAggregate("X", {"Y": Variable("P_A"), "Z": Variable("P_B")}),
     )
     assert_equal(
         DeltaMessageAggregate("X", {"Y": Variable("A"), "Z": Variable("B")}).substituted(
-            lambda x: Variable("Z") if isinstance(x, DeltaMessageAggregate) else x
+            lambda x: Variable("Z") if isinstance(x, DeltaMessageAggregate) else x,
         ),
         Variable("Z"),
     )
@@ -2873,7 +2960,9 @@ def test_delta_message_aggregate_substituted() -> None:
 
 def test_delta_message_aggregate_substituted_location() -> None:
     expr = DeltaMessageAggregate(
-        "X", {"Y": Variable("A"), "Z": Variable("B")}, location=Location((1, 2))
+        "X",
+        {"Y": Variable("A"), "Z": Variable("B")},
+        location=Location((1, 2)),
     ).substituted(lambda x: x)
     assert expr.location
 
@@ -2881,7 +2970,8 @@ def test_delta_message_aggregate_substituted_location() -> None:
 def test_delta_message_aggregate_simplified() -> None:
     assert_equal(
         DeltaMessageAggregate(
-            "X", {"Y": Variable("A"), "Z": Add(Number(1), Number(2))}
+            "X",
+            {"Y": Variable("A"), "Z": Add(Number(1), Number(2))},
         ).simplified(),
         DeltaMessageAggregate("X", {"Y": Variable("A"), "Z": Number(3)}),
     )
@@ -2889,7 +2979,8 @@ def test_delta_message_aggregate_simplified() -> None:
 
 def test_delta_message_aggregate_variables() -> None:
     result = DeltaMessageAggregate(
-        "Aggr", {"X": Variable("A"), "Y": Variable("B"), "Baz": Variable("C")}
+        "Aggr",
+        {"X": Variable("A"), "Y": Variable("B"), "Baz": Variable("C")},
     ).variables()
     expected = [Variable("A"), Variable("B"), Variable("C")]
     assert result == expected
@@ -2897,10 +2988,14 @@ def test_delta_message_aggregate_variables() -> None:
 
 def test_indexed_neg() -> None:
     assert Indexed(Variable("X"), Variable("Y")) == -Indexed(
-        Variable("X"), Variable("Y"), negative=True
+        Variable("X"),
+        Variable("Y"),
+        negative=True,
     )
     assert Indexed(Variable("X"), Variable("Y")) != Indexed(
-        Variable("X"), Variable("Y"), negative=True
+        Variable("X"),
+        Variable("Y"),
+        negative=True,
     )
 
 
@@ -2912,14 +3007,15 @@ def test_proof_invalid_logic() -> None:
         (
             "Benchmark is not in QF_IDL (integer difference logic).",
             None,
-        )
+        ),
     ]
 
 
 def test_case_variables() -> None:
     assert_equal(
         CaseExpr(
-            Variable("C"), [([ID("V1"), ID("V2")], Number(1)), ([ID("V3")], Variable("E"))]
+            Variable("C"),
+            [([ID("V1"), ID("V2")], Number(1)), ([ID("V3")], Variable("E"))],
         ).variables(),
         [Variable("C"), Variable("E")],
     )
@@ -2927,7 +3023,8 @@ def test_case_variables() -> None:
 
 def test_case_substituted() -> None:
     c = CaseExpr(
-        Variable("C"), [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))]
+        Variable("C"),
+        [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))],
     )
     assert_equal(
         c.substituted(lambda x: Number(42) if x == Variable("E1") else x),
@@ -2935,7 +3032,7 @@ def test_case_substituted() -> None:
     )
     assert_equal(
         c.substituted(
-            lambda x: Number(42) if isinstance(x, Variable) and x.name.startswith("E") else x
+            lambda x: Number(42) if isinstance(x, Variable) and x.name.startswith("E") else x,
         ),
         CaseExpr(Variable("C"), [([ID("V1"), ID("V2")], Number(42)), ([ID("V3")], Number(42))]),
     )
@@ -2964,7 +3061,8 @@ def test_case_substituted_location() -> None:
 def test_case_findall() -> None:
     assert_equal(
         CaseExpr(
-            Variable("C1"), [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))]
+            Variable("C1"),
+            [([ID("V1"), ID("V2")], Variable("E1")), ([ID("V3")], Variable("E2"))],
         ).findall(lambda x: isinstance(x, Variable) and x.name.endswith("1")),
         [Variable("C1"), Variable("E1")],
     )
@@ -2998,7 +3096,8 @@ def test_case_type() -> None:
 def test_case_simplified() -> None:
     assert_equal(
         CaseExpr(
-            Variable("C"), [([ID("V1"), ID("V2")], And(TRUE, FALSE)), ([ID("V3")], FALSE)]
+            Variable("C"),
+            [([ID("V1"), ID("V2")], And(TRUE, FALSE)), ([ID("V3")], FALSE)],
         ).simplified(),
         CaseExpr(Variable("C"), [([ID("V1"), ID("V2")], FALSE), ([ID("V3")], FALSE)]),
     )

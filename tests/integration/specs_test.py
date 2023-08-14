@@ -12,7 +12,10 @@ from tests.utils import assert_equal_code_specs
 
 def test_ethernet(tmp_path: Path) -> None:
     assert_equal_code_specs(
-        [SPEC_DIR / "ethernet.rflx"], GENERATED_DIR, tmp_path, accept_extra_files=True
+        [SPEC_DIR / "ethernet.rflx"],
+        GENERATED_DIR,
+        tmp_path,
+        accept_extra_files=True,
     )
 
 
@@ -182,7 +185,10 @@ def test_ethernet_generating_ethernet_2_vlan_dynamic() -> None:
 
 def test_ipv4(tmp_path: Path) -> None:
     assert_equal_code_specs(
-        [SPEC_DIR / "ipv4.rflx"], GENERATED_DIR, tmp_path, accept_extra_files=True
+        [SPEC_DIR / "ipv4.rflx"],
+        GENERATED_DIR,
+        tmp_path,
+        accept_extra_files=True,
     )
 
 
@@ -280,7 +286,10 @@ def test_in_ethernet(tmp_path: Path) -> None:
 
 def test_udp(tmp_path: Path) -> None:
     assert_equal_code_specs(
-        [SPEC_DIR / "udp.rflx"], GENERATED_DIR, tmp_path, accept_extra_files=True
+        [SPEC_DIR / "udp.rflx"],
+        GENERATED_DIR,
+        tmp_path,
+        accept_extra_files=True,
     )
 
 
@@ -372,7 +381,10 @@ def test_in_ipv4_generating_udp_in_ipv4_in_ethernet(
 
 def test_tlv(tmp_path: Path) -> None:
     assert_equal_code_specs(
-        [SPEC_DIR / "tlv.rflx"], GENERATED_DIR, tmp_path, accept_extra_files=True
+        [SPEC_DIR / "tlv.rflx"],
+        GENERATED_DIR,
+        tmp_path,
+        accept_extra_files=True,
     )
 
 

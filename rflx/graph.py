@@ -20,10 +20,17 @@ def _graph_with_defaults(name: str) -> Dot:
 
     result = Dot(graph_name=f'"{name}"')
     result.set_graph_defaults(
-        splines="true", ranksep="0.1 equally", pad="0.1", truecolor="true", bgcolor="#00000000"
+        splines="true",
+        ranksep="0.1 equally",
+        pad="0.1",
+        truecolor="true",
+        bgcolor="#00000000",
     )
     result.set_edge_defaults(
-        fontname="Fira Code", fontcolor="#6f6f6f", color="#6f6f6f", penwidth="2.5"
+        fontname="Fira Code",
+        fontcolor="#6f6f6f",
+        color="#6f6f6f",
+        penwidth="2.5",
     )
     result.set_node_defaults(
         fontname="Arimo",
@@ -58,7 +65,7 @@ def create_message_graph(message: Message) -> Dot:
 
     result = _graph_with_defaults(message.full_name)
     result.add_node(
-        Node(name="Initial", fillcolor="#ffffff", shape="circle", width="0.5", label="")
+        Node(name="Initial", fillcolor="#ffffff", shape="circle", width="0.5", label=""),
     )
     for f in message.fields:
         result.add_node(Node(name=f.name))
@@ -75,7 +82,7 @@ def create_message_graph(message: Message) -> Dot:
                 penwidth="0",
                 width="0",
                 height="0",
-            )
+            ),
         )
         result.add_edge(Edge(src=l.source.name, dst=intermediate_node, arrowhead="none"))
         result.add_edge(Edge(src=intermediate_node, dst=l.target.name, minlen="1"))
@@ -109,7 +116,7 @@ def create_session_graph(session: AbstractSession, ignore: Optional[Sequence[str
                     name=str(state.identifier.name),
                     fillcolor="#ffffff",
                     fontcolor="black",
-                )
+                ),
             )
         elif state == FINAL_STATE:
             result.add_node(
@@ -119,7 +126,7 @@ def create_session_graph(session: AbstractSession, ignore: Optional[Sequence[str
                     shape="circle",
                     width="0.5",
                     label="",
-                )
+                ),
             )
         else:
             result.add_node(Node(name=str(state.identifier.name)))
@@ -137,7 +144,7 @@ def create_session_graph(session: AbstractSession, ignore: Optional[Sequence[str
                         dst=str(t.target.name),
                         tooltip=label,
                         minlen="3",
-                    )
+                    ),
                 )
 
     return result

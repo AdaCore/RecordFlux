@@ -33,7 +33,10 @@ TESTS = [
 def main(argv: Sequence[str]) -> int:
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument(
-        "directory", metavar="DIRECTORY", help="output directory", type=pathlib.Path
+        "directory",
+        metavar="DIRECTORY",
+        help="output directory",
+        type=pathlib.Path,
     )
     args = arg_parser.parse_args(argv[1:])
 
@@ -91,7 +94,7 @@ begin
 end {procedure_name};
 """[
             1:
-        ]
+        ],
     )
 
 

@@ -131,11 +131,11 @@ def test_rfi_get_size() -> None:
                     "Local": {
                         "S": {
                             "Y": 8192,
-                        }
+                        },
                     },
-                }
-            }
-        }
+                },
+            },
+        },
     }
     error = RecordFluxError()
 
@@ -166,7 +166,11 @@ def test_rfi_get_size() -> None:
     ],
 )
 def test_load_integration_file(
-    tmp_path: Path, content: str, error_msg: Sequence[str], line: int, column: int
+    tmp_path: Path,
+    content: str,
+    error_msg: Sequence[str],
+    line: int,
+    column: int,
 ) -> None:
     test_rfi = tmp_path / "test.rfi"
     test_rfi.write_text(content)

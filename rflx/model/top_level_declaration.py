@@ -41,7 +41,7 @@ class TopLevelDeclaration(Base):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.identifier.location,
-                    )
+                    ),
                 ],
             )
 

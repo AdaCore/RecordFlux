@@ -30,7 +30,9 @@ class Validator:
         split_disjunctions: bool = False,
     ):
         model = self._create_model(
-            [Path(f) for f in files], skip_model_verification, split_disjunctions
+            [Path(f) for f in files],
+            skip_model_verification,
+            split_disjunctions,
         )
         checksum_functions = self._parse_checksum_module(checksum_module)
         missing_checksum_definitions = {
@@ -50,8 +52,8 @@ class Validator:
                     [
                         f'field "{field_name}" of "{message_name}"'
                         for message_name, field_name in missing_checksum_definitions
-                    ]
-                )
+                    ],
+                ),
             )
 
         try:
@@ -71,17 +73,17 @@ class Validator:
     ) -> None:
         if target_coverage < 0 or target_coverage > 100:
             raise ValidationError(
-                f"target coverage must be between 0 and 100, got {target_coverage}"
+                f"target coverage must be between 0 and 100, got {target_coverage}",
             )
 
         try:
             message_value = self._pyrflx.package(message_identifier.parent).new_message(
-                message_identifier.name
+                message_identifier.name,
             )
         except KeyError as e:
             raise ValidationError(
                 f'message "{message_identifier.name}" could not be found '
-                f'in package "{message_identifier.parent}"'
+                f'in package "{message_identifier.parent}"',
             ) from e
 
         incorrectly_classified = 0
@@ -97,7 +99,9 @@ class Validator:
                 )
                 for path in directory:
                     validation_result = self._validate_message(
-                        path, is_valid_directory, message_value
+                        path,
+                        is_valid_directory,
+                        message_value,
                     )
                     coverage_info.update(validation_result.parsed_message)
                     validation_result.print_console_output()
@@ -106,7 +110,7 @@ class Validator:
                         incorrectly_classified += 1
                         if abort_on_error:
                             raise ValidationError(
-                                f"aborted: message {path} was classified incorrectly"
+                                f"aborted: message {path} was classified incorrectly",
                             )
             coverage_info.print_coverage()
 
@@ -120,13 +124,16 @@ class Validator:
         ):
             error_msgs.append(
                 f"missed target coverage of {target_coverage/100:.2%}, "
-                f"reached {coverage_info.total_covered_links / coverage_info.total_links:.2%}"
+                f"reached {coverage_info.total_covered_links / coverage_info.total_links:.2%}",
             )
         if len(error_msgs) > 0:
             raise ValidationError("\n".join(e for e in error_msgs))
 
     def _create_model(
-        self, files: Sequence[Path], skip_model_verification: bool, split_disjunctions: bool
+        self,
+        files: Sequence[Path],
+        skip_model_verification: bool,
+        split_disjunctions: bool,
     ) -> Model:
         for f in files:
             if not f.is_file():
@@ -232,14 +239,14 @@ class Validator:
             raise ValidationError(
                 f'provided module "{name}" cannot be '
                 f"imported, make sure module name is provided as "
-                f'"package.module" and not as file system path: {e}'
+                f'"package.module" and not as file system path: {e}',
             ) from e
 
         try:
             checksum_functions = checksum_module.checksum_functions
         except AttributeError as e:
             raise ValidationError(
-                f'missing attribute "checksum_function" in checksum module "{name}"'
+                f'missing attribute "checksum_function" in checksum module "{name}"',
             ) from e
 
         if not isinstance(checksum_functions, dict):
@@ -251,14 +258,16 @@ class Validator:
             for field_name, checksum_func_callable in checksum_field_mapping.items():
                 if not callable(checksum_func_callable):
                     raise ValidationError(
-                        f'value at key "{field_name}" is not a callable checksum function'
+                        f'value at key "{field_name}" is not a callable checksum function',
                     )
 
         return checksum_functions
 
     @staticmethod
     def _validate_message(
-        message_path: Path, valid_original_message: bool, message_value: MessageValue
+        message_path: Path,
+        valid_original_message: bool,
+        message_value: MessageValue,
     ) -> ValidationResult:
         if not message_path.is_file():
             raise ValidationError(f"{message_path} is not a regular file")
@@ -377,12 +386,12 @@ class CoverageInformation:
             file_covered_links = self.file_covered_links(file)
             print(
                 f"{file : <40} {file_links : >10} {file_covered_links : >10} "
-                f"{file_covered_links / file_links :>15.2%}"
+                f"{file_covered_links / file_links :>15.2%}",
             )
         print("-" * 80)
         print(
             f"{'TOTAL' : <40} {self.total_links: >10} {self.total_covered_links : >10} "
-            f"{self.total_covered_links / self.total_links :15.2%}"
+            f"{self.total_covered_links / self.total_links :15.2%}",
         )
         print("-" * 80)
 
@@ -400,7 +409,7 @@ class CoverageInformation:
                 for link in sorted(uncovered_links, key=lambda x: str(x.location)):
                     print(
                         f"{link.location!s:<17}"
-                        f": missing link {link.source.name:^25} -> {link.target.name:^20}".rstrip()
+                        f": missing link {link.source.name:^25} -> {link.target.name:^20}".rstrip(),
                     )
 
 
@@ -436,7 +445,7 @@ class ValidationResult:
             print(
                 f"{self.message_path!s:<80} FAILED\n"
                 f"provided as: {self.valid_original_message}\t "
-                f"recognized as: {self.valid_parser_result}"
+                f"recognized as: {self.valid_parser_result}",
             )
             if self.parser_error is not None:
                 print(self.parser_error)

@@ -12,5 +12,8 @@ def test_renaming_declaration_to_ir() -> None:
         match=r"^<stdin>:1:2: model: error: renaming declarations not yet supported$",
     ):
         decl.RenamingDeclaration(
-            "X", "Y", expr.Selected(expr.Variable("M"), "F"), location=Location((1, 2))
+            "X",
+            "Y",
+            expr.Selected(expr.Variable("M"), "F"),
+            location=Location((1, 2)),
         ).to_ir(id_generator())

@@ -150,8 +150,8 @@ class State(Base):
                             expr.Mod,
                             expr.Pow,
                         ),
-                    )
-                )
+                    ),
+                ),
             )
 
         return any(
@@ -213,7 +213,7 @@ class State(Base):
                         [
                             *field_assignments,
                             a,
-                        ]
+                        ],
                     )
                     field_assignments = []
             else:
@@ -228,7 +228,7 @@ class State(Base):
                         [
                             self._collect_message_field_assignments(field_assignments),
                             a,
-                        ]
+                        ],
                     )
                     field_assignments = []
 
@@ -240,12 +240,14 @@ class State(Base):
         self._actions = actions
 
     def _collect_message_field_assignments(
-        self, field_assignments: list[stmt.MessageFieldAssignment]
+        self,
+        field_assignments: list[stmt.MessageFieldAssignment],
     ) -> stmt.VariableAssignment:
         return stmt.VariableAssignment(
             field_assignments[0].identifier,
             expr.DeltaMessageAggregate(
-                field_assignments[0].identifier, {a.field: a.expression for a in field_assignments}
+                field_assignments[0].identifier,
+                {a.field: a.expression for a in field_assignments},
             ),
             location=Location(
                 field_assignments[0].location.start if field_assignments[0].location else (0, 0),
@@ -264,14 +266,14 @@ class State(Base):
 
         def find_identifier(name: ID, expression: expr.Expr) -> bool:
             return bool(
-                expression.findall(lambda e: isinstance(e, expr.Variable) and e.identifier == name)
+                expression.findall(lambda e: isinstance(e, expr.Variable) and e.identifier == name),
             )
 
         def find_attribute_prefix(name: ID, expression: expr.Expr) -> bool:
             return bool(
                 expression.findall(
-                    lambda e: isinstance(e, expr.Attribute) and find_identifier(name, e.prefix)
-                )
+                    lambda e: isinstance(e, expr.Attribute) and find_identifier(name, e.prefix),
+                ),
             )
 
         def substituted(expression: expr.Expr, structure: rty.Structure) -> expr.Expr:
@@ -534,7 +536,7 @@ class Session(AbstractSession):
                                 Subsystem.MODEL,
                                 Severity.ERROR,
                                 t.target.location,
-                            )
+                            ),
                         ],
                     )
 
@@ -583,7 +585,7 @@ class Session(AbstractSession):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             s.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -595,7 +597,7 @@ class Session(AbstractSession):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             s.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -614,7 +616,7 @@ class Session(AbstractSession):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         location,
-                    )
+                    ),
                 ],
             )
 
@@ -646,7 +648,7 @@ class Session(AbstractSession):
                         d.check_type(
                             self.types[type_identifier].type_,
                             lambda x: self._typify_variable(x, visible_declarations),
-                        )
+                        ),
                     )
                 else:
                     undefined_type(d.type_identifier, d.location)
@@ -655,7 +657,8 @@ class Session(AbstractSession):
                 if isinstance(d, decl.FunctionDeclaration):
                     for a in d.arguments:
                         type_identifier = mty.internal_type_identifier(
-                            a.type_identifier, self.package
+                            a.type_identifier,
+                            self.package,
                         )
                         if type_identifier in self.types:
                             a.type_ = self.types[type_identifier].type_
@@ -682,7 +685,7 @@ class Session(AbstractSession):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             next(iter(local_declarations.values())).location,
-                        )
+                        ),
                     ],
                 )
 
@@ -694,7 +697,7 @@ class Session(AbstractSession):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             io_statements[0].location,
-                        )
+                        ),
                     ],
                 )
 
@@ -707,7 +710,7 @@ class Session(AbstractSession):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             s1.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -724,7 +727,7 @@ class Session(AbstractSession):
                                 Subsystem.MODEL,
                                 Severity.ERROR,
                                 s1.identifier.location,
-                            )
+                            ),
                         ],
                     )
                     self.error.extend(
@@ -734,7 +737,7 @@ class Session(AbstractSession):
                                 Subsystem.MODEL,
                                 Severity.INFO,
                                 s2.identifier.location,
-                            )
+                            ),
                         ],
                     )
 
@@ -751,7 +754,7 @@ class Session(AbstractSession):
                                 Subsystem.MODEL,
                                 Severity.ERROR,
                                 s1.parameter.location,
-                            )
+                            ),
                         ],
                     )
                     self.error.extend(
@@ -761,7 +764,7 @@ class Session(AbstractSession):
                                 Subsystem.MODEL,
                                 Severity.INFO,
                                 s2.parameter.location,
-                            )
+                            ),
                         ],
                     )
 
@@ -775,13 +778,15 @@ class Session(AbstractSession):
                 a.check_type(
                     type_,
                     lambda x: self._typify_variable(x, declarations),
-                )
+                ),
             )
 
             self._reference_variable_declaration(a.variables(), declarations)
 
     def _validate_transitions(
-        self, state: State, declarations: Mapping[ID, decl.Declaration]
+        self,
+        state: State,
+        declarations: Mapping[ID, decl.Declaration],
     ) -> None:
         for t in state.transitions:
             t.condition = t.condition.substituted(lambda x: self._typify_variable(x, declarations))
@@ -796,7 +801,7 @@ class Session(AbstractSession):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         state.location,
-                    )
+                    ),
                 ],
             )
 
@@ -808,7 +813,7 @@ class Session(AbstractSession):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         state.exception_transition.location,
-                    )
+                    ),
                 ],
             )
 
@@ -824,12 +829,14 @@ class Session(AbstractSession):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             d.location,
-                        )
+                        ),
                     ],
                 )
 
     def _typify_variable(
-        self, expression: expr.Expr, declarations: Mapping[ID, decl.Declaration]
+        self,
+        expression: expr.Expr,
+        declarations: Mapping[ID, decl.Declaration],
     ) -> expr.Expr:
         if isinstance(
             expression,
@@ -876,7 +883,8 @@ class Session(AbstractSession):
 
     @staticmethod
     def _reference_variable_declaration(
-        variables: Iterable[expr.Variable], declarations: Mapping[ID, decl.Declaration]
+        variables: Iterable[expr.Variable],
+        declarations: Mapping[ID, decl.Declaration],
     ) -> None:
         for v in variables:
             with contextlib.suppress(KeyError):

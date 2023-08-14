@@ -69,7 +69,9 @@ def check_diagnostics_error(unit: lang.AnalysisUnit, error: RecordFluxError) -> 
 
 def parse_session_error(string: str) -> None:
     unit = lang.AnalysisContext().get_from_buffer(
-        "<stdin>", string, rule=lang.GrammarRule.session_declaration_rule
+        "<stdin>",
+        string,
+        rule=lang.GrammarRule.session_declaration_rule,
     )
     error = RecordFluxError()
     check_diagnostics_error(unit, error)
@@ -81,7 +83,9 @@ def parse_session_error(string: str) -> None:
 
 def parse_session(string: str) -> model.UncheckedSession:
     unit = lang.AnalysisContext().get_from_buffer(
-        "<stdin>", string, rule=lang.GrammarRule.session_declaration_rule
+        "<stdin>",
+        string,
+        rule=lang.GrammarRule.session_declaration_rule,
     )
     error = RecordFluxError()
     check_diagnostics_error(unit, error)
@@ -149,7 +153,8 @@ def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    ("string", "expected"), [("X", expr.Variable("X")), ("X::Y", expr.Variable("X::Y"))]
+    ("string", "expected"),
+    [("X", expr.Variable("X")), ("X::Y", expr.Variable("X::Y"))],
 )
 def test_variable(string: str, expected: decl.Declaration) -> None:
     actual = parse_expression(string, lang.GrammarRule.variable_rule)
@@ -344,13 +349,17 @@ def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
         (
             "for all X in Y => X = Z",
             expr.ForAllIn(
-                "X", expr.Variable("Y"), expr.Equal(expr.Variable("X"), expr.Variable("Z"))
+                "X",
+                expr.Variable("Y"),
+                expr.Equal(expr.Variable("X"), expr.Variable("Z")),
             ),
         ),
         (
             "for some X in Y => X = Z",
             expr.ForSomeIn(
-                "X", expr.Variable("Y"), expr.Equal(expr.Variable("X"), expr.Variable("Z"))
+                "X",
+                expr.Variable("Y"),
+                expr.Equal(expr.Variable("X"), expr.Variable("Z")),
             ),
         ),
         (
@@ -478,7 +487,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
                     expr.Variable("L"),
                     expr.Selected(expr.Variable("E"), "B"),
                     expr.Equal(expr.Selected(expr.Variable("E"), "T"), expr.Variable("A")),
-                )
+                ),
             ),
         ),
         ("A'Head.D", expr.Selected(expr.Head(expr.Variable("A")), "D")),
@@ -491,7 +500,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
                         expr.Variable("L"),
                         expr.Selected(expr.Variable("E"), "B"),
                         expr.Equal(expr.Selected(expr.Variable("E"), "T"), expr.Variable("A")),
-                    )
+                    ),
                 ),
                 "D",
             ),
@@ -514,7 +523,7 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
                                             expr.Selected(expr.Variable("E"), "T"),
                                             expr.Selected(expr.Variable("P"), "L"),
                                         ),
-                                    )
+                                    ),
                                 ),
                                 "D",
                             ),
@@ -701,7 +710,7 @@ def test_attribute_statement(string: str, expected: stmt.Statement) -> None:
                 "A",
                 transitions=[model.Transition("B")],
                 declarations=[
-                    decl.VariableDeclaration("Z", "__BUILTINS__::Boolean", expr.Variable("Y"))
+                    decl.VariableDeclaration("Z", "__BUILTINS__::Boolean", expr.Variable("Y")),
                 ],
                 actions=[],
             ),
@@ -791,7 +800,7 @@ def test_session_declaration() -> None:
             model.State(
                 "A",
                 declarations=[
-                    decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y"))
+                    decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
                 ],
                 actions=[stmt.VariableAssignment("Z", expr.FALSE)],
                 transitions=[
@@ -890,13 +899,14 @@ def test_session() -> None:
            end Session;
 
         end Test;
-        """
+        """,
     )
     p.create_model()
 
 
 def test_expression_aggregate_no_number() -> None:
     with pytest.raises(
-        RecordFluxError, match=(r"^<stdin>:1:5: parser: error: Expected Numeral, got 'First'$")
+        RecordFluxError,
+        match=(r"^<stdin>:1:5: parser: error: Expected Numeral, got 'First'$"),
     ):
         parse_expression("[1, Foo]", lang.GrammarRule.expression_rule)

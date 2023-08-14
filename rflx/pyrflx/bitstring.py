@@ -40,7 +40,10 @@ class Bitstring:
 
     def __bytes__(self) -> bytes:
         return b"".join(
-            [int(self._bits[i : i + 8], 2).to_bytes(1, "big") for i in range(0, len(self._bits), 8)]
+            [
+                int(self._bits[i : i + 8], 2).to_bytes(1, "big")
+                for i in range(0, len(self._bits), 8)
+            ],
         )
 
     def __len__(self) -> int:

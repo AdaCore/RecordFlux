@@ -164,7 +164,8 @@ def assert_messages_string(string: str, messages: Sequence[model.Message]) -> No
 
 
 def assert_messages(
-    actual_messages: Sequence[model.Message], expected_messages: Sequence[model.Message]
+    actual_messages: Sequence[model.Message],
+    expected_messages: Sequence[model.Message],
 ) -> None:
     for actual, expected in zip_longest(actual_messages, expected_messages):
         assert actual.full_name == expected.full_name
@@ -246,7 +247,7 @@ def test_parse_duplicate_specifications() -> None:
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                     "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                 },
-            }
+            },
         },
     )
 
@@ -264,7 +265,7 @@ def test_parse_empty_package_spec() -> None:
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                     "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
                 },
-            }
+            },
         },
     )
 
@@ -348,7 +349,7 @@ def test_parse_integer_type_spec() -> None:
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Integer_Type"},
                 "identifier": {"_kind": "UnqualifiedID", "_value": "Integer_Type"},
             },
-        }
+        },
     }
 
     assert_ast_files([f"{SPEC_DIR}/integer_type.rflx"], spec)
@@ -371,7 +372,7 @@ def test_parse_enumeration_type_spec() -> None:
                                     "_kind": "Aspect",
                                     "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
                                     "value": {"_kind": "NumericLiteral", "_value": "3"},
-                                }
+                                },
                             ],
                             "elements": {
                                 "_kind": "NamedEnumerationDef",
@@ -579,7 +580,7 @@ def test_parse_enumeration_type_spec() -> None:
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Enumeration_Type"},
                 "identifier": {"_kind": "UnqualifiedID", "_value": "Enumeration_Type"},
             },
-        }
+        },
     }
     assert_ast_files([f"{SPEC_DIR}/enumeration_type.rflx"], spec)
 
@@ -668,14 +669,14 @@ def test_parse_sequence_type_spec() -> None:
                                                                 "_value": "8",
                                                             },
                                                         },
-                                                    }
+                                                    },
                                                 ],
                                                 "condition": None,
                                                 "target": {
                                                     "_kind": "UnqualifiedID",
                                                     "_value": "Bytes",
                                                 },
-                                            }
+                                            },
                                         ],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -727,7 +728,7 @@ def test_parse_sequence_type_spec() -> None:
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Sequence_Type"},
                 "identifier": {"_kind": "UnqualifiedID", "_value": "Sequence_Type"},
             },
-        }
+        },
     }
     assert_ast_files([f"{SPEC_DIR}/sequence_type.rflx"], spec)
 
@@ -933,7 +934,7 @@ def test_parse_message_type_spec() -> None:
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
                 "identifier": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
             },
-        }
+        },
     }
     assert_ast_files([f"{SPEC_DIR}/message_type.rflx"], spec)
 
@@ -1143,7 +1144,7 @@ def test_parse_type_refinement_spec() -> None:
                 {
                     "_kind": "ContextItem",
                     "item": {"_kind": "UnqualifiedID", "_value": "Message_Type"},
-                }
+                },
             ],
             "package_declaration": {
                 "_kind": "PackageNode",
@@ -1252,7 +1253,7 @@ def test_parse_type_derivation_spec() -> None:
                                             "package": None,
                                         },
                                         "type_arguments": [],
-                                    }
+                                    },
                                 ],
                                 "initial_field": None,
                             },
@@ -1463,7 +1464,7 @@ def test_parse_ethernet_spec() -> None:
                                                                 "_value": "First",
                                                             },
                                                         },
-                                                    }
+                                                    },
                                                 ],
                                                 "condition": {
                                                     "_kind": "BinOp",
@@ -1516,7 +1517,7 @@ def test_parse_ethernet_spec() -> None:
                                                                 "_value": "First",
                                                             },
                                                         },
-                                                    }
+                                                    },
                                                 ],
                                                 "condition": {
                                                     "_kind": "BinOp",
@@ -1625,7 +1626,7 @@ def test_parse_ethernet_spec() -> None:
                                                                 "_value": "8",
                                                             },
                                                         },
-                                                    }
+                                                    },
                                                 ],
                                                 "condition": {
                                                     "_kind": "BinOp",
@@ -1783,7 +1784,7 @@ def test_parse_ethernet_spec() -> None:
                                                     "_kind": "UnqualifiedID",
                                                     "_value": "null",
                                                 },
-                                            }
+                                            },
                                         ],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -1806,7 +1807,7 @@ def test_parse_ethernet_spec() -> None:
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Ethernet"},
                 "identifier": {"_kind": "UnqualifiedID", "_value": "Ethernet"},
             },
-        }
+        },
     }
 
     assert_ast_files([f"{SPEC_DIR}/ethernet.rflx"], spec)
@@ -1851,8 +1852,8 @@ def test_parse_error_illegal_redefinition() -> None:
                 package Test is
                    type Boolean is range 0 .. 1 with Size => 2;
                 end Test;
-                """
-            )
+                """,
+            ),
         )
 
 
@@ -1872,7 +1873,7 @@ def test_parse_error_unexpected_exception_in_parser(monkeypatch: pytest.MonkeyPa
             package Test is
                type T is range 0 .. 255 with Size => 8;
             end Test;
-            """
+            """,
         )
 
 
@@ -2218,10 +2219,16 @@ def test_create_model_message_type_message() -> None:
 
     simple_types = {
         model.Field("Bar"): model.Integer(
-            "Message_Type::T", expr.Number(0), expr.Number(255), expr.Number(8)
+            "Message_Type::T",
+            expr.Number(0),
+            expr.Number(255),
+            expr.Number(8),
         ),
         model.Field("Baz"): model.Integer(
-            "Message_Type::T", expr.Number(0), expr.Number(255), expr.Number(8)
+            "Message_Type::T",
+            expr.Number(0),
+            expr.Number(255),
+            expr.Number(8),
         ),
     }
 
@@ -2246,7 +2253,10 @@ def test_create_model_message_type_message() -> None:
     types = {
         **simple_types,
         model.Field("Foo"): model.Integer(
-            "Message_Type::T", expr.Number(0), expr.Number(255), expr.Number(8)
+            "Message_Type::T",
+            expr.Number(0),
+            expr.Number(255),
+            expr.Number(8),
         ),
     }
 
@@ -2255,7 +2265,8 @@ def test_create_model_message_type_message() -> None:
     empty_message = model.Message("Message_Type::Empty_PDU", [], {})
 
     assert_messages_files(
-        [f"{SPEC_DIR}/message_type.rflx"], [message, simple_message, empty_message]
+        [f"{SPEC_DIR}/message_type.rflx"],
+        [message, simple_message, empty_message],
     )
 
 
@@ -2282,7 +2293,8 @@ def test_create_model_message_in_message() -> None:
     )
 
     derived_length_value = model.DerivedMessage(
-        "Message_In_Message::Derived_Length_Value", length_value
+        "Message_In_Message::Derived_Length_Value",
+        length_value,
     )
 
     message = model.Message(
@@ -2395,7 +2407,7 @@ def test_create_model_message_locations() -> None:
                  F2 : T;
               end message;
         end Test;
-        """
+        """,
     )
     m = p.create_model()
     assert [f.identifier.location for f in m.messages[0].fields] == [
@@ -2425,7 +2437,7 @@ def test_create_model_session_locations() -> None:
               end A;
            end Session;
         end Test;
-        """
+        """,
     )
     m = p.create_model()
     assert [p.location for p in m.sessions[0].parameters] == [
@@ -2440,7 +2452,7 @@ def test_create_model_sequence_with_imported_element_type() -> None:
            package Test is
               type T is range 0 .. 255 with Size => 8;
            end Test;
-        """
+        """,
     )
     p.parse_string(
         """\
@@ -2448,14 +2460,17 @@ def test_create_model_sequence_with_imported_element_type() -> None:
            package Sequence_Test is
               type T is sequence of Test::T;
            end Sequence_Test;
-        """
+        """,
     )
     m = p.create_model()
     sequences = [t for t in m.types if isinstance(t, model.Sequence)]
     assert len(sequences) == 1
     assert sequences[0].identifier == ID("Sequence_Test::T")
     assert sequences[0].element_type == model.Integer(
-        "Test::T", expr.Number(0), expr.Number(255), expr.Number(8)
+        "Test::T",
+        expr.Number(0),
+        expr.Number(255),
+        expr.Number(8),
     )
 
 
@@ -2479,7 +2494,7 @@ def test_create_model_checksum() -> None:
                  with Checksum => (C1 => (F3, F1'First .. F2'Last),
                                    C2 => (C1'Last + 1 .. C2'First - 1));
         end Test;
-        """
+        """,
     )
     m = p.create_model()
 
@@ -2489,7 +2504,7 @@ def test_create_model_checksum() -> None:
             expr.ValueRange(
                 expr.Add(expr.Last("C1"), expr.Number(1)),
                 expr.Sub(expr.First("C2"), expr.Number(1)),
-            )
+            ),
         ],
     }
 
@@ -2817,7 +2832,9 @@ def test_parameterized_messages() -> None:
                 [
                     Link(INITIAL, Field("F"), size=expr.Mul(expr.Variable("P"), expr.Number(8))),
                     Link(
-                        Field("F"), FINAL, condition=expr.Less(expr.Variable("P"), expr.Number(100))
+                        Field("F"),
+                        FINAL,
+                        condition=expr.Less(expr.Variable("P"), expr.Number(100)),
                     ),
                 ],
                 {Field("P"): T, Field("F"): OPAQUE},
@@ -2835,7 +2852,9 @@ def test_parameterized_messages() -> None:
                 [
                     Link(INITIAL, Field("L")),
                     Link(
-                        Field("L"), Field("F_F"), size=expr.Mul(expr.Variable("L"), expr.Number(8))
+                        Field("L"),
+                        Field("F_F"),
+                        size=expr.Mul(expr.Variable("L"), expr.Number(8)),
                     ),
                     Link(
                         Field("F_F"),
@@ -2892,7 +2911,8 @@ def test_parameterized_messages() -> None:
     ],
 )
 def test_parse_error_invalid_arguments_for_parameterized_messages(
-    parameters: str, error: str
+    parameters: str,
+    error: str,
 ) -> None:
     assert_error_string(
         f"""\
@@ -3061,7 +3081,7 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
                  F : T;
               end message;
         end Message_Type;
-        """
+        """,
     )
     with pytest.raises(
         RecordFluxError,
@@ -3082,7 +3102,7 @@ def test_parse_reserved_words_as_enum_literals(keyword: str) -> None:
         package Test is
            type A is (Reset => 1, {keyword.title()} => 2) with Size => 8;
         end Test;
-        """
+        """,
     )
 
 
@@ -3105,7 +3125,7 @@ def test_parse_reserved_word_as_channel_name() -> None:
               end A;
            end Session;
         end Test;
-        """
+        """,
     )
 
 
@@ -3328,7 +3348,7 @@ def test_enumeration() -> None:
            type E is (E1 => 1, E2 => 2) with Always_Valid => False, Size => 8;
            type A is (A1 => 10) with Always_Valid => True, Size => 6;
         end Test;
-        """
+        """,
     )
     m = p.create_model()
     assert m.types == [

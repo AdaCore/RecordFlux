@@ -61,15 +61,18 @@ grammar.add_rules(
             lexer.Or,
             lexer.Case,
             lexer.UnqualifiedIdentifier,
-        )
+        ),
     ),
     qualified_identifier=ast.ID(
-        Opt(grammar.unqualified_identifier, "::"), grammar.unqualified_identifier
+        Opt(grammar.unqualified_identifier, "::"),
+        grammar.unqualified_identifier,
     ),
     numeric_literal=ast.NumericLiteral(lexer.Numeral),
     variable=ast.Variable(grammar.qualified_identifier),
     sequence_aggregate=ast.SequenceAggregate(
-        "[", List(grammar.numeric_literal, sep=",", empty_valid=True), "]"
+        "[",
+        List(grammar.numeric_literal, sep=",", empty_valid=True),
+        "]",
     ),
     string_literal=ast.StringLiteral(lexer.StringLiteral),
     concatenation=Or(
@@ -192,10 +195,12 @@ grammar.add_rules(
     conversion=ast.Conversion(grammar.qualified_identifier, "(", grammar.extended_expression, ")"),
     null_message_aggregate=ast.NullMessageAggregate("null", "message"),
     message_aggregate_association=ast.MessageAggregateAssociation(
-        grammar.unqualified_identifier, "=>", grammar.extended_expression
+        grammar.unqualified_identifier,
+        "=>",
+        grammar.extended_expression,
     ),
     message_aggregate_association_list=ast.MessageAggregateAssociations(
-        List(grammar.message_aggregate_association, sep=",")
+        List(grammar.message_aggregate_association, sep=","),
     ),
     message_aggregate=ast.MessageAggregate(
         grammar.qualified_identifier,
@@ -220,10 +225,18 @@ grammar.add_rules(
     extended_paren_expression=ast.ParenExpression("(", grammar.extended_expression, ")"),
     extended_choice_list=List(Or(grammar.qualified_identifier, grammar.numeric_literal), sep="|"),
     extended_choices=ast.Choice(
-        "when", grammar.extended_choice_list, "=>", grammar.extended_expression
+        "when",
+        grammar.extended_choice_list,
+        "=>",
+        grammar.extended_expression,
     ),
     extended_case_expression=ast.CaseExpression(
-        "(", "case", grammar.extended_expression, "is", List(grammar.extended_choices, sep=","), ")"
+        "(",
+        "case",
+        grammar.extended_expression,
+        "is",
+        List(grammar.extended_choices, sep=","),
+        ")",
     ),
     extended_suffix=Or(
         ast.Select(
@@ -359,7 +372,8 @@ grammar.add_rules(
         ";",
     ),
     message_field_list=ast.MessageFields(
-        Opt(grammar.null_message_field), List(grammar.message_field)
+        Opt(grammar.null_message_field),
+        List(grammar.message_field),
     ),
     value_range=ast.ChecksumValueRange(grammar.expression, "..", grammar.expression),
     checksum_association=ast.ChecksumAssoc(
@@ -370,7 +384,11 @@ grammar.add_rules(
         ")",
     ),
     checksum_aspect=ast.ChecksumAspect(
-        "Checksum", "=>", "(", List(grammar.checksum_association, sep=","), ")"
+        "Checksum",
+        "=>",
+        "(",
+        List(grammar.checksum_association, sep=","),
+        ")",
     ),
     byte_order_aspect=ast.ByteOrderAspect(
         "Byte_Order",
@@ -392,10 +410,12 @@ grammar.add_rules(
         ast.NullMessageTypeDef("null", "message"),
     ),
     positional_enumeration=ast.PositionalEnumerationDef(
-        List(grammar.unqualified_identifier, sep=",")
+        List(grammar.unqualified_identifier, sep=","),
     ),
     element_value_association=ast.ElementValueAssoc(
-        grammar.unqualified_identifier, "=>", grammar.numeric_literal
+        grammar.unqualified_identifier,
+        "=>",
+        grammar.numeric_literal,
     ),
     named_enumeration=ast.NamedEnumerationDef(List(grammar.element_value_association, sep=",")),
     enumeration_aspects=List(Or(grammar.aspect, grammar.aspect), sep=","),
@@ -476,7 +496,9 @@ grammar.add_rules(
     declaration=Or(grammar.renaming_declaration, grammar.variable_declaration),
     description_aspect=ast.Description("Desc", "=>", grammar.string_literal),
     assignment_statement=ast.Assignment(
-        grammar.unqualified_identifier, ":=", grammar.extended_expression
+        grammar.unqualified_identifier,
+        ":=",
+        grammar.extended_expression,
     ),
     message_field_assignment_statement=ast.MessageFieldAssignment(
         grammar.unqualified_identifier,
@@ -552,7 +574,9 @@ grammar.add_rules(
         grammar.unqualified_identifier,
     ),
     basic_declaration=Or(
-        grammar.type_declaration, grammar.type_refinement, grammar.session_declaration
+        grammar.type_declaration,
+        grammar.type_refinement,
+        grammar.session_declaration,
     ),
     basic_declarations=Pick(List(grammar.basic_declaration, sep=";"), ";"),
     package_declaration=ast.Package(

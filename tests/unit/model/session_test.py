@@ -75,11 +75,13 @@ def test_str() -> None:
                     decl.ChannelDeclaration("X", readable=True, writable=True),
                     decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
                     decl.FunctionDeclaration(
-                        "G", [decl.Argument("P", BOOLEAN.identifier)], BOOLEAN.identifier
+                        "G",
+                        [decl.Argument("P", BOOLEAN.identifier)],
+                        BOOLEAN.identifier,
                     ),
                 ],
                 [BOOLEAN, TLV_MESSAGE],
-            )
+            ),
         ),
         textwrap.dedent(
             """\
@@ -110,7 +112,7 @@ def test_str() -> None:
                         and G (F) = True
                   goto A
                end B;
-            end S"""
+            end S""",
         ),
     )
 
@@ -341,7 +343,8 @@ def test_undeclared_variable() -> None:
                     Transition(
                         target=ID("null"),
                         condition=expr.Equal(
-                            expr.Variable("Undefined", location=Location((10, 20))), expr.TRUE
+                            expr.Variable("Undefined", location=Location((10, 20))),
+                            expr.TRUE,
                         ),
                     ),
                     Transition(
@@ -374,7 +377,7 @@ def test_undefined_type() -> None:
             ),
         ],
         declarations=[
-            decl.VariableDeclaration("Defined", "Undefined_Type", location=Location((10, 20)))
+            decl.VariableDeclaration("Defined", "Undefined_Type", location=Location((10, 20))),
         ],
         parameters=[],
         types=[],
@@ -392,7 +395,8 @@ def test_declared_variable() -> None:
                     Transition(
                         target=ID("null"),
                         condition=expr.Equal(
-                            expr.Variable("Defined"), expr.Variable("TLV::Msg_Data")
+                            expr.Variable("Defined"),
+                            expr.Variable("TLV::Msg_Data"),
                         ),
                     ),
                     Transition(
@@ -502,7 +506,8 @@ def test_declared_local_variable_message_field() -> None:
                     Transition(
                         target=ID("null"),
                         condition=expr.Equal(
-                            expr.Selected(expr.Variable("Global"), "Length"), expr.Number(1)
+                            expr.Selected(expr.Variable("Global"), "Length"),
+                            expr.Number(1),
                         ),
                     ),
                     Transition(
@@ -529,7 +534,7 @@ def test_assignment_to_undeclared_variable() -> None:
                 transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
-                    stmt.VariableAssignment("Undefined", expr.FALSE, location=Location((10, 20)))
+                    stmt.VariableAssignment("Undefined", expr.FALSE, location=Location((10, 20))),
                 ],
             ),
         ],
@@ -549,8 +554,9 @@ def test_assignment_from_undeclared_variable() -> None:
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
-                        "Global", expr.Variable("Undefined", location=Location((10, 20)))
-                    )
+                        "Global",
+                        expr.Variable("Undefined", location=Location((10, 20))),
+                    ),
                 ],
             ),
         ],
@@ -573,7 +579,7 @@ def test_assignment_with_undeclared_message_in_delta_message_aggregate() -> None
                     stmt.VariableAssignment(
                         "Global",
                         expr.DeltaMessageAggregate("Undefined", {}, location=Location((10, 20))),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -632,9 +638,11 @@ def test_call_to_undeclared_function() -> None:
                     stmt.VariableAssignment(
                         "Global",
                         expr.Call(
-                            "UndefSub", [expr.Variable("Global")], location=Location((10, 20))
+                            "UndefSub",
+                            [expr.Variable("Global")],
+                            location=Location((10, 20)),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -652,7 +660,8 @@ def test_call_undeclared_variable() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("null"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
+                        target=ID("null"),
+                        condition=expr.Equal(expr.Variable("Result"), expr.TRUE),
                     ),
                     Transition(
                         target=ID("Start"),
@@ -663,9 +672,10 @@ def test_call_undeclared_variable() -> None:
                     stmt.VariableAssignment(
                         "Result",
                         expr.Call(
-                            "SubProg", [expr.Variable("Undefined", location=Location((10, 20)))]
+                            "SubProg",
+                            [expr.Variable("Undefined", location=Location((10, 20)))],
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -694,7 +704,7 @@ def test_call_invalid_argument_type() -> None:
                             "Function",
                             [expr.Variable("Channel", location=Location((10, 20)))],
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -729,7 +739,7 @@ def test_call_missing_arguments() -> None:
                             "Function",
                             location=Location((10, 20)),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -759,7 +769,7 @@ def test_call_too_many_arguments() -> None:
                             [expr.TRUE, expr.Number(1)],
                             location=Location((10, 20)),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -824,7 +834,7 @@ def test_channel_read_undeclared() -> None:
                 transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
-                    stmt.Read("Undeclared", expr.Variable("Result"), location=Location((10, 20)))
+                    stmt.Read("Undeclared", expr.Variable("Result"), location=Location((10, 20))),
                 ],
             ),
         ],
@@ -847,7 +857,7 @@ def test_channel_read_invalid_type() -> None:
                         "Result",
                         expr.Number(0, location=Location((10, 30))),
                         location=Location((10, 20)),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -874,7 +884,7 @@ def test_channel_read_invalid_mode() -> None:
                 transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
-                    stmt.Read("Channel", expr.Variable("Result"), location=Location((10, 20)))
+                    stmt.Read("Channel", expr.Variable("Result"), location=Location((10, 20))),
                 ],
             ),
         ],
@@ -902,7 +912,7 @@ def test_channel_write_invalid_mode() -> None:
                 transitions=[Transition(target=ID("null"))],
                 declarations=[],
                 actions=[
-                    stmt.Write("Out_Channel", expr.Variable("Result"), location=Location((10, 20)))
+                    stmt.Write("Out_Channel", expr.Variable("Result"), location=Location((10, 20))),
                 ],
             ),
         ],
@@ -949,7 +959,8 @@ def test_undeclared_variable_in_function_call() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("null"), condition=expr.Equal(expr.Variable("Result"), expr.TRUE)
+                        target=ID("null"),
+                        condition=expr.Equal(expr.Variable("Result"), expr.TRUE),
                     ),
                     Transition(
                         target=ID("Start"),
@@ -960,9 +971,10 @@ def test_undeclared_variable_in_function_call() -> None:
                     stmt.VariableAssignment(
                         "Result",
                         expr.Call(
-                            "SubProg", [expr.Variable("Undefined", location=Location((10, 20)))]
+                            "SubProg",
+                            [expr.Variable("Undefined", location=Location((10, 20)))],
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -984,14 +996,15 @@ def test_local_variable_shadows_global() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("null"), condition=expr.Equal(expr.Variable("Global"), expr.TRUE)
+                        target=ID("null"),
+                        condition=expr.Equal(expr.Variable("Global"), expr.TRUE),
                     ),
                     Transition(
                         target=ID("Start"),
                     ),
                 ],
                 declarations=[
-                    decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20)))
+                    decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20))),
                 ],
             ),
         ],
@@ -1031,7 +1044,7 @@ def test_unused_local_variable() -> None:
                 "Start",
                 transitions=[Transition(target=ID("null"))],
                 declarations=[
-                    decl.VariableDeclaration("Data", "Boolean", location=Location((10, 20)))
+                    decl.VariableDeclaration("Data", "Boolean", location=Location((10, 20))),
                 ],
             ),
         ],
@@ -1079,7 +1092,8 @@ def test_renaming() -> None:
                     Transition(
                         target=ID("null"),
                         condition=expr.Equal(
-                            expr.Length(expr.Variable("Null_Message")), expr.Number(0)
+                            expr.Length(expr.Variable("Null_Message")),
+                            expr.Number(0),
                         ),
                     ),
                     Transition(
@@ -1113,7 +1127,8 @@ def test_renaming_invalid() -> None:
                     Transition(
                         target=ID("null"),
                         condition=expr.Equal(
-                            expr.Length(expr.Variable("Universal_Message")), expr.Number(0)
+                            expr.Length(expr.Variable("Universal_Message")),
+                            expr.Number(0),
                         ),
                     ),
                     Transition(
@@ -1186,7 +1201,8 @@ def test_for_all() -> None:
                             "E",
                             expr.Variable("List"),
                             expr.Greater(
-                                expr.Selected(expr.Variable("E"), "Length"), expr.Number(0)
+                                expr.Selected(expr.Variable("E"), "Length"),
+                                expr.Number(0),
                             ),
                             location=Location((10, 20)),
                         ),
@@ -1220,7 +1236,7 @@ def test_append() -> None:
                             "TLV::Message",
                             {"Tag": expr.Variable("TLV::Msg_Error")},
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1239,7 +1255,7 @@ def test_append_incompatible() -> None:
                 exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
-                    stmt.Append("Global", expr.Variable("Global"), location=Location((10, 20)))
+                    stmt.Append("Global", expr.Variable("Global"), location=Location((10, 20))),
                 ],
             ),
         ],
@@ -1262,7 +1278,7 @@ def test_append_message_unsupported() -> None:
                 exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
-                    stmt.Append("List", expr.Variable("Element", location=Location((10, 20))))
+                    stmt.Append("List", expr.Variable("Element", location=Location((10, 20)))),
                 ],
             ),
         ],
@@ -1309,7 +1325,7 @@ def test_extend_incompatible() -> None:
                 exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
-                    stmt.Extend("Global", expr.Variable("Global"), location=Location((10, 20)))
+                    stmt.Extend("Global", expr.Variable("Global"), location=Location((10, 20))),
                 ],
             ),
         ],
@@ -1338,7 +1354,7 @@ def test_message_aggregate_with_undefined_parameter() -> None:
                             "TLV::Message",
                             {"Tag": expr.Variable("Undef", location=Location((10, 20)))},
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1365,12 +1381,12 @@ def test_message_aggregate_with_undefined_type() -> None:
                             {"Flag": expr.TRUE},
                             location=Location((10, 30)),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
         declarations=[
-            decl.VariableDeclaration("Data", "P::Undefined", location=Location((10, 20)))
+            decl.VariableDeclaration("Data", "P::Undefined", location=Location((10, 20))),
         ],
         parameters=[],
         types=[BOOLEAN],
@@ -1397,10 +1413,11 @@ def test_comprehension() -> None:
                             expr.Variable("List"),
                             expr.Selected(expr.Variable("E"), "Tag"),
                             expr.Greater(
-                                expr.Selected(expr.Variable("E"), "Length"), expr.Number(0)
+                                expr.Selected(expr.Variable("E"), "Length"),
+                                expr.Number(0),
                             ),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1425,10 +1442,11 @@ def test_assignment_opaque_function_undef_parameter() -> None:
                         "Data",
                         expr.Opaque(
                             expr.Call(
-                                "Sub", [expr.Variable("UndefData", location=Location((10, 20)))]
+                                "Sub",
+                                [expr.Variable("UndefData", location=Location((10, 20)))],
                             ),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1457,7 +1475,7 @@ def test_assignment_opaque_function_result() -> None:
                         expr.Opaque(
                             expr.Call("Sub", [expr.Variable("Data")]),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1483,7 +1501,7 @@ def test_message_field_assignment_with_invalid_field_name() -> None:
                         "Message",
                         ID("Invalid", location=Location((1, 2))),
                         expr.Number(42),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1509,7 +1527,7 @@ def test_message_field_assignment_to_message_parameter() -> None:
                         "Message",
                         ID("Length", location=Location((1, 2))),
                         expr.Number(42),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1540,7 +1558,7 @@ def test_message_field_assignment_with_incompatible_field_type() -> None:
                         "Message",
                         "Tag",
                         expr.Number(42, location=Location((1, 2))),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1567,8 +1585,11 @@ def test_message_field_assignment_with_incompatible_variable_type() -> None:
                 exception_transition=Transition(target=ID("null")),
                 actions=[
                     stmt.MessageFieldAssignment(
-                        "Message", "Tag", expr.Variable("TLV::Msg_Data"), location=Location((1, 2))
-                    )
+                        "Message",
+                        "Tag",
+                        expr.Variable("TLV::Msg_Data"),
+                        location=Location((1, 2)),
+                    ),
                 ],
             ),
         ],
@@ -1601,7 +1622,7 @@ def test_conversion() -> None:
                             "Null::Message",
                             expr.Selected(expr.Variable("Message"), "Value"),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1629,7 +1650,7 @@ def test_conversion_undefined() -> None:
                             expr.Selected(expr.Variable("Message"), "Value"),
                             location=Location((10, 30)),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1663,7 +1684,7 @@ def test_conversion_invalid_argument() -> None:
                             "TLV::Message",
                             expr.Variable("Message", location=Location((10, 20))),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1695,7 +1716,7 @@ def test_conversion_invalid() -> None:
                             expr.Selected(expr.Variable("Message"), "Value"),
                             location=Location((10, 20)),
                         ),
-                    )
+                    ),
                 ],
             ),
         ],
@@ -1720,13 +1741,19 @@ def test_conversion_invalid() -> None:
     [
         [
             decl.FunctionDeclaration(
-                "X", [decl.Argument("Y", "Boolean")], "Undefined", location=Location((10, 20))
-            )
+                "X",
+                [decl.Argument("Y", "Boolean")],
+                "Undefined",
+                location=Location((10, 20)),
+            ),
         ],
         [
             decl.FunctionDeclaration(
-                "X", [decl.Argument("Y", "Undefined")], "Boolean", location=Location((10, 20))
-            )
+                "X",
+                [decl.Argument("Y", "Undefined")],
+                "Boolean",
+                location=Location((10, 20)),
+            ),
         ],
     ],
 )
@@ -1775,7 +1802,8 @@ def test_undefined_type_in_declarations(declarations: abc.Sequence[decl.BasicDec
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("null"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                        target=ID("null"),
+                        condition=expr.Equal(expr.Variable("X"), expr.TRUE),
                     ),
                     Transition(
                         target=ID("Start"),
@@ -1814,7 +1842,8 @@ def test_undefined_type_in_local_declarations(
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("null"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                        target=ID("null"),
+                        condition=expr.Equal(expr.Variable("X"), expr.TRUE),
                     ),
                     Transition(
                         target=ID("Start"),
@@ -1837,7 +1866,8 @@ def test_type_error_in_variable_declaration() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("null"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                        target=ID("null"),
+                        condition=expr.Equal(expr.Variable("X"), expr.TRUE),
                     ),
                     Transition(
                         target=ID("Start"),
@@ -1847,7 +1877,7 @@ def test_type_error_in_variable_declaration() -> None:
             ),
         ],
         declarations=[
-            decl.VariableDeclaration("X", "Boolean", expr.Number(1, location=Location((10, 20))))
+            decl.VariableDeclaration("X", "Boolean", expr.Number(1, location=Location((10, 20)))),
         ],
         parameters=[],
         types=[BOOLEAN],
@@ -1867,7 +1897,8 @@ def test_type_error_in_renaming_declaration() -> None:
                 "Start",
                 transitions=[
                     Transition(
-                        target=ID("null"), condition=expr.Equal(expr.Variable("X"), expr.TRUE)
+                        target=ID("null"),
+                        condition=expr.Equal(expr.Variable("X"), expr.TRUE),
                     ),
                     Transition(
                         target=ID("Start"),
@@ -1900,7 +1931,9 @@ def test_type_error_in_renaming_declaration() -> None:
         (
             [
                 decl.VariableDeclaration(
-                    "M", UNIVERSAL_MESSAGE.identifier, location=Location((1, 2))
+                    "M",
+                    UNIVERSAL_MESSAGE.identifier,
+                    location=Location((1, 2)),
                 ),
             ],
             [
@@ -2028,7 +2061,7 @@ def test_missing_exception_transition() -> None:
                             "TLV::Message",
                             {"Tag": expr.Variable("TLV::Msg_Error")},
                         ),
-                    )
+                    ),
                 ],
                 location=Location((10, 20)),
             ),
@@ -2064,7 +2097,7 @@ def test_missing_exception_transition() -> None:
                     stmt.VariableAssignment(
                         "Tag",
                         expr.Call("SubProg"),
-                    )
+                    ),
                 ],
             ),
             [TLV_TAG],
@@ -2073,7 +2106,9 @@ def test_missing_exception_transition() -> None:
     ],
 )
 def test_unnecessary_exception_transition(
-    state: State, parameters: abc.Sequence[decl.FormalDeclaration], types: abc.Sequence[Type]
+    state: State,
+    parameters: abc.Sequence[decl.FormalDeclaration],
+    types: abc.Sequence[Type],
 ) -> None:
     assert_session_model_error(
         states=[state],
@@ -2301,7 +2336,8 @@ def test_resolving_of_function_calls() -> None:
     ],
 )
 def test_state_normalization(
-    actions: list[stmt.Statement], normalized_actions: list[stmt.Statement]
+    actions: list[stmt.Statement],
+    normalized_actions: list[stmt.Statement],
 ) -> None:
     assert str(
         State(
@@ -2309,14 +2345,14 @@ def test_state_normalization(
             transitions=[Transition(target=ID("null"))],
             exception_transition=Transition(target=ID("null")),
             actions=actions,
-        )
+        ),
     ) == str(
         State(
             "S",
             transitions=[Transition(target=ID("null"))],
             exception_transition=Transition(target=ID("null")),
             actions=normalized_actions,
-        )
+        ),
     )
     assert State(
         "S",
@@ -2339,7 +2375,7 @@ def test_state_normalization(
                 *actions,
                 stmt.VariableAssignment("Y", expr.Number(9)),
             ],
-        )
+        ),
     ) == str(
         State(
             "S",
@@ -2350,7 +2386,7 @@ def test_state_normalization(
                 *normalized_actions,
                 stmt.VariableAssignment("Y", expr.Number(9)),
             ],
-        )
+        ),
     )
     assert State(
         "S",
@@ -2382,59 +2418,9 @@ def test_state_normalization(
                 "S",
                 declarations=[
                     decl.VariableDeclaration(
-                        "Msg", "Message", type_=rty.Message("M", is_definite=False)
-                    )
-                ],
-                transitions=[Transition(target=ID("null"))],
-            ),
-            State(
-                "S",
-                declarations=[
-                    decl.VariableDeclaration(
-                        "Msg", "Message", type_=rty.Message("M", is_definite=False)
-                    )
-                ],
-                transitions=[Transition(target=ID("null"))],
-            ),
-        ),
-        (
-            State(
-                "S",
-                declarations=[
-                    decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=rty.Message(
-                            "M",
-                            is_definite=True,
-                        ),
-                        expression=expr.Variable("X"),
-                    )
-                ],
-                transitions=[Transition(target=ID("null"))],
-            ),
-            State(
-                "S",
-                declarations=[
-                    decl.VariableDeclaration(
-                        "Msg",
-                        "Message",
-                        type_=rty.Message(
-                            "M",
-                            is_definite=True,
-                        ),
-                        expression=expr.Variable("X"),
-                    )
-                ],
-                transitions=[Transition(target=ID("null"))],
-            ),
-        ),
-        (
-            State(
-                "S",
-                declarations=[
-                    decl.VariableDeclaration(
-                        "Int", "Integer", type_=rty.Integer("Integer", rty.Bounds(0, 255))
+                        type_=rty.Message("M", is_definite=False),
                     ),
                 ],
                 transitions=[Transition(target=ID("null"))],
@@ -2443,7 +2429,9 @@ def test_state_normalization(
                 "S",
                 declarations=[
                     decl.VariableDeclaration(
-                        "Int", "Integer", type_=rty.Integer("Integer", rty.Bounds(0, 255))
+                        "Msg",
+                        "Message",
+                        type_=rty.Message("M", is_definite=False),
                     ),
                 ],
                 transitions=[Transition(target=ID("null"))],
@@ -2460,7 +2448,63 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                        expression=expr.Variable("X"),
+                    ),
+                ],
+                transitions=[Transition(target=ID("null"))],
+            ),
+            State(
+                "S",
+                declarations=[
+                    decl.VariableDeclaration(
+                        "Msg",
+                        "Message",
+                        type_=rty.Message(
+                            "M",
+                            is_definite=True,
+                        ),
+                        expression=expr.Variable("X"),
+                    ),
+                ],
+                transitions=[Transition(target=ID("null"))],
+            ),
+        ),
+        (
+            State(
+                "S",
+                declarations=[
+                    decl.VariableDeclaration(
+                        "Int",
+                        "Integer",
+                        type_=rty.Integer("Integer", rty.Bounds(0, 255)),
+                    ),
+                ],
+                transitions=[Transition(target=ID("null"))],
+            ),
+            State(
+                "S",
+                declarations=[
+                    decl.VariableDeclaration(
+                        "Int",
+                        "Integer",
+                        type_=rty.Integer("Integer", rty.Bounds(0, 255)),
+                    ),
+                ],
+                transitions=[Transition(target=ID("null"))],
+            ),
+        ),
+        (
+            State(
+                "S",
+                declarations=[
+                    decl.VariableDeclaration(
+                        "Msg",
+                        "Message",
+                        type_=rty.Message(
+                            "M",
+                            is_definite=True,
+                        ),
+                    ),
                 ],
                 actions=[stmt.Reset("Msg")],
                 transitions=[Transition(target=ID("null"))],
@@ -2475,7 +2519,7 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                    ),
                 ],
                 actions=[stmt.Reset("Msg")],
                 transitions=[Transition(target=ID("null"))],
@@ -2492,7 +2536,7 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                    ),
                 ],
                 actions=[
                     stmt.Append("List", expr.Variable("E")),
@@ -2510,7 +2554,7 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                    ),
                 ],
                 actions=[
                     stmt.Append("List", expr.Variable("E")),
@@ -2530,13 +2574,13 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                    ),
                 ],
                 actions=[
                     stmt.VariableAssignment(
                         "Msg",
                         expr.Variable("X"),
-                    )
+                    ),
                 ],
                 transitions=[Transition(target=ID("null"))],
             ),
@@ -2550,13 +2594,13 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                    ),
                 ],
                 actions=[
                     stmt.VariableAssignment(
                         "Msg",
                         expr.Variable("X"),
-                    )
+                    ),
                 ],
                 transitions=[Transition(target=ID("null"))],
             ),
@@ -2572,14 +2616,14 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                    ),
                 ],
                 actions=[
                     stmt.MessageFieldAssignment(
                         "Msg",
                         "Field",
                         expr.Variable("X"),
-                    )
+                    ),
                 ],
                 transitions=[Transition(target=ID("null"))],
             ),
@@ -2593,14 +2637,14 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                    ),
                 ],
                 actions=[
                     stmt.MessageFieldAssignment(
                         "Msg",
                         "Field",
                         expr.Variable("X"),
-                    )
+                    ),
                 ],
                 transitions=[Transition(target=ID("null"))],
             ),
@@ -2637,7 +2681,7 @@ def test_state_normalization(
                                 is_definite=True,
                             ),
                         ),
-                    )
+                    ),
                 ],
                 transitions=[Transition(target=ID("null"))],
             ),
@@ -2668,7 +2712,7 @@ def test_state_normalization(
                                 "M",
                             ),
                         ),
-                    )
+                    ),
                 ],
                 transitions=[Transition(target=ID("null"))],
             ),
@@ -2739,7 +2783,7 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                    ),
                 ],
                 actions=[
                     stmt.VariableAssignment(
@@ -2759,7 +2803,7 @@ def test_state_normalization(
                             "M",
                             is_definite=True,
                         ),
-                    )
+                    ),
                 ],
                 actions=[
                     stmt.VariableAssignment(
@@ -2787,7 +2831,7 @@ def test_message_assignment_from_function() -> None:
                 exception_transition=Transition(target=ID("null")),
                 declarations=[decl.VariableDeclaration("Msg", "Null::Message")],
                 actions=[stmt.VariableAssignment("Msg", expr.Call("SubProg"))],
-            )
+            ),
         ],
         declarations=[],
         parameters=[decl.FunctionDeclaration("SubProg", [], "Null::Message")],
@@ -2839,7 +2883,9 @@ def test_message_assignment_from_function() -> None:
                     decl.ChannelDeclaration("X", readable=True, writable=True),
                     decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
                     decl.FunctionDeclaration(
-                        "G", [decl.Argument("P", BOOLEAN.identifier)], BOOLEAN.identifier
+                        "G",
+                        [decl.Argument("P", BOOLEAN.identifier)],
+                        BOOLEAN.identifier,
                     ),
                 ],
                 Location((1, 2)),
@@ -2883,7 +2929,9 @@ def test_message_assignment_from_function() -> None:
                     decl.ChannelDeclaration("X", readable=True, writable=True),
                     decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
                     decl.FunctionDeclaration(
-                        "G", [decl.Argument("P", BOOLEAN.identifier)], BOOLEAN.identifier
+                        "G",
+                        [decl.Argument("P", BOOLEAN.identifier)],
+                        BOOLEAN.identifier,
                     ),
                 ],
                 [BOOLEAN, TLV_MESSAGE],

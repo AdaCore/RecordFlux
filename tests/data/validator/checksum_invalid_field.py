@@ -6,5 +6,5 @@ checksum_functions = {
     "Checksum_Message::Message": {
         "C": checksum_test,
         "Invalid_Field": checksum_test,
-    }
+    },
 }

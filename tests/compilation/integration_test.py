@@ -182,7 +182,7 @@ def test_sequence_with_imported_element_type_scalar(tmp_path: Path) -> None:
         package Test is
            type T is range 0 .. 255 with Size => 8;
         end Test;
-        """
+        """,
     )
     p.parse_string(
         """\
@@ -190,7 +190,7 @@ def test_sequence_with_imported_element_type_scalar(tmp_path: Path) -> None:
         package Sequence_Test is
            type T is sequence of Test::T;
         end Sequence_Test;
-        """
+        """,
     )
     utils.assert_compilable_code(p.create_model(), Integration(), tmp_path)
 
@@ -208,7 +208,7 @@ def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
                  A : Opaque;
               end message;
         end Test;
-        """
+        """,
     )
     p.parse_string(
         """\
@@ -216,7 +216,7 @@ def test_sequence_with_imported_element_type_message(tmp_path: Path) -> None:
         package Sequence_Test is
            type T is sequence of Test::M;
         end Sequence_Test;
-        """
+        """,
     )
     utils.assert_compilable_code(p.create_model(), Integration(), tmp_path)
 
@@ -397,7 +397,7 @@ def test_refinement_with_imported_enum_literal(tmp_path: Path) -> None:
         package Numbers is
            type Protocol is (PROTO_X, PROTO_Y) with Size => 8;
         end Numbers;
-        """
+        """,
     )
     p.parse_string(
         """\
@@ -411,7 +411,7 @@ def test_refinement_with_imported_enum_literal(tmp_path: Path) -> None:
                  Data  : Opaque;
               end message;
         end Proto;
-        """
+        """,
     )
     p.parse_string(
         """\
@@ -422,7 +422,7 @@ def test_refinement_with_imported_enum_literal(tmp_path: Path) -> None:
            for Proto::Packet use (Data => X)
               if Protocol = Numbers::PROTO_X;
         end In_Proto;
-        """
+        """,
     )
     utils.assert_compilable_code(p.create_model(), Integration(), tmp_path)
 
@@ -789,8 +789,8 @@ def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Pa
                   Ada.Text_IO.Put_Line ("X" & Message);
                end Print;
 
-            end RFLX.RFLX_Debug;"""
-        )
+            end RFLX.RFLX_Debug;""",
+        ),
     )
 
     assert utils.assert_executable_code(model, integration, tmp_path, debug=debug) == expected
@@ -852,8 +852,8 @@ def test_session_indirect_use_of_enum_type(tmp_path: Path) -> None:
                end S;
 
             end A;
-            """
-        )
+            """,
+        ),
     )
     b = tmp_path / "b.rflx"
     b.write_text(
@@ -867,8 +867,8 @@ def test_session_indirect_use_of_enum_type(tmp_path: Path) -> None:
                   end message;
 
             end B;
-            """
-        )
+            """,
+        ),
     )
     c = tmp_path / "c.rflx"
     c.write_text(
@@ -879,8 +879,8 @@ def test_session_indirect_use_of_enum_type(tmp_path: Path) -> None:
                type E is (E_1, E_2) with Size => 8;
 
             end C;
-            """
-        )
+            """,
+        ),
     )
     utils.assert_compilable_code_specs([a], tmp_path)
 

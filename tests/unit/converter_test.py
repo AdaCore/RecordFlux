@@ -84,7 +84,7 @@ def test_convert_iana_invalid_no_registry_id(tmp_path: Path) -> None:
                 """\
                 <registry xmlns="http://www.iana.org/assignments">
                 </registry>
-                """
+                """,
             ),
             source=STDIN,
             always_valid=False,
@@ -306,5 +306,5 @@ def test_convert_iana(xml_str: str, rflx_str: str, tmp_path: Path) -> None:
     assert output_file.exists(), "No output file generated"
     assert output_file.is_file(), "Output is not a file"
     assert output_file.read_text(
-        encoding="utf-8"
+        encoding="utf-8",
     ) == "-- AUTOMATICALLY GENERATED. DO NOT EDIT.\n" + textwrap.dedent(rflx_str)

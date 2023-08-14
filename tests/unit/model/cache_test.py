@@ -41,7 +41,7 @@ def test_verified(tmp_path: Path) -> None:
                 expr.Number(0),
                 expr.Sub(expr.Pow(expr.Number(2), expr.Number(8)), expr.Number(1)),
                 expr.Number(8),
-            )
+            ),
         },
     )
     m2 = model.Message(
@@ -56,7 +56,7 @@ def test_verified(tmp_path: Path) -> None:
                 expr.Number(0),
                 expr.Sub(expr.Pow(expr.Number(2), expr.Number(8)), expr.Number(1)),
                 expr.Number(8),
-            )
+            ),
         },
     )
     m3 = model.Message(
@@ -71,7 +71,7 @@ def test_verified(tmp_path: Path) -> None:
                 expr.Number(0),
                 expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
                 expr.Number(16),
-            )
+            ),
         },
     )
     c = cache.Cache(tmp_path / "test.json")

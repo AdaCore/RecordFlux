@@ -91,12 +91,14 @@ def substitution(
             field = None
             aggregate = None
             if isinstance(expression.left, expr.Variable) and isinstance(
-                expression.right, expr.Aggregate
+                expression.right,
+                expr.Aggregate,
             ):
                 field = model.Field(expression.left.name)
                 aggregate = byte_aggregate(expression.right)
             elif isinstance(expression.left, expr.Aggregate) and isinstance(
-                expression.right, expr.Variable
+                expression.right,
+                expr.Variable,
             ):
                 field = model.Field(expression.right.name)
                 aggregate = byte_aggregate(expression.left)
@@ -115,7 +117,7 @@ def substitution(
                                                 expr.Variable(field.affixed_name),
                                             ),
                                             "First",
-                                        )
+                                        ),
                                     ],
                                 ),
                                 expr.Call(
@@ -127,7 +129,7 @@ def substitution(
                                                 expr.Variable(field.affixed_name),
                                             ),
                                             "Last",
-                                        )
+                                        ),
                                     ],
                                 ),
                             ),
@@ -156,7 +158,8 @@ def substitution(
                 other = expression.left
             if boolean_literal and other:
                 return expression.__class__(
-                    other, type_conversion(expr.Call("To_Base_Integer", [boolean_literal]))
+                    other,
+                    type_conversion(expr.Call("To_Base_Integer", [boolean_literal])),
                 )
 
         def field_value(field: model.Field) -> expr.Expr:
@@ -177,7 +180,8 @@ def substitution(
                 and isinstance(expression.right, expr.Number)
             ):
                 return expression.__class__(
-                    field_value(model.Field(expression.left.name)), expression.right
+                    field_value(model.Field(expression.left.name)),
+                    expression.right,
                 )
             if (
                 isinstance(expression.right, expr.Variable)
@@ -185,7 +189,8 @@ def substitution(
                 and isinstance(expression.left, expr.Number)
             ):
                 return expression.__class__(
-                    expression.left, field_value(model.Field(expression.right.name))
+                    expression.left,
+                    field_value(model.Field(expression.right.name)),
                 )
 
         return expression
@@ -210,21 +215,24 @@ def substitution_facts(
     def field_first(field: model.Field) -> expr.Expr:
         if public:
             return expr.Call(
-                "Field_First", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
+                "Field_First",
+                [expr.Variable("Ctx"), expr.Variable(field.affixed_name)],
             )
         return expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "First")
 
     def field_last(field: model.Field) -> expr.Expr:
         if public:
             return expr.Call(
-                "Field_Last", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
+                "Field_Last",
+                [expr.Variable("Ctx"), expr.Variable(field.affixed_name)],
             )
         return expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last")
 
     def field_size(field: model.Field) -> expr.Expr:
         if public:
             return expr.Call(
-                "Field_Size", [expr.Variable("Ctx"), expr.Variable(field.affixed_name)]
+                "Field_Size",
+                [expr.Variable("Ctx"), expr.Variable(field.affixed_name)],
             )
         return expr.Add(
             expr.Sub(
@@ -250,7 +258,8 @@ def substitution_facts(
         if isinstance(field_type, model.Enumeration):
             if public:
                 return expr.Call(
-                    "To_Base_Integer", [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])]
+                    "To_Base_Integer",
+                    [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])],
                 )
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
@@ -294,7 +303,7 @@ def substitution_facts(
         },
         **{
             expr.Literal(t.package * l): type_conversion(
-                expr.Call("To_Base_Integer", [expr.Variable(prefix * t.package * l)])
+                expr.Call("To_Base_Integer", [expr.Variable(prefix * t.package * l)]),
             )
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
@@ -306,7 +315,9 @@ def substitution_facts(
 
 
 def message_structure_invariant(
-    message: model.Message, prefix: str, embedded: bool = False
+    message: model.Message,
+    prefix: str,
+    embedded: bool = False,
 ) -> Expr:
     """
     Create the invariant that defines a valid message structure.
@@ -328,27 +339,28 @@ def message_structure_invariant(
             field_type.size
             if isinstance(field_type, model.Scalar)
             else link.size.substituted(
-                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_LENGTH)
+                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_LENGTH),
             ).simplified()
         )
         first = (
             prefixed("First")
             if link.source == model.INITIAL
             else link.first.substituted(
-                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_INDEX)
+                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_INDEX),
             )
             .substituted(
                 mapping={
                     expr.UNDEFINED: expr.Add(
                         expr.Selected(
                             expr.Indexed(
-                                prefixed("Cursors"), expr.Variable(link.source.affixed_name)
+                                prefixed("Cursors"),
+                                expr.Variable(link.source.affixed_name),
                             ),
                             "Last",
                         ),
                         expr.Number(1),
-                    )
-                }
+                    ),
+                },
             )
             .simplified()
         )
@@ -412,8 +424,8 @@ def message_structure_invariant(
                             first.ada_expr(),
                         ),
                     ),
-                )
-            ]
+                ),
+            ],
         )
 
     def field_property(fld: model.Field) -> Expr:
@@ -430,15 +442,17 @@ def message_structure_invariant(
                         [Indexed(prefixed("Cursors").ada_expr(), Variable(fld.affixed_name))],
                     ),
                     field_property(fld),
-                )
-            ]
+                ),
+            ],
         )
 
     return AndThen(*[map_invariant(f) for f in message.fields])
 
 
 def context_predicate(
-    message: model.Message, composite_fields: Sequence[model.Field], prefix: str
+    message: model.Message,
+    composite_fields: Sequence[model.Field],
+    prefix: str,
 ) -> Expr:
     def cursors_invariant() -> Expr:
         """
@@ -491,8 +505,8 @@ def context_predicate(
                                 ],
                             ),
                         ),
-                    )
-                ]
+                    ),
+                ],
             ),
         )
 
@@ -520,7 +534,7 @@ def context_predicate(
                                     Indexed(
                                         Variable("Cursors"),
                                         Variable(f.affixed_name),
-                                    )
+                                    ),
                                 ],
                             ),
                             Or(
@@ -534,7 +548,7 @@ def context_predicate(
                                                 expr.Indexed(
                                                     expr.Variable("Cursors"),
                                                     expr.Variable(l.source.affixed_name),
-                                                )
+                                                ),
                                             ],
                                         ),
                                         expr.Equal(
@@ -548,20 +562,20 @@ def context_predicate(
                                             expr.Variable(l.source.affixed_name),
                                         ),
                                         l.condition.substituted(
-                                            substitution(message, embedded=True, prefix=prefix)
+                                            substitution(message, embedded=True, prefix=prefix),
                                         ),
                                     )
                                     .simplified()
                                     .ada_expr()
                                     for l in message.incoming(f)
-                                ]
+                                ],
                             ),
-                        )
-                    ]
+                        ),
+                    ],
                 )
                 for f in message.fields
                 if f not in message.direct_successors(model.INITIAL)
-            ]
+            ],
         )
 
     def invalid_successors_invariant() -> Expr:
@@ -584,11 +598,11 @@ def context_predicate(
                                             Indexed(
                                                 Variable("Cursors"),
                                                 Variable(p.affixed_name),
-                                            )
+                                            ),
                                         ],
                                     )
                                     for p in message.direct_predecessors(f)
-                                ]
+                                ],
                             ),
                             Call(
                                 "Invalid",
@@ -596,15 +610,15 @@ def context_predicate(
                                     Indexed(
                                         Variable("Cursors"),
                                         Variable(f.affixed_name),
-                                    )
+                                    ),
                                 ],
                             ),
-                        )
-                    ]
+                        ),
+                    ],
                 )
                 for f in message.fields
                 if f not in message.direct_successors(model.INITIAL)
-            ]
+            ],
         )
 
     return AndThen(
@@ -616,8 +630,8 @@ def context_predicate(
                         Equal(First("Buffer"), Variable("Buffer_First")),
                         Equal(Last("Buffer"), Variable("Buffer_Last")),
                     ),
-                )
-            ]
+                ),
+            ],
         ),
         public_context_predicate(),
         LessEqual(Sub(Variable("First"), Number(1)), Variable("Verified_Last")),
@@ -672,7 +686,9 @@ def context_invariant(message: model.Message, loop_entry: bool = False) -> list[
 
 
 def valid_path_to_next_field_condition(
-    message: model.Message, field: model.Field, prefix: str
+    message: model.Message,
+    field: model.Field,
+    prefix: str,
 ) -> list[Expr]:
     return [
         If(
@@ -696,8 +712,8 @@ def valid_path_to_next_field_condition(
                         if l.target != model.FINAL
                         else TRUE,
                     ),
-                )
-            ]
+                ),
+            ],
         )
         for l in message.outgoing(field)
         if l.target != model.FINAL
@@ -705,7 +721,9 @@ def valid_path_to_next_field_condition(
 
 
 def context_cursor_unchanged(
-    message: model.Message, field: model.Field, predecessors: bool
+    message: model.Message,
+    field: model.Field,
+    predecessors: bool,
 ) -> list[Expr]:
     lower: model.Field
     upper: model.Field
@@ -745,18 +763,20 @@ def context_cursor_unchanged(
                             Call(
                                 "Context_Cursors",
                                 [Variable("Ctx")],
-                            )
+                            ),
                         ),
                         Variable("F"),
                     ],
                 ),
             ),
-        )
+        ),
     ]
 
 
 def sufficient_space_for_field_condition(
-    message_id: ID, field_name: Name, size: Optional[Expr] = None
+    message_id: ID,
+    field_name: Name,
+    size: Optional[Expr] = None,
 ) -> Expr:
     if size is None:
         size = Call(message_id * "Field_Size", [Variable("Ctx"), field_name])
@@ -764,7 +784,8 @@ def sufficient_space_for_field_condition(
 
 
 def initialize_field_statements(
-    field: model.Field, reset_written_last: bool = False
+    field: model.Field,
+    reset_written_last: bool = False,
 ) -> list[Statement]:
     return [
         CallStatement(
@@ -924,7 +945,8 @@ def contains_function_name(refinement_package: ID, pdu: ID, sdu: ID, field: ID) 
 
 
 def has_value_dependent_condition(
-    message: model.Message, field: Optional[model.Field] = None
+    message: model.Message,
+    field: Optional[model.Field] = None,
 ) -> bool:
     links = message.outgoing(field) if field else message.structure
     fields = [field] if field else message.fields
@@ -936,13 +958,14 @@ def has_value_dependent_condition(
         and not r.findall(lambda x: isinstance(x, expr.Aggregate))
         and r.findall(
             lambda x: isinstance(x, expr.Variable)
-            and any(x.identifier == f.identifier for f in fields)
+            and any(x.identifier == f.identifier for f in fields),
         )
     )
 
 
 def has_aggregate_dependent_condition(
-    message: model.Message, field: Optional[model.Field] = None
+    message: model.Message,
+    field: Optional[model.Field] = None,
 ) -> bool:
     links = message.outgoing(field) if field else message.structure
     fields = [field] if field else message.fields
@@ -960,7 +983,8 @@ def has_aggregate_dependent_condition(
 
 
 def has_size_dependent_condition(
-    message: model.Message, field: Optional[model.Field] = None
+    message: model.Message,
+    field: Optional[model.Field] = None,
 ) -> bool:
     field_sizes = {expr.Size(f.name) for f in message.fields}
     links = message.outgoing(field) if field else message.structure
@@ -983,7 +1007,7 @@ def create_sequence_instantiation(
     sequence_package: GenericPackageInstantiation
     if isinstance(element_type, model.Message):
         element_type_identifier = ID(
-            element_type.identifier.flat if flat else prefix * element_type.identifier
+            element_type.identifier.flat if flat else prefix * element_type.identifier,
         )
         sequence_context = [
             WithClause(prefix * const.MESSAGE_SEQUENCE_PACKAGE),
@@ -1032,7 +1056,9 @@ def create_sequence_instantiation(
 
 
 def unchanged_cursor_before_or_invalid(
-    limit: Expr, loop_entry: bool, or_invalid: bool = True
+    limit: Expr,
+    loop_entry: bool,
+    or_invalid: bool = True,
 ) -> Expr:
     return ForAllIn(
         "F",
@@ -1053,7 +1079,7 @@ def unchanged_cursor_before_or_invalid(
                             Variable("F"),
                         ),
                     ),
-                )
+                ),
             ],
             *(
                 [
@@ -1063,7 +1089,7 @@ def unchanged_cursor_before_or_invalid(
                             Variable("Ctx"),
                             Variable("F"),
                         ],
-                    )
+                    ),
                 ]
                 if or_invalid
                 else []
@@ -1076,7 +1102,7 @@ def conditional_field_size(field: model.Field, message: model.Message, prefix: s
     def substituted(expression: expr.Expr) -> Expr:
         return (
             expression.substituted(
-                substitution(message, prefix, target_type=const.TYPES_BIT_LENGTH)
+                substitution(message, prefix, target_type=const.TYPES_BIT_LENGTH),
             )
             .simplified()
             .ada_expr()

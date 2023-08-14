@@ -88,7 +88,10 @@ class Scalar(Type):
 
     @abstractmethod
     def constraints(
-        self, name: str, proof: bool = False, same_package: bool = True
+        self,
+        name: str,
+        proof: bool = False,
+        same_package: bool = True,
     ) -> abc.Sequence[expr.Expr]:
         raise NotImplementedError
 
@@ -116,7 +119,7 @@ class Integer(Scalar):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
 
@@ -136,7 +139,7 @@ class Integer(Scalar):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
 
@@ -148,7 +151,7 @@ class Integer(Scalar):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
 
@@ -166,7 +169,7 @@ class Integer(Scalar):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
         if first_num > last_num:
@@ -177,7 +180,7 @@ class Integer(Scalar):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
 
@@ -189,7 +192,7 @@ class Integer(Scalar):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
 
@@ -204,7 +207,7 @@ class Integer(Scalar):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
 
@@ -227,7 +230,9 @@ class Integer(Scalar):
     @property
     def type_(self) -> rty.Type:
         return rty.Integer(
-            self.full_name, rty.Bounds(self.first.value, self.last.value), location=self.location
+            self.full_name,
+            rty.Bounds(self.first.value, self.last.value),
+            location=self.location,
         )
 
     @property
@@ -251,14 +256,21 @@ class Integer(Scalar):
         return self._last_expr
 
     def constraints(
-        self, name: str, proof: bool = False, same_package: bool = True  # noqa: ARG002
+        self,
+        name: str,
+        proof: bool = False,  # noqa: ARG002
+        same_package: bool = True,  # noqa: ARG002
     ) -> abc.Sequence[expr.Expr]:
         return [
             expr.GreaterEqual(
-                expr.Variable(name, type_=self.type_), self.first, location=self.location
+                expr.Variable(name, type_=self.type_),
+                self.first,
+                location=self.location,
             ),
             expr.LessEqual(
-                expr.Variable(name, type_=self.type_), self.last, location=self.location
+                expr.Variable(name, type_=self.type_),
+                self.last,
+                location=self.location,
             ),
             expr.Equal(expr.Size(name), self.size, location=self.location),
         ]
@@ -305,7 +317,7 @@ class Enumeration(Scalar):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
-                        )
+                        ),
                     ],
                 )
                 continue
@@ -333,7 +345,7 @@ class Enumeration(Scalar):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
-                        )
+                        ),
                     ],
                 )
             if max_literal_value.bit_length() > int(size_num):
@@ -344,7 +356,7 @@ class Enumeration(Scalar):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -359,7 +371,7 @@ class Enumeration(Scalar):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
         for i1, v1 in enumerate(self.literals.values()):
@@ -374,7 +386,7 @@ class Enumeration(Scalar):
                                 v2.location,
                             ),
                             ("previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location),
-                        ]
+                        ],
                     )
 
         if always_valid and len(self.literals) == 2 ** int(size_num):
@@ -385,7 +397,7 @@ class Enumeration(Scalar):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
 
@@ -426,7 +438,10 @@ class Enumeration(Scalar):
         return expr.Number(len(self.literals))
 
     def constraints(
-        self, name: str, proof: bool = False, same_package: bool = True
+        self,
+        name: str,
+        proof: bool = False,
+        same_package: bool = True,
     ) -> abc.Sequence[expr.Expr]:
         literals = dict(self.literals)
 
@@ -450,18 +465,20 @@ class Enumeration(Scalar):
             expr.Or(
                 *[
                     expr.Equal(
-                        expr.Variable(name, type_=self.type_), expr.Literal(l), self.location
+                        expr.Variable(name, type_=self.type_),
+                        expr.Literal(l),
+                        self.location,
                     )
                     for l in literals
                 ],
                 location=self.location,
-            )
+            ),
         ]
         result.extend(
             [
                 expr.Equal(expr.Literal(l, type_=self.type_), v, self.location)
                 for l, v in literals.items()
-            ]
+            ],
         )
         result.append(expr.Equal(expr.Size(name), self.size, self.location))
         return result
@@ -637,7 +654,11 @@ class UncheckedEnumeration(UncheckedType):
 
     def checked(self, _declarations: ty.Sequence[TopLevelDeclaration]) -> Enumeration:
         return Enumeration(
-            self.identifier, self.literals, self.size, self.always_valid, self.location
+            self.identifier,
+            self.literals,
+            self.size,
+            self.always_valid,
+            self.location,
         )
 
 
@@ -676,7 +697,8 @@ class UncheckedOpaque(UncheckedType):
 
 
 UNCHECKED_OPAQUE = UncheckedOpaque(
-    const.INTERNAL_PACKAGE * "Opaque", Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0))
+    const.INTERNAL_PACKAGE * "Opaque",
+    Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
 )
 OPAQUE = UNCHECKED_OPAQUE.checked([])
 

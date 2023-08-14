@@ -190,8 +190,8 @@ class BaseError(Exception, Base):
                     subsystem,
                     severity,
                     location,
-                )
-            ]
+                ),
+            ],
         )
         raise self
 

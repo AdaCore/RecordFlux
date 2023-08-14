@@ -20,7 +20,8 @@ def test_base_compare_equal(left: Base, right: Base) -> None:
 
 
 @pytest.mark.parametrize(
-    ("left", "right"), [(C1(1), C1(2)), (C2(1, 2), C2(2, 1)), (C1(1), C2(1, 1))]
+    ("left", "right"),
+    [(C1(1), C1(2)), (C2(1, 2), C2(2, 1)), (C1(1), C2(1, 1))],
 )
 def test_base_compare_inequal(left: Base, right: Base) -> None:
     assert left != right

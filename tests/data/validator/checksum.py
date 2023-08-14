@@ -45,7 +45,8 @@ def internet_checksum(checksum_bytes: bytes) -> int:
     intermediary_result = message_in_sixteen_bit_chunks[0]
     for i in range(1, len(message_in_sixteen_bit_chunks)):
         intermediary_result = add_ones_complement(
-            intermediary_result, message_in_sixteen_bit_chunks[i]
+            intermediary_result,
+            message_in_sixteen_bit_chunks[i],
         )
 
     return intermediary_result ^ 0xFFFF

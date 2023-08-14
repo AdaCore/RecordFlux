@@ -46,15 +46,17 @@ def test_bool_expr_str() -> None:
     assert_equal(
         str(
             ada.And(
-                ada.Variable("A"), ada.Or(ada.Variable("B"), ada.Variable("C")), ada.Variable("D")
-            )
+                ada.Variable("A"),
+                ada.Or(ada.Variable("B"), ada.Variable("C")),
+                ada.Variable("D"),
+            ),
         ),
         textwrap.dedent(
             """\
             A
             and (B
                  or C)
-            and D"""
+            and D""",
         ),
     )
     assert_equal(
@@ -63,14 +65,14 @@ def test_bool_expr_str() -> None:
                 ada.Variable("A"),
                 ada.OrElse(ada.Variable("B"), ada.Variable("C")),
                 ada.Variable("D"),
-            )
+            ),
         ),
         textwrap.dedent(
             """\
             A
             and then (B
                       or else C)
-            and then D"""
+            and then D""",
         ),
     )
 
@@ -99,7 +101,8 @@ def test_or_else_str() -> None:
 
 
 @pytest.mark.parametrize(
-    "expression", [ada.Add, ada.Mul, ada.Sub, ada.Div, ada.Pow, ada.Mod, ada.Rem]
+    "expression",
+    [ada.Add, ada.Mul, ada.Sub, ada.Div, ada.Pow, ada.Mod, ada.Rem],
 )
 def test_math_expr_ada_expr(expression: Callable[[ada.Expr, ada.Expr], ada.Expr]) -> None:
     result = expression(ada.Variable("X"), ada.Variable("Y")).rflx_expr()
@@ -120,7 +123,8 @@ def test_attribute() -> None:
 
 
 @pytest.mark.parametrize(
-    "relation", [ada.Less, ada.LessEqual, ada.Equal, ada.GreaterEqual, ada.Greater, ada.NotEqual]
+    "relation",
+    [ada.Less, ada.LessEqual, ada.Equal, ada.GreaterEqual, ada.Greater, ada.NotEqual],
 )
 def test_math_relation_rflx_expr(relation: Callable[[ada.Expr, ada.Expr], ada.Expr]) -> None:
     result = relation(ada.Variable("X"), ada.Variable("Y")).rflx_expr()
@@ -166,7 +170,8 @@ def test_selected_str() -> None:
 
 def test_selected_rflx_expr() -> None:
     assert ada.Selected(ada.Variable("X"), "Y").rflx_expr() == expr.Selected(
-        expr.Variable("X"), "Y"
+        expr.Variable("X"),
+        "Y",
     )
 
 
@@ -177,19 +182,23 @@ def test_indexed_str() -> None:
 
 def test_indexed_rflx_expr() -> None:
     assert ada.Indexed(ada.Variable("X"), ada.Variable("Y")).rflx_expr() == expr.Indexed(
-        expr.Variable("X"), expr.Variable("Y")
+        expr.Variable("X"),
+        expr.Variable("Y"),
     )
 
 
 def test_call_rflx_expr() -> None:
     assert ada.Call("X", [ada.Variable("Y"), ada.Variable("Z")]).rflx_expr() == expr.Call(
-        "X", [expr.Variable("Y"), expr.Variable("Z")]
+        "X",
+        [expr.Variable("Y"), expr.Variable("Z")],
     )
 
 
 def test_slice_rflx_expr() -> None:
     assert ada.Slice(
-        ada.Variable("X"), ada.Variable("Y"), ada.Variable("Z")
+        ada.Variable("X"),
+        ada.Variable("Y"),
+        ada.Variable("Z"),
     ).rflx_expr() == expr.Slice(expr.Variable("X"), expr.Variable("Y"), expr.Variable("Z"))
 
 
@@ -199,7 +208,8 @@ def test_aggregate_str() -> None:
 
 def test_aggregate_rflx_expr() -> None:
     assert ada.Aggregate(ada.Number(1), ada.Number(2)).rflx_expr() == expr.Aggregate(
-        expr.Number(1), expr.Number(2)
+        expr.Number(1),
+        expr.Number(2),
     )
 
 
@@ -228,7 +238,7 @@ def test_if_str() -> None:
                     (ada.Variable("Y"), ada.Number(2)),
                 ],
                 ada.Number(3),
-            )
+            ),
         ),
         "(if X then 1 elsif Y then 2 else 3)",
     )
@@ -246,7 +256,7 @@ def test_if_str() -> None:
                     ),
                 ],
                 ada.Variable("Some_Complex_Expression"),
-            )
+            ),
         ),
         textwrap.dedent(
             """\
@@ -259,14 +269,15 @@ def test_if_str() -> None:
              then
                 Another_Complex_Expression
              else
-                Some_Complex_Expression)"""
+                Some_Complex_Expression)""",
         ),
     )
 
 
 def test_if_expr_rflx_expr() -> None:
     assert ada.IfExpr(
-        [(ada.Variable("X"), ada.Variable("Y"))], ada.Variable("Z")
+        [(ada.Variable("X"), ada.Variable("Y"))],
+        ada.Variable("Z"),
     ).rflx_expr() == expr.IfExpr([(expr.Variable("X"), expr.Variable("Y"))], expr.Variable("Z"))
 
 
@@ -280,7 +291,7 @@ def test_case_str() -> None:
                     (ada.Variable("Z"), ada.Number(1)),
                     (ada.Variable("others"), ada.Number(2)),
                 ],
-            )
+            ),
         ),
         textwrap.dedent(
             """\
@@ -288,14 +299,15 @@ def test_case_str() -> None:
                 when Y | Z =>
                    1,
                 when others =>
-                   2)"""
+                   2)""",
         ),
     )
 
 
 def test_value_range_rflx_expr() -> None:
     assert ada.ValueRange(ada.Variable("X"), ada.Variable("Y")).rflx_expr() == expr.ValueRange(
-        expr.Variable("X"), expr.Variable("Y")
+        expr.Variable("X"),
+        expr.Variable("Y"),
     )
 
 
@@ -314,7 +326,7 @@ def test_quantified_expression_str() -> None:
 
 @pytest.mark.parametrize("expression", [ada.ForAllOf, ada.ForAllIn, ada.ForSomeIn])
 def test_quantified_expression_rflx_expr(
-    expression: Callable[[str, ada.Expr, ada.Expr], ada.Expr]
+    expression: Callable[[str, ada.Expr, ada.Expr], ada.Expr],
 ) -> None:
     result = expression("X", ada.Variable("Y"), ada.Variable("Z")).rflx_expr()
     expected = getattr(expr, expression.__name__)("X", expr.Variable("Y"), expr.Variable("Z"))
@@ -376,7 +388,7 @@ def test_named_aggregate_str() -> None:
             ada.NamedAggregate(
                 ("X", ada.Number(1)),
                 (ada.ValueRange(ada.Number(2), ada.Number(3)), ada.Variable("Y")),
-            )
+            ),
         )
         == "(X => 1, 2 .. 3 => Y)"
     )
@@ -418,7 +430,7 @@ def test_expr_str() -> None:
                     (ada.Variable("Y"), ada.Number(2)),
                 ],
                 ada.Div(ada.Mul(ada.Variable("A"), ada.Number(3)), ada.Number(8)),
-            )
+            ),
         ),
         "(if (X and Y) or Z then 1 elsif Y then 2 else (A * 3) / 8)",
     )
@@ -436,7 +448,7 @@ def test_expr_str() -> None:
                     (ada.Variable("Variable_Y"), ada.Number(2)),
                 ],
                 ada.Div(ada.Mul(ada.Variable("Variable_A"), ada.Number(3)), ada.Number(8)),
-            )
+            ),
         ),
         textwrap.dedent(
             """\
@@ -451,7 +463,7 @@ def test_expr_str() -> None:
              then
                 2
              else
-                (Variable_A * 3) / 8)"""
+                (Variable_A * 3) / 8)""",
         ),
     )
     assert_equal(
@@ -479,7 +491,7 @@ def test_expr_str() -> None:
                 ada.Variable("A"),
                 ada.Or(ada.Variable("B"), ada.Variable("C")),
                 ada.Variable("D"),
-            )
+            ),
         ),
         textwrap.dedent(
             """\
@@ -498,7 +510,7 @@ def test_expr_str() -> None:
             and A
             and (B
                  or C)
-            and D"""
+            and D""",
         ),
     )
     assert_equal(
@@ -525,7 +537,7 @@ def test_expr_str() -> None:
                         ada.Number(8),
                     ),
                 ),
-            )
+            ),
         ),
         textwrap.dedent(
             """\
@@ -541,7 +553,7 @@ def test_expr_str() -> None:
                  then
                     2
                  else
-                    (Variable_A * 3) / 8))"""
+                    (Variable_A * 3) / 8))""",
         ),
     )
     assert str(ada.Equal(ada.String("S"), ada.Variable("X"))) == '"S" = X'
@@ -560,7 +572,7 @@ def test_call_str() -> None:
                 "A",
                 [ada.Variable("B"), ada.Variable("C")],
                 {ID("D"): ada.Number(1), ID("E"): ada.Number(2)},
-            )
+            ),
         )
         == "A (B, C, D => 1, E => 2)"
     )
@@ -574,7 +586,8 @@ def test_conversion_str() -> None:
 
 def test_conversion_rflx_expr() -> None:
     assert ada.Conversion("X", ada.Variable("Y")).rflx_expr() == expr.Conversion(
-        "X", expr.Variable("Y")
+        "X",
+        expr.Variable("Y"),
     )
 
 
@@ -645,8 +658,10 @@ def test_enumeration_type() -> None:
     assert (
         str(
             ada.EnumerationType(
-                "A", {ID("B"): ada.Number(1), ID("C"): ada.Number(2)}, ada.Number(8)
-            )
+                "A",
+                {ID("B"): ada.Number(1), ID("C"): ada.Number(2)},
+                ada.Number(8),
+            ),
         )
         == "type A is (B, C) with\n  Size =>\n    8;\nfor A use (B => 1, C => 2);"
     )
@@ -740,7 +755,7 @@ def test_call_statement_str() -> None:
                 "A",
                 [ada.Variable("B"), ada.Variable("C")],
                 {ID("D"): ada.Number(1), ID("E"): ada.Number(2)},
-            )
+            ),
         )
         == "A (B, C, D => 1, E => 2);"
     )
@@ -756,13 +771,13 @@ def test_while_str() -> None:
             ada.While(
                 ada.Variable("X"),
                 [ada.NullStatement()],
-            )
+            ),
         ),
         textwrap.dedent(
             """\
             while X loop
                null;
-            end loop;"""
+            end loop;""",
         ),
     )
     assert_equal(
@@ -773,7 +788,7 @@ def test_while_str() -> None:
                     ada.Variable("Y"),
                 ),
                 [ada.NullStatement()],
-            )
+            ),
         ),
         textwrap.dedent(
             """\
@@ -782,7 +797,7 @@ def test_while_str() -> None:
                and Y
             loop
                null;
-            end loop;"""
+            end loop;""",
         ),
     )
 
@@ -793,7 +808,8 @@ def test_qualified_expr() -> None:
 
 def test_qualified_expr_rflx_expr() -> None:
     assert ada.QualifiedExpr("X", ada.Variable("Y")).rflx_expr() == expr.QualifiedExpr(
-        "X", expr.Variable("Y")
+        "X",
+        expr.Variable("Y"),
     )
 
 
@@ -816,13 +832,13 @@ def test_for_loop() -> None:
         """\
         for X of Y loop
            null;
-        end loop;"""
+        end loop;""",
     )
 
 
 def test_declarative_items() -> None:
     assert str(
-        ada.PackageDeclaration("P", declarations=[ada.ObjectDeclaration("X", "Boolean")])
+        ada.PackageDeclaration("P", declarations=[ada.ObjectDeclaration("X", "Boolean")]),
     ) == textwrap.dedent(
         """\
         package P
@@ -831,5 +847,5 @@ def test_declarative_items() -> None:
            X : Boolean;
 
         end P;
-        """
+        """,
     )

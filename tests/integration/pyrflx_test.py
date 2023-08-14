@@ -203,7 +203,7 @@ package Test is
                if A = Foo::E1;
       end message;
 
-end Test;"""
+end Test;""",
     )
 
     (tmp_path / "foo.rflx").write_text(
@@ -212,7 +212,7 @@ package Foo is
 
    type T is (E1 => 11, E2 => 12) with Size => 8;
 
-end Foo;"""
+end Foo;""",
     )
 
     pyrflx_ = PyRFLX.from_specs([str(tmp_path / "test.rflx")])
@@ -279,7 +279,8 @@ def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
 
 
 def test_no_verification_sequence_nested_messages(
-    sequence_message_package: Package, message_sequence_value: MessageValue
+    sequence_message_package: Package,
+    message_sequence_value: MessageValue,
 ) -> None:
     sequence_message_one = sequence_message_package.new_message("Sequence_Element")
     sequence_message_one.set("Byte", 5)
@@ -330,7 +331,8 @@ def icmp_checksum_function(message: bytes, **kwargs: object) -> int:
 
 
 def test_no_verification_icmp_checksum(
-    icmp_checksum_message_value: MessageValue, icmp_message: Message
+    icmp_checksum_message_value: MessageValue,
+    icmp_message: Message,
 ) -> None:
     test_data = (
         b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
@@ -351,7 +353,7 @@ def test_no_verification_icmp_checksum(
                     ValueRange(First("Tag"), Sub(First("Checksum"), Number(1))),
                     Size("Checksum"),
                     ValueRange(Add(Last("Checksum"), Number(1)), Last("Message")),
-                ]
+                ],
             },
         ),
         skip_verification=True,
@@ -376,7 +378,8 @@ def test_no_verification_icmp_checksum(
 
 
 def test_sequence_message_serialization(
-    sequence_message_package: Package, message_sequence_value: MessageValue
+    sequence_message_package: Package,
+    message_sequence_value: MessageValue,
 ) -> None:
     sequence_message_one = sequence_message_package.new_message("Sequence_Element")
     sequence_message_one.set("Byte", 5)
@@ -430,9 +433,9 @@ def test_tlv_message_with_not_operator() -> None:
                             Or(
                                 Not(Not(Equal(Variable("Tag"), Variable("Msg_Data")))),
                                 Not(Equal(Variable("Tag"), Variable("Msg_Error"))),
-                            )
-                        )
-                    )
+                            ),
+                        ),
+                    ),
                 ),
             ),
             Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
@@ -470,7 +473,7 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
                         Or(
                             Not(Not(Equal(Variable("Tag"), Variable("Msg_Data")))),
                             Not(Equal(Variable("Tag"), Variable("Msg_Error"))),
-                        )
+                        ),
                     ),
                 ),
             ),
@@ -495,7 +498,7 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
                 "after `16` iterations, best effort: "
                 "`not (not (not (not (not (not (not (not (not (not (not (not (not "
                 "(not (not (not (not (Tag = TLV::Msg_Data\n"
-                "                 or Tag /= TLV::Msg_Error)))))))))))))))))`"
+                "                 or Tag /= TLV::Msg_Error)))))))))))))))))`",
             )
             + "$"
         ),

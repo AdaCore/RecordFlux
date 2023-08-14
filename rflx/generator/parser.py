@@ -125,7 +125,7 @@ class ParserGenerator:
                                             Mod(Variable("Last"), Size(const.TYPES_BYTE)),
                                         ),
                                         Size(const.TYPES_BYTE),
-                                    )
+                                    ),
                                 ],
                             ),
                             constant=True,
@@ -161,11 +161,11 @@ class ParserGenerator:
                                                 *[
                                                     Variable(f.affixed_name)
                                                     for f in big_endian_fields
-                                                ]
+                                                ],
                                             ),
                                         ),
                                         Variable(const.TYPES_HIGH_ORDER_FIRST),
-                                    )
+                                    ),
                                 ],
                                 Variable(const.TYPES_LOW_ORDER_FIRST),
                             )
@@ -216,13 +216,13 @@ class ParserGenerator:
                                                 * message.identifier
                                                 * "Composite_Field",
                                                 [Variable("Fld")],
-                                            )
-                                        )
+                                            ),
+                                        ),
                                     ]
                                     if composite_fields
                                     else []
                                 ),
-                            )
+                            ),
                         ),
                     ],
                 ),
@@ -236,7 +236,8 @@ class ParserGenerator:
         composite_fields: Sequence[Field],
     ) -> UnitPart:
         specification = ProcedureSpecification(
-            "Verify", [InOutParameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
+            "Verify",
+            [InOutParameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
         valid_field_condition = AndThen(
@@ -262,7 +263,7 @@ class ParserGenerator:
                                     const.TYPES_TO_INDEX,
                                     [Call("Field_Last", [Variable("Ctx"), Variable("Fld")])],
                                 ),
-                            )
+                            ),
                         ]
                         if common.has_aggregate_dependent_condition(message)
                         else []
@@ -300,22 +301,23 @@ class ParserGenerator:
                                             *[
                                                 Equal(Variable("Fld"), Variable(f.affixed_name))
                                                 for f in message.direct_predecessors(FINAL)
-                                            ]
+                                            ],
                                         ),
                                         Equal(
                                             Mod(
                                                 Call(
-                                                    "Field_Last", [Variable("Ctx"), Variable("Fld")]
+                                                    "Field_Last",
+                                                    [Variable("Ctx"), Variable("Fld")],
                                                 ),
                                                 Size(const.TYPES_BYTE),
                                             ),
                                             Number(0),
                                         ),
-                                    )
-                                ]
-                            )
+                                    ),
+                                ],
+                            ),
                         ],
-                    )
+                    ),
                 ]
                 if len(message.fields) > 1
                 else []
@@ -329,7 +331,7 @@ class ParserGenerator:
                     LessEqual(
                         Call("Field_Last", [Variable("Ctx"), Variable("Fld")]),
                         Variable("Ctx.Verified_Last"),
-                    )
+                    ),
                 ],
             ),
             IfStatement(
@@ -337,7 +339,7 @@ class ParserGenerator:
                     (
                         Call("Composite_Field", [Variable("Fld")]),
                         [set_context_cursor_composite_field("Fld")],
-                    )
+                    ),
                 ],
                 [set_context_cursor_scalar()],
             )
@@ -362,7 +364,7 @@ class ParserGenerator:
                             ("State", Variable("S_Invalid")),
                             ("Predecessor", Variable("Fld")),
                         ),
-                    )
+                    ),
                 ]
                 if len(message.fields) > 1
                 else []
@@ -378,16 +380,16 @@ class ParserGenerator:
                             Call(
                                 self.prefix * message.identifier * "Has_Buffer",
                                 [Variable("Ctx")],
-                            )
+                            ),
                         ),
                         Postcondition(
                             And(
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 *common.context_invariant(message),
-                            )
+                            ),
                         ),
                     ],
-                )
+                ),
             ],
             [
                 SubprogramBody(
@@ -403,7 +405,8 @@ class ParserGenerator:
                                             [Indexed(Variable("Ctx.Cursors"), Variable("Fld"))],
                                         ),
                                         Call(
-                                            "Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]
+                                            "Valid_Predecessor",
+                                            [Variable("Ctx"), Variable("Fld")],
                                         ),
                                         Call("Path_Condition", [Variable("Ctx"), Variable("Fld")]),
                                     ),
@@ -428,7 +431,7 @@ class ParserGenerator:
                                                                             ],
                                                                         ),
                                                                         Number(0),
-                                                                    )
+                                                                    ),
                                                                 ],
                                                                 Call(
                                                                     "Get",
@@ -454,7 +457,7 @@ class ParserGenerator:
                                                                 (
                                                                     valid_field_condition,
                                                                     set_cursors_statements,
-                                                                )
+                                                                ),
                                                             ],
                                                             [
                                                                 Assignment(
@@ -474,16 +477,17 @@ class ParserGenerator:
                                                                             ),
                                                                         ),
                                                                     ),
-                                                                )
+                                                                ),
                                                             ],
                                                         ),
                                                     ],
-                                                )
+                                                ),
                                             ],
                                             [
                                                 Assignment(
                                                     Indexed(
-                                                        Variable("Ctx.Cursors"), Variable("Fld")
+                                                        Variable("Ctx.Cursors"),
+                                                        Variable("Fld"),
                                                     ),
                                                     NamedAggregate(
                                                         ("State", Variable("S_Incomplete")),
@@ -492,21 +496,22 @@ class ParserGenerator:
                                                             Variable(FINAL.affixed_name),
                                                         ),
                                                     ),
-                                                )
+                                                ),
                                             ],
-                                        )
+                                        ),
                                     ],
-                                )
+                                ),
                             ],
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         )
 
     def create_verify_message_procedure(self, message: Message) -> UnitPart:
         specification = ProcedureSpecification(
-            "Verify_Message", [InOutParameter(["Ctx"], "Context")]
+            "Verify_Message",
+            [InOutParameter(["Ctx"], "Context")],
         )
 
         loop_invariant = And(
@@ -523,16 +528,16 @@ class ParserGenerator:
                             Call(
                                 self.prefix * message.identifier * "Has_Buffer",
                                 [Variable("Ctx")],
-                            )
+                            ),
                         ),
                         Postcondition(
                             And(
                                 Call("Has_Buffer", [Variable("Ctx")]),
                                 *common.context_invariant(message),
-                            )
+                            ),
                         ),
                     ],
-                )
+                ),
             ],
             [
                 SubprogramBody(
@@ -546,16 +551,18 @@ class ParserGenerator:
                                 PragmaStatement("Loop_Invariant", [loop_invariant]),
                                 CallStatement("Verify", [Variable("Ctx"), Variable("F")]),
                             ],
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         )
 
     @staticmethod
     def create_present_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Present", "Boolean", [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
+            "Present",
+            "Boolean",
+            [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
         return UnitPart(
@@ -573,7 +580,7 @@ class ParserGenerator:
                             ),
                         ),
                     ),
-                )
+                ),
             ],
         )
 
@@ -594,21 +601,24 @@ class ParserGenerator:
                         *[
                             Equal(
                                 Selected(
-                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "State"
+                                    Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
+                                    "State",
                                 ),
                                 Variable(s),
                             )
                             for s in ("S_Valid", "S_Well_Formed")
-                        ]
+                        ],
                     ),
-                )
+                ),
             ],
         )
 
     @staticmethod
     def create_valid_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Valid", "Boolean", [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
+            "Valid",
+            "Boolean",
+            [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
         return UnitPart(
@@ -628,12 +638,12 @@ class ParserGenerator:
                                             ),
                                             Call("Present", [Variable("Ctx"), Variable("Fld")]),
                                         ),
-                                    )
-                                ]
-                            )
+                                    ),
+                                ],
+                            ),
                         ),
                     ],
-                )
+                ),
             ],
             private=[
                 ExpressionFunctionDeclaration(
@@ -651,14 +661,16 @@ class ParserGenerator:
                             ),
                         ),
                     ),
-                )
+                ),
             ],
         )
 
     @staticmethod
     def create_incomplete_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Incomplete", "Boolean", [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
+            "Incomplete",
+            "Boolean",
+            [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
         return UnitPart(
@@ -670,14 +682,16 @@ class ParserGenerator:
                         Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "State"),
                         Variable("S_Incomplete"),
                     ),
-                )
+                ),
             ],
         )
 
     @staticmethod
     def create_invalid_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Invalid", "Boolean", [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")]
+            "Invalid",
+            "Boolean",
+            [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
         )
 
         return UnitPart(
@@ -695,13 +709,15 @@ class ParserGenerator:
                             Variable("S_Incomplete"),
                         ),
                     ),
-                )
+                ),
             ],
         )
 
     def create_well_formed_message_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification(
-            "Well_Formed_Message", "Boolean", [Parameter(["Ctx"], "Context")]
+            "Well_Formed_Message",
+            "Boolean",
+            [Parameter(["Ctx"], "Context")],
         )
 
         return UnitPart(
@@ -713,22 +729,24 @@ class ParserGenerator:
                             Call(
                                 self.prefix * message.identifier * "Has_Buffer",
                                 [Variable("Ctx")],
-                            )
-                        )
+                            ),
+                        ),
                     ],
-                )
+                ),
             ],
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     self.valid_message_condition(message, well_formed=True),
-                )
+                ),
             ],
         )
 
     def create_valid_message_function(self, message: Message) -> UnitPart:
         specification = FunctionSpecification(
-            "Valid_Message", "Boolean", [Parameter(["Ctx"], "Context")]
+            "Valid_Message",
+            "Boolean",
+            [Parameter(["Ctx"], "Context")],
         )
 
         return UnitPart(
@@ -740,23 +758,25 @@ class ParserGenerator:
                             Call(
                                 self.prefix * message.identifier * "Has_Buffer",
                                 [Variable("Ctx")],
-                            )
-                        )
+                            ),
+                        ),
                     ],
-                )
+                ),
             ],
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     self.valid_message_condition(message),
-                )
+                ),
             ],
         )
 
     @staticmethod
     def create_incomplete_message_function() -> UnitPart:
         specification = FunctionSpecification(
-            "Incomplete_Message", "Boolean", [Parameter(["Ctx"], "Context")]
+            "Incomplete_Message",
+            "Boolean",
+            [Parameter(["Ctx"], "Context")],
         )
 
         return UnitPart(
@@ -783,12 +803,14 @@ class ParserGenerator:
                             [Variable("Ctx"), Variable("F")],
                         ),
                     ),
-                )
+                ),
             ],
         )
 
     def create_scalar_getter_functions(
-        self, message: Message, scalar_fields: Mapping[Field, Scalar]
+        self,
+        message: Message,
+        scalar_fields: Mapping[Field, Scalar],
     ) -> UnitPart:
         def specification(field: Field, field_type: Type) -> FunctionSpecification:
             if field_type.package == BUILTINS_PACKAGE:
@@ -797,7 +819,9 @@ class ParserGenerator:
                 type_identifier = self.prefix * field_type.identifier
 
             return FunctionSpecification(
-                f"Get_{field.name}", type_identifier, [Parameter(["Ctx"], "Context")]
+                f"Get_{field.name}",
+                type_identifier,
+                [Parameter(["Ctx"], "Context")],
             )
 
         def result(field: Field) -> Expr:
@@ -822,7 +846,7 @@ class ParserGenerator:
                                         Variable(self.prefix * message.identifier * f.affixed_name),
                                     ],
                                 ),
-                            )
+                            ),
                         ],
                     )
                     for f, t in scalar_fields.items()
@@ -836,7 +860,9 @@ class ParserGenerator:
         )
 
     def create_opaque_getter_functions(
-        self, message: Message, opaque_fields: Sequence[Field]
+        self,
+        message: Message,
+        opaque_fields: Sequence[Field],
     ) -> UnitPart:
         def name(field: Field) -> str:
             return f"Get_{field.name}"
@@ -874,7 +900,7 @@ class ParserGenerator:
                                         Variable(self.prefix * message.identifier * f.affixed_name),
                                     ],
                                 ),
-                            )
+                            ),
                         ),
                         Postcondition(
                             Equal(
@@ -888,10 +914,10 @@ class ParserGenerator:
                                                 Variable("Ctx"),
                                                 Variable(f.affixed_name),
                                             ],
-                                        )
+                                        ),
                                     ],
                                 ),
-                            )
+                            ),
                         ),
                     ],
                 )
@@ -913,7 +939,7 @@ class ParserGenerator:
                                             Variable(f.affixed_name),
                                         ),
                                         "First",
-                                    )
+                                    ),
                                 ],
                             ),
                             constant=True,
@@ -930,7 +956,7 @@ class ParserGenerator:
                                             Variable(f.affixed_name),
                                         ),
                                         "Last",
-                                    )
+                                    ),
                                 ],
                             ),
                             constant=True,
@@ -939,7 +965,7 @@ class ParserGenerator:
                     [
                         ReturnStatement(
                             Slice(Variable("Ctx.Buffer.all"), Variable("First"), Variable("Last")),
-                        )
+                        ),
                     ],
                 )
                 for f in opaque_fields
@@ -947,7 +973,9 @@ class ParserGenerator:
         )
 
     def create_opaque_getter_procedures(
-        self, message: Message, opaque_fields: Sequence[Field]
+        self,
+        message: Message,
+        opaque_fields: Sequence[Field],
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
@@ -992,14 +1020,14 @@ class ParserGenerator:
                                                     Variable(
                                                         self.prefix
                                                         * message.identifier
-                                                        * f.affixed_name
+                                                        * f.affixed_name,
                                                     ),
                                                 ],
-                                            )
+                                            ),
                                         ],
                                     ),
                                 ),
-                            )
+                            ),
                         ),
                         Postcondition(
                             Call(
@@ -1009,7 +1037,7 @@ class ParserGenerator:
                                     Variable(f.affixed_name),
                                     Variable("Data"),
                                 ],
-                            )
+                            ),
                         ),
                     ],
                 )
@@ -1031,7 +1059,7 @@ class ParserGenerator:
                                             Variable(f.affixed_name),
                                         ),
                                         "First",
-                                    )
+                                    ),
                                 ],
                             ),
                             constant=True,
@@ -1048,7 +1076,7 @@ class ParserGenerator:
                                             Variable(f.affixed_name),
                                         ),
                                         "Last",
-                                    )
+                                    ),
                                 ],
                             ),
                             constant=True,
@@ -1078,11 +1106,14 @@ class ParserGenerator:
         )
 
     def create_generic_opaque_getter_procedures(
-        self, message: Message, opaque_fields: Sequence[Field]
+        self,
+        message: Message,
+        opaque_fields: Sequence[Field],
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
-                f"Generic_Get_{field.name}", [Parameter(["Ctx"], "Context")]
+                f"Generic_Get_{field.name}",
+                [Parameter(["Ctx"], "Context")],
             )
 
         return UnitPart(
@@ -1103,15 +1134,16 @@ class ParserGenerator:
                                         Variable(self.prefix * message.identifier * f.affixed_name),
                                     ],
                                 ),
-                            )
-                        )
+                            ),
+                        ),
                     ],
                     [
                         FormalSubprogramDeclaration(
                             ProcedureSpecification(
-                                f"Process_{f.name}", [Parameter([f.name], const.TYPES_BYTES)]
-                            )
-                        )
+                                f"Process_{f.name}",
+                                [Parameter([f.name], const.TYPES_BYTES)],
+                            ),
+                        ),
                     ],
                 )
                 for f in opaque_fields
@@ -1132,7 +1164,7 @@ class ParserGenerator:
                                             Variable(f.affixed_name),
                                         ),
                                         "First",
-                                    )
+                                    ),
                                 ],
                             ),
                             constant=True,
@@ -1149,7 +1181,7 @@ class ParserGenerator:
                                             Variable(f.affixed_name),
                                         ),
                                         "Last",
-                                    )
+                                    ),
                                 ],
                             ),
                             constant=True,
@@ -1160,10 +1192,12 @@ class ParserGenerator:
                             f"Process_{f.name}",
                             [
                                 Slice(
-                                    Variable("Ctx.Buffer.all"), Variable("First"), Variable("Last")
-                                )
+                                    Variable("Ctx.Buffer.all"),
+                                    Variable("First"),
+                                    Variable("Last"),
+                                ),
                             ],
-                        )
+                        ),
                     ],
                 )
                 for f in opaque_fields
@@ -1188,7 +1222,7 @@ class ParserGenerator:
                     )
                     for l in message.incoming(FINAL)
                     if l.target == FINAL
-                ]
+                ],
             )
             .substituted(common.substitution(message, self.prefix))
             .simplified()

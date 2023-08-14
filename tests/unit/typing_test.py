@@ -167,7 +167,9 @@ def test_any_integer_is_compatible(any_integer: Type, other: Type, expected: boo
     ],
 )
 def test_undefined_integer_common_type(
-    undefined_integer: Type, other: Type, expected: Type
+    undefined_integer: Type,
+    other: Type,
+    expected: Type,
 ) -> None:
     assert undefined_integer.common_type(other) == expected
     assert other.common_type(undefined_integer) == expected
@@ -194,7 +196,9 @@ def test_undefined_integer_common_type(
     ],
 )
 def test_undefined_integer_is_compatible(
-    undefined_integer: Type, other: Type, expected: bool
+    undefined_integer: Type,
+    other: Type,
+    expected: bool,
 ) -> None:
     assert undefined_integer.is_compatible(other) == expected
     assert other.is_compatible(undefined_integer) == expected
@@ -226,7 +230,9 @@ def test_undefined_integer_is_compatible(
     ],
 )
 def test_universal_integer_common_type(
-    universal_integer: Type, other: Type, expected: Type
+    universal_integer: Type,
+    other: Type,
+    expected: Type,
 ) -> None:
     assert universal_integer.common_type(other) == expected
     assert other.common_type(universal_integer) == expected
@@ -253,7 +259,9 @@ def test_universal_integer_common_type(
     ],
 )
 def test_universal_integer_is_compatible(
-    universal_integer: Type, other: Type, expected: bool
+    universal_integer: Type,
+    other: Type,
+    expected: bool,
 ) -> None:
     assert universal_integer.is_compatible(other) == expected
     assert other.is_compatible(universal_integer) == expected
@@ -783,7 +791,8 @@ def test_check_type_error(actual: Type, expected: Type, match: str) -> None:
     ],
 )
 def test_check_type_instance(
-    actual: Type, expected: Union[type[Type], tuple[type[Type], ...]]
+    actual: Type,
+    expected: Union[type[Type], tuple[type[Type], ...]],
 ) -> None:
     check_type_instance(actual, expected, Location((10, 20)), '"A"').propagate()
 
@@ -811,7 +820,9 @@ def test_check_type_instance(
     ],
 )
 def test_check_type_instance_error(
-    actual: Type, expected: Union[type[Type], tuple[type[Type], ...]], match: str
+    actual: Type,
+    expected: Union[type[Type], tuple[type[Type], ...]],
+    match: str,
 ) -> None:
     with pytest.raises(RecordFluxError, match=match):
         check_type_instance(actual, expected, Location((10, 20)), '"A"').propagate()

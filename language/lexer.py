@@ -149,7 +149,7 @@ rflx_lexer.add_rules(
             ("Present", Token.Present),
             ("Valid", Token.Valid),
         ]
-    ]
+    ],
 )
 
 rflx_lexer.add_rules(
@@ -166,7 +166,7 @@ rflx_lexer.add_rules(
         for text, token in [
             ("Checksum", Token.Checksum),
         ]
-    ]
+    ],
 )
 
 rflx_lexer.add_rules(

@@ -54,7 +54,9 @@ def type_location(identifier: ID, node: lang.RFLXNode) -> Location:
 
 
 def diagnostics_to_error(
-    diagnostics: Sequence[lang.Diagnostic], error: RecordFluxError, filename: Path
+    diagnostics: Sequence[lang.Diagnostic],
+    error: RecordFluxError,
+    filename: Path,
 ) -> bool:
     """Append langkit diagnostics to RecordFlux error. Return True if error occured."""
 
@@ -74,7 +76,7 @@ def diagnostics_to_error(
                         source=filename,
                         end=(loc.end.line, loc.end.column),
                     ),
-                )
+                ),
             ],
         )
     return True
@@ -88,7 +90,9 @@ def create_description(description: Optional[lang.Description] = None) -> Option
 
 
 def create_transition(
-    error: RecordFluxError, transition: lang.Transition, filename: Path
+    error: RecordFluxError,
+    transition: lang.Transition,
+    filename: Path,
 ) -> model.Transition:
     if transition.kind_name not in ("Transition", "ConditionalTransition"):
         raise NotImplementedError(f"Transition kind {transition.kind_name} unsupported")
@@ -106,7 +110,9 @@ def create_reset(error: RecordFluxError, reset: lang.Statement, filename: Path) 
         create_id(error, reset.f_identifier, filename),
         {
             create_id(error, c.f_identifier, filename): create_expression(
-                error, c.f_expression, filename
+                error,
+                c.f_expression,
+                filename,
             )
             for c in reset.f_associations
         },
@@ -115,7 +121,9 @@ def create_reset(error: RecordFluxError, reset: lang.Statement, filename: Path) 
 
 
 def create_assignment(
-    error: RecordFluxError, assignment: lang.Statement, filename: Path
+    error: RecordFluxError,
+    assignment: lang.Statement,
+    filename: Path,
 ) -> stmt.Statement:
     assert isinstance(assignment, lang.Assignment)
     return stmt.VariableAssignment(
@@ -126,7 +134,9 @@ def create_assignment(
 
 
 def create_message_field_assignment(
-    error: RecordFluxError, assignment: lang.Statement, filename: Path
+    error: RecordFluxError,
+    assignment: lang.Statement,
+    filename: Path,
 ) -> stmt.Statement:
     assert isinstance(assignment, lang.MessageFieldAssignment)
     return stmt.MessageFieldAssignment(
@@ -138,7 +148,9 @@ def create_message_field_assignment(
 
 
 def create_attribute_statement(
-    error: RecordFluxError, expression: lang.Statement, filename: Path
+    error: RecordFluxError,
+    expression: lang.Statement,
+    filename: Path,
 ) -> stmt.Statement:
     assert isinstance(expression, lang.AttributeStatement)
     attrs = {
@@ -157,7 +169,9 @@ def create_attribute_statement(
 
 
 def create_statement(
-    error: RecordFluxError, statement: lang.Statement, filename: Path
+    error: RecordFluxError,
+    statement: lang.Statement,
+    filename: Path,
 ) -> stmt.Statement:
     handlers = {
         "Reset": create_reset,
@@ -169,7 +183,10 @@ def create_statement(
 
 
 def create_state(
-    error: RecordFluxError, state: lang.State, package: ID, filename: Path
+    error: RecordFluxError,
+    state: lang.State,
+    package: ID,
+    filename: Path,
 ) -> model.State:
     location = node_location(state, filename)
     identifier = create_id(error, state.f_identifier, filename)
@@ -183,8 +200,8 @@ def create_state(
                     Subsystem.PARSER,
                     Severity.ERROR,
                     location,
-                )
-            ]
+                ),
+            ],
         )
     transitions = [
         create_transition(error, t, filename) for t in state.f_body.f_conditional_transitions
@@ -212,7 +229,9 @@ def create_state(
 
 
 def _check_session_identifier(
-    error: RecordFluxError, session: lang.SessionDecl, filename: Path
+    error: RecordFluxError,
+    session: lang.SessionDecl,
+    filename: Path,
 ) -> None:
     if session.f_identifier.text != session.f_end_identifier.text:
         error.extend(
@@ -223,8 +242,8 @@ def _check_session_identifier(
                     Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(session, filename),
-                )
-            ]
+                ),
+            ],
         )
 
 
@@ -255,8 +274,8 @@ def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Pat
                         Subsystem.PARSER,
                         Severity.ERROR,
                         node_location(identifier, filename),
-                    )
-                ]
+                    ),
+                ],
             )
         if identifier.text.upper().startswith("RFLX_"):
             error.extend(
@@ -273,7 +292,7 @@ def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Pat
                         Severity.INFO,
                         node_location(identifier, filename),
                     ),
-                ]
+                ],
             )
         return ID(identifier.text, location=node_location(identifier, filename))
     if isinstance(identifier, lang.ID):
@@ -306,15 +325,20 @@ def create_sequence(
 ) -> Optional[model.UncheckedSequence]:
     assert isinstance(sequence, lang.SequenceTypeDef)
     element_identifier = model.internal_type_identifier(
-        create_id(error, sequence.f_element_type, filename), identifier.parent
+        create_id(error, sequence.f_element_type, filename),
+        identifier.parent,
     )
     return model.UncheckedSequence(
-        identifier, element_identifier, type_location(identifier, sequence)
+        identifier,
+        element_identifier,
+        type_location(identifier, sequence),
     )
 
 
 def create_numeric_literal(
-    _error: RecordFluxError, expression: lang.Expr, filename: Path
+    _error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     location = node_location(expression, filename)
     num = expression.text.split("#")
@@ -387,7 +411,7 @@ def create_math_binop(error: RecordFluxError, expression: lang.Expr, filename: P
         )
 
     raise NotImplementedError(
-        f"Invalid math BinOp {expression.f_op.kind_name} => {expression.text}"
+        f"Invalid math BinOp {expression.f_op.kind_name} => {expression.text}",
     )
 
 
@@ -433,26 +457,32 @@ def create_bool_binop(error: RecordFluxError, expression: lang.Expr, filename: P
         )
 
     raise NotImplementedError(
-        f"Invalid bool BinOp {expression.f_op.kind_name} => {expression.text}"
+        f"Invalid bool BinOp {expression.f_op.kind_name} => {expression.text}",
     )
 
 
 def create_paren_bool_expression(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     assert isinstance(expression, lang.ParenExpression)
     return create_bool_expression(error, expression.f_data, filename)
 
 
 def create_paren_math_expression(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     assert isinstance(expression, lang.ParenExpression)
     return create_math_expression(error, expression.f_data, filename)
 
 
 def create_paren_expression(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     assert isinstance(expression, lang.ParenExpression)
     return create_expression(error, expression.f_data, filename)
@@ -471,7 +501,9 @@ def create_variable(error: RecordFluxError, expression: lang.Expr, filename: Pat
 
 
 def create_math_attribute(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     assert isinstance(expression, lang.Attribute)
     inner = create_expression(error, expression.f_expression, filename)
@@ -482,7 +514,7 @@ def create_math_attribute(
     if expression.f_kind.kind_name == "AttrSize":
         return expr.Size(inner)
     raise NotImplementedError(
-        f"Invalid math attribute: {expression.f_kind.kind_name} => {expression.text}"
+        f"Invalid math attribute: {expression.f_kind.kind_name} => {expression.text}",
     )
 
 
@@ -508,12 +540,14 @@ def create_attribute(error: RecordFluxError, expression: lang.Expr, filename: Pa
     if expression.f_kind.kind_name == "AttrValid":
         return expr.Valid(inner)
     raise NotImplementedError(
-        f"Invalid attribute: {expression.f_kind.kind_name} => {expression.text}"
+        f"Invalid attribute: {expression.f_kind.kind_name} => {expression.text}",
     )
 
 
 def create_sequence_aggregate(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     assert isinstance(expression, lang.SequenceAggregate)
     return expr.Aggregate(
@@ -523,7 +557,9 @@ def create_sequence_aggregate(
 
 
 def create_string_literal(
-    _error: RecordFluxError, expression: lang.Expr, filename: Path
+    _error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     return expr.String(
         expression.text.split('"')[1],
@@ -541,7 +577,9 @@ def create_call(error: RecordFluxError, expression: lang.Expr, filename: Path) -
 
 
 def create_quantified_expression(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     assert isinstance(expression, lang.QuantifiedExpression)
     param_id = create_id(error, expression.f_parameter_identifier, filename)
@@ -566,13 +604,16 @@ def create_binding(error: RecordFluxError, expression: lang.Expr, filename: Path
                 Severity.ERROR,
                 node_location(expression, filename),
             ),
-        ]
+        ],
     )
     return create_expression(error, expression.f_expression, filename)
 
 
 def create_variable_decl(
-    error: RecordFluxError, declaration: lang.LocalDecl, package: ID, filename: Path
+    error: RecordFluxError,
+    declaration: lang.LocalDecl,
+    package: ID,
+    filename: Path,
 ) -> decl.BasicDeclaration:
     assert isinstance(declaration, lang.VariableDecl)
     initializer = (
@@ -583,7 +624,8 @@ def create_variable_decl(
     return decl.VariableDeclaration(
         create_id(error, declaration.f_identifier, filename),
         model.internal_type_identifier(
-            create_id(error, declaration.f_type_identifier, filename), package
+            create_id(error, declaration.f_type_identifier, filename),
+            package,
         ),
         initializer,
         location=node_location(declaration, filename),
@@ -621,7 +663,10 @@ def create_channel_decl(
 
 
 def create_renaming_decl(
-    error: RecordFluxError, declaration: lang.LocalDecl, package: ID, filename: Path
+    error: RecordFluxError,
+    declaration: lang.LocalDecl,
+    package: ID,
+    filename: Path,
 ) -> decl.BasicDeclaration:
     assert isinstance(declaration, lang.RenamingDecl)
     selected = create_expression(error, declaration.f_expression, filename)
@@ -629,7 +674,8 @@ def create_renaming_decl(
     return decl.RenamingDeclaration(
         create_id(error, declaration.f_identifier, filename),
         model.internal_type_identifier(
-            create_id(error, declaration.f_type_identifier, filename), package
+            create_id(error, declaration.f_type_identifier, filename),
+            package,
         ),
         selected,
         location=node_location(declaration, filename),
@@ -649,7 +695,8 @@ def create_function_decl(
             decl.Argument(
                 create_id(error, p.f_identifier, filename),
                 model.internal_type_identifier(
-                    create_id(error, p.f_type_identifier, filename), package
+                    create_id(error, p.f_type_identifier, filename),
+                    package,
                 ),
             )
             for p in declaration.f_parameters.f_parameters
@@ -658,7 +705,8 @@ def create_function_decl(
         create_id(error, declaration.f_identifier, filename),
         arguments,
         model.internal_type_identifier(
-            create_id(error, declaration.f_return_type_identifier, filename), package
+            create_id(error, declaration.f_return_type_identifier, filename),
+            package,
         ),
         location=node_location(declaration, filename),
     )
@@ -672,7 +720,9 @@ def create_negation(error: RecordFluxError, expression: lang.Expr, filename: Pat
 
 
 def create_concatenation(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     assert isinstance(expression, lang.Concatenation)
     left = create_expression(error, expression.f_left, filename)
@@ -680,12 +730,15 @@ def create_concatenation(
     assert isinstance(left, expr.Aggregate)
     assert isinstance(right, expr.Aggregate)
     return expr.Aggregate(
-        *(left.elements + right.elements), location=node_location(expression, filename)
+        *(left.elements + right.elements),
+        location=node_location(expression, filename),
     )
 
 
 def create_comprehension(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     assert isinstance(expression, lang.Comprehension)
     condition = (
@@ -715,7 +768,8 @@ def create_case(error: RecordFluxError, expression: lang.Expr, filename: Path) -
     assert isinstance(expression, lang.CaseExpression)
 
     def create_choice(
-        value: Union[lang.AbstractID, lang.Expr], filename: Path
+        value: Union[lang.AbstractID, lang.Expr],
+        filename: Path,
     ) -> Union[ID, expr.Number]:
         if isinstance(value, lang.AbstractID):
             return create_id(error, value, filename)
@@ -753,7 +807,9 @@ def create_conversion(error: RecordFluxError, expression: lang.Expr, filename: P
 
 
 def create_message_aggregate(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     assert isinstance(expression, lang.MessageAggregate)
     values: Mapping[StrID, expr.Expr] = {}
@@ -762,7 +818,9 @@ def create_message_aggregate(
     elif isinstance(expression.f_values, lang.MessageAggregateAssociations):
         values = {
             create_id(error, c.f_identifier, filename): create_expression(
-                error, c.f_expression, filename
+                error,
+                c.f_expression,
+                filename,
             )
             for c in expression.f_values.f_associations
         }
@@ -802,7 +860,10 @@ def create_expression(error: RecordFluxError, expression: lang.Expr, filename: P
 
 
 def create_declaration(
-    error: RecordFluxError, declaration: lang.LocalDecl, package: ID, filename: Path
+    error: RecordFluxError,
+    declaration: lang.LocalDecl,
+    package: ID,
+    filename: Path,
 ) -> decl.BasicDeclaration:
     handlers = {
         "VariableDecl": create_variable_decl,
@@ -812,7 +873,10 @@ def create_declaration(
 
 
 def create_formal_declaration(
-    error: RecordFluxError, declaration: lang.FormalDecl, package: ID, filename: Path
+    error: RecordFluxError,
+    declaration: lang.FormalDecl,
+    package: ID,
+    filename: Path,
 ) -> decl.FormalDeclaration:
     handlers = {
         "FormalChannelDecl": create_channel_decl,
@@ -822,7 +886,9 @@ def create_formal_declaration(
 
 
 def create_math_expression(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     handlers = {
         "NumericLiteral": create_numeric_literal,
@@ -847,7 +913,9 @@ def create_math_expression(
 
 
 def create_bool_expression(
-    error: RecordFluxError, expression: lang.Expr, filename: Path
+    error: RecordFluxError,
+    expression: lang.Expr,
+    filename: Path,
 ) -> expr.Expr:
     handlers = {
         "BinOp": create_bool_binop,
@@ -895,7 +963,7 @@ def create_modular(
                 Severity.INFO,
                 type_location(identifier, modular),
             ),
-        ]
+        ],
     )
 
 
@@ -916,8 +984,8 @@ def create_range(
                     Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(rangetype, filename),
-                )
-            ]
+                ),
+            ],
         )
     size = create_math_expression(error, rangetype.f_size.f_value, filename)
     return model.UncheckedInteger(
@@ -938,7 +1006,13 @@ def create_null_message(
 ) -> Optional[model.UncheckedMessage]:
     assert isinstance(message, lang.NullMessageTypeDef)
     return model.UncheckedMessage(
-        identifier, [], [], [], None, None, location=type_location(identifier, message)
+        identifier,
+        [],
+        [],
+        [],
+        None,
+        None,
+        location=type_location(identifier, message),
     )
 
 
@@ -999,7 +1073,8 @@ def create_message_field_types(
     result: list[tuple[model.Field, ID, list[tuple[ID, expr.Expr]]]] = []
     for field_identifier, type_identifier, type_arguments in fields:
         qualified_type_identifier = model.internal_type_identifier(
-            create_id(error, type_identifier, filename), identifier.parent
+            create_id(error, type_identifier, filename),
+            identifier.parent,
         )
         field = model.Field(create_id(error, field_identifier, filename))
         result.append(
@@ -1009,13 +1084,15 @@ def create_message_field_types(
                 create_message_arguments(error, type_arguments, filename)
                 if isinstance(type_arguments, lang.TypeArgumentList)
                 else [],
-            )
+            ),
         )
     return result
 
 
 def create_message_arguments(
-    error: RecordFluxError, type_arguments: lang.TypeArgumentList, filename: Path
+    error: RecordFluxError,
+    type_arguments: lang.TypeArgumentList,
+    filename: Path,
 ) -> list[tuple[ID, expr.Expr]]:
     return [
         (
@@ -1027,7 +1104,9 @@ def create_message_arguments(
 
 
 def create_message_structure(
-    error: RecordFluxError, fields: lang.MessageFields, filename: Path
+    error: RecordFluxError,
+    fields: lang.MessageFields,
+    filename: Path,
 ) -> list[model.Link]:
     def extract_aspect(aspects: lang.AspectList) -> tuple[expr.Expr, expr.Expr]:
         size: expr.Expr = expr.UNDEFINED
@@ -1036,7 +1115,7 @@ def create_message_structure(
         grouped = defaultdict(list)
         for aspect in aspects:
             grouped[aspect.f_identifier.text].append(
-                (aspect, node_location(aspect.f_identifier, filename))
+                (aspect, node_location(aspect.f_identifier, filename)),
             )
 
         for name, locations in grouped.items():
@@ -1055,7 +1134,7 @@ def create_message_structure(
                             Subsystem.PARSER,
                             Severity.ERROR,
                             location,
-                        )
+                        ),
                     ],
                 )
         return size, first
@@ -1090,7 +1169,7 @@ def create_message_structure(
             model.Link(
                 model.INITIAL,
                 *extract_then(fields.f_initial_field.f_then),
-            )
+            ),
         )
     else:
         structure.append(
@@ -1098,7 +1177,7 @@ def create_message_structure(
                 model.INITIAL,
                 model.Field(field_identifiers[0]),
                 location=field_identifiers[0].location,
-            )
+            ),
         )
 
     for i, field in enumerate(fields.f_fields):
@@ -1111,7 +1190,7 @@ def create_message_structure(
                         Subsystem.PARSER,
                         Severity.ERROR,
                         field_identifiers[i].location,
-                    )
+                    ),
                 ],
             )
 
@@ -1123,7 +1202,7 @@ def create_message_structure(
                     source_node,
                     target_node,
                     location=node_location(field, filename, end_location=True),
-                )
+                ),
             )
 
         for then in field.f_thens:
@@ -1137,7 +1216,7 @@ def create_message_structure(
                             Subsystem.PARSER,
                             Severity.ERROR,
                             node_location(then.f_target, filename) if then.f_target else None,
-                        )
+                        ),
                     ],
                 )
                 continue
@@ -1147,7 +1226,10 @@ def create_message_structure(
             continue
 
         merge_field_aspects(
-            error, field_identifiers[i], structure, *extract_aspect(field.f_aspects)
+            error,
+            field_identifiers[i],
+            structure,
+            *extract_aspect(field.f_aspects),
         )
         merge_field_condition(
             field_identifiers[i],
@@ -1230,7 +1312,9 @@ def merge_field_condition(
 
 
 def check_duplicate_aspect(
-    error: RecordFluxError, name: str, locations: Sequence[Location]
+    error: RecordFluxError,
+    name: str,
+    locations: Sequence[Location],
 ) -> None:
     if len(locations) > 1:
         error.extend(
@@ -1255,7 +1339,9 @@ def check_duplicate_aspect(
 
 
 def parse_aspects(  # noqa: PLR0912
-    error: RecordFluxError, aspects: lang.MessageAspectList, filename: Path
+    error: RecordFluxError,
+    aspects: lang.MessageAspectList,
+    filename: Path,
 ) -> tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
     checksum_result = {}
     byte_order_result = None
@@ -1285,7 +1371,7 @@ def parse_aspects(  # noqa: PLR0912
                             expr.ValueRange(
                                 create_math_expression(error, value.f_first, filename),
                                 create_math_expression(error, value.f_last, filename),
-                            )
+                            ),
                         )
                     else:
                         raise NotImplementedError(f"Invalid checksum association {value.kind_name}")
@@ -1310,7 +1396,9 @@ def create_derived_message(
     base_id = create_id(error, derivation.f_base, filename)
     base_name = model.internal_type_identifier(base_id, identifier.parent)
     return model.UncheckedDerivedMessage(
-        identifier, base_name, location=type_location(identifier, derivation)
+        identifier,
+        base_name,
+        location=type_location(identifier, derivation),
     )
 
 
@@ -1353,7 +1441,7 @@ def create_enumeration(
                                     Subsystem.PARSER,
                                     Severity.ERROR,
                                     node_location(aspect.f_value, filename),
-                                )
+                                ),
                             ],
                         )
                 else:
@@ -1366,7 +1454,7 @@ def create_enumeration(
                         Subsystem.PARSER,
                         Severity.ERROR,
                         identifier.location,
-                    )
+                    ),
                 ],
             )
             return None
@@ -1387,7 +1475,7 @@ def create_enumeration(
         ]
     else:
         raise NotImplementedError(
-            f"Enumeration kind {enumeration.f_elements.kind_name} unsupported"
+            f"Enumeration kind {enumeration.f_elements.kind_name} unsupported",
         )
 
     aspects = create_aspects(enumeration.f_aspects)
@@ -1397,7 +1485,11 @@ def create_enumeration(
     size, always_valid = aspects
 
     return model.UncheckedEnumeration(
-        identifier, literals, size, always_valid, location=type_location(identifier, enumeration)
+        identifier,
+        literals,
+        size,
+        always_valid,
+        location=type_location(identifier, enumeration),
     )
 
 
@@ -1437,7 +1529,7 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
                     Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(package.f_identifier, name),
-                )
+                ),
             ],
         )
     if identifier != package.f_end_identifier.text:
@@ -1468,13 +1560,13 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
                         Subsystem.PARSER,
                         Severity.ERROR,
                         node_location(package.f_identifier, name),
-                    )
+                    ),
                 ],
             )
     for t in package.f_declarations:
         # Eng/RecordFlux/RecordFlux#1208
         if isinstance(t, lang.TypeDecl) and model.is_builtin_type(
-            create_id(error, t.f_identifier, name).name
+            create_id(error, t.f_identifier, name).name,
         ):
             error.extend(
                 [
@@ -1483,7 +1575,7 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
                         Subsystem.MODEL,
                         Severity.ERROR,
                         node_location(t, name),
-                    )
+                    ),
                 ],
             )
 
@@ -1560,13 +1652,16 @@ class Parser:
                 specifications.append(spec)
 
         _check_for_duplicate_specifications(
-            error, [*self._specifications.values(), *specifications]
+            error,
+            [*self._specifications.values(), *specifications],
         )
 
         self._specifications.update({s.package: s for s in specifications})
 
         self._parse_withed_files(
-            error, [c for s in specifications for c in s.context_clauses], include_paths
+            error,
+            [c for s in specifications for c in s.context_clauses],
+            include_paths,
         )
 
         if not _check_for_dependency_cycles(error, specifications, self._specifications):
@@ -1594,7 +1689,7 @@ class Parser:
                 error.propagate()
 
                 self._specifications = _sort_specs_topologically(
-                    {**self._specifications, spec.package: spec}
+                    {**self._specifications, spec.package: spec},
                 )
 
         error.propagate()
@@ -1676,7 +1771,7 @@ class Parser:
                                     *nested_context_clauses,
                                 ]
                                 and c.name not in self._specifications
-                            ]
+                            ],
                         )
                     break
             else:
@@ -1687,8 +1782,8 @@ class Parser:
                             Subsystem.PARSER,
                             Severity.ERROR,
                             context_clause.location,
-                        )
-                    ]
+                        ),
+                    ],
                 )
 
         self._parse_withed_files(error, nested_context_clauses, include_paths)
@@ -1727,7 +1822,8 @@ class Parser:
         for t in spec.f_package_declaration.f_declarations:
             if isinstance(t, lang.TypeDecl):
                 identifier = model.internal_type_identifier(
-                    create_id(error, t.f_identifier, filename), package_id
+                    create_id(error, t.f_identifier, filename),
+                    package_id,
                 )
                 if t.f_definition.kind_name != "MessageTypeDef" and t.f_parameters:
                     error.extend(
@@ -1737,8 +1833,8 @@ class Parser:
                                 Subsystem.PARSER,
                                 Severity.ERROR,
                                 node_location(t.f_parameters.f_parameters, filename),
-                            )
-                        ]
+                            ),
+                        ],
                     )
                 new_type = handlers[t.f_definition.kind_name](
                     error,
@@ -1758,7 +1854,8 @@ class Parser:
 
 
 def _check_for_duplicate_specifications(
-    error: RecordFluxError, specifications: Sequence[SpecificationFile]
+    error: RecordFluxError,
+    specifications: Sequence[SpecificationFile],
 ) -> None:
     for i, n1 in enumerate(specifications, start=1):
         for n2 in specifications[i:]:
@@ -1845,7 +1942,7 @@ def _check_for_dependency_cycle(
 
 
 def _sort_specs_topologically(
-    specifications: Mapping[ID, SpecificationFile]
+    specifications: Mapping[ID, SpecificationFile],
 ) -> OrderedDict[ID, SpecificationFile]:
     """(Reverse) Topologically sort specifications using Kahn's algorithm."""
 

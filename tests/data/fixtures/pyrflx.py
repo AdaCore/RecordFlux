@@ -77,15 +77,17 @@ def fixture_icmp_checksum_message_value(icmp_message: model.Message) -> pyrflx.M
             checksums={
                 ID("Checksum"): [
                     expr.ValueRange(
-                        expr.First("Tag"), expr.Sub(expr.First("Checksum"), expr.Number(1))
+                        expr.First("Tag"),
+                        expr.Sub(expr.First("Checksum"), expr.Number(1)),
                     ),
                     expr.Size("Checksum"),
                     expr.ValueRange(
-                        expr.Add(expr.Last("Checksum"), expr.Number(1)), expr.Last("Message")
+                        expr.Add(expr.Last("Checksum"), expr.Number(1)),
+                        expr.Last("Message"),
                     ),
-                ]
+                ],
             },
-        )
+        ),
     )
 
 
@@ -106,15 +108,17 @@ def fixture_icmp_checksum_message_first(icmp_message: model.Message) -> pyrflx.M
             checksums={
                 ID("Checksum"): [
                     expr.ValueRange(
-                        expr.First("Message"), expr.Sub(expr.First("Checksum"), expr.Number(1))
+                        expr.First("Message"),
+                        expr.Sub(expr.First("Checksum"), expr.Number(1)),
                     ),
                     expr.Size("Checksum"),
                     expr.ValueRange(
-                        expr.Add(expr.Last("Checksum"), expr.Number(1)), expr.Last("Message")
+                        expr.Add(expr.Last("Checksum"), expr.Number(1)),
+                        expr.Last("Message"),
                     ),
-                ]
+                ],
             },
-        )
+        ),
     )
 
 

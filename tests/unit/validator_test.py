@@ -17,7 +17,8 @@ CHECKSUM_MODULE = "tests.data.validator.checksum"
 
 def test_initialize_pyrflx_spec_file_not_found() -> None:
     with pytest.raises(
-        ValidationError, match=r'^specification file not found: "non_existent_file.rflx"$'
+        ValidationError,
+        match=r'^specification file not found: "non_existent_file.rflx"$',
     ):
         Validator(["non_existent_file.rflx"], CHECKSUM_MODULE, skip_model_verification=True)
 
@@ -153,17 +154,22 @@ def test_initialize_pyrflx_checksum_invalid_attribute_type() -> None:
 
 def test_validate_error_msg_not_in_package() -> None:
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     with pytest.raises(
-        ValidationError, match=r'^message "Message" could not be found in package "Ethernet"$'
+        ValidationError,
+        match=r'^message "Message" could not be found in package "Ethernet"$',
     ):
         validator.validate(ID("Ethernet::Message"), None, None, None)
 
 
 def test_validate_cannot_open_output_file(tmp_path: Path) -> None:
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     with pytest.raises(
         ValidationError,
@@ -183,7 +189,9 @@ def test_validate_cannot_open_output_file(tmp_path: Path) -> None:
 
 def test_validate_abort_on_error() -> None:
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     with pytest.raises(
         ValidationError,
@@ -206,7 +214,9 @@ def test_validate_not_regular_file(tmp_path: Path) -> None:
     subdir = tmp_path / "test.raw"
     subdir.mkdir()
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     with pytest.raises(
         ValidationError,
@@ -217,7 +227,9 @@ def test_validate_not_regular_file(tmp_path: Path) -> None:
 
 def test_validate_positive() -> None:
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     validator.validate(
         ID("Ethernet::Frame"),
@@ -228,7 +240,9 @@ def test_validate_positive() -> None:
 
 def test_validate_positive_output(tmp_path: Path) -> None:
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     validator.validate(
         ID("Ethernet::Frame"),
@@ -237,17 +251,19 @@ def test_validate_positive_output(tmp_path: Path) -> None:
         tmp_path / "output.json",
     )
     assert (tmp_path / "output.json").read_text() == (TEST_DIR / "output_positive.json").read_text(
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
 
 def test_validate_negative() -> None:
     number = len(
         list((TEST_DIR / "ethernet/frame/invalid").glob("*.raw"))
-        + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw"))
+        + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw")),
     )
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     with pytest.raises(
         ValidationError,
@@ -263,10 +279,12 @@ def test_validate_negative() -> None:
 def test_validate_negative_output(tmp_path: Path) -> None:
     number = len(
         list((TEST_DIR / "ethernet/frame/invalid").glob("*.raw"))
-        + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw"))
+        + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw")),
     )
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     with pytest.raises(
         ValidationError,
@@ -279,13 +297,15 @@ def test_validate_negative_output(tmp_path: Path) -> None:
             tmp_path / "output.json",
         )
     assert (tmp_path / "output.json").read_text() == (TEST_DIR / "output_negative.json").read_text(
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
 
 def test_validate_coverage(capsys: pytest.CaptureFixture[str]) -> None:
     validator = Validator(
-        [SPEC_DIR / "ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     validator.validate(
         ID("Ethernet::Frame"),
@@ -331,7 +351,8 @@ def test_coverage_threshold_missed(capsys: pytest.CaptureFixture[str]) -> None:
         split_disjunctions=True,
     )
     with pytest.raises(
-        ValidationError, match=(r"^missed target coverage of 90.00%, reached 73.68%$")
+        ValidationError,
+        match=(r"^missed target coverage of 90.00%, reached 73.68%$"),
     ):
         validator.validate(
             ID("Ethernet::Frame"),
@@ -391,10 +412,13 @@ TOTAL                                            38         28          73.68%
 
 def test_validate_coverage_threshold_invalid() -> None:
     validator = Validator(
-        [SPEC_DIR / "in_ethernet.rflx"], CHECKSUM_MODULE, skip_model_verification=True
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
     )
     with pytest.raises(
-        ValidationError, match=r"^target coverage must be between 0 and 100, got 110$"
+        ValidationError,
+        match=r"^target coverage must be between 0 and 100, got 110$",
     ):
         validator.validate(
             ID("Ethernet::Frame"),
@@ -626,7 +650,7 @@ def test_parameterized_message_missing_parameter() -> None:
         validator._validate_message(  # noqa: SLF001
             Path(
                 TEST_DIR
-                / "parameterized/message/invalid/parameterized_message_missing_parameter.raw"
+                / "parameterized/message/invalid/parameterized_message_missing_parameter.raw",
             ),
             valid_original_message=True,
             message_value=message,
@@ -652,7 +676,7 @@ def test_parameterized_message_excess_parameter() -> None:
         validator._validate_message(  # noqa: SLF001
             Path(
                 TEST_DIR
-                / "parameterized/message/invalid/parameterized_message_excess_parameter.raw"
+                / "parameterized/message/invalid/parameterized_message_excess_parameter.raw",
             ),
             valid_original_message=True,
             message_value=message,

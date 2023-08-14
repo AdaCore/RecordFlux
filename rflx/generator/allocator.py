@@ -162,8 +162,8 @@ class AllocatorGenerator:
                         )
                         for slot in slots
                     ],
-                )
-            ]
+                ),
+            ],
         )
 
     def _create_ptr_subtypes(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
@@ -183,12 +183,12 @@ class AllocatorGenerator:
                                         Add(First(const.TYPES_INDEX), Number(size - 1)),
                                     ),
                                 ),
-                            )
-                        )
+                            ),
+                        ),
                     ],
                 )
                 for size in sorted({slot.size for slot in slots})
-            ]
+            ],
         )
         self._declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
         self._declaration_context.append(UseTypeClause(self._prefix * const.TYPES_INDEX))
@@ -206,8 +206,8 @@ class AllocatorGenerator:
                         Component(self._slot_name(slot.slot_id), self._ptr_type(slot.size))
                         for slot in slots
                     ],
-                )
-            ]
+                ),
+            ],
         )
 
     def _create_init_pred(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
@@ -222,10 +222,10 @@ class AllocatorGenerator:
                                 Variable("null"),
                             )
                             for slot in slots
-                        ]
+                        ],
                     ),
-                )
-            ]
+                ),
+            ],
         )
 
     def _create_uninitialized_pred(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
@@ -240,10 +240,10 @@ class AllocatorGenerator:
                                 Variable("null"),
                             )
                             for slot in slots
-                        ]
+                        ],
                     ),
-                )
-            ]
+                ),
+            ],
         )
 
     def _create_global_allocated_pred(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
@@ -251,7 +251,9 @@ class AllocatorGenerator:
             [
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
-                        "Global_Allocated", "Boolean", [Parameter(["S"], "Slots")]
+                        "Global_Allocated",
+                        "Boolean",
+                        [Parameter(["S"], "Slots")],
                     ),
                     And(
                         *[
@@ -271,13 +273,14 @@ class AllocatorGenerator:
                             if not slot.global_
                         ],
                     ),
-                )
-            ]
+                ),
+            ],
         )
 
     def _create_init_proc(self, slots: Sequence[NumberedSlotInfo]) -> UnitPart:
         proc = ProcedureSpecification(
-            "Initialize", [OutParameter(["S"], "Slots"), Parameter(["M"], "Memory")]
+            "Initialize",
+            [OutParameter(["S"], "Slots"), Parameter(["M"], "Memory")],
         )
         return UnitPart(
             [
@@ -299,7 +302,7 @@ class AllocatorGenerator:
                         else [NullStatement()]
                     ),
                     aspects=[SparkMode(off=True)],
-                )
+                ),
             ],
         )
 
@@ -308,7 +311,8 @@ class AllocatorGenerator:
         return UnitPart(
             [
                 SubprogramDeclaration(
-                    proc, [Postcondition(Call("Uninitialized", [Variable("S")]))]
+                    proc,
+                    [Postcondition(Call("Uninitialized", [Variable("S")]))],
                 ),
             ],
             [
@@ -327,7 +331,7 @@ class AllocatorGenerator:
                         else [NullStatement()]
                     ),
                     aspects=[SparkMode(off=True)],
-                )
+                ),
             ],
         )
 
@@ -381,8 +385,9 @@ class AllocatorGenerator:
                 if isinstance(a, ir.VarDecl) and self._needs_allocation(a.type_):
                     state_requirements.append(
                         AllocationRequirement(
-                            a.location, self.get_size(a.identifier, s.identifier.name)
-                        )
+                            a.location,
+                            self.get_size(a.identifier, s.identifier.name),
+                        ),
                     )
                 if (
                     isinstance(a, ir.Assign)
@@ -400,7 +405,7 @@ class AllocatorGenerator:
                         AllocationRequirement(
                             a.location,
                             self.get_size(identifier, self._scope(s, identifier)),
-                        )
+                        ),
                     )
                 if isinstance(a, ir.Assign) and isinstance(a.expression, ir.Head):
                     identifier = a.expression.prefix
@@ -408,7 +413,7 @@ class AllocatorGenerator:
                         AllocationRequirement(
                             a.location,
                             self.get_size(identifier, self._scope(s, identifier)),
-                        )
+                        ),
                     )
                 if isinstance(a, ir.Assign) and isinstance(a.expression, ir.Find):
                     if isinstance(a.expression.sequence, ir.Var):
@@ -421,7 +426,7 @@ class AllocatorGenerator:
                         AllocationRequirement(
                             a.location,
                             self.get_size(identifier, self._scope(s, identifier)),
-                        )
+                        ),
                     )
 
             alloc_requirements_per_state.append(state_requirements)
@@ -431,7 +436,8 @@ class AllocatorGenerator:
 
         slots = []
         for requirements_per_slot in zip_longest(
-            *alloc_requirements_per_state, fillvalue=AllocationRequirement(None, 0)
+            *alloc_requirements_per_state,
+            fillvalue=AllocationRequirement(None, 0),
         ):
             size = max(x.size for x in requirements_per_slot)
             locations = [x.location for x in requirements_per_slot if x.location is not None]

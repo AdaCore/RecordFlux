@@ -823,7 +823,9 @@ class BinaryExpr(Expr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> BinaryExpr:
         return self.__class__(
-            self.left.substituted(mapping), self.right.substituted(mapping), self.origin
+            self.left.substituted(mapping),
+            self.right.substituted(mapping),
+            self.origin,
         )
 
     @property
@@ -986,7 +988,7 @@ class Div(BinaryIntExpr):
     def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Right /= 0
-            Cond(NotEqual(self.right, IntVal(0)))
+            Cond(NotEqual(self.right, IntVal(0))),
         ]
 
     @property
@@ -1018,7 +1020,7 @@ class Pow(BinaryIntExpr):
                     VarDecl(v_id, v_type, None, origin=self.origin),
                     Assign(v_id, self, to_integer(self.type_), origin=self.origin),
                 ],
-            )
+            ),
         ]
 
     @property
@@ -1034,7 +1036,7 @@ class Mod(BinaryIntExpr):
     def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
             # Right /= 0
-            Cond(NotEqual(self.right, IntVal(0)))
+            Cond(NotEqual(self.right, IntVal(0))),
         ]
 
     @property
@@ -1171,7 +1173,7 @@ class Call(Expr):
     def _update_str(self) -> None:
         self._str = intern(
             str(self.identifier)
-            + (f" ({', '.join(str(a) for a in self.arguments)})" if self.arguments else "")
+            + (f" ({', '.join(str(a) for a in self.arguments)})" if self.arguments else ""),
         )
 
 
@@ -1203,7 +1205,7 @@ class IntCall(Call, IntExpr):
         self._str = intern(
             ("-" if self.negative else "")
             + str(self.identifier)
-            + (f" ({', '.join(str(a) for a in self.arguments)})" if self.arguments else "")
+            + (f" ({', '.join(str(a) for a in self.arguments)})" if self.arguments else ""),
         )
 
 
@@ -1463,7 +1465,7 @@ class Comprehension(Expr):
 
     def _update_str(self) -> None:
         self._str = intern(
-            f"[for {self.iterator} in {self.sequence} if {self.condition} => {self.selector}]"
+            f"[for {self.iterator} in {self.sequence} if {self.condition} => {self.selector}]",
         )
 
 
@@ -1502,7 +1504,7 @@ class Find(Expr):
 
     def _update_str(self) -> None:
         self._str = intern(
-            f"Find (for {self.iterator} in {self.sequence} if {self.condition} => {self.selector})"
+            f"Find (for {self.iterator} in {self.sequence} if {self.condition} => {self.selector})",
         )
 
 
@@ -1532,7 +1534,7 @@ class Agg(Expr):
 
 
 def _named_agg_elements_converter(
-    elements: Sequence[tuple[Union[StrID, BasicExpr], BasicExpr]]
+    elements: Sequence[tuple[Union[StrID, BasicExpr], BasicExpr]],
 ) -> Sequence[tuple[Union[ID, BasicExpr], BasicExpr]]:
     return [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
 
@@ -1542,7 +1544,7 @@ class NamedAgg(Expr):
     """Only used by code generator and therefore provides minimum functionality."""
 
     elements: Sequence[tuple[Union[ID, BasicExpr], BasicExpr]] = field(
-        converter=_named_agg_elements_converter
+        converter=_named_agg_elements_converter,
     )
     origin: Optional[Origin] = None
 
@@ -1729,7 +1731,8 @@ class ComplexExpr(Base):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ComplexExpr:
         return self.__class__(
-            [s.substituted(mapping) for s in self.stmts], self.expr.substituted(mapping)
+            [s.substituted(mapping) for s in self.stmts],
+            self.expr.substituted(mapping),
         )
 
 
@@ -1866,8 +1869,8 @@ def remove_unnecessary_checks(statements: Sequence[Stmt], manager: ProofManager)
                             ProofResult.SAT: [],
                             ProofResult.UNKNOWN: [],
                         },
-                    )
-                ]
+                    ),
+                ],
             )
             facts.append(s)
 
@@ -1889,7 +1892,9 @@ def remove_unused_assignments(statements: Sequence[Stmt]) -> list[Stmt]:
 
 
 def add_required_checks(
-    statements: Sequence[Stmt], manager: ProofManager, variable_id: Generator[ID, None, None]
+    statements: Sequence[Stmt],
+    manager: ProofManager,
+    variable_id: Generator[ID, None, None],
 ) -> list[Stmt]:
     """
     Add check statements in places where preconditions are not always true.

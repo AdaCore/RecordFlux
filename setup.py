@@ -25,7 +25,7 @@ class BuildParser(bdist_wheel):  # type: ignore[misc]
                 "generated/gnatcoll-bindings/gmp",
                 "generated/gnatcoll-bindings/iconv",
                 "generated/adasat",
-            ]
+            ],
         )
         env["GNATCOLL_ICONV_OPT"] = "-v"
         subprocess.run(
@@ -105,7 +105,7 @@ setup(
             "sphinx >=4.5, <5",
             "sphinx-rtd-theme >= 1.1.1, <1.2",
             "tqdm >=4.61.1, <4.63",
-        ]
+        ],
     },
     scripts=["bin/rflx"],
 )

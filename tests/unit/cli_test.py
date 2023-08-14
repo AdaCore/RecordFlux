@@ -69,7 +69,7 @@ def test_main_check_quiet() -> None:
 def test_main_check_parser_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cli, "check", lambda _: raise_parser_error())
     assert "<stdin>:8:22: parser: error: TEST" in str(
-        cli.main(["rflx", "check", MESSAGE_SPEC_FILE])
+        cli.main(["rflx", "check", MESSAGE_SPEC_FILE]),
     )
 
 
@@ -82,13 +82,13 @@ def test_main_check_model_error_create_model(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(rflx.specification.Parser, "parse", lambda _x, _y: raise_parser_error())
     monkeypatch.setattr(rflx.specification.Parser, "create_model", lambda _: raise_model_error())
     assert "<stdin>:8:22: parser: error: TEST\n<stdin>:8:22: model: error: TEST" in str(
-        cli.main(["rflx", "check", MESSAGE_SPEC_FILE])
+        cli.main(["rflx", "check", MESSAGE_SPEC_FILE]),
     )
 
 
 def test_main_check_non_existent_file() -> None:
     assert 'error: file not found: "non-existent file"' in str(
-        cli.main(["rflx", "check", "non-existent file"])
+        cli.main(["rflx", "check", "non-existent file"]),
     )
 
 
@@ -113,7 +113,7 @@ def test_main_generate_no_library_files(tmp_path: Path) -> None:
                 "",
                 "-n",
                 str(SPEC_DIR / "empty_package.rflx"),
-            ]
+            ],
         )
         == 0
     )
@@ -135,7 +135,7 @@ def test_main_generate_prefix(tmp_path: Path) -> None:
                     prefix,
                     MESSAGE_SPEC_FILE,
                     SESSION_SPEC_FILE,
-                ]
+                ],
             )
             == 0
         )
@@ -156,8 +156,8 @@ def test_main_generate_invalid_prefix(tmp_path: Path) -> None:
                     prefix,
                     MESSAGE_SPEC_FILE,
                     SESSION_SPEC_FILE,
-                ]
-            )
+                ],
+            ),
         )
 
 
@@ -178,8 +178,8 @@ def test_main_generate_non_existent_directory() -> None:
                 "non-existent directory",
                 MESSAGE_SPEC_FILE,
                 SESSION_SPEC_FILE,
-            ]
-        )
+            ],
+        ),
     )
 
 
@@ -192,7 +192,10 @@ def test_main_generate_non_existent_directory() -> None:
     ],
 )
 def test_main_generate_debug(
-    args: list[str], expected: generator.Debug, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    args: list[str],
+    expected: generator.Debug,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     result = []
 
@@ -214,7 +217,7 @@ def test_main_generate_debug(
     )
     assert (
         cli.main(
-            ["rflx", "generate", "-d", str(tmp_path), *args, MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]
+            ["rflx", "generate", "-d", str(tmp_path), *args, MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
         )
         == 0
     )
@@ -229,7 +232,7 @@ def test_main_graph(tmp_path: Path) -> None:
 
 def test_main_graph_non_existent_file(tmp_path: Path) -> None:
     assert 'cli: error: file not found: "non-existent file"' in str(
-        cli.main(["rflx", "graph", "-d", str(tmp_path), "non-existent file"])
+        cli.main(["rflx", "graph", "-d", str(tmp_path), "non-existent file"]),
     )
 
 
@@ -239,8 +242,15 @@ def test_main_graph_non_existent_files(tmp_path: Path) -> None:
         'cli: error: file not found: "non-existent file 2"'
         in str(
             cli.main(
-                ["rflx", "graph", "-d", str(tmp_path), "non-existent file 1", "non-existent file 2"]
-            )
+                [
+                    "rflx",
+                    "graph",
+                    "-d",
+                    str(tmp_path),
+                    "non-existent file 1",
+                    "non-existent file 2",
+                ],
+            ),
         )
     )
 
@@ -248,8 +258,8 @@ def test_main_graph_non_existent_files(tmp_path: Path) -> None:
 def test_main_graph_non_existent_directory() -> None:
     assert 'cli: error: directory not found: "non-existent directory"' in str(
         cli.main(
-            ["rflx", "graph", "-d", "non-existent directory", MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]
-        )
+            ["rflx", "graph", "-d", "non-existent directory", MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+        ),
     )
 
 
@@ -270,7 +280,7 @@ def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
                 str(tmp_path),
                 "-i",
                 str(tmp_path),
-            ]
+            ],
         )
 
     with pytest.raises(SystemExit, match="2"):
@@ -283,7 +293,7 @@ def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
                 str(tmp_path),
                 "-i",
                 str(tmp_path),
-            ]
+            ],
         )
 
 
@@ -295,7 +305,7 @@ def test_main_validate_no_test_data_provided(tmp_path: Path) -> None:
                 "validate",
                 str(tmp_path / "test.rflx"),
                 "Test::Message",
-            ]
+            ],
         )
         == "cli: error: must provide directory with valid and/or invalid messages"
     )
@@ -320,7 +330,7 @@ def test_main_validate_output_file_exists(tmp_path: Path) -> None:
                 str(tmp_file),
                 "-c",
                 "checksum",
-            ]
+            ],
         )
     ) == f"cli: error: output file already exists: {tmp_file}"
 
@@ -337,7 +347,7 @@ def test_main_validate_path_does_not_exist(tmp_path: Path) -> None:
                 str(tmp_path / "non_existent_dir"),
                 "-c",
                 "checksum",
-            ]
+            ],
         )
     ) == f"cli: error: {tmp_path}/non_existent_dir does not exist or is not a directory"
 
@@ -356,7 +366,7 @@ def test_main_validate_path_is_not_directory(tmp_path: Path) -> None:
                 str(tmp_file),
                 "-c",
                 "checksum",
-            ]
+            ],
         )
     ) == f"cli: error: {tmp_file} does not exist or is not a directory"
 
@@ -373,7 +383,7 @@ def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
                 str(tmp_path),
                 "-i",
                 str(tmp_path),
-            ]
+            ],
         )
         == 'cli: error: invalid identifier: id: error: " " in identifier parts of "Ethernet Frame"'
     )
@@ -382,7 +392,9 @@ def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
 def test_main_validate_non_fatal_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
     monkeypatch.setattr(
-        validator.Validator, "validate", lambda _a, _b, _c, _d, _e, _f, _g, _h: raise_parser_error()
+        validator.Validator,
+        "validate",
+        lambda _a, _b, _c, _d, _e, _f, _g, _h: raise_parser_error(),
     )
     assert (
         cli.main(
@@ -395,7 +407,7 @@ def test_main_validate_non_fatal_error(monkeypatch: pytest.MonkeyPatch, tmp_path
                 str(tmp_path),
                 "-i",
                 str(tmp_path),
-            ]
+            ],
         )
         == "<stdin>:8:22: parser: error: TEST"
     )
@@ -417,18 +429,22 @@ def test_main_validate_validation_error(monkeypatch: pytest.MonkeyPatch, tmp_pat
                 "Test::Message",
                 "-v",
                 str(tmp_path),
-            ]
-        )
+            ],
+        ),
     )
 
 
 @pytest.mark.parametrize("raise_error", [raise_unexpected_exception, raise_pyrflx_error])
 def test_main_validate_fatal_error(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, raise_error: Callable[[], None]
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    raise_error: Callable[[], None],
 ) -> None:
     monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
     monkeypatch.setattr(
-        validator.Validator, "validate", lambda _a, _b, _c, _d, _e, _f, _g, _h: raise_error()
+        validator.Validator,
+        "validate",
+        lambda _a, _b, _c, _d, _e, _f, _g, _h: raise_error(),
     )
     assert "RecordFlux Bug" in str(
         cli.main(
@@ -439,8 +455,8 @@ def test_main_validate_fatal_error(
                 "Test::Message",
                 "-v",
                 str(tmp_path),
-            ]
-        )
+            ],
+        ),
     )
 
 
@@ -450,8 +466,8 @@ def test_main_unexpected_exception(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
         r"\n-* RecordFlux Bug -*.*Traceback.*-*.*RecordFlux/issues.*",
         str(
             cli.main(
-                ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]
-            )
+                ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+            ),
         ),
         re.DOTALL,
     )
@@ -468,9 +484,9 @@ def test_fail_fast() -> None:
                         "5",
                         "check",
                         str(SPEC_DIR / "multiple_errors.rflx"),
-                    ]
-                )
-            ).split("\n")
+                    ],
+                ),
+            ).split("\n"),
         )
         == 10
     )
@@ -502,7 +518,7 @@ def test_missing_unsafe_option() -> None:
                 "--no-verification",
                 "check",
                 MESSAGE_SPEC_FILE,
-            ]
+            ],
         )
         == 'cli: error: unsafe option "--no-verification" given without "--unsafe"'
     )
@@ -523,8 +539,8 @@ def test_exception_in_unsafe_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
                     str(tmp_path),
                     MESSAGE_SPEC_FILE,
                     SESSION_SPEC_FILE,
-                ]
-            )
+                ],
+            ),
         ),
         re.DOTALL,
     )
@@ -546,7 +562,7 @@ def test_main_convert_iana(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert cli.main(["rflx", "convert", "iana", "-d", str(tmp_path / "1"), IANA_XML_FILE]) == 0
     assert (
         cli.main(
-            ["rflx", "convert", "iana", "-d", str(tmp_path / "2"), "--always-valid", IANA_XML_FILE]
+            ["rflx", "convert", "iana", "-d", str(tmp_path / "2"), "--always-valid", IANA_XML_FILE],
         )
         == 0
     )
@@ -577,6 +593,7 @@ def test_requirement(requirement: str, name: str, extra: Optional[str]) -> None:
 
 def test_requirement_error() -> None:
     with pytest.raises(
-        FatalError, match=r'^cli: error: failed parsing requirement "\(<2,>=1\) pydantic"$'
+        FatalError,
+        match=r'^cli: error: failed parsing requirement "\(<2,>=1\) pydantic"$',
     ):
         cli.Requirement("(<2,>=1) pydantic")

@@ -132,7 +132,7 @@ class ParallelProofs:
                     ProofResult.UNKNOWN: unknown_error,
                 },
                 add_unsat,
-            )
+            ),
         )
 
     def push(self) -> None:
@@ -151,7 +151,7 @@ class ParallelProofs:
                     [
                         (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
                         for m, locn in proof.error
-                    ]
+                    ],
                 )
         return result
 
@@ -228,15 +228,22 @@ class Expr(DBC, Base):
     def check_type(self, expected: Union[rty.Type, tuple[rty.Type, ...]]) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
         return self._check_type_subexpr() + rty.check_type(
-            self.type_, expected, self.location, _entity_name(self)
+            self.type_,
+            expected,
+            self.location,
+            _entity_name(self),
         )
 
     def check_type_instance(
-        self, expected: Union[type[rty.Type], tuple[type[rty.Type], ...]]
+        self,
+        expected: Union[type[rty.Type], tuple[type[rty.Type], ...]],
     ) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
         return self._check_type_subexpr() + rty.check_type_instance(
-            self.type_, expected, self.location, _entity_name(self)
+            self.type_,
+            expected,
+            self.location,
+            _entity_name(self),
         )
 
     @property
@@ -333,11 +340,11 @@ class Not(Expr):
         # De Morgan's law
         if isinstance(self.expr, And):
             return Or(
-                *(Not(term.simplified()).simplified() for term in self.expr.terms)
+                *(Not(term.simplified()).simplified() for term in self.expr.terms),
             ).simplified()
         if isinstance(self.expr, Or):
             return And(
-                *(Not(term.simplified()).simplified() for term in self.expr.terms)
+                *(Not(term.simplified()).simplified() for term in self.expr.terms),
             ).simplified()
         for relation, inverse_relation in [
             (Less, GreaterEqual),
@@ -386,7 +393,7 @@ class BinExpr(Expr):
 
     def _update_str(self) -> None:
         self._str = intern(
-            f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}"
+            f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}",
         )
 
     def __neg__(self) -> Expr:
@@ -427,7 +434,9 @@ class BinExpr(Expr):
 
     def simplified(self) -> Expr:
         return self.__class__(
-            self.left.simplified(), self.right.simplified(), location=self.location
+            self.left.simplified(),
+            self.right.simplified(),
+            location=self.location,
         )
 
     @property
@@ -452,7 +461,7 @@ class AssExpr(Expr):
         self._str = intern(
             self.symbol.join(map(self.parenthesized, self.terms))
             if self.terms
-            else str(self.neutral_element())
+            else str(self.neutral_element()),
         )
 
     @abstractmethod
@@ -485,7 +494,8 @@ class AssExpr(Expr):
         expr = func(self)
         if isinstance(expr, AssExpr):
             return expr.__class__(
-                *[t.substituted(func) for t in expr.terms], location=expr.location
+                *[t.substituted(func) for t in expr.terms],
+                location=expr.location,
             )
         return expr
 
@@ -570,7 +580,7 @@ class AssExpr(Expr):
                                         u.condition_expressions[0][0],
                                     ).simplified(),
                                     t.condition_expressions[0][1],
-                                )
+                                ),
                             ],
                             t.else_expression,
                         ),
@@ -1343,7 +1353,11 @@ class Variable(Name):
 
     def __neg__(self) -> Variable:
         return self.__class__(
-            self.identifier, not self.negative, self.immutable, self.type_, self.location
+            self.identifier,
+            not self.negative,
+            self.immutable,
+            self.type_,
+            self.location,
         )
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -1375,7 +1389,8 @@ class Variable(Name):
             return ir.ComplexBoolExpr([], ir.BoolVar(self.name, origin=self))
         if isinstance(self.type_, rty.Integer):
             return ir.ComplexIntExpr(
-                [], ir.IntVar(self.name, self.type_, self.negative, origin=self)
+                [],
+                ir.IntVar(self.name, self.type_, self.negative, origin=self),
             )
 
         assert isinstance(self.type_, rty.Any)
@@ -1589,7 +1604,7 @@ class Valid(Attribute):
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(
-            (rty.Sequence, rty.Message) if isinstance(self.prefix, Variable) else rty.Any
+            (rty.Sequence, rty.Message) if isinstance(self.prefix, Variable) else rty.Any,
         )
 
     def _to_ir(self, prefix: ID) -> ir.Expr:
@@ -1631,8 +1646,8 @@ class Present(Attribute):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
-                ]
+                    ),
+                ],
             )
         return error
 
@@ -1660,7 +1675,10 @@ class HasData(Attribute):
 
 class Head(Attribute):
     def __init__(
-        self, prefix: Union[StrID, Expr], negative: bool = False, type_: rty.Type = rty.UNDEFINED
+        self,
+        prefix: Union[StrID, Expr],
+        negative: bool = False,
+        type_: rty.Type = rty.UNDEFINED,
     ):
         super().__init__(prefix, negative)
         self.type_ = type_
@@ -1697,7 +1715,7 @@ class Head(Attribute):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.prefix.location,
-                    )
+                    ),
                 ],
             )
         return error
@@ -1735,7 +1753,10 @@ class Val(Attribute):
     """Only used by code generator and therefore provides minimum functionality."""
 
     def __init__(
-        self, prefix: Union[StrID, Expr], expression: Expr, _negative: bool = False
+        self,
+        prefix: Union[StrID, Expr],
+        expression: Expr,
+        _negative: bool = False,
     ) -> None:
         self.expression = expression
         super().__init__(prefix)
@@ -1768,7 +1789,9 @@ class Val(Attribute):
 
     def ada_expr(self) -> ada.Expr:
         result = getattr(ada, self.__class__.__name__)(
-            self.prefix.ada_expr(), self.expression.ada_expr(), self.negative
+            self.prefix.ada_expr(),
+            self.expression.ada_expr(),
+            self.negative,
         )
         assert isinstance(result, ada.Expr)
         return result
@@ -1801,7 +1824,9 @@ class Indexed(Name):
 
     def ada_expr(self) -> ada.Expr:
         return ada.Indexed(
-            self.prefix.ada_expr(), *[e.ada_expr() for e in self.elements], negative=self.negative
+            self.prefix.ada_expr(),
+            *[e.ada_expr() for e in self.elements],
+            negative=self.negative,
         )
 
     def z3expr(self) -> z3.ExprRef:
@@ -1828,7 +1853,12 @@ class Selected(Name):
 
     def __neg__(self) -> Selected:
         return self.__class__(
-            self.prefix, self.selector, not self.negative, self.immutable, self.type_, self.location
+            self.prefix,
+            self.selector,
+            not self.negative,
+            self.immutable,
+            self.type_,
+            self.location,
         )
 
     def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
@@ -1856,7 +1886,7 @@ class Selected(Name):
                             self.prefix.type_.parameters | self.prefix.type_.fields,
                             self.location,
                         ),
-                    ]
+                    ],
                 )
                 self.type_ = rty.Any()
         else:
@@ -1985,7 +2015,7 @@ class Call(Name):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -1997,7 +2027,7 @@ class Call(Name):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -2179,7 +2209,8 @@ class Aggregate(Expr):
         expr = func(self)
         if isinstance(expr, self.__class__):
             return expr.__class__(
-                *[e.substituted(func) for e in expr.elements], location=expr.location
+                *[e.substituted(func) for e in expr.elements],
+                location=expr.location,
             )
         return expr
 
@@ -2250,7 +2281,7 @@ class NamedAggregate(Expr):
     def _update_str(self) -> None:
         assert len(self.elements) > 0
         self._str = intern(
-            "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")"
+            "(" + ", ".join(f"{name} => {element}" for name, element in self.elements) + ")",
         )
 
     def __neg__(self) -> Expr:
@@ -2315,7 +2346,7 @@ class Relation(BinExpr):
         ):
             raise Z3TypeError(
                 f'invalid relation between "{type(left).__name__}" and "{type(right).__name__}"'
-                f" in {self}"
+                f" in {self}",
             )
         result = self._operator(left, right)
         assert isinstance(result, z3.BoolRef)
@@ -2506,7 +2537,7 @@ class In(Relation):
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.left.check_type_instance(rty.Any) + self.right.check_type(
-            rty.Aggregate(self.left.type_)
+            rty.Aggregate(self.left.type_),
         )
 
     @property
@@ -2536,7 +2567,7 @@ class NotIn(Relation):
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.left.check_type_instance(rty.Any) + self.right.check_type(
-            rty.Aggregate(self.left.type_)
+            rty.Aggregate(self.left.type_),
         )
 
     @property
@@ -2571,8 +2602,8 @@ class IfExpr(Expr):
                 [
                     *[e.type_ for _, e in condition_expressions],
                     *([else_expression.type_] if else_expression else []),
-                ]
-            )
+                ],
+            ),
         )
         self.condition_expressions = condition_expressions
         self.else_expression = else_expression
@@ -2731,7 +2762,7 @@ class QuantifiedExpr(Expr):
     def _update_str(self) -> None:
         self._str = intern(
             f"(for {self.quantifier} {self.parameter_identifier} {self.keyword} {self.iterable}"
-            f" =>\n{indent(str(self.predicate), 4)})"
+            f" =>\n{indent(str(self.predicate), 4)})",
         )
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -2769,12 +2800,14 @@ class QuantifiedExpr(Expr):
                 v
                 for v in self.iterable.variables() + self.predicate.variables()
                 if v.identifier != self.parameter_identifier
-            )
+            ),
         )
 
     def ada_expr(self) -> ada.Expr:
         result = getattr(ada, self.__class__.__name__)(
-            self.parameter_identifier, self.iterable.ada_expr(), self.predicate.ada_expr()
+            self.parameter_identifier,
+            self.iterable.ada_expr(),
+            self.predicate.ada_expr(),
         )
         assert isinstance(result, ada.Expr)
         return result
@@ -2933,7 +2966,7 @@ class Conversion(Expr):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
-                        )
+                        ),
                     ],
                 )
                 if isinstance(self.argument.prefix.type_, rty.Message):
@@ -2945,7 +2978,7 @@ class Conversion(Expr):
                                 Subsystem.MODEL,
                                 Severity.INFO,
                                 self.location,
-                            )
+                            ),
                         ],
                     )
         else:
@@ -2956,7 +2989,7 @@ class Conversion(Expr):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.argument.location,
-                    )
+                    ),
                 ],
             )
 
@@ -3071,7 +3104,7 @@ class Comprehension(Expr):
 
     def _update_str(self) -> None:
         self._str = intern(
-            f"[for {self.iterator} in {self.sequence} if {self.condition} => {self.selector}]"
+            f"[for {self.iterator} in {self.sequence} if {self.condition} => {self.selector}]",
         )
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -3221,7 +3254,7 @@ class MessageAggregate(Expr):
                             field.location,
                         ),
                         *_similar_field_names(field, self.type_.types, field.location),
-                    ]
+                    ],
                 )
                 continue
 
@@ -3244,7 +3277,7 @@ class MessageAggregate(Expr):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             field.location,
-                        )
+                        ),
                     ],
                 )
                 break
@@ -3271,7 +3304,7 @@ class MessageAggregate(Expr):
                             unique(
                                 c[len(self.field_values)]
                                 for c in sorted(self._field_combinations())
-                            )
+                            ),
                         ),
                         Subsystem.MODEL,
                         Severity.INFO,
@@ -3381,7 +3414,8 @@ class DeltaMessageAggregate(MessageAggregate):
 
 
 def substitution(
-    mapping: Mapping[Name, Expr], func: Optional[Callable[[Expr], Expr]] = None
+    mapping: Mapping[Name, Expr],
+    func: Optional[Callable[[Expr], Expr]] = None,
 ) -> Callable[[Expr], Expr]:
     if func:
         return func
@@ -3466,7 +3500,7 @@ class CaseExpr(Expr):
                         )
                         for l in missing
                     ],
-                ]
+                ],
             )
 
         invalid = set(literals) - set(type_literals)
@@ -3488,7 +3522,7 @@ class CaseExpr(Expr):
                         )
                         for l in invalid
                     ],
-                ]
+                ],
             )
         return error
 
@@ -3530,7 +3564,7 @@ class CaseExpr(Expr):
                         )
                         for r in missing_ranges
                     ],
-                ]
+                ],
             )
 
         invalid = set(literals) - set(type_literals)
@@ -3552,7 +3586,7 @@ class CaseExpr(Expr):
                         )
                         for l in invalid
                     ],
-                ]
+                ],
             )
 
         return error
@@ -3583,7 +3617,7 @@ class CaseExpr(Expr):
                                 Severity.INFO,
                                 e2.location,
                             ),
-                        ]
+                        ],
                     )
 
         error += self.expr.check_type_instance(rty.Any)
@@ -3613,7 +3647,7 @@ class CaseExpr(Expr):
                         )
                         for l in duplicates
                     ],
-                ]
+                ],
             )
 
         if isinstance(self.expr.type_, rty.Enumeration):
@@ -3635,7 +3669,7 @@ class CaseExpr(Expr):
                         Severity.INFO,
                         self.expr.location,
                     ),
-                ]
+                ],
             )
 
         self.type_ = result_type
@@ -3722,13 +3756,15 @@ class CaseExpr(Expr):
                 [
                     *simplified.expr.variables(),
                     *[v for _, e in simplified.choices for v in e.variables()],
-                ]
-            )
+                ],
+            ),
         )
 
 
 def _similar_field_names(
-    field: ID, fields: Iterable[ID], location: Optional[Location]
+    field: ID,
+    fields: Iterable[ID],
+    location: Optional[Location],
 ) -> list[tuple[str, Subsystem, Severity, Optional[Location]]]:
     field_similarity = sorted(
         ((f, difflib.SequenceMatcher(None, str(f), str(field)).ratio()) for f in sorted(fields)),
@@ -3743,13 +3779,14 @@ def _similar_field_names(
                 Subsystem.MODEL,
                 Severity.INFO,
                 location,
-            )
+            ),
         ]
     return []
 
 
 def _to_ir_basic_int(
-    expression: Expr, variable_id: Generator[ID, None, None]
+    expression: Expr,
+    variable_id: Generator[ID, None, None],
 ) -> tuple[list[ir.Stmt], ir.BasicIntExpr]:
     assert isinstance(expression.type_, rty.AnyInteger)
 
@@ -3770,7 +3807,8 @@ def _to_ir_basic_int(
 
 
 def _to_ir_basic_bool(
-    expression: Expr, variable_id: Generator[ID, None, None]
+    expression: Expr,
+    variable_id: Generator[ID, None, None],
 ) -> tuple[list[ir.Stmt], ir.BasicBoolExpr]:
     assert expression.type_ == rty.BOOLEAN
 
@@ -3790,7 +3828,8 @@ def _to_ir_basic_bool(
 
 
 def _to_ir_basic_expr(
-    expression: Expr, variable_id: Generator[ID, None, None]
+    expression: Expr,
+    variable_id: Generator[ID, None, None],
 ) -> tuple[list[ir.Stmt], ir.BasicExpr]:
     result = expression.to_ir(variable_id)
     if isinstance(result.expr, ir.BasicExpr):

@@ -64,7 +64,8 @@ class Link(Base):
 
     def __str__(self) -> str:
         condition = indent_next(
-            f"\nif {indent_next(str(self.condition), 3)}" if self.condition != expr.TRUE else "", 3
+            f"\nif {indent_next(str(self.condition), 3)}" if self.condition != expr.TRUE else "",
+            3,
         )
         aspects = []
         if self.size != expr.UNDEFINED:
@@ -144,7 +145,9 @@ class AbstractMessage(mty.Type):
             if not state and not self.is_null:
                 self._state.has_unreachable = self._validate(self._structure, types)
                 self._structure, self._checksums = self._normalize(
-                    self._structure, types, self._checksums
+                    self._structure,
+                    types,
+                    self._checksums,
                 )
                 fields = self._compute_topological_sorting(self._state.has_unreachable)
                 if fields:
@@ -198,7 +201,7 @@ class AbstractMessage(mty.Type):
                 f"{parameter_field.identifier} : {parameter_type_identifier}"
                 for parameter_field, parameter_type in self.parameter_types.items()
                 for parameter_type_identifier in (parameter_type.qualified_identifier,)
-            ]
+            ],
         )
         if parameters:
             parameters = f" ({parameters})"
@@ -402,7 +405,7 @@ class AbstractMessage(mty.Type):
                         and v.identifier != ID("Message")
                         and Field(v.identifier) not in self.parameters
                     },
-                }
+                },
             ).simplified()
 
         structure = []
@@ -523,7 +526,10 @@ class AbstractMessage(mty.Type):
         return has_unreachable
 
     def _validate_types(
-        self, types: Mapping[Field, mty.Type], type_fields: set[Field], structure_fields: set[Field]
+        self,
+        types: Mapping[Field, mty.Type],
+        type_fields: set[Field],
+        structure_fields: set[Field],
     ) -> None:
         parameters = type_fields - structure_fields - {INITIAL, FINAL}
 
@@ -537,8 +543,8 @@ class AbstractMessage(mty.Type):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             p.identifier.location,
-                        )
-                    ]
+                        ),
+                    ],
                 )
             elif isinstance(parameter_type, mty.Enumeration) and parameter_type.always_valid:
                 self.error.extend(
@@ -548,8 +554,8 @@ class AbstractMessage(mty.Type):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             p.identifier.location,
-                        )
-                    ]
+                        ),
+                    ],
                 )
 
         for f in structure_fields - type_fields:
@@ -560,7 +566,7 @@ class AbstractMessage(mty.Type):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         f.identifier.location,
-                    )
+                    ),
                 ],
             )
 
@@ -581,7 +587,7 @@ class AbstractMessage(mty.Type):
                         for l in self.outgoing(INITIAL)
                         if l.target.identifier.location
                     ],
-                ]
+                ],
             )
 
         if initial_links[0].first != expr.UNDEFINED:
@@ -592,7 +598,7 @@ class AbstractMessage(mty.Type):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         initial_links[0].first.location,
-                    )
+                    ),
                 ],
             )
 
@@ -640,7 +646,7 @@ class AbstractMessage(mty.Type):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             f.identifier.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -668,7 +674,7 @@ class AbstractMessage(mty.Type):
                             )
                             for l in links
                         ],
-                    ]
+                    ],
                 )
 
         return has_unreachable
@@ -700,7 +706,7 @@ class AbstractMessage(mty.Type):
                                 )
                                 for v in variables
                             ],
-                        ]
+                        ],
                     )
 
             if link.has_implicit_size:
@@ -713,7 +719,7 @@ class AbstractMessage(mty.Type):
                                 Severity.ERROR,
                                 link.size.location,
                             ),
-                        ]
+                        ],
                     )
                 else:
                     valid_definitions = (
@@ -742,7 +748,7 @@ class AbstractMessage(mty.Type):
                                     Severity.INFO,
                                     link.size.location,
                                 ),
-                            ]
+                            ],
                         )
 
     def _normalize(
@@ -823,7 +829,7 @@ class AbstractMessage(mty.Type):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    )
+                    ),
                 ],
             )
             # Eng/RecordFlux/RecordFlux#256
@@ -1097,7 +1103,7 @@ class Message(AbstractMessage):
                 and expression.prefix.name.startswith("RFLX_")
             ):
                 return expression.copy(
-                    prefix=expression.prefix.copy(identifier=expression.prefix.name[5:])
+                    prefix=expression.prefix.copy(identifier=expression.prefix.name[5:]),
                 )
             return expression
 
@@ -1116,8 +1122,9 @@ class Message(AbstractMessage):
                 if isinstance(v, expr.Variable):
                     composite_sizes.append(
                         expr.Equal(
-                            expr.Size(f.name), expr.Size(v.copy(identifier="RFLX_" + v.identifier))
-                        )
+                            expr.Size(f.name),
+                            expr.Size(v.copy(identifier="RFLX_" + v.identifier)),
+                        ),
                     )
 
                 if isinstance(v, expr.Selected) and isinstance(v.prefix, expr.Variable):
@@ -1126,10 +1133,10 @@ class Message(AbstractMessage):
                             expr.Size(f.name),
                             expr.Size(
                                 v.copy(
-                                    prefix=v.prefix.copy(identifier="RFLX_" + v.prefix.identifier)
-                                )
+                                    prefix=v.prefix.copy(identifier="RFLX_" + v.prefix.identifier),
+                                ),
                             ),
-                        )
+                        ),
                     )
         facts: list[expr.Expr] = [*values, *aggregate_sizes, *composite_sizes]
         type_constraints = to_mapping(self._aggregate_constraints() + self._type_size_constraints())
@@ -1139,7 +1146,7 @@ class Message(AbstractMessage):
 
         for field in fields:
             overlay_condition = expr.Not(
-                expr.Or(*[l.condition for l in self.incoming(field) if l.first != expr.UNDEFINED])
+                expr.Or(*[l.condition for l in self.incoming(field) if l.first != expr.UNDEFINED]),
             ).simplified()
             paths_to_field = sorted(
                 {
@@ -1151,7 +1158,7 @@ class Message(AbstractMessage):
                     ]
                     for path in possible_paths
                     if any(l.target == field for l in path)
-                }
+                },
             )
 
             for path in paths_to_field:
@@ -1190,7 +1197,7 @@ class Message(AbstractMessage):
                         )
                         else path_condition,
                         field_size,
-                    )
+                    ),
                 )
 
         return (
@@ -1204,7 +1211,7 @@ class Message(AbstractMessage):
                         lambda x: x[0],
                     )
                     for field_size in [expr.Add(*(s for _, s in groups))]
-                ]
+                ],
             )
             .substituted(mapping=to_mapping(values))
             .simplified()
@@ -1246,7 +1253,8 @@ class Message(AbstractMessage):
         for path in self.paths(FINAL):
             for l in path[:-1]:
                 result[l.target] = max(
-                    result[l.target], self._max_value(expr.Size(l.target.name), path)
+                    result[l.target],
+                    self._max_value(expr.Size(l.target.name), path),
                 )
 
         return result
@@ -1257,7 +1265,7 @@ class Message(AbstractMessage):
                 expr.Size(link.target.name)
                 for link in path
                 if link.target != FINAL and link.first == expr.UNDEFINED
-            ]
+            ],
         )
         link_expressions = [fact for link in path for fact in self._link_expressions(link)]
         return expr.max_value(
@@ -1286,8 +1294,8 @@ class Message(AbstractMessage):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             p.identifier.location,
-                        )
-                    ]
+                        ),
+                    ],
                 )
 
     def _verify_use_of_literals(self) -> None:
@@ -1310,14 +1318,14 @@ class Message(AbstractMessage):
                             *[
                                 e
                                 for ass_expr in expression.findall(
-                                    lambda x: isinstance(x, expr.AssExpr)
+                                    lambda x: isinstance(x, expr.AssExpr),
                                 )
                                 if isinstance(ass_expr, expr.AssExpr)
                                 for e in ass_expr.terms
                                 if isinstance(e, expr.Literal) and e not in [expr.TRUE, expr.FALSE]
                             ],
                         ]
-                    ]
+                    ],
                 )
 
     def _verify_use_of_type_names(self) -> None:
@@ -1336,7 +1344,7 @@ class Message(AbstractMessage):
                             *[
                                 e
                                 for ass_expr in expression.findall(
-                                    lambda x: isinstance(x, expr.AssExpr)
+                                    lambda x: isinstance(x, expr.AssExpr),
                                 )
                                 if isinstance(ass_expr, expr.AssExpr)
                                 for e in ass_expr.terms
@@ -1345,14 +1353,14 @@ class Message(AbstractMessage):
                             *[
                                 e
                                 for relation in expression.findall(
-                                    lambda x: isinstance(x, expr.Relation)
+                                    lambda x: isinstance(x, expr.Relation),
                                 )
                                 if isinstance(relation, expr.Relation)
                                 for e in [relation.left, relation.right]
                                 if isinstance(e, expr.TypeName)
                             ],
                         ]
-                    ]
+                    ],
                 )
 
     def _verify_message_types(self) -> None:
@@ -1369,8 +1377,8 @@ class Message(AbstractMessage):
                                     Subsystem.MODEL,
                                     Severity.ERROR,
                                     var.location,
-                                )
-                            ]
+                                ),
+                            ],
                         )
 
     def _verify_expression_types(self) -> None:
@@ -1433,7 +1441,7 @@ class Message(AbstractMessage):
                                     Subsystem.MODEL,
                                     Severity.INFO,
                                     expression.location,
-                                )
+                                ),
                             ],
                         )
 
@@ -1463,7 +1471,7 @@ class Message(AbstractMessage):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             expression.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -1476,7 +1484,7 @@ class Message(AbstractMessage):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         link.first.location,
-                    )
+                    ),
                 ],
             )
 
@@ -1489,7 +1497,7 @@ class Message(AbstractMessage):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         link.size.location,
-                    )
+                    ),
                 ],
             )
         if link.target != FINAL and link.target in self.types:
@@ -1503,7 +1511,7 @@ class Message(AbstractMessage):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             link.target.identifier.location,
-                        )
+                        ),
                     ],
                 )
             if unconstrained and link.size == expr.UNDEFINED:
@@ -1514,7 +1522,7 @@ class Message(AbstractMessage):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             link.target.identifier.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -1543,7 +1551,7 @@ class Message(AbstractMessage):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             name.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -1563,7 +1571,7 @@ class Message(AbstractMessage):
                                 Subsystem.MODEL,
                                 Severity.ERROR,
                                 e.location,
-                            )
+                            ),
                         ],
                     )
 
@@ -1579,7 +1587,7 @@ class Message(AbstractMessage):
                                     Subsystem.MODEL,
                                     Severity.ERROR,
                                     v.location,
-                                )
+                                ),
                             ],
                         )
 
@@ -1607,7 +1615,7 @@ class Message(AbstractMessage):
                                             Subsystem.MODEL,
                                             Severity.ERROR,
                                             e.location,
-                                        )
+                                        ),
                                     ],
                                 )
 
@@ -1624,7 +1632,7 @@ class Message(AbstractMessage):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         name.location,
-                    )
+                    ),
                 ],
             )
         for name in checked - set(self.checksums):
@@ -1635,7 +1643,7 @@ class Message(AbstractMessage):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         name.location,
-                    )
+                    ),
                 ],
             )
 
@@ -1657,8 +1665,8 @@ class Message(AbstractMessage):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         l.source.identifier.location,
-                    )
-                ]
+                    ),
+                ],
             )
             unknown_error = RecordFluxError(
                 [
@@ -1668,8 +1676,8 @@ class Message(AbstractMessage):
                         Subsystem.MODEL,
                         Severity.WARNING,
                         l.source.identifier.location,
-                    )
-                ]
+                    ),
+                ],
             )
             proofs.add(
                 expr.Equal(l.condition, expr.FALSE),
@@ -1741,7 +1749,7 @@ class Message(AbstractMessage):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             f.identifier.location,
-                        )
+                        ),
                     ],
                 )
 
@@ -1756,7 +1764,7 @@ class Message(AbstractMessage):
                         expr.Or(
                             *[o.condition for o in outgoing],
                             location=last_field.identifier.location,
-                        )
+                        ),
                     )
                 proof = expr.TRUE.check(facts)
                 if proof.result == expr.ProofResult.SAT:
@@ -1771,7 +1779,7 @@ class Message(AbstractMessage):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         f.identifier.location,
-                    )
+                    ),
                 )
                 for index, (path, errors) in enumerate(sorted(paths)):
                     error.append(
@@ -1780,13 +1788,13 @@ class Message(AbstractMessage):
                             Subsystem.MODEL,
                             Severity.INFO,
                             f.identifier.location,
-                        )
+                        ),
                     )
                     error.extend(
                         [
                             (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
                             for m, l in errors
-                        ]
+                        ],
                     )
                 self.error.extend(error)
 
@@ -1815,7 +1823,7 @@ class Message(AbstractMessage):
                                 Subsystem.MODEL,
                                 Severity.ERROR,
                                 cond.location,
-                            )
+                            ),
                         ],
                     )
                     self.error.extend(
@@ -1827,13 +1835,13 @@ class Message(AbstractMessage):
                                 l.target.identifier.location,
                             )
                             for l in path
-                        ]
+                        ],
                     )
                     self.error.extend(
                         [
                             (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
                             for m, l in errors
-                        ]
+                        ],
                     )
 
     def _prove_coverage(self) -> None:
@@ -1866,15 +1874,15 @@ class Message(AbstractMessage):
                             expr.GreaterEqual(expr.Variable("f"), self._target_first(l)),
                             expr.LessEqual(expr.Variable("f"), self._target_last(l)),
                             location=l.location,
-                        )
+                        ),
                     )
                     for l in path
-                ]
+                ],
             )
 
             # Define that the end of the last field of a path is the end of the message
             facts.append(
-                expr.Equal(self._target_last(path[-1]), expr.Last("Message"), self.location)
+                expr.Equal(self._target_last(path[-1]), expr.Last("Message"), self.location),
             )
 
             # Constraints for links and types
@@ -1898,7 +1906,7 @@ class Message(AbstractMessage):
                         )
                         for l in path
                     ],
-                ]
+                ],
             )
             proofs.add(expr.TRUE, facts, sat_error=error, unknown_error=error)
         proofs.check(self.error)
@@ -1910,7 +1918,9 @@ class Message(AbstractMessage):
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
                     facts = [f for l in p for f in self._link_expressions(l)]
                     overlaid = expr.Equal(
-                        self._target_last(l), expr.Last(l.first.prefix), l.location
+                        self._target_last(l),
+                        expr.Last(l.first.prefix),
+                        l.location,
                     )
                     error = RecordFluxError(
                         [
@@ -1920,11 +1930,15 @@ class Message(AbstractMessage):
                                 Subsystem.MODEL,
                                 Severity.ERROR,
                                 self.identifier.location,
-                            )
+                            ),
                         ],
                     )
                     proofs.add(
-                        overlaid, facts, unsat_error=error, unknown_error=error, add_unsat=True
+                        overlaid,
+                        facts,
+                        unsat_error=error,
+                        unknown_error=error,
+                        add_unsat=True,
                     )
             proofs.push()
         proofs.check(self.error)
@@ -1960,7 +1974,7 @@ class Message(AbstractMessage):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             field_size.location,
-                        )
+                        ),
                     ],
                 )
                 proofs.add(negative, facts, sat_error=error, unknown_error=error)
@@ -1973,7 +1987,7 @@ class Message(AbstractMessage):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             self.identifier.location,
-                        )
+                        ),
                     ],
                 )
                 proofs.add(start, facts, unsat_error=error, unknown_error=error, add_unsat=True)
@@ -1987,7 +2001,7 @@ class Message(AbstractMessage):
                                 expr.Mod(self._target_first(last), element_size),
                                 expr.Number(1),
                                 last.location,
-                            )
+                            ),
                         )
 
                         path_message = " -> ".join([p.target.name for p in path])
@@ -1999,7 +2013,7 @@ class Message(AbstractMessage):
                                     Subsystem.MODEL,
                                     Severity.ERROR,
                                     f.identifier.location,
-                                )
+                                ),
                             ],
                         )
                         proofs.add(
@@ -2018,7 +2032,7 @@ class Message(AbstractMessage):
                                 expr.Mod(field_size, element_size),
                                 expr.Number(0),
                                 last.location,
-                            )
+                            ),
                         )
 
                         path_message = " -> ".join([p.target.name for p in path])
@@ -2030,8 +2044,8 @@ class Message(AbstractMessage):
                                     Subsystem.MODEL,
                                     Severity.ERROR,
                                     field_size.location,
-                                )
-                            ]
+                                ),
+                            ],
                         )
                         proofs.add(
                             is_multiple_of_element_size,
@@ -2062,7 +2076,7 @@ class Message(AbstractMessage):
                     expr.Size(link.target.name)
                     for link in path
                     if link.target != FINAL and link.first == expr.UNDEFINED
-                ]
+                ],
             )
             facts = [
                 *[fact for link in path for fact in self._link_expressions(link)],
@@ -2121,7 +2135,9 @@ class Message(AbstractMessage):
         )
 
     def _link_size_expressions(
-        self, link: Link, ignore_implicit_sizes: bool = False
+        self,
+        link: Link,
+        ignore_implicit_sizes: bool = False,
     ) -> list[expr.Expr]:
         name = link.target.name
         target_first = self._target_first(link)
@@ -2235,7 +2251,8 @@ class UnprovenMessage(AbstractMessage):
 
     @ensure(lambda result: valid_message_field_types(result))
     def merged(
-        self, message_arguments: Optional[Mapping[ID, Mapping[ID, expr.Expr]]] = None
+        self,
+        message_arguments: Optional[Mapping[ID, Mapping[ID, expr.Expr]]] = None,
     ) -> UnprovenMessage:
         message_arguments = message_arguments or {}
         message = self
@@ -2291,12 +2308,13 @@ class UnprovenMessage(AbstractMessage):
                             initial_link.size.substituted(mapping=substitution),
                             link.first.substituted(mapping=substitution),
                             link.location,
-                        )
+                        ),
                     )
                 elif link.source == field:
                     for final_link in inner_message.incoming(FINAL):
                         merged_condition = expr.And(
-                            link.condition, final_link.condition
+                            link.condition,
+                            final_link.condition,
                         ).substituted(mapping=substitution)
                         # The outer message may references to merged fields in its conditions
                         # that are not yet present as the messages are not yet merged.
@@ -2309,7 +2327,7 @@ class UnprovenMessage(AbstractMessage):
                                 *inner_message.message_constraints(),
                                 *inner_message.type_constraints(merged_condition),
                                 inner_message.path_condition(final_link.source),
-                            ]
+                            ],
                         )
                         if proof.result != expr.ProofResult.UNSAT:
                             structure.append(
@@ -2321,13 +2339,13 @@ class UnprovenMessage(AbstractMessage):
                                         mapping={
                                             **substitution,
                                             expr.Last(field.identifier): expr.Last(
-                                                final_link.source.identifier
+                                                final_link.source.identifier,
                                             ),
-                                        }
+                                        },
                                     ),
                                     link.first.substituted(mapping=substitution),
                                     link.location,
-                                )
+                                ),
                             )
                 else:
                     structure.append(link)
@@ -2370,8 +2388,8 @@ class UnprovenMessage(AbstractMessage):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         field.identifier.location,
-                    )
-                ]
+                    ),
+                ],
             )
         message.error.propagate()
         return message.copy(structure=structure, types=types, byte_order=byte_order)
@@ -2433,7 +2451,7 @@ class UnprovenMessage(AbstractMessage):
                     m.location
                     for e in expressions
                     for m in e.findall(
-                        lambda x: isinstance(x, expr.Variable) and x.identifier == ID("Message")
+                        lambda x: isinstance(x, expr.Variable) and x.identifier == ID("Message"),
                     )
                 ]
                 if locations:
@@ -2454,11 +2472,14 @@ class UnprovenMessage(AbstractMessage):
                                 )
                                 for loc in locations
                             ],
-                        ]
+                        ],
                     )
 
     def _check_name_conflicts(
-        self, message: AbstractMessage, inner_message: AbstractMessage, field: Field
+        self,
+        message: AbstractMessage,
+        inner_message: AbstractMessage,
+        field: Field,
     ) -> None:
         name_conflicts = [
             f for f in message.fields for g in inner_message.fields if f.name == g.name
@@ -2492,7 +2513,9 @@ class UnprovenMessage(AbstractMessage):
 
     @staticmethod
     def _prune_dangling_fields(
-        structure: list[Link], types: dict[Field, mty.Type], byte_order: dict[Field, ByteOrder]
+        structure: list[Link],
+        types: dict[Field, mty.Type],
+        byte_order: dict[Field, ByteOrder],
     ) -> tuple[list[Link], dict[Field, mty.Type], dict[Field, ByteOrder]]:
         dangling = []
         progress = True
@@ -2625,8 +2648,12 @@ class Refinement(mty.Type):
 
         self.condition = self.condition.substituted(
             lambda e: substitute_variables(
-                e, unqualified_enum_literals, qualified_enum_literals, type_names, self.package
-            )
+                e,
+                unqualified_enum_literals,
+                qualified_enum_literals,
+                type_names,
+                self.package,
+            ),
         )
 
         def set_types(expression: expr.Expr) -> expr.Expr:
@@ -2643,7 +2670,7 @@ class Refinement(mty.Type):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.package.location,
-                    )
+                    ),
                 ],
             )
 
@@ -2682,7 +2709,7 @@ class Refinement(mty.Type):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.field.identifier.location,
-                    )
+                    ),
                 ],
             )
 
@@ -2700,7 +2727,7 @@ class Refinement(mty.Type):
                         *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
                         self.pdu.path_condition(self.field),
                         cond,
-                    ]
+                    ],
                 )
                 if proof.result == expr.ProofResult.UNSAT:
                     self.error.extend(
@@ -2711,8 +2738,8 @@ class Refinement(mty.Type):
                                 Subsystem.MODEL,
                                 Severity.ERROR,
                                 self.field.identifier.location,
-                            )
-                        ]
+                            ),
+                        ],
                     )
                 if proof.result == expr.ProofResult.UNKNOWN:
                     self.error.extend(
@@ -2723,8 +2750,8 @@ class Refinement(mty.Type):
                                 Subsystem.MODEL,
                                 Severity.WARNING,
                                 self.field.identifier.location,
-                            )
-                        ]
+                            ),
+                        ],
                     )
 
     def __str__(self) -> str:
@@ -2800,7 +2827,7 @@ class UncheckedMessage(mty.UncheckedType):
                                 Severity.INFO,
                                 next(f.identifier for f in message_types if f == field).location,
                             ),
-                        ]
+                        ],
                     )
                 message_types[field] = field_type
             else:
@@ -2811,8 +2838,8 @@ class UncheckedMessage(mty.UncheckedType):
                             Subsystem.MODEL,
                             Severity.ERROR,
                             type_identifier.location,
-                        )
-                    ]
+                        ),
+                    ],
                 )
 
         try:
@@ -2858,7 +2885,7 @@ class UncheckedMessage(mty.UncheckedType):
                                 Severity.INFO,
                                 arg_id.location,
                             ),
-                        ]
+                        ],
                     )
             else:
                 argument_errors.extend(
@@ -2875,7 +2902,7 @@ class UncheckedMessage(mty.UncheckedType):
                             Severity.INFO,
                             param.identifier.location,
                         ),
-                    ]
+                    ],
                 )
 
 
@@ -2925,7 +2952,9 @@ class UncheckedDerivedMessage(mty.UncheckedType):
 
         try:
             result = UnprovenDerivedMessage(
-                self.identifier, base_messages[0], location=self.location
+                self.identifier,
+                base_messages[0],
+                location=self.location,
             ).merged()
         except RecordFluxError as e:
             error.extend(e)
@@ -2956,8 +2985,8 @@ class UncheckedRefinement(mty.UncheckedType):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.pdu.location,
-                    )
-                ]
+                    ),
+                ],
             )
 
         if self.sdu not in messages:
@@ -2968,8 +2997,8 @@ class UncheckedRefinement(mty.UncheckedType):
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.sdu.location,
-                    )
-                ]
+                    ),
+                ],
             )
 
         error.propagate()

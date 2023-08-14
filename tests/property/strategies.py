@@ -88,7 +88,10 @@ def integers(
     first = draw(st.integers(min_value=0, max_value=max_value))
     last = draw(st.integers(min_value=first, max_value=max_value))
     return Integer(
-        next(unique_identifiers), expr.Number(first), expr.Number(last), expr.Number(size)
+        next(unique_identifiers),
+        expr.Number(first),
+        expr.Number(last),
+        expr.Number(size),
     )
 
 
@@ -110,13 +113,14 @@ def enumerations(
             st.tuples(
                 literal_identifiers(),
                 st.builds(
-                    expr.Number, st.integers(min_value=0, max_value=min(2**size - 1, 2**63 - 1))
+                    expr.Number,
+                    st.integers(min_value=0, max_value=min(2**size - 1, 2**63 - 1)),
                 ),
             ),
             unique_by=(lambda x: x[0], lambda x: x[1]),  # type: ignore[no-any-return]
             min_size=1,
             max_size=2**size,
-        )
+        ),
     )
 
     return Enumeration(
@@ -138,7 +142,7 @@ def scalars(
         st.one_of(
             integers(unique_identifiers, multiple_of_8, align_to_8),
             enumerations(unique_identifiers, multiple_of_8, align_to_8),
-        )
+        ),
     )
 
 
@@ -168,7 +172,7 @@ def composites(draw: Draw, unique_identifiers: abc.Generator[ID, None, None]) ->
                 ),
                 unique_identifiers,
             ),
-        )
+        ),
     )
 
 
@@ -191,7 +195,7 @@ def messages(  # noqa: PLR0915
             if isinstance(pair.source_type, Integer) and pair.source_type.last.value <= max_size:
                 return expr.Mul(expr.Variable(pair.source.name), expr.Number(8))
             return expr.Number(
-                draw(st.integers(min_value=1, max_value=max_size).map(lambda x: x * 8))
+                draw(st.integers(min_value=1, max_value=max_size).map(lambda x: x * 8)),
             )
         return expr.UNDEFINED
 
@@ -210,7 +214,7 @@ def messages(  # noqa: PLR0915
                 expr.Variable(
                     list(pair.source_type.literals.keys())[
                         draw(st.integers(min_value=0, max_value=len(pair.source_type.literals) - 1))
-                    ]
+                    ],
                 ),
             )
         return expr.TRUE
@@ -232,7 +236,7 @@ def messages(  # noqa: PLR0915
         t = draw(
             st.one_of(scalars(unique_identifiers), composites(unique_identifiers))
             if alignment == 0
-            else scalars(unique_identifiers, align_to_8=alignment)
+            else scalars(unique_identifiers, align_to_8=alignment),
         )
         types_[f] = t
         alignments[f] = alignment
@@ -265,7 +269,10 @@ def messages(  # noqa: PLR0915
                     potential_targets.append(FINAL)
                 target = draw(st.sampled_from(potential_targets))
                 pair = FieldPair(
-                    source, target, types_[source], types_[target] if target != FINAL else None
+                    source,
+                    target,
+                    types_[source],
+                    types_[target] if target != FINAL else None,
                 )
                 structure.append(
                     Link(
@@ -273,7 +280,7 @@ def messages(  # noqa: PLR0915
                         target,
                         condition=expr.Not(out[0].condition).simplified(),
                         size=size(pair),
-                    )
+                    ),
                 )
 
         loose_ends = [f for f in fields_ if all(l.source != f for l in structure)]
@@ -302,14 +309,14 @@ def messages(  # noqa: PLR0915
                     error.Subsystem.MODEL,
                     error.Severity.INFO,
                     None,
-                )
+                ),
             ],
         )
         raise
 
 
 def non_null_messages(
-    unique_identifiers: abc.Generator[ID, None, None]
+    unique_identifiers: abc.Generator[ID, None, None],
 ) -> st.SearchStrategy[Message]:
     return messages(unique_identifiers, not_null=True)
 
@@ -421,7 +428,7 @@ def relations(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Relati
             expr.NotEqual,
             expr.In,
             expr.NotIn,
-        ]
+        ],
     )
     relation = draw(sample)
     return relation(draw(elements), draw(elements))
@@ -434,8 +441,8 @@ def boolean_relations(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> exp
             [
                 expr.Equal,
                 expr.NotEqual,
-            ]
-        )
+            ],
+        ),
     )
     return relation(draw(elements), draw(elements))
 
@@ -447,5 +454,5 @@ def boolean_expressions(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> e
         st.one_of(
             relations(elements),
             st.builds(operation, boolean_expressions(elements), boolean_expressions(elements)),
-        )
+        ),
     )

@@ -315,7 +315,7 @@ def test_variable(string: str, expected: dict[str, str]) -> None:
                         "_kind": "TermAssoc",
                         "expression": {"_kind": "NumericLiteral", "_value": "42"},
                         "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
-                    }
+                    },
                 ],
                 "expression": {
                     "_kind": "Variable",
@@ -911,7 +911,7 @@ def test_expression_boolean(string: str, expected: dict[str, str]) -> None:
                                 "name": {"_kind": "UnqualifiedID", "_value": "Z"},
                                 "package": None,
                             },
-                        }
+                        },
                     ],
                     "identifier": {"_kind": "UnqualifiedID", "_value": "Y"},
                 },
@@ -973,7 +973,7 @@ def test_mathematical_expression(string: str, expected: dict[str, str]) -> None:
                                 "name": {"_kind": "UnqualifiedID", "_value": "Z"},
                                 "package": None,
                             },
-                        }
+                        },
                     ],
                     "identifier": {"_kind": "UnqualifiedID", "_value": "Y"},
                 },
@@ -1243,7 +1243,7 @@ def test_boolean_expression(string: str, expected: dict[str, str]) -> None:
                                 },
                             },
                             "identifier": {"_kind": "UnqualifiedID", "_value": "Y"},
-                        }
+                        },
                     ],
                 },
             },
@@ -1936,7 +1936,7 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                 "name": {"_kind": "UnqualifiedID", "_value": "Y"},
                                 "package": None,
                             },
-                        }
+                        },
                     ],
                     "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                 },
@@ -1959,7 +1959,7 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                     "name": {"_kind": "UnqualifiedID", "_value": "Y"},
                                     "package": None,
                                 },
-                            }
+                            },
                         ],
                         "identifier": {"_kind": "UnqualifiedID", "_value": "X"},
                     },
@@ -2332,12 +2332,12 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                             "_kind": "UnqualifiedID",
                                             "_value": "D",
                                         },
-                                    }
+                                    },
                                 ],
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "B1"},
-                    }
+                    },
                 ],
                 "expression": {
                     "_kind": "MessageAggregate",
@@ -2363,7 +2363,7 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                     },
                                 },
                                 "identifier": {"_kind": "UnqualifiedID", "_value": "D"},
-                            }
+                            },
                         ],
                     },
                 },
@@ -2403,7 +2403,7 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                             "_kind": "UnqualifiedID",
                                             "_value": "D",
                                         },
-                                    }
+                                    },
                                 ],
                             },
                         },
@@ -2438,7 +2438,7 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                             "_kind": "UnqualifiedID",
                                             "_value": "D",
                                         },
-                                    }
+                                    },
                                 ],
                             },
                         },
@@ -2538,7 +2538,7 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                                         "_kind": "UnqualifiedID",
                                                         "_value": "D",
                                                     },
-                                                }
+                                                },
                                             ],
                                         },
                                     },
@@ -2546,7 +2546,7 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                         "_kind": "UnqualifiedID",
                                         "_value": "B2",
                                     },
-                                }
+                                },
                             ],
                             "expression": {
                                 "_kind": "MessageAggregate",
@@ -2575,13 +2575,13 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                                 "_kind": "UnqualifiedID",
                                                 "_value": "D",
                                             },
-                                        }
+                                        },
                                     ],
                                 },
                             },
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "B1"},
-                    }
+                    },
                 ],
                 "expression": {
                     "_kind": "MessageAggregate",
@@ -2607,7 +2607,7 @@ def test_expression_base(string: str, expected: dict[str, str]) -> None:
                                     },
                                 },
                                 "identifier": {"_kind": "UnqualifiedID", "_value": "D"},
-                            }
+                            },
                         ],
                     },
                 },
@@ -2822,7 +2822,7 @@ def test_renaming_declaration(string: str, expected: dict[str, str]) -> None:
                 },
                 "identifier": {"_kind": "UnqualifiedID", "_value": "A"},
             },
-        )
+        ),
     ],
 )
 def test_assignment_statement(string: str, expected: dict[str, str]) -> None:
@@ -2848,7 +2848,7 @@ def test_assignment_statement(string: str, expected: dict[str, str]) -> None:
                 "message": {"_kind": "UnqualifiedID", "_value": "A"},
                 "field": {"_kind": "UnqualifiedID", "_value": "B"},
             },
-        )
+        ),
     ],
 )
 def test_message_field_assignment_statement(string: str, expected: dict[str, str]) -> None:
@@ -3033,7 +3033,7 @@ def test_attribute_statement(string: str, expected: dict[str, str]) -> None:
                             },
                             "description": None,
                             "target": {"_kind": "UnqualifiedID", "_value": "B"},
-                        }
+                        },
                     ],
                     "declarations": [],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
@@ -3102,7 +3102,7 @@ def test_attribute_statement(string: str, expected: dict[str, str]) -> None:
                                 },
                             },
                             "target": {"_kind": "UnqualifiedID", "_value": "B"},
-                        }
+                        },
                     ],
                     "declarations": [],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
@@ -3155,7 +3155,7 @@ def test_attribute_statement(string: str, expected: dict[str, str]) -> None:
                                 "name": {"_kind": "UnqualifiedID", "_value": "Boolean"},
                                 "package": None,
                             },
-                        }
+                        },
                     ],
                     "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
                     "exception_transition": None,
@@ -3292,7 +3292,7 @@ def test_state(string: str, expected: dict[str, str]) -> None:
                             "name": {"_kind": "UnqualifiedID", "_value": "Boolean"},
                             "package": None,
                         },
-                    }
+                    },
                 ],
                 "end_identifier": {"_kind": "UnqualifiedID", "_value": "Session"},
                 "identifier": {"_kind": "UnqualifiedID", "_value": "Session"},
@@ -3339,7 +3339,7 @@ def test_state(string: str, expected: dict[str, str]) -> None:
                                         "_kind": "UnqualifiedID",
                                         "_value": "Z",
                                     },
-                                }
+                                },
                             ],
                             "conditional_transitions": [
                                 {
@@ -3372,7 +3372,7 @@ def test_state(string: str, expected: dict[str, str]) -> None:
                                     },
                                     "description": None,
                                     "target": {"_kind": "UnqualifiedID", "_value": "null"},
-                                }
+                                },
                             ],
                             "declarations": [
                                 {
@@ -3400,7 +3400,7 @@ def test_state(string: str, expected: dict[str, str]) -> None:
                                         },
                                         "package": None,
                                     },
-                                }
+                                },
                             ],
                             "end_identifier": {"_kind": "UnqualifiedID", "_value": "A"},
                             "exception_transition": None,
@@ -3497,9 +3497,9 @@ def test_session_declaration(string: str, expected: dict[str, str]) -> None:
                                             "_kind": "UnqualifiedID",
                                             "_value": "C",
                                         },
-                                    }
+                                    },
                                 ],
-                            }
+                            },
                         ],
                         "initial_field": None,
                     },
@@ -3533,7 +3533,7 @@ def test_session_declaration(string: str, expected: dict[str, str]) -> None:
                                     },
                                 },
                                 "type_arguments": [],
-                            }
+                            },
                         ],
                         "initial_field": None,
                     },
@@ -3550,7 +3550,7 @@ def test_session_declaration(string: str, expected: dict[str, str]) -> None:
                                 "name": {"_kind": "UnqualifiedID", "_value": "B"},
                                 "package": {"_kind": "UnqualifiedID", "_value": "A"},
                             },
-                        }
+                        },
                     ],
                 },
             },
@@ -3568,7 +3568,7 @@ def test_session_declaration(string: str, expected: dict[str, str]) -> None:
                                 "_kind": "ByteOrderTypeLoworderfirst",
                                 "_value": "Low_Order_First",
                             },
-                        }
+                        },
                     ],
                     "message_fields": {
                         "_kind": "MessageFields",
@@ -3585,7 +3585,7 @@ def test_session_declaration(string: str, expected: dict[str, str]) -> None:
                                     "name": {"_kind": "UnqualifiedID", "_value": "Integer"},
                                     "package": None,
                                 },
-                            }
+                            },
                         ],
                         "initial_field": None,
                     },

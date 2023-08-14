@@ -224,11 +224,11 @@ message_re = re.compile(
     r"(?P<subsystem>\w+): "
     r"(?P<severity>info|warning|error): "
     r"(?P<message>.*)"
-    r"$"
+    r"$",
 )
 
 generic_message_re = re.compile(
-    r"^(?P<subsystem>\w+): (?P<severity>info|warning|error): (?P<message>.*)$"
+    r"^(?P<subsystem>\w+): (?P<severity>info|warning|error): (?P<message>.*)$",
 )
 
 
@@ -333,7 +333,9 @@ def output_dir():
 def generate_all(filenames=None):
     filenames = filenames or get_source_files()
     return run(
-        filenames, mode="generate", options=["-d", output_dir(), "--ignore-unsupported-checksum"]
+        filenames,
+        mode="generate",
+        options=["-d", output_dir(), "--ignore-unsupported-checksum"],
     )
 
 

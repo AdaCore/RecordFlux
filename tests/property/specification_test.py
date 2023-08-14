@@ -16,8 +16,8 @@ from tests.utils import parse_bool_expression, parse_expression, parse_math_expr
             strategies.numbers(),
             strategies.variables(strategies.identifiers()),
             strategies.attributes(strategies.identifiers()),
-        )
-    )
+        ),
+    ),
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
@@ -33,10 +33,10 @@ def test_parsing_mathematical_expressions(expression: expr.Expr) -> None:
                     strategies.numbers(),
                     strategies.variables(strategies.identifiers()),
                     strategies.attributes(strategies.identifiers()),
-                )
-            )
-        )
-    )
+                ),
+            ),
+        ),
+    ),
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
@@ -51,7 +51,7 @@ def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
                 strategies.numbers(),
                 strategies.variables(strategies.identifiers()),
                 strategies.attributes(strategies.identifiers()),
-            )
+            ),
         ),
         strategies.boolean_relations(
             st.one_of(strategies.aggregates(strategies.numbers()), strategies.strings()),
@@ -63,27 +63,27 @@ def test_parsing_boolean_expressions(expression: expr.Expr) -> None:
                         strategies.numbers(),
                         strategies.variables(strategies.identifiers()),
                         strategies.attributes(strategies.identifiers()),
-                    )
-                )
-            )
+                    ),
+                ),
+            ),
         ),
         strategies.calls(
             st.one_of(
                 strategies.numbers(),
                 strategies.variables(strategies.identifiers()),
                 strategies.attributes(strategies.identifiers()),
-            )
+            ),
         ),
         strategies.quantified_expressions(
             st.one_of(
                 strategies.numbers(),
                 strategies.variables(strategies.identifiers()),
                 strategies.attributes(strategies.identifiers()),
-            )
+            ),
         ),
         strategies.strings(),
         strategies.aggregates(strategies.numbers()),
-    )
+    ),
 )
 @settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much, HealthCheck.too_slow])
 def test_parsing_expressions(expression: expr.Expr) -> None:

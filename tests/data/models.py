@@ -41,10 +41,16 @@ NULL_MESSAGE = Message("Null::Message", [], {}, skip_proof=True)
 NULL_MODEL = Model([NULL_MESSAGE])
 
 TLV_TAG = Enumeration(
-    "TLV::Tag", [("Msg_Data", Number(1)), ("Msg_Error", Number(3))], Number(8), always_valid=False
+    "TLV::Tag",
+    [("Msg_Data", Number(1)), ("Msg_Error", Number(3))],
+    Number(8),
+    always_valid=False,
 )
 TLV_LENGTH = Integer(
-    "TLV::Length", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+    "TLV::Length",
+    Number(0),
+    Sub(Pow(Number(2), Number(16)), Number(1)),
+    Number(16),
 )
 TLV_MESSAGE = Message(
     "TLV::Message",
@@ -70,10 +76,16 @@ TLV_WITH_CHECKSUM_TAG = Enumeration(
     always_valid=False,
 )
 TLV_WITH_CHECKSUM_LENGTH = Integer(
-    "TLV_With_Checksum::Length", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+    "TLV_With_Checksum::Length",
+    Number(0),
+    Sub(Pow(Number(2), Number(16)), Number(1)),
+    Number(16),
 )
 TLV_WITH_CHECKSUM_CHECKSUM = Integer(
-    "TLV_With_Checksum::Checksum", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+    "TLV_With_Checksum::Checksum",
+    Number(0),
+    Sub(Pow(Number(2), Number(16)), Number(1)),
+    Number(16),
 )
 TLV_WITH_CHECKSUM_MESSAGE = Message(
     "TLV_With_Checksum::Message",
@@ -95,23 +107,32 @@ TLV_WITH_CHECKSUM_MESSAGE = Message(
     skip_proof=True,
 )
 TLV_WITH_CHECKSUM_MODEL = Model(
-    [TLV_WITH_CHECKSUM_TAG, TLV_WITH_CHECKSUM_LENGTH, TLV_WITH_CHECKSUM_MESSAGE]
+    [TLV_WITH_CHECKSUM_TAG, TLV_WITH_CHECKSUM_LENGTH, TLV_WITH_CHECKSUM_MESSAGE],
 )
 
 NULL_MESSAGE_IN_TLV_MESSAGE = Refinement("In_TLV", TLV_MESSAGE, Field("Value"), NULL_MESSAGE)
 NULL_MESSAGE_IN_TLV_MESSAGE_MODEL = Model(
-    [TLV_TAG, TLV_LENGTH, TLV_MESSAGE, NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE]
+    [TLV_TAG, TLV_LENGTH, TLV_MESSAGE, NULL_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
 )
 
 ETHERNET_ADDRESS = Integer(
-    "Ethernet::Address", Number(0), Sub(Pow(Number(2), Number(48)), Number(1)), Number(48)
+    "Ethernet::Address",
+    Number(0),
+    Sub(Pow(Number(2), Number(48)), Number(1)),
+    Number(48),
 )
 ETHERNET_TYPE_LENGTH = Integer(
-    "Ethernet::Type_Length", Number(46), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+    "Ethernet::Type_Length",
+    Number(46),
+    Sub(Pow(Number(2), Number(16)), Number(1)),
+    Number(16),
 )
 ETHERNET_TPID = Integer("Ethernet::TPID", Number(0x8100, 16), Number(0x8100, 16), Number(16))
 ETHERNET_TCI = Integer(
-    "Ethernet::TCI", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+    "Ethernet::TCI",
+    Number(0),
+    Sub(Pow(Number(2), Number(16)), Number(1)),
+    Number(16),
 )
 ETHERNET_FRAME = Message(
     "Ethernet::Frame",
@@ -165,7 +186,7 @@ ETHERNET_FRAME = Message(
     skip_proof=True,
 )
 ETHERNET_MODEL = Model(
-    [ETHERNET_ADDRESS, ETHERNET_TYPE_LENGTH, ETHERNET_TPID, ETHERNET_TCI, ETHERNET_FRAME]
+    [ETHERNET_ADDRESS, ETHERNET_TYPE_LENGTH, ETHERNET_TPID, ETHERNET_TCI, ETHERNET_FRAME],
 )
 
 ENUMERATION_PRIORITY = Enumeration(
@@ -183,7 +204,10 @@ ENUMERATION_MESSAGE = Message(
 ENUMERATION_MODEL = Model([ENUMERATION_PRIORITY, ENUMERATION_MESSAGE])
 
 SEQUENCE_LENGTH = Integer(
-    "Sequence::Length", Number(0), Sub(Pow(Number(2), Number(8)), Number(1)), Number(8)
+    "Sequence::Length",
+    Number(0),
+    Sub(Pow(Number(2), Number(8)), Number(1)),
+    Number(8),
 )
 SEQUENCE_INTEGER = Integer("Sequence::Integer", Number(1), Number(100), Number(16))
 SEQUENCE_INTEGER_VECTOR = Sequence("Sequence::Integer_Vector", SEQUENCE_INTEGER)
@@ -201,7 +225,8 @@ SEQUENCE_AV_ENUMERATION = Enumeration(
     always_valid=True,
 )
 SEQUENCE_AV_ENUMERATION_VECTOR = Sequence(
-    "Sequence::AV_Enumeration_Vector", SEQUENCE_AV_ENUMERATION
+    "Sequence::AV_Enumeration_Vector",
+    SEQUENCE_AV_ENUMERATION,
 )
 SEQUENCE_MESSAGE = Message(
     "Sequence::Message",
@@ -268,7 +293,7 @@ SEQUENCE_MODEL = Model(
         SEQUENCE_INNER_MESSAGES,
         SEQUENCE_MESSAGES_MESSAGE,
         SEQUENCE_SEQUENCE_SIZE_DEFINED_BY_MESSAGE_SIZE,
-    ]
+    ],
 )
 
 EXPRESSION_MESSAGE = Message(
@@ -329,10 +354,16 @@ UNIVERSAL_MESSAGE_TYPE = Enumeration(
     always_valid=False,
 )
 UNIVERSAL_LENGTH = Integer(
-    "Universal::Length", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16)
+    "Universal::Length",
+    Number(0),
+    Sub(Pow(Number(2), Number(16)), Number(1)),
+    Number(16),
 )
 UNIVERSAL_VALUE = Integer(
-    "Universal::Value", Number(0), Sub(Pow(Number(2), Number(8)), Number(1)), Number(8)
+    "Universal::Value",
+    Number(0),
+    Sub(Pow(Number(2), Number(8)), Number(1)),
+    Number(8),
 )
 UNIVERSAL_VALUES = Sequence("Universal::Values", UNIVERSAL_VALUE)
 UNIVERSAL_OPTION_TYPE = Enumeration(
@@ -463,7 +494,7 @@ UNIVERSAL_MODEL = Model(
         UNIVERSAL_VALUES,
         UNIVERSAL_MESSAGE,
         UNIVERSAL_REFINEMENT,
-    ]
+    ],
 )
 
 FIXED_SIZE_MESSAGE = Message(

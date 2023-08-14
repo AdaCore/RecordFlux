@@ -69,7 +69,7 @@ class StyleChecker:
             if len(line) != len(previous_line):
                 raise CheckDocError(
                     f"{self._filename}:{previous_lineno}: "
-                    "heading marker length does not match heading length"
+                    "heading marker length does not match heading length",
                 )
             return True
 
@@ -113,13 +113,13 @@ class StyleChecker:
         # No multiple consecutive whitespace
         if "  " in previous_line:
             raise CheckDocError(
-                f"{self._filename}:{previous_lineno}: multiple consecutive whitespace"
+                f"{self._filename}:{previous_lineno}: multiple consecutive whitespace",
             )
 
         # No punctuation inside a line
         if re.match(r".*[.?!] [A-Z]", previous_line) is not None:
             raise CheckDocError(
-                f"{self._filename}:{previous_lineno}: multiple sentences on one line"
+                f"{self._filename}:{previous_lineno}: multiple sentences on one line",
             )
 
     def finish(self) -> None:
@@ -175,7 +175,7 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
         match = re.match(r"^\s*\.\. code-block::", line)
         if match:
             raise CheckDocError(
-                f"{filename}:{lineno}: code-block directive forbidden (use 'code::' instead)"
+                f"{filename}:{lineno}: code-block directive forbidden (use 'code::' instead)",
             )
 
         match = re.match(r"^\s*\.\. doc-check: (?P<type>\S+)\s*$", line)
@@ -206,7 +206,7 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
                     raise CheckDocError(
                         f"{filename}:{lineno}: "
                         "inconsistent code block type "
-                        f"(block: {code_type}, doc: {doc_check_type})"
+                        f"(block: {code_type}, doc: {doc_check_type})",
                     )
             else:
                 doc_check_type = code_type
@@ -338,7 +338,10 @@ def check_python_code(block: str) -> None:
         filename.write_text(block, encoding="utf-8")
 
         result = subprocess.run(
-            ["python3", filename], check=False, capture_output=True, encoding="utf-8"
+            ["python3", filename],
+            check=False,
+            capture_output=True,
+            encoding="utf-8",
         )
         try:
             result.check_returncode()
@@ -357,7 +360,11 @@ def check_yaml_code(block: str) -> None:
 def main() -> None:
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument(
-        "-d", "--dir", type=Path, required=True, help="Directory to check recursively"
+        "-d",
+        "--dir",
+        type=Path,
+        required=True,
+        help="Directory to check recursively",
     )
     argument_parser.add_argument("-x", "--exclude", type=Path, nargs="*", help="File to exclude")
     arguments = argument_parser.parse_args()

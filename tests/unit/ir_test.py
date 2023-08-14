@@ -44,7 +44,7 @@ def test_assign_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.Assign("Y", ir.IntVar("Z", INT_TY), INT_TY)
 
 
@@ -78,13 +78,13 @@ def test_field_assign_substituted() -> None:
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
             ID("Z"): ID("A"),
-        }
+        },
     ) == ir.FieldAssign("Y", "Y", ir.IntVar("A", INT_TY), MSG_TY)
 
 
 def test_field_assign_preconditions() -> None:
     assert not ir.FieldAssign("X", "Y", ir.IntVar("Z", INT_TY), MSG_TY).preconditions(
-        id_generator()
+        id_generator(),
     )
 
 
@@ -96,7 +96,7 @@ def test_field_assign_to_z3_expr() -> None:
         z3.Bool("X.Y") == z3.Bool("Z")
     )
     assert ir.FieldAssign("X", "Y", ir.ObjVar("Z", MSG_TY), MSG_TY).to_z3_expr() == z3.BoolVal(
-        val=True
+        val=True,
     )
 
 
@@ -109,7 +109,7 @@ def test_append_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.Append("Y", ir.IntVar("Z", INT_TY), SEQ_TY)
 
 
@@ -130,7 +130,7 @@ def test_extend_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.Extend("Y", ir.IntVar("Z", INT_TY), SEQ_TY)
 
 
@@ -153,21 +153,21 @@ def test_reset_substituted() -> None:
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
             ID("Z"): ID("A"),
-        }
+        },
     ) == ir.Reset("Y", {ID("Y"): ir.IntVar("A", INT_TY)}, MSG_TY)
 
 
 def test_reset_preconditions() -> None:
     assert not ir.Reset("X", {}, MSG_TY).preconditions(id_generator())
     assert not ir.Reset("X", {ID("Y"): ir.IntVar("Z", INT_TY)}, MSG_TY).preconditions(
-        id_generator()
+        id_generator(),
     )
 
 
 def test_reset_to_z3_expr() -> None:
     assert ir.Reset("X", {}, MSG_TY).to_z3_expr() == z3.BoolVal(val=True)
     assert ir.Reset("X", {ID("Y"): ir.IntVar("Z", INT_TY)}, MSG_TY).to_z3_expr() == z3.BoolVal(
-        val=True
+        val=True,
     )
 
 
@@ -180,7 +180,7 @@ def test_read_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.Read("X", ir.IntVar("Z", INT_TY))
 
 
@@ -201,7 +201,7 @@ def test_write_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.Write("X", ir.IntVar("Z", INT_TY))
 
 
@@ -217,7 +217,7 @@ def test_check_substituted() -> None:
     assert ir.Check(ir.BoolVar("X")).substituted(
         {
             ID("X"): ID("Y"),
-        }
+        },
     ) == ir.Check(ir.BoolVar("Y"))
 
 
@@ -262,7 +262,7 @@ def test_int_var_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.IntVar("Y", INT_TY)
 
 
@@ -288,7 +288,7 @@ def test_bool_var_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.BoolVar("Y")
 
 
@@ -314,7 +314,7 @@ def test_obj_var_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.ObjVar("Y", ENUM_TY)
 
 
@@ -336,7 +336,7 @@ def test_enum_lit_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.EnumLit("X", ENUM_TY)
 
 
@@ -426,7 +426,7 @@ def test_attr_substituted(attribute: ir.Attr, expected: ir.Attr) -> None:
             {
                 ID("X"): ID("Y"),
                 ID("Y"): ID("Z"),
-            }
+            },
         )
         == expected
     )
@@ -487,14 +487,15 @@ def test_field_access_attr_field_type() -> None:
     ],
 )
 def test_field_access_attr_substituted(
-    attribute: ir.FieldAccessAttr, expected: ir.FieldAccessAttr
+    attribute: ir.FieldAccessAttr,
+    expected: ir.FieldAccessAttr,
 ) -> None:
     assert (
         attribute.substituted(
             {
                 ID("X"): ID("Y"),
                 ID("Y"): ID("Z"),
-            }
+            },
         )
         == expected
     )
@@ -534,10 +535,13 @@ def test_field_access_attr_z3_expr(attribute: ir.FieldAccessAttr, expected: z3.E
 def test_binary_expr_location(binary_expr: type[ir.BinaryExpr]) -> None:
     assert binary_expr(ir.IntVar("X", INT_TY), ir.IntVal(1)).location is None
     assert binary_expr(
-        ir.IntVar("X", INT_TY), ir.IntVal(1), origin=ir.ConstructedOrigin("Z", Location((1, 2)))
+        ir.IntVar("X", INT_TY),
+        ir.IntVal(1),
+        origin=ir.ConstructedOrigin("Z", Location((1, 2))),
     ).location == Location((1, 2))
     assert binary_expr(
-        ir.IntVar("X", INT_TY, origin=ir.ConstructedOrigin("X", Location((1, 2)))), ir.IntVal(1)
+        ir.IntVar("X", INT_TY, origin=ir.ConstructedOrigin("X", Location((1, 2)))),
+        ir.IntVal(1),
     ).location == Location((1, 2))
 
 
@@ -562,11 +566,13 @@ def test_binary_expr_location(binary_expr: type[ir.BinaryExpr]) -> None:
 )
 def test_binary_expr_origin_str(binary_expr: type[ir.BinaryExpr]) -> None:
     assert binary_expr(ir.IntVar("X", INT_TY), ir.IntVal(1)).origin_str == str(
-        binary_expr(ir.IntVar("X", INT_TY), ir.IntVal(1))
+        binary_expr(ir.IntVar("X", INT_TY), ir.IntVal(1)),
     )
     assert (
         binary_expr(
-            ir.IntVar("X", INT_TY), ir.IntVal(1), origin=ir.ConstructedOrigin("Z", None)
+            ir.IntVar("X", INT_TY),
+            ir.IntVal(1),
+            origin=ir.ConstructedOrigin("Z", None),
         ).origin_str
         == "Z"
     )
@@ -592,12 +598,12 @@ def test_binary_expr_origin_str(binary_expr: type[ir.BinaryExpr]) -> None:
     ],
 )
 def test_binary_expr_substituted(
-    binary_expr: Callable[[ir.BasicIntExpr, ir.BasicIntExpr], ir.Relation]
+    binary_expr: Callable[[ir.BasicIntExpr, ir.BasicIntExpr], ir.Relation],
 ) -> None:
     assert binary_expr(ir.IntVar("X", INT_TY), ir.IntVal(1)).substituted(
         {
             ID("X"): ID("Y"),
-        }
+        },
     ) == binary_expr(ir.IntVar("Y", INT_TY), ir.IntVal(1))
 
 
@@ -611,7 +617,9 @@ def test_add_to_z3_expr() -> None:
 
 def test_add_preconditions() -> None:
     assert ir.Add(
-        ir.IntVar("X", INT_TY), ir.IntVal(1), origin=expr.Add(expr.Variable("X"), expr.Number(1))
+        ir.IntVar("X", INT_TY),
+        ir.IntVal(1),
+        origin=expr.Add(expr.Variable("X"), expr.Number(1)),
     ).preconditions(id_generator()) == [
         ir.Cond(
             ir.LessEqual(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
@@ -716,12 +724,12 @@ def test_mod_preconditions() -> None:
     ],
 )
 def test_unary_expr_substituted(
-    unary_expr: Callable[[ir.BasicIntExpr, ir.BasicIntExpr], ir.Relation]
+    unary_expr: Callable[[ir.BasicIntExpr, ir.BasicIntExpr], ir.Relation],
 ) -> None:
     assert unary_expr(ir.IntVar("X", INT_TY), ir.IntVal(1)).substituted(
         {
             ID("X"): ID("Y"),
-        }
+        },
     ) == unary_expr(ir.IntVar("Y", INT_TY), ir.IntVal(1))
 
 
@@ -739,7 +747,8 @@ def test_and_str() -> None:
 
 def test_and_to_z3_expr() -> None:
     assert ir.And(ir.BoolVar("X"), ir.BoolVal(value=True)).to_z3_expr() == z3.And(
-        z3.Bool("X"), z3.BoolVal(val=True)
+        z3.Bool("X"),
+        z3.BoolVal(val=True),
     )
 
 
@@ -749,7 +758,8 @@ def test_or_str() -> None:
 
 def test_or_to_z3_expr() -> None:
     assert ir.Or(ir.BoolVar("X"), ir.BoolVal(value=True)).to_z3_expr() == z3.Or(
-        z3.Bool("X"), z3.BoolVal(val=True)
+        z3.Bool("X"),
+        z3.BoolVal(val=True),
     )
 
 
@@ -822,13 +832,16 @@ def test_int_call_str() -> None:
 
 def test_int_call_substituted() -> None:
     assert ir.IntCall("X", [ir.IntVar("Y", INT_TY)], [], INT_TY).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z")}
+        {ID("X"): ID("Y"), ID("Y"): ID("Z")},
     ) == ir.IntCall("X", [ir.IntVar("Z", INT_TY)], [], INT_TY)
 
 
 def test_int_call_to_z3_expr() -> None:
     assert ir.IntCall(
-        "X", [ir.IntVar("Y", INT_TY), ir.BoolVal(value=True)], [], INT_TY
+        "X",
+        [ir.IntVar("Y", INT_TY), ir.BoolVal(value=True)],
+        [],
+        INT_TY,
     ).to_z3_expr() == z3.Int("X")
 
 
@@ -842,13 +855,13 @@ def test_bool_call_type() -> None:
 
 def test_bool_call_substituted() -> None:
     assert ir.BoolCall("X", [ir.BoolVar("Y")], []).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z")}
+        {ID("X"): ID("Y"), ID("Y"): ID("Z")},
     ) == ir.BoolCall("X", [ir.BoolVar("Z")], [])
 
 
 def test_bool_call_to_z3_expr() -> None:
     assert ir.BoolCall("X", [ir.BoolVar("Y")], [], ir.BoolVal(value=True)).to_z3_expr() == z3.Bool(
-        "X"
+        "X",
     )
 
 
@@ -868,7 +881,7 @@ def test_obj_call_type() -> None:
 
 def test_obj_call_substituted() -> None:
     assert ir.ObjCall("X", [ir.BoolVar("Y")], [], ENUM_TY).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z")}
+        {ID("X"): ID("Y"), ID("Y"): ID("Z")},
     ) == ir.ObjCall("X", [ir.BoolVar("Z")], [], ENUM_TY)
 
 
@@ -877,7 +890,7 @@ def test_call_preconditions() -> None:
     assert not call.preconditions(id_generator())
     call.set_preconditions([ir.Cond(ir.Greater(ir.IntVar("Y", INT_TY), ir.IntVal(0)))])
     assert call.preconditions(id_generator()) == [
-        ir.Cond(ir.Greater(ir.IntVar("Y", INT_TY), ir.IntVal(0)))
+        ir.Cond(ir.Greater(ir.IntVar("Y", INT_TY), ir.IntVal(0))),
     ]
 
 
@@ -891,7 +904,7 @@ def test_int_field_access_type() -> None:
 
 def test_int_field_access_substituted() -> None:
     assert ir.IntFieldAccess("M", "F", MSG_TY).substituted(
-        {ID("M"): ID("X"), ID("F"): ID("Y")}
+        {ID("M"): ID("X"), ID("F"): ID("Y")},
     ) == ir.IntFieldAccess("X", "F", MSG_TY)
 
 
@@ -905,7 +918,7 @@ def test_bool_field_access_str() -> None:
 
 def test_bool_field_access_substituted() -> None:
     assert ir.BoolFieldAccess("M", "F", MSG_TY).substituted(
-        {ID("M"): ID("X"), ID("F"): ID("Y")}
+        {ID("M"): ID("X"), ID("F"): ID("Y")},
     ) == ir.BoolFieldAccess("X", "F", MSG_TY)
 
 
@@ -923,7 +936,7 @@ def test_obj_field_access_type() -> None:
 
 def test_obj_field_access_substituted() -> None:
     assert ir.ObjFieldAccess("M", "F", MSG_TY).substituted(
-        {ID("M"): ID("X"), ID("F"): ID("Y")}
+        {ID("M"): ID("X"), ID("F"): ID("Y")},
     ) == ir.ObjFieldAccess("X", "F", MSG_TY)
 
 
@@ -940,7 +953,7 @@ def test_int_if_expr_str() -> None:
                 ir.ComplexIntExpr([], ir.IntVar("Y", INT_TY)),
                 ir.ComplexIntExpr([], ir.IntVal(1)),
                 INT_TY,
-            )
+            ),
         )
         == "(if X then {Y} else {1})"
     )
@@ -988,7 +1001,7 @@ def test_bool_if_expr_str() -> None:
                 ir.BoolVar("X"),
                 ir.ComplexBoolExpr([], ir.BoolVar("Y")),
                 ir.ComplexBoolExpr([], ir.BoolVal(value=False)),
-            )
+            ),
         )
         == "(if X then {Y} else {False})"
     )
@@ -1035,7 +1048,7 @@ def test_conversion_type() -> None:
 
 def test_conversion_substituted() -> None:
     assert ir.Conversion("X", ir.IntVar("Y", INT_TY), INT_TY).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z")}
+        {ID("X"): ID("Y"), ID("Y"): ID("Z")},
     ) == ir.Conversion("X", ir.IntVar("Z", INT_TY), INT_TY)
 
 
@@ -1053,7 +1066,7 @@ def test_int_conversion_type() -> None:
 
 def test_int_conversion_substituted() -> None:
     assert ir.IntConversion("X", ir.IntVar("Y", INT_TY), INT_TY).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z")}
+        {ID("X"): ID("Y"), ID("Y"): ID("Z")},
     ) == ir.IntConversion("X", ir.IntVar("Z", INT_TY), INT_TY)
 
 
@@ -1069,7 +1082,7 @@ def test_comprehension_str() -> None:
                 ir.ObjVar("Y", SEQ_TY),
                 ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
                 ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
-            )
+            ),
         )
         == "[for X in Y if {True} => {X}]"
     )
@@ -1088,11 +1101,11 @@ def test_comprehension_str() -> None:
                             "B",
                             ir.Greater(ir.IntVar("X", INT_TY), ir.IntVar("0", INT_TY)),
                             INT_TY,
-                        )
+                        ),
                     ],
                     ir.BoolVar("B"),
                 ),
-            )
+            ),
         )
         == "[for X in Y if {B := X > 0; B} => {A := X + 1; A}]"
     )
@@ -1150,7 +1163,7 @@ def test_find_str() -> None:
                 ir.ObjVar("Y", SEQ_TY),
                 ir.ComplexExpr([], ir.ObjVar("X", MSG_TY)),
                 ir.ComplexBoolExpr([], ir.BoolVal(value=True)),
-            )
+            ),
         )
         == "Find (for X in Y if {True} => {X})"
     )
@@ -1169,11 +1182,11 @@ def test_find_str() -> None:
                             "B",
                             ir.Greater(ir.IntVar("X", INT_TY), ir.IntVar("0", INT_TY)),
                             INT_TY,
-                        )
+                        ),
                     ],
                     ir.BoolVar("B"),
                 ),
-            )
+            ),
         )
         == "Find (for X in Y if {B := X > 0; B} => {A := X + 1; A})"
     )
@@ -1236,7 +1249,7 @@ def test_agg_type() -> None:
 
 def test_agg_substituted() -> None:
     assert ir.Agg([ir.IntVar("X", INT_TY), ir.IntVal(1)]).substituted({ID("X"): ID("Y")}) == ir.Agg(
-        [ir.IntVar("Y", INT_TY), ir.IntVal(1)]
+        [ir.IntVar("Y", INT_TY), ir.IntVal(1)],
     )
 
 
@@ -1278,7 +1291,7 @@ def test_msg_agg_type() -> None:
 
 def test_msg_agg_substituted() -> None:
     assert ir.MsgAgg("X", {ID("Y"): ir.IntVar("Z", INT_TY)}, MSG_TY).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z"), ID("Z"): ID("A")}
+        {ID("X"): ID("Y"), ID("Y"): ID("Z"), ID("Z"): ID("A")},
     ) == ir.MsgAgg("X", {ID("Y"): ir.IntVar("A", INT_TY)}, MSG_TY)
 
 
@@ -1297,7 +1310,7 @@ def test_delta_msg_agg_type() -> None:
 
 def test_delta_msg_agg_substituted() -> None:
     assert ir.DeltaMsgAgg("X", {ID("Y"): ir.IntVar("Z", INT_TY)}, MSG_TY).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z"), ID("Z"): ID("A")}
+        {ID("X"): ID("Y"), ID("Y"): ID("Z"), ID("Z"): ID("A")},
     ) == ir.DeltaMsgAgg("X", {ID("Y"): ir.IntVar("A", INT_TY)}, MSG_TY)
 
 
@@ -1320,7 +1333,7 @@ def test_case_expr_str() -> None:
                 ),
             ],
             INT_TY,
-        )
+        ),
     ) == ("(case X is\n      when 1 | 3 => 0,\n      when 2 => X)")
 
 
@@ -1362,7 +1375,7 @@ def test_case_expr_substituted() -> None:
         {
             ID("X"): ID("Y"),
             ID("Y"): ID("Z"),
-        }
+        },
     ) == ir.CaseExpr(
         ir.IntVar("Y", INT_TY),
         [
@@ -1407,7 +1420,7 @@ def test_add_required_checks() -> None:
                     origin=expr.Variable("X", location=Location((1, 2))),
                 ),
                 INT_TY,
-            )
+            ),
         ],
         PROOF_MANAGER,
         id_generator(),
@@ -1417,7 +1430,7 @@ def test_add_required_checks() -> None:
                 ir.IntVar("Z", INT_TY),
                 ir.IntVal(0),
                 origin=expr.Variable("X", location=Location((1, 2))),
-            )
+            ),
         ),
         ir.Assign(
             "X",

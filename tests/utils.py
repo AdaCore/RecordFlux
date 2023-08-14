@@ -83,7 +83,11 @@ def assert_equal_code_specs(
         parser.parse(pathlib.Path(spec_file))
 
     assert_equal_code(
-        parser.create_model(), parser.get_integration(), expected_dir, tmp_path, accept_extra_files
+        parser.create_model(),
+        parser.get_integration(),
+        expected_dir,
+        tmp_path,
+        accept_extra_files,
     )
 
 
@@ -134,7 +138,9 @@ def assert_compilable_code_specs(
 
 
 def assert_compilable_code_string(
-    specification: str, tmp_path: pathlib.Path, prefix: Optional[str] = None
+    specification: str,
+    tmp_path: pathlib.Path,
+    prefix: Optional[str] = None,
 ) -> None:
     parser = Parser()
     parser.parse_string(specification)
@@ -174,7 +180,13 @@ def assert_executable_code(
     debug: Debug = Debug.BUILTIN,
 ) -> str:
     assert_compilable_code(
-        model, integration, tmp_path, main, prefix, debug, mode="asserts_enabled"
+        model,
+        integration,
+        tmp_path,
+        main,
+        prefix,
+        debug,
+        mode="asserts_enabled",
     )
 
     p = subprocess.run(
@@ -280,8 +292,8 @@ def _create_files(
                   for Proof_Switches ("Ada") use
                      Defaults.Proof_Switches & ("--steps=0", "--timeout=150");
                end Prove;
-            end Test;"""
-        )
+            end Test;""",
+        ),
     )
 
     src_dir = tmp_path / "src"
@@ -338,7 +350,7 @@ def session_main(
                                             ada.Call(
                                                 session_package * "Initialized",
                                                 [ada.Variable("Ctx")],
-                                            )
+                                            ),
                                         ],
                                     ),
                                     *(
@@ -362,9 +374,9 @@ def session_main(
                                                                 ],
                                                             ),
                                                         ],
-                                                    )
-                                                ]
-                                            )
+                                                    ),
+                                                ],
+                                            ),
                                         ]
                                         if output_channels
                                         else []
@@ -390,15 +402,15 @@ def session_main(
                                                                 ],
                                                             ),
                                                         ],
-                                                    )
-                                                ]
-                                            )
+                                                    ),
+                                                ],
+                                            ),
                                         ]
                                         if input_channels
                                         else []
                                     ),
                                 ],
-                            )
+                            ),
                         ]
                         if input_channels or output_channels
                         else []
@@ -460,7 +472,7 @@ def session_main(
                             ],
                         ),
                         ada.String(":"),
-                    )
+                    ),
                 ],
             ),
             ada.ForOf(
@@ -477,8 +489,8 @@ def session_main(
                 ada.AndThen(
                     ada.Equal(ada.First("Prefix"), ada.Number(1)),
                     ada.LessEqual(ada.Length("Prefix"), ada.Number(1000)),
-                )
-            )
+                ),
+            ),
         ],
     )
 
@@ -528,7 +540,7 @@ def session_main(
                                         ada.String("Read "),
                                         ada.Image("Chan"),
                                         ada.String(": read buffer size too small"),
-                                    )
+                                    ),
                                 ],
                             ),
                             ada.ReturnStatement(),
@@ -580,7 +592,8 @@ def session_main(
                 ada.AndThen(
                     ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
                     ada.Call(
-                        session_package * "Has_Data", [ada.Variable("Ctx"), ada.Variable("Chan")]
+                        session_package * "Has_Data",
+                        [ada.Variable("Ctx"), ada.Variable("Chan")],
                     ),
                 ),
             ),
@@ -621,7 +634,7 @@ def session_main(
                                         ada.Equal(
                                             ada.Variable("Chan"),
                                             ada.Variable(session_package * f"C_{channel}"),
-                                        )
+                                        ),
                                     ]
                                     if len(input_channels) > 1
                                     else []
@@ -638,8 +651,8 @@ def session_main(
                                     (
                                         ada.First("RFLX" * const.TYPES_INDEX),
                                         ada.Number(message[0]),
-                                    )
-                                ]
+                                    ),
+                                ],
                             ),
                         )
                         for channel, messages in input_channels.items()
@@ -694,30 +707,33 @@ def session_main(
                                         [
                                             ada.Assignment(
                                                 ada.Call(
-                                                    "Written_Messages", [ada.Variable("Chan")]
+                                                    "Written_Messages",
+                                                    [ada.Variable("Chan")],
                                                 ),
                                                 ada.Add(
                                                     ada.Call(
-                                                        "Written_Messages", [ada.Variable("Chan")]
+                                                        "Written_Messages",
+                                                        [ada.Variable("Chan")],
                                                     ),
                                                     ada.Number(1),
                                                 ),
-                                            )
+                                            ),
                                         ],
-                                    )
-                                ]
+                                    ),
+                                ],
                             ),
                         ],
-                    )
+                    ),
                 ],
-            )
+            ),
         ],
         aspects=[
             ada.Precondition(
                 ada.AndThen(
                     ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
                     ada.Call(
-                        session_package * "Needs_Data", [ada.Variable("Ctx"), ada.Variable("Chan")]
+                        session_package * "Needs_Data",
+                        [ada.Variable("Ctx"), ada.Variable("Chan")],
                     ),
                 ),
             ),

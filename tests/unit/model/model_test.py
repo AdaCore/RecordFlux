@@ -50,7 +50,7 @@ def test_name_conflict_types() -> None:
             [
                 Integer(ID("P::T"), Number(0), Number(255), Number(8), location=Location((10, 20))),
                 Integer(ID("P::T"), Number(1), Number(100), Number(8), location=Location((11, 30))),
-            ]
+            ],
         )
 
 
@@ -69,7 +69,7 @@ def test_conflicting_refinements() -> None:
             r"$"
         ),
     ):
-        Model([models.MESSAGE, r1, r2]),
+        Model([models.MESSAGE, r1, r2])
 
 
 def test_name_conflict_sessions() -> None:
@@ -112,7 +112,7 @@ def test_conflicting_literal_builtin_type() -> None:
                     Number(8),
                     always_valid=False,
                 ),
-            ]
+            ],
         )
 
 
@@ -141,7 +141,7 @@ def test_name_conflict_between_literal_and_type() -> None:
                 ),
                 Integer("P::Foo", Number(0), Number(255), Number(8), Location((4, 16))),
                 Integer("P::Bar", Number(0), Number(255), Number(8), Location((5, 16))),
-            ]
+            ],
         )
 
 
@@ -166,7 +166,7 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
                     always_valid=False,
                     location=Location((3, 16)),
                 ),
-            ]
+            ],
         )
 
 
@@ -217,7 +217,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
                     always_valid=False,
                     location=Location((4, 16)),
                 ),
-            ]
+            ],
         )
 
 
@@ -252,7 +252,7 @@ def test_write_specification_files(tmp_path: Path) -> None:
                  Foo : P::T;
               end message;
 
-        end P;"""
+        end P;""",
     )
 
 
@@ -279,7 +279,7 @@ def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
                  Foo : P::T;
               end message;
 
-        end P;"""
+        end P;""",
     )
 
 
@@ -304,7 +304,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
 
            type T is range 0 .. 255 with Size => 8;
 
-        end P;"""
+        end P;""",
     )
     assert q_path.read_text() == textwrap.dedent(
         """\
@@ -316,7 +316,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
 
            type U is sequence of P::T;
 
-        end Q;"""
+        end Q;""",
     )
     assert r_path.read_text() == textwrap.dedent(
         """\
@@ -334,7 +334,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
                  Uniform : Q::U;
               end message;
 
-        end R;"""
+        end R;""",
     )
 
 
@@ -359,7 +359,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
 
            type T is range 0 .. 255 with Size => 8;
 
-        end P;"""
+        end P;""",
     )
     assert q_path.read_text() == textwrap.dedent(
         """\
@@ -369,7 +369,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
 
            type U1 is sequence of P::T;
 
-        end Q;"""
+        end Q;""",
     )
     assert r_path.read_text() == textwrap.dedent(
         """\
@@ -389,7 +389,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
                  Uniform : R::U;
               end message;
 
-        end R;"""
+        end R;""",
     )
 
 
@@ -505,7 +505,11 @@ def test_unchecked_model_checked(
             [
                 UNCHECKED_OPAQUE,
                 mty.UncheckedInteger(
-                    ID("P::I"), Number(0), Number(128), Number(2), Location((1, 2))
+                    ID("P::I"),
+                    Number(0),
+                    Number(128),
+                    Number(2),
+                    Location((1, 2)),
                 ),
                 mty.UncheckedEnumeration(
                     ID("E", Location((3, 4))),
@@ -547,7 +551,9 @@ def test_unchecked_model_checked(
     ],
 )
 def test_unchecked_model_checked_error(
-    unchecked: list[UncheckedTopLevelDeclaration], expected: str, tmp_path: Path
+    unchecked: list[UncheckedTopLevelDeclaration],
+    expected: str,
+    tmp_path: Path,
 ) -> None:
     cache = Cache(tmp_path / "test.json")
 

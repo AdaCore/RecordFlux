@@ -19,7 +19,11 @@ RESERVED_WORDS = "|".join(rflx.specification.const.RESERVED_WORDS)
 
 
 def convert(
-    data: str, source: Path, always_valid: bool, output_dir: Path, reproducible: bool = False
+    data: str,
+    source: Path,
+    always_valid: bool,
+    output_dir: Path,
+    reproducible: bool = False,
 ) -> None:
     try:
         # TODO(eng/recordflux/RecordFlux#1375): Prevent XML attacks by replacing xml by defusedxml
@@ -49,7 +53,12 @@ def convert(
     resolve_duplicate_literals(enum_types)
     file = output_dir / Path(file_name(package_name) + ".rflx")
     write_rflx_specification(
-        file, enum_types, package_name, registry_title, registry_last_updated, reproducible
+        file,
+        enum_types,
+        package_name,
+        registry_title,
+        registry_last_updated,
+        reproducible,
     )
 
 
@@ -68,7 +77,7 @@ def write_rflx_specification(
                 ""
                 if reproducible
                 else f"-- Generation date: {datetime.now().strftime('%Y-%m-%d')}\n"  # noqa: DTZ005
-            )
+            ),
         )
         if registry_title is not None:
             f.write(f"-- {registry_title.text}\n")

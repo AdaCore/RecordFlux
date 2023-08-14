@@ -128,10 +128,10 @@ class SerializerGenerator:
                                                     message,
                                                     self.prefix,
                                                     target_type=const.TYPES_BIT_LENGTH,
-                                                )
+                                                ),
                                             )
                                             .simplified()
-                                            .ada_expr()
+                                            .ada_expr(),
                                         ]
                                         if l.condition != expr.TRUE
                                         else []
@@ -154,10 +154,10 @@ class SerializerGenerator:
                                     self.prefix * message.identifier * "Valid_Next",
                                     [Variable("Ctx"), Variable("Fld")],
                                 ),
-                            )
-                        )
+                            ),
+                        ),
                     ],
-                )
+                ),
             ],
         )
 
@@ -188,7 +188,7 @@ class SerializerGenerator:
                                     self.prefix * message.identifier * "Valid_Next",
                                     [Variable("Ctx"), Variable("Fld")],
                                 ),
-                            )
+                            ),
                         ),
                         Postcondition(TRUE),
                     ],
@@ -212,7 +212,7 @@ class SerializerGenerator:
                             ),
                         ],
                     ),
-                )
+                ),
             ],
         )
 
@@ -316,7 +316,7 @@ class SerializerGenerator:
                                             Mod(Variable("Last"), Size(const.TYPES_BYTE)),
                                         ),
                                         Size(const.TYPES_BYTE),
-                                    )
+                                    ),
                                 ],
                             ),
                         ),
@@ -341,13 +341,15 @@ class SerializerGenerator:
                                             (
                                                 Variable(f.affixed_name),
                                                 common.conditional_field_size(
-                                                    f, message, self.prefix
+                                                    f,
+                                                    message,
+                                                    self.prefix,
                                                 ),
                                             )
                                             for f in message.fields
                                         ],
                                     ),
-                                )
+                                ),
                             ],
                         ),
                         IfStatement(
@@ -355,7 +357,7 @@ class SerializerGenerator:
                                 (
                                     Variable("State_Valid"),
                                     [set_context_cursor(CursorState.VALID)],
-                                )
+                                ),
                             ],
                             [set_context_cursor(CursorState.WELL_FORMED)],
                         ),
@@ -384,7 +386,7 @@ class SerializerGenerator:
                                         ),
                                         Number(1),
                                     ),
-                                )
+                                ),
                             ],
                         ),
                     ],
@@ -427,21 +429,22 @@ class SerializerGenerator:
                                                     ),
                                                     Equal(
                                                         Mod(
-                                                            Variable("Size"), Size(const.TYPES_BYTE)
+                                                            Variable("Size"),
+                                                            Size(const.TYPES_BYTE),
                                                         ),
                                                         Number(0),
                                                     ),
                                                 ),
                                             ],
                                             Variable("State_Valid"),
-                                        )
+                                        ),
                                     ]
                                     if composite_fields
                                     else [
                                         Variable("State_Valid"),
                                     ]
                                 ),
-                            )
+                            ),
                         ),
                         Postcondition(
                             AndThen(
@@ -451,7 +454,7 @@ class SerializerGenerator:
                                         Call(
                                             "Invalid_Successor",
                                             [Variable("Ctx"), Variable("Fld")],
-                                        )
+                                        ),
                                     ]
                                     if len(message.fields) > 1
                                     else []
@@ -464,7 +467,7 @@ class SerializerGenerator:
                                             Call(
                                                 "Field_First",
                                                 [Variable("Ctx"), Variable("Fld")],
-                                            )
+                                            ),
                                         ],
                                     ),
                                 ),
@@ -480,7 +483,7 @@ class SerializerGenerator:
                                                 ),
                                                 Variable("Size"),
                                                 -Number(1),
-                                            )
+                                            ),
                                         ],
                                     ),
                                 ),
@@ -508,7 +511,7 @@ class SerializerGenerator:
                                                     ),
                                                 ),
                                                 Size(const.TYPES_BYTE),
-                                            )
+                                            ),
                                         ],
                                     ),
                                 ),
@@ -537,7 +540,7 @@ class SerializerGenerator:
                                                 "Valid",
                                                 [Variable("Ctx"), Variable("Fld")],
                                             ),
-                                        )
+                                        ),
                                     ],
                                     Call("Well_Formed", [Variable("Ctx"), Variable("Fld")]),
                                 ),
@@ -545,27 +548,33 @@ class SerializerGenerator:
                                 *(
                                     [
                                         common.unchanged_cursor_before_or_invalid(
-                                            Variable("Fld"), loop_entry=False, or_invalid=False
-                                        )
+                                            Variable("Fld"),
+                                            loop_entry=False,
+                                            or_invalid=False,
+                                        ),
                                     ]
                                     if len(message.fields) > 1
                                     else []
                                 ),
-                            )
+                            ),
                         ),
                     ],
-                )
-            ]
+                ),
+            ],
         )
 
     def create_scalar_setter_procedures(
-        self, message: Message, scalar_fields: Mapping[Field, Scalar]
+        self,
+        message: Message,
+        scalar_fields: Mapping[Field, Scalar],
     ) -> UnitPart:
         if not scalar_fields:
             return UnitPart()
 
         def specification(
-            field: Field, field_type: Type, use_enum_records_directly: bool = False
+            field: Field,
+            field_type: Type,
+            use_enum_records_directly: bool = False,
         ) -> ProcedureSpecification:
             if field_type.package == BUILTINS_PACKAGE:
                 type_identifier = ID(field_type.name)
@@ -575,11 +584,13 @@ class SerializerGenerator:
                 and not use_enum_records_directly
             ):
                 type_identifier = common.prefixed_type_identifier(
-                    common.full_enum_name(field_type), self.prefix
+                    common.full_enum_name(field_type),
+                    self.prefix,
                 )
             else:
                 type_identifier = common.prefixed_type_identifier(
-                    field_type.identifier, self.prefix
+                    field_type.identifier,
+                    self.prefix,
                 )
 
             return ProcedureSpecification(
@@ -588,12 +599,15 @@ class SerializerGenerator:
             )
 
         def precondition(
-            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
+            field: Field,
+            field_type: Scalar,
+            use_enum_records_directly: bool = False,
         ) -> Precondition:
             return Precondition(
                 AndThen(
                     *self.setter_preconditions(
-                        message, self.prefix * message.identifier * field.affixed_name
+                        message,
+                        self.prefix * message.identifier * field.affixed_name,
                     ),
                     Call(
                         f"Valid_{field_type.name}"
@@ -605,7 +619,7 @@ class SerializerGenerator:
                             else Call(
                                 common.to_base_integer(self.prefix, field_type.package),
                                 [Variable("Val")],
-                            )
+                            ),
                         ],
                     ),
                     common.sufficient_space_for_field_condition(
@@ -621,11 +635,13 @@ class SerializerGenerator:
                             [Variable("Val")],
                         ),
                     ),
-                )
+                ),
             )
 
         def postcondition(
-            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
+            field: Field,
+            field_type: Scalar,
+            use_enum_records_directly: bool = False,
         ) -> Postcondition:
             return Postcondition(
                 And(
@@ -643,18 +659,20 @@ class SerializerGenerator:
                                 and field_type.always_valid
                                 and not use_enum_records_directly
                                 else Variable("Val"),
-                            )
+                            ),
                         ]
                         if int(field_type.value_count) > 1
                         else []
                     ),
                     *self.public_setter_postconditions(message, field),
                     *common.context_cursor_unchanged(message, field, predecessors=True),
-                )
+                ),
             )
 
         def body(
-            field: Field, field_type: Scalar, use_enum_records_directly: bool = False
+            field: Field,
+            field_type: Scalar,
+            use_enum_records_directly: bool = False,
         ) -> SubprogramBody:
             return SubprogramBody(
                 specification(field, field_type, use_enum_records_directly),
@@ -758,7 +776,7 @@ class SerializerGenerator:
                                 Variable(
                                     const.TYPES_HIGH_ORDER_FIRST
                                     if uniform_byte_order == ByteOrder.HIGH_ORDER_FIRST
-                                    else const.TYPES_LOW_ORDER_FIRST
+                                    else const.TYPES_LOW_ORDER_FIRST,
                                 )
                                 if uniform_byte_order
                                 else If(
@@ -771,7 +789,7 @@ class SerializerGenerator:
                                                         Variable(f.affixed_name)
                                                         for f, b in message.byte_order.items()
                                                         if b == ByteOrder.LOW_ORDER_FIRST
-                                                    ]
+                                                    ],
                                                 ),
                                             ),
                                             Variable(const.TYPES_LOW_ORDER_FIRST),
@@ -806,7 +824,8 @@ class SerializerGenerator:
                                     ],
                                 ),
                                 common.sufficient_space_for_field_condition(
-                                    self.prefix * message.identifier, Variable("Fld")
+                                    self.prefix * message.identifier,
+                                    Variable("Fld"),
                                 ),
                                 In(
                                     Call(
@@ -825,12 +844,12 @@ class SerializerGenerator:
                                                 Call(
                                                     self.prefix * message.identifier * "Field_Size",
                                                     [Variable("Ctx"), Variable("Fld")],
-                                                )
+                                                ),
                                             ],
                                         ),
                                     ],
                                 ),
-                            )
+                            ),
                         ),
                         Postcondition(
                             And(
@@ -844,7 +863,7 @@ class SerializerGenerator:
                                         Call(
                                             "Invalid_Successor",
                                             [Variable("Ctx"), Variable("Fld")],
-                                        )
+                                        ),
                                     ]
                                     if len(message.fields) > 1
                                     else []
@@ -853,8 +872,10 @@ class SerializerGenerator:
                                 *(
                                     [
                                         common.unchanged_cursor_before_or_invalid(
-                                            Variable("Fld"), loop_entry=False, or_invalid=False
-                                        )
+                                            Variable("Fld"),
+                                            loop_entry=False,
+                                            or_invalid=False,
+                                        ),
                                     ]
                                     if len(message.fields) > 1
                                     else []
@@ -868,7 +889,7 @@ class SerializerGenerator:
                                         Call("Field_First", [Variable("Ctx"), Variable("Fld")]),
                                     ]
                                 ],
-                            )
+                            ),
                         ),
                     ],
                 ),
@@ -884,7 +905,8 @@ class SerializerGenerator:
     def create_composite_setter_empty_procedures(self, message: Message) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
-                f"Set_{field.name}_Empty", [InOutParameter(["Ctx"], "Context")]
+                f"Set_{field.name}_Empty",
+                [InOutParameter(["Ctx"], "Context")],
             )
 
         return UnitPart(
@@ -901,7 +923,9 @@ class SerializerGenerator:
                                     ),
                                     *self.composite_setter_preconditions(message, f),
                                     *self.composite_setter_field_condition_precondition(
-                                        message, f, empty=True
+                                        message,
+                                        f,
+                                        empty=True,
                                     ),
                                     Equal(
                                         Call(
@@ -911,19 +935,19 @@ class SerializerGenerator:
                                                 Variable(
                                                     self.prefix
                                                     * message.identifier
-                                                    * f.affixed_name
+                                                    * f.affixed_name,
                                                 ),
                                             ],
                                         ),
                                         Number(0),
                                     ),
-                                )
+                                ),
                             ),
                             Postcondition(
                                 And(
                                     *self.composite_setter_postconditions(f),
                                     *self.public_setter_postconditions(message, f),
-                                )
+                                ),
                             ),
                         ],
                     )
@@ -936,7 +960,8 @@ class SerializerGenerator:
                     specification(f),
                     [
                         ObjectDeclaration(
-                            ["Unused_Buffer_First", "Unused_Buffer_Last"], const.TYPES_INDEX
+                            ["Unused_Buffer_First", "Unused_Buffer_Last"],
+                            const.TYPES_INDEX,
                         ),
                         ObjectDeclaration(["Unused_Offset"], const.TYPES_OFFSET),
                     ],
@@ -962,7 +987,9 @@ class SerializerGenerator:
         )
 
     def create_sequence_setter_procedures(
-        self, message: Message, sequence_fields: Mapping[Field, Type]
+        self,
+        message: Message,
+        sequence_fields: Mapping[Field, Type],
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
@@ -989,7 +1016,9 @@ class SerializerGenerator:
                                 ),
                                 *self.composite_setter_preconditions(message, f),
                                 *self.composite_setter_field_condition_precondition(
-                                    message, f, empty=True
+                                    message,
+                                    f,
+                                    empty=True,
                                 ),
                                 Call(
                                     self.prefix * message.identifier * "Valid_Length",
@@ -1012,7 +1041,7 @@ class SerializerGenerator:
                                     self.prefix * common.sequence_name(message, f) * "Valid",
                                     [Variable("Seq_Ctx")],
                                 ),
-                            )
+                            ),
                         ),
                         Postcondition(
                             And(
@@ -1032,10 +1061,10 @@ class SerializerGenerator:
                                                 "Present",
                                                 [Variable("Ctx"), Variable(f.affixed_name)],
                                             ),
-                                        )
-                                    ]
+                                        ),
+                                    ],
                                 ),
-                            )
+                            ),
                         ),
                     ],
                 )
@@ -1056,7 +1085,7 @@ class SerializerGenerator:
                                         * common.sequence_name(message, f)
                                         * "Byte_Size",
                                         [Variable("Seq_Ctx")],
-                                    )
+                                    ),
                                 ],
                             ),
                             constant=True,
@@ -1128,7 +1157,7 @@ class SerializerGenerator:
                                     Mul(Length("Data"), Size(const.TYPES_BYTE)),
                                 ),
                                 *self.composite_setter_field_condition_precondition(message, f),
-                            )
+                            ),
                         ),
                         Postcondition(
                             And(
@@ -1142,7 +1171,7 @@ class SerializerGenerator:
                                         Variable("Data"),
                                     ],
                                 ),
-                            )
+                            ),
                         ),
                     ],
                 )
@@ -1171,7 +1200,8 @@ class SerializerGenerator:
                     ],
                     [
                         CallStatement(
-                            f"Initialize_{f.name}_Private", [Variable("Ctx"), Length("Data")]
+                            f"Initialize_{f.name}_Private",
+                            [Variable("Ctx"), Length("Data")],
                         ),
                         PragmaStatement(
                             "Assert",
@@ -1184,10 +1214,10 @@ class SerializerGenerator:
                                             Call(
                                                 "Field_Last",
                                                 [Variable("Ctx"), Variable(f.affixed_name)],
-                                            )
+                                            ),
                                         ],
                                     ),
-                                )
+                                ),
                             ],
                         ),
                         Assignment(
@@ -1211,7 +1241,7 @@ class SerializerGenerator:
                                                 Call(
                                                     "Field_First",
                                                     [Variable("Ctx"), Variable(f.affixed_name)],
-                                                )
+                                                ),
                                             ],
                                         ),
                                         Call(
@@ -1220,7 +1250,7 @@ class SerializerGenerator:
                                                 Call(
                                                     "Field_Last",
                                                     [Variable("Ctx"), Variable(f.affixed_name)],
-                                                )
+                                                ),
                                             ],
                                         ),
                                     ),
@@ -1250,14 +1280,14 @@ class SerializerGenerator:
                         [
                             OutParameter([field.name], const.TYPES_BYTES),
                         ],
-                    )
+                    ),
                 ),
                 FormalSubprogramDeclaration(
                     FunctionSpecification(
                         "Process_Data_Pre",
                         "Boolean",
                         [Parameter(["Length"], const.TYPES_LENGTH)],
-                    )
+                    ),
                 ),
             ]
 
@@ -1294,7 +1324,7 @@ class SerializerGenerator:
                                                     Variable(
                                                         self.prefix
                                                         * message.identifier
-                                                        * f.affixed_name
+                                                        * f.affixed_name,
                                                     ),
                                                 ],
                                             ),
@@ -1308,13 +1338,13 @@ class SerializerGenerator:
                                         Variable("Length"),
                                     ],
                                 ),
-                            )
+                            ),
                         ),
                         Postcondition(
                             And(
                                 *self.composite_setter_postconditions(f),
                                 *self.public_setter_postconditions(message, f),
-                            )
+                            ),
                         ),
                     ],
                     formal_parameters(f),
@@ -1348,7 +1378,7 @@ class SerializerGenerator:
                                         Variable("First"),
                                         Call(const.TYPES_TO_BIT_LENGTH, [Variable("Length")]),
                                         -Number(1),
-                                    )
+                                    ),
                                 ],
                             ),
                             constant=True,
@@ -1393,7 +1423,8 @@ class SerializerGenerator:
 
         def specification_public(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(
-                f"Initialize_{field.name}", [InOutParameter(["Ctx"], "Context")]
+                f"Initialize_{field.name}",
+                [InOutParameter(["Ctx"], "Context")],
             )
 
         def specification_public_with_length(field: Field) -> ProcedureSpecification:
@@ -1420,16 +1451,16 @@ class SerializerGenerator:
                                                 self.prefix * message.identifier * f.affixed_name,
                                             ),
                                             *self.composite_setter_preconditions(message, f),
-                                        )
+                                        ),
                                     ),
                                     Postcondition(
                                         And(
                                             *self.composite_setter_postconditions(f),
                                             *self.public_setter_postconditions(message, f),
-                                        )
+                                        ),
                                     ),
                                 ],
-                            )
+                            ),
                         ]
                         if f in fields_with_explicit_size
                         else []
@@ -1452,7 +1483,7 @@ class SerializerGenerator:
                                                     Variable(
                                                         self.prefix
                                                         * message.identifier
-                                                        * f.affixed_name
+                                                        * f.affixed_name,
                                                     ),
                                                     Variable("Length"),
                                                 ],
@@ -1461,10 +1492,11 @@ class SerializerGenerator:
                                                 message,
                                                 f,
                                                 Call(
-                                                    const.TYPES_TO_BIT_LENGTH, [Variable("Length")]
+                                                    const.TYPES_TO_BIT_LENGTH,
+                                                    [Variable("Length")],
                                                 ),
                                             ),
-                                        )
+                                        ),
                                     ),
                                     Postcondition(
                                         And(
@@ -1475,14 +1507,15 @@ class SerializerGenerator:
                                                     [Variable("Ctx"), Variable(f.affixed_name)],
                                                 ),
                                                 Call(
-                                                    const.TYPES_TO_BIT_LENGTH, [Variable("Length")]
+                                                    const.TYPES_TO_BIT_LENGTH,
+                                                    [Variable("Length")],
                                                 ),
                                             ),
                                             *self.public_setter_postconditions(message, f),
-                                        )
+                                        ),
                                     ),
                                 ],
-                            )
+                            ),
                         ]
                         if f in fields_with_implicit_size
                         else []
@@ -1508,7 +1541,8 @@ class SerializerGenerator:
                                 const.TYPES_BIT_INDEX,
                                 Add(
                                     Call(
-                                        "Field_First", [Variable("Ctx"), Variable(f.affixed_name)]
+                                        "Field_First",
+                                        [Variable("Ctx"), Variable(f.affixed_name)],
                                     ),
                                     Mul(
                                         Call(const.TYPES_BIT_LENGTH, [Variable("Length")]),
@@ -1539,7 +1573,7 @@ class SerializerGenerator:
                                         [
                                             Variable("Ctx"),
                                             Variable(
-                                                self.prefix * message.identifier * f.affixed_name
+                                                self.prefix * message.identifier * f.affixed_name,
                                             ),
                                             Variable("Length"),
                                         ],
@@ -1557,7 +1591,7 @@ class SerializerGenerator:
                                                         Variable(
                                                             self.prefix
                                                             * message.identifier
-                                                            * f.affixed_name
+                                                            * f.affixed_name,
                                                         ),
                                                     ],
                                                 ),
@@ -1574,7 +1608,7 @@ class SerializerGenerator:
                                                     Variable(
                                                         self.prefix
                                                         * message.identifier
-                                                        * f.affixed_name
+                                                        * f.affixed_name,
                                                     ),
                                                 ],
                                             ),
@@ -1582,7 +1616,7 @@ class SerializerGenerator:
                                         ),
                                         Number(1),
                                     ),
-                                )
+                                ),
                             ),
                             Postcondition(
                                 And(
@@ -1595,7 +1629,7 @@ class SerializerGenerator:
                                         Call(const.TYPES_TO_BIT_LENGTH, [Variable("Length")]),
                                     ),
                                     *self.private_setter_postconditions(message, f),
-                                )
+                                ),
                             ),
                         ],
                     ),
@@ -1615,13 +1649,13 @@ class SerializerGenerator:
                                                     Call(
                                                         "Field_Size",
                                                         [Variable("Ctx"), Variable(f.affixed_name)],
-                                                    )
+                                                    ),
                                                 ],
                                             ),
                                         ],
                                     ),
                                 ],
-                            )
+                            ),
                         ]
                         if f in fields_with_explicit_size
                         else []
@@ -1637,7 +1671,7 @@ class SerializerGenerator:
                                         [Variable("Ctx"), Variable("Length")],
                                     ),
                                 ],
-                            )
+                            ),
                         ]
                         if f in fields_with_implicit_size
                         else []
@@ -1683,9 +1717,9 @@ class SerializerGenerator:
                                         [Variable("Ctx"), Variable(field.affixed_name)],
                                     ),
                                 ),
-                            )
-                        ]
-                    )
+                            ),
+                        ],
+                    ),
                 ]
                 if field in message.direct_predecessors(FINAL)
                 else []
@@ -1732,7 +1766,10 @@ class SerializerGenerator:
         ]
 
     def composite_setter_field_condition_precondition(
-        self, message: Message, field: Field, empty: bool = False
+        self,
+        message: Message,
+        field: Field,
+        empty: bool = False,
     ) -> list[Expr]:
         return [
             common.field_condition_call(
@@ -1745,7 +1782,10 @@ class SerializerGenerator:
         ]
 
     def composite_setter_preconditions(
-        self, message: Message, field: Field, size: Optional[Expr] = None
+        self,
+        message: Message,
+        field: Field,
+        size: Optional[Expr] = None,
     ) -> list[Expr]:
         return [
             common.sufficient_space_for_field_condition(
@@ -1756,7 +1796,9 @@ class SerializerGenerator:
         ]
 
     def scalar_setter_and_getter_relation(
-        self, message: Message, scalar_fields: Mapping[Field, Scalar]
+        self,
+        message: Message,
+        scalar_fields: Mapping[Field, Scalar],
     ) -> Expr:
         return Case(
             Variable("Fld"),
@@ -1775,7 +1817,7 @@ class SerializerGenerator:
                                         "To_Actual",
                                         [Variable("Val")],
                                     ),
-                                )
+                                ),
                             ]
                             if f in scalar_fields and int(scalar_fields[f].value_count) > 1
                             else []
@@ -1803,9 +1845,9 @@ class SerializerGenerator:
                                                     ],
                                                 ),
                                             ),
-                                        )
-                                    ]
-                                )
+                                        ),
+                                    ],
+                                ),
                             ]
                             if f in message.direct_predecessors(FINAL)
                             else []
@@ -1818,7 +1860,8 @@ class SerializerGenerator:
 
     @staticmethod
     def _update_last(
-        message: Optional[Message] = None, field: Optional[Field] = None
+        message: Optional[Message] = None,
+        field: Optional[Field] = None,
     ) -> list[Statement]:
         assert (message and field) or not (message or field)
         last = (

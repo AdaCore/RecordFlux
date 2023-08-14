@@ -31,7 +31,8 @@ class UncheckedModel(Base):
                 if isinstance(checked_declaration, message.UnprovenMessage):
                     try:
                         proven_message = checked_declaration.proven(
-                            skip_verification or cache.is_verified(checked_declaration), workers
+                            skip_verification or cache.is_verified(checked_declaration),
+                            workers,
                         )
                         declarations.append(proven_message)
                         cache.add_verified(proven_message)
@@ -57,7 +58,8 @@ class UncheckedModel(Base):
 
 class Model(Base):
     def __init__(
-        self, declarations: Optional[Sequence[top_level_declaration.TopLevelDeclaration]] = None
+        self,
+        declarations: Optional[Sequence[top_level_declaration.TopLevelDeclaration]] = None,
     ) -> None:
         self._declarations = declarations or []
 

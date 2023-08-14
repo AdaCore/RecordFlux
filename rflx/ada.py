@@ -85,7 +85,7 @@ class BinExpr(Expr):
 
     def _update_str(self) -> None:
         self._str = intern(
-            f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}"
+            f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}",
         )
 
     @property
@@ -100,7 +100,8 @@ class BinExpr(Expr):
 
     def rflx_expr(self) -> expr.BinExpr:
         result = getattr(expr, self.__class__.__name__)(
-            self.left.rflx_expr(), self.right.rflx_expr()
+            self.left.rflx_expr(),
+            self.right.rflx_expr(),
         )
         assert isinstance(result, expr.BinExpr)
         return result
@@ -536,7 +537,9 @@ class Indexed(Name):
 
     def rflx_expr(self) -> expr.Indexed:
         return expr.Indexed(
-            self.prefix.rflx_expr(), *[e.rflx_expr() for e in self.elements], negative=self.negative
+            self.prefix.rflx_expr(),
+            *[e.rflx_expr() for e in self.elements],
+            negative=self.negative,
         )
 
 
@@ -577,7 +580,10 @@ class Call(Name):
 
     def __neg__(self) -> Call:
         return self.__class__(
-            self.identifier, self.arguments, self.named_arguments, not self.negative
+            self.identifier,
+            self.arguments,
+            self.named_arguments,
+            not self.negative,
         )
 
     @property
@@ -586,7 +592,7 @@ class Call(Name):
             [
                 *(str(a) for a in self.arguments),
                 *(f"{n} => {a}" for n, a in self.named_arguments.items()),
-            ]
+            ],
         )
         if arguments:
             arguments = f" ({arguments})"
@@ -659,7 +665,7 @@ class NamedAggregate(Expr):
                 f"{name.ada_str if isinstance(name, ID) else name} => {element}"
                 for name, element in self.elements
             )
-            + ")"
+            + ")",
         )
 
     @property
@@ -684,7 +690,8 @@ class Relation(BinExpr):
 
     def rflx_expr(self) -> expr.Relation:
         result = getattr(expr, self.__class__.__name__)(
-            self.left.rflx_expr(), self.right.rflx_expr()
+            self.left.rflx_expr(),
+            self.right.rflx_expr(),
         )
         assert isinstance(result, expr.Relation)
         return result
@@ -739,7 +746,8 @@ class NotIn(Relation):
 
 
 def If(  # noqa: N802
-    condition_expressions: Sequence[tuple[Expr, Expr]], else_expression: Optional[Expr] = None
+    condition_expressions: Sequence[tuple[Expr, Expr]],
+    else_expression: Optional[Expr] = None,
 ) -> Expr:
     if len(condition_expressions) == 0 and else_expression is not None:
         return else_expression
@@ -795,7 +803,8 @@ class IfExpr(Expr):
 
 
 def Case(  # noqa: N802
-    control_expression: Expr, case_expressions: Sequence[tuple[Expr, Expr]]
+    control_expression: Expr,
+    case_expressions: Sequence[tuple[Expr, Expr]],
 ) -> Expr:
     if len(case_expressions) == 1 and case_expressions[0][0] == Variable("others"):
         return case_expressions[0][1]
@@ -804,7 +813,9 @@ def Case(  # noqa: N802
 
 class CaseExpr(Expr):
     def __init__(
-        self, control_expression: Expr, case_expressions: Sequence[tuple[Expr, Expr]]
+        self,
+        control_expression: Expr,
+        case_expressions: Sequence[tuple[Expr, Expr]],
     ) -> None:
         super().__init__()
         self.control_expression = control_expression
@@ -820,7 +831,7 @@ class CaseExpr(Expr):
                 [
                     f"\nwhen {choice} =>\n{indent(str(expression), 3)}"
                     for choice, expression in grouped_cases
-                ]
+                ],
             ),
             4,
         )
@@ -844,7 +855,7 @@ class QuantifiedExpr(Expr):
     def _update_str(self) -> None:
         self._str = intern(
             f"(for {self.quantifier} {self.parameter_identifier.ada_str} {self.keyword}"
-            f" {self.iterable} =>\n{indent(str(self.predicate), 4)})"
+            f" {self.iterable} =>\n{indent(str(self.predicate), 4)})",
         )
 
     @property
@@ -863,7 +874,9 @@ class QuantifiedExpr(Expr):
 
     def rflx_expr(self) -> expr.QuantifiedExpr:
         result = getattr(expr, self.__class__.__name__)(
-            self.parameter_identifier, self.iterable.rflx_expr(), self.predicate.rflx_expr()
+            self.parameter_identifier,
+            self.iterable.rflx_expr(),
+            self.predicate.rflx_expr(),
         )
         assert isinstance(result, expr.QuantifiedExpr)
         return result
@@ -1127,7 +1140,8 @@ class Depends(Aspect):
             return "(" + ", ".join(str(p) for p in values) + ")"
 
         dependencies = indent_next(
-            ", ".join(f"{o.ada_str} => {input_values(i)}" for o, i in self.dependencies.items()), 1
+            ", ".join(f"{o.ada_str} => {input_values(i)}" for o, i in self.dependencies.items()),
+            1,
         )
         return f"({dependencies})"
 
@@ -1260,7 +1274,9 @@ class FormalDeclaration(Base):
 
 class FormalSubprogramDeclaration(FormalDeclaration):
     def __init__(
-        self, specification: SubprogramSpecification, default: Optional[StrID] = None
+        self,
+        specification: SubprogramSpecification,
+        default: Optional[StrID] = None,
     ) -> None:
         self.specification = specification
         self.default = ID(default) if default else None
@@ -1416,7 +1432,10 @@ class ObjectDeclaration(Declaration):
 
 class Discriminant(Base):
     def __init__(
-        self, identifiers: Sequence[StrID], type_identifier: StrID, default: Optional[Expr] = None
+        self,
+        identifiers: Sequence[StrID],
+        type_identifier: StrID,
+        default: Optional[Expr] = None,
     ) -> None:
         self.identifiers = list(map(ID, identifiers))
         self.type_identifier = ID(type_identifier)
@@ -1464,7 +1483,10 @@ class TypeDeclaration(Declaration, FormalDeclaration):
 
 class ModularType(TypeDeclaration):
     def __init__(
-        self, identifier: StrID, modulus: Expr, aspects: Optional[Sequence[Aspect]] = None
+        self,
+        identifier: StrID,
+        modulus: Expr,
+        aspects: Optional[Sequence[Aspect]] = None,
     ) -> None:
         super().__init__(identifier, aspects=aspects or [])
         self.modulus = modulus
@@ -1502,8 +1524,9 @@ class EnumerationType(TypeDeclaration):
         self.literals = (
             OrderedDict(
                 sorted(
-                    literals.items(), key=lambda t: t[1].value if isinstance(t[1], Number) else 0
-                )
+                    literals.items(),
+                    key=lambda t: t[1].value if isinstance(t[1], Number) else 0,
+                ),
             )
             if None not in literals.values()
             else literals
@@ -1529,7 +1552,10 @@ class EnumerationType(TypeDeclaration):
 
 class Subtype(TypeDeclaration):
     def __init__(
-        self, identifier: StrID, base_identifier: StrID, aspects: Optional[Sequence[Aspect]] = None
+        self,
+        identifier: StrID,
+        base_identifier: StrID,
+        aspects: Optional[Sequence[Aspect]] = None,
     ) -> None:
         super().__init__(identifier, aspects=aspects)
         self.base_identifier = ID(base_identifier)
@@ -1749,7 +1775,7 @@ class CallStatement(Statement):
             [
                 *(str(a) for a in self.arguments),
                 *(f"{n} => {a}" for n, a in self.named_arguments.items()),
-            ]
+            ],
         )
         arguments = f" ({arguments})" if arguments else ""
         return f"{self.identifier.ada_str}{arguments};"
@@ -1885,7 +1911,7 @@ class CaseStatement(Statement):
             [
                 f"\nwhen {choice} =>\n{indent(os.linesep.join(str(s) for s in statements), 3)}"
                 for choice, statements in grouped_cases
-            ]
+            ],
         )
 
         return f"case {self.control_expression} is{indent(cases, 3)}\nend case;"
@@ -1958,7 +1984,9 @@ class RaiseStatement(Statement):
 
 class Declare(Statement):
     def __init__(
-        self, declarations: Sequence[Declaration], statements: Sequence[Statement]
+        self,
+        declarations: Sequence[Declaration],
+        statements: Sequence[Statement],
     ) -> None:
         self.declarations = declarations
         self.statements = statements
@@ -1971,7 +1999,10 @@ class Declare(Statement):
 
 class Parameter(Base):
     def __init__(
-        self, identifiers: Sequence[StrID], type_identifier: StrID, default: Optional[Expr] = None
+        self,
+        identifiers: Sequence[StrID],
+        type_identifier: StrID,
+        default: Optional[Expr] = None,
     ) -> None:
         self.identifiers = list(map(ID, identifiers))
         self.type_identifier = ID(type_identifier)
@@ -2178,7 +2209,9 @@ class GenericFunctionInstantiation(Subprogram):
 
 class SubprogramRenamingDeclaration(Subprogram):
     def __init__(
-        self, specification: SubprogramSpecification, subprogram_identifier: StrID
+        self,
+        specification: SubprogramSpecification,
+        subprogram_identifier: StrID,
     ) -> None:
         super().__init__(specification)
         self.subprogram_identifier = ID(subprogram_identifier)
@@ -2270,7 +2303,9 @@ class PackageUnit(Unit):
 
 class InstantiationUnit(Unit):
     def __init__(
-        self, context: Sequence[ContextItem], declaration: GenericPackageInstantiation
+        self,
+        context: Sequence[ContextItem],
+        declaration: GenericPackageInstantiation,
     ) -> None:
         self.context = context
         self.declaration = declaration

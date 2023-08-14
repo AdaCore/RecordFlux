@@ -81,8 +81,8 @@ class Integration:
                                 Subsystem.PARSER,
                                 Severity.ERROR,
                                 Integration._to_location(package),
-                            )
-                        ]
+                            ),
+                        ],
                     )
                     return
                 assert len(matching_sessions) == 1
@@ -138,7 +138,7 @@ class Integration:
             self._packages[filename.stem] = IntegrationFile.parse_obj(file)
         except ValidationError as e:
             error.extend(
-                [(f"{e}", Subsystem.PARSER, Severity.ERROR, self._to_location(filename.stem))]
+                [(f"{e}", Subsystem.PARSER, Severity.ERROR, self._to_location(filename.stem))],
             )
 
     @staticmethod
@@ -147,7 +147,10 @@ class Integration:
 
     @staticmethod
     def _validate_globals(
-        package: str, integration: SessionIntegration, session: Session, error: RecordFluxError
+        package: str,
+        integration: SessionIntegration,
+        session: Session,
+        error: RecordFluxError,
     ) -> None:
         if integration.buffer_size.global_ is None:
             return
@@ -164,13 +167,16 @@ class Integration:
                             Subsystem.PARSER,
                             Severity.ERROR,
                             Integration._to_location(package),
-                        )
-                    ]
+                        ),
+                    ],
                 )
 
     @staticmethod
     def _validate_states(
-        package: str, integration: SessionIntegration, session: Session, error: RecordFluxError
+        package: str,
+        integration: SessionIntegration,
+        session: Session,
+        error: RecordFluxError,
     ) -> None:
         if integration.buffer_size.local_ is None:
             return
@@ -190,8 +196,8 @@ class Integration:
                             Subsystem.PARSER,
                             Severity.ERROR,
                             Integration._to_location(package),
-                        )
-                    ]
+                        ),
+                    ],
                 )
                 return
             state_declaration_vars = [str(x.name) for x in state.declarations]
@@ -207,6 +213,6 @@ class Integration:
                                 Subsystem.PARSER,
                                 Severity.ERROR,
                                 Integration._to_location(package),
-                            )
-                        ]
+                            ),
+                        ],
                     )

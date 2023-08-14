@@ -75,7 +75,9 @@ class TypeCheckableDeclaration(Declaration):
 
     @abstractmethod
     def check_type(
-        self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+        self,
+        declaration_type: rty.Type,
+        typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         """Set the types of the declaration and variables, and check the types of expressions."""
         raise NotImplementedError
@@ -100,7 +102,9 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         return f"{self.identifier} : {ada_type_name(self.type_identifier)}{expression}"
 
     def check_type(
-        self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+        self,
+        declaration_type: rty.Type,
+        typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = declaration_type
 
@@ -144,7 +148,9 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         return f"{self.identifier} : {self.type_identifier} renames {self.expression}"
 
     def check_type(
-        self, declaration_type: rty.Type, typify_variable: Callable[[Expr], Expr]
+        self,
+        declaration_type: rty.Type,
+        typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = declaration_type
         expression = self.expression.substituted(typify_variable)
@@ -244,7 +250,9 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         )
 
     def check_type(
-        self, declaration_type: rty.Type, _typify_variable: Callable[[Expr], Expr]
+        self,
+        declaration_type: rty.Type,
+        _typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = declaration_type
         return RecordFluxError()

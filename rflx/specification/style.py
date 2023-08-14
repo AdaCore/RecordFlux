@@ -89,8 +89,8 @@ def _append(
                 Subsystem.STYLE,
                 Severity.ERROR,
                 Location((row, col), spec_file),
-            )
-        ]
+            ),
+        ],
     )
 
 
@@ -113,7 +113,12 @@ def _determine_enabled_checks(error: RecordFluxError, line: str, spec_file: Path
 
 
 def _check_blank_lines(
-    error: RecordFluxError, line: str, row: int, spec_file: Path, blank_lines: int, row_count: int
+    error: RecordFluxError,
+    line: str,
+    row: int,
+    spec_file: Path,
+    blank_lines: int,
+    row_count: int,
 ) -> int:
     if not line:
         if row == 1:
@@ -162,7 +167,10 @@ def _check_indentation(error: RecordFluxError, line: str, row: int, spec_file: P
 
 
 def _check_token_spacing(  # noqa: PLR0912
-    error: RecordFluxError, line: str, row: int, spec_file: Path
+    error: RecordFluxError,
+    line: str,
+    row: int,
+    spec_file: Path,
 ) -> None:
     strings = [range(m.start(), m.end()) for m in re.finditer(r'"[^"]*"', line.split("--")[0])]
 

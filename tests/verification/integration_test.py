@@ -10,19 +10,25 @@ from tests.data.specs import (
 
 def test_definite_message_with_builtin_type_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(
-        DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC, tmp_path, units=["rflx-test-message"]
+        DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC,
+        tmp_path,
+        units=["rflx-test-message"],
     )
 
 
 def test_parameterized_message_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(
-        PARAMETERIZED_MESSAGE_SPEC, tmp_path, units=["rflx-test-message"]
+        PARAMETERIZED_MESSAGE_SPEC,
+        tmp_path,
+        units=["rflx-test-message"],
     )
 
 
 def test_definite_parameterized_message_provability(tmp_path: Path) -> None:
     utils.assert_provable_code_string(
-        DEFINITE_PARAMETERIZED_MESSAGE_SPEC, tmp_path, units=["rflx-test-message"]
+        DEFINITE_PARAMETERIZED_MESSAGE_SPEC,
+        tmp_path,
+        units=["rflx-test-message"],
     )
 
 

@@ -46,7 +46,10 @@ def main(  # noqa: PLR0915
 ) -> Union[int, str]:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-q", "--quiet", action="store_true", help="disable logging to standard output"
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="disable logging to standard output",
     )
     parser.add_argument("--version", action="store_true")
     parser.add_argument(
@@ -78,7 +81,11 @@ def main(  # noqa: PLR0915
 
     parser_check = subparsers.add_parser("check", help="check specification")
     parser_check.add_argument(
-        "files", metavar="SPECIFICATION_FILE", type=Path, nargs="+", help="specification file"
+        "files",
+        metavar="SPECIFICATION_FILE",
+        type=Path,
+        nargs="+",
+        help="specification file",
     )
     parser_check.set_defaults(func=check)
 
@@ -91,10 +98,17 @@ def main(  # noqa: PLR0915
         help="add prefix to generated packages (default: %(default)s)",
     )
     parser_generate.add_argument(
-        "-n", "--no-library", help="omit generating library files", action="store_true"
+        "-n",
+        "--no-library",
+        help="omit generating library files",
+        action="store_true",
     )
     parser_generate.add_argument(
-        "-d", dest="output_directory", type=Path, default=".", help="output directory"
+        "-d",
+        dest="output_directory",
+        type=Path,
+        default=".",
+        help="output directory",
     )
     parser_generate.add_argument(
         "--debug",
@@ -108,10 +122,16 @@ def main(  # noqa: PLR0915
         action="store_true",
     )
     parser_generate.add_argument(
-        "--integration-files-dir", help="directory for the .rfi files", type=Path
+        "--integration-files-dir",
+        help="directory for the .rfi files",
+        type=Path,
     )
     parser_generate.add_argument(
-        "files", metavar="SPECIFICATION_FILE", type=Path, nargs="*", help="specification file"
+        "files",
+        metavar="SPECIFICATION_FILE",
+        type=Path,
+        nargs="*",
+        help="specification file",
     )
     parser_generate.set_defaults(func=generate)
 
@@ -133,15 +153,24 @@ def main(  # noqa: PLR0915
         help="ignore states with names matching regular expression",
     )
     parser_graph.add_argument(
-        "files", metavar="SPECIFICATION_FILE", type=Path, nargs="+", help="specification file"
+        "files",
+        metavar="SPECIFICATION_FILE",
+        type=Path,
+        nargs="+",
+        help="specification file",
     )
     parser_graph.add_argument(
-        "-d", dest="output_directory", type=Path, default=".", help="output directory"
+        "-d",
+        dest="output_directory",
+        type=Path,
+        default=".",
+        help="output directory",
     )
     parser_graph.set_defaults(func=graph)
 
     parser_validate = subparsers.add_parser(
-        "validate", help="validate specification against a set of known valid or invalid messages"
+        "validate",
+        help="validate specification against a set of known valid or invalid messages",
     )
     parser_validate.add_argument(
         "--split-disjunctions",
@@ -213,7 +242,8 @@ def main(  # noqa: PLR0915
     parser_validate.set_defaults(func=validate)
 
     parser_setup = subparsers.add_parser(
-        "setup_ide", help="set up RecordFlux IDE integration (GNAT Studio)"
+        "setup_ide",
+        help="set up RecordFlux IDE integration (GNAT Studio)",
     )
     parser_setup.add_argument(
         "--gnat-studio-dir",
@@ -225,13 +255,15 @@ def main(  # noqa: PLR0915
     parser_setup.set_defaults(func=setup)
 
     parser_convert = subparsers.add_parser(
-        "convert", help="convert foreign specifications into RecordFlux specifications"
+        "convert",
+        help="convert foreign specifications into RecordFlux specifications",
     )
 
     convert_subparsers = parser_convert.add_subparsers(dest="subcommand")
 
     parser_iana = convert_subparsers.add_parser(
-        "iana", help="convert IANA registry into RecordFlux specifications"
+        "iana",
+        help="convert IANA registry into RecordFlux specifications",
     )
 
     parser_iana.add_argument(
@@ -242,7 +274,11 @@ def main(  # noqa: PLR0915
         action="store_true",
     )
     parser_iana.add_argument(
-        "-d", dest="output_directory", type=Path, default=".", help="output directory"
+        "-d",
+        dest="output_directory",
+        type=Path,
+        default=".",
+        help="output directory",
     )
     parser_iana.add_argument("file", type=argparse.FileType("r"), nargs="?", default=sys.stdin)
     parser_iana.set_defaults(func=convert_iana)
@@ -308,7 +344,7 @@ def version() -> str:
         [
             f"RecordFlux {__version__}",
             *dependencies,
-        ]
+        ],
     )
 
 
@@ -344,7 +380,10 @@ def generate(args: argparse.Namespace) -> None:
         fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
 
     model, integration = parse(
-        args.files, args.no_verification, args.workers, args.integration_files_dir
+        args.files,
+        args.no_verification,
+        args.workers,
+        args.integration_files_dir,
     )
 
     Generator(
@@ -373,7 +412,10 @@ def parse(
     integration_files_dir: Optional[Path] = None,
 ) -> tuple[Model, Integration]:
     parser = Parser(
-        skip_verification, cached=True, workers=workers, integration_files_dir=integration_files_dir
+        skip_verification,
+        cached=True,
+        workers=workers,
+        integration_files_dir=integration_files_dir,
     )
     error = RecordFluxError()
     present_files = []

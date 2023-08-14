@@ -90,7 +90,9 @@ def test_attributes(pyrflx_: PyRFLX) -> None:
 
 def test_no_verification(icmp_message_value: MessageValue) -> None:
     pyrflx_ = PyRFLX.from_specs(
-        [SPEC_DIR / "icmp.rflx"], skip_model_verification=True, skip_message_verification=True
+        [SPEC_DIR / "icmp.rflx"],
+        skip_model_verification=True,
+        skip_message_verification=True,
     )
     icmp_message_value_unv = pyrflx_.package("ICMP").new_message("Message")
     icmp_message_value.set("Tag", "Echo_Request")
@@ -135,7 +137,8 @@ def test_message_value_bitstring(tlv_message_value: MessageValue) -> None:
 
 
 def test_message_value_all_fields(
-    tlv_message_value: MessageValue, ethernet_frame_value: MessageValue
+    tlv_message_value: MessageValue,
+    ethernet_frame_value: MessageValue,
 ) -> None:
     assert tlv_message_value.fields == ["Tag", "Length", "Value"]
     assert ethernet_frame_value.fields == [
@@ -150,7 +153,8 @@ def test_message_value_all_fields(
 
 
 def test_message_value_accessible_fields_initial_fields(
-    tlv_message_value: MessageValue, ethernet_frame_value: MessageValue
+    tlv_message_value: MessageValue,
+    ethernet_frame_value: MessageValue,
 ) -> None:
     assert tlv_message_value.accessible_fields == ["Tag"]
     assert ethernet_frame_value.accessible_fields == ["Destination", "Source", "Type_Length_TPID"]
@@ -284,7 +288,8 @@ def test_message_value_set_get_value(tlv_message_value: MessageValue) -> None:
 
 def test_message_value_get_invalid_field(tlv_message_value: MessageValue) -> None:
     with pytest.raises(
-        PyRFLXError, match=r'^pyrflx: error: "nofield" is not a field of this message$'
+        PyRFLXError,
+        match=r'^pyrflx: error: "nofield" is not a field of this message$',
     ):
         tlv_message_value.get("nofield")
 
@@ -378,7 +383,8 @@ def test_message_value_field_set() -> None:
 
 
 def test_message_value_is_valid_opaque_field(
-    tlv_message_value: MessageValue, ethernet_frame_value: MessageValue
+    tlv_message_value: MessageValue,
+    ethernet_frame_value: MessageValue,
 ) -> None:
     assert not tlv_message_value._is_valid_composite_field("Value")
     tlv_message_value.set("Tag", "Msg_Data")
@@ -431,7 +437,8 @@ def test_message_value_parse_incorrect_nested_message(ethernet_frame_value: Mess
 
 
 def test_message_value_parse_from_bitstring(
-    tlv_message_value: MessageValue, enum_value: EnumValue
+    tlv_message_value: MessageValue,
+    enum_value: EnumValue,
 ) -> None:
     intval = IntegerValue(Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)))
     intval.parse(b"\x02")
@@ -448,7 +455,8 @@ def test_message_value_parse_from_bitstring(
 
 def test_message_value_parse_from_bitstring_invalid(tlv_message_value: MessageValue) -> None:
     with pytest.raises(
-        PyRFLXError, match="^pyrflx: error: Bitstring does not consist of only 0 and 1$"
+        PyRFLXError,
+        match="^pyrflx: error: Bitstring does not consist of only 0 and 1$",
     ):
         Bitstring("123")
     assert Bitstring("01") + Bitstring("00") == Bitstring("0100")
@@ -510,7 +518,7 @@ def fixture_enum_value() -> EnumValue:
             [("One", expr.Number(1)), ("Two", expr.Number(2))],
             expr.Number(8),
             always_valid=False,
-        )
+        ),
     )
 
 
@@ -611,7 +619,8 @@ def test_opaque_value() -> None:
     opaquevalue = OpaqueValue(Opaque())
     assert not opaquevalue.initialized
     with pytest.raises(
-        PyRFLXError, match="^pyrflx: error: value __INTERNAL__::Opaque not initialized$"
+        PyRFLXError,
+        match="^pyrflx: error: value __INTERNAL__::Opaque not initialized$",
     ):
         opaquevalue.value  # noqa: B018
     opaquevalue.assign(b"\x01\x02")
@@ -666,13 +675,15 @@ def test_invalid_value() -> None:
 
     t = TestType("Test::Type")
     with pytest.raises(
-        PyRFLXError, match="^pyrflx: error: cannot construct unknown type: TestType$"
+        PyRFLXError,
+        match="^pyrflx: error: cannot construct unknown type: TestType$",
     ):
         TypeValue.construct(t)
 
 
 def test_sequence_messages(
-    message_sequence_value: MessageValue, sequence_message_package: Package
+    message_sequence_value: MessageValue,
+    sequence_message_package: Package,
 ) -> None:
     sequence_element_one = sequence_message_package.new_message("Sequence_Element")
     sequence_element_one.set("Byte", 5)
@@ -697,13 +708,13 @@ def fixture_sequence_type_foo_value(sequence_type_package: Package) -> MessageVa
 
 def test_sequence_scalars(sequence_type_foo_value: MessageValue) -> None:
     a = IntegerValue(
-        Integer("Sequence_Type::Byte_One", expr.Number(0), expr.Number(255), expr.Number(8))
+        Integer("Sequence_Type::Byte_One", expr.Number(0), expr.Number(255), expr.Number(8)),
     )
     b = IntegerValue(
-        Integer("Sequence_Type::Byte_Two", expr.Number(0), expr.Number(255), expr.Number(8))
+        Integer("Sequence_Type::Byte_Two", expr.Number(0), expr.Number(255), expr.Number(8)),
     )
     c = IntegerValue(
-        Integer("Sequence_Type::Byte_Three", expr.Number(0), expr.Number(255), expr.Number(8))
+        Integer("Sequence_Type::Byte_Three", expr.Number(0), expr.Number(255), expr.Number(8)),
     )
     a.assign(5)
     b.assign(6)
@@ -723,7 +734,7 @@ def test_sequence_preserve_value(enum_value: EnumValue) -> None:
         Sequence(
             "Test::Sequence",
             Integer("Test::Mod_Int", expr.Number(0), expr.Number(255), expr.Number(8)),
-        )
+        ),
     )
     type_sequence.assign([intval])
     assert type_sequence.value == [intval]
@@ -736,7 +747,8 @@ def test_sequence_preserve_value(enum_value: EnumValue) -> None:
 
 
 def test_sequence_parse_from_bytes(
-    message_sequence_value: MessageValue, sequence_type_foo_value: MessageValue
+    message_sequence_value: MessageValue,
+    sequence_type_foo_value: MessageValue,
 ) -> None:
     message_sequence_value.parse(b"\x02\x05\x06")
     assert message_sequence_value.bytestring == b"\x02\x05\x06"
@@ -757,7 +769,7 @@ def test_sequence_assign_invalid(
         Sequence(
             "Test::Sequence",
             Integer("Test::Mod_Int", expr.Number(0), expr.Number(255), expr.Number(8)),
-        )
+        ),
     )
     msg_sequence = SequenceValue(Sequence("Test::MsgSequence", tlv_message_value._type))
 
@@ -782,7 +794,8 @@ def test_sequence_assign_invalid(
         msg_sequence.assign([tlv_message_value])
 
     with pytest.raises(
-        PyRFLXError, match="^pyrflx: error: cannot assign EnumValue to an sequence of Message$"
+        PyRFLXError,
+        match="^pyrflx: error: cannot assign EnumValue to an sequence of Message$",
     ):
         msg_sequence.assign([enum_value])
 
@@ -797,7 +810,8 @@ def test_sequence_assign_invalid(
     ethernet_frame_value.set("Payload", bytes(46))
 
     with pytest.raises(
-        PyRFLXError, match='^pyrflx: error: cannot assign "Frame" to an sequence of "Message"$'
+        PyRFLXError,
+        match='^pyrflx: error: cannot assign "Frame" to an sequence of "Message"$',
     ):
         msg_sequence.assign([tlv_message_value, ethernet_frame_value])
 
@@ -872,7 +886,7 @@ def test_checksum_field_not_defined(icmp_checksum_message_value: MessageValue) -
         ),
     ):
         icmp_checksum_message_value.set_checksum_function(
-            {"NonExistingField": icmp_checksum_function}
+            {"NonExistingField": icmp_checksum_function},
         )
 
     with pytest.raises(
@@ -1023,7 +1037,9 @@ def test_checksum_message_first(icmp_checksum_message_first: MessageValue) -> No
 
 def test_checksum_no_verification() -> None:
     pyrflx_ = PyRFLX.from_specs(
-        [SPEC_DIR / "icmp.rflx"], skip_model_verification=True, skip_message_verification=True
+        [SPEC_DIR / "icmp.rflx"],
+        skip_model_verification=True,
+        skip_message_verification=True,
     )
     icmp_message = pyrflx_.package("ICMP").new_message("Message")._type
     icmp_msg = MessageValue(
@@ -1041,15 +1057,17 @@ def test_checksum_no_verification() -> None:
             checksums={
                 ID("Checksum"): [
                     expr.ValueRange(
-                        expr.First("Message"), expr.Sub(expr.First("Checksum"), expr.Number(1))
+                        expr.First("Message"),
+                        expr.Sub(expr.First("Checksum"), expr.Number(1)),
                     ),
                     expr.Size("Checksum"),
                     expr.ValueRange(
-                        expr.Add(expr.Last("Checksum"), expr.Number(1)), expr.Last("Message")
+                        expr.Add(expr.Last("Checksum"), expr.Number(1)),
+                        expr.Last("Message"),
                     ),
-                ]
+                ],
             },
-        )
+        ),
     )
     test_data = (
         b"\x47\xb4\x67\x5e\x00\x00\x00\x00"
@@ -1130,7 +1148,7 @@ def checksum_function_255(message: bytes, **_kwargs: object) -> int:  # noqa: AR
 @pytest.fixture(name="pyrflx_checksum")
 def fixture_prflx_checksum() -> PyRFLX:
     return PyRFLX.from_specs(
-        [SPEC_DIR / "refinement_with_checksum.rflx", SPEC_DIR / "tlv_with_checksum.rflx"]
+        [SPEC_DIR / "refinement_with_checksum.rflx", SPEC_DIR / "tlv_with_checksum.rflx"],
     )
 
 
@@ -1158,10 +1176,10 @@ def test_set_checksum_to_pyrflx(
         {
             "Refinement_With_Checksum::Message": {"Checksum": checksum_function_255},
             "TLV_With_Checksum::Message": {"Checksum": checksum_function_zero},
-        }
+        },
     )
     refinement_with_checksum_msg = pyrflx_checksum.package("Refinement_With_Checksum").new_message(
-        "Message"
+        "Message",
     )
     tlv_with_checksum_msg = pyrflx_checksum.package("TLV_With_Checksum").new_message("Message")
     refinement_checksum_function = refinement_with_checksum_msg._checksums["Checksum"].function
@@ -1191,7 +1209,7 @@ def test_set_checksum_to_pyrflx_invalid_id(
             {
                 "Refinement_With_Checksum:Message": {"Checksum": checksum_function_255},
                 "TLV_With_Checksum::Message": {"Checksum": checksum_function_zero},
-            }
+            },
         )
 
     with pytest.raises(
@@ -1202,7 +1220,7 @@ def test_set_checksum_to_pyrflx_invalid_id(
             {
                 "Not_A_Package": {"Checksum": checksum_function_255},
                 "TLV_With_Checksum::Message": {"Checksum": checksum_function_zero},
-            }
+            },
         )
 
 
@@ -1212,7 +1230,7 @@ def test_set_checksum_to_pyrflx_package_not_found(
     pyrflx_checksum.set_checksum_functions(
         {
             "Not_A_Package::Not_A_Message": {"Checksum": checksum_function_255},
-        }
+        },
     )
 
 
@@ -1226,7 +1244,7 @@ def test_set_checksum_to_pyrflx_message_not_found(
         pyrflx_checksum.set_checksum_functions(
             {
                 "TLV_With_Checksum::Not_A_Message": {"Checksum": checksum_function_255},
-            }
+            },
         )
 
 
@@ -1305,7 +1323,8 @@ def test_always_valid_aspect(
 
 
 def test_get_inner_messages(
-    sequence_message_package: Package, message_sequence_refinement_value: MessageValue
+    sequence_message_package: Package,
+    message_sequence_refinement_value: MessageValue,
 ) -> None:
     sequence_element_one = sequence_message_package.new_message("Sequence_Element")
     sequence_element_one.set("Byte", 5)
@@ -1408,7 +1427,8 @@ def test_parameterized_message_unsupported_type(parameterized_package: Package) 
 
 def test_parameterized_message_invalid_type(parameterized_package: Package) -> None:
     with pytest.raises(
-        PyRFLXError, match='^pyrflx: error: message argument for "Tag_Mode" has invalid type "int"$'
+        PyRFLXError,
+        match='^pyrflx: error: message argument for "Tag_Mode" has invalid type "int"$',
     ):
         parameterized_package.new_message(
             "Message",
@@ -1420,7 +1440,8 @@ def test_parameterized_message_invalid_type(parameterized_package: Package) -> N
             },
         )
     with pytest.raises(
-        PyRFLXError, match='^pyrflx: error: message argument for "Use_Tag" has invalid type "str"$'
+        PyRFLXError,
+        match='^pyrflx: error: message argument for "Use_Tag" has invalid type "str"$',
     ):
         parameterized_package.new_message(
             "Message",
@@ -1435,7 +1456,7 @@ def test_parameterized_message_invalid_type(parameterized_package: Package) -> N
 
 def test_json_serialization() -> None:
     integer_value = IntegerValue(
-        Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8))
+        Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)),
     )
     integer_value.assign(128)
     assert integer_value.as_json() == 128
@@ -1446,7 +1467,7 @@ def test_json_serialization() -> None:
             [("One", expr.Number(1)), ("Two", expr.Number(2))],
             expr.Number(8),
             always_valid=False,
-        )
+        ),
     )
     enum_value.assign("Two")
     assert enum_value.as_json() == ("Test::Two", 2)
@@ -1455,7 +1476,7 @@ def test_json_serialization() -> None:
         Sequence(
             "Test::Sequence",
             Integer("Test::Int", expr.Number(0), expr.Number(255), expr.Number(8)),
-        )
+        ),
     )
     sequence_value.assign([integer_value, integer_value, integer_value])
     assert sequence_value.as_json() == [128, 128, 128]
