@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import itertools
-import multiprocessing
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Generator, Iterable, Mapping, Sequence
@@ -485,11 +484,9 @@ class Session(AbstractSession):
         types: Sequence[mty.Type],
         location: Optional[Location] = None,
         workers: int = 1,
-        mp_context: Optional[multiprocessing.context.BaseContext] = None,
     ):
         super().__init__(identifier, states, declarations, parameters, types, location)
         self._workers = workers
-        self._mp_context = mp_context or multiprocessing.get_context()
 
         self._validate()
 
@@ -510,7 +507,6 @@ class Session(AbstractSession):
             self.location,
             variable_id,
             self._workers,
-            self._mp_context,
         )
 
     def _optimize(self) -> None:
@@ -929,11 +925,7 @@ class UnprovenSession(AbstractSession):
             location,
         )
 
-    def proven(
-        self,
-        workers: int,
-        mp_context: Optional[multiprocessing.context.BaseContext] = None,
-    ) -> Session:
+    def proven(self, workers: int) -> Session:
         return Session(
             self.identifier,
             self.states,
@@ -942,7 +934,6 @@ class UnprovenSession(AbstractSession):
             list(self.types.values()),
             self.location,
             workers,
-            mp_context,
         )
 
 

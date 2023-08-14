@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import multiprocessing
 import re
 from abc import abstractmethod
 from collections.abc import Generator, Mapping, Sequence
@@ -16,7 +15,7 @@ from attr import define, field, frozen
 
 from rflx import typing_ as rty
 from rflx.common import Base
-from rflx.const import MAX_SCALAR_SIZE
+from rflx.const import MAX_SCALAR_SIZE, MP_CONTEXT
 from rflx.error import Location, Subsystem, info
 from rflx.identifier import ID, StrID
 
@@ -86,23 +85,15 @@ class ProofJob(Base):
 
 
 class ProofManager(Base):
-    def __init__(
-        self,
-        workers: int,
-        mp_context: Optional[multiprocessing.context.BaseContext] = None,
-    ) -> None:
+    def __init__(self, workers: int) -> None:
         self._jobs: list[ProofJob] = []
         self._workers = workers
-        self._mp_context = mp_context
 
     def add(self, jobs: Sequence[ProofJob]) -> None:
         self._jobs.extend(jobs)
 
     def check(self) -> list[ProofJob]:
-        with ProcessPoolExecutor(
-            max_workers=self._workers,
-            mp_context=self._mp_context,
-        ) as executor:
+        with ProcessPoolExecutor(max_workers=self._workers, mp_context=MP_CONTEXT) as executor:
             result = list(executor.map(ProofManager._check, self._jobs))  # noqa: SLF001
 
         self._jobs.clear()
@@ -1803,9 +1794,8 @@ class Session:
         location: Optional[Location],
         variable_id: Generator[ID, None, None],
         workers: int = 1,
-        mp_context: Optional[multiprocessing.context.BaseContext] = None,
     ) -> None:
-        manager = ProofManager(workers, mp_context)
+        manager = ProofManager(workers)
         states = [
             State(
                 s.identifier,

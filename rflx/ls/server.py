@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import multiprocessing
 import uuid
 from collections import defaultdict
 from pathlib import Path
@@ -106,8 +105,6 @@ class RecordFluxLanguageServer(LanguageServer):
 
         self._parser: Parser
         self._error: error.RecordFluxError
-        # Workaround to prevent a deadlock when language server is run by VS Code
-        self._mp_context = multiprocessing.get_context(method="spawn")
 
     def update_model(self) -> None:
         token = str(uuid.uuid4())
@@ -132,11 +129,7 @@ class RecordFluxLanguageServer(LanguageServer):
                 files.append(document_path)
                 self.publish_diagnostics(document_uri, [])
 
-        self._parser = Parser(
-            cached=True,
-            workers=self.workers,
-            mp_context=self._mp_context,
-        )
+        self._parser = Parser(cached=True, workers=self.workers)
 
         self._error = error.RecordFluxError()
 
@@ -166,11 +159,7 @@ class RecordFluxLanguageServer(LanguageServer):
         )
 
         try:
-            self.checked_model = self.unchecked_model.checked(
-                self.cache,
-                workers=self.workers,
-                mp_context=self._mp_context,
-            )
+            self.checked_model = self.unchecked_model.checked(self.cache, workers=self.workers)
         except error.RecordFluxError as e:
             self._error.extend(e)
 

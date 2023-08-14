@@ -79,7 +79,7 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.common import file_name
-from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE, MAX_SCALAR_SIZE
+from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE, MAX_SCALAR_SIZE, MP_CONTEXT
 from rflx.error import RecordFluxError, Severity, Subsystem, fail, warn
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
@@ -128,7 +128,7 @@ class Generator:
         self._reproducible = reproducible
         self._debug = debug
         self._ignore_unsupported_checksum = ignore_unsupported_checksum
-        self._executor = ProcessPoolExecutor(max_workers=workers)
+        self._executor = ProcessPoolExecutor(max_workers=workers, mp_context=MP_CONTEXT)
         self._template_dir = const.TEMPLATE_DIR
         assert self._template_dir.is_dir(), "template directory not found"
 

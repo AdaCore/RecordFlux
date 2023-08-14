@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import difflib
 import itertools
-import multiprocessing
 import operator
 from abc import abstractmethod
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
@@ -19,6 +18,7 @@ import z3
 
 from rflx import ada, ir, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
+from rflx.const import MP_CONTEXT
 from rflx.contract import DBC, invariant, require
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
@@ -99,15 +99,10 @@ class ProofJob:
 
 
 class ParallelProofs:
-    def __init__(
-        self,
-        workers: int,
-        mp_context: Optional[multiprocessing.context.BaseContext] = None,
-    ) -> None:
+    def __init__(self, workers: int) -> None:
         self._proofs: list[list[ProofJob]] = []
         self._current: list[ProofJob] = []
         self._workers = workers
-        self._mp_context = mp_context
 
     def add(  # noqa: PLR0913
         self,
@@ -163,10 +158,7 @@ class ParallelProofs:
 
     def check(self, error: RecordFluxError) -> None:
         self.push()
-        with ProcessPoolExecutor(
-            max_workers=self._workers,
-            mp_context=self._mp_context,
-        ) as executor:
+        with ProcessPoolExecutor(max_workers=self._workers, mp_context=MP_CONTEXT) as executor:
             for e in executor.map(ParallelProofs.check_proof, self._proofs):
                 error.extend(e)
         error.propagate()

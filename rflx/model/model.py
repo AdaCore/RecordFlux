@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import itertools
-import multiprocessing
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,9 +26,7 @@ class UncheckedModel(Base):
         cache: Cache,
         skip_verification: bool = False,
         workers: int = 1,
-        mp_context: Optional[multiprocessing.context.BaseContext] = None,
     ) -> Model:
-        mp_context = mp_context or multiprocessing.get_context()
         error = RecordFluxError(self.error)
         declarations: list[top_level_declaration.TopLevelDeclaration] = []
 
@@ -41,7 +38,6 @@ class UncheckedModel(Base):
                         proven_message = checked_declaration.proven(
                             skip_verification or cache.is_verified(checked_declaration),
                             workers,
-                            mp_context,
                         )
                         declarations.append(proven_message)
                         cache.add_verified(proven_message)
@@ -49,7 +45,7 @@ class UncheckedModel(Base):
                         error.extend(e)
                 elif isinstance(checked_declaration, session.UnprovenSession):
                     try:
-                        proven_session = checked_declaration.proven(workers, mp_context)
+                        proven_session = checked_declaration.proven(workers)
                         declarations.append(proven_session)
                     except RecordFluxError as e:
                         error.extend(e)

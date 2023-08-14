@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unexpected errors when using `--max_errors=1` (eng/recordflux/RecordFlux#825)
 - Incorrect detection of conditions as always true for enumerations with `Always_Valid` aspect (eng/recordflux/RecordFlux#1276)
 - Potential name conflicts with internally used identifiers that start with `RFLX_` (eng/recordflux/RecordFlux#638)
+- Deadlocks during verification caused by forked processes (eng/recordflux/RecordFlux#1366)
 
 ## [0.11.1] - 2023-07-14
 
