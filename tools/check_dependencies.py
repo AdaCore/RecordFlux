@@ -19,10 +19,12 @@ def check_dependencies() -> bool:
         try:
             installed_version = version(r.name)
             if installed_version not in r.specifier:
-                print(f"{r.name} has version {installed_version}, should be {r.specifier}")
+                print(  # noqa: T201
+                    f"{r.name} has version {installed_version}, should be {r.specifier}",
+                )
                 result = False
         except PackageNotFoundError:
-            print(f"{r.name} not found")
+            print(f"{r.name} not found")  # noqa: T201
             result = False
 
     return result

@@ -286,7 +286,7 @@ def main(  # noqa: PLR0915
     args = parser.parse_args(argv[1:])
 
     if args.version:
-        print(version())
+        print(version())  # noqa: T201
         return 0
 
     if not args.subcommand:
@@ -517,7 +517,7 @@ def setup(args: argparse.Namespace) -> None:
     plugins_dir = args.gnat_studio_dir / "plug-ins"
     if not plugins_dir.exists():
         plugins_dir.mkdir(parents=True, exist_ok=True)
-    print(f'Installing RecordFlux plugin into "{plugins_dir}"')
+    print(f'Installing RecordFlux plugin into "{plugins_dir}"')  # noqa: T201
     shutil.copy(Path(gnatstudio_dir) / "recordflux.py", plugins_dir)
 
 

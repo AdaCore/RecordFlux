@@ -375,39 +375,39 @@ class CoverageInformation:
                 self._print_link_coverage()
 
     def _print_coverage_overview(self) -> None:
-        print("\n")
-        print("-" * 80)
-        print(f"{'RecordFlux Validation Coverage Report' : ^80}".rstrip())
-        print(f"Directory: {Path.cwd()}")
-        print("-" * 80)
-        print(f"{'File' : <40} {'Links' : >10} {'Used' : >10} {'Coverage' : >15}")
+        print("\n")  # noqa: T201
+        print("-" * 80)  # noqa: T201
+        print(f"{'RecordFlux Validation Coverage Report' : ^80}".rstrip())  # noqa: T201
+        print(f"Directory: {Path.cwd()}")  # noqa: T201
+        print("-" * 80)  # noqa: T201
+        print(f"{'File' : <40} {'Links' : >10} {'Used' : >10} {'Coverage' : >15}")  # noqa: T201
         for file in self._spec_files:
             file_links = self.file_total_links(file)
             file_covered_links = self.file_covered_links(file)
-            print(
+            print(  # noqa: T201
                 f"{file : <40} {file_links : >10} {file_covered_links : >10} "
                 f"{file_covered_links / file_links :>15.2%}",
             )
-        print("-" * 80)
-        print(
+        print("-" * 80)  # noqa: T201
+        print(  # noqa: T201
             f"{'TOTAL' : <40} {self.total_links: >10} {self.total_covered_links : >10} "
             f"{self.total_covered_links / self.total_links :15.2%}",
         )
-        print("-" * 80)
+        print("-" * 80)  # noqa: T201
 
     def _print_link_coverage(self) -> None:
-        print("\n")
-        print("=" * 80)
-        print(f"{'Uncovered Links' : ^80}".rstrip())
-        print("=" * 80)
+        print("\n")  # noqa: T201
+        print("=" * 80)  # noqa: T201
+        print(f"{'Uncovered Links' : ^80}".rstrip())  # noqa: T201
+        print("=" * 80)  # noqa: T201
         for file in self._spec_files:
             uncovered_links = self.file_uncovered_links(file)
             if len(uncovered_links) != 0:
-                print("\n")
-                print(f"{file : ^80}".rstrip())
-                print("-" * 80)
+                print("\n")  # noqa: T201
+                print(f"{file : ^80}".rstrip())  # noqa: T201
+                print("-" * 80)  # noqa: T201
                 for link in sorted(uncovered_links, key=lambda x: str(x.location)):
-                    print(
+                    print(  # noqa: T201
                         f"{link.location!s:<17}"
                         f": missing link {link.source.name:^25} -> {link.target.name:^20}".rstrip(),
                     )
@@ -440,15 +440,15 @@ class ValidationResult:
 
     def print_console_output(self) -> None:
         if self.validation_success:
-            print(f"{self.message_path!s:<80} PASSED")
+            print(f"{self.message_path!s:<80} PASSED")  # noqa: T201
         else:
-            print(
+            print(  # noqa: T201
                 f"{self.message_path!s:<80} FAILED\n"
                 f"provided as: {self.valid_original_message}\t "
                 f"recognized as: {self.valid_parser_result}",
             )
             if self.parser_error is not None:
-                print(self.parser_error)
+                print(self.parser_error)  # noqa: T201
 
 
 class OutputWriter:

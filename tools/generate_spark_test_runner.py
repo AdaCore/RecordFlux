@@ -57,7 +57,7 @@ def create_test_runner(tests: Sequence[str], directory: pathlib.Path) -> None:
     procedure_name = f"Test_{test}" if test else "Test"
     test_cases = "\n".join(f"      Result.all.Add_Test (new RFLX.{t}_Tests.Test);" for t in tests)
 
-    print(f"Create {filename}")
+    print(f"Create {filename}")  # noqa: T201
 
     filename.write_text(
         f"""

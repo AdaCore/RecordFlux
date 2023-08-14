@@ -96,7 +96,7 @@ def generate(feature_test: Path) -> None:
 
 def remove_ada_files(directory: Path) -> None:
     for f in directory.glob("*.ad?"):
-        print(f"Removing {f}")
+        print(f"Removing {f}")  # noqa: T201
         f.unlink()
 
 

@@ -173,7 +173,7 @@ class BaseError(Exception, Base):
         if self.errors:
             raise self
         if self._messages:
-            print(self)
+            print(self)  # noqa: T201
             self._messages = deque()
 
     def fail(
@@ -241,7 +241,7 @@ def warn(
     subsystem: Subsystem,
     location: Optional[Location] = None,
 ) -> None:
-    print(RecordFluxError([(message, subsystem, Severity.WARNING, location)]))
+    print(RecordFluxError([(message, subsystem, Severity.WARNING, location)]))  # noqa: T201
 
 
 def info(
@@ -249,4 +249,4 @@ def info(
     subsystem: Subsystem,
     location: Optional[Location] = None,
 ) -> None:
-    print(RecordFluxError([(message, subsystem, Severity.INFO, location)]))
+    print(RecordFluxError([(message, subsystem, Severity.INFO, location)]))  # noqa: T201

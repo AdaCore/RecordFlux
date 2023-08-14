@@ -116,7 +116,7 @@ def parse_requirements(requirements_file: Path) -> tuple[list[Requirement], bool
                 if req.identifier in requirements or any(
                     identifier == req.identifier for identifier in requirements
                 ):
-                    print(f'duplicate requirement "{req.identifier}"')
+                    print(f'duplicate requirement "{req.identifier}"')  # noqa: T201
                     error = True
                 requirements[req.identifier] = req
 
@@ -125,10 +125,12 @@ def parse_requirements(requirements_file: Path) -> tuple[list[Requirement], bool
                     if parent in requirements:
                         requirements[parent].requirements.append(req)
                     else:
-                        print(f'missing requirement "{parent}" for "{req.identifier}"')
+                        print(  # noqa: T201
+                            f'missing requirement "{parent}" for "{req.identifier}"',
+                        )
                         error = True
         else:
-            print(f'ignored "{l}"')
+            print(f'ignored "{l}"')  # noqa: T201
 
     return (list(requirements.values()), error)
 
@@ -153,7 +155,7 @@ def check_references(requirements: Sequence[Requirement], references: Sequence[s
             if not req.requirements:
                 req.referenced = True
             else:
-                print(f'meta requirement "{req.identifier}" must not be referenced')
+                print(f'meta requirement "{req.identifier}" must not be referenced')  # noqa: T201
                 error = True
 
     undefined = [
@@ -163,29 +165,29 @@ def check_references(requirements: Sequence[Requirement], references: Sequence[s
     ]
     if undefined:
         for ref in undefined:
-            print(f'reference to undefined requirement "{ref}"')
+            print(f'reference to undefined requirement "{ref}"')  # noqa: T201
         error = True
 
     for r in [r for r in requirements if not r.referenced and not r.requirements]:
-        print(f'unreferenced requirement "{r.identifier}"')
+        print(f'unreferenced requirement "{r.identifier}"')  # noqa: T201
         error = True
 
     return error
 
 
 def print_checkbox_list(requirements: Sequence[Requirement]) -> None:
-    print()
+    print()  # noqa: T201
     for r in sorted(requirements):
         indentation = "    " * r.identifier.count(ID_SEPARATOR)
         status = "x" if r.referenced else " "
-        print(f"{indentation}- [{status}] {r.description} ({r.identifier})")
-    print()
+        print(f"{indentation}- [{status}] {r.description} ({r.identifier})")  # noqa: T201
+    print()  # noqa: T201
 
 
 def print_statistics(requirements: Sequence[Requirement]) -> None:
     total = len(requirements)
     referenced = len({r for r in requirements if r.referenced})
-    print(f"{referenced} / {total} ({referenced / total * 100:.2f} %)")
+    print(f"{referenced} / {total} ({referenced / total * 100:.2f} %)")  # noqa: T201
 
 
 if __name__ == "__main__":

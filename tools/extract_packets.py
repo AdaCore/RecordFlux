@@ -75,7 +75,7 @@ def main(argv: Sequence[str]) -> Union[bool, str]:
             prefix = args.pcap.stem.replace(" ", "_")
             number = str(i).zfill(ceil(log(len(pkts)) / log(10)))
             filename = args.output / f"{prefix}_{number}.raw"
-            print(f"Creating {filename}")
+            print(f"Creating {filename}")  # noqa: T201
             Path(filename).write_bytes(bytes(p))
             hexdump(bytes(p))
 

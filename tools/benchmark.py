@@ -14,7 +14,7 @@ from rflx.pyrflx import PyRFLX
 
 class Benchmark:
     def __init__(self, specdir: Path) -> None:
-        print("Loading...")
+        print("Loading...")  # noqa: T201
         start = perf_counter()
         self.__pyrflx = PyRFLX.from_specs(
             [str(specdir / "ipv4.rflx"), str(specdir / "icmp.rflx")],
@@ -23,7 +23,7 @@ class Benchmark:
         )
         self.__ipv4 = self.__pyrflx.package("IPv4")
         self.__icmp = self.__pyrflx.package("ICMP")
-        print(f"Loaded in {perf_counter() - start} seconds")
+        print(f"Loaded in {perf_counter() - start} seconds")  # noqa: T201
 
     def generate(self, count: int = 2**16) -> Generator[bytes, None, None]:
         if count > 2**16:
@@ -63,7 +63,7 @@ class Benchmark:
         for _ in tqdm(self.generate()):
             if i % 500 == 0:
                 if perf_counter() - start > 1:
-                    print("Performance < 500it/s, stopping")
+                    print("Performance < 500it/s, stopping")  # noqa: T201
                     sys.exit(1)
                 start = perf_counter()
             i += 1
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
     benchmark = Benchmark(args.specdir)
     if args.profile:
-        print("Profiling...")
+        print("Profiling...")  # noqa: T201
 
         def run() -> None:
             for _ in benchmark.generate(20):

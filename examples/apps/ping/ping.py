@@ -44,7 +44,7 @@ ICMP_DATA = bytes(list(range(0, 56)))
 def ping(target: str) -> None:
     target_ip = socket.gethostbyname(target)
 
-    print(f"PING {target} ({target_ip})")
+    print(f"PING {target} ({target_ip})")  # noqa: T201
 
     sock_out = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
     sock_in = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
@@ -79,13 +79,13 @@ def ping(target: str) -> None:
                     continue
 
                 reply_seq = str(reply.get("Sequence_Number"))
-                print(
+                print(  # noqa: T201
                     f"{int(reply.size) // 8} bytes from {packet_src}: icmp_seq={reply_seq}",
                     flush=True,
                 )
 
                 if reply.get("Data") != ICMP_DATA:
-                    print("mismatch between sent and received data")
+                    print("mismatch between sent and received data")  # noqa: T201
 
                 time.sleep(1)
                 receiving = False
@@ -94,7 +94,7 @@ def ping(target: str) -> None:
                     time.sleep(1)
                     receiving = False
                 else:
-                    print(e)
+                    print(e)  # noqa: T201
                     sys.exit(1)
 
 
