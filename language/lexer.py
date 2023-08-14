@@ -125,7 +125,7 @@ rflx_lexer.add_rules(
     (Pattern(r"--.*"), Token.Comment),
 )
 
-# Hack to support keywords that equal attributes
+# Workaround to support keywords that equal attributes
 # Inspired by Libadalang grammar (ada/language/lexer.py)
 rflx_lexer.add_rules(
     *[
