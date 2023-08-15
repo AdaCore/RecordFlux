@@ -9,16 +9,15 @@
   "python.analysis.extraPaths": [
     "./stubs"
   ],
-  "python.formatting.provider": "black",
   "python.linting.enabled": true,
-  "python.linting.flake8Enabled": false,
   "python.linting.mypyEnabled": true,
-  "python.linting.pydocstyleEnabled": false,
-  "python.linting.pylintEnabled": false,
   "python.testing.pytestArgs": [
     "-vv",
     "-nauto",
     "tests"
   ],
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
 }
