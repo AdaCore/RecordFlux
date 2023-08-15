@@ -146,7 +146,7 @@ end %(name);</text>
     </contextual>
 
 </GNAT_Studio>
-"""
+"""  # noqa: E501
 
 GPS.parse_xml(XML)
 

@@ -2422,7 +2422,8 @@ class SessionGenerator:
             )
 
         fatal_fail(
-            f'unexpected type ({field_access.type_}) for "{field_access}" in assignment of "{target}"',
+            f'unexpected type ({field_access.type_}) for "{field_access}"'
+            f' in assignment of "{target}"',
             Subsystem.GENERATOR,
             location=target.location,
         )

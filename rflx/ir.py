@@ -1206,7 +1206,8 @@ class IntCall(Call, IntExpr):
         )
 
     def to_z3_expr(self) -> z3.ArithRef:
-        # TODO(eng/recordflux/RecordFlux#1338): Return value need not to be identical for identical arguments
+        # TODO(eng/recordflux/RecordFlux#1338): Return value need not to be identical
+        # The return value may be different even if the arguments are the same.
         expression = z3.Int(str(self.identifier))
         return -expression if self.negative else expression
 
@@ -1229,7 +1230,8 @@ class BoolCall(Call, BoolExpr):
         )
 
     def to_z3_expr(self) -> z3.BoolRef:
-        # TODO(eng/recordflux/RecordFlux#1338): Return value need not to be identical for identical arguments
+        # TODO(eng/recordflux/RecordFlux#1338): Return value need not to be identical
+        # The return value may be different even if the arguments are the same.
         return z3.Bool(str(self.identifier))
 
 

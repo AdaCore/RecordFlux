@@ -214,7 +214,7 @@ def test_main_generate_debug(
     monkeypatch.setattr(
         generator.Generator,
         "generate",
-        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005
+        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005, E501
     )
     assert (
         cli.main(

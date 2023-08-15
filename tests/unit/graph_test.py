@@ -118,7 +118,8 @@ def test_dot_graph_with_condition(tmp_path: Path) -> None:
     )
     expected = """
         digraph "P::M" {
-            graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true, truecolor=true];
+            graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
+                   truecolor=true];
             edge [color="#6f6f6f", fontcolor="#6f6f6f", fontname="Fira Code", penwidth="2.5"];
             node [color="#6f6f6f", fillcolor="#009641", fontcolor="#ffffff", fontname=Arimo,
                  shape=box, style="rounded,filled", width="1.5"];

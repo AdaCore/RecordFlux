@@ -21,8 +21,10 @@ class Token:
     ----------
         symbol: The symbol referenced by this token.
         lexeme: A string representation of the token in the file.
-        line_number: An integer indicating the line at which the token is located in the file starting from 1.
-        character_offset: An integer indicating the character offset from the begining of the line at which the first character of the lexeme is located starting from 1.
+        line_number: An integer indicating the line at which the token is located in the file
+                     starting from 1.
+        character_offset: An integer indicating the character offset from the begining of the line
+                          at which the first character of the lexeme is located starting from 1.
     """
 
     symbol: Optional[Symbol]
@@ -52,7 +54,7 @@ class LSLexer:
         return self._tokens
 
     def search_token(self, line_number: int, character_offset: int) -> Optional[Token]:
-        """Return the token located at (line_numer, character_offset) if it exists, otherwise return None."""
+        """Return the token at the given location if it exists, otherwise return None."""
 
         if len(self._tokens) == 0:
             return None
@@ -98,7 +100,7 @@ class LSLexer:
         return None
 
     def tokenize(self, source: str, path: str = "<stdin>") -> None:
-        """Take a source string and turn it into a list of tokens accessible via the LSLexer.tokens() method."""
+        """Convert a string into a list of tokens that can be accessed via the tokens property."""
 
         unit = rflx_lang.AnalysisContext().get_from_buffer(
             path,

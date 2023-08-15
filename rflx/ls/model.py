@@ -75,7 +75,8 @@ class Symbol:
     Arguments:
     ---------
         identifier: The unique identifier associated to the symbol.
-        category: A SymbolCategory indicating the type (message, session, numeric, enumeration...) of the symbol.
+        category: A SymbolCategory indicating the type (message, session, numeric, enumeration...)
+                  of the symbol.
         definition_location: A Location indicating where the symbol is defined.
         parent: A optional ID indicating if the cur
     """

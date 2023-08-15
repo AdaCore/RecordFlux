@@ -1162,7 +1162,7 @@ else
    pragma Finalization;
    goto Finalize_S;
 end if;\
-""",
+""",  # noqa: E501
         ),
         (
             ir.Assign(

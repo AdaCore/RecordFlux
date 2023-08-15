@@ -1457,7 +1457,7 @@ def test_parse_ethernet_spec() -> None:
                                                                     "_kind": "ID",
                                                                     "name": {
                                                                         "_kind": "UnqualifiedID",
-                                                                        "_value": "Type_Length_TPID",
+                                                                        "_value": "Type_Length_TPID",  # noqa: E501
                                                                     },
                                                                     "package": None,
                                                                 },
@@ -1510,7 +1510,7 @@ def test_parse_ethernet_spec() -> None:
                                                                     "_kind": "ID",
                                                                     "name": {
                                                                         "_kind": "UnqualifiedID",
-                                                                        "_value": "Type_Length_TPID",
+                                                                        "_value": "Type_Length_TPID",  # noqa: E501
                                                                     },
                                                                     "package": None,
                                                                 },
@@ -1718,7 +1718,7 @@ def test_parse_ethernet_spec() -> None:
                                                                     "identifier": {
                                                                         "_kind": "ID",
                                                                         "name": {
-                                                                            "_kind": "UnqualifiedID",
+                                                                            "_kind": "UnqualifiedID",  # noqa: E501
                                                                             "_value": "Payload",
                                                                         },
                                                                         "package": None,
@@ -1756,7 +1756,7 @@ def test_parse_ethernet_spec() -> None:
                                                                     "identifier": {
                                                                         "_kind": "ID",
                                                                         "name": {
-                                                                            "_kind": "UnqualifiedID",
+                                                                            "_kind": "UnqualifiedID",  # noqa: E501
                                                                             "_value": "Payload",
                                                                         },
                                                                         "package": None,
