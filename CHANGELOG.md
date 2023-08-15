@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Language server (eng/recordflux/RecordFlux#1355)
+- VS Code extension (eng/recordflux/RecordFlux#1355)
 - Support for GNAT Pro 23.2
 - Logging of required runtime checks during code generation (eng/recordflux/RecordFlux#1204)
 
