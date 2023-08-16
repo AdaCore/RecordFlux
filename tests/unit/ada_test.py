@@ -711,6 +711,10 @@ def test_record_type() -> None:
     )
 
 
+def test_null_component() -> None:
+    assert str(ada.NullComponent()) == "null;"
+
+
 def test_access_type() -> None:
     assert str(ada.AccessType("A", "B")) == "type A is access B;"
 
