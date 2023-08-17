@@ -4,8 +4,7 @@ with RFLX.RFLX_Types;
 
 package RFLX.Messages.Msg_LE_Nested with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    pragma Warnings (Off, "use clause for type ""Base_Integer"" * has no effect");

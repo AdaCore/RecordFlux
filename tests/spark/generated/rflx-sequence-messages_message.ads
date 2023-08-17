@@ -5,8 +5,7 @@ with RFLX.Sequence.Inner_Messages;
 
 package RFLX.Sequence.Messages_Message with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    pragma Warnings (Off, "use clause for type ""Base_Integer"" * has no effect");

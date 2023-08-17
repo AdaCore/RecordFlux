@@ -8,8 +8,7 @@ with RFLX.IPv4.Packet;
 
 package RFLX.In_Ethernet.Contains with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    use type RFLX_Types.Index;

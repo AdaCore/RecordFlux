@@ -5,8 +5,7 @@ with RFLX.Sequence.Integer_Vector;
 
 package RFLX.Sequence.Sequence_Size_Defined_By_Message_Size with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    pragma Warnings (Off, "use clause for type ""Base_Integer"" * has no effect");

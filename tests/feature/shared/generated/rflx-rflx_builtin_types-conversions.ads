@@ -5,11 +5,8 @@ with RFLX.RFLX_Arithmetic;
 
 package RFLX.RFLX_Builtin_Types.Conversions with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
-
-   pragma Annotate (GNATprove, Always_Return, Conversions);
 
    function Valid_Boolean (Val : RFLX.RFLX_Arithmetic.U64) return Boolean is
      (case Val is

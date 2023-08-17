@@ -3,8 +3,7 @@ pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
 package RFLX.RFLX_Arithmetic with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    type U64 is mod 2**64 with

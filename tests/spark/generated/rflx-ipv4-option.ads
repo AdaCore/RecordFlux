@@ -7,8 +7,7 @@ use RFLX.RFLX_Builtin_Types.Conversions;
 
 package RFLX.IPv4.Option with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    pragma Warnings (Off, "use clause for type ""Base_Integer"" * has no effect");

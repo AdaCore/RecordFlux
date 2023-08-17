@@ -3,8 +3,7 @@ pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
 package RFLX.RFLX_Builtin_Types with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    type Length is new Natural;

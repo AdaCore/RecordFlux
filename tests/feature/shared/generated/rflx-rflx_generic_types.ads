@@ -13,8 +13,7 @@ generic
    type Custom_Bit_Length is range <>;
 package RFLX.RFLX_Generic_Types with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    subtype Index is Custom_Index;

@@ -6,8 +6,7 @@ with RFLX.TLV.Message;
 
 package RFLX.In_TLV.Contains with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    function Null_Message_In_TLV_Message_Value (Ctx : RFLX.TLV.Message.Context) return Boolean is

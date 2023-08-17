@@ -7,8 +7,7 @@ generic
    with package Operators is new RFLX.RFLX_Generic_Types.Generic_Operators (<>);
 package RFLX.RFLX_Generic_Types.Generic_Operations with
    SPARK_Mode,
-   Annotate =>
-     (GNATprove, Always_Return)
+   Always_Terminates
 is
    use Operators;
 

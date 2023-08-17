@@ -10,11 +10,8 @@ generic
    with function To_Base_Int (Element : Element_Type) return RFLX.RFLX_Types.Base_Integer;
 package RFLX.RFLX_Scalar_Sequence with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
-
-   pragma Annotate (GNATprove, Always_Return, RFLX_Scalar_Sequence);
 
    use type RFLX_Types.Bytes_Ptr;
 

@@ -7,8 +7,7 @@ with RFLX.Sequence.AV_Enumeration_Vector;
 
 package RFLX.Sequence.Message with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    pragma Warnings (Off, "use clause for type ""Base_Integer"" * has no effect");
