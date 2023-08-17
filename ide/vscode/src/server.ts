@@ -97,7 +97,7 @@ async function createServer(
     newEnv.LS_IMPORT_STRATEGY = settings.importStrategy;
     newEnv.LS_SHOW_NOTIFICATION = settings.showNotifications;
 
-    const args = settings.interpreter.slice(1).concat(["-m", "rflx", "ls"]);
+    const args = settings.interpreter.slice(1).concat(["-m", "rflx", "run_ls"]);
     traceInfo(`Server run command: ${[command, ...args].join(' ')}`);
 
     const serverOptions: ServerOptions = {
