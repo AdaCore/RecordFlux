@@ -25,11 +25,6 @@ workflow:
       when: never
     - if: $CI_COMMIT_BRANCH
 
-stages:
-  - initialization
-  - testing
-  - finalization
-
 .ci_job:
   rules:
     - if: $SCHEDULE == null || $SCHEDULE == "nightly"
@@ -40,7 +35,6 @@ stages:
 
 .initialization:
   extends: .ci_job
-  stage: initialization
 
 .setup_alire: &setup_alire
     - curl -Ls https://github.com/alire-project/alire/releases/download/v1.2.2/alr-1.2.2-x86_64.AppImage -o /tmp/alr.AppImage
@@ -118,8 +112,7 @@ setup:
 
 .testing:
   extends: .ci_job
-  stage: testing
-  dependencies:
+  needs:
     - setup
 
 .setup_python: &setup_python
@@ -134,8 +127,6 @@ setup:
       fi
 
 changelog:
-  stage: testing
-  dependencies: []
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
@@ -145,8 +136,6 @@ changelog:
       fi
 
 commit_messages:
-  stage: testing
-  dependencies: []
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
@@ -278,8 +267,6 @@ gnat_community_compatibility:
 
 verification_tests:
   extends: .testing
-  dependencies:
-    - setup
   services:
      - image:recordflux
      - cpu:8
@@ -299,8 +286,6 @@ verification_tests:
 
 verification_python_tests:
   extends: .testing
-  dependencies:
-    - setup
   services:
      - image:recordflux
      - cpu:8
@@ -369,7 +354,8 @@ pdf_documentation:
 ##################
 
 .scheduled_job:
-  stage: testing
+  needs:
+    - setup
 
 gnat_wave_compatibility:
   extends: .scheduled_job
