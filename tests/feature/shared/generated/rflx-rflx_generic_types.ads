@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
 with Ada.Unchecked_Deallocation;
 with RFLX.RFLX_Arithmetic;

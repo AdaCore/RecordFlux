@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 with {prefix}RFLX_Types;
 
 generic
@@ -9,11 +10,8 @@ generic
    with function To_Base_Int (Element : Element_Type) return {prefix}RFLX_Types.Base_Integer;
 package {prefix}RFLX_Scalar_Sequence with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
-
-   pragma Annotate (GNATprove, Always_Return, RFLX_Scalar_Sequence);
 
    use type RFLX_Types.Bytes_Ptr;
 

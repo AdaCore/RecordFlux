@@ -1,3 +1,4 @@
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 generic
    type Element_Type is (<>);
    type Index_Type is (<>);
@@ -7,7 +8,7 @@ package Generic_Socket with
    SPARK_Mode,
    Abstract_State => Network,
    Initializes    => Network,
-   Annotate       => (GNATprove, Always_Return)
+   Always_Terminates
 is
 
    procedure Setup with

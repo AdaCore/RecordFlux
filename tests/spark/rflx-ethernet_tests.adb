@@ -1,3 +1,4 @@
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 with SPARK; use SPARK;
 with SPARK.Assertions; use SPARK.Assertions;
 with SPARK.File_IO; use SPARK.File_IO;
@@ -21,7 +22,7 @@ package body RFLX.Ethernet_Tests is
    Payload_Length : RFLX_Builtin_Types.Length;
 
    procedure Store_Payload_Length (Buffer : RFLX_Builtin_Types.Bytes)
-   with Annotate => (GNATprove, Always_Return);
+   with Always_Terminates;
 
    procedure Store_Payload_Length (Buffer : RFLX_Builtin_Types.Bytes)
    is

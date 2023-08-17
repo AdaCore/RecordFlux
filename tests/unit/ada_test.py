@@ -840,6 +840,14 @@ def test_for_loop() -> None:
     )
 
 
+def test_always_terminates() -> None:
+    assert str(ada.AlwaysTerminates()) == "Always_Terminates"
+    assert (
+        str(ada.AlwaysTerminates(ada.LessEqual(ada.Variable("X"), ada.Number(1))))
+        == "Always_Terminates =>\n  X <= 1"
+    )
+
+
 def test_declarative_items() -> None:
     assert str(
         ada.PackageDeclaration("P", declarations=[ada.ObjectDeclaration("X", "Boolean")]),

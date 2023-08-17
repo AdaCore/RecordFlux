@@ -8,11 +8,12 @@
 --  This file is part of Basalt, which is distributed under the terms of the
 --  GNU Affero General Public License version 3.
 --
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
 package Basalt.Strings_Generic with
    SPARK_Mode,
    Pure,
-   Annotate => (GNATprove, Always_Return)
+   Always_Terminates
 is
 
    type Residue_Class_Ring is new Integer range 0 .. 16;

@@ -1,10 +1,10 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
 generic
 package {prefix}RFLX_Generic_Types.Generic_Operators with
    SPARK_Mode,
-   Annotate =>
-     (GNATprove, Always_Return)
+   Always_Terminates
 is
 
    function "+" (Left : Index; Right : Length) return Index is

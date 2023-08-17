@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
 package RFLX.RFLX_Arithmetic with
   SPARK_Mode,

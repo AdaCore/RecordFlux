@@ -25,8 +25,7 @@ is
          Global        => null,
          Import,
          Convention    => C,
-         External_Name => "socket",
-         Annotate      => (GNATprove, Always_Return);
+         External_Name => "socket";
       PF_INET      : constant IC.int := 2;
       SOCK_RAW     : constant IC.int := 3;
       IPPROTO_ICMP : constant IC.int := 1;
@@ -60,8 +59,7 @@ is
          External_Name => "recv",
          Global        => null,
          Pre           => Length <= IC.size_t (Buffer'Length),
-         Post          => C_Recv'Result <= IC.int (Buffer'Length),
-         Annotate      => (GNATprove, Always_Return);
+         Post          => C_Recv'Result <= IC.int (Buffer'Length);
       Result : IC.int;
    begin
       Buffer := (others => Element_Type'First);
@@ -89,8 +87,7 @@ is
          External_Name => "c_send",
          Global        => null,
          Pre           => Length >= IC.size_t (Buffer'Length),
-         Post          => C_Send'Result <= IC.int (Buffer'Length),
-         Annotate      => (GNATprove, Always_Return);
+         Post          => C_Send'Result <= IC.int (Buffer'Length);
       Result : IC.int;
    begin
       if Buffer'Length < 1 then

@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
 with {prefix}RFLX_Generic_Types.Generic_Operators;
 
@@ -6,8 +7,7 @@ generic
    with package Operators is new {prefix}RFLX_Generic_Types.Generic_Operators (<>);
 package {prefix}RFLX_Generic_Types.Generic_Operations with
    SPARK_Mode,
-   Annotate =>
-     (GNATprove, Always_Return)
+   Always_Terminates
 is
    use Operators;
 

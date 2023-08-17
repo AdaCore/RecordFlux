@@ -1,4 +1,5 @@
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 
 with Ada.Unchecked_Deallocation;
 with {prefix}RFLX_Arithmetic;
@@ -12,8 +13,7 @@ generic
    type Custom_Bit_Length is range <>;
 package {prefix}RFLX_Generic_Types with
   SPARK_Mode,
-  Annotate =>
-    (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    subtype Index is Custom_Index;

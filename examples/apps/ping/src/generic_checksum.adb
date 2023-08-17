@@ -30,6 +30,7 @@ is
          Index := Data'First;
          while Index < Data'Last loop
             pragma Loop_Invariant (Index in Data'Range);
+            pragma Loop_Variant (Increases => Index);
             Checksum := Add (Checksum, Shift_Left (To_Checksum (Data (Index))) + To_Checksum (Data (Index + 1)));
             exit when Index >= Data'Last - 1;
             Index := Index + 2;

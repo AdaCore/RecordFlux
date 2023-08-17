@@ -1146,6 +1146,19 @@ class Depends(Aspect):
         return f"({dependencies})"
 
 
+class AlwaysTerminates(Aspect):
+    def __init__(self, expression: Optional[Expr] = None) -> None:
+        self.expression = expression
+
+    @property
+    def mark(self) -> str:
+        return "Always_Terminates"
+
+    @property
+    def definition(self) -> str:
+        return "" if self.expression is None else str(self.expression)
+
+
 class DynamicPredicate(Aspect):
     def __init__(self, expression: Expr) -> None:
         self.expression = expression

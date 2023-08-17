@@ -1,8 +1,9 @@
+pragma Warnings (Off, """Always_Terminates"" is not a valid aspect identifier");
 with RFLX.RFLX_Builtin_Types;
 
 package SPARK.Assertions with
   SPARK_Mode,
-  Annotate => (GNATprove, Always_Return)
+  Always_Terminates
 is
 
    use type RFLX.RFLX_Builtin_Types.Bytes;
