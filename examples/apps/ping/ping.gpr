@@ -10,10 +10,12 @@ project Ping is
 
    package Compiler is
       for Driver ("recordflux") use "";
+      for Driver ("python") use "";
    end Compiler;
 
    package Naming is
       for Spec_Suffix ("recordflux") use ".rflx";
+      for Spec_Suffix ("python") use ".py";
    end Naming;
 
    package Recordflux is
