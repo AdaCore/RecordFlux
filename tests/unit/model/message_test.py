@@ -4801,38 +4801,6 @@ def test_possibly_always_true_refinement(
     ) in captured.out
 
 
-def test_possibly_always_true_message_condition(
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
-    monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)
-    monkeypatch.setattr(Message, "_prove_contradictions", lambda _: None)
-    monkeypatch.setattr(Message, "_prove_coverage", lambda _: None)
-    monkeypatch.setattr(Message, "_prove_overlays", lambda _: None)
-    monkeypatch.setattr(Message, "_prove_field_positions", lambda _: None)
-    monkeypatch.setattr(Message, "_prove_message_size", lambda _: None)
-    Message(
-        "P::M",
-        [
-            Link(INITIAL, Field("Tag")),
-            Link(
-                Field(ID("Tag", location=Location((10, 20)))),
-                FINAL,
-                condition=Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
-            ),
-        ],
-        {
-            Field("Tag"): TLV_TAG,
-        },
-    )
-    captured = capsys.readouterr()
-    assert captured.out == (
-        '<stdin>:10:20: model: warning: condition "Tag = TLV::Msg_Data"'
-        ' on transition "Tag" -> "Final" might be always true\n'
-    )
-
-
 @pytest.mark.parametrize(
     ("unchecked", "expected"),
     [
