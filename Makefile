@@ -214,6 +214,7 @@ install: install_build_deps $(SDIST)
 
 install_devel: install_build_deps parser
 	$(MAKE) -C devutils install_devel
+	rm -rf $(BUILD_DIR)/build/__editable__.*
 	pip3 install --force-reinstall -e ".[devel]" --config-settings editable_mode=strict
 
 install_devel_edge: install_devel
