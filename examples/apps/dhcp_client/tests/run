@@ -3,11 +3,11 @@
 set -x
 set -o pipefail
 
-dnsmasq --no-daemon --dhcp-leasefile=obj/dnsmasq.leases --port=1053 --dhcp-alternate-port --conf-file=$(dirname "$(realpath $0)")/dnsmasq.conf &
+dnsmasq --no-daemon --dhcp-leasefile=build/dnsmasq.leases --port=1053 --dhcp-alternate-port --conf-file=$(dirname "$(realpath $0)")/dnsmasq.conf &
 DNSMASQ_PID=$!
 
 sleep 2
-timeout 5 obj/dhcp_client |& sed '/Success/q; $q1'
+timeout 5 build/obj/dhcp_client |& sed '/Success/q; $q1'
 SUCCESS=$?
 
 kill -9 $DNSMASQ_PID

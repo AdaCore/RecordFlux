@@ -1,8 +1,8 @@
 include ../../../Makefile.common
 
-specs = $(wildcard specs/*.rflx)
-src = generated/rflx.ads
-bin = obj/ping
+SPECS = $(wildcard specs/*.rflx)
+GENERATED = build/generated/rflx.ads
+BIN = build/obj/ping
 
 .PHONY: test test_python test_spark build prove generate clean
 
@@ -11,21 +11,24 @@ test: test_python test_spark
 test_python:
 	sudo -n timeout 5 `command -v python3` ping.py 127.0.0.1 | sed '/64 bytes from 127\.0\.0\.1: icmp_seq=0/q; $$q1'
 
-test_spark: $(bin)
+test_spark: $(BIN)
 	sudo -n timeout 3 obj/ping 127.0.0.1 | sed '/64 bytes from 127\.0\.0\.1: icmp_seq=0/q; $$q1'
 
-build: $(bin)
+build: $(BIN)
 
-prove: $(GNATPROVE_CACHE_DIR) $(src)
+prove: $(GNATPROVE_CACHE_DIR) $(GENERATED)
 	$(GNATPROVE) -Pping
 
-generate: $(src)
+generate: $(GENERATED)
 
 clean:
-	rm -rf generated/* obj python
+	rm -rf build python
 
-$(src): $(specs)
-	rflx generate -d generated --ignore-unsupported-checksum $^
+$(GENERATED): $(SPECS) | build/generated
+	rflx generate -d build/generated --ignore-unsupported-checksum $^
 
-$(bin): $(src)
+build/generated:
+	mkdir -p build/generated
+
+$(BIN): $(GENERATED) $(wildcard build/generated/*)
 	gprbuild -Pping -Xgnat=$(GNAT)

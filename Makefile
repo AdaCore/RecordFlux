@@ -170,8 +170,8 @@ test_compilation:
 	$(MAKE) -C tests/spark test_optimized
 
 test_binary_size:
-	$(MAKE) -C examples/apps/dhcp_client binary_size
-	$(MAKE) -C examples/apps/spdm_responder test_size
+	$(MAKE) -C examples/apps/dhcp_client test_binary_size
+	$(MAKE) -C examples/apps/spdm_responder test_binary_size
 
 test_specs:
 	$(PYTEST) tests/examples/specs_test.py

@@ -137,13 +137,13 @@ check: check_spec
 check_spec: $(SPECIFICATIONS) | $(INTEGRATION_FILES) $(RFLX)
 	timeout -k 60 900 $(RFLX) check $^
 
-.PHONY: test test_cross test_size
+.PHONY: test test_cross test_binary_size
 
-test: test_cross test_size lib
+test: test_cross test_binary_size lib
 
 test_cross: build/arm/example/main build/riscv64/example/main libarm libriscv64
 
-test_size: build/arm/example/main build/riscv64/example/main
+test_binary_size: build/arm/example/main build/riscv64/example/main
 	tools/check_size.py arm build/arm/example/main .text 45000
 	tools/check_size.py riscv64 build/riscv64/example/main .text 37000
 

@@ -3,8 +3,8 @@ with "../../../defaults";
 project Ping is
 
    for Languages use ("RecordFlux", "Python", "Ada", "C");
-   for Source_Dirs use (".", "specs", "generated", "src", "contrib");
-   for Object_Dir use "obj";
+   for Source_Dirs use (".", "specs", "build/generated", "src", "contrib");
+   for Object_Dir use "build/obj";
    for Create_Missing_Dirs use "True";
    for Main use ("ping.adb");
 
@@ -17,7 +17,7 @@ project Ping is
    end Naming;
 
    package Recordflux is
-      for Output_Dir use "generated";
+      for Output_Dir use "build/generated";
    end Recordflux;
 
    package Builder is

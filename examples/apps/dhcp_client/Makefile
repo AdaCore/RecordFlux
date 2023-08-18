@@ -1,33 +1,36 @@
 include ../../../Makefile.common
 
-specs = $(wildcard specs/*.rflx)
-src = generated/rflx-dhcp_client.ads
-bin = obj/dhcp_client
-bin-optimized = obj_optimized/dhcp_client
+SPECS = $(wildcard specs/*.rflx)
+GENERATED = build/generated/rflx-dhcp_client.ads
+BIN = build/obj/dhcp_client
+BIN_OPTIMIZED = build/obj_optimized/dhcp_client
 
-.PHONY: test build prove generate clean binary_size
+.PHONY: test build prove generate clean test_binary_size
 
-test: $(bin)
+test: $(BIN) test_binary_size
 	tests/run
 
-build: $(bin)
+test_binary_size: $(BIN_OPTIMIZED)
+	test $(shell size -A -d build/obj_optimized/dhcp_client | grep .text | awk '{ print $$2 }') -le 173000
 
-prove: $(GNATPROVE_CACHE_DIR) $(src)
+build: $(BIN)
+
+prove: $(GNATPROVE_CACHE_DIR) $(GENERATED)
 	$(GNATPROVE) -Pdhcp_client
 
-generate: $(src)
+generate: $(GENERATED)
 
 clean:
-	rm -rf generated/* obj obj_optimized
+	rm -rf build
 
-binary_size: $(bin-optimized)
-	test $(shell size -A -d obj_optimized/dhcp_client | grep .text | awk '{ print $$2 }') -le 173000
+$(GENERATED): $(SPECS) | build/generated
+	rflx generate -d build/generated --debug built-in $^
 
-$(src): $(specs)
-	rflx generate -d generated --debug built-in $^
+build/generated:
+	mkdir -p build/generated
 
-$(bin): $(src) $(wildcard src/*) $(wildcard generated/*)
+$(BIN): $(GENERATED) $(wildcard build/generated/*)
 	gprbuild -Pdhcp_client -Xgnat=$(GNAT) -Xmode=asserts_enabled
 
-$(bin-optimized): $(src) $(wildcard src/*) $(wildcard generated/*)
+$(BIN_OPTIMIZED): $(GENERATED) $(wildcard build/generated/*)
 	gprbuild -Pdhcp_client -Xgnat=$(GNAT) -Xmode=optimized

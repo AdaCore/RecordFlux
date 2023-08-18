@@ -7,12 +7,12 @@ project DHCP_Client is
    Test := external ("test", "");
 
    for Languages use ("Ada", "RecordFlux");
-   for Source_Dirs use ("specs", "src", "generated");
+   for Source_Dirs use ("specs", "src", "build/generated");
    case Mode is
       when "strict" | "asserts_enabled" =>
-         for Object_Dir use "obj";
+         for Object_Dir use "build/obj";
       when "optimized" =>
-         for Object_Dir use "obj_optimized";
+         for Object_Dir use "build/obj_optimized";
    end case;
    for Create_Missing_Dirs use "True";
    for Main use ("dhcp_client");
@@ -22,7 +22,7 @@ project DHCP_Client is
    end Naming;
 
    package RecordFlux is
-      for Output_Dir use "generated";
+      for Output_Dir use "build/generated";
    end RecordFlux;
 
    package Builder is
