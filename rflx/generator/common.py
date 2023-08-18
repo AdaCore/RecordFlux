@@ -37,6 +37,7 @@ from rflx.ada import (
     Old,
     Or,
     Parameter,
+    Pragma,
     PragmaStatement,
     Rem,
     Selected,
@@ -1205,3 +1206,23 @@ def byte_aligned_field(prefix: str, message: model.Message, field: model.Field) 
         ),
         Number(1),
     )
+
+
+def wrap_warning(expr_list: list[Declaration], warnings: list[str]) -> list[Declaration]:
+    return [
+        *[
+            Pragma(
+                "Warnings",
+                [Variable("Off"), String(s)],
+            )
+            for s in warnings
+        ],
+        *expr_list,
+        *[
+            Pragma(
+                "Warnings",
+                [Variable("On"), String(s)],
+            )
+            for s in warnings
+        ],
+    ]

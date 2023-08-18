@@ -288,13 +288,16 @@ def create_cursors_invariant_function() -> UnitPart:
     return UnitPart(
         [],
         [],
-        [
-            ExpressionFunctionDeclaration(
-                specification,
-                common.cursors_invariant(),
-                [Postcondition(TRUE)],
-            ),
-        ],
+        common.wrap_warning(
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    common.cursors_invariant(),
+                    [Postcondition(TRUE)],
+                ),
+            ],
+            ["postcondition does not mention function result"],
+        ),
     )
 
 
