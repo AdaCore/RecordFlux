@@ -449,67 +449,68 @@ def message_structure_invariant(
     return AndThen(*[map_invariant(f) for f in message.fields])
 
 
+def cursors_invariant() -> Expr:
+    """
+    Create the invariant that defines valid representations of fields.
+
+    Each field cursor represents the state of one parsed or serialized message field.
+    This invariant ensures for all well formed fields that
+
+        - the field bounds are inside the range of verified buffer part,
+        - the field size is greater or equal to zero,
+        - and the field value fulfills all constraints of its field type.
+    """
+    return ForAllIn(
+        "F",
+        Variable("Field"),
+        If(
+            [
+                (
+                    Call(
+                        "Well_Formed",
+                        [Indexed(Variable("Cursors"), Variable("F"))],
+                    ),
+                    And(
+                        GreaterEqual(
+                            Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
+                            Variable("First"),
+                        ),
+                        LessEqual(
+                            Selected(Indexed(Variable("Cursors"), Variable("F")), "Last"),
+                            Variable("Verified_Last"),
+                        ),
+                        LessEqual(
+                            Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
+                            Add(
+                                Selected(
+                                    Indexed(Variable("Cursors"), Variable("F")),
+                                    "Last",
+                                ),
+                                Number(1),
+                            ),
+                        ),
+                        Call(
+                            "Valid_Value",
+                            [
+                                Variable("F"),
+                                Selected(
+                                    Indexed(Variable("Cursors"), Variable("F")),
+                                    "Value",
+                                ),
+                            ],
+                        ),
+                    ),
+                ),
+            ],
+        ),
+    )
+
+
 def context_predicate(
     message: model.Message,
     composite_fields: Sequence[model.Field],
     prefix: str,
 ) -> Expr:
-    def cursors_invariant() -> Expr:
-        """
-        Create the invariant that defines valid representations of fields.
-
-        Each field cursor represents the state of one parsed or serialized message field.
-        This invariant ensures for all well formed fields that
-
-            - the field bounds are inside the range of verified buffer part,
-            - the field size is greater or equal to zero,
-            - and the field value fulfills all constraints of its field type.
-        """
-        return ForAllIn(
-            "F",
-            Variable("Field"),
-            If(
-                [
-                    (
-                        Call(
-                            "Well_Formed",
-                            [Indexed(Variable("Cursors"), Variable("F"))],
-                        ),
-                        And(
-                            GreaterEqual(
-                                Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
-                                Variable("First"),
-                            ),
-                            LessEqual(
-                                Selected(Indexed(Variable("Cursors"), Variable("F")), "Last"),
-                                Variable("Verified_Last"),
-                            ),
-                            LessEqual(
-                                Selected(Indexed(Variable("Cursors"), Variable("F")), "First"),
-                                Add(
-                                    Selected(
-                                        Indexed(Variable("Cursors"), Variable("F")),
-                                        "Last",
-                                    ),
-                                    Number(1),
-                                ),
-                            ),
-                            Call(
-                                "Valid_Value",
-                                [
-                                    Variable("F"),
-                                    Selected(
-                                        Indexed(Variable("Cursors"), Variable("F")),
-                                        "Value",
-                                    ),
-                                ],
-                            ),
-                        ),
-                    ),
-                ],
-            ),
-        )
-
     def valid_predecessors_invariant() -> Expr:
         """
         Create the invariant that defines the state of predecessors of valid fields.
@@ -642,7 +643,10 @@ def context_predicate(
         Equal(Rem(Variable("Last"), Size(const.TYPES_BYTE)), Number(0)),
         Equal(Rem(Variable("Verified_Last"), Size(const.TYPES_BYTE)), Number(0)),
         Equal(Rem(Variable("Written_Last"), Size(const.TYPES_BYTE)), Number(0)),
-        cursors_invariant(),
+        Call(
+            "Cursors_Invariant",
+            [Variable("Cursors"), Variable("First"), Variable("Verified_Last")],
+        ),
         valid_predecessors_invariant(),
         invalid_successors_invariant(),
         message_structure_invariant(message, prefix, embedded=True),

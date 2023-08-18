@@ -275,6 +275,29 @@ def create_cursor_validation_functions() -> UnitPart:
     )
 
 
+def create_cursors_invariant_function() -> UnitPart:
+    specification = FunctionSpecification(
+        "Cursors_Invariant",
+        "Boolean",
+        [
+            Parameter(["Cursors"], "Field_Cursors"),
+            Parameter(["First"], const.TYPES_BIT_INDEX),
+            Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
+        ],
+    )
+    return UnitPart(
+        [],
+        [],
+        [
+            ExpressionFunctionDeclaration(
+                specification,
+                common.cursors_invariant(),
+                [Postcondition(TRUE)],
+            ),
+        ],
+    )
+
+
 def create_valid_context_function(
     message: Message,
     composite_fields: abc.Sequence[Field],

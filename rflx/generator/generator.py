@@ -469,6 +469,9 @@ class Generator:
             self._executor.submit(message_generator.create_cursor_type),
             self._executor.submit(message_generator.create_cursor_validation_functions),
             self._executor.submit(
+                message_generator.create_cursors_invariant_function,
+            ),
+            self._executor.submit(
                 message_generator.create_valid_context_function,
                 message,
                 composite_fields,
