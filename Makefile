@@ -24,6 +24,8 @@ ADASAT_HEAD = f948e2271aec51f9313fa41ff3c00230a483f9e8
 SHELL = /bin/bash
 PYTEST = python3 -m pytest -n$(TEST_PROCS) -vv --timeout=7200
 
+APPS := $(filter-out __init__.py,$(notdir $(wildcard examples/apps/*)))
+
 export PYTHONPATH := $(MAKEFILE_DIR)
 
 # Switch to a specific revision of the git repository.
@@ -151,10 +153,7 @@ test_optimized:
 	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation
 
 test_apps:
-	$(MAKE) -C examples/apps/ping test_python
-	$(MAKE) -C examples/apps/ping test_spark
-	$(MAKE) -C examples/apps/dhcp_client test
-	$(MAKE) -C examples/apps/spdm_responder test
+	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) test || exit;)
 
 test_compilation:
 	# Skip test for FSF GNAT to prevent violations of restriction "No_Secondary_Stack" in AUnit units
@@ -198,9 +197,7 @@ prove_python_tests: $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/verification
 
 prove_apps: $(GNATPROVE_CACHE_DIR)
-	$(MAKE) -C examples/apps/ping prove
-	$(MAKE) -C examples/apps/dhcp_client prove
-	$(MAKE) -C examples/apps/spdm_responder prove
+	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) prove || exit;)
 
 prove_property_tests: $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/property_verification
@@ -243,10 +240,13 @@ printenv_gnat:
 	    alr printenv \
 	) || true
 
-.PHONY: generate
+.PHONY: generate generate_apps
 
 generate:
 	tools/generate_spark_test_code.py
+
+generate_apps:
+	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) generate || exit;)
 
 .PHONY: doc html_doc pdf_doc
 

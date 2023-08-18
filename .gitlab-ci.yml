@@ -154,14 +154,34 @@ checks:
     - *setup_python
     - make check
 
+code_generation:
+  extends: .testing
+  services:
+     - image:recordflux
+     - cpu:4
+     - mem:4
+  script:
+    - *setup_python
+    - make generate_apps
+  artifacts:
+    paths:
+      - examples/apps/*/build/generated
+
+.update_timestamps_of_generated_code: &update_timestamps_of_generated_code
+    - touch examples/apps/*/build/generated/*
+
 tests:
   extends: .testing
+  needs:
+    - setup
+    - code_generation
   services:
      - image:recordflux
      - cpu:8
      - mem:16
   script:
     - git fetch --unshallow
+    - *update_timestamps_of_generated_code
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
@@ -188,6 +208,9 @@ python_compatibility:
 
 gnat_pro_compatibility:
   extends: .testing
+  needs:
+    - setup
+    - code_generation
   services:
      - image:recordflux
      - cpu:2
@@ -204,6 +227,7 @@ gnat_pro_compatibility:
         CLEAN_RECORDFLUX_SETUP: 1
   script:
     - git fetch --unshallow
+    - *update_timestamps_of_generated_code
     - *setup_gnat
     - *activate_nvm
     - *setup_python
@@ -212,6 +236,9 @@ gnat_pro_compatibility:
 
 gnat_fsf_compatibility:
   extends: .testing
+  needs:
+    - setup
+    - code_generation
   services:
      - image:recordflux
      - cpu:2
@@ -224,6 +251,7 @@ gnat_fsf_compatibility:
         CLEAN_RECORDFLUX_SETUP: 1
   script:
     - git fetch --unshallow
+    - *update_timestamps_of_generated_code
     - $CI_PROJECT_DIR/alr -n init --lib alire
     - pushd alire
     - $CI_PROJECT_DIR/alr toolchain --select --local gnat_native=$GNAT_VERSION gprbuild=22.0.1
@@ -238,6 +266,9 @@ gnat_fsf_compatibility:
 
 gnat_community_compatibility:
   extends: .testing
+  needs:
+    - setup
+    - code_generation
   services:
      - image:recordflux
      - cpu:2
@@ -250,6 +281,7 @@ gnat_community_compatibility:
         CLEAN_RECORDFLUX_SETUP: 1
   script:
     - git fetch --unshallow
+    - *update_timestamps_of_generated_code
     - curl -L "https://raw.githubusercontent.com/AdaCore/gnat_community_install_script/master/install_package.sh" -o install_package.sh
     - curl -L "https://raw.githubusercontent.com/AdaCore/gnat_community_install_script/master/install_script.qs" -o install_script.qs
     - if [ $GNAT_VERSION == "2021" ]; then
@@ -306,8 +338,9 @@ verification_python_tests:
 
 verification_apps:
   extends: .testing
-  dependencies:
+  needs:
     - setup
+    - code_generation
   services:
      - image:recordflux
      - cpu:4
@@ -318,6 +351,7 @@ verification_apps:
         - "ping"
         - "dhcp_client"
   script:
+    - *update_timestamps_of_generated_code
     - *setup_gnat
     - *setup_spark
     - *setup_python
