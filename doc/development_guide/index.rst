@@ -9,6 +9,7 @@ Additionally to the dependencies listed in the `User's Guide <https://docs.adaco
 
 - `AUnit <https://github.com/AdaCore/aunit>`_ (if FSF GNAT is used)
 - `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_
+- `Node.js <https://nodejs.org/>`_ 20.5.0 or higher (see `nvm <https://github.com/nvm-sh/nvm>`_ for an alternative installation method)
 
 The FSF GNAT and all Ada dependencies can be installed using Alire.
 
