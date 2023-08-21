@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Reject duplicate optional arguments in `rflx` CLI (eng/recordflux/RecordFlux#1342)
+- Split the `Valid_Context` into multiple functions (eng/recordflux/RecordFlux#1385)
 
 ### Removed
 
