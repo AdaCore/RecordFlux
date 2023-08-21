@@ -363,9 +363,124 @@ def create_cursors_invariant_function() -> UnitPart:
     )
 
 
-def create_valid_context_function(
+def create_valid_predecessors_invariant_function(
     message: Message,
     composite_fields: abc.Sequence[Field],
+    prefix: str,
+) -> UnitPart:
+    """
+    Create the invariant that defines the state of predecessors of valid fields.
+
+    This invariant ensures for all well formed message fields that
+
+        - one of its predecessor fields is well formed,
+        - the predecessor component in the cursor refers to a valid predecessor,
+        - and the condition on the link between the field and its predecessor is fulfilled.
+
+    This ensures that there is a valid message path from each well formed field to the
+    initial field.
+    """
+    specification = FunctionSpecification(
+        "Valid_Predecessors_Invariant",
+        "Boolean",
+        [
+            Parameter(["Cursors"], "Field_Cursors"),
+            Parameter(["First"], const.TYPES_BIT_INDEX),
+            Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
+            Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
+            Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+            *common.message_parameters(message),
+        ],
+    )
+    return UnitPart(
+        [],
+        [],
+        common.wrap_warning(
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    AndThen(
+                        *[
+                            If(
+                                [
+                                    (
+                                        Call(
+                                            "Well_Formed",
+                                            [
+                                                Indexed(
+                                                    Variable("Cursors"),
+                                                    Variable(f.affixed_name),
+                                                ),
+                                            ],
+                                        ),
+                                        Or(
+                                            *[
+                                                expr.AndThen(
+                                                    expr.Call(
+                                                        "Well_Formed"
+                                                        if l.source in composite_fields
+                                                        else "Valid",
+                                                        [
+                                                            expr.Indexed(
+                                                                expr.Variable("Cursors"),
+                                                                expr.Variable(
+                                                                    l.source.affixed_name,
+                                                                ),
+                                                            ),
+                                                        ],
+                                                    ),
+                                                    expr.Equal(
+                                                        expr.Selected(
+                                                            expr.Indexed(
+                                                                expr.Variable("Cursors"),
+                                                                expr.Variable(f.affixed_name),
+                                                            ),
+                                                            "Predecessor",
+                                                        ),
+                                                        expr.Variable(l.source.affixed_name),
+                                                    ),
+                                                    l.condition.substituted(
+                                                        common.substitution(
+                                                            message,
+                                                            embedded=True,
+                                                            prefix=prefix,
+                                                        ),
+                                                    ),
+                                                )
+                                                .simplified()
+                                                .ada_expr()
+                                                for l in message.incoming(f)
+                                            ],
+                                        ),
+                                    ),
+                                ],
+                            )
+                            for f in message.fields
+                            if f not in message.direct_successors(INITIAL)
+                        ],
+                    ),
+                    [
+                        Precondition(
+                            Call(
+                                "Cursors_Invariant",
+                                [Variable("Cursors"), Variable("First"), Variable("Verified_Last")],
+                            ),
+                        ),
+                        Postcondition(TRUE),
+                    ],
+                ),
+            ],
+            [
+                'formal parameter "*" is not referenced',
+                "postcondition does not mention function result",
+                'unused variable "*"',
+            ],
+        ),
+    )
+
+
+def create_valid_context_function(
+    message: Message,
     prefix: str,
 ) -> UnitPart:
     specification = FunctionSpecification(
@@ -404,7 +519,7 @@ def create_valid_context_function(
             ),
             ExpressionFunctionDeclaration(
                 specification,
-                common.context_predicate(message, composite_fields, prefix),
+                common.context_predicate(message, prefix),
                 [Postcondition(TRUE)],
             ),
             Pragma(

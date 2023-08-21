@@ -472,9 +472,14 @@ class Generator:
                 message_generator.create_cursors_invariant_function,
             ),
             self._executor.submit(
-                message_generator.create_valid_context_function,
+                message_generator.create_valid_predecessors_invariant_function,
                 message,
                 composite_fields,
+                self._prefix,
+            ),
+            self._executor.submit(
+                message_generator.create_valid_context_function,
+                message,
                 self._prefix,
             ),
             self._executor.submit(message_generator.create_context_type, message),
