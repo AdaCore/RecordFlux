@@ -14,8 +14,6 @@ variables:
    # If set to 1, the packaging of RecordFlux including the compilation of the langkit-based parser will be tested.
    CLEAN_RECORDFLUX_SETUP: 0
 
-   NVM_DIR: $CI_PROJECT_DIR/.nvm
-
 workflow:
   rules:
     # Switch between branch pipelines and merge request pipelines to ensure that all checks must
@@ -66,15 +64,6 @@ workflow:
     - . .venv$PYTHON_VERSION/bin/activate
     - make init install
 
-.activate_nvm: &activate_nvm
-    - . $NVM_DIR/nvm.sh
-
-.setup_nvm: &setup_nvm
-    - mkdir -p $NVM_DIR
-    - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
-    - . $NVM_DIR/nvm.sh --no-use
-    - nvm install v$NODE_VERSION
-
 setup:
   extends: .initialization
   services:
@@ -88,12 +77,10 @@ setup:
       - .venv3.10
       - .venv3.11
       - alr
-      - $NVM_DIR
   script:
     - git fetch --unshallow
     - *setup_alire
     - *setup_gnat
-    - *setup_nvm
     - export PYTHON_VERSION=3.8
     - *setup_python_venv
     - make clean
@@ -185,7 +172,6 @@ tests:
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
-    - *activate_nvm
     - make test
 
 python_compatibility:
@@ -229,7 +215,6 @@ gnat_pro_compatibility:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
     - *setup_gnat
-    - *activate_nvm
     - *setup_python
     - export GNAT=pro$GNAT_VERSION
     - make test_compilation
@@ -259,7 +244,6 @@ gnat_fsf_compatibility:
     - eval `$CI_PROJECT_DIR/alr printenv`
     - popd
     - gnat --version
-    - *activate_nvm
     - *setup_python
     - export GNAT=fsf$GNAT_VERSION
     - make test_compilation
@@ -292,7 +276,6 @@ gnat_community_compatibility:
     - sh ./install_package.sh ./gnat-x86_64-linux-bin $CI_PROJECT_DIR/gnat
     - export PATH=$CI_PROJECT_DIR/gnat/bin:$PATH
     - gnat --version
-    - *activate_nvm
     - *setup_python
     - export GNAT=community$GNAT_VERSION
     - make test_compilation
