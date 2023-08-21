@@ -5,29 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.12.0] - 2023-08-22
 
 ### Added
 
 - Language server (eng/recordflux/RecordFlux#1355)
 - VS Code extension (eng/recordflux/RecordFlux#1355)
 - Support for GNAT Pro 23.2
-- Logging of required runtime checks during code generation (eng/recordflux/RecordFlux#1204)
+- Logging of required runtime checks during code generation (AdaCore/RecordFlux#1204, eng/recordflux/RecordFlux#1204)
 
 ### Changed
 
-- Prevent unnecessary runtime checks in generated code (eng/recordflux/RecordFlux#1204)
+- Prevent unnecessary runtime checks in generated code (AdaCore/RecordFlux#1204, eng/recordflux/RecordFlux#1204)
 - Removal of discriminant in `Field_Cursor` type (eng/recordflux/RecordFlux#1377)
 
 ### Fixed
 
-- Missing quotes in error messages about invalid aspects (eng/recordflux/RecordFlux#1267)
-- Subsequent errors caused by style errors (eng/recordflux/RecordFlux#1268)
+- Missing quotes in error messages about invalid aspects (AdaCore/RecordFlux#1267, eng/recordflux/RecordFlux#1267)
+- Subsequent errors caused by style errors (AdaCore/RecordFlux#1268, eng/recordflux/RecordFlux#1268)
 - Missing type checking in refinement conditions (eng/recordflux/RecordFlux#1360)
-- Exception caused by comparing integer field to aggregate (eng/recordflux/RecordFlux#1251)
-- Unexpected errors when using `--max_errors=1` (eng/recordflux/RecordFlux#825)
-- Incorrect detection of conditions as always true for enumerations with `Always_Valid` aspect (eng/recordflux/RecordFlux#1276)
-- Potential name conflicts with internally used identifiers that start with `RFLX_` (eng/recordflux/RecordFlux#638)
+- Exception caused by comparing integer field to aggregate (AdaCore/RecordFlux#1251, eng/recordflux/RecordFlux#1251)
+- Unexpected errors when using `--max_errors=1` (AdaCore/RecordFlux#825, eng/recordflux/RecordFlux#825)
+- Incorrect detection of conditions as always true for enumerations with `Always_Valid` aspect (AdaCore/RecordFlux#1276, eng/recordflux/RecordFlux#1276)
+- Potential name conflicts with internally used identifiers that start with `RFLX_` (AdaCore/RecordFlux#638, eng/recordflux/RecordFlux#638)
 - Deadlocks during verification caused by forked processes (eng/recordflux/RecordFlux#1366)
 
 ## [0.11.1] - 2023-07-14
@@ -354,7 +354,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2019-05-14
 
-[Unreleased]: https://github.com/AdaCore/RecordFlux/compare/v0.11.1...HEAD
+[0.12.0]: https://github.com/AdaCore/RecordFlux/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/AdaCore/RecordFlux/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/AdaCore/RecordFlux/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/AdaCore/RecordFlux/compare/v0.9.1...v0.10.0
