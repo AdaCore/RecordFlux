@@ -400,6 +400,7 @@ gnat_wave_compatibility:
      - cpu:2
      - mem:4
   script:
+    - git fetch --unshallow
     - anod install gnat
     - eval `anod printenv gnat`
     - gnat --version
