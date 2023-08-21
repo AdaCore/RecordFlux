@@ -535,6 +535,26 @@ private
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
+     ((if Well_Formed (Cursors (F_D)) then (Valid (Cursors (F_C)) and then Cursors (F_D).Predecessor = F_C)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last),
+     Post =>
+       True;
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -557,7 +577,7 @@ private
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
-      and then ((if Well_Formed (Cursors (F_D)) then (Valid (Cursors (F_C)) and then Cursors (F_D).Predecessor = F_C)))
+      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
       and then ((if Invalid (Cursors (F_C)) then Invalid (Cursors (F_D))))
       and then ((if
                     Well_Formed (Cursors (F_C))

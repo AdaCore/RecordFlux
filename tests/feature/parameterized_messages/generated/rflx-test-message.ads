@@ -677,6 +677,31 @@ private
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean) return Boolean is
+     ((if
+          Well_Formed (Cursors (F_Extension))
+       then
+          (Well_Formed (Cursors (F_Data))
+           and then Cursors (F_Extension).Predecessor = F_Data
+           and then RFLX_Types.Base_Integer (To_Base_Integer (Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True)))))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last),
+     Post =>
+       True;
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -699,12 +724,7 @@ private
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
-      and then ((if
-                    Well_Formed (Cursors (F_Extension))
-                 then
-                    (Well_Formed (Cursors (F_Data))
-                     and then Cursors (F_Extension).Predecessor = F_Data
-                     and then RFLX_Types.Base_Integer (To_Base_Integer (Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True)))))
+      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended)
       and then ((if Invalid (Cursors (F_Data)) then Invalid (Cursors (F_Extension))))
       and then ((if
                     Well_Formed (Cursors (F_Data))

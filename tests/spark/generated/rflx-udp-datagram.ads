@@ -769,6 +769,45 @@ private
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
+     ((if
+          Well_Formed (Cursors (F_Destination_Port))
+       then
+          (Valid (Cursors (F_Source_Port))
+           and then Cursors (F_Destination_Port).Predecessor = F_Source_Port))
+      and then (if
+                   Well_Formed (Cursors (F_Length))
+                then
+                   (Valid (Cursors (F_Destination_Port))
+                    and then Cursors (F_Length).Predecessor = F_Destination_Port))
+      and then (if
+                   Well_Formed (Cursors (F_Checksum))
+                then
+                   (Valid (Cursors (F_Length))
+                    and then Cursors (F_Checksum).Predecessor = F_Length))
+      and then (if
+                   Well_Formed (Cursors (F_Payload))
+                then
+                   (Valid (Cursors (F_Checksum))
+                    and then Cursors (F_Payload).Predecessor = F_Checksum)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last),
+     Post =>
+       True;
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -791,26 +830,7 @@ private
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
-      and then ((if
-                    Well_Formed (Cursors (F_Destination_Port))
-                 then
-                    (Valid (Cursors (F_Source_Port))
-                     and then Cursors (F_Destination_Port).Predecessor = F_Source_Port))
-                and then (if
-                             Well_Formed (Cursors (F_Length))
-                          then
-                             (Valid (Cursors (F_Destination_Port))
-                              and then Cursors (F_Length).Predecessor = F_Destination_Port))
-                and then (if
-                             Well_Formed (Cursors (F_Checksum))
-                          then
-                             (Valid (Cursors (F_Length))
-                              and then Cursors (F_Checksum).Predecessor = F_Length))
-                and then (if
-                             Well_Formed (Cursors (F_Payload))
-                          then
-                             (Valid (Cursors (F_Checksum))
-                              and then Cursors (F_Payload).Predecessor = F_Checksum)))
+      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
       and then ((if Invalid (Cursors (F_Source_Port)) then Invalid (Cursors (F_Destination_Port)))
                 and then (if Invalid (Cursors (F_Destination_Port)) then Invalid (Cursors (F_Length)))
                 and then (if Invalid (Cursors (F_Length)) then Invalid (Cursors (F_Checksum)))

@@ -1493,6 +1493,107 @@ private
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
+     ((if
+          Well_Formed (Cursors (F_IHL))
+       then
+          (Valid (Cursors (F_Version))
+           and then Cursors (F_IHL).Predecessor = F_Version))
+      and then (if
+                   Well_Formed (Cursors (F_DSCP))
+                then
+                   (Valid (Cursors (F_IHL))
+                    and then Cursors (F_DSCP).Predecessor = F_IHL))
+      and then (if
+                   Well_Formed (Cursors (F_ECN))
+                then
+                   (Valid (Cursors (F_DSCP))
+                    and then Cursors (F_ECN).Predecessor = F_DSCP))
+      and then (if
+                   Well_Formed (Cursors (F_Total_Length))
+                then
+                   (Valid (Cursors (F_ECN))
+                    and then Cursors (F_Total_Length).Predecessor = F_ECN))
+      and then (if
+                   Well_Formed (Cursors (F_Identification))
+                then
+                   (Valid (Cursors (F_Total_Length))
+                    and then Cursors (F_Identification).Predecessor = F_Total_Length
+                    and then RFLX_Types.Base_Integer (Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Cursors (F_IHL).Value) * 4))
+      and then (if
+                   Well_Formed (Cursors (F_Flag_R))
+                then
+                   (Valid (Cursors (F_Identification))
+                    and then Cursors (F_Flag_R).Predecessor = F_Identification))
+      and then (if
+                   Well_Formed (Cursors (F_Flag_DF))
+                then
+                   (Valid (Cursors (F_Flag_R))
+                    and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
+                    and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))))
+      and then (if
+                   Well_Formed (Cursors (F_Flag_MF))
+                then
+                   (Valid (Cursors (F_Flag_DF))
+                    and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF))
+      and then (if
+                   Well_Formed (Cursors (F_Fragment_Offset))
+                then
+                   (Valid (Cursors (F_Flag_MF))
+                    and then Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF))
+      and then (if
+                   Well_Formed (Cursors (F_TTL))
+                then
+                   (Valid (Cursors (F_Fragment_Offset))
+                    and then Cursors (F_TTL).Predecessor = F_Fragment_Offset))
+      and then (if
+                   Well_Formed (Cursors (F_Protocol))
+                then
+                   (Valid (Cursors (F_TTL))
+                    and then Cursors (F_Protocol).Predecessor = F_TTL))
+      and then (if
+                   Well_Formed (Cursors (F_Header_Checksum))
+                then
+                   (Valid (Cursors (F_Protocol))
+                    and then Cursors (F_Header_Checksum).Predecessor = F_Protocol))
+      and then (if
+                   Well_Formed (Cursors (F_Source))
+                then
+                   (Valid (Cursors (F_Header_Checksum))
+                    and then Cursors (F_Source).Predecessor = F_Header_Checksum))
+      and then (if
+                   Well_Formed (Cursors (F_Destination))
+                then
+                   (Valid (Cursors (F_Source))
+                    and then Cursors (F_Destination).Predecessor = F_Source))
+      and then (if
+                   Well_Formed (Cursors (F_Options))
+                then
+                   (Valid (Cursors (F_Destination))
+                    and then Cursors (F_Options).Predecessor = F_Destination))
+      and then (if
+                   Well_Formed (Cursors (F_Payload))
+                then
+                   (Well_Formed (Cursors (F_Options))
+                    and then Cursors (F_Payload).Predecessor = F_Options)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last),
+     Post =>
+       True;
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -1515,88 +1616,7 @@ private
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
-      and then ((if
-                    Well_Formed (Cursors (F_IHL))
-                 then
-                    (Valid (Cursors (F_Version))
-                     and then Cursors (F_IHL).Predecessor = F_Version))
-                and then (if
-                             Well_Formed (Cursors (F_DSCP))
-                          then
-                             (Valid (Cursors (F_IHL))
-                              and then Cursors (F_DSCP).Predecessor = F_IHL))
-                and then (if
-                             Well_Formed (Cursors (F_ECN))
-                          then
-                             (Valid (Cursors (F_DSCP))
-                              and then Cursors (F_ECN).Predecessor = F_DSCP))
-                and then (if
-                             Well_Formed (Cursors (F_Total_Length))
-                          then
-                             (Valid (Cursors (F_ECN))
-                              and then Cursors (F_Total_Length).Predecessor = F_ECN))
-                and then (if
-                             Well_Formed (Cursors (F_Identification))
-                          then
-                             (Valid (Cursors (F_Total_Length))
-                              and then Cursors (F_Identification).Predecessor = F_Total_Length
-                              and then RFLX_Types.Base_Integer (Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Cursors (F_IHL).Value) * 4))
-                and then (if
-                             Well_Formed (Cursors (F_Flag_R))
-                          then
-                             (Valid (Cursors (F_Identification))
-                              and then Cursors (F_Flag_R).Predecessor = F_Identification))
-                and then (if
-                             Well_Formed (Cursors (F_Flag_DF))
-                          then
-                             (Valid (Cursors (F_Flag_R))
-                              and then Cursors (F_Flag_DF).Predecessor = F_Flag_R
-                              and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))))
-                and then (if
-                             Well_Formed (Cursors (F_Flag_MF))
-                          then
-                             (Valid (Cursors (F_Flag_DF))
-                              and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF))
-                and then (if
-                             Well_Formed (Cursors (F_Fragment_Offset))
-                          then
-                             (Valid (Cursors (F_Flag_MF))
-                              and then Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF))
-                and then (if
-                             Well_Formed (Cursors (F_TTL))
-                          then
-                             (Valid (Cursors (F_Fragment_Offset))
-                              and then Cursors (F_TTL).Predecessor = F_Fragment_Offset))
-                and then (if
-                             Well_Formed (Cursors (F_Protocol))
-                          then
-                             (Valid (Cursors (F_TTL))
-                              and then Cursors (F_Protocol).Predecessor = F_TTL))
-                and then (if
-                             Well_Formed (Cursors (F_Header_Checksum))
-                          then
-                             (Valid (Cursors (F_Protocol))
-                              and then Cursors (F_Header_Checksum).Predecessor = F_Protocol))
-                and then (if
-                             Well_Formed (Cursors (F_Source))
-                          then
-                             (Valid (Cursors (F_Header_Checksum))
-                              and then Cursors (F_Source).Predecessor = F_Header_Checksum))
-                and then (if
-                             Well_Formed (Cursors (F_Destination))
-                          then
-                             (Valid (Cursors (F_Source))
-                              and then Cursors (F_Destination).Predecessor = F_Source))
-                and then (if
-                             Well_Formed (Cursors (F_Options))
-                          then
-                             (Valid (Cursors (F_Destination))
-                              and then Cursors (F_Options).Predecessor = F_Destination))
-                and then (if
-                             Well_Formed (Cursors (F_Payload))
-                          then
-                             (Well_Formed (Cursors (F_Options))
-                              and then Cursors (F_Payload).Predecessor = F_Options)))
+      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
       and then ((if Invalid (Cursors (F_Version)) then Invalid (Cursors (F_IHL)))
                 and then (if Invalid (Cursors (F_IHL)) then Invalid (Cursors (F_DSCP)))
                 and then (if Invalid (Cursors (F_DSCP)) then Invalid (Cursors (F_ECN)))

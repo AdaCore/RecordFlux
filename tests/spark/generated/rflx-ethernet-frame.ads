@@ -786,6 +786,63 @@ private
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
+     ((if
+          Well_Formed (Cursors (F_Source))
+       then
+          (Valid (Cursors (F_Destination))
+           and then Cursors (F_Source).Predecessor = F_Destination))
+      and then (if
+                   Well_Formed (Cursors (F_Type_Length_TPID))
+                then
+                   (Valid (Cursors (F_Source))
+                    and then Cursors (F_Type_Length_TPID).Predecessor = F_Source))
+      and then (if
+                   Well_Formed (Cursors (F_TPID))
+                then
+                   (Valid (Cursors (F_Type_Length_TPID))
+                    and then Cursors (F_TPID).Predecessor = F_Type_Length_TPID
+                    and then Cursors (F_Type_Length_TPID).Value = 16#8100#))
+      and then (if
+                   Well_Formed (Cursors (F_TCI))
+                then
+                   (Valid (Cursors (F_TPID))
+                    and then Cursors (F_TCI).Predecessor = F_TPID))
+      and then (if
+                   Well_Formed (Cursors (F_Type_Length))
+                then
+                   (Valid (Cursors (F_TCI))
+                    and then Cursors (F_Type_Length).Predecessor = F_TCI)
+                   or (Valid (Cursors (F_Type_Length_TPID))
+                       and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
+                       and then Cursors (F_Type_Length_TPID).Value /= 16#8100#))
+      and then (if
+                   Well_Formed (Cursors (F_Payload))
+                then
+                   (Valid (Cursors (F_Type_Length))
+                    and then Cursors (F_Payload).Predecessor = F_Type_Length
+                    and then Cursors (F_Type_Length).Value <= 1500)
+                   or (Valid (Cursors (F_Type_Length))
+                       and then Cursors (F_Payload).Predecessor = F_Type_Length
+                       and then Cursors (F_Type_Length).Value >= 1536)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last),
+     Post =>
+       True;
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -808,44 +865,7 @@ private
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
-      and then ((if
-                    Well_Formed (Cursors (F_Source))
-                 then
-                    (Valid (Cursors (F_Destination))
-                     and then Cursors (F_Source).Predecessor = F_Destination))
-                and then (if
-                             Well_Formed (Cursors (F_Type_Length_TPID))
-                          then
-                             (Valid (Cursors (F_Source))
-                              and then Cursors (F_Type_Length_TPID).Predecessor = F_Source))
-                and then (if
-                             Well_Formed (Cursors (F_TPID))
-                          then
-                             (Valid (Cursors (F_Type_Length_TPID))
-                              and then Cursors (F_TPID).Predecessor = F_Type_Length_TPID
-                              and then Cursors (F_Type_Length_TPID).Value = 16#8100#))
-                and then (if
-                             Well_Formed (Cursors (F_TCI))
-                          then
-                             (Valid (Cursors (F_TPID))
-                              and then Cursors (F_TCI).Predecessor = F_TPID))
-                and then (if
-                             Well_Formed (Cursors (F_Type_Length))
-                          then
-                             (Valid (Cursors (F_TCI))
-                              and then Cursors (F_Type_Length).Predecessor = F_TCI)
-                             or (Valid (Cursors (F_Type_Length_TPID))
-                                 and then Cursors (F_Type_Length).Predecessor = F_Type_Length_TPID
-                                 and then Cursors (F_Type_Length_TPID).Value /= 16#8100#))
-                and then (if
-                             Well_Formed (Cursors (F_Payload))
-                          then
-                             (Valid (Cursors (F_Type_Length))
-                              and then Cursors (F_Payload).Predecessor = F_Type_Length
-                              and then Cursors (F_Type_Length).Value <= 1500)
-                             or (Valid (Cursors (F_Type_Length))
-                                 and then Cursors (F_Payload).Predecessor = F_Type_Length
-                                 and then Cursors (F_Type_Length).Value >= 1536)))
+      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
       and then ((if Invalid (Cursors (F_Destination)) then Invalid (Cursors (F_Source)))
                 and then (if Invalid (Cursors (F_Source)) then Invalid (Cursors (F_Type_Length_TPID)))
                 and then (if Invalid (Cursors (F_Type_Length_TPID)) then Invalid (Cursors (F_TPID)))

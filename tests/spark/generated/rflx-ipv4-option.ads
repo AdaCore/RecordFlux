@@ -739,6 +739,58 @@ private
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
+     ((if
+          Well_Formed (Cursors (F_Option_Class))
+       then
+          (Valid (Cursors (F_Copied))
+           and then Cursors (F_Option_Class).Predecessor = F_Copied))
+      and then (if
+                   Well_Formed (Cursors (F_Option_Number))
+                then
+                   (Valid (Cursors (F_Option_Class))
+                    and then Cursors (F_Option_Number).Predecessor = F_Option_Class))
+      and then (if
+                   Well_Formed (Cursors (F_Option_Length))
+                then
+                   (Valid (Cursors (F_Option_Number))
+                    and then Cursors (F_Option_Length).Predecessor = F_Option_Number
+                    and then Cursors (F_Option_Number).Value > 1))
+      and then (if
+                   Well_Formed (Cursors (F_Option_Data))
+                then
+                   (Valid (Cursors (F_Option_Length))
+                    and then Cursors (F_Option_Data).Predecessor = F_Option_Length
+                    and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
+                               and Cursors (F_Option_Number).Value = 4)
+                              or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
+                                  and (Cursors (F_Option_Number).Value = 9
+                                       or Cursors (F_Option_Number).Value = 3
+                                       or Cursors (F_Option_Number).Value = 7))
+                              or (Cursors (F_Option_Length).Value = 11
+                                  and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
+                                  and Cursors (F_Option_Number).Value = 2)
+                              or (Cursors (F_Option_Length).Value = 4
+                                  and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
+                                  and Cursors (F_Option_Number).Value = 8)))))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last),
+     Post =>
+       True;
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -761,39 +813,7 @@ private
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
       and then Cursors_Invariant (Cursors, First, Verified_Last)
-      and then ((if
-                    Well_Formed (Cursors (F_Option_Class))
-                 then
-                    (Valid (Cursors (F_Copied))
-                     and then Cursors (F_Option_Class).Predecessor = F_Copied))
-                and then (if
-                             Well_Formed (Cursors (F_Option_Number))
-                          then
-                             (Valid (Cursors (F_Option_Class))
-                              and then Cursors (F_Option_Number).Predecessor = F_Option_Class))
-                and then (if
-                             Well_Formed (Cursors (F_Option_Length))
-                          then
-                             (Valid (Cursors (F_Option_Number))
-                              and then Cursors (F_Option_Length).Predecessor = F_Option_Number
-                              and then Cursors (F_Option_Number).Value > 1))
-                and then (if
-                             Well_Formed (Cursors (F_Option_Data))
-                          then
-                             (Valid (Cursors (F_Option_Length))
-                              and then Cursors (F_Option_Data).Predecessor = F_Option_Length
-                              and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
-                                         and Cursors (F_Option_Number).Value = 4)
-                                        or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                            and (Cursors (F_Option_Number).Value = 9
-                                                 or Cursors (F_Option_Number).Value = 3
-                                                 or Cursors (F_Option_Number).Value = 7))
-                                        or (Cursors (F_Option_Length).Value = 11
-                                            and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                            and Cursors (F_Option_Number).Value = 2)
-                                        or (Cursors (F_Option_Length).Value = 4
-                                            and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                            and Cursors (F_Option_Number).Value = 8)))))
+      and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
       and then ((if Invalid (Cursors (F_Copied)) then Invalid (Cursors (F_Option_Class)))
                 and then (if Invalid (Cursors (F_Option_Class)) then Invalid (Cursors (F_Option_Number)))
                 and then (if Invalid (Cursors (F_Option_Number)) then Invalid (Cursors (F_Option_Length)))
