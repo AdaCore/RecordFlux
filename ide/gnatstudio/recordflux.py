@@ -323,10 +323,11 @@ def output_dir():
     assert output_dir, "Output directory not configured"
     create_missing = GPS.Project.root().get_attribute_as_string("Create_Missing_Dirs")
     if create_missing and create_missing.lower() == "true":
-        if Path.exists(output_dir):
-            assert Path.is_dir(output_dir)
+        output_path = Path(output_dir)
+        if output_path.exists():
+            assert output_path.is_dir()
         else:
-            Path.mkdir(output_dir, parents=True)
+            output_path.mkdir(parents=True)
     return output_dir
 
 
@@ -360,7 +361,7 @@ def get_message_name(locations, name, line, column):
 
 
 def display_message_graph(filename):
-    with (output_dir() + "/locations.json").open() as f:
+    with (Path(output_dir()) / "locations.json").open() as f:
         locations = json.load(f)
     loc = GPS.EditorBuffer.get().current_view().cursor()
     column = loc.column()
