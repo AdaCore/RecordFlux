@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reject duplicate optional arguments in `rflx` CLI (eng/recordflux/RecordFlux#1342)
 - Split the `Valid_Context` into multiple functions (eng/recordflux/RecordFlux#1385)
+- IANA registries with unsupported content are skipped with a warning (eng/recordflux/RecordFlux#1406)
 
 ### Removed
 
