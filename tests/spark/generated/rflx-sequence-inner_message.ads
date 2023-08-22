@@ -623,6 +623,23 @@ private
      (Cursor.State = S_Invalid
       or Cursor.State = S_Incomplete);
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   function Cursors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length) return Boolean is
+     ((for all F in Field =>
+          (if
+              Well_Formed (Cursors (F))
+           then
+              Cursors (F).First >= First
+              and Cursors (F).Last <= Verified_Last
+              and Cursors (F).First <= Cursors (F).Last + 1
+              and Valid_Value (F, Cursors (F).Value))))
+    with
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -644,14 +661,7 @@ private
       and then Last rem RFLX_Types.Byte'Size = 0
       and then Verified_Last rem RFLX_Types.Byte'Size = 0
       and then Written_Last rem RFLX_Types.Byte'Size = 0
-      and then (for all F in Field =>
-                   (if
-                       Well_Formed (Cursors (F))
-                    then
-                       Cursors (F).First >= First
-                       and Cursors (F).Last <= Verified_Last
-                       and Cursors (F).First <= Cursors (F).Last + 1
-                       and Valid_Value (F, Cursors (F).Value)))
+      and then Cursors_Invariant (Cursors, First, Verified_Last)
       and then ((if
                     Well_Formed (Cursors (F_Payload))
                  then
