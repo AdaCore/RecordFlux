@@ -276,6 +276,16 @@ def create_cursor_validation_functions() -> UnitPart:
 
 
 def create_cursors_invariant_function() -> UnitPart:
+    """
+    Create the function to hold the invariant that defines valid representations of fields.
+
+    Each field cursor represents the state of one parsed or serialized message field.
+    This invariant ensures for all well formed fields that
+
+        - the field bounds are inside the range of verified buffer part,
+        - the field size is greater or equal to zero,
+        - and the field value fulfills all constraints of its field type.
+    """
     specification = FunctionSpecification(
         "Cursors_Invariant",
         "Boolean",
@@ -292,7 +302,59 @@ def create_cursors_invariant_function() -> UnitPart:
             [
                 ExpressionFunctionDeclaration(
                     specification,
-                    common.cursors_invariant(),
+                    ForAllIn(
+                        "F",
+                        Variable("Field"),
+                        If(
+                            [
+                                (
+                                    Call(
+                                        "Well_Formed",
+                                        [Indexed(Variable("Cursors"), Variable("F"))],
+                                    ),
+                                    And(
+                                        GreaterEqual(
+                                            Selected(
+                                                Indexed(Variable("Cursors"), Variable("F")),
+                                                "First",
+                                            ),
+                                            Variable("First"),
+                                        ),
+                                        LessEqual(
+                                            Selected(
+                                                Indexed(Variable("Cursors"), Variable("F")),
+                                                "Last",
+                                            ),
+                                            Variable("Verified_Last"),
+                                        ),
+                                        LessEqual(
+                                            Selected(
+                                                Indexed(Variable("Cursors"), Variable("F")),
+                                                "First",
+                                            ),
+                                            Add(
+                                                Selected(
+                                                    Indexed(Variable("Cursors"), Variable("F")),
+                                                    "Last",
+                                                ),
+                                                Number(1),
+                                            ),
+                                        ),
+                                        Call(
+                                            "Valid_Value",
+                                            [
+                                                Variable("F"),
+                                                Selected(
+                                                    Indexed(Variable("Cursors"), Variable("F")),
+                                                    "Value",
+                                                ),
+                                            ],
+                                        ),
+                                    ),
+                                ),
+                            ],
+                        ),
+                    ),
                     [Postcondition(TRUE)],
                 ),
             ],
