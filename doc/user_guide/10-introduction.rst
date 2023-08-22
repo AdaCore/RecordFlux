@@ -110,8 +110,8 @@ The following versions of GNAT are supported:
 
 For compiling the generated code, one of the following versions of GNAT is required:
 
--  GNAT Pro 20.2, 21.2, 22.2 or 23.2
--  GNAT Community 2020 or 2021
+-  GNAT Pro 21.2, 22.2 or 23.2
+-  GNAT Community 2021
 -  FSF GNAT 11.2 or 12.1
 
 A successful installation of the native toolchain can be verified on the command line as follows:
@@ -141,7 +141,7 @@ The tool can be installed using either the system package manager (`python3-pip`
 
 For the formal verification of the generated code, the following SPARK Pro version is required:
 
--  SPARK Pro 23.1
+-  SPARK Pro Wavefront 20230710
 
 If you plan to use the RecordFlux Modeller, GNAT Studio needs to be installed and set up.
 

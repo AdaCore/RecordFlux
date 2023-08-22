@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for SPARK Pro Wavefront 20230710 (eng/recordflux/RecordFlux#1403)
+
 ### Changed
 
 - Reject duplicate optional arguments in `rflx` CLI (eng/recordflux/RecordFlux#1342)
+
+### Removed
+
+- Support for GNAT Pro 20.2 and GNAT Community 2020 (eng/recordflux/RecordFlux#1403)
+- Support for SPARK Pro 23.1 (eng/recordflux/RecordFlux#1403)
 
 ## [0.12.0] - 2023-08-22
 
