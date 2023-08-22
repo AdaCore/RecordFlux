@@ -1,6 +1,6 @@
 # All SCM-managed files are automatically added to the sdist by setuptools_scm.
 prune *
-exclude .git* defaults* Makefile MANIFEST.in
+exclude .git* defaults* Makefile* MANIFEST.in
 graft bin
 graft ide/gnatstudio
 graft rflx
