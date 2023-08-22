@@ -122,6 +122,21 @@ changelog:
         git diff --name-only origin/main..HEAD | sed -n '/CHANGELOG.md/{:a $q0; n; ba}; ${s/.*/No entry added to CHANGELOG.md/p;q1}';
       fi
 
+anod:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  script:
+    - |
+      if [[ "$CI_MERGE_REQUEST_LABELS" != *"Anod"* ]]; then
+        git fetch origin main;
+        echo > /tmp/setup.py-diff '
+        sed -z "s/.*install_requires=\[\s*\([^]]*\)],\s*extras_require={\([^}]*\)}.*/\1\2/" $1 > $1.a
+        sed -z "s/.*install_requires=\[\s*\([^]]*\)],\s*extras_require={\([^}]*\)}.*/\1\2/" $2 > $2.b
+        diff -u -w $1.a $2.b
+        ';
+        git difftool -y -x '/bin/bash -eu /tmp/setup.py-diff' --trust-exit-code HEAD origin/main -- setup.py
+      fi
+
 commit_messages:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
