@@ -604,9 +604,11 @@ package SPDM is
          Reserved_3 : Reserved_32;
          Reserved_4 : Reserved_32;
          Ext_Asym_Sel_Count : Ext_Asym_Count
-            if Ext_Asym_Sel_Count <= 1;
+            then Ext_Hash_Sel_Count
+               if Ext_Asym_Sel_Count <= 1;
          Ext_Hash_Sel_Count : Ext_Hash_Count
-            if Ext_Hash_Sel_Count <= 1;
+            then Reserved_5
+               if Ext_Hash_Sel_Count <= 1;
          Reserved_5 : Reserved_16;
          Ext_Asym : Ext_Algs
             with Size => 32 * Ext_Asym_Sel_Count;

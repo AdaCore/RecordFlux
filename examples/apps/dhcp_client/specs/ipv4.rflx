@@ -28,10 +28,11 @@ package IPv4 is
          Option_Length : Option_Length;
          Option_Data : Opaque
             with Size => (Option_Length - 2) * 8
-            if (Option_Class = CONTROL and Option_Number = 2 and Option_Length = 11)
-               or (Option_Class = CONTROL and Option_Number = 8 and Option_Length = 4)
-               or (Option_Class = CONTROL and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
-               or (Option_Class = DEBUGGING_AND_MEASUREMENT and Option_Number = 4);
+            then null
+               if (Option_Class = CONTROL and Option_Number = 2 and Option_Length = 11)
+                  or (Option_Class = CONTROL and Option_Number = 8 and Option_Length = 4)
+                  or (Option_Class = CONTROL and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
+                  or (Option_Class = DEBUGGING_AND_MEASUREMENT and Option_Number = 4);
       end message;
 
    type Options is sequence of Option;
@@ -44,10 +45,12 @@ package IPv4 is
          ECN : ECN;
          Total_Length : Total_Length;
          Identification : Identification
-            if Total_Length >= IHL * 4;
+            then Flag_R
+               if Total_Length >= IHL * 4;
          Flag_R : Boolean;
          Flag_DF : Boolean
-            if Flag_R = False;
+            then Flag_MF
+               if Flag_R = False;
          Flag_MF : Boolean;
          Fragment_Offset : Fragment_Offset;
          TTL : TTL;

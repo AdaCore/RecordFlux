@@ -10,11 +10,12 @@ package TLS_Alert is
       message
          Level : Alert_Level;
          Description : Tls_Parameters::TLS_Alerts
-            if (Level = Warning and
-                  (Description = Tls_Parameters::Close_Notify
-                     or Description = Tls_Parameters::User_Canceled))
-               or (Level = Fatal and Description /= Tls_Parameters::Close_Notify
-                     and Description /= Tls_Parameters::User_Canceled);
+            then null
+               if (Level = Warning and
+                     (Description = Tls_Parameters::Close_Notify
+                        or Description = Tls_Parameters::User_Canceled))
+                  or (Level = Fatal and Description /= Tls_Parameters::Close_Notify
+                        and Description /= Tls_Parameters::User_Canceled);
       end message;
 
 end TLS_Alert;

@@ -26,10 +26,11 @@ package IPv4 is
             then Option_Length
                if Option_Number > 1;
          Option_Length : Option_Length
-            if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
-               or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
-               or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
-               or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
+            then Option_Data
+               if (Option_Class = Control and Option_Number = 2 and Option_Length = 11)
+                  or (Option_Class = Control and Option_Number = 8 and Option_Length = 4)
+                  or (Option_Class = Control and (Option_Number = 3 or Option_Number = 7 or Option_Number = 9))
+                  or (Option_Class = Debugging_And_Measurement and Option_Number = 4);
          Option_Data : Opaque
             with Size => (Option_Length - 2) * 8;
       end message;
@@ -43,10 +44,12 @@ package IPv4 is
          DSCP : DCSP;
          ECN : ECN;
          Total_Length : Total_Length
-            if Total_Length >= IHL * 4;
+            then Identification
+               if Total_Length >= IHL * 4;
          Identification : Identification;
          Flag_R : Boolean
-            if Flag_R = False;
+            then Flag_DF
+               if Flag_R = False;
          Flag_DF : Boolean;
          Flag_MF : Boolean;
          Fragment_Offset : Fragment_Offset;

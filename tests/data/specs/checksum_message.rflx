@@ -9,7 +9,8 @@ package Checksum_Message is
          A : A;
          B : B;
          C : C
-            if C'Valid_Checksum;
+            then null
+               if C'Valid_Checksum;
       end message with
          Checksum => (C => (A, B));
 

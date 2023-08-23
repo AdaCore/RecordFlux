@@ -7,7 +7,8 @@ DEFINITE_MESSAGE_WITH_BUILTIN_TYPE_SPEC = """\
              message
                 Flag : Boolean;
                 Length : Length
-                   if Length > 0;
+                   then Data
+                      if Length > 0;
                 Data : Opaque
                    with Size => Length * 8;
              end message;

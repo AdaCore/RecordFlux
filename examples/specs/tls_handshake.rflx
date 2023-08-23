@@ -42,8 +42,9 @@ package TLS_Handshake is
          Fragment_Offset : Length;
          Fragment_Length : Length
             --  The condition below follows indirectly from RFC 9147.
-            if Fragment_Length <= Length
-               and Fragment_Offset <= Length - Fragment_Length;
+            then Payload
+               if Fragment_Length <= Length
+                  and Fragment_Offset <= Length - Fragment_Length;
          Payload : Opaque
             with Size => Fragment_Length * 8;
       end message;
@@ -91,43 +92,44 @@ package TLS_Handshake is
    type CH_Extension_TLS is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- dtls-only = N
-               -- tls13 = .*CH.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag /= Tls_Extensiontype_Values::Client_Certificate_Url and
-               Tag /= Tls_Extensiontype_Values::Trusted_Ca_Keys and
-               Tag /= Tls_Extensiontype_Values::Truncated_Hmac and
-               Tag /= Tls_Extensiontype_Values::User_Mapping and
-               Tag /= Tls_Extensiontype_Values::Client_Authz and
-               Tag /= Tls_Extensiontype_Values::Server_Authz and
-               Tag /= Tls_Extensiontype_Values::Cert_Type and
-               Tag /= Tls_Extensiontype_Values::Ec_Point_Formats and
-               Tag /= Tls_Extensiontype_Values::Srp and
-               Tag /= Tls_Extensiontype_Values::Status_Request_V2 and
-               Tag /= Tls_Extensiontype_Values::Encrypt_Then_Mac and
-               Tag /= Tls_Extensiontype_Values::Extended_Master_Secret and
-               Tag /= Tls_Extensiontype_Values::Token_Binding and
-               Tag /= Tls_Extensiontype_Values::Cached_Info and
-               Tag /= Tls_Extensiontype_Values::Tls_Lts and
-               Tag /= Tls_Extensiontype_Values::Session_Ticket_Renamed_From_SessionTicket_TLS and
-               Tag /= Tls_Extensiontype_Values::TLMSP and
-               Tag /= Tls_Extensiontype_Values::TLMSP_Proxying and
-               Tag /= Tls_Extensiontype_Values::TLMSP_Delegate and
-               Tag /= Tls_Extensiontype_Values::Oid_Filters and
-               Tag /= Tls_Extensiontype_Values::Connection_Id_Deprecated and
-               Tag /= Tls_Extensiontype_Values::Connection_Id and
-               Tag /= Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms and
-               Tag /= Tls_Extensiontype_Values::Renegotiation_Info
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- dtls-only = N
+                  -- tls13 = .*CH.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag /= Tls_Extensiontype_Values::Client_Certificate_Url and
+                  Tag /= Tls_Extensiontype_Values::Trusted_Ca_Keys and
+                  Tag /= Tls_Extensiontype_Values::Truncated_Hmac and
+                  Tag /= Tls_Extensiontype_Values::User_Mapping and
+                  Tag /= Tls_Extensiontype_Values::Client_Authz and
+                  Tag /= Tls_Extensiontype_Values::Server_Authz and
+                  Tag /= Tls_Extensiontype_Values::Cert_Type and
+                  Tag /= Tls_Extensiontype_Values::Ec_Point_Formats and
+                  Tag /= Tls_Extensiontype_Values::Srp and
+                  Tag /= Tls_Extensiontype_Values::Status_Request_V2 and
+                  Tag /= Tls_Extensiontype_Values::Encrypt_Then_Mac and
+                  Tag /= Tls_Extensiontype_Values::Extended_Master_Secret and
+                  Tag /= Tls_Extensiontype_Values::Token_Binding and
+                  Tag /= Tls_Extensiontype_Values::Cached_Info and
+                  Tag /= Tls_Extensiontype_Values::Tls_Lts and
+                  Tag /= Tls_Extensiontype_Values::Session_Ticket_Renamed_From_SessionTicket_TLS and
+                  Tag /= Tls_Extensiontype_Values::TLMSP and
+                  Tag /= Tls_Extensiontype_Values::TLMSP_Proxying and
+                  Tag /= Tls_Extensiontype_Values::TLMSP_Delegate and
+                  Tag /= Tls_Extensiontype_Values::Oid_Filters and
+                  Tag /= Tls_Extensiontype_Values::Connection_Id_Deprecated and
+                  Tag /= Tls_Extensiontype_Values::Connection_Id and
+                  Tag /= Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms and
+                  Tag /= Tls_Extensiontype_Values::Renegotiation_Info
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -138,40 +140,41 @@ package TLS_Handshake is
    type CH_Extension_DTLS is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- tls13 = .*CH.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag /= Tls_Extensiontype_Values::Client_Certificate_Url and
-               Tag /= Tls_Extensiontype_Values::Trusted_Ca_Keys and
-               Tag /= Tls_Extensiontype_Values::Truncated_Hmac and
-               Tag /= Tls_Extensiontype_Values::User_Mapping and
-               Tag /= Tls_Extensiontype_Values::Client_Authz and
-               Tag /= Tls_Extensiontype_Values::Server_Authz and
-               Tag /= Tls_Extensiontype_Values::Cert_Type and
-               Tag /= Tls_Extensiontype_Values::Ec_Point_Formats and
-               Tag /= Tls_Extensiontype_Values::Srp and
-               Tag /= Tls_Extensiontype_Values::Status_Request_V2 and
-               Tag /= Tls_Extensiontype_Values::Encrypt_Then_Mac and
-               Tag /= Tls_Extensiontype_Values::Extended_Master_Secret and
-               Tag /= Tls_Extensiontype_Values::Token_Binding and
-               Tag /= Tls_Extensiontype_Values::Cached_Info and
-               Tag /= Tls_Extensiontype_Values::Tls_Lts and
-               Tag /= Tls_Extensiontype_Values::Session_Ticket_Renamed_From_SessionTicket_TLS and
-               Tag /= Tls_Extensiontype_Values::TLMSP and
-               Tag /= Tls_Extensiontype_Values::TLMSP_Proxying and
-               Tag /= Tls_Extensiontype_Values::TLMSP_Delegate and
-               Tag /= Tls_Extensiontype_Values::Oid_Filters and
-               Tag /= Tls_Extensiontype_Values::Connection_Id_Deprecated and
-               Tag /= Tls_Extensiontype_Values::Renegotiation_Info
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- tls13 = .*CH.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag /= Tls_Extensiontype_Values::Client_Certificate_Url and
+                  Tag /= Tls_Extensiontype_Values::Trusted_Ca_Keys and
+                  Tag /= Tls_Extensiontype_Values::Truncated_Hmac and
+                  Tag /= Tls_Extensiontype_Values::User_Mapping and
+                  Tag /= Tls_Extensiontype_Values::Client_Authz and
+                  Tag /= Tls_Extensiontype_Values::Server_Authz and
+                  Tag /= Tls_Extensiontype_Values::Cert_Type and
+                  Tag /= Tls_Extensiontype_Values::Ec_Point_Formats and
+                  Tag /= Tls_Extensiontype_Values::Srp and
+                  Tag /= Tls_Extensiontype_Values::Status_Request_V2 and
+                  Tag /= Tls_Extensiontype_Values::Encrypt_Then_Mac and
+                  Tag /= Tls_Extensiontype_Values::Extended_Master_Secret and
+                  Tag /= Tls_Extensiontype_Values::Token_Binding and
+                  Tag /= Tls_Extensiontype_Values::Cached_Info and
+                  Tag /= Tls_Extensiontype_Values::Tls_Lts and
+                  Tag /= Tls_Extensiontype_Values::Session_Ticket_Renamed_From_SessionTicket_TLS and
+                  Tag /= Tls_Extensiontype_Values::TLMSP and
+                  Tag /= Tls_Extensiontype_Values::TLMSP_Proxying and
+                  Tag /= Tls_Extensiontype_Values::TLMSP_Delegate and
+                  Tag /= Tls_Extensiontype_Values::Oid_Filters and
+                  Tag /= Tls_Extensiontype_Values::Connection_Id_Deprecated and
+                  Tag /= Tls_Extensiontype_Values::Renegotiation_Info
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -183,24 +186,25 @@ package TLS_Handshake is
    type SH_Extension_TLS is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- dtls-only = N
-               -- tls13 = .*SH.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag = Tls_Extensiontype_Values::Password_Salt or
-               Tag = Tls_Extensiontype_Values::Tls_Cert_With_Extern_Psk or
-               Tag = Tls_Extensiontype_Values::Pre_Shared_Key or
-               Tag = Tls_Extensiontype_Values::Supported_Versions or
-               Tag = Tls_Extensiontype_Values::Key_Share
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- dtls-only = N
+                  -- tls13 = .*SH.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag = Tls_Extensiontype_Values::Password_Salt or
+                  Tag = Tls_Extensiontype_Values::Tls_Cert_With_Extern_Psk or
+                  Tag = Tls_Extensiontype_Values::Pre_Shared_Key or
+                  Tag = Tls_Extensiontype_Values::Supported_Versions or
+                  Tag = Tls_Extensiontype_Values::Key_Share
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -211,25 +215,26 @@ package TLS_Handshake is
    type SH_Extension_DTLS is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- tls13 = .*SH.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag = Tls_Extensiontype_Values::Password_Salt or
-               Tag = Tls_Extensiontype_Values::Tls_Cert_With_Extern_Psk or
-               Tag = Tls_Extensiontype_Values::Pre_Shared_Key or
-               Tag = Tls_Extensiontype_Values::Supported_Versions or
-               Tag = Tls_Extensiontype_Values::Key_Share or
-               Tag = Tls_Extensiontype_Values::Connection_Id or
-               Tag = Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- tls13 = .*SH.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag = Tls_Extensiontype_Values::Password_Salt or
+                  Tag = Tls_Extensiontype_Values::Tls_Cert_With_Extern_Psk or
+                  Tag = Tls_Extensiontype_Values::Pre_Shared_Key or
+                  Tag = Tls_Extensiontype_Values::Supported_Versions or
+                  Tag = Tls_Extensiontype_Values::Key_Share or
+                  Tag = Tls_Extensiontype_Values::Connection_Id or
+                  Tag = Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -241,23 +246,24 @@ package TLS_Handshake is
    type HRR_Extension_TLS is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- dtls-only = N
-               -- tls13 = .*HRR.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag = Tls_Extensiontype_Values::Password_Salt or
-               Tag = Tls_Extensiontype_Values::Supported_Versions or
-               Tag = Tls_Extensiontype_Values::Cookie or
-               Tag = Tls_Extensiontype_Values::Key_Share
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- dtls-only = N
+                  -- tls13 = .*HRR.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag = Tls_Extensiontype_Values::Password_Salt or
+                  Tag = Tls_Extensiontype_Values::Supported_Versions or
+                  Tag = Tls_Extensiontype_Values::Cookie or
+                  Tag = Tls_Extensiontype_Values::Key_Share
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -268,23 +274,24 @@ package TLS_Handshake is
    type HRR_Extension_DTLS is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- tls13 = .*HRR.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag = Tls_Extensiontype_Values::Password_Salt or
-               Tag = Tls_Extensiontype_Values::Supported_Versions or
-               Tag = Tls_Extensiontype_Values::Cookie or
-               Tag = Tls_Extensiontype_Values::Key_Share or
-               Tag = Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- tls13 = .*HRR.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag = Tls_Extensiontype_Values::Password_Salt or
+                  Tag = Tls_Extensiontype_Values::Supported_Versions or
+                  Tag = Tls_Extensiontype_Values::Cookie or
+                  Tag = Tls_Extensiontype_Values::Key_Share or
+                  Tag = Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -296,34 +303,35 @@ package TLS_Handshake is
    type EE_Extension is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- tls13 = .*EE.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag = Tls_Extensiontype_Values::Server_Name or
-               Tag = Tls_Extensiontype_Values::Max_Fragment_Length or
-               Tag = Tls_Extensiontype_Values::Supported_Groups_Renamed_From_Elliptic_Curves or
-               Tag = Tls_Extensiontype_Values::Use_Srtp or
-               Tag = Tls_Extensiontype_Values::Heartbeat or
-               Tag = Tls_Extensiontype_Values::Application_Layer_Protocol_Negotiation or
-               Tag = Tls_Extensiontype_Values::Client_Certificate_Type or
-               Tag = Tls_Extensiontype_Values::Server_Certificate_Type or
-               Tag = Tls_Extensiontype_Values::Record_Size_Limit or
-               Tag = Tls_Extensiontype_Values::Ticket_Pinning or
-               Tag = Tls_Extensiontype_Values::Supported_Ekt_Ciphers or
-               Tag = Tls_Extensiontype_Values::Early_Data or
-               Tag = Tls_Extensiontype_Values::External_Id_Hash or
-               Tag = Tls_Extensiontype_Values::External_Session_Id or
-               Tag = Tls_Extensiontype_Values::Quic_Transport_Parameters or
-               Tag = Tls_Extensiontype_Values::Ticket_Request
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- tls13 = .*EE.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag = Tls_Extensiontype_Values::Server_Name or
+                  Tag = Tls_Extensiontype_Values::Max_Fragment_Length or
+                  Tag = Tls_Extensiontype_Values::Supported_Groups_Renamed_From_Elliptic_Curves or
+                  Tag = Tls_Extensiontype_Values::Use_Srtp or
+                  Tag = Tls_Extensiontype_Values::Heartbeat or
+                  Tag = Tls_Extensiontype_Values::Application_Layer_Protocol_Negotiation or
+                  Tag = Tls_Extensiontype_Values::Client_Certificate_Type or
+                  Tag = Tls_Extensiontype_Values::Server_Certificate_Type or
+                  Tag = Tls_Extensiontype_Values::Record_Size_Limit or
+                  Tag = Tls_Extensiontype_Values::Ticket_Pinning or
+                  Tag = Tls_Extensiontype_Values::Supported_Ekt_Ciphers or
+                  Tag = Tls_Extensiontype_Values::Early_Data or
+                  Tag = Tls_Extensiontype_Values::External_Id_Hash or
+                  Tag = Tls_Extensiontype_Values::External_Session_Id or
+                  Tag = Tls_Extensiontype_Values::Quic_Transport_Parameters or
+                  Tag = Tls_Extensiontype_Values::Ticket_Request
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -335,28 +343,29 @@ package TLS_Handshake is
    type CR_Extension is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- tls13 = .*CR.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag = Tls_Extensiontype_Values::Server_Name or
-               Tag = Tls_Extensiontype_Values::Status_Request or
-               Tag = Tls_Extensiontype_Values::Signature_Algorithms or
-               Tag = Tls_Extensiontype_Values::Signed_Certificate_Timestamp or
-               Tag = Tls_Extensiontype_Values::Compress_Certificate or
-               Tag = Tls_Extensiontype_Values::Delegated_Credential or
-               Tag = Tls_Extensiontype_Values::Certificate_Authorities or
-               Tag = Tls_Extensiontype_Values::Oid_Filters or
-               Tag = Tls_Extensiontype_Values::Signature_Algorithms_Cert or
-               Tag = Tls_Extensiontype_Values::Transparency_Info
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- tls13 = .*CR.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag = Tls_Extensiontype_Values::Server_Name or
+                  Tag = Tls_Extensiontype_Values::Status_Request or
+                  Tag = Tls_Extensiontype_Values::Signature_Algorithms or
+                  Tag = Tls_Extensiontype_Values::Signed_Certificate_Timestamp or
+                  Tag = Tls_Extensiontype_Values::Compress_Certificate or
+                  Tag = Tls_Extensiontype_Values::Delegated_Credential or
+                  Tag = Tls_Extensiontype_Values::Certificate_Authorities or
+                  Tag = Tls_Extensiontype_Values::Oid_Filters or
+                  Tag = Tls_Extensiontype_Values::Signature_Algorithms_Cert or
+                  Tag = Tls_Extensiontype_Values::Transparency_Info
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -368,23 +377,24 @@ package TLS_Handshake is
    type CT_Extension is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- tls13 = .*CT.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag = Tls_Extensiontype_Values::Status_Request or
-               Tag = Tls_Extensiontype_Values::Signed_Certificate_Timestamp or
-               Tag = Tls_Extensiontype_Values::Delegated_Credential or
-               Tag = Tls_Extensiontype_Values::Transparency_Info or
-               Tag = Tls_Extensiontype_Values::Dnssec_Chain
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- tls13 = .*CT.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag = Tls_Extensiontype_Values::Status_Request or
+                  Tag = Tls_Extensiontype_Values::Signed_Certificate_Timestamp or
+                  Tag = Tls_Extensiontype_Values::Delegated_Credential or
+                  Tag = Tls_Extensiontype_Values::Transparency_Info or
+                  Tag = Tls_Extensiontype_Values::Dnssec_Chain
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -396,19 +406,20 @@ package TLS_Handshake is
    type NST_Extension is
       message
          Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
-            if
-            -- Message type specific constraints
-            (
-               --
-               -- Automatically generated condition that selects the enum literals having
-               -- the following properties:
-               --
-               -- tls13 = .*NST.*
-               --
-               -- NOTE: Remove or amend this comment when the condition below is modified.
-               --
-               Tag = Tls_Extensiontype_Values::Early_Data
-            );
+            then Data_Length
+               if
+               -- Message type specific constraints
+               (
+                  --
+                  -- Automatically generated condition that selects the enum literals having
+                  -- the following properties:
+                  --
+                  -- tls13 = .*NST.*
+                  --
+                  -- NOTE: Remove or amend this comment when the condition below is modified.
+                  --
+                  Tag = Tls_Extensiontype_Values::Early_Data
+               );
          Data_Length : Data_Length;
          Data : Opaque
             with Size => 8 * Data_Length;
@@ -439,43 +450,43 @@ package TLS_Handshake is
       message
          Suite : Tls_Parameters::TLS_Cipher_Suites
             then null
-            if
-            --
-            -- Automatically generated condition that selects the enum literals having
-            -- the following properties:
-            --
-            -- dtls = Y
-            --
-            -- NOTE: Remove or amend this comment when the condition below is modified.
-            --
-            Suite /= Tls_Parameters::TLS_RSA_EXPORT_WITH_RC4_40_MD5 and
-            Suite /= Tls_Parameters::TLS_RSA_WITH_RC4_128_MD5 and
-            Suite /= Tls_Parameters::TLS_RSA_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_DH_Anon_EXPORT_WITH_RC4_40_MD5 and
-            Suite /= Tls_Parameters::TLS_DH_Anon_WITH_RC4_128_MD5 and
-            Suite /= Tls_Parameters::TLS_KRB5_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_KRB5_WITH_RC4_128_MD5 and
-            Suite /= Tls_Parameters::TLS_KRB5_EXPORT_WITH_RC4_40_SHA and
-            Suite /= Tls_Parameters::TLS_KRB5_EXPORT_WITH_RC4_40_MD5 and
-            Suite /= Tls_Parameters::TLS_PSK_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_DHE_PSK_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_RSA_PSK_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_SM4_GCM_SM3 and
-            Suite /= Tls_Parameters::TLS_SM4_CCM_SM3 and
-            Suite /= Tls_Parameters::TLS_ECDH_ECDSA_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_ECDHE_ECDSA_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_ECDH_RSA_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_ECDHE_RSA_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_ECDH_Anon_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_ECDHE_PSK_WITH_RC4_128_SHA and
-            Suite /= Tls_Parameters::TLS_DHE_RSA_WITH_AES_256_CCM_8 and
-            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC and
-            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC and
-            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_28147_CNT_IMIT and
-            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_L and
-            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_MAGMA_MGM_L and
-            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_S and
-            Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_MAGMA_MGM_S;
+               if
+               --
+               -- Automatically generated condition that selects the enum literals having
+               -- the following properties:
+               --
+               -- dtls = Y
+               --
+               -- NOTE: Remove or amend this comment when the condition below is modified.
+               --
+               Suite /= Tls_Parameters::TLS_RSA_EXPORT_WITH_RC4_40_MD5 and
+               Suite /= Tls_Parameters::TLS_RSA_WITH_RC4_128_MD5 and
+               Suite /= Tls_Parameters::TLS_RSA_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_DH_Anon_EXPORT_WITH_RC4_40_MD5 and
+               Suite /= Tls_Parameters::TLS_DH_Anon_WITH_RC4_128_MD5 and
+               Suite /= Tls_Parameters::TLS_KRB5_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_KRB5_WITH_RC4_128_MD5 and
+               Suite /= Tls_Parameters::TLS_KRB5_EXPORT_WITH_RC4_40_SHA and
+               Suite /= Tls_Parameters::TLS_KRB5_EXPORT_WITH_RC4_40_MD5 and
+               Suite /= Tls_Parameters::TLS_PSK_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_DHE_PSK_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_RSA_PSK_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_SM4_GCM_SM3 and
+               Suite /= Tls_Parameters::TLS_SM4_CCM_SM3 and
+               Suite /= Tls_Parameters::TLS_ECDH_ECDSA_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_ECDHE_ECDSA_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_ECDH_RSA_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_ECDHE_RSA_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_ECDH_Anon_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_ECDHE_PSK_WITH_RC4_128_SHA and
+               Suite /= Tls_Parameters::TLS_DHE_RSA_WITH_AES_256_CCM_8 and
+               Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC and
+               Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC and
+               Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_28147_CNT_IMIT and
+               Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_L and
+               Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_MAGMA_MGM_L and
+               Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_S and
+               Suite /= Tls_Parameters::TLS_GOSTR341112_256_WITH_MAGMA_MGM_S;
       end message;
 
    type Cipher_Suites_DTLS is sequence of Cipher_Suite_DTLS;
@@ -489,8 +500,9 @@ package TLS_Handshake is
          Legacy_Version : TLS_Common::Protocol_Version
             -- For compatibility reasons both TLS 1.3 and DTLS 1.3 require
             -- indicating the version 1.2 here.
-            if (Legacy_Version = Tls_Common::TLS_1_2
-               or Legacy_Version = Tls_Common::DTLS_1_2);
+            then Random
+               if (Legacy_Version = Tls_Common::TLS_1_2
+                  or Legacy_Version = Tls_Common::DTLS_1_2);
          Random : Opaque
             with Size => 32 * 8;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length;
@@ -580,8 +592,9 @@ package TLS_Handshake is
          Legacy_Version : TLS_Common::Protocol_Version
             -- For compatibility reasons both TLS 1.3 and DTLS 1.3 require
             -- indicating the version 1.2 here.
-            if (Legacy_Version = Tls_Common::TLS_1_2
-               or Legacy_Version = Tls_Common::DTLS_1_2);
+            then Random
+               if (Legacy_Version = Tls_Common::TLS_1_2
+                  or Legacy_Version = Tls_Common::DTLS_1_2);
          Random : Opaque
             with Size => 32 * 8;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length;

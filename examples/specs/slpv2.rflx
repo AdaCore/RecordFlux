@@ -108,7 +108,8 @@ package SLPv2 is
          SLP_SPI_String_Length : U16;
          SLP_SPI_String : Opaque
             with Size => SLP_SPI_String_Length * 8
-            if (8 * Authentication_Block_Length >= (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1));
+            then Structured_Authentication_Block
+               if (8 * Authentication_Block_Length >= (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1));
          Structured_Authentication_Block : Opaque
             with Size => 8 * Authentication_Block_Length - (SLP_SPI_String'Last - Block_Structure_Descriptor'First + 1);
       end message;

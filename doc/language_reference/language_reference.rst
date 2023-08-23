@@ -147,7 +147,6 @@ Additional `then clauses <#grammar-token-then_clause>`_ enable the definition of
    type_name: `qualified_name`
    field: field_`name` : `type_name` [ ( `type_argument` { , `type_argument` } ) ]
         :  [ with `aspects` ]
-        :  [ if `condition` ]
         :  { `then_clause` } ;
    type_argument: `named_argument`
    null_field: null `then_clause` ;
@@ -185,9 +184,6 @@ Optionally, a then clause can contain a condition under which the corresponding 
 These aspects can also be specified for the field directly.
 Each aspect can be specified either for the field or in all incoming then clauses, but not in both.
 The condition can refer to previous fields (including the field containing the then clause).
-A condition can also be added for the field directly.
-A field condition is equivalent to adding a condition to all then clauses.
-If a field condition as well as a condition at a then clause exists, both conditions are combined by a logical conjunction.
 If required, a null field can be used to specify the size of the first field in the message.
 An empty message can be represented by a null message.
 

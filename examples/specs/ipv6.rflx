@@ -120,7 +120,8 @@ package IPv6 is
    type Routing_Header_Type_2 is
       message
          Segments_Left : Segments_Count
-            if Segments_Left = 1;
+            then Reserved
+               if Segments_Left = 1;
          Reserved : Reserved_32;
          Home_Address : Address;
       end message;

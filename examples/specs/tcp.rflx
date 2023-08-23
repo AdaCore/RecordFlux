@@ -88,7 +88,8 @@ package TCP is
          Sequence_Number : Sequence_Number;
          Acknowledgment_Number : Acknowledgment_Number;
          Data_Offset : Data_Offset
-            if Segment_Length >= Data_Offset * 4;
+            then Reserved
+               if Segment_Length >= Data_Offset * 4;
          Reserved : Reserved;
          NS : Boolean;  -- Nonce Sum (RFC 3540)
          CWR : Boolean; -- Congestion Window Reduced (RFC 3168)
@@ -102,10 +103,12 @@ package TCP is
          Window : Window;
          Checksum : Checksum;
          Urgent_Pointer : Urgent_Pointer
-            if URG = True or (URG = False and Urgent_Pointer = 0);
+            then Options
+               if URG = True or (URG = False and Urgent_Pointer = 0);
          Options : Options
             with Size => (Data_Offset * 32) - (Urgent_Pointer'Last - Source_Port'First + 1)
-            if (Options'Last - Source_Port'First + 1) mod 32 = 0;
+            then Data
+               if (Options'Last - Source_Port'First + 1) mod 32 = 0;
          Data : Opaque
             with Size => (Segment_Length * 8) - (Data_Offset * 32);
       end message;

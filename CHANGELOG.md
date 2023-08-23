@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Support for SPARK Pro Wavefront 20230905 (eng/recordflux/RecordFlux#1409)
+- Short form field conditions (eng/recordflux/RecordFlux#617)
 
 ## [0.14.0] - 2023-09-26
 

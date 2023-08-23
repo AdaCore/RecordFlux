@@ -311,8 +311,8 @@ def test_message_with_optional_field_based_on_message_size(tmp_path: Path) -> No
 @pytest.mark.parametrize(
     "aspects",
     [
-        "with Size => Test::T'Size if A = Test::T'Size",
-        "with Size => A'Size if A = A'Size",
+        "with Size => Test::T'Size then null if A = Test::T'Size",
+        "with Size => A'Size then null if A = A'Size",
     ],
 )
 def test_size_attribute(tmp_path: Path, aspects: str) -> None:
@@ -348,7 +348,8 @@ def test_message_size_calculation(tmp_path: Path) -> None:
                  B : T;
                  C : Opaque
                     with Size => A * 8
-                    if Message'Size = A * 8 + (B'Last - A'First + 1);
+                    then null
+                       if Message'Size = A * 8 + (B'Last - A'First + 1);
               end message;
 
         end Test;
@@ -487,10 +488,12 @@ def test_message_field_conditions_on_corresponding_fields(tmp_path: Path) -> Non
            type M is
               message
                  A : T
-                    if A = 1;
+                    then B
+                       if A = 1;
                  B : Opaque
                     with Size => A * 16
-                    if B = [2, 3] and B'Size = 16;
+                    then C
+                       if B = [2, 3] and B'Size = 16;
                  C : T;
               end message;
 
@@ -511,7 +514,8 @@ def test_message_field_conditions_on_subsequent_fields(tmp_path: Path) -> None:
                  B : Opaque
                     with Size => A * 16;
                  C : T
-                    if A = 1 and B = [2, 3] and B'Size = 16;
+                    then null
+                       if A = 1 and B = [2, 3] and B'Size = 16;
               end message;
 
         end Test;
@@ -644,7 +648,8 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
            type M1 is
               message
                  Size : Payload_Size
-                    if Size mod 8 = 0;
+                    then Payload
+                       if Size mod 8 = 0;
                  Payload : Opaque
                     with Size => Size;
               end message;

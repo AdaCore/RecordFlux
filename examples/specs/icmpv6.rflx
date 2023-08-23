@@ -106,7 +106,8 @@ package ICMPv6 is
                -- Eng/RecordFlux/RecordFlux#1227
                with Size => Message'Last - Sequence_Number'Last;
          Data : Opaque
-            if Message'Size >= 64 and Message'Size <= 8 * 1280;
+            then null
+               if Message'Size >= 64 and Message'Size <= 8 * 1280;
       end message;
 
 end ICMPv6;

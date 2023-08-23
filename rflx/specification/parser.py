@@ -1231,13 +1231,24 @@ def create_message_structure(
             structure,
             *extract_aspect(field.f_aspects),
         )
-        merge_field_condition(
-            field_identifiers[i],
-            structure,
-            create_bool_expression(error, field.f_condition, filename)
-            if field.f_condition
-            else expr.TRUE,
-        )
+        if field.f_condition:
+            error.extend(
+                [
+                    (
+                        "short form condition is not supported anymore",
+                        Subsystem.PARSER,
+                        Severity.ERROR,
+                        node_location(field.f_condition, filename),
+                    ),
+                    (
+                        "add condition to all outgoing links of "
+                        f'field "{field_identifiers[i]}" instead',
+                        Subsystem.PARSER,
+                        Severity.INFO,
+                        node_location(field.f_condition, filename),
+                    ),
+                ],
+            )
 
     return structure
 
@@ -1295,20 +1306,6 @@ def merge_field_aspects(
                             ),
                         ],
                     )
-
-
-def merge_field_condition(
-    field_identifier: ID,
-    structure: Sequence[model.Link],
-    condition: expr.Expr,
-) -> None:
-    if condition != expr.TRUE:
-        for l in (l for l in structure if l.source.identifier == field_identifier):
-            l.condition = (
-                expr.And(condition, l.condition, location=l.condition.location)
-                if l.condition != expr.TRUE
-                else condition
-            )
 
 
 def check_duplicate_aspect(

@@ -2626,24 +2626,6 @@ def test_create_model_byteorder(spec: str, byte_order: ByteOrder) -> None:
         type M is
            message
               A : T
-                 if A > 10
-                 then B
-                    if A < 100;
-              B : T;
-           end message;
-        """,
-        """\
-        type M is
-           message
-              A : T
-                 if A > 10 and A < 100;
-              B : T;
-           end message;
-        """,
-        """\
-        type M is
-           message
-              A : T
                  then B
                     if A > 10 and A < 100;
               B : T;
@@ -2775,24 +2757,15 @@ def test_message_field_size(spec: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("field_a", "link", "field_b"),
+    ("link", "field_b"),
     [
-        ("", "with First => A'First, Size => 8 if A > 10 and A < 100", ""),
-        ("if A > 10", "with First => A'First, Size => 8 if A < 100", ""),
-        ("if A > 10 and A < 100", "with First => A'First, Size => 8", ""),
-        ("", "with First => A'First if A > 10 and A < 100", "with Size => 8"),
-        ("if A > 10", "with First => A'First if A < 100", "with Size => 8"),
-        (" if A > 10 and A < 100", "with First => A'First", "with Size => 8"),
-        ("", "with Size => 8 if A > 10 and A < 100", "with First => A'First"),
-        ("if A > 10", "with Size => 8 if A < 100", "with First => A'First"),
-        ("if A > 10 and A < 100", "with Size => 8", "with First => A'First"),
-        ("", "if A > 10 and A < 100", "with First => A'First, Size => 8"),
-        ("if A > 10", "if A < 100", "with First => A'First, Size => 8"),
-        ("if A > 10 and A < 100", "", "with First => A'First, Size => 8"),
+        ("with First => A'First if A > 10 and A < 100", "with Size => 8"),
+        ("with First => A'First, Size => 8 if A > 10 and A < 100", ""),
+        ("with Size => 8 if A > 10 and A < 100", "with First => A'First"),
+        ("if A > 10 and A < 100", "with First => A'First, Size => 8"),
     ],
 )
-def test_message_field_condition_and_aspects(field_a: str, link: str, field_b: str) -> None:
-    field_a = f"\n                    {field_a}" if field_a else ""
+def test_message_field_condition_and_aspects(link: str, field_b: str) -> None:
     link = f"\n                       {link}" if link else ""
     field_b = f"\n                    {field_b}" if field_b else ""
     assert_messages_string(
@@ -2801,7 +2774,7 @@ def test_message_field_condition_and_aspects(field_a: str, link: str, field_b: s
            type T is range 0 .. 255 with Size => 8;
            type M is
               message
-                 A : T{field_a}
+                 A : T
                     then B{link};
                  B : Opaque{field_b};
               end message;
@@ -2841,7 +2814,8 @@ def test_parameterized_messages() -> None:
               message
                  F : Opaque
                     with Size => P * 8
-                    if P < 100;
+                    then null
+                       if P < 100;
               end message;
 
            type M_S is
@@ -2905,38 +2879,38 @@ def test_parameterized_messages() -> None:
         (
             "",
             r"^"
-            r"<stdin>:14:14: model: error: missing argument\n"
+            r"<stdin>:15:14: model: error: missing argument\n"
             r'<stdin>:5:14: model: info: expected argument for parameter "P"'
             r"$",
         ),
         (
             " (Q => 16)",
             r"^"
-            r'<stdin>:14:19: model: error: unexpected argument "Q"\n'
-            r'<stdin>:14:19: model: info: expected argument for parameter "P"'
+            r'<stdin>:15:19: model: error: unexpected argument "Q"\n'
+            r'<stdin>:15:19: model: info: expected argument for parameter "P"'
             r"$",
         ),
         (
             " (P => 16, Q => 16)",
             r"^"
-            r'<stdin>:14:28: model: error: unexpected argument "Q"\n'
-            r"<stdin>:14:28: model: info: expected no argument"
+            r'<stdin>:15:28: model: error: unexpected argument "Q"\n'
+            r"<stdin>:15:28: model: info: expected no argument"
             r"$",
         ),
         (
             " (Q => 16, P => 16)",
             r"^"
-            r'<stdin>:14:19: model: error: unexpected argument "Q"\n'
-            r'<stdin>:14:19: model: info: expected argument for parameter "P"\n'
-            r'<stdin>:14:28: model: error: unexpected argument "P"\n'
-            r"<stdin>:14:28: model: info: expected no argument"
+            r'<stdin>:15:19: model: error: unexpected argument "Q"\n'
+            r'<stdin>:15:19: model: info: expected argument for parameter "P"\n'
+            r'<stdin>:15:28: model: error: unexpected argument "P"\n'
+            r"<stdin>:15:28: model: info: expected no argument"
             r"$",
         ),
         (
             " (P => 16, P => 16)",
             r"^"
-            r'<stdin>:14:28: model: error: unexpected argument "P"\n'
-            r"<stdin>:14:28: model: info: expected no argument"
+            r'<stdin>:15:28: model: error: unexpected argument "P"\n'
+            r"<stdin>:15:28: model: info: expected no argument"
             r"$",
         ),
     ],
@@ -2955,7 +2929,8 @@ def test_parse_error_invalid_arguments_for_parameterized_messages(
               message
                  F : Opaque
                     with Size => P * 8
-                    if P < 100;
+                    then null
+                       if P < 100;
               end message;
 
            type M is
@@ -3540,4 +3515,21 @@ def test_parse_error_bool_expression_in_math_context(expression: str, message: s
         end Test;
         """,
         message,
+    )
+
+
+def test_parse_error_short_form_condition() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type U8 is range 0 .. 255 with Size => 8;
+           type M is
+              message
+                 A : U8
+                    if A = 42;
+              end message;
+        end Test;
+        """,
+        r"^<stdin>:6:16: parser: error: short form condition is not supported anymore\n"
+        r'<stdin>:6:16: parser: info: add condition to all outgoing links of field "A" instead$',
     )
