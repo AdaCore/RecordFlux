@@ -70,10 +70,49 @@ Make targets for common development tasks are:
 
 Additional tools can be found in ``tools/``.
 
+VS Code extension
+=================
+
+To build the VS Code extension and install it to VS Code there are several options.
+Below are two possible workflows.
+
+Option 1
+--------
+
+To build the `recordflux.vsix` package and install it to VS Code directly in one step execute the following command at the project root:
+
+.. code:: console
+
+   make -C ide/vscode install
+
+**Note:**
+In this workflow the editable installation of RecordFlux is not made aware of the built extension.
+
+Option 2
+--------
+
+Alternatively, execute the following command at the project root to just build the `recordflux.vsix` package:
+
+.. code:: console
+
+   make -C ide/vscode dist
+
+Then, make this available to the editable installation of RecordFlux by executing:
+
+.. code:: console
+
+   make install_devel
+
+Finally, use the dedicated `rflx install` sub-command to install the extension into VS Code:
+
+.. code:: console
+
+   rflx install vscode
+
 Code Design Guidelines
 ======================
 
-The following guidelines should be followed for clearity and consistency throughout the project:
+The following guidelines should be followed for clarity and consistency throughout the project:
 
 - The formatting of error messages should be consistent. An error message starts with a lowercase letter and identifiers are highlighted by double quotes.
 - Private functions are prefered over inner functions. Long inner functions can impede the comprehension of a function.
