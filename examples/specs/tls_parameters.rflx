@@ -1,7 +1,7 @@
 -- AUTOMATICALLY GENERATED. DO NOT EDIT.
--- Generation date: 2022-10-05
+-- Generation date: 2023-08-24
 -- Transport Layer Security (TLS) Parameters
--- Registry last updated on 2021-06-02
+-- Registry last updated on 2023-07-19
 
 package Tls_Parameters is
 
@@ -35,11 +35,11 @@ package Tls_Parameters is
        Ecdsa_Fixed_Ecdh => 66,
 
        -- dtls = Y
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        Gost_Sign256 => 67,
 
        -- dtls = Y
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        Gost_Sign512 => 68)
    with Size => 8, Always_Valid;
 
@@ -85,7 +85,7 @@ package Tls_Parameters is
        -- dtls = Y
        -- rec = N
        -- Ref: rfc5469
-       -- xref = SC-tls-des-idea-ciphers-to-historic
+       -- xref = status-change-tls-des-idea-ciphers-to-historic
        TLS_RSA_WITH_IDEA_CBC_SHA => 16#0007#,
 
        -- dtls = Y
@@ -96,7 +96,7 @@ package Tls_Parameters is
        -- dtls = Y
        -- rec = N
        -- Ref: rfc5469
-       -- xref = SC-tls-des-idea-ciphers-to-historic
+       -- xref = status-change-tls-des-idea-ciphers-to-historic
        TLS_RSA_WITH_DES_CBC_SHA => 16#0009#,
 
        -- dtls = Y
@@ -112,7 +112,7 @@ package Tls_Parameters is
        -- dtls = Y
        -- rec = N
        -- Ref: rfc5469
-       -- xref = SC-tls-des-idea-ciphers-to-historic
+       -- xref = status-change-tls-des-idea-ciphers-to-historic
        TLS_DH_DSS_WITH_DES_CBC_SHA => 16#000C#,
 
        -- dtls = Y
@@ -128,7 +128,7 @@ package Tls_Parameters is
        -- dtls = Y
        -- rec = N
        -- Ref: rfc5469
-       -- xref = SC-tls-des-idea-ciphers-to-historic
+       -- xref = status-change-tls-des-idea-ciphers-to-historic
        TLS_DH_RSA_WITH_DES_CBC_SHA => 16#000F#,
 
        -- dtls = Y
@@ -144,7 +144,7 @@ package Tls_Parameters is
        -- dtls = Y
        -- rec = N
        -- Ref: rfc5469
-       -- xref = SC-tls-des-idea-ciphers-to-historic
+       -- xref = status-change-tls-des-idea-ciphers-to-historic
        TLS_DHE_DSS_WITH_DES_CBC_SHA => 16#0012#,
 
        -- dtls = Y
@@ -160,7 +160,7 @@ package Tls_Parameters is
        -- dtls = Y
        -- rec = N
        -- Ref: rfc5469
-       -- xref = SC-tls-des-idea-ciphers-to-historic
+       -- xref = status-change-tls-des-idea-ciphers-to-historic
        TLS_DHE_RSA_WITH_DES_CBC_SHA => 16#0015#,
 
        -- dtls = Y
@@ -188,7 +188,7 @@ package Tls_Parameters is
        -- dtls = Y
        -- rec = N
        -- Ref: rfc5469
-       -- xref = SC-tls-des-idea-ciphers-to-historic
+       -- xref = status-change-tls-des-idea-ciphers-to-historic
        TLS_DH_Anon_WITH_DES_CBC_SHA => 16#001A#,
 
        -- dtls = Y
@@ -813,6 +813,16 @@ package Tls_Parameters is
        -- Ref: rfc8446
        -- xref = IESG Action 2018-08-16
        TLS_AES_128_CCM_8_SHA256 => 16#1305#,
+
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-irtf-cfrg-aegis-aead-00
+       TLS_AEGIS_256_SHA384 => 16#1306#,
+
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-irtf-cfrg-aegis-aead-00
+       TLS_AEGIS_128L_SHA256 => 16#1307#,
 
        -- dtls = Y
        -- rec = N
@@ -1722,47 +1732,47 @@ package Tls_Parameters is
 
        -- dtls = Y
        -- rec = N
-       -- Ref: draft-camwinget-tls-ts13-macciphersuites
+       -- Ref: rfc9150
        TLS_SHA256_SHA256 => 16#C0B4#,
 
        -- dtls = Y
        -- rec = N
-       -- Ref: draft-camwinget-tls-ts13-macciphersuites
+       -- Ref: rfc9150
        TLS_SHA384_SHA384 => 16#C0B5#,
 
        -- dtls = N
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC => 16#C100#,
 
        -- dtls = N
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC => 16#C101#,
 
        -- dtls = N
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        TLS_GOSTR341112_256_WITH_28147_CNT_IMIT => 16#C102#,
 
        -- dtls = N
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_L => 16#C103#,
 
        -- dtls = N
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        TLS_GOSTR341112_256_WITH_MAGMA_MGM_L => 16#C104#,
 
        -- dtls = N
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_S => 16#C105#,
 
        -- dtls = N
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        TLS_GOSTR341112_256_WITH_MAGMA_MGM_S => 16#C106#,
 
        -- dtls = Y
@@ -1843,11 +1853,11 @@ package Tls_Parameters is
        Heartbeat => 24,
 
        -- dtls = Y
-       -- Ref: draft-ietf-tls-dtls-connection-id
-       Tls12_Cid_TEMPORARY_Registered_2019_07_02_Extension_Registered_2020_07_28_Expires_2021_07_02 => 25,
+       -- Ref: rfc9146
+       Tls12_Cid => 25,
 
        -- dtls = Y
-       -- Ref: RFC-ietf-tls-dtls13-43
+       -- Ref: rfc9147
        ACK => 26)
    with Size => 8, Always_Valid;
 
@@ -1913,8 +1923,8 @@ package Tls_Parameters is
        Decrypt_Error => 51,
 
        -- dtls = Y
-       -- Ref: RFC-ietf-tls-dtls13-43
-       The_Too_Many_Cids_Requested => 52,
+       -- Ref: rfc9147
+       Too_Many_Cids_Requested => 52,
 
        -- dtls = Y
        -- Ref: rfc8446
@@ -1990,12 +2000,12 @@ package Tls_Parameters is
        Encrypted_Extensions => 8,
 
        -- dtls = Y
-       -- Ref: RFC-ietf-tls-dtls13-43
-       RequestConnectionId => 9,
+       -- Ref: rfc9147
+       Request_Connection_Id => 9,
 
        -- dtls = Y
-       -- Ref: RFC-ietf-tls-dtls13-43
-       NewConnectionId => 10,
+       -- Ref: rfc9147
+       New_Connection_Id => 10,
 
        -- dtls = Y
        -- Ref: rfc8446
@@ -2008,6 +2018,11 @@ package Tls_Parameters is
        -- dtls = Y
        -- Ref: rfc8446
        Certificate_Verify => 15,
+
+       -- dtls = Y
+       -- Ref: rfc9261
+       -- comment = Used in TLS versions prior to 1.3.
+       Client_Certificate_Request => 17,
 
        -- dtls = Y
        -- Ref: rfc8446
@@ -2200,37 +2215,37 @@ package Tls_Parameters is
 
        -- dtls = Y
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        GC256A => 34,
 
        -- dtls = Y
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        GC256B => 35,
 
        -- dtls = Y
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        GC256C => 36,
 
        -- dtls = Y
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        GC256D => 37,
 
        -- dtls = Y
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        GC512A => 38,
 
        -- dtls = Y
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        GC512B => 39,
 
        -- dtls = Y
        -- rec = N
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: rfc9189
        GC512C => 40,
 
        -- dtls = N
@@ -2262,6 +2277,18 @@ package Tls_Parameters is
        -- rec = N
        -- Ref: rfc7919
        Ffdhe8192 => 260,
+
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-tls-westerbaan-xyber768d00-02
+       -- comment = Pre-standards version of Kyber768
+       X25519Kyber768Draft00 => 25497,
+
+       -- dtls = Y
+       -- rec = N
+       -- Ref: draft-kwiatkowski-tls-ecdhe-kyber-01
+       -- comment = Combining secp256r1 ECDH with pre-standards version of Kyber768
+       SecP256r1Kyber768Draft00 => 25498,
 
        -- dtls = Y
        -- rec = N
@@ -2344,11 +2371,13 @@ package Tls_Parameters is
        Ed448_8 => 8,
 
        -- dtls = Y
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: 1
+       -- Ref: rfc9189
        Gostr34102012_256 => 64,
 
        -- dtls = Y
-       -- Ref: draft-smyshlyaev-tls12-gost-suites
+       -- Ref: 1
+       -- Ref: rfc9189
        Gostr34102012_512 => 65)
    with Size => 8, Always_Valid;
 
@@ -2437,12 +2466,14 @@ package Tls_Parameters is
    with Size => 8, Always_Valid;
 
    type TLS_SignatureScheme is
-      (-- recommended = Y
+      (-- recommended = N
        -- Ref: rfc8446
+       -- Ref: rfc9155
        Rsa_Pkcs1_Sha1 => 16#0201#,
 
-       -- recommended = Y
+       -- recommended = N
        -- Ref: rfc8446
+       -- Ref: rfc9155
        Ecdsa_Sha1 => 16#0203#,
 
        -- recommended = Y
@@ -2502,31 +2533,31 @@ package Tls_Parameters is
        Sm2sig_Sm3 => 16#0708#,
 
        -- recommended = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        Gostr34102012_256a => 16#0709#,
 
        -- recommended = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        Gostr34102012_256b => 16#070A#,
 
        -- recommended = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        Gostr34102012_256c => 16#070B#,
 
        -- recommended = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        Gostr34102012_256d => 16#070C#,
 
        -- recommended = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        Gostr34102012_512a => 16#070D#,
 
        -- recommended = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        Gostr34102012_512b => 16#070E#,
 
        -- recommended = N
-       -- Ref: draft-smyshlyaev-tls13-gost-suites
+       -- Ref: rfc9367
        Gostr34102012_512c => 16#070F#,
 
        -- recommended = Y
@@ -2583,5 +2614,13 @@ package Tls_Parameters is
        -- Ref: rfc8446
        Psk_Dhe_Ke => 1)
    with Size => 8, Always_Valid;
+
+   type TLS_KDF_Identifiers is
+      (-- Ref: rfc5869
+       HKDF_SHA256 => 16#0001#,
+
+       -- Ref: rfc5869
+       HKDF_SHA384 => 16#0002#)
+   with Size => 16, Always_Valid;
 
 end Tls_Parameters;
