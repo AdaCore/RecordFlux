@@ -23,16 +23,9 @@ workflow:
       when: never
     - if: $CI_COMMIT_BRANCH
 
-.ci_job:
-  rules:
-    - if: $SCHEDULE == null || $SCHEDULE == "nightly"
-
 ##################
 # Initialization #
 ##################
-
-.initialization:
-  extends: .ci_job
 
 .setup_alire: &setup_alire
     - curl -Ls https://github.com/alire-project/alire/releases/download/v1.2.2/alr-1.2.2-x86_64.AppImage -o /tmp/alr.AppImage
@@ -65,7 +58,6 @@ workflow:
     - make init install
 
 setup:
-  extends: .initialization
   services:
      - image:recordflux
      - cpu:2
@@ -98,9 +90,10 @@ setup:
 ###########
 
 .testing:
-  extends: .ci_job
   needs:
     - setup
+  rules:
+    - if: $SCHEDULE == null || $SCHEDULE == "nightly"
 
 .setup_python: &setup_python
     - export PATH=/it/e3/bin:$PATH
