@@ -1,0 +1,420 @@
+-- AUTOMATICALLY GENERATED. DO NOT EDIT.
+-- Generation date: 2023-09-10
+-- Transport Layer Security (TLS) Extensions
+-- Registry last updated on 2023-07-13
+
+package Tls_Extensiontype_Values is
+
+   type TLS_ExtensionType_Values is
+      (-- tls13 = CH, EE, CR
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc6066
+       -- Ref: rfc9261
+       Server_Name => 0,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc6066
+       -- Ref: rfc8449
+       Max_Fragment_Length => 1,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc6066
+       Client_Certificate_Url => 2,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc6066
+       Trusted_Ca_Keys => 3,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc6066
+       -- xref = IESG Action 2018-08-16
+       Truncated_Hmac => 4,
+
+       -- tls13 = CH, CR, CT
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc6066
+       Status_Request => 5,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc4681
+       User_Mapping => 6,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc5878
+       Client_Authz => 7,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc5878
+       Server_Authz => 8,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc6091
+       Cert_Type => 9,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8422
+       -- Ref: rfc7919
+       Supported_Groups_Renamed_From_Elliptic_Curves => 10,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8422
+       Ec_Point_Formats => 11,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc5054
+       Srp => 12,
+
+       -- tls13 = CH, CR
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Signature_Algorithms => 13,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc5764
+       Use_Srtp => 14,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc6520
+       Heartbeat => 15,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc7301
+       Application_Layer_Protocol_Negotiation => 16,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc6961
+       Status_Request_V2 => 17,
+
+       -- tls13 = CH, CR, CT
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc6962
+       Signed_Certificate_Timestamp => 18,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc7250
+       Client_Certificate_Type => 19,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc7250
+       Server_Certificate_Type => 20,
+
+       -- tls13 = CH
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc7685
+       Padding => 21,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc7366
+       Encrypt_Then_Mac => 22,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc7627
+       Extended_Master_Secret => 23,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8472
+       Token_Binding => 24,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc7924
+       Cached_Info => 25,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: draft-gutmann-tls-lts
+       Tls_Lts => 26,
+
+       -- tls13 = CH, CR
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8879
+       Compress_Certificate => 27,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8449
+       Record_Size_Limit => 28,
+
+       -- tls13 = CH
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc8492
+       Pwd_Protect => 29,
+
+       -- tls13 = CH
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc8492
+       Pwd_Clear => 30,
+
+       -- tls13 = CH, SH, HRR
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc8492
+       Password_Salt => 31,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc8672
+       Ticket_Pinning => 32,
+
+       -- tls13 = CH, SH
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc8773
+       Tls_Cert_With_Extern_Psk => 33,
+
+       -- tls13 = CH, CR, CT
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc9345
+       Delegated_Credential => 34,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc5077
+       -- Ref: rfc8447
+       Session_Ticket_Renamed_From_SessionTicket_TLS => 35,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = N
+       -- xref = ETSI TS 103 523-2
+       TLMSP => 36,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = N
+       -- xref = ETSI TS 103 523-2
+       TLMSP_Proxying => 37,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = N
+       -- xref = ETSI TS 103 523-2
+       TLMSP_Delegate => 38,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8870
+       Supported_Ekt_Ciphers => 39,
+
+       -- tls13 = CH, SH
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Pre_Shared_Key => 41,
+
+       -- tls13 = CH, EE, NST
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Early_Data => 42,
+
+       -- tls13 = CH, SH, HRR
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Supported_Versions => 43,
+
+       -- tls13 = CH, HRR
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Cookie => 44,
+
+       -- tls13 = CH
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Psk_Key_Exchange_Modes => 45,
+
+       -- tls13 = CH, CR
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Certificate_Authorities => 47,
+
+       -- tls13 = CR
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Oid_Filters => 48,
+
+       -- tls13 = CH
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Post_Handshake_Auth => 49,
+
+       -- tls13 = CH, CR
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Signature_Algorithms_Cert => 50,
+
+       -- tls13 = CH, SH, HRR
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8446
+       Key_Share => 51,
+
+       -- tls13 = CH, CR, CT
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc9162
+       Transparency_Info => 52,
+
+       -- tls13 = -
+       -- dtls-only = Y
+       -- rec = N
+       -- Ref: rfc9146
+       Connection_Id_Deprecated => 53,
+
+       -- tls13 = CH, SH
+       -- dtls-only = Y
+       -- rec = N
+       -- Ref: rfc9146
+       Connection_Id => 54,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8844
+       External_Id_Hash => 55,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc8844
+       External_Session_Id => 56,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc9001
+       Quic_Transport_Parameters => 57,
+
+       -- tls13 = CH, EE
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc9149
+       Ticket_Request => 58,
+
+       -- tls13 = CH, CT
+       -- dtls-only = N
+       -- rec = N
+       -- Ref: rfc9102
+       -- Ref: 6860
+       Dnssec_Chain => 59,
+
+       -- tls13 = CH, HRR, SH
+       -- dtls-only = Y
+       -- rec = N
+       -- Ref: draft-pismenny-tls-dtls-plaintext-sequence-number-01
+       Sequence_Number_Encryption_Algorithms => 60,
+
+       -- tls13 = -
+       -- dtls-only = N
+       -- rec = Y
+       -- Ref: rfc5746
+       Renegotiation_Info => 65281)
+   with Size => 16, Always_Valid;
+
+   type TLS_Certificate_Types is
+      (-- rec = Y
+       -- Ref: rfc6091
+       -- Ref: 5976
+       -- comment = Was X.509 before TLS 1.3.
+       X509 => 0,
+
+       -- rec = Y
+       -- Ref: rfc7250
+       Raw_Public_Key => 2,
+
+       -- rec = N
+       -- Ref: rfc8902
+       TLS_Certificate_Types_1609Dot2 => 3)
+   with Size => 8, Always_Valid;
+
+   type TLS_Certificate_Status_Types is
+      (-- Ref: rfc6066
+       -- Ref: rfc6961
+       Ocsp => 1)
+   with Size => 8, Always_Valid;
+
+   -- type TLS_Application_Layer_Protocol_Negotiation_ALPN_Protocol_IDs
+   -- ... Skipped due to unsupported content in the registry ...
+
+   type TLS_CachedInformationType_Values is
+      (-- Ref: rfc7924
+       Cert => 1,
+
+       -- Ref: rfc7924
+       Cert_Req => 2)
+   with Size => 8, Always_Valid;
+
+   type TLS_Certificate_Compression_Algorithm_IDs is
+      (-- Ref: rfc8879
+       Zlib => 1,
+
+       -- Ref: rfc8879
+       Brotli => 2,
+
+       -- Ref: rfc8879
+       Zstd => 3)
+   with Size => 16, Always_Valid;
+
+end Tls_Extensiontype_Values;
