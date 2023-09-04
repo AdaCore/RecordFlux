@@ -71,7 +71,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID, StrID, id_generator
 from rflx.model import Integer
-from tests.data.models import ENUMERATION
+from tests.data import models
 from tests.utils import assert_equal, check_regex
 
 EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
@@ -3069,7 +3069,7 @@ def test_case_findall() -> None:
 
 
 def test_case_type() -> None:
-    c1 = Variable("C", type_=ENUMERATION.type_)
+    c1 = Variable("C", type_=models.enumeration().type_)
     assert_type(CaseExpr(c1, [([ID("Zero"), ID("One")], TRUE), ([ID("Two")], FALSE)]), rty.BOOLEAN)
     assert_type(
         CaseExpr(c1, [([ID("Zero"), ID("One")], Number(1)), ([ID("Two")], Number(2))]),
@@ -3106,7 +3106,7 @@ def test_case_simplified() -> None:
 def test_case_invalid() -> None:
     assert_type_error(
         CaseExpr(
-            Variable("C", type_=ENUMERATION.type_),
+            Variable("C", type_=models.enumeration().type_),
             [([ID("Zero")], TRUE), ([ID("One")], FALSE)],
             location=Location((1, 2)),
         ),
@@ -3115,7 +3115,7 @@ def test_case_invalid() -> None:
     )
     assert_type_error(
         CaseExpr(
-            Variable("C", type_=ENUMERATION.type_),
+            Variable("C", type_=models.enumeration().type_),
             [([ID("Zero"), ID("One")], TRUE), ([ID("Two"), ID("Invalid")], FALSE)],
             location=Location((1, 2)),
         ),
@@ -3124,7 +3124,7 @@ def test_case_invalid() -> None:
     )
     assert_type_error(
         CaseExpr(
-            Variable("C", type_=ENUMERATION.type_),
+            Variable("C", type_=models.enumeration().type_),
             [
                 ([ID("Zero"), ID("One", location=Location((2, 2)))], TRUE),
                 ([ID("Two"), ID("One", location=Location((3, 2)))], FALSE),

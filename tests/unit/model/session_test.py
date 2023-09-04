@@ -21,15 +21,7 @@ from rflx.model import (
     declaration as decl,
     statement as stmt,
 )
-from tests.data.models import (
-    NULL_MESSAGE,
-    NULL_MESSAGE_IN_TLV_MESSAGE,
-    TLV_MESSAGE,
-    TLV_MESSAGES,
-    TLV_TAG,
-    TLV_TAGS,
-    UNIVERSAL_MESSAGE,
-)
+from tests.data import models
 from tests.utils import assert_equal, assert_session_model_error, get_test_model
 
 
@@ -80,7 +72,7 @@ def test_str() -> None:
                         BOOLEAN.identifier,
                     ),
                 ],
-                [BOOLEAN, TLV_MESSAGE],
+                [BOOLEAN, models.tlv_message()],
             ),
         ),
         textwrap.dedent(
@@ -407,7 +399,7 @@ def test_declared_variable() -> None:
         ],
         declarations=[decl.VariableDeclaration("Defined", "TLV::Tag")],
         parameters=[],
-        types=[TLV_TAG],
+        types=[models.tlv_tag()],
     )
 
 
@@ -492,7 +484,7 @@ def test_declared_local_variable_valid() -> None:
         ],
         declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
     )
 
 
@@ -522,7 +514,7 @@ def test_declared_local_variable_message_field() -> None:
         ],
         declarations=[decl.VariableDeclaration("Global", "TLV::Message")],
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
     )
 
 
@@ -801,7 +793,7 @@ def test_channel_read() -> None:
         parameters=[
             decl.ChannelDeclaration("Some_Channel", readable=True, writable=False),
         ],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
     )
 
 
@@ -822,7 +814,7 @@ def test_channel_write() -> None:
         parameters=[
             decl.ChannelDeclaration("Some_Channel", readable=False, writable=True),
         ],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
     )
 
 
@@ -840,7 +832,7 @@ def test_channel_read_undeclared() -> None:
         ],
         declarations=[decl.VariableDeclaration("Result", "TLV::Message")],
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
         regex=r'^<stdin>:10:20: model: error: undefined channel "Undeclared"$',
     )
 
@@ -863,7 +855,7 @@ def test_channel_read_invalid_type() -> None:
         ],
         declarations=[decl.VariableDeclaration("Result", "TLV::Message")],
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
         regex=(
             r"^"
             r"<stdin>:10:20: model: error: channel parameter must be a variable\n"
@@ -894,7 +886,7 @@ def test_channel_read_invalid_mode() -> None:
         parameters=[
             decl.ChannelDeclaration("Channel", readable=False, writable=True),
         ],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
         regex=(
             r"^"
             r"<stdin>:10:20: model: error: expected readable channel\n"
@@ -922,7 +914,7 @@ def test_channel_write_invalid_mode() -> None:
         parameters=[
             decl.ChannelDeclaration("Out_Channel", readable=True, writable=False),
         ],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
         regex=(
             r"^"
             r"<stdin>:10:20: model: error: expected writable channel\n"
@@ -948,7 +940,7 @@ def test_channel_attribute_has_data() -> None:
             decl.VariableDeclaration("Result", "Boolean"),
         ],
         parameters=[],
-        types=[BOOLEAN, TLV_MESSAGE],
+        types=[BOOLEAN, models.tlv_message()],
     )
 
 
@@ -1113,7 +1105,7 @@ def test_renaming() -> None:
             ),
         ],
         parameters=[],
-        types=[NULL_MESSAGE, TLV_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
+        types=[models.null_message(), models.tlv_message(), models.null_message_in_tlv_message()],
         regex=r"^<stdin>:10:20: model: error: renaming declarations not yet supported$",
     )
 
@@ -1148,7 +1140,11 @@ def test_renaming_invalid() -> None:
             ),
         ],
         parameters=[],
-        types=[UNIVERSAL_MESSAGE, TLV_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
+        types=[
+            models.universal_message(),
+            models.tlv_message(),
+            models.null_message_in_tlv_message(),
+        ],
         regex=(
             r"^"
             r'<stdin>:10:20: model: error: invalid renaming to "Universal_Message"\n'
@@ -1215,7 +1211,7 @@ def test_for_all() -> None:
         ],
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
-        types=[BOOLEAN, TLV_MESSAGES],
+        types=[BOOLEAN, models.tlv_messages()],
         regex=r"^<stdin>:10:20: model: error: quantified expressions not yet supported$",
     )
 
@@ -1242,7 +1238,7 @@ def test_append() -> None:
         ],
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
-        types=[TLV_TAG, TLV_MESSAGE, TLV_MESSAGES],
+        types=[models.tlv_tag(), models.tlv_message(), models.tlv_messages()],
     )
 
 
@@ -1287,7 +1283,7 @@ def test_append_message_unsupported() -> None:
             decl.VariableDeclaration("Element", "TLV::Message"),
         ],
         parameters=[],
-        types=[TLV_MESSAGE, TLV_MESSAGES],
+        types=[models.tlv_message(), models.tlv_messages()],
         regex=(
             r"^<stdin>:10:20: model: error: appending independently created message not supported\n"
             r"<stdin>:10:20: model: info: message aggregate should be used instead$"
@@ -1312,7 +1308,7 @@ def test_extend() -> None:
             decl.VariableDeclaration("Element", "TLV::Messages"),
         ],
         parameters=[],
-        types=[BOOLEAN, TLV_MESSAGES],
+        types=[BOOLEAN, models.tlv_messages()],
     )
 
 
@@ -1360,7 +1356,7 @@ def test_message_aggregate_with_undefined_parameter() -> None:
         ],
         declarations=[decl.VariableDeclaration("Data", "TLV::Message")],
         parameters=[],
-        types=[BOOLEAN, TLV_MESSAGE],
+        types=[BOOLEAN, models.tlv_message()],
         regex=r'^<stdin>:10:20: model: error: undefined variable "Undef"$',
     )
 
@@ -1426,7 +1422,7 @@ def test_comprehension() -> None:
             decl.VariableDeclaration("Result", "TLV::Tags"),
         ],
         parameters=[],
-        types=[BOOLEAN, TLV_MESSAGES, TLV_TAGS],
+        types=[BOOLEAN, models.tlv_messages(), models.tlv_tags()],
     )
 
 
@@ -1456,7 +1452,7 @@ def test_assignment_opaque_function_undef_parameter() -> None:
         parameters=[
             decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
         ],
-        types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
+        types=[BOOLEAN, OPAQUE, models.tlv_message()],
         regex=r'^<stdin>:10:20: model: error: undefined variable "UndefData"$',
     )
 
@@ -1485,7 +1481,7 @@ def test_assignment_opaque_function_result() -> None:
         parameters=[
             decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
         ],
-        types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
+        types=[BOOLEAN, OPAQUE, models.tlv_message()],
     )
 
 
@@ -1509,7 +1505,7 @@ def test_message_field_assignment_with_invalid_field_name() -> None:
             decl.VariableDeclaration("Message", "TLV::Message"),
         ],
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
         regex=r'^<stdin>:1:2: model: error: invalid message field "Invalid"$',
     )
 
@@ -1566,7 +1562,7 @@ def test_message_field_assignment_with_incompatible_field_type() -> None:
             decl.VariableDeclaration("Message", "TLV::Message"),
         ],
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
         regex=(
             r"^"
             r'<stdin>:1:2: model: error: expected enumeration type "TLV::Tag"\n'
@@ -1597,7 +1593,7 @@ def test_message_field_assignment_with_incompatible_variable_type() -> None:
             decl.VariableDeclaration("Message", "TLV::Tag"),
         ],
         parameters=[],
-        types=[TLV_TAG],
+        types=[models.tlv_tag()],
         regex=(
             r"^"
             r"<stdin>:1:2: model: error: expected message type\n"
@@ -1631,7 +1627,7 @@ def test_conversion() -> None:
             decl.VariableDeclaration("Converted", "Null::Message"),
         ],
         parameters=[],
-        types=[NULL_MESSAGE, TLV_MESSAGE, NULL_MESSAGE_IN_TLV_MESSAGE],
+        types=[models.null_message(), models.tlv_message(), models.null_message_in_tlv_message()],
     )
 
 
@@ -1659,7 +1655,7 @@ def test_conversion_undefined() -> None:
             decl.VariableDeclaration("Converted", "P::Undef", location=Location((10, 20))),
         ],
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
         regex=(
             r'^<stdin>:10:20: model: error: undefined type "P::Undef"\n'
             r'<stdin>:10:30: model: error: invalid conversion to "P::Undef"\n'
@@ -1693,7 +1689,7 @@ def test_conversion_invalid_argument() -> None:
             decl.VariableDeclaration("Converted", "TLV::Message"),
         ],
         parameters=[],
-        types=[OPAQUE, TLV_MESSAGE],
+        types=[OPAQUE, models.tlv_message()],
         regex=(
             r"^<stdin>:10:20: model: error: invalid argument for conversion,"
             r" expected message field$"
@@ -1725,7 +1721,7 @@ def test_conversion_invalid() -> None:
             decl.VariableDeclaration("Converted", "Null::Message"),
         ],
         parameters=[],
-        types=[NULL_MESSAGE, TLV_MESSAGE],
+        types=[models.null_message(), models.tlv_message()],
         regex=(
             r"^"
             r'<stdin>:10:20: model: error: invalid conversion to "Null::Message"\n'
@@ -1813,7 +1809,7 @@ def test_undefined_type_in_declarations(declarations: abc.Sequence[decl.BasicDec
         ],
         declarations=declarations,
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
         regex=r'^<stdin>:10:20: model: error: undefined type "Undefined"$',
     )
 
@@ -1854,7 +1850,7 @@ def test_undefined_type_in_local_declarations(
         ],
         declarations=[],
         parameters=[],
-        types=[TLV_MESSAGE],
+        types=[models.tlv_message()],
         regex=r'^<stdin>:10:20: model: error: undefined type "Undefined"$',
     )
 
@@ -1932,7 +1928,7 @@ def test_type_error_in_renaming_declaration() -> None:
             [
                 decl.VariableDeclaration(
                     "M",
-                    UNIVERSAL_MESSAGE.identifier,
+                    models.universal_message().identifier,
                     location=Location((1, 2)),
                 ),
             ],
@@ -1948,7 +1944,7 @@ def test_type_error_in_renaming_declaration() -> None:
                 stmt.Read(
                     "C1",
                     expr.MessageAggregate(
-                        UNIVERSAL_MESSAGE.identifier,
+                        models.universal_message().identifier,
                         {"Message_Type": expr.Variable("Universal::MT_Null")},
                     ),
                     location=Location((1, 2)),
@@ -2033,16 +2029,16 @@ def test_conflicting_actions(
             ),
         ],
         declarations=[
-            decl.VariableDeclaration("M1", UNIVERSAL_MESSAGE.identifier),
-            decl.VariableDeclaration("M2", UNIVERSAL_MESSAGE.identifier),
-            decl.VariableDeclaration("M3", UNIVERSAL_MESSAGE.identifier),
+            decl.VariableDeclaration("M1", models.universal_message().identifier),
+            decl.VariableDeclaration("M2", models.universal_message().identifier),
+            decl.VariableDeclaration("M3", models.universal_message().identifier),
             decl.VariableDeclaration("X", BOOLEAN.identifier),
         ],
         parameters=[
             decl.ChannelDeclaration("C1", readable=True, writable=True),
             decl.ChannelDeclaration("C2", readable=True, writable=True),
         ],
-        types=[BOOLEAN, UNIVERSAL_MESSAGE, *UNIVERSAL_MESSAGE.types.values()],
+        types=[BOOLEAN, models.universal_message(), *models.universal_message().types.values()],
         regex=rf"^{errors}$",
     )
 
@@ -2068,7 +2064,7 @@ def test_missing_exception_transition() -> None:
         ],
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
-        types=[TLV_TAG, TLV_MESSAGE, TLV_MESSAGES],
+        types=[models.tlv_tag(), models.tlv_message(), models.tlv_messages()],
         regex=r'^<stdin>:10:20: model: error: missing exception transition in state "Start"$',
     )
 
@@ -2100,7 +2096,7 @@ def test_missing_exception_transition() -> None:
                     ),
                 ],
             ),
-            [TLV_TAG],
+            [models.tlv_tag()],
             [decl.FunctionDeclaration("SubProg", [], "TLV::Tag")],
         ),
     ],
@@ -2148,7 +2144,7 @@ def test_resolving_of_function_calls() -> None:
         parameters=[
             decl.FunctionDeclaration("Func", [], "Boolean"),
         ],
-        types=[BOOLEAN, OPAQUE, TLV_MESSAGE],
+        types=[BOOLEAN, OPAQUE, models.tlv_message()],
     )
 
     global_decl = session.declarations[ID("Global")]
@@ -2835,7 +2831,7 @@ def test_message_assignment_from_function() -> None:
         ],
         declarations=[],
         parameters=[decl.FunctionDeclaration("SubProg", [], "Null::Message")],
-        types=[NULL_MESSAGE],
+        types=[models.null_message()],
         location=Location((1, 1)),
     )
 
@@ -2934,7 +2930,7 @@ def test_message_assignment_from_function() -> None:
                         BOOLEAN.identifier,
                     ),
                 ],
-                [BOOLEAN, TLV_MESSAGE],
+                [BOOLEAN, models.tlv_message()],
                 Location((1, 2)),
             ),
         ),
@@ -2943,7 +2939,7 @@ def test_message_assignment_from_function() -> None:
 def test_unchecked_session_checked(unchecked: UncheckedSession, expected: Session) -> None:
     assert (
         unchecked.checked(
-            [BOOLEAN, TLV_MESSAGE],
+            [BOOLEAN, models.tlv_message()],
         )
         == expected
     )

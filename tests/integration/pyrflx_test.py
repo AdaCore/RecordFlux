@@ -31,7 +31,7 @@ from rflx.model.model import Model
 from rflx.model.type_ import OPAQUE
 from rflx.pyrflx import MessageValue, Package, PyRFLX, PyRFLXError, TypeValue, utils
 from tests.const import CAPTURED_DIR, SPEC_DIR
-from tests.data.models import TLV_LENGTH, TLV_TAG
+from tests.data import models
 
 
 def test_ethernet_set_tltpid(ethernet_frame_value: MessageValue) -> None:
@@ -441,10 +441,14 @@ def test_tlv_message_with_not_operator() -> None:
             Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
             Link(Field("Value"), FINAL),
         ],
-        {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): OPAQUE},
+        {
+            Field("Tag"): models.tlv_tag(),
+            Field("Length"): models.tlv_length(),
+            Field("Value"): OPAQUE,
+        },
     )
 
-    model = PyRFLX(model=Model([TLV_TAG, TLV_LENGTH, message]))
+    model = PyRFLX(model=Model([models.tlv_tag(), models.tlv_length(), message]))
     pkg = model.package("TLV")
     msg = pkg.new_message("Message_With_Not_Operator")
     test_bytes = b"\x01\x00\x04\x00\x00\x00\x00"
@@ -480,7 +484,11 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
             Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
             Link(Field("Value"), FINAL),
         ],
-        {Field("Tag"): TLV_TAG, Field("Length"): TLV_LENGTH, Field("Value"): OPAQUE},
+        {
+            Field("Tag"): models.tlv_tag(),
+            Field("Length"): models.tlv_length(),
+            Field("Value"): OPAQUE,
+        },
     )
 
     with pytest.raises(
@@ -503,4 +511,4 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
             + "$"
         ),
     ):
-        PyRFLX(model=Model([TLV_TAG, TLV_LENGTH, message]))
+        PyRFLX(model=Model([models.tlv_tag(), models.tlv_length(), message]))

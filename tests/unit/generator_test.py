@@ -31,18 +31,6 @@ from tests.const import GENERATED_DIR
 from tests.data import models
 from tests.utils import assert_equal, assert_equal_code
 
-MODELS = [
-    models.DERIVATION_MODEL,
-    models.ENUMERATION_MODEL,
-    models.ETHERNET_MODEL,
-    models.EXPRESSION_MODEL,
-    models.NULL_MESSAGE_IN_TLV_MESSAGE_MODEL,
-    models.NULL_MODEL,
-    models.SEQUENCE_MODEL,
-    models.TLV_MODEL,
-    Model(models.FIXED_SIZE_SIMPLE_MESSAGE.dependencies),
-]
-
 MSG_TY = rty.Message("M")
 SEQ_TY = rty.Sequence("S", rty.Message("M"))
 
@@ -60,12 +48,12 @@ def test_unsupported_checksum(tmp_path: Path) -> None:
             r" \(consider --ignore-unsupported-checksum option\)$"
         ),
     ):
-        Generator().generate(models.TLV_WITH_CHECKSUM_MODEL, Integration(), tmp_path)
+        Generator().generate(models.tlv_with_checksum_model(), Integration(), tmp_path)
 
 
 def test_ignore_unsupported_checksum(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
     Generator(ignore_unsupported_checksum=True).generate(
-        models.TLV_WITH_CHECKSUM_MODEL,
+        models.tlv_with_checksum_model(),
         Integration(),
         tmp_path,
     )
@@ -149,8 +137,8 @@ def test_generate_missing_template_files(monkeypatch: pytest.MonkeyPatch, tmp_pa
 
 
 def test_generate_partial_update(tmp_path: Path) -> None:
-    Generator().generate(models.TLV_MODEL, Integration(), tmp_path)
-    Generator().generate(models.TLV_MODEL, Integration(), tmp_path)
+    Generator().generate(models.tlv_model(), Integration(), tmp_path)
+    Generator().generate(models.tlv_model(), Integration(), tmp_path)
     with pytest.raises(
         RecordFluxError,
         match=(
@@ -162,10 +150,10 @@ def test_generate_partial_update(tmp_path: Path) -> None:
             "$"
         ),
     ):
-        Generator().generate(models.ETHERNET_MODEL, Integration(), tmp_path)
+        Generator().generate(models.ethernet_model(), Integration(), tmp_path)
 
 
-@pytest.mark.parametrize("model", MODELS)
+@pytest.mark.parametrize("model", models.spark_test_models())
 def test_equality(model: Model, tmp_path: Path) -> None:
     assert_equal_code(model, Integration(), GENERATED_DIR, tmp_path, accept_extra_files=True)
 
@@ -235,7 +223,7 @@ def test_substitution_relation_aggregate(
         expected = equal_call if relation == expr.Equal else expr.Not(equal_call)
 
     assert (
-        relation(left, right).substituted(common.substitution(models.TLV_MESSAGE, "", embedded))
+        relation(left, right).substituted(common.substitution(models.tlv_message(), "", embedded))
         == expected
     )
 
@@ -266,7 +254,7 @@ def test_substitution_relation_boolean_literal(
     expected_right: expr.Expr,
 ) -> None:
     assert relation(left, right).substituted(
-        common.substitution(models.TLV_MESSAGE, ""),
+        common.substitution(models.tlv_message(), ""),
     ) == relation(expected_left, expected_right)
 
 
@@ -295,7 +283,7 @@ def test_substitution_relation_scalar(
 ) -> None:
     assert_equal(
         relation(*expressions).substituted(
-            common.substitution(models.TLV_MESSAGE, "", public=True),
+            common.substitution(models.tlv_message(), "", public=True),
         ),
         relation(*expected),
     )
@@ -321,7 +309,7 @@ DUMMY_SESSION = ir.Session(
     ],
     declarations=[],
     parameters=[],
-    types={t.identifier: t for t in models.UNIVERSAL_MODEL.types},
+    types={t.identifier: t for t in models.universal_model().types},
     location=None,
     variable_id=id_generator(),
 )
@@ -2162,7 +2150,7 @@ def test_generate_field_size_optimization() -> None:
             ),
         ],
         {
-            Field("Length"): models.UNIVERSAL_LENGTH,
+            Field("Length"): models.universal_length(),
             Field("Data"): mty.OPAQUE,
         },
     )
@@ -2183,7 +2171,7 @@ def test_generate_field_size_optimization() -> None:
 
 
 def test_generate_string_substitution() -> None:
-    subst = common.substitution(models.DEFINITE_MESSAGE, "")
+    subst = common.substitution(models.definite_message(), "")
     assert subst(expr.String("abc")) == expr.Aggregate(
         expr.Number(97),
         expr.Number(98),

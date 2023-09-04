@@ -14,7 +14,7 @@ from rflx.integration import Integration
 from rflx.model import Model
 from rflx.specification import Parser
 from tests.const import FEATURE_DIR, SPEC_DIR
-from tests.unit.generator_test import MODELS
+from tests.data import models
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logging.disable(logging.NOTSET)
@@ -49,7 +49,7 @@ def generate_spark_tests() -> None:
 
     parser = Parser()
     parser.parse(*SPECIFICATION_FILES)
-    model = merge_models([parser.create_model(), *MODELS])
+    model = merge_models([parser.create_model(), *models.spark_test_models()])
     Generator(
         "RFLX",
         reproducible=True,

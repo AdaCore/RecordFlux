@@ -9,13 +9,13 @@ from tests.data import models
 @pytest.mark.parametrize(
     "message",
     [
-        models.NULL_MESSAGE,
-        models.TLV_MESSAGE,
-        models.ETHERNET_FRAME,
-        models.ENUMERATION_MESSAGE,
-        models.SEQUENCE_MESSAGE,
-        models.EXPRESSION_MESSAGE,
-        models.DERIVATION_MESSAGE,
+        models.null_message(),
+        models.tlv_message(),
+        models.ethernet_frame(),
+        models.enumeration_message(),
+        models.sequence_message(),
+        models.expression_message(),
+        models.derivation_message(),
     ],
 )
 def test_models(message: model.Message) -> None:

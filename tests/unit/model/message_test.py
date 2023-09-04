@@ -63,36 +63,7 @@ from rflx.model import (
     UnprovenMessage,
 )
 from rflx.model.message import ByteOrder
-from tests.data.models import (
-    DEFINITE_MESSAGE,
-    ENUMERATION,
-    ETHERNET_FRAME,
-    FIXED_SIZE_MESSAGE,
-    FIXED_SIZE_SIMPLE_MESSAGE,
-    INTEGER,
-    MESSAGE,
-    NULL_MESSAGE,
-    REFINEMENT,
-    SEQUENCE_INNER_MESSAGE,
-    SEQUENCE_INNER_MESSAGES,
-    SEQUENCE_INTEGER_VECTOR,
-    SEQUENCE_LENGTH,
-    SEQUENCE_MESSAGE,
-    SEQUENCE_MESSAGES_MESSAGE,
-    TLV_LENGTH,
-    TLV_MESSAGE,
-    TLV_TAG,
-    UNIVERSAL_LENGTH,
-    UNIVERSAL_MESSAGE,
-    UNIVERSAL_MESSAGE_TYPE,
-    UNIVERSAL_OPTION,
-    UNIVERSAL_OPTION_TYPE,
-    UNIVERSAL_OPTION_TYPES,
-    UNIVERSAL_OPTIONS,
-    UNIVERSAL_REFINEMENT,
-    UNIVERSAL_VALUE,
-    UNIVERSAL_VALUES,
-)
+from tests.data import models
 from tests.utils import assert_equal, assert_message_model_error
 
 M_NO_REF = UnprovenMessage(
@@ -112,9 +83,9 @@ M_NO_REF = UnprovenMessage(
     ],
     {
         Field("F1"): OPAQUE,
-        Field("F2"): INTEGER,
-        Field("F3"): ENUMERATION,
-        Field("F4"): INTEGER,
+        Field("F2"): models.integer(),
+        Field("F3"): models.enumeration(),
+        Field("F4"): models.integer(),
     },
 )
 
@@ -139,12 +110,12 @@ M_CMPLX_REF = UnprovenMessage(
         Link(Field("F6"), FINAL),
     ],
     {
-        Field("F1"): deepcopy(INTEGER),
-        Field("F2"): deepcopy(INTEGER),
-        Field("F3"): deepcopy(INTEGER),
+        Field("F1"): deepcopy(models.integer()),
+        Field("F2"): deepcopy(models.integer()),
+        Field("F3"): deepcopy(models.integer()),
         Field("NR"): deepcopy(M_NO_REF),
-        Field("F5"): deepcopy(INTEGER),
-        Field("F6"): deepcopy(INTEGER),
+        Field("F5"): deepcopy(models.integer()),
+        Field("F6"): deepcopy(models.integer()),
     },
 )
 
@@ -174,9 +145,9 @@ M_NO_REF_DERI = UnprovenDerivedMessage(
     ],
     {
         Field("F1"): OPAQUE,
-        Field("F2"): INTEGER,
-        Field("F3"): ENUMERATION,
-        Field("F4"): INTEGER,
+        Field("F2"): models.integer(),
+        Field("F3"): models.enumeration(),
+        Field("F4"): models.integer(),
     },
 )
 
@@ -212,10 +183,10 @@ PARAMETERIZED_MESSAGE = Message(
         ),
     ],
     {
-        Field("P1"): INTEGER,
-        Field("P2"): ENUMERATION,
+        Field("P1"): models.integer(),
+        Field("P2"): models.enumeration(),
         Field("F1"): OPAQUE,
-        Field("F2"): INTEGER,
+        Field("F2"): models.integer(),
     },
 )
 
@@ -228,7 +199,7 @@ M_PARAM_NO_REF = UnprovenMessage(
         Link(Field("F1"), FINAL, condition=Equal(Variable("P1"), Number(2))),
         Link(Field("F2"), FINAL),
     ],
-    {Field("P1"): INTEGER, Field("F1"): INTEGER, Field("F2"): INTEGER},
+    {Field("P1"): models.integer(), Field("F1"): models.integer(), Field("F2"): models.integer()},
 )
 
 
@@ -238,7 +209,7 @@ M_PARAM_PARAM_REF = UnprovenMessage(
         Link(INITIAL, Field("PNR")),
         Link(Field("PNR"), FINAL),
     ],
-    {Field("P2"): INTEGER, Field("PNR"): deepcopy(M_PARAM_NO_REF)},
+    {Field("P2"): models.integer(), Field("PNR"): deepcopy(M_PARAM_NO_REF)},
 )
 
 
@@ -261,11 +232,17 @@ def test_invalid_identifier() -> None:
 
 @pytest.mark.parametrize(
     "parameter_type",
-    [NULL_MESSAGE, TLV_MESSAGE, SEQUENCE_INTEGER_VECTOR, SEQUENCE_INNER_MESSAGES, OPAQUE],
+    [
+        models.null_message(),
+        models.tlv_message(),
+        models.sequence_integer_vector(),
+        models.sequence_inner_messages(),
+        OPAQUE,
+    ],
 )
 def test_invalid_parameter_type_composite(parameter_type: Type) -> None:
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
-    types = {Field(ID("P", Location((1, 2)))): parameter_type, Field("X"): INTEGER}
+    types = {Field(ID("P", Location((1, 2)))): parameter_type, Field("X"): models.integer()}
 
     assert_message_model_error(
         structure,
@@ -282,7 +259,7 @@ def test_invalid_parameter_type_always_valid_enum() -> None:
         always_valid=True,
     )
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
-    types = {Field(ID("P", Location((1, 2)))): always_valid_enum, Field("X"): INTEGER}
+    types = {Field(ID("P", Location((1, 2)))): always_valid_enum, Field("X"): models.integer()}
 
     assert_message_model_error(
         structure,
@@ -436,7 +413,7 @@ def test_unsupported_expression() -> None:
         ),
     ]
 
-    types = {x: INTEGER}
+    types = {x: models.integer()}
 
     assert_message_model_error(
         structure,
@@ -490,7 +467,7 @@ def test_cycle() -> None:
 
 
 def test_parameters() -> None:
-    assert not ETHERNET_FRAME.parameters
+    assert not models.ethernet_frame().parameters
     assert PARAMETERIZED_MESSAGE.parameters == (
         Field("P1"),
         Field("P2"),
@@ -498,7 +475,7 @@ def test_parameters() -> None:
 
 
 def test_fields() -> None:
-    assert ETHERNET_FRAME.fields == (
+    assert models.ethernet_frame().fields == (
         Field("Destination"),
         Field("Source"),
         Field("Type_Length_TPID"),
@@ -515,30 +492,30 @@ def test_fields() -> None:
 
 def test_parameter_types() -> None:
     assert PARAMETERIZED_MESSAGE.parameter_types == {
-        Field("P1"): INTEGER,
-        Field("P2"): ENUMERATION,
+        Field("P1"): models.integer(),
+        Field("P2"): models.enumeration(),
     }
 
 
 def test_field_types() -> None:
     assert PARAMETERIZED_MESSAGE.field_types == {
         Field("F1"): OPAQUE,
-        Field("F2"): INTEGER,
+        Field("F2"): models.integer(),
     }
 
 
 def test_path_condition() -> None:
-    assert_equal(ETHERNET_FRAME.path_condition(INITIAL), TRUE)
+    assert_equal(models.ethernet_frame().path_condition(INITIAL), TRUE)
     assert_equal(
-        ETHERNET_FRAME.path_condition(Field("TPID")),
+        models.ethernet_frame().path_condition(Field("TPID")),
         Equal(Variable("Type_Length_TPID"), Number(33024, 16)),
     )
     assert_equal(
-        ETHERNET_FRAME.path_condition(Field("Type_Length")),
+        models.ethernet_frame().path_condition(Field("Type_Length")),
         TRUE,
     )
     assert_equal(
-        ETHERNET_FRAME.path_condition(Field("Payload")),
+        models.ethernet_frame().path_condition(Field("Payload")),
         Or(
             LessEqual(Variable("Type_Length"), Number(1500)),
             GreaterEqual(Variable("Type_Length"), Number(1536)),
@@ -547,9 +524,9 @@ def test_path_condition() -> None:
 
 
 def test_incoming() -> None:
-    assert_equal(ETHERNET_FRAME.incoming(INITIAL), [])
+    assert_equal(models.ethernet_frame().incoming(INITIAL), [])
     assert_equal(
-        ETHERNET_FRAME.incoming(Field("Type_Length")),
+        models.ethernet_frame().incoming(Field("Type_Length")),
         [
             Link(Field("TCI"), Field("Type_Length")),
             Link(
@@ -561,7 +538,7 @@ def test_incoming() -> None:
         ],
     )
     assert_equal(
-        ETHERNET_FRAME.incoming(FINAL),
+        models.ethernet_frame().incoming(FINAL),
         [
             Link(
                 Field("Payload"),
@@ -576,9 +553,9 @@ def test_incoming() -> None:
 
 
 def test_outgoing() -> None:
-    assert_equal(ETHERNET_FRAME.outgoing(INITIAL), [Link(INITIAL, Field("Destination"))])
+    assert_equal(models.ethernet_frame().outgoing(INITIAL), [Link(INITIAL, Field("Destination"))])
     assert_equal(
-        ETHERNET_FRAME.outgoing(Field("Type_Length")),
+        models.ethernet_frame().outgoing(Field("Type_Length")),
         [
             Link(
                 Field("Type_Length"),
@@ -594,27 +571,30 @@ def test_outgoing() -> None:
             ),
         ],
     )
-    assert_equal(ETHERNET_FRAME.outgoing(FINAL), [])
+    assert_equal(models.ethernet_frame().outgoing(FINAL), [])
 
 
 def test_direct_predecessors() -> None:
-    assert_equal(ETHERNET_FRAME.direct_predecessors(INITIAL), [])
+    assert_equal(models.ethernet_frame().direct_predecessors(INITIAL), [])
     assert_equal(
-        ETHERNET_FRAME.direct_predecessors(Field("Type_Length")),
+        models.ethernet_frame().direct_predecessors(Field("Type_Length")),
         [Field("TCI"), Field("Type_Length_TPID")],
     )
-    assert_equal(ETHERNET_FRAME.direct_predecessors(FINAL), [Field("Payload")])
+    assert_equal(models.ethernet_frame().direct_predecessors(FINAL), [Field("Payload")])
 
 
 def test_direct_successors() -> None:
-    assert_equal(ETHERNET_FRAME.direct_successors(INITIAL), [Field("Destination")])
-    assert_equal(ETHERNET_FRAME.direct_successors(Field("Type_Length")), [Field("Payload")])
-    assert_equal(ETHERNET_FRAME.direct_successors(FINAL), [])
+    assert_equal(models.ethernet_frame().direct_successors(INITIAL), [Field("Destination")])
+    assert_equal(
+        models.ethernet_frame().direct_successors(Field("Type_Length")),
+        [Field("Payload")],
+    )
+    assert_equal(models.ethernet_frame().direct_successors(FINAL), [])
 
 
 def test_definite_predecessors() -> None:
     assert_equal(
-        ETHERNET_FRAME.definite_predecessors(FINAL),
+        models.ethernet_frame().definite_predecessors(FINAL),
         (
             Field("Destination"),
             Field("Source"),
@@ -624,14 +604,14 @@ def test_definite_predecessors() -> None:
         ),
     )
     assert_equal(
-        ETHERNET_FRAME.definite_predecessors(Field("TCI")),
+        models.ethernet_frame().definite_predecessors(Field("TCI")),
         (Field("Destination"), Field("Source"), Field("Type_Length_TPID"), Field("TPID")),
     )
 
 
 def test_predecessors() -> None:
     assert_equal(
-        ETHERNET_FRAME.predecessors(FINAL),
+        models.ethernet_frame().predecessors(FINAL),
         (
             Field("Destination"),
             Field("Source"),
@@ -643,16 +623,16 @@ def test_predecessors() -> None:
         ),
     )
     assert_equal(
-        ETHERNET_FRAME.predecessors(Field("TCI")),
+        models.ethernet_frame().predecessors(Field("TCI")),
         (Field("Destination"), Field("Source"), Field("Type_Length_TPID"), Field("TPID")),
     )
-    assert_equal(ETHERNET_FRAME.predecessors(Field("Destination")), ())
-    assert_equal(ETHERNET_FRAME.predecessors(INITIAL), ())
+    assert_equal(models.ethernet_frame().predecessors(Field("Destination")), ())
+    assert_equal(models.ethernet_frame().predecessors(INITIAL), ())
 
 
 def test_successors() -> None:
     assert_equal(
-        ETHERNET_FRAME.successors(INITIAL),
+        models.ethernet_frame().successors(INITIAL),
         (
             Field("Destination"),
             Field("Source"),
@@ -664,7 +644,7 @@ def test_successors() -> None:
         ),
     )
     assert_equal(
-        ETHERNET_FRAME.successors(Field("Source")),
+        models.ethernet_frame().successors(Field("Source")),
         (
             Field("Type_Length_TPID"),
             Field("TPID"),
@@ -674,11 +654,11 @@ def test_successors() -> None:
         ),
     )
     assert_equal(
-        ETHERNET_FRAME.successors(Field("TPID")),
+        models.ethernet_frame().successors(Field("TPID")),
         (Field("TCI"), Field("Type_Length"), Field("Payload")),
     )
-    assert_equal(ETHERNET_FRAME.successors(Field("Payload")), ())
-    assert_equal(ETHERNET_FRAME.successors(FINAL), ())
+    assert_equal(models.ethernet_frame().successors(Field("Payload")), ())
+    assert_equal(models.ethernet_frame().successors(FINAL), ())
 
 
 def test_field_identifier_locations() -> None:
@@ -689,7 +669,7 @@ def test_field_identifier_locations() -> None:
     message = UnprovenMessage(
         "P::M",
         [Link(INITIAL, Field("A")), Link(Field("A"), Field("B")), Link(Field("B"), FINAL)],
-        {p: INTEGER, a: INTEGER, b: INTEGER},
+        {p: models.integer(), a: models.integer(), b: models.integer()},
     )
 
     assert message.parameters == (p,)
@@ -702,18 +682,18 @@ def test_field_identifier_locations() -> None:
 @pytest.mark.parametrize(
     "expression",
     [
-        Variable(INTEGER.identifier, location=Location((1, 2))),
+        Variable(models.integer().identifier, location=Location((1, 2))),
         And(
             TRUE,
-            Variable(INTEGER.identifier, location=Location((1, 2))),
+            Variable(models.integer().identifier, location=Location((1, 2))),
             location=Location((3, 4)),
         ),
         Equal(
-            Add(Variable(INTEGER.identifier, location=Location((1, 2))), Number(1)),
+            Add(Variable(models.integer().identifier, location=Location((1, 2))), Number(1)),
             Number(1),
         ),
         Equal(
-            Variable(INTEGER.identifier, location=Location((1, 2))),
+            Variable(models.integer().identifier, location=Location((1, 2))),
             Variable("X"),
         ),
     ],
@@ -723,7 +703,7 @@ def test_invalid_use_of_type_name(expression: Expr) -> None:
         Link(INITIAL, Field("X")),
         Link(Field("X"), FINAL, condition=expression),
     ]
-    types = {Field("X"): INTEGER}
+    types = {Field("X"): models.integer()}
 
     assert_message_model_error(
         structure,
@@ -745,7 +725,7 @@ def test_invalid_use_of_enum_literal(expression: Expr) -> None:
         Link(INITIAL, Field("X")),
         Link(Field("X"), FINAL, condition=expression),
     ]
-    types = {Field("X"): ENUMERATION}
+    types = {Field("X"): models.enumeration()}
 
     assert_message_model_error(
         structure,
@@ -770,7 +750,7 @@ def test_invalid_message_field_type() -> None:
 
 def test_unused_parameter() -> None:
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
-    types = {Field(ID("P", Location((1, 2)))): INTEGER, Field("X"): INTEGER}
+    types = {Field(ID("P", Location((1, 2)))): models.integer(), Field("X"): models.integer()}
 
     assert_message_model_error(
         structure,
@@ -886,7 +866,7 @@ def test_undefined_variables() -> None:
         Link(Field("F2"), FINAL),
     ]
 
-    types = {Field("F1"): INTEGER, Field("F2"): INTEGER}
+    types = {Field("F1"): models.integer(), Field("F2"): models.integer()}
 
     assert_message_model_error(
         structure,
@@ -958,9 +938,9 @@ def test_reference_to_optional_field_2() -> None:
         Link(Field("Data"), FINAL),
     ]
     types = {
-        Field("Flag"): INTEGER,
-        Field("Opt"): INTEGER,
-        Field("Any"): INTEGER,
+        Field("Flag"): models.integer(),
+        Field("Opt"): models.integer(),
+        Field("Any"): models.integer(),
         Field("Data"): OPAQUE,
     }
     assert_message_model_error(
@@ -978,7 +958,7 @@ def test_invalid_use_of_size_attribute() -> None:
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), FINAL, Equal(Size(Number(1)), Number(32), Location((400, 17)))),
     ]
-    types = {Field("F1"): INTEGER}
+    types = {Field("F1"): models.integer()}
     assert_message_model_error(
         structure,
         types,
@@ -996,7 +976,7 @@ def test_invalid_relation_to_opaque() -> None:
             condition=Equal(Variable("Data"), Number(42, location=Location((10, 20)))),
         ),
     ]
-    types = {Field("Length"): INTEGER, Field("Data"): OPAQUE}
+    types = {Field("Length"): models.integer(), Field("Data"): OPAQUE}
     assert_message_model_error(
         structure,
         types,
@@ -1122,7 +1102,7 @@ def test_sequence_aggregate_invalid_element_type() -> None:
     inner = Message(
         "P::I",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-        {Field("F"): INTEGER},
+        {Field("F"): models.integer()},
     )
     sequence_type = Sequence("P::Sequence", inner)
     f = Field("F")
@@ -1190,7 +1170,7 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
                 Link(o2, FINAL),
             ],
             {
-                Field("L1"): INTEGER,
+                Field("L1"): models.integer(),
                 Field("L2"): Integer("P::T", Number(0), Number(3), Number(2)),
                 Field("O1"): OPAQUE,
                 o2: OPAQUE,
@@ -1206,7 +1186,7 @@ def test_opaque_valid_byte_aligned_dynamic_mul() -> None:
             Link(Field("L"), Field("O1"), size=Mul(Number(8), Variable("L"))),
             Link(Field("O1"), FINAL),
         ],
-        {Field("L"): INTEGER, Field("O1"): OPAQUE},
+        {Field("L"): models.integer(), Field("O1"): OPAQUE},
     )
 
 
@@ -1224,7 +1204,7 @@ def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
             Link(Field("O1"), Field("O2"), size=Number(128)),
             Link(Field("O2"), FINAL),
         ],
-        {Field("L"): INTEGER, Field("O1"): OPAQUE, Field("O2"): OPAQUE},
+        {Field("L"): models.integer(), Field("O1"): OPAQUE, Field("O2"): OPAQUE},
     )
 
 
@@ -1258,7 +1238,7 @@ def test_opaque_size_not_multiple_of_8_dynamic() -> None:
                 Link(Field("L"), o, size=Variable("L", location=Location((44, 3)))),
                 Link(o, FINAL),
             ],
-            {Field("L"): INTEGER, o: OPAQUE},
+            {Field("L"): models.integer(), o: OPAQUE},
         )
 
 
@@ -1275,7 +1255,7 @@ def test_opaque_size_valid_multiple_of_8_dynamic_cond() -> None:
             ),
             Link(Field("O"), FINAL),
         ],
-        {Field("L"): INTEGER, Field("O"): OPAQUE},
+        {Field("L"): models.integer(), Field("O"): OPAQUE},
     )
 
 
@@ -1301,9 +1281,9 @@ def test_prefixed_message_attribute() -> None:
             Link(Field("F4"), FINAL),
         ],
         {
-            Field("F1"): deepcopy(INTEGER),
-            Field("F2"): deepcopy(INTEGER),
-            Field("F3"): deepcopy(INTEGER),
+            Field("F1"): deepcopy(models.integer()),
+            Field("F2"): deepcopy(models.integer()),
+            Field("F3"): deepcopy(models.integer()),
             Field("F4"): OPAQUE,
         },
     ).prefixed("X_")
@@ -1329,9 +1309,9 @@ def test_prefixed_message_attribute() -> None:
             Link(Field("X_F4"), FINAL),
         ],
         {
-            Field("X_F1"): deepcopy(INTEGER),
-            Field("X_F2"): deepcopy(INTEGER),
-            Field("X_F3"): deepcopy(INTEGER),
+            Field("X_F1"): deepcopy(models.integer()),
+            Field("X_F2"): deepcopy(models.integer()),
+            Field("X_F3"): deepcopy(models.integer()),
             Field("X_F4"): OPAQUE,
         },
     )
@@ -1347,8 +1327,8 @@ def test_exclusive_valid() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     Message("P::M", structure, types)
 
@@ -1361,8 +1341,8 @@ def test_exclusive_enum_valid() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): ENUMERATION,
-        Field("F2"): INTEGER,
+        Field("F1"): models.enumeration(),
+        Field("F2"): models.integer(),
     }
     Message("P::M", structure, types)
 
@@ -1375,7 +1355,7 @@ def test_exclusive_prefixed_enum_valid() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): ENUMERATION,
+        Field("F1"): models.enumeration(),
         Field("F2"): Enumeration(
             "P2::Enumeration",
             [("One", Number(2)), ("Two", Number(1))],
@@ -1398,8 +1378,8 @@ def test_exclusive_conflict() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field(ID("F1", Location((8, 4)))): INTEGER,
-        Field("F2"): INTEGER,
+        Field(ID("F1", Location((8, 4)))): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1429,9 +1409,9 @@ def test_exclusive_with_size_valid() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
+        Field("F1"): models.integer(),
         Field("F2"): OPAQUE,
-        Field("F3"): INTEGER,
+        Field("F3"): models.integer(),
     }
     Message("P::M", structure, types)
 
@@ -1453,9 +1433,9 @@ def test_exclusive_with_size_valid_and_not() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
+        Field("F1"): models.integer(),
         Field("F2"): OPAQUE,
-        Field("F3"): INTEGER,
+        Field("F3"): models.integer(),
     }
     Message("P::M", structure, types)
 
@@ -1469,7 +1449,7 @@ def test_exclusive_with_size_invalid() -> None:
     ]
     types = {
         Field(ID("F1", Location((98, 10)))): OPAQUE,
-        Field("F2"): INTEGER,
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1506,9 +1486,9 @@ def test_no_valid_path() -> None:
         Link(f3, FINAL, condition=LessEqual(Variable("F1"), Number(80), Location((23, 5)))),
     ]
     types = {
-        f1: INTEGER,
-        f2: INTEGER,
-        f3: INTEGER,
+        f1: models.integer(),
+        f2: models.integer(),
+        f3: models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1559,7 +1539,7 @@ def test_invalid_path_1(monkeypatch: pytest.MonkeyPatch) -> None:
         Link(f1, FINAL, condition=Equal(Number(1), Number(2), Location((5, 10)))),
     ]
     types = {
-        Field("F1"): INTEGER,
+        Field("F1"): models.integer(),
     }
     monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)
     assert_message_model_error(
@@ -1580,8 +1560,8 @@ def test_invalid_path_2(monkeypatch: pytest.MonkeyPatch) -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)
     assert_message_model_error(
@@ -1634,8 +1614,8 @@ def test_invalid_type_condition_range_low() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1739,8 +1719,8 @@ def test_tlv_valid_enum() -> None:
         Link(Field("V"), FINAL),
     ]
     types = {
-        Field("L"): INTEGER,
-        Field("T"): ENUMERATION,
+        Field("L"): models.integer(),
+        Field("T"): models.enumeration(),
         Field("V"): OPAQUE,
     }
     Message("P::M", structure, types)
@@ -1753,8 +1733,8 @@ def test_invalid_fixed_size_field_with_size() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1770,8 +1750,8 @@ def test_valid_first() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     Message("P::M", structure, types)
 
@@ -1784,9 +1764,9 @@ def test_invalid_first_is_not_previous_field() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
-        Field("F3"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
+        Field("F3"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1806,8 +1786,8 @@ def test_invalid_first_is_expression() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1823,8 +1803,8 @@ def test_invalid_first_is_last() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1841,9 +1821,9 @@ def test_invalid_first_forward_reference() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
-        Field("F3"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
+        Field("F3"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1863,7 +1843,7 @@ def test_valid_size_reference() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
+        Field("F1"): models.integer(),
         Field("F2"): OPAQUE,
     }
     Message("P::M", structure, types)
@@ -1876,7 +1856,7 @@ def test_invalid_size_forward_reference() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
+        Field("F1"): models.integer(),
         Field("F2"): OPAQUE,
     }
     assert_message_model_error(
@@ -1894,7 +1874,7 @@ def test_invalid_negative_field_size_1() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
+        Field("F1"): models.integer(),
         Field("F2"): OPAQUE,
     }
     assert_message_model_error(
@@ -1919,7 +1899,7 @@ def test_invalid_negative_field_size_2() -> None:
         Link(o, FINAL),
     ]
     types = {
-        Field("L"): INTEGER,
+        Field("L"): models.integer(),
         o: OPAQUE,
     }
     assert_message_model_error(
@@ -1944,7 +1924,7 @@ def test_invalid_negative_field_size_3() -> None:
         ),
     ]
     types = {
-        Field("F1"): INTEGER,
+        Field("F1"): models.integer(),
         Field("F2"): OPAQUE,
     }
     assert_message_model_error(
@@ -1978,8 +1958,8 @@ def test_sequence_no_size() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): SEQUENCE_INTEGER_VECTOR,
-        Field("F2"): SEQUENCE_INTEGER_VECTOR,
+        Field("F1"): models.sequence_integer_vector(),
+        Field("F2"): models.sequence_integer_vector(),
     }
     assert_message_model_error(
         structure,
@@ -2023,7 +2003,7 @@ def test_field_coverage_1(monkeypatch: pytest.MonkeyPatch) -> None:
         Link(Field("F2"), FINAL),
     ]
 
-    types = {Field("F1"): INTEGER, Field("F2"): INTEGER}
+    types = {Field("F1"): models.integer(), Field("F2"): models.integer()}
     monkeypatch.setattr(Message, "_verify_expressions", lambda _: None)
     assert_message_model_error(
         structure,
@@ -2052,10 +2032,10 @@ def test_field_coverage_2(monkeypatch: pytest.MonkeyPatch) -> None:
     ]
 
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
-        Field("F3"): INTEGER,
-        Field("F4"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
+        Field("F3"): models.integer(),
+        Field("F4"): models.integer(),
     }
     monkeypatch.setattr(Message, "_verify_expressions", lambda _: None)
     assert_message_model_error(
@@ -2078,7 +2058,7 @@ def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
         Link(Field("F2"), FINAL),
     ]
 
-    types = {Field("F1"): INTEGER, Field("F2"): INTEGER}
+    types = {Field("F1"): models.integer(), Field("F2"): models.integer()}
     monkeypatch.setattr(Message, "_verify_expressions", lambda _: None)
     assert_message_model_error(
         structure,
@@ -2101,7 +2081,7 @@ def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
         Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
     ],
 )
-@pytest.mark.parametrize("type_", [OPAQUE, SEQUENCE_INTEGER_VECTOR])
+@pytest.mark.parametrize("type_", [OPAQUE, models.sequence_integer_vector()])
 def test_message_with_implicit_size_single_field(size: Expr, condition: Expr, type_: Type) -> None:
     x = Field("X")
 
@@ -2125,7 +2105,7 @@ def test_message_with_implicit_size_single_field(size: Expr, condition: Expr, ty
         Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
     ],
 )
-@pytest.mark.parametrize("type_", [OPAQUE, SEQUENCE_INTEGER_VECTOR])
+@pytest.mark.parametrize("type_", [OPAQUE, models.sequence_integer_vector()])
 def test_message_with_implicit_size_multiple_fields(
     size: Expr,
     condition: Expr,
@@ -2189,10 +2169,10 @@ def test_no_path_to_final() -> None:
     ]
 
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
-        Field("F3"): INTEGER,
-        Field("F4"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
+        Field("F3"): models.integer(),
+        Field("F4"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -2213,12 +2193,12 @@ def test_no_path_to_final_transitive() -> None:
     ]
 
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
-        Field("F3"): INTEGER,
-        Field("F4"): INTEGER,
-        Field("F5"): INTEGER,
-        Field("F6"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
+        Field("F3"): models.integer(),
+        Field("F4"): models.integer(),
+        Field("F5"): models.integer(),
+        Field("F6"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -2238,8 +2218,8 @@ def test_conditionally_unreachable_field_mod_first() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -2277,8 +2257,8 @@ def test_conditionally_unreachable_field_mod_last() -> None:
         Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -2311,8 +2291,8 @@ def test_conditionally_unreachable_field_range_first() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -2350,8 +2330,8 @@ def test_conditionally_unreachable_field_range_last() -> None:
         Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -2384,8 +2364,8 @@ def test_conditionally_unreachable_field_enum_first() -> None:
         Link(Field("F2"), FINAL),
     ]
     types = {
-        Field("F1"): ENUMERATION,
-        Field("F2"): ENUMERATION,
+        Field("F1"): models.enumeration(),
+        Field("F2"): models.enumeration(),
     }
     assert_message_model_error(
         structure,
@@ -2423,8 +2403,8 @@ def test_conditionally_unreachable_field_enum_last() -> None:
         Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
     ]
     types = {
-        Field("F1"): ENUMERATION,
-        Field("F2"): ENUMERATION,
+        Field("F1"): models.enumeration(),
+        Field("F2"): models.enumeration(),
     }
     assert_message_model_error(
         structure,
@@ -2458,8 +2438,8 @@ def test_conditionally_unreachable_field_outgoing() -> None:
         Link(Field("F2"), FINAL, Greater(Variable("F1"), Number(32))),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -2500,9 +2480,9 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
         Link(Field("F3"), FINAL),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field(ID("F2", Location((90, 12)))): INTEGER,
-        Field("F3"): INTEGER,
+        Field("F1"): models.integer(),
+        Field(ID("F2", Location((90, 12)))): models.integer(),
+        Field("F3"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -2533,8 +2513,8 @@ def test_size_aspect_final() -> None:
         Link(Field("F2"), FINAL, size=Number(100, location=Location((4, 12)))),
     ]
     types = {
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -2756,12 +2736,12 @@ def test_no_contradiction_multi() -> None:
         Link(Field("F5"), FINAL),
     ]
     types = {
-        Field("F0"): INTEGER,
-        Field("F1"): INTEGER,
-        Field("F2"): INTEGER,
-        Field("F3"): INTEGER,
-        Field("F4"): INTEGER,
-        Field("F5"): INTEGER,
+        Field("F0"): models.integer(),
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
+        Field("F3"): models.integer(),
+        Field("F4"): models.integer(),
+        Field("F5"): models.integer(),
     }
     Message("P::M", structure, types)
 
@@ -2797,9 +2777,9 @@ def test_discontiguous_optional_fields() -> None:
         ),
     ]
     types = {
-        Field("Flag"): INTEGER,
-        Field("Opt1"): INTEGER,
-        Field("Data"): INTEGER,
+        Field("Flag"): models.integer(),
+        Field("Opt1"): models.integer(),
+        Field("Data"): models.integer(),
         Field("Opt2"): OPAQUE,
     }
     Message("P::M", structure, types)
@@ -2844,7 +2824,7 @@ def test_checksum(checksums: abc.Mapping[ID, abc.Sequence[Expr]], condition: Exp
         Link(f2, f3),
         Link(f3, FINAL, condition),
     ]
-    types = {f1: INTEGER, f2: INTEGER, f3: INTEGER}
+    types = {f1: models.integer(), f2: models.integer(), f3: models.integer()}
     message = Message("P::M", structure, types, checksums=checksums)
     assert message.checksums == checksums
 
@@ -2902,7 +2882,7 @@ def test_checksum_error(
         Link(f2, f3),
         Link(f3, FINAL, condition),
     ]
-    types = {f1: INTEGER, f2: INTEGER, f3: INTEGER}
+    types = {f1: models.integer(), f2: models.integer(), f3: models.integer()}
     assert_message_model_error(structure, types, error, checksums=checksums)
 
 
@@ -2916,7 +2896,7 @@ def test_field_size() -> None:
             Link(Field("B"), Field("C")),
             Link(Field("C"), FINAL),
         ],
-        {Field("A"): INTEGER, Field("B"): OPAQUE, Field("C"): OPAQUE},
+        {Field("A"): models.integer(), Field("B"): OPAQUE, Field("C"): OPAQUE},
         location=Location((30, 10)),
     )
 
@@ -2941,38 +2921,38 @@ def test_copy() -> None:
     message = Message(
         "P::M",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-        {Field("F"): INTEGER},
+        {Field("F"): models.integer()},
     )
     assert_equal(
         message.copy(identifier="A::B"),
         Message(
             "A::B",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): INTEGER},
+            {Field("F"): models.integer()},
         ),
     )
     assert_equal(
         message.copy(
             structure=[Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            types={Field("C"): INTEGER},
+            types={Field("C"): models.integer()},
             byte_order={Field("C"): ByteOrder.HIGH_ORDER_FIRST},
         ),
         Message(
             "P::M",
             [Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            {Field("C"): INTEGER},
+            {Field("C"): models.integer()},
         ),
     )
     assert_equal(
         message.copy(
             structure=[Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            types={Field("C"): INTEGER},
+            types={Field("C"): models.integer()},
             byte_order={Field("C"): ByteOrder.LOW_ORDER_FIRST},
         ),
         Message(
             "P::M",
             [Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            {Field("C"): INTEGER},
+            {Field("C"): models.integer()},
             byte_order=ByteOrder.LOW_ORDER_FIRST,
         ),
     )
@@ -2982,7 +2962,7 @@ def test_proven() -> None:
     message = Message(
         "P::M",
         [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-        {Field("F"): INTEGER},
+        {Field("F"): models.integer()},
     )
     assert message.proven() == message
 
@@ -3013,71 +2993,73 @@ def test_is_possibly_empty() -> None:
 
 
 def test_has_fixed_size() -> None:
-    assert NULL_MESSAGE.has_fixed_size
-    assert FIXED_SIZE_MESSAGE.has_fixed_size
-    assert not TLV_MESSAGE.has_fixed_size
-    assert not ETHERNET_FRAME.has_fixed_size
-    assert not SEQUENCE_MESSAGE.has_fixed_size
+    assert models.null_message().has_fixed_size
+    assert models.fixed_size_message().has_fixed_size
+    assert not models.tlv_message().has_fixed_size
+    assert not models.ethernet_frame().has_fixed_size
+    assert not models.sequence_message().has_fixed_size
 
 
 def test_has_implicit_size() -> None:
-    assert not NULL_MESSAGE.has_implicit_size
-    assert not FIXED_SIZE_MESSAGE.has_implicit_size
-    assert not TLV_MESSAGE.has_implicit_size
-    assert ETHERNET_FRAME.has_implicit_size
-    assert not SEQUENCE_MESSAGE.has_implicit_size
+    assert not models.null_message().has_implicit_size
+    assert not models.fixed_size_message().has_implicit_size
+    assert not models.tlv_message().has_implicit_size
+    assert models.ethernet_frame().has_implicit_size
+    assert not models.sequence_message().has_implicit_size
 
 
 def test_is_definite() -> None:
-    assert NULL_MESSAGE.is_definite
-    assert FIXED_SIZE_SIMPLE_MESSAGE.is_definite
-    assert DEFINITE_MESSAGE.is_definite
-    assert not FIXED_SIZE_MESSAGE.is_definite
-    assert not TLV_MESSAGE.is_definite
-    assert not ETHERNET_FRAME.is_definite
-    assert not SEQUENCE_MESSAGE.is_definite
+    assert models.null_message().is_definite
+    assert models.fixed_size_simple_message().is_definite
+    assert models.definite_message().is_definite
+    assert not models.fixed_size_message().is_definite
+    assert not models.tlv_message().is_definite
+    assert not models.ethernet_frame().is_definite
+    assert not models.sequence_message().is_definite
 
 
 def test_size() -> None:
-    assert NULL_MESSAGE.size() == Number(0)
-    assert FIXED_SIZE_MESSAGE.size() == Number(200)
-    assert DEFINITE_MESSAGE.size() == Add(Mul(Variable("Length"), Number(8)), Number(16))
-    assert DEFINITE_MESSAGE.size({Field("Length"): Number(8)}) == Number(80)
-    assert TLV_MESSAGE.size({Field("Tag"): Literal("TLV::Msg_Error")}) == Number(8)
-    assert TLV_MESSAGE.size(
+    assert models.null_message().size() == Number(0)
+    assert models.fixed_size_message().size() == Number(200)
+    assert models.definite_message().size() == Add(Mul(Variable("Length"), Number(8)), Number(16))
+    assert models.definite_message().size({Field("Length"): Number(8)}) == Number(80)
+    assert models.tlv_message().size({Field("Tag"): Literal("TLV::Msg_Error")}) == Number(8)
+    assert models.tlv_message().size(
         {
             Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Number(4),
             Field("Value"): Aggregate(*[Number(0)] * 4),
         },
     ) == Number(56)
-    assert TLV_MESSAGE.size(
+    assert models.tlv_message().size(
         {
             Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Div(Add(Size("Tag"), Size("TLV::Length")), Number(8)),
             Field("Value"): Aggregate(*[Number(0)] * 3),
         },
     ) == Number(48)
-    assert TLV_MESSAGE.size(
+    assert models.tlv_message().size(
         {
             Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Add(Div(Size("X"), Number(8)), Variable("Y")),
             Field("Value"): Variable("Z"),
         },
     ) == Add(Size("Z"), Number(24))
-    assert TLV_MESSAGE.size(
+    assert models.tlv_message().size(
         {
             Field("Tag"): Literal("TLV::Msg_Data"),
             Field("Length"): Div(Size("Msg_Data"), Number(8)),
             Field("Value"): Opaque("Msg_Data"),
         },
     ) == Add(Mul(Div(Size("Msg_Data"), Number(8)), Number(8)), Number(24))
-    assert TLV_MESSAGE.size({Field("Tag"): Variable("X"), Field("Length"): Variable("Y")}) == Add(
+    assert models.tlv_message().size(
+        {Field("Tag"): Variable("X"), Field("Length"): Variable("Y")},
+    ) == Add(
         Mul(Variable("Y"), Number(8)),
         Number(24),
     )
 
-    assert ETHERNET_FRAME.size(
+    assert models.ethernet_frame().size(
         {
             Field("Destination"): Number(0),
             Field("Source"): Number(0),
@@ -3086,7 +3068,7 @@ def test_size() -> None:
             Field("Payload"): Aggregate(*[Number(0)] * 46),
         },
     ) == Number(480)
-    assert ETHERNET_FRAME.size(
+    assert models.ethernet_frame().size(
         {
             Field("Destination"): Number(0),
             Field("Source"): Number(0),
@@ -3097,7 +3079,7 @@ def test_size() -> None:
             Field("Payload"): Aggregate(*[Number(0)] * 46),
         },
     ) == Number(512)
-    assert ETHERNET_FRAME.size(
+    assert models.ethernet_frame().size(
         {
             Field("Destination"): Number(0),
             Field("Source"): Number(0),
@@ -3106,7 +3088,7 @@ def test_size() -> None:
             Field("Payload"): Aggregate(*[Number(0)] * 46),
         },
     ) == Number(480)
-    assert ETHERNET_FRAME.size(
+    assert models.ethernet_frame().size(
         {
             Field("Destination"): Number(0),
             Field("Source"): Number(0),
@@ -3139,7 +3121,7 @@ def test_size() -> None:
         ],
         {
             Field("Has_Data"): BOOLEAN,
-            Field("Length"): TLV_LENGTH,
+            Field("Length"): models.tlv_length(),
             Field("Data"): OPAQUE,
         },
     )
@@ -3196,8 +3178,8 @@ def test_size() -> None:
             ),
         ],
         {
-            Field("A"): TLV_LENGTH,
-            Field("B"): TLV_LENGTH,
+            Field("A"): models.tlv_length(),
+            Field("B"): models.tlv_length(),
         },
     )
     assert optional_overlayed_field.size(
@@ -3249,9 +3231,9 @@ def test_size() -> None:
             ),
         ],
         {
-            Field("A"): TLV_LENGTH,
-            Field("B"): TLV_LENGTH,
-            Field("C"): TLV_LENGTH,
+            Field("A"): models.tlv_length(),
+            Field("B"): models.tlv_length(),
+            Field("C"): models.tlv_length(),
         },
     )
     assert path_dependent_fields.size({Field("A"): Variable("X"), Field("B"): Number(0)}) == Number(
@@ -3267,21 +3249,21 @@ def test_size() -> None:
 
 
 def test_size_subpath() -> None:
-    assert NULL_MESSAGE.size({}, subpath=True) == Number(0)
+    assert models.null_message().size({}, subpath=True) == Number(0)
 
-    assert FIXED_SIZE_MESSAGE.size(
+    assert models.fixed_size_message().size(
         {
             Field("Message_Type"): Literal("Universal::MT_Data"),
         },
         subpath=True,
     ) == Number(8)
-    assert FIXED_SIZE_MESSAGE.size(
+    assert models.fixed_size_message().size(
         {
             Field("Data"): Aggregate(*[Number(0)] * 4),
         },
         subpath=True,
     ) == Number(32)
-    assert FIXED_SIZE_MESSAGE.size(
+    assert models.fixed_size_message().size(
         {
             Field("Message_Type"): Literal("Universal::MT_Data"),
             Field("Data"): Aggregate(*[Number(0)] * 4),
@@ -3289,19 +3271,19 @@ def test_size_subpath() -> None:
         subpath=True,
     ) == Number(40)
 
-    assert DEFINITE_MESSAGE.size(
+    assert models.definite_message().size(
         {
             Field("Length"): Number(8),
         },
         subpath=True,
     ) == Number(16)
-    assert DEFINITE_MESSAGE.size(
+    assert models.definite_message().size(
         {
             Field("Data"): Variable("D"),
         },
         subpath=True,
     ) == Size("D")
-    assert DEFINITE_MESSAGE.size(
+    assert models.definite_message().size(
         {
             Field("Length"): Variable("L"),
             Field("Data"): Variable("D"),
@@ -3309,13 +3291,13 @@ def test_size_subpath() -> None:
         subpath=True,
     ) == Add(Size("D"), Number(16))
 
-    assert TLV_MESSAGE.size(
+    assert models.tlv_message().size(
         {
             Field("Tag"): Variable("T"),
         },
         subpath=True,
     ) == Number(8)
-    assert TLV_MESSAGE.size(
+    assert models.tlv_message().size(
         {
             Field("Tag"): Variable("T"),
             Field("Length"): Variable("L"),
@@ -3323,28 +3305,28 @@ def test_size_subpath() -> None:
         },
         subpath=True,
     ) == Number(56)
-    assert TLV_MESSAGE.size(
+    assert models.tlv_message().size(
         {
             Field("Tag"): Variable("T"),
             Field("Length"): Variable("L"),
         },
         subpath=True,
     ) == Number(24)
-    assert TLV_MESSAGE.size(
+    assert models.tlv_message().size(
         {
             Field("Length"): Div(Add(Size("Tag"), Size("TLV::Length")), Number(8)),
             Field("Value"): Aggregate(*[Number(0)] * 3),
         },
         subpath=True,
     ) == Number(40)
-    assert TLV_MESSAGE.size(
+    assert models.tlv_message().size(
         {
             Field("Length"): Add(Div(Size("X"), Number(8)), Variable("Y")),
             Field("Value"): Variable("Z"),
         },
         subpath=True,
     ) == Add(Size("Z"), Number(16))
-    assert TLV_MESSAGE.size(
+    assert models.tlv_message().size(
         {
             Field("Length"): Div(Size("Msg_Data"), Number(8)),
             Field("Value"): Opaque("Msg_Data"),
@@ -3352,7 +3334,7 @@ def test_size_subpath() -> None:
         subpath=True,
     ) == Add(Mul(Div(Size("Msg_Data"), Number(8)), Number(8)), Number(16))
 
-    assert ETHERNET_FRAME.size(
+    assert models.ethernet_frame().size(
         {
             Field("Destination"): Number(0),
             Field("Source"): Number(0),
@@ -3362,7 +3344,7 @@ def test_size_subpath() -> None:
         },
         subpath=True,
     ) == Number(480)
-    assert ETHERNET_FRAME.size(
+    assert models.ethernet_frame().size(
         {
             Field("Destination"): Number(0),
             Field("Source"): Number(0),
@@ -3374,7 +3356,7 @@ def test_size_subpath() -> None:
         },
         subpath=True,
     ) == Number(512)
-    assert ETHERNET_FRAME.size(
+    assert models.ethernet_frame().size(
         {
             Field("Destination"): Number(0),
             Field("Source"): Number(0),
@@ -3384,7 +3366,7 @@ def test_size_subpath() -> None:
         },
         subpath=True,
     ) == Number(480)
-    assert ETHERNET_FRAME.size(
+    assert models.ethernet_frame().size(
         {
             Field("Destination"): Number(0),
             Field("Source"): Number(0),
@@ -3418,7 +3400,7 @@ def test_size_subpath() -> None:
         ],
         {
             Field("Has_Data"): BOOLEAN,
-            Field("Length"): TLV_LENGTH,
+            Field("Length"): models.tlv_length(),
             Field("Data"): OPAQUE,
         },
     )
@@ -3488,8 +3470,8 @@ def test_size_subpath() -> None:
             ),
         ],
         {
-            Field("A"): TLV_LENGTH,
-            Field("B"): TLV_LENGTH,
+            Field("A"): models.tlv_length(),
+            Field("B"): models.tlv_length(),
         },
     )
     assert optional_overlayed_field.size(
@@ -3546,9 +3528,9 @@ def test_size_subpath() -> None:
             ),
         ],
         {
-            Field("A"): TLV_LENGTH,
-            Field("B"): TLV_LENGTH,
-            Field("C"): TLV_LENGTH,
+            Field("A"): models.tlv_length(),
+            Field("B"): models.tlv_length(),
+            Field("C"): models.tlv_length(),
         },
     )
     assert path_dependent_fields.size(
@@ -3579,7 +3561,7 @@ def test_size_subpath_error() -> None:
             r"$"
         ),
     ):
-        TLV_MESSAGE.size(
+        models.tlv_message().size(
             {
                 Field("Tag"): Variable("T"),
                 Field("Value"): Variable("V"),
@@ -3589,10 +3571,10 @@ def test_size_subpath_error() -> None:
 
 
 def test_max_size() -> None:
-    assert NULL_MESSAGE.max_size() == Number(0)
-    assert FIXED_SIZE_MESSAGE.max_size() == Number(8 + 3 * 64)
-    assert TLV_MESSAGE.max_size() == Number(8 + 16 + (2**16 - 1) * 8)
-    assert SEQUENCE_MESSAGE.max_size() == Number(8 + (2**8 - 1) * 8 + 2 * 16)
+    assert models.null_message().max_size() == Number(0)
+    assert models.fixed_size_message().max_size() == Number(8 + 3 * 64)
+    assert models.tlv_message().max_size() == Number(8 + 16 + (2**16 - 1) * 8)
+    assert models.sequence_message().max_size() == Number(8 + (2**8 - 1) * 8 + 2 * 16)
 
 
 def test_max_size_error() -> None:
@@ -3600,18 +3582,18 @@ def test_max_size_error() -> None:
         RecordFluxError,
         match=r"^model: error: unable to calculate maximum size of message with implicit size$",
     ):
-        ETHERNET_FRAME.max_size()
+        models.ethernet_frame().max_size()
 
 
 def test_max_field_sizes() -> None:
-    assert NULL_MESSAGE.max_field_sizes() == {}
-    assert FIXED_SIZE_MESSAGE.max_field_sizes() == {
+    assert models.null_message().max_field_sizes() == {}
+    assert models.fixed_size_message().max_field_sizes() == {
         Field("Message_Type"): Number(8),
         Field("Data"): Number(64),
         Field("Values"): Number(64),
         Field("Options"): Number(64),
     }
-    assert TLV_MESSAGE.max_field_sizes() == {
+    assert models.tlv_message().max_field_sizes() == {
         Field("Tag"): Number(8),
         Field("Length"): Number(16),
         Field("Value"): Number((2**16 - 1) * 8),
@@ -3625,7 +3607,7 @@ def test_max_field_sizes_error() -> None:
             r"^model: error: unable to calculate maximum field sizes of message with implicit size$"
         ),
     ):
-        ETHERNET_FRAME.max_field_sizes()
+        models.ethernet_frame().max_field_sizes()
 
 
 def test_derived_message_incorrect_base_name() -> None:
@@ -3642,7 +3624,7 @@ def test_derived_message_proven() -> None:
         Message(
             "X::M",
             [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): INTEGER},
+            {Field("F"): models.integer()},
         ),
     )
     assert message.proven() == message
@@ -3671,9 +3653,9 @@ def test_prefixed_message() -> None:
                 Link(Field("F4"), FINAL),
             ],
             {
-                Field("F1"): deepcopy(INTEGER),
+                Field("F1"): deepcopy(models.integer()),
                 Field("F2"): deepcopy(BOOLEAN),
-                Field("F3"): deepcopy(INTEGER),
+                Field("F3"): deepcopy(models.integer()),
                 Field("F4"): OPAQUE,
             },
         ).prefixed("X_"),
@@ -3698,9 +3680,9 @@ def test_prefixed_message() -> None:
                 Link(Field("X_F4"), FINAL),
             ],
             {
-                Field("X_F1"): deepcopy(INTEGER),
+                Field("X_F1"): deepcopy(models.integer()),
                 Field("X_F2"): deepcopy(BOOLEAN),
-                Field("X_F3"): deepcopy(INTEGER),
+                Field("X_F3"): deepcopy(models.integer()),
                 Field("X_F4"): OPAQUE,
             },
         ),
@@ -3730,9 +3712,9 @@ def test_merge_message_simple() -> None:
         ],
         {
             Field("NR_F1"): OPAQUE,
-            Field("NR_F2"): deepcopy(INTEGER),
-            Field("NR_F3"): deepcopy(ENUMERATION),
-            Field("NR_F4"): deepcopy(INTEGER),
+            Field("NR_F2"): deepcopy(models.integer()),
+            Field("NR_F3"): deepcopy(models.enumeration()),
+            Field("NR_F4"): deepcopy(models.integer()),
         },
     )
 
@@ -3793,15 +3775,15 @@ def test_merge_message_complex() -> None:
                 ),
             ],
             {
-                Field("F1"): deepcopy(INTEGER),
-                Field("F2"): deepcopy(INTEGER),
-                Field("F3"): deepcopy(INTEGER),
+                Field("F1"): deepcopy(models.integer()),
+                Field("F2"): deepcopy(models.integer()),
+                Field("F3"): deepcopy(models.integer()),
                 Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(INTEGER),
-                Field("NR_F3"): deepcopy(ENUMERATION),
-                Field("NR_F4"): deepcopy(INTEGER),
-                Field("F5"): deepcopy(INTEGER),
-                Field("F6"): deepcopy(INTEGER),
+                Field("NR_F2"): deepcopy(models.integer()),
+                Field("NR_F3"): deepcopy(models.enumeration()),
+                Field("NR_F4"): deepcopy(models.integer()),
+                Field("F5"): deepcopy(models.integer()),
+                Field("F6"): deepcopy(models.integer()),
             },
         ),
     )
@@ -3852,13 +3834,13 @@ def test_merge_message_recursive() -> None:
             ],
             {
                 Field("SR_NR_F1"): OPAQUE,
-                Field("SR_NR_F2"): deepcopy(INTEGER),
-                Field("SR_NR_F3"): deepcopy(ENUMERATION),
-                Field("SR_NR_F4"): deepcopy(INTEGER),
+                Field("SR_NR_F2"): deepcopy(models.integer()),
+                Field("SR_NR_F3"): deepcopy(models.enumeration()),
+                Field("SR_NR_F4"): deepcopy(models.integer()),
                 Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(INTEGER),
-                Field("NR_F3"): deepcopy(ENUMERATION),
-                Field("NR_F4"): deepcopy(INTEGER),
+                Field("NR_F2"): deepcopy(models.integer()),
+                Field("NR_F3"): deepcopy(models.enumeration()),
+                Field("NR_F4"): deepcopy(models.integer()),
             },
         ),
     )
@@ -3890,9 +3872,9 @@ def test_merge_message_simple_derived() -> None:
             ],
             {
                 Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(INTEGER),
-                Field("NR_F3"): deepcopy(ENUMERATION),
-                Field("NR_F4"): deepcopy(INTEGER),
+                Field("NR_F2"): deepcopy(models.integer()),
+                Field("NR_F3"): deepcopy(models.enumeration()),
+                Field("NR_F4"): deepcopy(models.integer()),
             },
             byte_order=ByteOrder.HIGH_ORDER_FIRST,
         ),
@@ -3903,7 +3885,7 @@ def test_merge_byte_order() -> None:
     inner_msg = UnprovenMessage(
         "P::Merge_Test_Byte_Order",
         [Link(INITIAL, Field("F1")), Link(Field("F1"), Field("F2")), Link(Field("F2"), FINAL)],
-        {Field("F1"): INTEGER, Field("F2"): ENUMERATION},
+        {Field("F1"): models.integer(), Field("F2"): models.enumeration()},
         byte_order=ByteOrder.LOW_ORDER_FIRST,
     )
     outer_msg = UnprovenMessage(
@@ -3923,7 +3905,7 @@ def test_merge_byte_order() -> None:
                 Link(Field("NR_F1"), Field("NR_F2")),
                 Link(Field("NR_F2"), FINAL),
             ],
-            {Field("NR_F1"): INTEGER, Field("NR_F2"): ENUMERATION},
+            {Field("NR_F1"): models.integer(), Field("NR_F2"): models.enumeration()},
             byte_order={
                 Field("NR_F1"): ByteOrder.LOW_ORDER_FIRST,
                 Field("NR_F2"): ByteOrder.LOW_ORDER_FIRST,
@@ -4021,7 +4003,7 @@ def test_merge_message_error_name_conflict() -> None:
     m2 = UnprovenMessage(
         "P::M2",
         [Link(INITIAL, m2_f2), Link(m2_f2, FINAL)],
-        {m2_f2: INTEGER},
+        {m2_f2: models.integer()},
         location=Location((15, 3)),
     )
 
@@ -4031,7 +4013,7 @@ def test_merge_message_error_name_conflict() -> None:
     m1 = UnprovenMessage(
         "P::M1",
         [Link(INITIAL, m1_f1), Link(m1_f1, m1_f1_f2), Link(m1_f1_f2, FINAL)],
-        {m1_f1: m2, m1_f1_f2: INTEGER},
+        {m1_f1: m2, m1_f1_f2: models.integer()},
         location=Location((2, 9)),
     )
 
@@ -4061,9 +4043,9 @@ def test_merge_message_parameterized() -> None:
                 Link(Field("PNR_F2"), FINAL),
             ],
             {
-                Field("P2"): INTEGER,
-                Field("PNR_F1"): INTEGER,
-                Field("PNR_F2"): INTEGER,
+                Field("P2"): models.integer(),
+                Field("PNR_F1"): models.integer(),
+                Field("PNR_F2"): models.integer(),
             },
         ).proven(),
     )
@@ -4089,7 +4071,7 @@ def test_merge_message_with_message_last_attribute() -> None:
             ),
             Link(Field("I2"), FINAL),
         ],
-        {Field("I1"): INTEGER, Field("I2"): OPAQUE},
+        {Field("I1"): models.integer(), Field("I2"): OPAQUE},
     )
 
     inner.error.propagate()
@@ -4102,7 +4084,7 @@ def test_merge_message_with_message_last_attribute() -> None:
                 Link(Field("O1"), Field("O2")),
                 Link(Field("O2"), FINAL),
             ],
-            {Field("O1"): INTEGER, Field("O2"): inner},
+            {Field("O1"): models.integer(), Field("O2"): inner},
         )
         .merged()
         .proven()
@@ -4130,7 +4112,11 @@ def test_merge_message_with_message_last_attribute() -> None:
                 ),
                 Link(Field("O2_I2"), FINAL),
             ],
-            {Field("O1"): INTEGER, Field("O2_I1"): INTEGER, Field("O2_I2"): OPAQUE},
+            {
+                Field("O1"): models.integer(),
+                Field("O2_I1"): models.integer(),
+                Field("O2_I2"): OPAQUE,
+            },
         ),
     )
     o1 = Field(ID("O1", location=Location((2, 10))))
@@ -4153,7 +4139,7 @@ def test_merge_message_with_message_last_attribute() -> None:
                     Link(o1, Field("O2")),
                     Link(Field("O2"), FINAL),
                 ],
-                {o1: inner, Field("O2"): INTEGER},
+                {o1: inner, Field("O2"): models.integer()},
             )
             .merged()
             .proven()
@@ -4196,9 +4182,9 @@ def test_merge_message_with_message_size_attribute() -> None:
             Link(Field("B"), FINAL),
         ],
         {
-            Field("O1"): INTEGER,
-            Field("O2"): INTEGER,
-            Field("O3"): INTEGER,
+            Field("O1"): models.integer(),
+            Field("O2"): models.integer(),
+            Field("O3"): models.integer(),
             Field("A"): inner,
             Field("B"): inner,
         },
@@ -4236,9 +4222,9 @@ def test_merge_message_with_message_size_attribute() -> None:
             ),
         ],
         {
-            Field("O1"): INTEGER,
-            Field("O2"): INTEGER,
-            Field("O3"): INTEGER,
+            Field("O1"): models.integer(),
+            Field("O2"): models.integer(),
+            Field("O3"): models.integer(),
             Field("A_I"): OPAQUE,
             Field("B_I"): OPAQUE,
         },
@@ -4312,7 +4298,7 @@ def test_paths() -> None:
             Link(Field("L"), Field("O"), condition=LessEqual(Variable("L"), Number(100))),
             Link(Field("O"), FINAL),
         ],
-        {Field("L"): INTEGER, Field("O"): INTEGER},
+        {Field("L"): models.integer(), Field("O"): models.integer()},
     )
     assert message.paths(Field("O")) == {
         (
@@ -4327,7 +4313,7 @@ def test_paths() -> None:
 
 
 def test_normalization() -> None:
-    assert TLV_MESSAGE.structure == sorted(
+    assert models.tlv_message().structure == sorted(
         [
             Link(INITIAL, Field("Tag")),
             Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("TLV::Msg_Data"))),
@@ -4339,11 +4325,11 @@ def test_normalization() -> None:
 
 
 def test_set_refinements() -> None:
-    message = MESSAGE.copy()
+    message = models.message().copy()
 
     assert message.type_.refinements == []
 
-    message.set_refinements([REFINEMENT])
+    message.set_refinements([models.refinement()])
 
     assert message.type_.refinements == [
         rty.Refinement(
@@ -4362,29 +4348,32 @@ def test_set_refinements() -> None:
 
 
 def test_set_refinements_error() -> None:
-    message = MESSAGE.copy()
+    message = models.message().copy()
     with pytest.raises(
         FatalError,
         match=r"^model: error: setting refinements for different message$",
     ):
         message.set_refinements(
-            [REFINEMENT, Refinement("In_Message", TLV_MESSAGE, Field("Value"), MESSAGE)],
+            [
+                models.refinement(),
+                Refinement("In_Message", models.tlv_message(), Field("Value"), models.message()),
+            ],
         )
 
 
 def test_message_dependencies() -> None:
-    assert TLV_MESSAGE.dependencies == [
-        TLV_TAG,
-        TLV_LENGTH,
+    assert models.tlv_message().dependencies == [
+        models.tlv_tag(),
+        models.tlv_length(),
         OPAQUE,
-        TLV_MESSAGE,
+        models.tlv_message(),
     ]
-    assert SEQUENCE_MESSAGES_MESSAGE.dependencies == [
-        SEQUENCE_LENGTH,
+    assert models.sequence_messages_message().dependencies == [
+        models.sequence_length(),
         OPAQUE,
-        SEQUENCE_INNER_MESSAGE,
-        SEQUENCE_INNER_MESSAGES,
-        SEQUENCE_MESSAGES_MESSAGE,
+        models.sequence_inner_message(),
+        models.sequence_inner_messages(),
+        models.sequence_messages_message(),
     ]
 
 
@@ -4404,9 +4393,9 @@ def test_message_str() -> None:
         ],
         {
             Field("A"): BOOLEAN,
-            Field("L"): INTEGER,
-            Field("O"): INTEGER,
-            Field("P"): INTEGER,
+            Field("L"): models.integer(),
+            Field("O"): models.integer(),
+            Field("P"): models.integer(),
         },
     )
     assert_equal(
@@ -4430,23 +4419,23 @@ def test_message_str() -> None:
 
 
 def test_refinement_dependencies() -> None:
-    assert UNIVERSAL_REFINEMENT.direct_dependencies == [
-        UNIVERSAL_MESSAGE,
-        UNIVERSAL_OPTION,
-        UNIVERSAL_REFINEMENT,
+    assert models.universal_refinement().direct_dependencies == [
+        models.universal_message(),
+        models.universal_option(),
+        models.universal_refinement(),
     ]
-    assert UNIVERSAL_REFINEMENT.dependencies == [
-        UNIVERSAL_MESSAGE_TYPE,
-        UNIVERSAL_LENGTH,
+    assert models.universal_refinement().dependencies == [
+        models.universal_message_type(),
+        models.universal_length(),
         OPAQUE,
-        UNIVERSAL_OPTION_TYPE,
-        UNIVERSAL_OPTION_TYPES,
-        UNIVERSAL_OPTION,
-        UNIVERSAL_OPTIONS,
-        UNIVERSAL_VALUE,
-        UNIVERSAL_VALUES,
-        UNIVERSAL_MESSAGE,
-        UNIVERSAL_REFINEMENT,
+        models.universal_option_type(),
+        models.universal_option_types(),
+        models.universal_option(),
+        models.universal_options(),
+        models.universal_value(),
+        models.universal_values(),
+        models.universal_message(),
+        models.universal_refinement(),
     ]
 
 
@@ -4455,13 +4444,18 @@ def test_refinement_invalid_package() -> None:
         RecordFluxError,
         match=r'^<stdin>:22:10: model: error: unexpected format of package name "A::B"$',
     ):
-        Refinement(ID("A::B", Location((22, 10))), ETHERNET_FRAME, Field("Payload"), ETHERNET_FRAME)
+        Refinement(
+            ID("A::B", Location((22, 10))),
+            models.ethernet_frame(),
+            Field("Payload"),
+            models.ethernet_frame(),
+        )
 
 
 def test_refinement_invalid_field_type() -> None:
     x = Field(ID("X", Location((20, 10))))
 
-    message = Message("P::M", [Link(INITIAL, x), Link(x, FINAL)], {x: INTEGER})
+    message = Message("P::M", [Link(INITIAL, x), Link(x, FINAL)], {x: models.integer()})
 
     with pytest.raises(
         RecordFluxError,
@@ -4572,8 +4566,8 @@ def test_boolean_variable_as_condition() -> None:
             Link(Field("Tag_2"), FINAL),
         ],
         {
-            Field("Tag_1"): INTEGER,
-            Field("Tag_2"): INTEGER,
+            Field("Tag_1"): models.integer(),
+            Field("Tag_2"): models.integer(),
             Field("Has_Tag"): BOOLEAN,
         },
     )
@@ -4591,7 +4585,7 @@ def test_boolean_variable_as_condition() -> None:
                     Link(Field("Value"), FINAL),
                 ],
                 {
-                    Field("Tag"): TLV_TAG,
+                    Field("Tag"): models.tlv_tag(),
                     Field("Value"): OPAQUE,
                 },
             ),
@@ -4613,7 +4607,7 @@ def test_boolean_variable_as_condition() -> None:
                     Link(Field("Value"), FINAL),
                 ],
                 {
-                    Field("Tag"): TLV_TAG,
+                    Field("Tag"): models.tlv_tag(),
                     Field("Value"): OPAQUE,
                 },
             ),
@@ -4633,7 +4627,7 @@ def test_always_true_refinement(message: Message, condition: Expr) -> None:
             "In_Message",
             message,
             Field(ID("Value", location=Location((10, 20)))),
-            MESSAGE,
+            models.message(),
             condition,
         )
 
@@ -4650,7 +4644,7 @@ def test_always_true_refinement(message: Message, condition: Expr) -> None:
                     Link(Field("Value"), FINAL),
                 ],
                 {
-                    Field("Tag"): TLV_TAG,
+                    Field("Tag"): models.tlv_tag(),
                     Field("Value"): OPAQUE,
                 },
             ),
@@ -4672,7 +4666,7 @@ def test_always_true_refinement(message: Message, condition: Expr) -> None:
                     Link(Field("Value"), FINAL),
                 ],
                 {
-                    Field("Tag"): TLV_TAG,
+                    Field("Tag"): models.tlv_tag(),
                     Field("Value"): OPAQUE,
                 },
             ),
@@ -4692,7 +4686,7 @@ def test_always_false_refinement(message: Message, condition: Expr) -> None:
             "In_Message",
             message,
             Field(ID("Value", location=Location((10, 20)))),
-            MESSAGE,
+            models.message(),
             condition,
         )
 
@@ -4713,7 +4707,7 @@ def test_always_false_refinement(message: Message, condition: Expr) -> None:
                 ),
             ],
             {
-                Field("Tag"): TLV_TAG,
+                Field("Tag"): models.tlv_tag(),
             },
         ),
         (
@@ -4731,8 +4725,8 @@ def test_always_false_refinement(message: Message, condition: Expr) -> None:
                 ),
             ],
             {
-                Field("Tag_1"): TLV_TAG,
-                Field("Tag_2"): TLV_TAG,
+                Field("Tag_1"): models.tlv_tag(),
+                Field("Tag_2"): models.tlv_tag(),
             },
         ),
     ],
@@ -4778,7 +4772,7 @@ def test_possibly_always_true_refinement(
             Link(Field("Value"), FINAL),
         ],
         {
-            Field("Tag"): TLV_TAG,
+            Field("Tag"): models.tlv_tag(),
             Field("Value"): OPAQUE,
         },
     )
@@ -4786,12 +4780,13 @@ def test_possibly_always_true_refinement(
         Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
         Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
     )
+    inner_message = models.message()
     monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
     Refinement(
         "In_Message",
         message,
         Field(ID("Value", location=Location((10, 20)))),
-        MESSAGE,
+        inner_message,
         condition,
     ).error.propagate()
     captured = capsys.readouterr()
@@ -4828,9 +4823,9 @@ def test_possibly_always_true_refinement(
                 [],
                 [
                     (Field("F1"), OPAQUE.identifier, []),
-                    (Field("F2"), INTEGER.identifier, []),
-                    (Field("F3"), ENUMERATION.identifier, []),
-                    (Field("F4"), INTEGER.identifier, []),
+                    (Field("F2"), models.integer().identifier, []),
+                    (Field("F3"), models.enumeration().identifier, []),
+                    (Field("F4"), models.integer().identifier, []),
                 ],
                 None,
                 None,
@@ -4858,16 +4853,16 @@ def test_possibly_always_true_refinement(
                 ],
                 {
                     Field("F1"): OPAQUE,
-                    Field("F2"): INTEGER,
-                    Field("F3"): ENUMERATION,
-                    Field("F4"): INTEGER,
+                    Field("F2"): models.integer(),
+                    Field("F3"): models.enumeration(),
+                    Field("F4"): models.integer(),
                 },
             ),
         ),
     ],
 )
 def test_unchecked_message_checked(unchecked: UncheckedMessage, expected: Message) -> None:
-    assert unchecked.checked([OPAQUE, ENUMERATION, INTEGER]) == expected
+    assert unchecked.checked([OPAQUE, models.enumeration(), models.integer()]) == expected
 
 
 @pytest.mark.parametrize(
@@ -4897,9 +4892,9 @@ def test_unchecked_message_checked(unchecked: UncheckedMessage, expected: Messag
                 [],
                 [
                     (Field("F1"), OPAQUE.identifier, []),
-                    (Field("F2"), INTEGER.identifier, []),
-                    (Field("F3"), ENUMERATION.identifier, []),
-                    (Field("F4"), INTEGER.identifier, []),
+                    (Field("F2"), models.integer().identifier, []),
+                    (Field("F3"), models.enumeration().identifier, []),
+                    (Field("F4"), models.integer().identifier, []),
                 ],
                 None,
                 None,
@@ -4911,4 +4906,4 @@ def test_unchecked_message_checked(unchecked: UncheckedMessage, expected: Messag
 )
 def test_unchecked_message_checked_error(unchecked: UncheckedMessage, expected: str) -> None:
     with pytest.raises(RecordFluxError, match=expected):
-        unchecked.checked([OPAQUE, ENUMERATION, INTEGER])
+        unchecked.checked([OPAQUE, models.enumeration(), models.integer()])

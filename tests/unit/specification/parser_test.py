@@ -2334,7 +2334,7 @@ def test_create_model_message_in_message() -> None:
 
 
 def test_create_model_ethernet_frame() -> None:
-    assert_messages_files([f"{SPEC_DIR}/ethernet.rflx"], [models.ETHERNET_FRAME])
+    assert_messages_files([f"{SPEC_DIR}/ethernet.rflx"], [models.ethernet_frame()])
 
 
 def test_create_model_type_derivation_message() -> None:

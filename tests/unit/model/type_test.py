@@ -387,15 +387,15 @@ def test_enumeration_str() -> None:
 
 
 def test_sequence_dependencies() -> None:
-    assert models.SEQUENCE_INTEGER_VECTOR.dependencies == [
-        models.SEQUENCE_INTEGER,
-        models.SEQUENCE_INTEGER_VECTOR,
+    assert models.sequence_integer_vector().dependencies == [
+        models.sequence_integer(),
+        models.sequence_integer_vector(),
     ]
-    assert models.SEQUENCE_INNER_MESSAGES.dependencies == [
-        models.SEQUENCE_LENGTH,
+    assert models.sequence_inner_messages().dependencies == [
+        models.sequence_length(),
         OPAQUE,
-        models.SEQUENCE_INNER_MESSAGE,
-        models.SEQUENCE_INNER_MESSAGES,
+        models.sequence_inner_message(),
+        models.sequence_inner_messages(),
     ]
 
 
@@ -403,7 +403,7 @@ def test_sequence_dependencies() -> None:
     ("element_type", "error"),
     [
         (
-            Sequence("P::B", models.INTEGER, Location((3, 4))),
+            Sequence("P::B", models.integer(), Location((3, 4))),
             r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
             r'<stdin>:3:4: model: info: type "B" must be scalar or message',
         ),
@@ -435,7 +435,7 @@ def test_sequence_dependencies() -> None:
                     Link(INITIAL, Field("A"), condition=Equal(Size("Message"), Number(8))),
                     Link(Field("A"), FINAL),
                 ],
-                {Field("A"): models.INTEGER},
+                {Field("A"): models.integer()},
                 location=Location((3, 4)),
             ),
             r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'

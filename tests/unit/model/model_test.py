@@ -55,9 +55,9 @@ def test_name_conflict_types() -> None:
 
 
 def test_conflicting_refinements() -> None:
-    r1 = copy(models.REFINEMENT)
+    r1 = copy(models.refinement())
     r1.location = Location((10, 20))
-    r2 = copy(models.REFINEMENT)
+    r2 = copy(models.refinement())
     r2.location = Location((10, 30))
 
     with pytest.raises(
@@ -69,13 +69,13 @@ def test_conflicting_refinements() -> None:
             r"$"
         ),
     ):
-        Model([models.MESSAGE, r1, r2])
+        Model([models.message(), r1, r2])
 
 
 def test_name_conflict_sessions() -> None:
-    s1 = copy(models.SESSION)
+    s1 = copy(models.session())
     s1.location = Location((10, 20))
-    s2 = copy(models.SESSION)
+    s2 = copy(models.session())
     s2.location = Location((10, 30))
 
     with pytest.raises(
@@ -173,18 +173,18 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
 @pytest.mark.parametrize(
     ("types", "model"),
     [
-        ([models.TLV_MESSAGE], models.TLV_MODEL),
-        ([models.TLV_WITH_CHECKSUM_MESSAGE], models.TLV_WITH_CHECKSUM_MODEL),
-        ([models.ETHERNET_FRAME], models.ETHERNET_MODEL),
-        ([models.ENUMERATION_MESSAGE], models.ENUMERATION_MODEL),
-        ([models.UNIVERSAL_REFINEMENT], models.UNIVERSAL_MODEL),
+        ([models.tlv_message()], models.tlv_model()),
+        ([models.tlv_with_checksum_message()], models.tlv_with_checksum_model()),
+        ([models.ethernet_frame()], models.ethernet_model()),
+        ([models.enumeration_message()], models.enumeration_model()),
+        ([models.universal_refinement()], models.universal_model()),
         (
             [
-                models.SEQUENCE_MESSAGE,
-                models.SEQUENCE_MESSAGES_MESSAGE,
-                models.SEQUENCE_SEQUENCE_SIZE_DEFINED_BY_MESSAGE_SIZE,
+                models.sequence_message(),
+                models.sequence_messages_message(),
+                models.sequence_sequence_size_defined_by_message_size(),
             ],
-            models.SEQUENCE_MODEL,
+            models.sequence_model(),
         ),
     ],
 )

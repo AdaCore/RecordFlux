@@ -4,7 +4,7 @@ import pytest
 
 from rflx import expression as expr, model
 from rflx.model import cache
-from tests.data.models import TLV_MESSAGE
+from tests.data import models
 
 
 def test_init(tmp_path: Path) -> None:
@@ -98,6 +98,6 @@ def test_verified(tmp_path: Path) -> None:
 
 def test_verified_disabled(tmp_path: Path) -> None:
     c = cache.Cache(tmp_path / "test.json", enabled=False)
-    assert not c.is_verified(TLV_MESSAGE)
-    c.add_verified(TLV_MESSAGE)
-    assert not c.is_verified(TLV_MESSAGE)
+    assert not c.is_verified(models.tlv_message())
+    c.add_verified(models.tlv_message())
+    assert not c.is_verified(models.tlv_message())
