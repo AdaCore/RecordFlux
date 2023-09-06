@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support for SPARK Pro Wavefront 20230710 (eng/recordflux/RecordFlux#1403)
+- Support for SPARK Pro Wavefront 20230823 (eng/recordflux/RecordFlux#1403, eng/recordflux/RecordFlux#1409)
 
 ### Changed
 
