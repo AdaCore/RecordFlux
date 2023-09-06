@@ -26,7 +26,6 @@ from rflx.model import (
     Scalar,
     Sequence,
     Type,
-    UnprovenMessage,
 )
 from rflx.specification import const
 
@@ -297,10 +296,8 @@ def messages(  # noqa: PLR0915
                 structure.append(Link(field, f))
                 structure.append(Link(f, FINAL))
 
-    message = UnprovenMessage(next(unique_identifiers), structure, types_)
-
     try:
-        return message.proven()
+        message = Message(next(unique_identifiers), structure, types_)
     except error.RecordFluxError as e:
         e.extend(
             [
@@ -313,6 +310,8 @@ def messages(  # noqa: PLR0915
             ],
         )
         raise
+
+    return message
 
 
 def non_null_messages(

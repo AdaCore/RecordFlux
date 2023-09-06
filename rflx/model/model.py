@@ -32,25 +32,20 @@ class UncheckedModel(Base):
 
         for d in self.declarations:
             try:
-                checked_declaration = d.checked(declarations)
-                if isinstance(checked_declaration, message.UnprovenMessage):
-                    try:
-                        proven_message = checked_declaration.proven(
-                            skip_verification or cache.is_verified(checked_declaration),
-                            workers,
-                        )
-                        declarations.append(proven_message)
-                        cache.add_verified(proven_message)
-                    except RecordFluxError as e:
-                        error.extend(e)
-                elif isinstance(checked_declaration, session.UnprovenSession):
-                    try:
-                        proven_session = checked_declaration.proven(workers)
-                        declarations.append(proven_session)
-                    except RecordFluxError as e:
-                        error.extend(e)
+                if isinstance(d, message.UncheckedMessage):
+                    checked_message = d.checked(
+                        declarations,
+                        skip_verification
+                        or cache.is_verified(d.checked(declarations, skip_verification=True)),
+                        workers,
+                    )
+                    declarations.append(checked_message)
+                    cache.add_verified(checked_message)
+                elif isinstance(d, session.UncheckedSession):
+                    checked_session = d.checked(declarations)
+                    declarations.append(checked_session)
                 else:
-                    declarations.append(checked_declaration)
+                    declarations.append(d.checked(declarations))
             except RecordFluxError as e:  # noqa: PERF203
                 error.extend(e)
 

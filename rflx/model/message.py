@@ -12,7 +12,7 @@ from typing import Optional, Union
 import rflx.typing_ as rty
 from rflx import expression as expr
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
-from rflx.contract import ensure, invariant
+from rflx.contract import invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail
 from rflx.identifier import ID, StrID
 from rflx.model.top_level_declaration import TopLevelDeclaration
@@ -135,7 +135,7 @@ class AbstractMessage(mty.Type):
         self._byte_order = {}
 
         self._state = state or MessageState()
-        dependencies = self._dependencies(types)
+        dependencies = _dependencies(types)
         self._unqualified_enum_literals = mty.unqualified_enum_literals(dependencies, self.package)
         self._qualified_enum_literals = mty.qualified_enum_literals(dependencies)
         self._type_names = mty.qualified_type_names(dependencies)
@@ -239,7 +239,7 @@ class AbstractMessage(mty.Type):
 
     @property
     def dependencies(self) -> list[mty.Type]:
-        return self._dependencies(self.types)
+        return [*_dependencies(self.types), self]
 
     @property
     def byte_order(self) -> Mapping[Field, ByteOrder]:
@@ -255,10 +255,6 @@ class AbstractMessage(mty.Type):
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
     ) -> AbstractMessage:
-        raise NotImplementedError
-
-    @abstractmethod
-    def proven(self, skip_proof: bool = False, workers: int = 1) -> Message:
         raise NotImplementedError
 
     @property
@@ -428,87 +424,25 @@ class AbstractMessage(mty.Type):
         return self.copy(structure=structure, types=types, byte_order=byte_order)
 
     def typed_expression(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
-        expression = copy(expression)
-        if isinstance(expression, expr.Variable):
-            assert expression.identifier not in {
-                *self._qualified_enum_literals,
-                *self._type_names,
-            }, f'variable "{expression.identifier}" has the same name as a literal'
-            if expression.name.lower() == "message":
-                expression.type_ = rty.OPAQUE
-            elif Field(expression.identifier) in types:
-                expression.type_ = types[Field(expression.identifier)].type_
-        if (
-            isinstance(expression, expr.Literal)
-            and expression.identifier in self._qualified_enum_literals
-        ):
-            expression.type_ = self._qualified_enum_literals[expression.identifier].type_
-        if isinstance(expression, expr.TypeName):
-            expression.type_ = self._type_names[expression.identifier].type_
-        return expression
+        return typed_expression(expression, types, self._qualified_enum_literals, self._type_names)
 
     def type_constraints(self, expression: expr.Expr) -> list[expr.Expr]:
-        return [
-            *self._aggregate_constraints(expression),
-            *self._scalar_constraints(),
-            *self._type_size_constraints(),
-        ]
+        return type_constraints(
+            self.types,
+            self._qualified_enum_literals,
+            self._type_names,
+            expression,
+        )
 
     def _aggregate_constraints(self, expression: expr.Expr = expr.TRUE) -> list[expr.Expr]:
-        def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
-            comp = self.types[Field(field.name)]
-            assert isinstance(comp, mty.Composite)
-            result = expr.Equal(
-                expr.Mul(aggregate.length, comp.element_size),
-                expr.Size(field),
-                location=expression.location,
-            )
-            if isinstance(comp, mty.Sequence) and isinstance(comp.element_type, mty.Scalar):
-                return [
-                    result,
-                    *comp.element_type.constraints(name=comp.element_type.name, proof=True),
-                ]
-            return [result]
-
-        aggregate_constraints: list[expr.Expr] = []
-        for r in expression.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual))):
-            assert isinstance(r, (expr.Equal, expr.NotEqual))
-            if isinstance(r.left, expr.Aggregate) and isinstance(r.right, expr.Variable):
-                aggregate_constraints.extend(get_constraints(r.left, r.right))
-            if isinstance(r.left, expr.Variable) and isinstance(r.right, expr.Aggregate):
-                aggregate_constraints.extend(get_constraints(r.right, r.left))
-
-        return aggregate_constraints
-
-    def _scalar_constraints(self) -> list[expr.Expr]:
-        scalar_types = [
-            (f.name, t)
-            for f, t in self.types.items()
-            if isinstance(t, mty.Scalar)
-            and t != mty.BOOLEAN
-            and ID(f.name) not in self._qualified_enum_literals
-            and f.name not in ["Message", "Final"]
-        ]
-
-        return [
-            c
-            for n, t in scalar_types
-            for c in t.constraints(name=n, proof=True, same_package=False)
-        ]
+        return _aggregate_constraints(self.types, expression)
 
     def _type_size_constraints(self) -> list[expr.Expr]:
-        return [
-            expr.Equal(expr.Size(l), t.size)
-            for l, t in self._type_names.items()
-            if isinstance(t, mty.Scalar)
-        ]
+        return _type_size_constraints(self._type_names)
 
-    @classmethod
-    def message_constraints(cls) -> list[expr.Expr]:
-        return [
-            expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
-            expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
-        ]
+    @staticmethod
+    def message_constraints() -> list[expr.Expr]:
+        return message_constraints()
 
     def _validate(self, structure: Sequence[Link], types: Mapping[Field, mty.Type]) -> bool:
         type_fields = {*types, INITIAL, FINAL}
@@ -863,9 +797,6 @@ class AbstractMessage(mty.Type):
             link.size = link.size.substituted(set_types)
             link.first = link.first.substituted(set_types)
 
-    def _dependencies(self, types: Mapping[Field, mty.Type]) -> list[mty.Type]:
-        return [*unique(a for t in types.values() for a in t.dependencies), self]
-
 
 class Message(AbstractMessage):
     def __init__(  # noqa: PLR0913
@@ -935,9 +866,6 @@ class Message(AbstractMessage):
             location if location else self.location,
             skip_proof=self._skip_proof,
         )
-
-    def proven(self, _skip_proof: bool = False, _workers: int = 1) -> Message:
-        return copy(self)
 
     def is_possibly_empty(self, field: Field) -> bool:
         if isinstance(self.types[field], mty.Scalar):
@@ -2194,379 +2122,8 @@ class DerivedMessage(Message):
         )
         self.base = base
 
-    def copy(  # noqa: PLR0913
-        self,
-        identifier: Optional[StrID] = None,
-        structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, mty.Type]] = None,
-        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
-        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
-        location: Optional[Location] = None,
-    ) -> DerivedMessage:
-        return DerivedMessage(
-            identifier if identifier else self.identifier,
-            self.base,
-            structure if structure else copy(self.structure),
-            types if types else copy(self.types),
-            checksums if checksums else copy(self.checksums),
-            byte_order if byte_order else copy(self.byte_order),
-            location if location else self.location,
-        )
-
-    def proven(
-        self,
-        _skip_proof: bool = False,
-        _workers: int = 1,
-    ) -> DerivedMessage:
-        return copy(self)
-
-
-class UnprovenMessage(AbstractMessage):
-    def copy(  # noqa: PLR0913
-        self,
-        identifier: Optional[StrID] = None,
-        structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, mty.Type]] = None,
-        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
-        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
-        location: Optional[Location] = None,
-    ) -> UnprovenMessage:
-        return UnprovenMessage(
-            identifier if identifier else self.identifier,
-            structure if structure else copy(self.structure),
-            types if types else copy(self.types),
-            checksums if checksums else copy(self.checksums),
-            byte_order if byte_order else copy(self.byte_order),
-            location if location else self.location,
-        )
-
-    def proven(
-        self,
-        skip_proof: bool = False,
-        workers: int = 1,
-    ) -> Message:
-        return Message(
-            identifier=self.identifier,
-            structure=self.structure,
-            types=self.types,
-            checksums=self.checksums,
-            byte_order=self.byte_order,
-            location=self.location,
-            state=self._state,
-            skip_proof=skip_proof,
-            workers=workers,
-        )
-
-    @ensure(lambda result: valid_message_field_types(result))
-    def merged(
-        self,
-        message_arguments: Optional[Mapping[ID, Mapping[ID, expr.Expr]]] = None,
-    ) -> UnprovenMessage:
-        message_arguments = message_arguments or {}
-        message = self
-
-        while True:
-            inner_message = next(
-                ((f, t) for f, t in message.types.items() if isinstance(t, AbstractMessage)),
-                None,
-            )
-
-            if not inner_message:
-                return message
-
-            message = self._merge_inner_message(message, *inner_message, message_arguments)
-
-    def _merge_inner_message(
-        self,
-        message: UnprovenMessage,
-        field: Field,
-        inner_message: AbstractMessage,
-        message_arguments: Mapping[ID, Mapping[ID, expr.Expr]],
-    ) -> UnprovenMessage:
-        inner_message = self._replace_message_attributes(inner_message.prefixed(f"{field.name}_"))
-
-        assert not inner_message.error.errors
-
-        self._check_message_attributes(message, inner_message, field)
-        self._check_name_conflicts(message, inner_message, field)
-
-        substitution: Mapping[expr.Name, expr.Expr] = (
-            {expr.Variable(a): e for a, e in message_arguments[inner_message.identifier].items()}
-            if inner_message.identifier in message_arguments
-            else {}
-        )
-        structure = []
-
-        def set_types(expression: expr.Expr) -> expr.Expr:
-            return self.typed_expression(expression, inner_message.types)
-
-        for path in message.paths(FINAL):
-            for link in path:
-                if link.target == field:
-                    substitution = {
-                        **substitution,
-                        expr.Variable(INITIAL.name): expr.Variable(link.source.name),
-                    }
-                    initial_link = inner_message.outgoing(INITIAL)[0]
-                    structure.append(
-                        Link(
-                            link.source,
-                            initial_link.target,
-                            link.condition.substituted(mapping=substitution),
-                            initial_link.size.substituted(mapping=substitution),
-                            link.first.substituted(mapping=substitution),
-                            link.location,
-                        ),
-                    )
-                elif link.source == field:
-                    for final_link in inner_message.incoming(FINAL):
-                        merged_condition = expr.And(
-                            link.condition,
-                            final_link.condition,
-                        ).substituted(mapping=substitution)
-                        # The outer message may references to merged fields in its conditions
-                        # that are not yet present as the messages are not yet merged.
-                        # Due to this the types are not set completely. To avoid type errors
-                        # when checking the paths of the merged message the types of the
-                        # prefixed inner message have to be added to the merged condition.
-                        merged_condition = merged_condition.substituted(set_types)
-                        proof = merged_condition.check(
-                            [
-                                *inner_message.message_constraints(),
-                                *inner_message.type_constraints(merged_condition),
-                                inner_message.path_condition(final_link.source),
-                            ],
-                        )
-                        if proof.result != expr.ProofResult.UNSAT:
-                            structure.append(
-                                Link(
-                                    final_link.source,
-                                    link.target,
-                                    merged_condition.simplified(),
-                                    link.size.substituted(
-                                        mapping={
-                                            **substitution,
-                                            expr.Last(field.identifier): expr.Last(
-                                                final_link.source.identifier,
-                                            ),
-                                        },
-                                    ),
-                                    link.first.substituted(mapping=substitution),
-                                    link.location,
-                                ),
-                            )
-                else:
-                    structure.append(link)
-
-        structure = list(set(structure))
-        structure.extend(
-            Link(
-                l.source,
-                l.target,
-                l.condition.substituted(mapping=substitution),
-                l.size.substituted(mapping=substitution),
-                l.first.substituted(mapping=substitution),
-                l.location,
-            )
-            for l in inner_message.structure
-            if l.target != FINAL and l.source != INITIAL
-        )
-
-        types = {
-            **{f: t for f, t in message.types.items() if f != field},
-            **{
-                f: t
-                for f, t in inner_message.types.items()
-                if inner_message.identifier not in message_arguments
-                or f.identifier not in message_arguments[inner_message.identifier]
-            },
-        }
-
-        byte_order = {
-            **{f: b for f, b in message.byte_order.items() if f != field},
-            **inner_message.byte_order,
-        }
-
-        structure, types, byte_order = self._prune_dangling_fields(structure, types, byte_order)
-        if not structure or not types:
-            message.error.extend(
-                [
-                    (
-                        f'empty message type when merging field "{field.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        field.identifier.location,
-                    ),
-                ],
-            )
-        message.error.propagate()
-        return message.copy(structure=structure, types=types, byte_order=byte_order)
-
-    @staticmethod
-    def _replace_message_attributes(message: AbstractMessage) -> UnprovenMessage:
-        first_field = message.outgoing(INITIAL)[0].target
-
-        def replace(expression: expr.Expr) -> expr.Expr:
-            if (
-                not isinstance(expression, expr.Attribute)
-                or not isinstance(expression.prefix, expr.Variable)
-                or expression.prefix.name != "Message"
-            ):
-                return expression
-            if isinstance(expression, expr.First):
-                return expr.First(ID(first_field.identifier, location=expression.location))
-            if isinstance(expression, expr.Last):
-                return expression
-            if isinstance(expression, expr.Size):
-                return expr.Sub(
-                    expr.Last(ID("Message", location=expression.location)),
-                    expr.Last(INITIAL.name),
-                    location=expression.location,
-                )
-            assert False
-
-        return UnprovenMessage(
-            message.identifier,
-            [
-                Link(
-                    l.source,
-                    l.target,
-                    l.condition.substituted(replace),
-                    l.size.substituted(replace),
-                    l.first.substituted(replace),
-                    l.location,
-                )
-                for l in message.structure
-            ],
-            message.types,
-            message.checksums,
-            message.byte_order,
-            message.location,
-        )
-
-    @staticmethod
-    def _check_message_attributes(
-        message: AbstractMessage,
-        inner_message: AbstractMessage,
-        field: Field,
-    ) -> None:
-        if any(n.target != FINAL for n in message.outgoing(field)):
-            for expressions, error in [
-                ((l.condition for l in inner_message.structure), 'reference to "Message"'),
-                ((l.size for l in inner_message.structure), "implicit size"),
-            ]:
-                locations = [
-                    m.location
-                    for e in expressions
-                    for m in e.findall(
-                        lambda x: isinstance(x, expr.Variable) and x.identifier == ID("Message"),
-                    )
-                ]
-                if locations:
-                    message.error.extend(
-                        [
-                            (
-                                f"messages with {error} may only be used for last fields",
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                field.identifier.location,
-                            ),
-                            *[
-                                (
-                                    f'message field with {error} in "{inner_message.identifier}"',
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    loc,
-                                )
-                                for loc in locations
-                            ],
-                        ],
-                    )
-
-    def _check_name_conflicts(
-        self,
-        message: AbstractMessage,
-        inner_message: AbstractMessage,
-        field: Field,
-    ) -> None:
-        name_conflicts = [
-            f for f in message.fields for g in inner_message.fields if f.name == g.name
-        ]
-
-        if name_conflicts:
-            conflicting = name_conflicts.pop(0)
-            self.error.extend(
-                [
-                    (
-                        f'name conflict for "{conflicting.identifier}" in'
-                        f' "{message.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        conflicting.identifier.location,
-                    ),
-                    (
-                        f'when merging message "{inner_message.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        inner_message.location,
-                    ),
-                    (
-                        f'into field "{field.name}"',
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        field.identifier.location,
-                    ),
-                ],
-            )
-
-    @staticmethod
-    def _prune_dangling_fields(
-        structure: list[Link],
-        types: dict[Field, mty.Type],
-        byte_order: dict[Field, ByteOrder],
-    ) -> tuple[list[Link], dict[Field, mty.Type], dict[Field, ByteOrder]]:
-        dangling = []
-        progress = True
-        while progress:
-            progress = False
-            fields = {x for l in structure for x in (l.source, l.target) if x != FINAL}
-            for s in fields:
-                if all(l.source != s for l in structure):
-                    dangling.append(s)
-                    progress = True
-            structure = [l for l in structure if l.target not in dangling]
-
-        return (
-            structure,
-            {k: v for k, v in types.items() if k not in dangling},
-            {k: v for k, v in byte_order.items() if k not in dangling},
-        )
-
-
-class UnprovenDerivedMessage(UnprovenMessage):
-    def __init__(  # noqa: PLR0913
-        self,
-        identifier: StrID,
-        base: Union[UnprovenMessage, Message],
-        structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, mty.Type]] = None,
-        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
-        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
-        location: Optional[Location] = None,
-    ) -> None:
-        super().__init__(
-            identifier,
-            structure if structure else copy(base.structure),
-            types if types else copy(base.types),
-            checksums if checksums else copy(base.checksums),
-            byte_order if byte_order else copy(base.byte_order),
-            location if location else base.location,
-        )
-        self.error.extend(base.error)
-        self.base = base
-
-        if isinstance(base, (UnprovenDerivedMessage, DerivedMessage)):
-            self.error.extend(
+        if isinstance(base, DerivedMessage):
+            RecordFluxError(
                 [
                     (
                         f'illegal derivation "{self.identifier}"',
@@ -2581,8 +2138,7 @@ class UnprovenDerivedMessage(UnprovenMessage):
                         base.location,
                     ),
                 ],
-            )
-            self.error.propagate()
+            ).propagate()
 
     def copy(  # noqa: PLR0913
         self,
@@ -2592,8 +2148,8 @@ class UnprovenDerivedMessage(UnprovenMessage):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-    ) -> UnprovenDerivedMessage:
-        return UnprovenDerivedMessage(
+    ) -> DerivedMessage:
+        return DerivedMessage(
             identifier if identifier else self.identifier,
             self.base,
             structure if structure else copy(self.structure),
@@ -2601,17 +2157,6 @@ class UnprovenDerivedMessage(UnprovenMessage):
             checksums if checksums else copy(self.checksums),
             byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
-        )
-
-    def proven(self, _skip_proof: bool = False, workers: int = 1) -> DerivedMessage:
-        return DerivedMessage(
-            self.identifier,
-            self.base if isinstance(self.base, Message) else self.base.proven(workers=workers),
-            self.structure,
-            self.types,
-            self.checksums,
-            self.byte_order,
-            self.location,
         )
 
 
@@ -2794,14 +2339,68 @@ class UncheckedMessage(mty.UncheckedType):
     structure: Sequence[Link]
     parameter_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
     field_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
-    checksums: Optional[Mapping[ID, Sequence[expr.Expr]]]
-    byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]]
-    location: Optional[Location]
+    checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = dataclass_field(default=None)
+    byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = dataclass_field(
+        default=None,
+    )
+    location: Optional[Location] = dataclass_field(default=None)
 
-    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> UnprovenMessage:
+    @property
+    def fields(self) -> list[Field]:
+        return [f for f, _, _ in self.field_types]
+
+    @property
+    def byte_order_dict(self) -> dict[Field, ByteOrder]:
+        if self.byte_order is None:
+            return {f: ByteOrder.HIGH_ORDER_FIRST for f, _, _ in self.field_types}
+        if isinstance(self.byte_order, ByteOrder):
+            return {f: self.byte_order for f, _, _ in self.field_types}
+        return dict(self.byte_order)
+
+    def incoming(self, field: Field) -> list[Link]:
+        return [l for l in self.structure if l.target == field]
+
+    def outgoing(self, field: Field) -> list[Link]:
+        return [l for l in self.structure if l.source == field]
+
+    def paths(self, field: Field) -> set[tuple[Link, ...]]:
+        if field == INITIAL:
+            return set()
+
+        result = set()
+        for l in self.incoming(field):
+            source = self.paths(l.source)
+            for s in source:
+                result.add((*s, l))
+            if not source:
+                result.add((l,))
+
+        return result
+
+    def types(self, declarations: Sequence[TopLevelDeclaration]) -> dict[Field, mty.Type]:
+        return {
+            field: next(
+                (
+                    t
+                    for t in declarations
+                    if isinstance(t, mty.Type) and t.identifier == type_identifier
+                ),
+            )
+            for field, type_identifier, type_arguments in (
+                *self.parameter_types,
+                *self.field_types,
+            )
+        }
+
+    def checked(
+        self,
+        declarations: Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,
+        workers: int = 1,
+    ) -> Message:
         error = RecordFluxError()
         arguments = {}
-        message_types: dict[Field, mty.Type] = {}
+        fields: list[Field] = []
         for field, type_identifier, type_arguments in (*self.parameter_types, *self.field_types):
             field_type = next(
                 (
@@ -2820,7 +2419,7 @@ class UncheckedMessage(mty.UncheckedType):
                         type_identifier.location,
                     )
                     arguments[type_identifier] = dict(type_arguments)
-                if field in message_types:
+                if field in fields:
                     error.extend(  # pragma: no branch
                         [
                             (
@@ -2833,11 +2432,11 @@ class UncheckedMessage(mty.UncheckedType):
                                 "conflicting name",
                                 Subsystem.MODEL,
                                 Severity.INFO,
-                                next(f.identifier for f in message_types if f == field).location,
+                                next(f.identifier for f in fields if f == field).location,
                             ),
                         ],
                     )
-                message_types[field] = field_type
+                fields.append(field)
             else:
                 error.extend(
                     [
@@ -2850,21 +2449,43 @@ class UncheckedMessage(mty.UncheckedType):
                     ],
                 )
 
-        try:
-            result = UnprovenMessage(
-                self.identifier,
-                self.structure,
-                message_types,
-                self.checksums,
-                self.byte_order,
-                self.location,
-            ).merged(arguments)
-        except RecordFluxError as e:
-            error.extend(e)
-
         error.propagate()
 
-        return result
+        result = self.merged(declarations, arguments)
+
+        return Message(
+            identifier=result.identifier,
+            structure=result.structure,
+            types=result.types(declarations),
+            checksums=result.checksums,
+            byte_order=result.byte_order,
+            location=result.location,
+            skip_proof=skip_verification,
+            workers=workers,
+        )
+
+    def merged(
+        self,
+        declarations: Sequence[TopLevelDeclaration],
+        message_arguments: Optional[Mapping[ID, Mapping[ID, expr.Expr]]] = None,
+    ) -> UncheckedMessage:
+        assert all_types_declared(self, declarations)
+
+        message_arguments = message_arguments or {}
+        message = self
+
+        message_types = {d.identifier: d for d in declarations if isinstance(d, Message)}
+
+        while True:
+            inner_message = next(
+                ((f, message_types[i]) for f, i, _ in message.field_types if i in message_types),
+                None,
+            )
+
+            if not inner_message:
+                return message
+
+            message = self._merge_inner_message(message, *inner_message, message_arguments)
 
     def _check_message_arguments(
         self,
@@ -2913,14 +2534,313 @@ class UncheckedMessage(mty.UncheckedType):
                     ],
                 )
 
+    def _merge_inner_message(
+        self,
+        message: UncheckedMessage,
+        field: Field,
+        inner_message: Message,
+        message_arguments: Mapping[ID, Mapping[ID, expr.Expr]],
+    ) -> UncheckedMessage:
+        inner_message = self._replace_message_attributes(inner_message.prefixed(f"{field.name}_"))
+
+        self._check_message_attributes(message, inner_message, field)
+        self._check_name_conflicts(message, inner_message, field)
+
+        substitution: Mapping[expr.Name, expr.Expr] = (
+            {expr.Variable(a): e for a, e in message_arguments[inner_message.identifier].items()}
+            if inner_message.identifier in message_arguments
+            else {}
+        )
+        structure = []
+        inner_message_types = inner_message.types
+        dependencies = _dependencies(inner_message_types)
+        inner_message_qualified_enum_literals = mty.qualified_enum_literals(dependencies)
+        inner_message_qualified_type_names = mty.qualified_type_names(dependencies)
+
+        def typed_variable(expression: expr.Expr) -> expr.Expr:
+            return typed_expression(
+                expression,
+                inner_message_types,
+                inner_message_qualified_enum_literals,
+                inner_message_qualified_type_names,
+            )
+
+        for path in message.paths(FINAL):
+            for link in path:
+                if link.target == field:
+                    substitution = {
+                        **substitution,
+                        expr.Variable(INITIAL.name): expr.Variable(link.source.name),
+                    }
+                    initial_link = inner_message.outgoing(INITIAL)[0]
+                    structure.append(
+                        Link(
+                            link.source,
+                            initial_link.target,
+                            link.condition.substituted(mapping=substitution),
+                            initial_link.size.substituted(mapping=substitution),
+                            link.first.substituted(mapping=substitution),
+                            link.location,
+                        ),
+                    )
+                elif link.source == field:
+                    for final_link in inner_message.incoming(FINAL):
+                        merged_condition = (
+                            expr.And(
+                                link.condition,
+                                final_link.condition,
+                            )
+                            .substituted(mapping=substitution)
+                            .substituted(typed_variable)
+                        )
+                        proof = merged_condition.check(
+                            [
+                                *message_constraints(),
+                                *type_constraints(
+                                    inner_message_types,
+                                    inner_message_qualified_enum_literals,
+                                    inner_message_qualified_type_names,
+                                    merged_condition,
+                                ),
+                                inner_message.path_condition(final_link.source),
+                            ],
+                        )
+                        if proof.result != expr.ProofResult.UNSAT:
+                            structure.append(
+                                Link(
+                                    final_link.source,
+                                    link.target,
+                                    merged_condition.simplified(),
+                                    link.size.substituted(
+                                        mapping={
+                                            **substitution,
+                                            expr.Last(field.identifier): expr.Last(
+                                                final_link.source.identifier,
+                                            ),
+                                        },
+                                    ),
+                                    link.first.substituted(mapping=substitution),
+                                    link.location,
+                                ),
+                            )
+                else:
+                    structure.append(link)
+
+        structure = list(set(structure))
+        structure.extend(
+            Link(
+                l.source,
+                l.target,
+                l.condition.substituted(mapping=substitution),
+                l.size.substituted(mapping=substitution),
+                l.first.substituted(mapping=substitution),
+                l.location,
+            )
+            for l in inner_message.structure
+            if l.target != FINAL and l.source != INITIAL
+        )
+
+        field_types = [
+            *[(f, t, p) for f, t, p in message.field_types if f != field],
+            *[
+                (f, t.identifier, [])
+                for f, t in inner_message.field_types.items()
+                if inner_message.identifier not in message_arguments
+                or f.identifier not in message_arguments[inner_message.identifier]
+            ],
+        ]
+        checksums = {
+            **(message.checksums if message.checksums is not None else {}),
+            **(inner_message.checksums if inner_message.checksums is not None else {}),
+        }
+        byte_order = {
+            **{f: b for f, b in message.byte_order_dict.items() if f != field},
+            **inner_message.byte_order,
+        }
+
+        structure, field_types, byte_order = self._prune_dangling_fields(
+            structure,
+            field_types,
+            byte_order,
+        )
+        if not structure or not field_types:
+            fail(
+                f'empty message type when merging field "{field.identifier}"',
+                Subsystem.MODEL,
+                Severity.ERROR,
+                field.identifier.location,
+            )
+
+        return UncheckedMessage(
+            self.identifier,
+            sorted(structure),
+            self.parameter_types,
+            field_types,
+            checksums,
+            byte_order,
+            self.location,
+        )
+
+    @staticmethod
+    def _replace_message_attributes(message: AbstractMessage) -> Message:
+        first_field = message.outgoing(INITIAL)[0].target
+
+        def replace(expression: expr.Expr) -> expr.Expr:
+            if (
+                not isinstance(expression, expr.Attribute)
+                or not isinstance(expression.prefix, expr.Variable)
+                or expression.prefix.name != "Message"
+            ):
+                return expression
+            if isinstance(expression, expr.First):
+                return expr.First(ID(first_field.identifier, location=expression.location))
+            if isinstance(expression, expr.Last):
+                return expression
+            if isinstance(expression, expr.Size):
+                return expr.Sub(
+                    expr.Last(ID("Message", location=expression.location)),
+                    expr.Last(INITIAL.name),
+                    location=expression.location,
+                )
+            assert False
+
+        return Message(
+            message.identifier,
+            [
+                Link(
+                    l.source,
+                    l.target,
+                    l.condition.substituted(replace),
+                    l.size.substituted(replace),
+                    l.first.substituted(replace),
+                    l.location,
+                )
+                for l in message.structure
+            ],
+            message.types,
+            message.checksums,
+            message.byte_order,
+            message.location,
+            skip_proof=True,
+        )
+
+    @staticmethod
+    def _check_message_attributes(
+        message: UncheckedMessage,
+        inner_message: Message,
+        field: Field,
+    ) -> None:
+        error = RecordFluxError()
+
+        if any(n.target != FINAL for n in message.outgoing(field)):
+            for expressions, issue in [
+                ((l.condition for l in inner_message.structure), 'reference to "Message"'),
+                ((l.size for l in inner_message.structure), "implicit size"),
+            ]:
+                locations = [
+                    m.location
+                    for e in expressions
+                    for m in e.findall(
+                        lambda x: isinstance(x, expr.Variable) and x.identifier == ID("Message"),
+                    )
+                ]
+                if locations:
+                    error.extend(
+                        [
+                            (
+                                f"messages with {issue} may only be used for last fields",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                field.identifier.location,
+                            ),
+                            *[
+                                (
+                                    f'message field with {issue} in "{inner_message.identifier}"',
+                                    Subsystem.MODEL,
+                                    Severity.INFO,
+                                    loc,
+                                )
+                                for loc in locations
+                            ],
+                        ],
+                    )
+
+        error.propagate()
+
+    def _check_name_conflicts(
+        self,
+        message: UncheckedMessage,
+        inner_message: Message,
+        field: Field,
+    ) -> None:
+        error = RecordFluxError()
+        name_conflicts = [
+            f for f in message.fields for g in inner_message.fields if f.name == g.name
+        ]
+
+        if name_conflicts:
+            conflicting = name_conflicts.pop(0)
+            error.extend(
+                [
+                    (
+                        f'name conflict for "{conflicting.identifier}" in'
+                        f' "{message.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        conflicting.identifier.location,
+                    ),
+                    (
+                        f'when merging message "{inner_message.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        inner_message.location,
+                    ),
+                    (
+                        f'into field "{field.name}"',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        field.identifier.location,
+                    ),
+                ],
+            )
+
+        error.propagate()
+
+    @staticmethod
+    def _prune_dangling_fields(
+        structure: Sequence[Link],
+        field_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]],
+        byte_order: Mapping[Field, ByteOrder],
+    ) -> tuple[
+        list[Link],
+        list[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]],
+        dict[Field, ByteOrder],
+    ]:
+        dangling = []
+        progress = True
+        while progress:
+            progress = False
+            fields = {x for l in structure for x in (l.source, l.target) if x != FINAL}
+            for s in fields:
+                if all(l.source != s for l in structure):
+                    dangling.append(s)
+                    progress = True
+            structure = [l for l in structure if l.target not in dangling]
+
+        return (
+            list(structure),
+            [(f, t, p) for f, t, p in field_types if f not in dangling],
+            {k: v for k, v in byte_order.items() if k not in dangling},
+        )
+
 
 @dataclass
 class UncheckedDerivedMessage(mty.UncheckedType):
     identifier: ID
     base_identifier: ID
-    location: Optional[Location]
+    location: Optional[Location] = dataclass_field(default=None)
 
-    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> UnprovenMessage:
+    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> DerivedMessage:
         base_types = [
             t
             for t in declarations
@@ -2935,11 +2855,10 @@ class UncheckedDerivedMessage(mty.UncheckedType):
                 self.base_identifier.location,
             )
 
-        error = RecordFluxError()
-        base_messages = [t for t in base_types if isinstance(t, (UnprovenMessage, Message))]
+        base_messages = [t for t in base_types if isinstance(t, Message)]
 
         if not base_messages:
-            error.extend(
+            RecordFluxError(
                 [
                     (
                         f'illegal derivation "{self.identifier}"',
@@ -2954,22 +2873,9 @@ class UncheckedDerivedMessage(mty.UncheckedType):
                         base_types[0].identifier.location,
                     ),
                 ],
-            )
+            ).propagate()
 
-        error.propagate()
-
-        try:
-            result = UnprovenDerivedMessage(
-                self.identifier,
-                base_messages[0],
-                location=self.location,
-            ).merged()
-        except RecordFluxError as e:
-            error.extend(e)
-
-        error.propagate()
-
-        return result
+        return DerivedMessage(self.identifier, base_messages[0], location=self.location)
 
 
 @dataclass
@@ -2979,7 +2885,7 @@ class UncheckedRefinement(mty.UncheckedType):
     field: Field
     sdu: ID
     condition: expr.Expr
-    location: Optional[Location]
+    location: Optional[Location] = dataclass_field(default=None)
 
     def checked(self, declarations: Sequence[TopLevelDeclaration]) -> Refinement:
         error = RecordFluxError()
@@ -3028,6 +2934,109 @@ class UncheckedRefinement(mty.UncheckedType):
         return result
 
 
+def typed_expression(
+    expression: expr.Expr,
+    types: Mapping[Field, mty.Type],
+    qualified_enum_literals: Mapping[ID, mty.Enumeration],
+    qualified_type_names: Mapping[ID, mty.Type],
+) -> expr.Expr:
+    expression = copy(expression)
+    if isinstance(expression, expr.Variable):
+        assert expression.identifier not in {
+            *qualified_enum_literals,
+            *qualified_type_names,
+        }, f'variable "{expression.identifier}" has the same name as a literal'
+        if expression.name.lower() == "message":
+            expression.type_ = rty.OPAQUE
+        elif Field(expression.identifier) in types:
+            expression.type_ = types[Field(expression.identifier)].type_
+    if isinstance(expression, expr.Literal) and expression.identifier in qualified_enum_literals:
+        expression.type_ = qualified_enum_literals[expression.identifier].type_
+    if isinstance(expression, expr.TypeName):
+        expression.type_ = qualified_type_names[expression.identifier].type_
+    return expression
+
+
+def type_constraints(
+    types: Mapping[Field, mty.Type],
+    qualified_enum_literals: Mapping[ID, mty.Enumeration],
+    qualified_type_names: Mapping[ID, mty.Type],
+    expression: expr.Expr,
+) -> list[expr.Expr]:
+    return [
+        *_aggregate_constraints(types, expression),
+        *_scalar_constraints(types, qualified_enum_literals),
+        *_type_size_constraints(qualified_type_names),
+    ]
+
+
+def _aggregate_constraints(
+    types: Mapping[Field, mty.Type],
+    expression: expr.Expr = expr.TRUE,
+) -> list[expr.Expr]:
+    def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
+        comp = types[Field(field.name)]
+        assert isinstance(comp, mty.Composite)
+        result = expr.Equal(
+            expr.Mul(aggregate.length, comp.element_size),
+            expr.Size(field),
+            location=expression.location,
+        )
+        if isinstance(comp, mty.Sequence) and isinstance(comp.element_type, mty.Scalar):
+            return [
+                result,
+                *comp.element_type.constraints(name=comp.element_type.name, proof=True),
+            ]
+        return [result]
+
+    aggregate_constraints: list[expr.Expr] = []
+    for r in expression.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual))):
+        assert isinstance(r, (expr.Equal, expr.NotEqual))
+        if isinstance(r.left, expr.Aggregate) and isinstance(r.right, expr.Variable):
+            aggregate_constraints.extend(get_constraints(r.left, r.right))
+        if isinstance(r.left, expr.Variable) and isinstance(r.right, expr.Aggregate):
+            aggregate_constraints.extend(get_constraints(r.right, r.left))
+
+    return aggregate_constraints
+
+
+def _scalar_constraints(
+    types: Mapping[Field, mty.Type],
+    qualified_enum_literals: Mapping[ID, mty.Enumeration],
+) -> list[expr.Expr]:
+    scalar_types = [
+        (f.name, t)
+        for f, t in types.items()
+        if isinstance(t, mty.Scalar)
+        and t != mty.BOOLEAN
+        and ID(f.name) not in qualified_enum_literals
+        and f.name not in ["Message", "Final"]
+    ]
+
+    return [
+        c for n, t in scalar_types for c in t.constraints(name=n, proof=True, same_package=False)
+    ]
+
+
+def _type_size_constraints(qualified_type_names: Mapping[ID, mty.Type]) -> list[expr.Expr]:
+    return [
+        expr.Equal(expr.Size(l), t.size)
+        for l, t in qualified_type_names.items()
+        if isinstance(t, mty.Scalar)
+    ]
+
+
+def message_constraints() -> list[expr.Expr]:
+    return [
+        expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
+        expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
+    ]
+
+
+def _dependencies(types: Mapping[Field, mty.Type]) -> list[mty.Type]:
+    return [*unique(a for t in types.values() for a in t.dependencies)]
+
+
 def expression_list(expression: expr.Expr) -> Sequence[expr.Expr]:
     if isinstance(expression, expr.And):
         return expression.terms
@@ -3069,3 +3078,23 @@ def substitute_variables(
             location=expression.location,
         )
     return expression
+
+
+def all_types_declared(
+    message: UncheckedMessage,
+    declarations: Sequence[TopLevelDeclaration],
+) -> bool:
+    undeclared_types = sorted(
+        {
+            str(type_identifier)
+            for field, type_identifier, type_arguments in (
+                *message.parameter_types,
+                *message.field_types,
+            )
+            if not any(d.identifier == type_identifier for d in declarations)
+        },
+    )
+    assert (
+        not undeclared_types
+    ), f'undeclared types for message "{message.identifier}": {", ".join(undeclared_types)}'
+    return True

@@ -17,7 +17,6 @@ from rflx.model import (
     Transition,
     Type,
     UncheckedSession,
-    UnprovenSession,
     declaration as decl,
     statement as stmt,
 )
@@ -2886,7 +2885,7 @@ def test_message_assignment_from_function() -> None:
                 ],
                 Location((1, 2)),
             ),
-            UnprovenSession(
+            Session(
                 "P::S",
                 [
                     State(

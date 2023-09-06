@@ -49,10 +49,7 @@ def test_message_undefined_type() -> None:
               end message;
         end Test;
         """,
-        r"^"
-        r'<stdin>:4:16: model: error: undefined type "Test::T"\n'
-        r'<stdin>:4:10: model: error: missing type for field "Foo" in "Test::PDU"'
-        r"$",
+        r'^<stdin>:4:16: model: error: undefined type "Test::T"$',
     )
 
 

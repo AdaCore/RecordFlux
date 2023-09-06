@@ -114,7 +114,7 @@ class LSModel:
         )
 
     def _append_package_of(self, declaration: UncheckedTopLevelDeclaration) -> None:
-        package_identifier = declaration.identifier.parent
+        package_identifier = declaration.package
         package = LSModel._to_symbol(package_identifier)
         if not self._package_already_registered(package):
             self._append_symbol(package)
@@ -132,7 +132,7 @@ class LSModel:
         if isinstance(declaration, UncheckedEnumeration):
             result = [
                 Symbol(
-                    declaration.identifier.parent * literal[0],
+                    declaration.package * literal[0],
                     SymbolCategory.ENUMERATION_LITERAL,
                     declaration.location,
                     None,

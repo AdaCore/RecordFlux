@@ -12,8 +12,6 @@ from .message import (
     UncheckedDerivedMessage as UncheckedDerivedMessage,
     UncheckedMessage as UncheckedMessage,
     UncheckedRefinement as UncheckedRefinement,
-    UnprovenDerivedMessage as UnprovenDerivedMessage,
-    UnprovenMessage as UnprovenMessage,
 )
 from .model import Model as Model, UncheckedModel as UncheckedModel
 from .session import (
@@ -23,7 +21,6 @@ from .session import (
     State as State,
     Transition as Transition,
     UncheckedSession as UncheckedSession,
-    UnprovenSession as UnprovenSession,
 )
 from .top_level_declaration import (
     TopLevelDeclaration as TopLevelDeclaration,

@@ -906,37 +906,6 @@ class Session(AbstractSession):
         self._validate_usage()
 
 
-class UnprovenSession(AbstractSession):
-    def __init__(  # noqa: PLR0913
-        self,
-        identifier: StrID,
-        states: Sequence[State],
-        declarations: Sequence[decl.BasicDeclaration],
-        parameters: Sequence[decl.FormalDeclaration],
-        types: Sequence[mty.Type],
-        location: Optional[Location] = None,
-    ):
-        super().__init__(
-            identifier,
-            states,
-            declarations,
-            parameters,
-            types,
-            location,
-        )
-
-    def proven(self, workers: int) -> Session:
-        return Session(
-            self.identifier,
-            self.states,
-            list(self.declarations.values()),
-            list(self.parameters.values()),
-            list(self.types.values()),
-            self.location,
-            workers,
-        )
-
-
 @dataclass
 class UncheckedSession(UncheckedTopLevelDeclaration):
     identifier: ID
@@ -945,8 +914,8 @@ class UncheckedSession(UncheckedTopLevelDeclaration):
     parameters: Sequence[decl.FormalDeclaration]
     location: Optional[Location]
 
-    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> UnprovenSession:
-        return UnprovenSession(
+    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> Session:
+        return Session(
             self.identifier,
             self.states,
             self.declarations,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import textwrap
 from collections import abc
 from copy import deepcopy
+from functools import lru_cache
 
 import pytest
 
@@ -58,16 +59,15 @@ from rflx.model import (
     Refinement,
     Sequence,
     Type,
+    UncheckedDerivedMessage,
     UncheckedMessage,
-    UnprovenDerivedMessage,
-    UnprovenMessage,
 )
 from rflx.model.message import ByteOrder
 from tests.data import models
 from tests.utils import assert_equal, assert_message_model_error
 
-M_NO_REF = UnprovenMessage(
-    "P::No_Ref",
+M_NO_REF = UncheckedMessage(
+    ID("P::No_Ref"),
     [
         Link(INITIAL, Field("F1"), size=Number(16)),
         Link(Field("F1"), Field("F2")),
@@ -81,82 +81,43 @@ M_NO_REF = UnprovenMessage(
         Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
         Link(Field("F4"), FINAL),
     ],
-    {
-        Field("F1"): OPAQUE,
-        Field("F2"): models.integer(),
-        Field("F3"): models.enumeration(),
-        Field("F4"): models.integer(),
-    },
-)
-
-M_SMPL_REF = UnprovenMessage(
-    "P::Smpl_Ref",
-    [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
-    {Field("NR"): deepcopy(M_NO_REF)},
-)
-
-
-M_CMPLX_REF = UnprovenMessage(
-    "P::Cmplx_Ref",
+    [],
     [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(100))),
-        Link(Field("F1"), Field("F3"), GreaterEqual(Variable("F1"), Number(200))),
-        Link(Field("F2"), Field("NR"), LessEqual(Variable("F1"), Number(10))),
-        Link(Field("F3"), Field("NR"), GreaterEqual(Variable("F1"), Number(220))),
-        Link(Field("NR"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
-        Link(Field("NR"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
-        Link(Field("F5"), FINAL),
-        Link(Field("F6"), FINAL),
+        (Field("F1"), OPAQUE.identifier, []),
+        (Field("F2"), models.integer().identifier, []),
+        (Field("F3"), models.enumeration().identifier, []),
+        (Field("F4"), models.integer().identifier, []),
     ],
-    {
-        Field("F1"): deepcopy(models.integer()),
-        Field("F2"): deepcopy(models.integer()),
-        Field("F3"): deepcopy(models.integer()),
-        Field("NR"): deepcopy(M_NO_REF),
-        Field("F5"): deepcopy(models.integer()),
-        Field("F6"): deepcopy(models.integer()),
-    },
+)
+
+M_SMPL_REF = UncheckedMessage(
+    ID("P::Smpl_Ref"),
+    [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
+    [],
+    [(Field("NR"), M_NO_REF.identifier, [])],
 )
 
 
-M_DBL_REF = UnprovenMessage(
-    "P::Dbl_Ref",
+M_DBL_REF = UncheckedMessage(
+    ID("P::Dbl_Ref"),
     [Link(INITIAL, Field("SR")), Link(Field("SR"), Field("NR")), Link(Field("NR"), FINAL)],
-    {Field("SR"): deepcopy(M_SMPL_REF), Field("NR"): deepcopy(M_NO_REF)},
-)
-
-
-M_NO_REF_DERI = UnprovenDerivedMessage(
-    "P::No_Ref_Deri",
-    M_NO_REF,
+    [],
     [
-        Link(INITIAL, Field("F1"), size=Number(16)),
-        Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), Field("F3"), LessEqual(Variable("F2"), Number(100)), first=First("F2")),
-        Link(
-            Field("F2"),
-            Field("F4"),
-            GreaterEqual(Variable("F2"), Number(200)),
-            first=First("F2"),
-        ),
-        Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
-        Link(Field("F4"), FINAL),
+        (Field("SR"), M_SMPL_REF.identifier, []),
+        (Field("NR"), M_NO_REF.identifier, []),
     ],
-    {
-        Field("F1"): OPAQUE,
-        Field("F2"): models.integer(),
-        Field("F3"): models.enumeration(),
-        Field("F4"): models.integer(),
-    },
 )
 
 
-M_SMPL_REF_DERI = UnprovenDerivedMessage(
-    "P::Smpl_Ref_Deri",
-    M_SMPL_REF,
-    [Link(INITIAL, Field("NR")), Link(Field("NR"), FINAL)],
-    {Field("NR"): deepcopy(M_NO_REF_DERI)},
+M_NO_REF_DERI = UncheckedDerivedMessage(
+    ID("P::No_Ref_Deri"),
+    M_NO_REF.identifier,
+)
+
+
+M_SMPL_REF_DERI = UncheckedDerivedMessage(
+    ID("P::Smpl_Ref_Deri"),
+    M_SMPL_REF.identifier,
 )
 
 PARAMETERIZED_MESSAGE = Message(
@@ -191,26 +152,14 @@ PARAMETERIZED_MESSAGE = Message(
 )
 
 
-M_PARAM_NO_REF = UnprovenMessage(
-    "P::Param_No_Ref",
-    [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), condition=Equal(Variable("P1"), Number(1))),
-        Link(Field("F1"), FINAL, condition=Equal(Variable("P1"), Number(2))),
-        Link(Field("F2"), FINAL),
-    ],
-    {Field("P1"): models.integer(), Field("F1"): models.integer(), Field("F2"): models.integer()},
-)
+@lru_cache
+def msg_no_ref() -> Message:
+    return M_NO_REF.checked([OPAQUE, models.integer(), models.enumeration()])
 
 
-M_PARAM_PARAM_REF = UnprovenMessage(
-    "P::Param_Param_Ref",
-    [
-        Link(INITIAL, Field("PNR")),
-        Link(Field("PNR"), FINAL),
-    ],
-    {Field("P2"): models.integer(), Field("PNR"): deepcopy(M_PARAM_NO_REF)},
-)
+@lru_cache
+def msg_smpl_ref() -> Message:
+    return M_SMPL_REF.checked([OPAQUE, models.integer(), models.enumeration(), msg_no_ref()])
 
 
 def test_link_order() -> None:
@@ -666,9 +615,13 @@ def test_field_identifier_locations() -> None:
     a = Field(ID("A", Location((1, 2))))
     b = Field(ID("B", Location((2, 3))))
 
-    message = UnprovenMessage(
+    message = Message(
         "P::M",
-        [Link(INITIAL, Field("A")), Link(Field("A"), Field("B")), Link(Field("B"), FINAL)],
+        [
+            Link(INITIAL, Field("A")),
+            Link(Field("A"), Field("B"), condition=Less(Variable("A"), Variable("P"))),
+            Link(Field("B"), FINAL),
+        ],
         {p: models.integer(), a: models.integer(), b: models.integer()},
     )
 
@@ -2958,15 +2911,6 @@ def test_copy() -> None:
     )
 
 
-def test_proven() -> None:
-    message = Message(
-        "P::M",
-        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-        {Field("F"): models.integer()},
-    )
-    assert message.proven() == message
-
-
 def test_is_possibly_empty() -> None:
     a = Field("A")
     b = Field("B")
@@ -3618,22 +3562,10 @@ def test_derived_message_incorrect_base_name() -> None:
         DerivedMessage("P::M", Message(ID("A::B::C", location=Location((40, 8))), [], {}))
 
 
-def test_derived_message_proven() -> None:
-    message = DerivedMessage(
-        "P::M",
-        Message(
-            "X::M",
-            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): models.integer()},
-        ),
-    )
-    assert message.proven() == message
-
-
 def test_prefixed_message() -> None:
     assert_equal(
-        UnprovenMessage(
-            "P::M",
+        Message(
+            ID("P::M"),
             [
                 Link(INITIAL, Field("F1")),
                 Link(
@@ -3648,19 +3580,19 @@ def test_prefixed_message() -> None:
                     GreaterEqual(Variable("F1"), Number(200)),
                     first=First("F1"),
                 ),
-                Link(Field("F2"), FINAL, Equal(Variable("F2"), Variable("True"))),
-                Link(Field("F3"), Field("F4"), size=Variable("F3")),
+                Link(Field("F2"), FINAL, Equal(Variable("F2"), Literal("P::One"))),
+                Link(Field("F3"), Field("F4"), size=Mul(Variable("F3"), Number(8))),
                 Link(Field("F4"), FINAL),
             ],
             {
-                Field("F1"): deepcopy(models.integer()),
-                Field("F2"): deepcopy(BOOLEAN),
-                Field("F3"): deepcopy(models.integer()),
+                Field("F1"): models.integer(),
+                Field("F2"): models.enumeration(),
+                Field("F3"): models.integer(),
                 Field("F4"): OPAQUE,
             },
         ).prefixed("X_"),
-        UnprovenMessage(
-            "P::M",
+        Message(
+            ID("P::M"),
             [
                 Link(INITIAL, Field("X_F1")),
                 Link(
@@ -3675,14 +3607,14 @@ def test_prefixed_message() -> None:
                     GreaterEqual(Variable("X_F1"), Number(200)),
                     first=First("X_F1"),
                 ),
-                Link(Field("X_F2"), FINAL, Equal(Variable("X_F2"), Variable("True"))),
-                Link(Field("X_F3"), Field("X_F4"), size=Variable("X_F3")),
+                Link(Field("X_F2"), FINAL, Equal(Variable("X_F2"), Literal("P::One"))),
+                Link(Field("X_F3"), Field("X_F4"), size=Mul(Variable("X_F3"), Number(8))),
                 Link(Field("X_F4"), FINAL),
             ],
             {
-                Field("X_F1"): deepcopy(models.integer()),
-                Field("X_F2"): deepcopy(BOOLEAN),
-                Field("X_F3"): deepcopy(models.integer()),
+                Field("X_F1"): models.integer(),
+                Field("X_F2"): models.enumeration(),
+                Field("X_F3"): models.integer(),
                 Field("X_F4"): OPAQUE,
             },
         ),
@@ -3690,8 +3622,10 @@ def test_prefixed_message() -> None:
 
 
 def test_merge_message_simple() -> None:
-    assert deepcopy(M_SMPL_REF).merged() == UnprovenMessage(
-        "P::Smpl_Ref",
+    assert deepcopy(M_SMPL_REF).merged(
+        [models.integer(), models.enumeration(), msg_no_ref()],
+    ) == UncheckedMessage(
+        ID("P::Smpl_Ref"),
         [
             Link(INITIAL, Field("NR_F1"), size=Number(16)),
             Link(Field("NR_F1"), Field("NR_F2")),
@@ -3710,22 +3644,52 @@ def test_merge_message_simple() -> None:
             Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::One"))),
             Link(Field("NR_F4"), FINAL),
         ],
-        {
-            Field("NR_F1"): OPAQUE,
-            Field("NR_F2"): deepcopy(models.integer()),
-            Field("NR_F3"): deepcopy(models.enumeration()),
-            Field("NR_F4"): deepcopy(models.integer()),
+        [],
+        [
+            (Field("NR_F1"), OPAQUE.identifier, []),
+            (Field("NR_F2"), models.integer().identifier, []),
+            (Field("NR_F3"), models.enumeration().identifier, []),
+            (Field("NR_F4"), models.integer().identifier, []),
+        ],
+        checksums={},
+        byte_order={
+            Field("NR_F1"): ByteOrder.HIGH_ORDER_FIRST,
+            Field("NR_F2"): ByteOrder.HIGH_ORDER_FIRST,
+            Field("NR_F3"): ByteOrder.HIGH_ORDER_FIRST,
+            Field("NR_F4"): ByteOrder.HIGH_ORDER_FIRST,
         },
     )
 
 
 def test_merge_message_complex() -> None:
+    msg_cmplx_ref = UncheckedMessage(
+        ID("P::Cmplx_Ref"),
+        [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(100))),
+            Link(Field("F1"), Field("F3"), GreaterEqual(Variable("F1"), Number(200))),
+            Link(Field("F2"), Field("NR"), LessEqual(Variable("F1"), Number(10))),
+            Link(Field("F3"), Field("NR"), GreaterEqual(Variable("F1"), Number(220))),
+            Link(Field("NR"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
+            Link(Field("NR"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
+            Link(Field("F5"), FINAL),
+            Link(Field("F6"), FINAL),
+        ],
+        [],
+        [
+            (Field("F1"), models.integer().identifier, []),
+            (Field("F2"), models.integer().identifier, []),
+            (Field("F3"), models.integer().identifier, []),
+            (Field("NR"), M_NO_REF.identifier, []),
+            (Field("F5"), models.integer().identifier, []),
+            (Field("F6"), models.integer().identifier, []),
+        ],
+    )
     assert_equal(
-        deepcopy(M_CMPLX_REF).merged(),
-        UnprovenMessage(
-            "P::Cmplx_Ref",
+        deepcopy(msg_cmplx_ref).merged([models.integer(), msg_no_ref()]),
+        UncheckedMessage(
+            ID("P::Cmplx_Ref"),
             [
-                Link(INITIAL, Field("F1")),
                 Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(100))),
                 Link(Field("F1"), Field("F3"), GreaterEqual(Variable("F1"), Number(200))),
                 Link(
@@ -3740,26 +3704,9 @@ def test_merge_message_complex() -> None:
                     GreaterEqual(Variable("F1"), Number(220)),
                     size=Number(16),
                 ),
-                Link(
-                    Field("NR_F3"),
-                    Field("F5"),
-                    And(
-                        LessEqual(Variable("F1"), Number(100)),
-                        Equal(Variable("NR_F3"), Variable("P::One")),
-                    ),
-                ),
-                Link(Field("NR_F4"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
-                Link(
-                    Field("NR_F3"),
-                    Field("F6"),
-                    And(
-                        GreaterEqual(Variable("F1"), Number(200)),
-                        Equal(Variable("NR_F3"), Variable("P::One")),
-                    ),
-                ),
-                Link(Field("NR_F4"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
                 Link(Field("F5"), FINAL),
                 Link(Field("F6"), FINAL),
+                Link(INITIAL, Field("F1")),
                 Link(Field("NR_F1"), Field("NR_F2")),
                 Link(
                     Field("NR_F2"),
@@ -3773,17 +3720,48 @@ def test_merge_message_complex() -> None:
                     GreaterEqual(Variable("NR_F2"), Number(200)),
                     first=First("NR_F2"),
                 ),
+                Link(
+                    Field("NR_F3"),
+                    Field("F5"),
+                    And(
+                        LessEqual(Variable("F1"), Number(100)),
+                        Equal(Variable("NR_F3"), Variable("P::One")),
+                    ),
+                ),
+                Link(
+                    Field("NR_F3"),
+                    Field("F6"),
+                    And(
+                        GreaterEqual(Variable("F1"), Number(200)),
+                        Equal(Variable("NR_F3"), Variable("P::One")),
+                    ),
+                ),
+                Link(Field("NR_F4"), Field("F5"), LessEqual(Variable("F1"), Number(100))),
+                Link(Field("NR_F4"), Field("F6"), GreaterEqual(Variable("F1"), Number(200))),
             ],
-            {
-                Field("F1"): deepcopy(models.integer()),
-                Field("F2"): deepcopy(models.integer()),
-                Field("F3"): deepcopy(models.integer()),
-                Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(models.integer()),
-                Field("NR_F3"): deepcopy(models.enumeration()),
-                Field("NR_F4"): deepcopy(models.integer()),
-                Field("F5"): deepcopy(models.integer()),
-                Field("F6"): deepcopy(models.integer()),
+            [],
+            [
+                (Field("F1"), models.integer().identifier, []),
+                (Field("F2"), models.integer().identifier, []),
+                (Field("F3"), models.integer().identifier, []),
+                (Field("F5"), models.integer().identifier, []),
+                (Field("F6"), models.integer().identifier, []),
+                (Field("NR_F1"), OPAQUE.identifier, []),
+                (Field("NR_F2"), models.integer().identifier, []),
+                (Field("NR_F3"), models.enumeration().identifier, []),
+                (Field("NR_F4"), models.integer().identifier, []),
+            ],
+            checksums={},
+            byte_order={
+                Field("F1"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("F2"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("F3"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("F5"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("F6"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F1"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F2"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F3"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F4"): ByteOrder.HIGH_ORDER_FIRST,
             },
         ),
     )
@@ -3791,18 +3769,26 @@ def test_merge_message_complex() -> None:
 
 def test_merge_message_recursive() -> None:
     assert_equal(
-        deepcopy(M_DBL_REF).merged(),
-        UnprovenMessage(
-            "P::Dbl_Ref",
+        deepcopy(M_DBL_REF).merged(
+            [models.integer(), models.enumeration(), msg_no_ref(), msg_smpl_ref()],
+        ),
+        UncheckedMessage(
+            ID("P::Dbl_Ref"),
             [
                 Link(INITIAL, Field("SR_NR_F1"), size=Number(16)),
+                Link(Field("NR_F1"), Field("NR_F2")),
                 Link(
-                    Field("SR_NR_F3"),
-                    Field("NR_F1"),
-                    Equal(Variable("SR_NR_F3"), Variable("P::One")),
-                    size=Number(16),
+                    Field("NR_F2"),
+                    Field("NR_F3"),
+                    LessEqual(Variable("NR_F2"), Number(100)),
+                    first=First("NR_F2"),
                 ),
-                Link(Field("SR_NR_F4"), Field("NR_F1"), size=Number(16)),
+                Link(
+                    Field("NR_F2"),
+                    Field("NR_F4"),
+                    GreaterEqual(Variable("NR_F2"), Number(200)),
+                    first=First("NR_F2"),
+                ),
                 Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::One"))),
                 Link(Field("NR_F4"), FINAL),
                 Link(Field("SR_NR_F1"), Field("SR_NR_F2")),
@@ -3818,29 +3804,35 @@ def test_merge_message_recursive() -> None:
                     GreaterEqual(Variable("SR_NR_F2"), Number(200)),
                     first=First("SR_NR_F2"),
                 ),
-                Link(Field("NR_F1"), Field("NR_F2")),
                 Link(
-                    Field("NR_F2"),
-                    Field("NR_F3"),
-                    LessEqual(Variable("NR_F2"), Number(100)),
-                    first=First("NR_F2"),
+                    Field("SR_NR_F3"),
+                    Field("NR_F1"),
+                    Equal(Variable("SR_NR_F3"), Variable("P::One")),
+                    size=Number(16),
                 ),
-                Link(
-                    Field("NR_F2"),
-                    Field("NR_F4"),
-                    GreaterEqual(Variable("NR_F2"), Number(200)),
-                    first=First("NR_F2"),
-                ),
+                Link(Field("SR_NR_F4"), Field("NR_F1"), size=Number(16)),
             ],
-            {
-                Field("SR_NR_F1"): OPAQUE,
-                Field("SR_NR_F2"): deepcopy(models.integer()),
-                Field("SR_NR_F3"): deepcopy(models.enumeration()),
-                Field("SR_NR_F4"): deepcopy(models.integer()),
-                Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(models.integer()),
-                Field("NR_F3"): deepcopy(models.enumeration()),
-                Field("NR_F4"): deepcopy(models.integer()),
+            [],
+            [
+                (Field("SR_NR_F1"), OPAQUE.identifier, []),
+                (Field("SR_NR_F2"), models.integer().identifier, []),
+                (Field("SR_NR_F3"), models.enumeration().identifier, []),
+                (Field("SR_NR_F4"), models.integer().identifier, []),
+                (Field("NR_F1"), OPAQUE.identifier, []),
+                (Field("NR_F2"), models.integer().identifier, []),
+                (Field("NR_F3"), models.enumeration().identifier, []),
+                (Field("NR_F4"), models.integer().identifier, []),
+            ],
+            checksums={},
+            byte_order={
+                Field("SR_NR_F1"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("SR_NR_F2"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("SR_NR_F3"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("SR_NR_F4"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F1"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F2"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F3"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F4"): ByteOrder.HIGH_ORDER_FIRST,
             },
         ),
     )
@@ -3848,64 +3840,76 @@ def test_merge_message_recursive() -> None:
 
 def test_merge_message_simple_derived() -> None:
     assert_equal(
-        deepcopy(M_SMPL_REF_DERI).merged(),
-        UnprovenDerivedMessage(
-            "P::Smpl_Ref_Deri",
-            M_SMPL_REF,
-            [
-                Link(INITIAL, Field("NR_F1"), size=Number(16)),
-                Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::One"))),
-                Link(Field("NR_F4"), FINAL),
-                Link(Field("NR_F1"), Field("NR_F2")),
-                Link(
-                    Field("NR_F2"),
-                    Field("NR_F3"),
-                    LessEqual(Variable("NR_F2"), Number(100)),
-                    first=First("NR_F2"),
-                ),
-                Link(
-                    Field("NR_F2"),
-                    Field("NR_F4"),
-                    GreaterEqual(Variable("NR_F2"), Number(200)),
-                    first=First("NR_F2"),
-                ),
-            ],
-            {
-                Field("NR_F1"): OPAQUE,
-                Field("NR_F2"): deepcopy(models.integer()),
-                Field("NR_F3"): deepcopy(models.enumeration()),
-                Field("NR_F4"): deepcopy(models.integer()),
-            },
-            byte_order=ByteOrder.HIGH_ORDER_FIRST,
+        deepcopy(M_SMPL_REF_DERI).checked([models.integer(), models.enumeration(), msg_smpl_ref()]),
+        DerivedMessage(
+            ID("P::Smpl_Ref_Deri"),
+            Message(
+                ID("P::Smpl_Ref"),
+                [
+                    Link(INITIAL, Field("NR_F1"), size=Number(16)),
+                    Link(Field("NR_F3"), FINAL, Equal(Variable("NR_F3"), Variable("P::One"))),
+                    Link(Field("NR_F4"), FINAL),
+                    Link(Field("NR_F1"), Field("NR_F2")),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F3"),
+                        LessEqual(Variable("NR_F2"), Number(100)),
+                        first=First("NR_F2"),
+                    ),
+                    Link(
+                        Field("NR_F2"),
+                        Field("NR_F4"),
+                        GreaterEqual(Variable("NR_F2"), Number(200)),
+                        first=First("NR_F2"),
+                    ),
+                ],
+                {
+                    Field("NR_F1"): OPAQUE,
+                    Field("NR_F2"): models.integer(),
+                    Field("NR_F3"): models.enumeration(),
+                    Field("NR_F4"): models.integer(),
+                },
+            ),
         ),
     )
 
 
-def test_merge_byte_order() -> None:
-    inner_msg = UnprovenMessage(
-        "P::Merge_Test_Byte_Order",
+def test_merge_message_byte_order() -> None:
+    inner_msg = Message(
+        ID("P::Merge_Test_Byte_Order"),
         [Link(INITIAL, Field("F1")), Link(Field("F1"), Field("F2")), Link(Field("F2"), FINAL)],
-        {Field("F1"): models.integer(), Field("F2"): models.enumeration()},
+        {
+            Field("F1"): models.integer(),
+            Field("F2"): models.enumeration(),
+        },
         byte_order=ByteOrder.LOW_ORDER_FIRST,
     )
-    outer_msg = UnprovenMessage(
-        "P::Outer_Msg",
+    outer_msg = UncheckedMessage(
+        ID("P::Outer_Msg"),
         [
             Link(INITIAL, Field("NR")),
             Link(Field("NR"), FINAL),
         ],
-        {Field("NR"): inner_msg},
+        [],
+        [
+            (Field("NR"), inner_msg.identifier, []),
+        ],
     )
     assert_equal(
-        outer_msg.merged(),
-        UnprovenMessage(
-            "P::Outer_Msg",
+        outer_msg.merged([models.integer(), models.enumeration(), inner_msg]),
+        UncheckedMessage(
+            ID("P::Outer_Msg"),
             [
                 Link(INITIAL, Field("NR_F1")),
                 Link(Field("NR_F1"), Field("NR_F2")),
                 Link(Field("NR_F2"), FINAL),
             ],
-            {Field("NR_F1"): models.integer(), Field("NR_F2"): models.enumeration()},
+            [],
+            [
+                (Field("NR_F1"), models.integer().identifier, []),
+                (Field("NR_F2"), models.enumeration().identifier, []),
+            ],
+            checksums={},
             byte_order={
                 Field("NR_F1"): ByteOrder.LOW_ORDER_FIRST,
                 Field("NR_F2"): ByteOrder.LOW_ORDER_FIRST,
@@ -3915,105 +3919,131 @@ def test_merge_byte_order() -> None:
 
 
 def test_merge_message_constrained() -> None:
-    m1 = UnprovenMessage(
-        "P::M1",
+    m1 = Message(
+        ID("P::M1"),
         [
             Link(INITIAL, Field("F1")),
-            Link(Field("F1"), Field("F3"), Equal(Variable("F1"), Variable("True"))),
-            Link(Field("F1"), Field("F2")),
-            Link(Field("F2"), FINAL, Equal(Variable("F1"), Variable("False"))),
+            Link(Field("F1"), Field("F3"), GreaterEqual(Variable("F1"), Number(100))),
+            Link(Field("F1"), Field("F2"), Less(Variable("F1"), Number(100))),
+            Link(Field("F2"), FINAL, Greater(Variable("F1"), Number(1))),
             Link(Field("F3"), FINAL),
         ],
-        {Field("F1"): BOOLEAN, Field("F2"): BOOLEAN, Field("F3"): BOOLEAN},
+        {
+            Field("F1"): models.integer(),
+            Field("F2"): models.integer(),
+            Field("F3"): models.integer(),
+        },
     )
-    m2 = UnprovenMessage(
-        "P::M2",
+    m2 = UncheckedMessage(
+        ID("P::M2"),
         [
             Link(INITIAL, Field("F4")),
             Link(
                 Field("F4"),
                 FINAL,
-                And(
-                    Equal(Variable("F4_F1"), Variable("True")),
-                    Equal(Variable("F4_F3"), Variable("False")),
-                ),
+                Equal(Variable("F4_F1"), Number(40)),
             ),
         ],
-        {Field("F4"): m1},
-    )
-    expected = UnprovenMessage(
-        "P::M2",
+        [],
         [
+            (Field("F4"), m1.identifier, []),
+        ],
+    )
+    expected = UncheckedMessage(
+        ID("P::M2"),
+        [
+            Link(Field("F4_F1"), Field("F4_F2"), Less(Variable("F4_F1"), Number(100))),
+            Link(
+                Field("F4_F2"),
+                FINAL,
+                And(
+                    Equal(Variable("F4_F1"), Number(40)),
+                    Greater(Variable("F4_F1"), Number(1)),
+                ),
+            ),
             Link(
                 INITIAL,
                 Field("F4_F1"),
             ),
-            Link(Field("F4_F1"), Field("F4_F3"), Equal(Variable("F4_F1"), Variable("True"))),
-            Link(
-                Field("F4_F3"),
-                FINAL,
-                And(
-                    Equal(Variable("F4_F1"), Variable("True")),
-                    Equal(Variable("F4_F3"), Variable("False")),
-                ),
-            ),
         ],
-        {Field("F4_F1"): BOOLEAN, Field("F4_F3"): BOOLEAN},
+        [],
+        [
+            (Field("F4_F1"), models.integer().identifier, []),
+            (Field("F4_F2"), models.integer().identifier, []),
+        ],
+        checksums={},
+        byte_order={
+            Field("F4_F1"): ByteOrder.HIGH_ORDER_FIRST,
+            Field("F4_F2"): ByteOrder.HIGH_ORDER_FIRST,
+        },
     )
-    merged = m2.merged()
+    merged = m2.merged([m1, models.integer()])
+
     assert merged == expected
 
 
 def test_merge_message_constrained_empty() -> None:
-    m1 = UnprovenMessage(
-        "P::M1",
+    m1 = Message(
+        ID("P::M1"),
         [
             Link(INITIAL, Field("F1")),
-            Link(Field("F1"), Field("F2"), Equal(Variable("F1"), Variable("True"))),
-            Link(Field("F1"), FINAL, Equal(Variable("F1"), Variable("False"))),
-            Link(Field("F2"), FINAL, Equal(Variable("F2"), Variable("True"))),
+            Link(Field("F1"), Field("F2"), Equal(Variable("F1"), Number(2))),
+            Link(Field("F1"), FINAL, Equal(Variable("F1"), Number(1))),
+            Link(Field("F2"), FINAL, Equal(Variable("F2"), Number(2))),
         ],
-        {Field("F1"): BOOLEAN, Field("F2"): BOOLEAN},
+        {
+            Field("F1"): models.integer(),
+            Field("F2"): models.integer(),
+        },
     )
-    m2 = UnprovenMessage(
-        "P::M2",
+    m2 = UncheckedMessage(
+        ID("P::M2"),
         [
             Link(INITIAL, Field("F3")),
             Link(
                 Field("F3"),
                 FINAL,
                 And(
-                    Equal(Variable("F3_F1"), Variable("True")),
-                    Equal(Variable("F3_F2"), Variable("False")),
+                    Equal(Variable("F3_F1"), Number(2)),
+                    Equal(Variable("F3_F2"), Number(1)),
                 ),
             ),
         ],
-        {Field("F3"): m1},
+        [],
+        [
+            (Field("F3"), m1.identifier, []),
+        ],
     )
     with pytest.raises(
         RecordFluxError,
         match=r'^model: error: empty message type when merging field "F3"$',
     ):
-        m2.merged()
+        m2.merged([models.integer(), m1])
 
 
 def test_merge_message_error_name_conflict() -> None:
     m2_f2 = Field(ID("F2", Location((10, 5))))
 
-    m2 = UnprovenMessage(
-        "P::M2",
+    m2 = Message(
+        ID("P::M2"),
         [Link(INITIAL, m2_f2), Link(m2_f2, FINAL)],
-        {m2_f2: models.integer()},
+        {
+            m2_f2: models.integer(),
+        },
         location=Location((15, 3)),
     )
 
     m1_f1 = Field(ID("F1", Location((20, 8))))
     m1_f1_f2 = Field(ID("F1_F2", Location((30, 5))))
 
-    m1 = UnprovenMessage(
-        "P::M1",
+    m1 = UncheckedMessage(
+        ID("P::M1"),
         [Link(INITIAL, m1_f1), Link(m1_f1, m1_f1_f2), Link(m1_f1_f2, FINAL)],
-        {m1_f1: m2, m1_f1_f2: models.integer()},
+        [],
+        [
+            (m1_f1, m2.identifier, []),
+            (m1_f1_f2, models.integer().identifier, []),
+        ],
         location=Location((2, 9)),
     )
 
@@ -4026,34 +4056,69 @@ def test_merge_message_error_name_conflict() -> None:
             r'<stdin>:20:8: model: info: into field "F1"$'
         ),
     ):
-        m1.merged()
+        m1.merged([models.integer(), m2])
 
 
 def test_merge_message_parameterized() -> None:
+    msg_param_no_ref = Message(
+        ID("P::Param_No_Ref"),
+        [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2"), condition=Equal(Variable("P1"), Number(1))),
+            Link(Field("F1"), FINAL, condition=Equal(Variable("P1"), Number(2))),
+            Link(Field("F2"), FINAL),
+        ],
+        {
+            Field("P1"): models.integer(),
+            Field("F1"): models.integer(),
+            Field("F2"): models.integer(),
+        },
+    )
+    msg_param_param_ref = UncheckedMessage(
+        ID("P::Param_Param_Ref"),
+        [
+            Link(INITIAL, Field("PNR")),
+            Link(Field("PNR"), FINAL),
+        ],
+        [],
+        [
+            (Field("P2"), models.integer().identifier, []),
+            (Field("PNR"), msg_param_no_ref.identifier, []),
+        ],
+    )
+
     assert_equal(
-        deepcopy(M_PARAM_PARAM_REF)
-        .merged({ID("P::Param_No_Ref"): {ID("P1"): Variable("P2")}})
-        .proven(),
-        UnprovenMessage(
-            "P::Param_Param_Ref",
+        msg_param_param_ref.merged(
+            [models.integer(), msg_param_no_ref],
+            {ID("P::Param_No_Ref"): {ID("P1"): Variable("P2")}},
+        ),
+        UncheckedMessage(
+            ID("P::Param_Param_Ref"),
             [
                 Link(INITIAL, Field("PNR_F1")),
-                Link(Field("PNR_F1"), Field("PNR_F2"), condition=Equal(Variable("P2"), Number(1))),
                 Link(Field("PNR_F1"), FINAL, condition=Equal(Variable("P2"), Number(2))),
+                Link(Field("PNR_F1"), Field("PNR_F2"), condition=Equal(Variable("P2"), Number(1))),
                 Link(Field("PNR_F2"), FINAL),
             ],
-            {
-                Field("P2"): models.integer(),
-                Field("PNR_F1"): models.integer(),
-                Field("PNR_F2"): models.integer(),
+            [],
+            [
+                (Field("P2"), models.integer().identifier, []),
+                (Field("PNR_F1"), models.integer().identifier, []),
+                (Field("PNR_F2"), models.integer().identifier, []),
+            ],
+            checksums={},
+            byte_order={
+                Field("P2"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("PNR_F1"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("PNR_F2"): ByteOrder.HIGH_ORDER_FIRST,
             },
-        ).proven(),
+        ),
     )
 
 
-def test_merge_message_with_message_last_attribute() -> None:
-    inner = UnprovenMessage(
-        "P::I",
+def test_merge_message_with_message_attributes() -> None:
+    inner = Message(
+        ID("P::I"),
         [
             Link(INITIAL, Field("I1")),
             Link(
@@ -4061,34 +4126,41 @@ def test_merge_message_with_message_last_attribute() -> None:
                 Field("I2"),
                 condition=Less(Variable("I1"), Number(128)),
                 size=Sub(Last(ID("Message", location=Location((5, 10)))), Last("I1")),
-                first=First("Message"),
+                first=First("I1"),
             ),
             Link(
                 Field("I1"),
                 Field("I2"),
                 condition=GreaterEqual(Variable("I1"), Number(128)),
-                size=Sub(Last(ID("Message", location=Location((6, 10)))), Last("I1")),
+                size=Sub(
+                    Mul(Variable("I1"), Number(8)),
+                    Add(
+                        Sub(Last("I1"), First("Message")),
+                        Number(1),
+                    ),
+                ),
             ),
             Link(Field("I2"), FINAL),
         ],
-        {Field("I1"): models.integer(), Field("I2"): OPAQUE},
+        {
+            Field("I1"): models.integer(),
+            Field("I2"): OPAQUE,
+        },
     )
 
-    inner.error.propagate()
-
-    valid_outer = (
-        UnprovenMessage(
-            "P::O",
-            [
-                Link(INITIAL, Field("O1")),
-                Link(Field("O1"), Field("O2")),
-                Link(Field("O2"), FINAL),
-            ],
-            {Field("O1"): models.integer(), Field("O2"): inner},
-        )
-        .merged()
-        .proven()
-    )
+    valid_outer = UncheckedMessage(
+        ID("P::O"),
+        [
+            Link(INITIAL, Field("O1")),
+            Link(Field("O1"), Field("O2")),
+            Link(Field("O2"), FINAL),
+        ],
+        [],
+        [
+            (Field("O1"), models.integer().identifier, []),
+            (Field("O2"), inner.identifier, []),
+        ],
+    ).checked([OPAQUE, models.integer(), inner])
 
     assert_equal(
         valid_outer,
@@ -4108,7 +4180,14 @@ def test_merge_message_with_message_last_attribute() -> None:
                     Field("O2_I1"),
                     Field("O2_I2"),
                     condition=GreaterEqual(Variable("O2_I1"), Number(128)),
-                    size=Add(Last("Message"), -Last("O2_I1")),
+                    size=Add(
+                        Mul(Variable("O2_I1"), Number(8)),
+                        Add(
+                            -Last("O2_I1"),
+                            First("O2_I1"),
+                            -Number(1),
+                        ),
+                    ),
                 ),
                 Link(Field("O2_I2"), FINAL),
             ],
@@ -4126,29 +4205,28 @@ def test_merge_message_with_message_last_attribute() -> None:
             "^"
             "<stdin>:2:10: model: error: messages with implicit size may only be used for"
             " last fields\n"
-            '<stdin>:5:10: model: info: message field with implicit size in "P::I"\n'
-            '<stdin>:6:10: model: info: message field with implicit size in "P::I"'
+            '<stdin>:5:10: model: info: message field with implicit size in "P::I"'
             "$"
         ),
     ):
-        valid_outer = (
-            UnprovenMessage(
-                "P::O",
-                [
-                    Link(INITIAL, o1),
-                    Link(o1, Field("O2")),
-                    Link(Field("O2"), FINAL),
-                ],
-                {o1: inner, Field("O2"): models.integer()},
-            )
-            .merged()
-            .proven()
-        )
+        valid_outer = UncheckedMessage(
+            ID("P::O"),
+            [
+                Link(INITIAL, o1),
+                Link(o1, Field("O2")),
+                Link(Field("O2"), FINAL),
+            ],
+            [],
+            [
+                (o1, inner.identifier, []),
+                (Field("O2"), models.integer().identifier, []),
+            ],
+        ).checked([models.integer(), inner])
 
 
 def test_merge_message_with_message_size_attribute() -> None:
-    inner = UnprovenMessage(
-        "P::I",
+    inner = Message(
+        ID("P::I"),
         [
             Link(
                 INITIAL,
@@ -4161,13 +4239,13 @@ def test_merge_message_with_message_size_attribute() -> None:
                 condition=Equal(Size("Message"), Number(128)),
             ),
         ],
-        {Field("I"): OPAQUE},
+        {
+            Field("I"): OPAQUE,
+        },
     )
 
-    inner.error.propagate()
-
-    outer = UnprovenMessage(
-        "P::O",
+    outer = UncheckedMessage(
+        ID("P::O"),
         [
             Link(INITIAL, Field("O1")),
             Link(Field("O1"), Field("O2"), condition=Less(Variable("O1"), Number(100))),
@@ -4181,13 +4259,14 @@ def test_merge_message_with_message_size_attribute() -> None:
             Link(Field("A"), FINAL),
             Link(Field("B"), FINAL),
         ],
-        {
-            Field("O1"): models.integer(),
-            Field("O2"): models.integer(),
-            Field("O3"): models.integer(),
-            Field("A"): inner,
-            Field("B"): inner,
-        },
+        [],
+        [
+            (Field("O1"), models.integer().identifier, []),
+            (Field("O2"), models.integer().identifier, []),
+            (Field("O3"), models.integer().identifier, []),
+            (Field("A"), inner.identifier, []),
+            (Field("B"), inner.identifier, []),
+        ],
     )
 
     expected = Message(
@@ -4230,12 +4309,12 @@ def test_merge_message_with_message_size_attribute() -> None:
         },
     )
 
-    assert outer.merged().proven() == expected
+    assert outer.checked([OPAQUE, models.integer(), inner]) == expected
 
 
 def test_merge_message_type_message_size_attribute_in_outer_message() -> None:
-    inner = UnprovenMessage(
-        "P::I",
+    inner = Message(
+        ID("P::I"),
         [
             Link(
                 INITIAL,
@@ -4247,26 +4326,27 @@ def test_merge_message_type_message_size_attribute_in_outer_message() -> None:
                 FINAL,
             ),
         ],
-        {Field("I"): OPAQUE},
+        {
+            Field("I"): OPAQUE,
+        },
     )
 
-    inner.error.propagate()
-
-    outer = UnprovenMessage(
-        "P::O",
+    outer = UncheckedMessage(
+        ID("P::O"),
         [
             Link(INITIAL, Field("O1")),
             Link(Field("O1"), Field("O2"), size=Sub(Last("Message"), Last("O1"))),
             Link(Field("O2"), FINAL),
         ],
-        {
-            Field("O1"): inner,
-            Field("O2"): OPAQUE,
-        },
+        [],
+        [
+            (Field("O1"), inner.identifier, []),
+            (Field("O2"), OPAQUE.identifier, []),
+        ],
     )
 
     expected = Message(
-        "P::O",
+        ID("P::O"),
         [
             Link(
                 INITIAL,
@@ -4286,7 +4366,16 @@ def test_merge_message_type_message_size_attribute_in_outer_message() -> None:
         },
     )
 
-    assert outer.merged().proven() == expected
+    assert outer.checked([OPAQUE, inner]) == expected
+
+
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
+def test_merge_message_with_undeclared_type() -> None:
+    with pytest.raises(
+        AssertionError,
+        match=r'^undeclared types for message "P::Smpl_Ref": P::No_Ref$',
+    ):
+        deepcopy(M_SMPL_REF).merged([])
 
 
 def test_paths() -> None:
@@ -4831,8 +4920,8 @@ def test_possibly_always_true_refinement(
                 None,
                 None,
             ),
-            UnprovenMessage(
-                "P::No_Ref",
+            Message(
+                ID("P::No_Ref"),
                 [
                     Link(INITIAL, Field("F1"), size=Number(16)),
                     Link(Field("F1"), Field("F2")),

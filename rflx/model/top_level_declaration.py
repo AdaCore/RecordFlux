@@ -50,6 +50,10 @@ class TopLevelDeclaration(Base):
 class UncheckedTopLevelDeclaration(Base):
     identifier: ID
 
+    @property
+    def package(self) -> ID:
+        return self.identifier.parent
+
     @abstractmethod
     def checked(self, declarations: Sequence[TopLevelDeclaration]) -> TopLevelDeclaration:
         raise NotImplementedError

@@ -47,7 +47,6 @@ from rflx.model import (
     Session,
     State,
     Transition,
-    UnprovenMessage,
 )
 
 
@@ -489,8 +488,8 @@ def derivation_model() -> Model:
 
 
 @lru_cache
-def valid_message() -> UnprovenMessage:
-    return UnprovenMessage(
+def valid_message() -> Message:
+    return Message(
         "P::M",
         [
             Link(INITIAL, Field("F"), size=Number(16)),
