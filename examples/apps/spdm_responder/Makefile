@@ -160,8 +160,17 @@ build/%/example/main: $(GENERATED)
 build/generated:
 	mkdir -p build/generated
 
+# The verification of the SPDM specification occasionally gets stuck in the CI. The code generation
+# is attempted twice to decrease the occurrence of unsuccessful pipelines.
 build/generated/%: $(SPECIFICATIONS) | build/generated $(INTEGRATION_FILES) $(RFLX)
-	timeout -k 60 3600 $(RFLX) generate $^ -d build/generated
+	timeout -k 60 1200 $(RFLX) generate $^ -d build/generated; \
+	RC=$$?; \
+	if [ $$RC -eq 124 ]; \
+	then \
+		timeout -k 60 1200 $(RFLX) generate $^ -d build/generated; \
+	else \
+		(exit $$RC); \
+	fi
 
 .PHONY: lib libarm libriscv64
 
