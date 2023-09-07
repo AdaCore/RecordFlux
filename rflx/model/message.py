@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import itertools
-from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from copy import copy
@@ -12,7 +11,6 @@ from typing import Optional, Union
 import rflx.typing_ as rty
 from rflx import expression as expr
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
-from rflx.contract import invariant
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail
 from rflx.identifier import ID, StrID
 from rflx.model.top_level_declaration import TopLevelDeclaration
@@ -95,24 +93,7 @@ class Link(Base):
         return bool(self.size.findall(lambda x: x in [expr.Size("Message"), expr.Last("Message")]))
 
 
-def valid_message_field_types(message: AbstractMessage) -> bool:
-    for t in message.types.values():
-        if not isinstance(t, (mty.Scalar, mty.Composite, AbstractMessage)):
-            return False
-    return True
-
-
-class MessageState(Base):
-    parameter_types: Mapping[Field, mty.Type] = {}
-    field_types: Mapping[Field, mty.Type] = {}
-    definite_predecessors: Optional[Mapping[Field, tuple[Field, ...]]] = None
-    path_condition: Optional[Mapping[Field, expr.Expr]] = None
-    has_unreachable = False
-
-
-@invariant(lambda self: valid_message_field_types(self))
-@invariant(lambda self: not self.types if not self.structure else True)
-class AbstractMessage(mty.Type):
+class Message(mty.Type):
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -121,8 +102,11 @@ class AbstractMessage(mty.Type):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-        state: Optional[MessageState] = None,
+        skip_verification: bool = False,
+        workers: int = 1,
     ) -> None:
+        assert not types if not structure else True
+
         super().__init__(identifier, location)
 
         self.error.propagate()
@@ -134,29 +118,32 @@ class AbstractMessage(mty.Type):
         self._checksums = checksums or {}
         self._byte_order = {}
 
-        self._state = state or MessageState()
+        self._field_types = {}
+        self._parameter_types = {}
         dependencies = _dependencies(types)
         self._unqualified_enum_literals = mty.unqualified_enum_literals(dependencies, self.package)
         self._qualified_enum_literals = mty.qualified_enum_literals(dependencies)
         self._type_names = mty.qualified_type_names(dependencies)
         self._paths_cache: dict[Field, set[tuple[Link, ...]]] = {}
+        self._definite_predecessors_cache: dict[Field, tuple[Field, ...]] = {}
+        self._path_condition_cache: dict[Field, expr.Expr] = {}
 
         try:
-            if not state and not self.is_null:
-                self._state.has_unreachable = self._validate(self._structure, types)
+            if not self.is_null:
+                self._has_unreachable = self._validate(self._structure, types)
                 self._structure, self._checksums = self._normalize(
                     self._structure,
                     types,
                     self._checksums,
                 )
-                fields = self._compute_topological_sorting(self._state.has_unreachable)
+                fields = self._compute_topological_sorting(self._has_unreachable)
                 if fields:
                     # The fields of `types` are used to preserve the locations of the field
                     # definitions. `fields` cannot be used directly, as it contains the field
                     # identifiers of link targets.
                     ft = {f: (f, t) for f, t in types.items()}
-                    self._state.field_types = dict(ft[f] for f in fields)
-                    self._state.parameter_types = dict(ft[f] for f in types if f not in fields)
+                    self._field_types = dict(ft[f] for f in fields)
+                    self._parameter_types = dict(ft[f] for f in types if f not in fields)
                 self._set_types()
             byte_order = byte_order if byte_order else ByteOrder.HIGH_ORDER_FIRST
             if not isinstance(byte_order, dict):
@@ -165,13 +152,20 @@ class AbstractMessage(mty.Type):
             else:
                 assert all(f in byte_order for f in self.fields)
                 assert (
-                    all(f in self.fields for f in byte_order)
-                    if not self._state.has_unreachable
-                    else True
+                    all(f in self.fields for f in byte_order) if not self._has_unreachable else True
                 )
                 self._byte_order = byte_order
         except RecordFluxError:
             pass
+
+        self.error.propagate()
+
+        self._refinements: list[Refinement] = []
+        self._skip_verification = skip_verification
+        self._workers = workers
+
+        if not self.error.errors and not skip_verification:
+            self._verify()
 
         self.error.propagate()
 
@@ -262,7 +256,6 @@ class AbstractMessage(mty.Type):
     def byte_order(self) -> Mapping[Field, ByteOrder]:
         return self._byte_order
 
-    @abstractmethod
     def copy(  # noqa: PLR0913
         self,
         identifier: Optional[StrID] = None,
@@ -271,17 +264,25 @@ class AbstractMessage(mty.Type):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
-    ) -> AbstractMessage:
-        raise NotImplementedError
+    ) -> Message:
+        return Message(
+            identifier if identifier else self.identifier,
+            structure if structure else copy(self.structure),
+            types if types else copy(self.types),
+            checksums if checksums else copy(self.checksums),
+            byte_order if byte_order else copy(self.byte_order),
+            location if location else self.location,
+            skip_verification=self._skip_verification,
+        )
 
     @property
     def parameters(self) -> tuple[Field, ...]:
-        return tuple(self._state.parameter_types or {})
+        return tuple(self._parameter_types or {})
 
     @property
     def fields(self) -> tuple[Field, ...]:
         """Return fields topologically sorted."""
-        return tuple(self._state.field_types or {})
+        return tuple(self._field_types or {})
 
     @property
     def all_fields(self) -> tuple[Field, ...]:
@@ -290,12 +291,12 @@ class AbstractMessage(mty.Type):
     @property
     def parameter_types(self) -> Mapping[Field, mty.Type]:
         """Return parameters and corresponding types."""
-        return self._state.parameter_types
+        return self._parameter_types
 
     @property
     def field_types(self) -> Mapping[Field, mty.Type]:
         """Return fields and corresponding types topologically sorted."""
-        return self._state.field_types
+        return self._field_types
 
     @property
     def structure(self) -> Sequence[Link]:
@@ -304,7 +305,7 @@ class AbstractMessage(mty.Type):
     @property
     def types(self) -> Mapping[Field, mty.Type]:
         """Return parameters, fields and corresponding types topologically sorted."""
-        return {**self._state.parameter_types, **self._state.field_types}
+        return {**self._parameter_types, **self._field_types}
 
     @property
     def checksums(self) -> Mapping[ID, Sequence[expr.Expr]]:
@@ -338,19 +339,38 @@ class AbstractMessage(mty.Type):
 
     def definite_predecessors(self, field: Field) -> tuple[Field, ...]:
         """Return preceding fields which are part of all possible paths."""
-        if self._state.definite_predecessors is None:
-            self._state.definite_predecessors = {
-                f: self._compute_definite_predecessors(f) for f in self.all_fields
-            }
-        return self._state.definite_predecessors[field]
+        try:
+            return self._definite_predecessors_cache[field]
+        except KeyError:
+            result = tuple(
+                f
+                for f in self.fields
+                if all(any(f == pf.source for pf in p) for p in self.paths(field))
+            )
+
+            self._definite_predecessors_cache[field] = result
+
+            return result
 
     def path_condition(self, field: Field) -> expr.Expr:
         """Return conjunction of all conditions on path from INITIAL to field."""
-        if self._state.path_condition is None:
-            self._state.path_condition = {
-                f: self._compute_path_condition(f).simplified() for f in self.all_fields
-            }
-        return self._state.path_condition[field]
+        try:
+            return self._path_condition_cache[field]
+        except KeyError:
+            if field == INITIAL:
+                return expr.TRUE
+
+            result = expr.Or(
+                *[
+                    expr.And(self.path_condition(l.source), l.condition)
+                    for l in self.incoming(field)
+                ],
+                location=field.identifier.location,
+            ).simplified()
+
+            self._path_condition_cache[field] = result
+
+            return result
 
     def field_size(self, field: Field) -> expr.Number:
         """Return field size if field size is fixed and fail otherwise."""
@@ -380,23 +400,26 @@ class AbstractMessage(mty.Type):
         )
 
     def paths(self, field: Field) -> set[tuple[Link, ...]]:
-        if field == INITIAL:
-            return set()
-        if field in self._paths_cache:
+        try:
             return self._paths_cache[field]
+        except KeyError:
+            if field == INITIAL:
+                return set()
 
-        result = set()
-        for l in self.incoming(field):
-            source = self.paths(l.source)
-            for s in source:
-                result.add((*s, l))
-            if not source:
-                result.add((l,))
+            result = set()
 
-        self._paths_cache[field] = result
-        return result
+            for l in self.incoming(field):
+                source = self.paths(l.source)
+                for s in source:
+                    result.add((*s, l))
+                if not source:
+                    result.add((l,))
 
-    def prefixed(self, prefix: str) -> AbstractMessage:
+            self._paths_cache[field] = result
+
+            return result
+
+    def prefixed(self, prefix: str) -> Message:
         fields = {f.identifier for f in self.fields}
 
         def prefixed_expression(expression: expr.Expr) -> expr.Expr:
@@ -461,438 +484,9 @@ class AbstractMessage(mty.Type):
             expression,
         )
 
-    def _aggregate_constraints(self, expression: expr.Expr = expr.TRUE) -> list[expr.Expr]:
-        return _aggregate_constraints(self.types, expression)
-
-    def _type_size_constraints(self) -> list[expr.Expr]:
-        return _type_size_constraints(self._type_names)
-
     @staticmethod
     def message_constraints() -> list[expr.Expr]:
         return message_constraints()
-
-    def _validate(self, structure: Sequence[Link], types: Mapping[Field, mty.Type]) -> bool:
-        type_fields = {*types, INITIAL, FINAL}
-        structure_fields = {l.source for l in structure} | {l.target for l in structure}
-
-        self._validate_types(types, type_fields, structure_fields)
-        self._validate_initial_link()
-        self._validate_names(type_fields)
-
-        self.error.propagate()
-
-        has_unreachable = self._validate_structure(structure_fields)
-        self._validate_link_aspects()
-
-        return has_unreachable
-
-    def _validate_types(
-        self,
-        types: Mapping[Field, mty.Type],
-        type_fields: set[Field],
-        structure_fields: set[Field],
-    ) -> None:
-        parameters = type_fields - structure_fields - {INITIAL, FINAL}
-
-        for p in parameters:
-            parameter_type = types[p]
-            if not isinstance(parameter_type, mty.Scalar):
-                self.error.extend(
-                    [
-                        (
-                            "parameters must have a scalar type",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            p.identifier.location,
-                        ),
-                    ],
-                )
-            elif isinstance(parameter_type, mty.Enumeration) and parameter_type.always_valid:
-                self.error.extend(
-                    [
-                        (
-                            "always valid enumeration types not allowed as parameters",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            p.identifier.location,
-                        ),
-                    ],
-                )
-
-        for f in structure_fields - type_fields:
-            self.error.extend(
-                [
-                    (
-                        f'missing type for field "{f.name}" in "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        f.identifier.location,
-                    ),
-                ],
-            )
-
-    def _validate_initial_link(self) -> None:
-        initial_links = self.outgoing(INITIAL)
-
-        if len(initial_links) != 1:
-            self.error.extend(
-                [
-                    (
-                        f'ambiguous first field in "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                    *[
-                        ("duplicate", Subsystem.MODEL, Severity.INFO, l.target.identifier.location)
-                        for l in self.outgoing(INITIAL)
-                        if l.target.identifier.location
-                    ],
-                ],
-            )
-
-        if initial_links[0].first != expr.UNDEFINED:
-            self.error.extend(
-                [
-                    (
-                        "illegal first aspect at initial link",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        initial_links[0].first.location,
-                    ),
-                ],
-            )
-
-    def _validate_names(self, type_fields: set[Field]) -> None:
-        name_conflicts = [
-            (f, l)
-            for f in type_fields
-            for l in self._unqualified_enum_literals
-            if f.identifier == l
-        ]
-
-        if name_conflicts:
-            conflicting_field, conflicting_literal = name_conflicts.pop(0)
-            self.error.extend(
-                [
-                    (
-                        f'name conflict for field "{conflicting_field.name}" in'
-                        f' "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        conflicting_field.identifier.location,
-                    ),
-                    (
-                        "conflicting enumeration literal",
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        conflicting_literal.location,
-                    ),
-                ],
-            )
-
-    def _validate_structure(self, structure_fields: set[Field]) -> bool:
-        has_unreachable = False
-
-        for f in structure_fields:
-            for l in self.structure:
-                if f in (INITIAL, l.target):
-                    break
-            else:
-                has_unreachable = True
-                self.error.extend(
-                    [
-                        (
-                            f'unreachable field "{f.name}" in "{self.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            f.identifier.location,
-                        ),
-                    ],
-                )
-
-        duplicate_links = defaultdict(list)
-        for link in self.structure:
-            duplicate_links[(link.source, link.target, link.condition)].append(link)
-
-        for links in duplicate_links.values():
-            if len(links) > 1:
-                self.error.extend(
-                    [
-                        (
-                            f'duplicate link from "{links[0].source.identifier}"'
-                            f' to "{links[0].target.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            links[0].source.identifier.location,
-                        ),
-                        *[
-                            (
-                                "duplicate link",
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                l.location,
-                            )
-                            for l in links
-                        ],
-                    ],
-                )
-
-        return has_unreachable
-
-    def _validate_link_aspects(self) -> None:
-        for link in self.structure:
-            exponentiations = itertools.chain.from_iterable(
-                e.findall(lambda x: isinstance(x, expr.Pow))
-                for e in [link.condition, link.first, link.size]
-            )
-            for e in exponentiations:
-                assert isinstance(e, expr.Pow)
-                variables = e.right.findall(lambda x: isinstance(x, expr.Variable))
-                if variables:
-                    self.error.extend(
-                        [
-                            (
-                                f'unsupported expression in "{self.identifier}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                e.location,
-                            ),
-                            *[
-                                (
-                                    f'variable "{v}" in exponent',
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    v.location,
-                                )
-                                for v in variables
-                            ],
-                        ],
-                    )
-
-            if link.has_implicit_size:
-                if any(l.target != FINAL for l in self.outgoing(link.target)):
-                    self.error.extend(
-                        [
-                            (
-                                '"Message" must not be used in size aspects',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                link.size.location,
-                            ),
-                        ],
-                    )
-                else:
-                    valid_definitions = (
-                        [
-                            expr.Add(expr.Last("Message"), -expr.Last(link.source.name)),
-                            expr.Sub(expr.Last("Message"), expr.Last(link.source.name)),
-                        ]
-                        if link.source != INITIAL
-                        else [
-                            expr.Size("Message"),
-                            expr.Sub(expr.Last("Message"), expr.Last(INITIAL.name)),
-                        ]
-                    )
-                    if link.size not in valid_definitions:
-                        self.error.extend(
-                            [
-                                (
-                                    'invalid use of "Message" in size aspect',
-                                    Subsystem.MODEL,
-                                    Severity.ERROR,
-                                    link.size.location,
-                                ),
-                                (
-                                    "remove size aspect to define field with implicit size",
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    link.size.location,
-                                ),
-                            ],
-                        )
-
-    def _normalize(
-        self,
-        structure: Sequence[Link],
-        types: Mapping[Field, mty.Type],
-        checksums: Mapping[ID, Sequence[expr.Expr]],
-    ) -> tuple[list[Link], dict[ID, Sequence[expr.Expr]]]:
-        """
-        Normalize structure of message.
-
-        - Replace variables by literals where necessary.
-        - Qualify enumeration literals in conditions to prevent ambiguities.
-        - Add size expression for fields with implicit size. The distinction between variables and
-          literals is not possible in the parser, as both are syntactically identical.
-        """
-
-        def substitute(expression: expr.Expr) -> expr.Expr:
-            return substitute_variables(
-                expression,
-                self._unqualified_enum_literals,
-                self._qualified_enum_literals,
-                self._type_names,
-                self.package,
-            )
-
-        structure = [
-            Link(
-                l.source,
-                l.target,
-                l.condition.substituted(substitute),
-                l.size.substituted(substitute),
-                l.first.substituted(substitute),
-                l.location,
-            )
-            for l in structure
-        ]
-
-        for link in structure:
-            if link.size == expr.UNDEFINED and link.target in types:
-                t = types[link.target]
-                if isinstance(t, (mty.Opaque, mty.Sequence)) and all(
-                    l.target == FINAL for l in self.outgoing(link.target)
-                ):
-                    if link.source == INITIAL:
-                        link.size = expr.Size(ID("Message", location=link.location))
-                    else:
-                        link.size = expr.Sub(
-                            expr.Last("Message"),
-                            expr.Last(link.source.identifier),
-                            location=link.location,
-                        )
-
-        checksums = {
-            i: [e.substituted(substitute) for e in expressions]
-            for i, expressions in self.checksums.items()
-        }
-
-        return (structure, checksums)
-
-    def _compute_topological_sorting(self, has_unreachable: bool) -> Optional[tuple[Field, ...]]:
-        """Return fields topologically sorted (Kahn's algorithm)."""
-        result: tuple[Field, ...] = ()
-        fields = [INITIAL]
-        visited = set()
-        while fields:
-            n = fields.pop(0)
-            result += (n,)
-            for e in self.outgoing(n):
-                visited.add(e)
-                if set(self.incoming(e.target)) <= visited:
-                    fields.append(e.target)
-        if not has_unreachable and set(self.structure) - visited:
-            self.error.extend(
-                [
-                    (
-                        f'structure of "{self.identifier}" contains cycle',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
-            )
-            # Eng/RecordFlux/RecordFlux#256
-            return None
-        return tuple(f for f in result if f not in [INITIAL, FINAL])
-
-    def _compute_definite_predecessors(self, final: Field) -> tuple[Field, ...]:
-        return tuple(
-            f
-            for f in self.fields
-            if all(any(f == pf.source for pf in p) for p in self.paths(final))
-        )
-
-    def _compute_path_condition(self, field: Field) -> expr.Expr:
-        if field == INITIAL:
-            return expr.TRUE
-        return expr.Or(
-            *[
-                expr.And(self._compute_path_condition(l.source), l.condition)
-                for l in self.incoming(field)
-            ],
-            location=field.identifier.location,
-        )
-
-    def _set_types(self) -> None:
-        def set_types(expression: expr.Expr) -> expr.Expr:
-            return self.typed_expression(expression, self.types)
-
-        for link in self.structure:
-            link.condition = link.condition.substituted(set_types)
-            link.size = link.size.substituted(set_types)
-            link.first = link.first.substituted(set_types)
-
-
-class Message(AbstractMessage):
-    def __init__(  # noqa: PLR0913
-        self,
-        identifier: StrID,
-        structure: Sequence[Link],
-        types: Mapping[Field, mty.Type],
-        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
-        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
-        location: Optional[Location] = None,
-        state: Optional[MessageState] = None,
-        skip_proof: bool = False,
-        workers: int = 1,
-    ) -> None:
-        super().__init__(identifier, structure, types, checksums, byte_order, location, state)
-
-        self._refinements: list[Refinement] = []
-        self._skip_proof = skip_proof
-        self._workers = workers
-
-        if not self.error.errors and not skip_proof:
-            self.verify()
-
-        self.error.propagate()
-
-    def verify(self) -> None:
-        if not self.is_null:
-            self._verify_parameters()
-            self._verify_use_of_literals()
-            self._verify_use_of_type_names()
-            self._verify_message_types()
-
-            self.error.propagate()
-
-            self._verify_expression_types()
-            self._verify_expressions()
-            self._verify_checksums()
-
-            self.error.propagate()
-
-            self._prove_static_conditions()
-            self._prove_conflicting_conditions()
-            self._prove_reachability()
-            self._prove_contradictions()
-            self._prove_coverage()
-            self._prove_overlays()
-            self._prove_field_positions()
-            self._prove_message_size()
-
-            self.error.propagate()
-
-    def copy(  # noqa: PLR0913
-        self,
-        identifier: Optional[StrID] = None,
-        structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, mty.Type]] = None,
-        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
-        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
-        location: Optional[Location] = None,
-    ) -> Message:
-        return Message(
-            identifier if identifier else self.identifier,
-            structure if structure else copy(self.structure),
-            types if types else copy(self.types),
-            checksums if checksums else copy(self.checksums),
-            byte_order if byte_order else copy(self.byte_order),
-            location if location else self.location,
-            skip_proof=self._skip_proof,
-        )
 
     def is_possibly_empty(self, field: Field) -> bool:
         if isinstance(self.types[field], mty.Scalar):
@@ -926,8 +520,8 @@ class Message(AbstractMessage):
             }
             if not self.is_null
             else set(),
-            {f.identifier: t.type_ for f, t in self._state.parameter_types.items()},
-            {f.identifier: t.type_ for f, t in self._state.field_types.items()},
+            {f.identifier: t.type_ for f, t in self._parameter_types.items()},
+            {f.identifier: t.type_ for f, t in self._field_types.items()},
             [rty.Refinement(r.field.identifier, r.sdu.type_, r.package) for r in self._refinements],
             self.is_definite,
         )
@@ -1213,6 +807,385 @@ class Message(AbstractMessage):
                 )
 
         return result
+
+    def _aggregate_constraints(self, expression: expr.Expr = expr.TRUE) -> list[expr.Expr]:
+        return _aggregate_constraints(self.types, expression)
+
+    def _type_size_constraints(self) -> list[expr.Expr]:
+        return _type_size_constraints(self._type_names)
+
+    def _validate(self, structure: Sequence[Link], types: Mapping[Field, mty.Type]) -> bool:
+        type_fields = {*types, INITIAL, FINAL}
+        structure_fields = {l.source for l in structure} | {l.target for l in structure}
+
+        self._validate_types(types, type_fields, structure_fields)
+        self._validate_initial_link()
+        self._validate_names(type_fields)
+
+        self.error.propagate()
+
+        has_unreachable = self._validate_structure(structure_fields)
+        self._validate_link_aspects()
+
+        return has_unreachable
+
+    def _validate_types(
+        self,
+        types: Mapping[Field, mty.Type],
+        type_fields: set[Field],
+        structure_fields: set[Field],
+    ) -> None:
+        parameters = type_fields - structure_fields - {INITIAL, FINAL}
+
+        for f, t in types.items():
+            if f in structure_fields and not isinstance(t, (mty.Scalar, mty.Composite)):
+                self.error.extend(
+                    [
+                        (
+                            "message fields must have a scalar or composite type",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            f.identifier.location,
+                        ),
+                    ],
+                )
+
+            if f in parameters:
+                if not isinstance(t, mty.Scalar):
+                    self.error.extend(
+                        [
+                            (
+                                "parameters must have a scalar type",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                f.identifier.location,
+                            ),
+                        ],
+                    )
+                elif isinstance(t, mty.Enumeration) and t.always_valid:
+                    self.error.extend(
+                        [
+                            (
+                                "always valid enumeration types not allowed as parameters",
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                f.identifier.location,
+                            ),
+                        ],
+                    )
+
+        for f in structure_fields - type_fields:
+            self.error.extend(
+                [
+                    (
+                        f'missing type for field "{f.name}" in "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        f.identifier.location,
+                    ),
+                ],
+            )
+
+    def _validate_initial_link(self) -> None:
+        initial_links = self.outgoing(INITIAL)
+
+        if len(initial_links) != 1:
+            self.error.extend(
+                [
+                    (
+                        f'ambiguous first field in "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    ),
+                    *[
+                        ("duplicate", Subsystem.MODEL, Severity.INFO, l.target.identifier.location)
+                        for l in self.outgoing(INITIAL)
+                        if l.target.identifier.location
+                    ],
+                ],
+            )
+
+        if initial_links[0].first != expr.UNDEFINED:
+            self.error.extend(
+                [
+                    (
+                        "illegal first aspect at initial link",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        initial_links[0].first.location,
+                    ),
+                ],
+            )
+
+    def _validate_names(self, type_fields: set[Field]) -> None:
+        name_conflicts = [
+            (f, l)
+            for f in type_fields
+            for l in self._unqualified_enum_literals
+            if f.identifier == l
+        ]
+
+        if name_conflicts:
+            conflicting_field, conflicting_literal = name_conflicts.pop(0)
+            self.error.extend(
+                [
+                    (
+                        f'name conflict for field "{conflicting_field.name}" in'
+                        f' "{self.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        conflicting_field.identifier.location,
+                    ),
+                    (
+                        "conflicting enumeration literal",
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        conflicting_literal.location,
+                    ),
+                ],
+            )
+
+    def _validate_structure(self, structure_fields: set[Field]) -> bool:
+        has_unreachable = False
+
+        for f in structure_fields:
+            for l in self.structure:
+                if f in (INITIAL, l.target):
+                    break
+            else:
+                has_unreachable = True
+                self.error.extend(
+                    [
+                        (
+                            f'unreachable field "{f.name}" in "{self.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            f.identifier.location,
+                        ),
+                    ],
+                )
+
+        duplicate_links = defaultdict(list)
+        for link in self.structure:
+            duplicate_links[(link.source, link.target, link.condition)].append(link)
+
+        for links in duplicate_links.values():
+            if len(links) > 1:
+                self.error.extend(
+                    [
+                        (
+                            f'duplicate link from "{links[0].source.identifier}"'
+                            f' to "{links[0].target.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            links[0].source.identifier.location,
+                        ),
+                        *[
+                            (
+                                "duplicate link",
+                                Subsystem.MODEL,
+                                Severity.INFO,
+                                l.location,
+                            )
+                            for l in links
+                        ],
+                    ],
+                )
+
+        return has_unreachable
+
+    def _validate_link_aspects(self) -> None:
+        for link in self.structure:
+            exponentiations = itertools.chain.from_iterable(
+                e.findall(lambda x: isinstance(x, expr.Pow))
+                for e in [link.condition, link.first, link.size]
+            )
+            for e in exponentiations:
+                assert isinstance(e, expr.Pow)
+                variables = e.right.findall(lambda x: isinstance(x, expr.Variable))
+                if variables:
+                    self.error.extend(
+                        [
+                            (
+                                f'unsupported expression in "{self.identifier}"',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                e.location,
+                            ),
+                            *[
+                                (
+                                    f'variable "{v}" in exponent',
+                                    Subsystem.MODEL,
+                                    Severity.INFO,
+                                    v.location,
+                                )
+                                for v in variables
+                            ],
+                        ],
+                    )
+
+            if link.has_implicit_size:
+                if any(l.target != FINAL for l in self.outgoing(link.target)):
+                    self.error.extend(
+                        [
+                            (
+                                '"Message" must not be used in size aspects',
+                                Subsystem.MODEL,
+                                Severity.ERROR,
+                                link.size.location,
+                            ),
+                        ],
+                    )
+                else:
+                    valid_definitions = (
+                        [
+                            expr.Add(expr.Last("Message"), -expr.Last(link.source.name)),
+                            expr.Sub(expr.Last("Message"), expr.Last(link.source.name)),
+                        ]
+                        if link.source != INITIAL
+                        else [
+                            expr.Size("Message"),
+                            expr.Sub(expr.Last("Message"), expr.Last(INITIAL.name)),
+                        ]
+                    )
+                    if link.size not in valid_definitions:
+                        self.error.extend(
+                            [
+                                (
+                                    'invalid use of "Message" in size aspect',
+                                    Subsystem.MODEL,
+                                    Severity.ERROR,
+                                    link.size.location,
+                                ),
+                                (
+                                    "remove size aspect to define field with implicit size",
+                                    Subsystem.MODEL,
+                                    Severity.INFO,
+                                    link.size.location,
+                                ),
+                            ],
+                        )
+
+    def _normalize(
+        self,
+        structure: Sequence[Link],
+        types: Mapping[Field, mty.Type],
+        checksums: Mapping[ID, Sequence[expr.Expr]],
+    ) -> tuple[list[Link], dict[ID, Sequence[expr.Expr]]]:
+        """
+        Normalize structure of message.
+
+        - Replace variables by literals where necessary.
+        - Qualify enumeration literals in conditions to prevent ambiguities.
+        - Add size expression for fields with implicit size. The distinction between variables and
+          literals is not possible in the parser, as both are syntactically identical.
+        """
+
+        def substitute(expression: expr.Expr) -> expr.Expr:
+            return substitute_variables(
+                expression,
+                self._unqualified_enum_literals,
+                self._qualified_enum_literals,
+                self._type_names,
+                self.package,
+            )
+
+        structure = [
+            Link(
+                l.source,
+                l.target,
+                l.condition.substituted(substitute),
+                l.size.substituted(substitute),
+                l.first.substituted(substitute),
+                l.location,
+            )
+            for l in structure
+        ]
+
+        for link in structure:
+            if link.size == expr.UNDEFINED and link.target in types:
+                t = types[link.target]
+                if isinstance(t, (mty.Opaque, mty.Sequence)) and all(
+                    l.target == FINAL for l in self.outgoing(link.target)
+                ):
+                    if link.source == INITIAL:
+                        link.size = expr.Size(ID("Message", location=link.location))
+                    else:
+                        link.size = expr.Sub(
+                            expr.Last("Message"),
+                            expr.Last(link.source.identifier),
+                            location=link.location,
+                        )
+
+        checksums = {
+            i: [e.substituted(substitute) for e in expressions]
+            for i, expressions in self.checksums.items()
+        }
+
+        return (structure, checksums)
+
+    def _compute_topological_sorting(self, has_unreachable: bool) -> Optional[tuple[Field, ...]]:
+        """Return fields topologically sorted (Kahn's algorithm)."""
+        result: tuple[Field, ...] = ()
+        fields = [INITIAL]
+        visited = set()
+        while fields:
+            n = fields.pop(0)
+            result += (n,)
+            for e in self.outgoing(n):
+                visited.add(e)
+                if set(self.incoming(e.target)) <= visited:
+                    fields.append(e.target)
+        if not has_unreachable and set(self.structure) - visited:
+            self.error.extend(
+                [
+                    (
+                        f'structure of "{self.identifier}" contains cycle',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        self.location,
+                    ),
+                ],
+            )
+            # Eng/RecordFlux/RecordFlux#256
+            return None
+        return tuple(f for f in result if f not in [INITIAL, FINAL])
+
+    def _set_types(self) -> None:
+        def set_types(expression: expr.Expr) -> expr.Expr:
+            return self.typed_expression(expression, self.types)
+
+        for link in self.structure:
+            link.condition = link.condition.substituted(set_types)
+            link.size = link.size.substituted(set_types)
+            link.first = link.first.substituted(set_types)
+
+    def _verify(self) -> None:
+        if not self.is_null:
+            self._verify_parameters()
+            self._verify_use_of_literals()
+            self._verify_use_of_type_names()
+            self._verify_message_types()
+
+            self.error.propagate()
+
+            self._verify_expression_types()
+            self._verify_expressions()
+            self._verify_checksums()
+
+            self.error.propagate()
+
+            self._prove_static_conditions()
+            self._prove_conflicting_conditions()
+            self._prove_reachability()
+            self._prove_contradictions()
+            self._prove_coverage()
+            self._prove_overlays()
+            self._prove_field_positions()
+            self._prove_message_size()
+
+            self.error.propagate()
 
     def _max_value(self, target: expr.Expr, path: tuple[Link, ...]) -> expr.Number:
         message_size = expr.Add(
@@ -2366,9 +2339,15 @@ class UncheckedMessage(mty.UncheckedType):
     structure: Sequence[Link]
     parameter_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
     field_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
-    checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = dataclass_field(default=None)
-    byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = dataclass_field(
-        default=None,
+    checksums: Mapping[ID, Sequence[expr.Expr]] = dataclass_field(default_factory=dict)
+    byte_order: Union[
+        Mapping[Field, ByteOrder],
+        ByteOrder,
+    ] = dataclass_field(  # type: ignore[assignment]
+        # TODO(eng/recordflux/RecordFlux#1359): Fix type annotation
+        # The type should be `dict[Field, ByteOrder]`, but the subscription of `dict` is not
+        # supported by Python 3.8.
+        default_factory=dict,
     )
     location: Optional[Location] = dataclass_field(default=None)
 
@@ -2378,7 +2357,7 @@ class UncheckedMessage(mty.UncheckedType):
 
     @property
     def byte_order_dict(self) -> dict[Field, ByteOrder]:
-        if self.byte_order is None:
+        if not self.byte_order:
             return {f: ByteOrder.HIGH_ORDER_FIRST for f, _, _ in self.field_types}
         if isinstance(self.byte_order, ByteOrder):
             return {f: self.byte_order for f, _, _ in self.field_types}
@@ -2438,7 +2417,7 @@ class UncheckedMessage(mty.UncheckedType):
                 None,
             )
             if field_type:
-                if isinstance(field_type, AbstractMessage):
+                if isinstance(field_type, Message):
                     self._check_message_arguments(
                         error,
                         field_type,
@@ -2487,7 +2466,7 @@ class UncheckedMessage(mty.UncheckedType):
             checksums=result.checksums,
             byte_order=result.byte_order,
             location=result.location,
-            skip_proof=skip_verification,
+            skip_verification=skip_verification,
             workers=workers,
         )
 
@@ -2517,7 +2496,7 @@ class UncheckedMessage(mty.UncheckedType):
     def _check_message_arguments(
         self,
         argument_errors: RecordFluxError,
-        message: AbstractMessage,
+        message: Message,
         type_arguments: Sequence[tuple[ID, expr.Expr]],
         field_type_location: Optional[Location],
     ) -> None:
@@ -2709,7 +2688,7 @@ class UncheckedMessage(mty.UncheckedType):
         )
 
     @staticmethod
-    def _replace_message_attributes(message: AbstractMessage) -> Message:
+    def _replace_message_attributes(message: Message) -> Message:
         first_field = message.outgoing(INITIAL)[0].target
 
         def replace(expression: expr.Expr) -> expr.Expr:
@@ -2748,7 +2727,7 @@ class UncheckedMessage(mty.UncheckedType):
             message.checksums,
             message.byte_order,
             message.location,
-            skip_proof=True,
+            skip_verification=True,
         )
 
     @staticmethod

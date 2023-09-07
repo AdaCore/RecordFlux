@@ -1,6 +1,6 @@
 import pytest
 
-from rflx.common import Base
+from rflx.common import Base, verbose_repr
 
 
 class C1(Base):
@@ -35,3 +35,7 @@ def test_base_repr(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("RFLX_TESTING", "")
 
     assert repr(C2(1, {2: 3, 4: 5})) == "\n    C2(\n        data=1,\n        _data2={2: 3, 4: 5})"
+
+
+def test_verbose_repr() -> None:
+    assert verbose_repr(1, []) == "\n    int(\n    )\n    # 1\n    "

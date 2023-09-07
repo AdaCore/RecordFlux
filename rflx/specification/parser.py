@@ -1010,8 +1010,8 @@ def create_null_message(
         [],
         [],
         [],
-        None,
-        None,
+        {},
+        {},
         location=type_location(identifier, message),
     )
 
@@ -1342,9 +1342,12 @@ def parse_aspects(  # noqa: PLR0912
     error: RecordFluxError,
     aspects: lang.MessageAspectList,
     filename: Path,
-) -> tuple[Mapping[ID, Sequence[expr.Expr]], Optional[model.ByteOrder]]:
+) -> tuple[
+    Mapping[ID, Sequence[expr.Expr]],
+    Union[model.ByteOrder, dict[model.Field, model.ByteOrder]],
+]:
     checksum_result = {}
-    byte_order_result = None
+    byte_order_result: Union[model.ByteOrder, dict[model.Field, model.ByteOrder]] = {}
 
     grouped = defaultdict(list)
     for aspect in aspects:

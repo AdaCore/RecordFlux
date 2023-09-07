@@ -2,7 +2,6 @@ from .cache import Cache as Cache
 from .message import (
     FINAL as FINAL,
     INITIAL as INITIAL,
-    AbstractMessage as AbstractMessage,
     ByteOrder as ByteOrder,
     DerivedMessage as DerivedMessage,
     Field as Field,

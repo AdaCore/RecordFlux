@@ -17,7 +17,6 @@ from rflx.model import (
     INITIAL,
     OPAQUE,
     UNCHECKED_OPAQUE,
-    AbstractMessage,
     Cache,
     Enumeration,
     Field,
@@ -486,7 +485,7 @@ def test_unchecked_model_checked(
 
     assert UncheckedModel(unchecked, RecordFluxError()).checked(cache=cache) == Model(expected)
 
-    messages = [d for d in expected if isinstance(d, AbstractMessage)]
+    messages = [d for d in expected if isinstance(d, Message)]
     if messages:
         for d in messages:
             cache.is_verified(d)

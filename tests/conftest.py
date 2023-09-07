@@ -55,11 +55,7 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
             "    Actual:   " + re.sub(r"\n +", " ", str(left)),
             "    Expected: " + re.sub(r"\n +", " ", str(right)),
         ]
-    if (
-        isinstance(left, model.AbstractMessage)
-        and isinstance(right, model.AbstractMessage)
-        and op == "=="
-    ):
+    if isinstance(left, model.Message) and isinstance(right, model.Message) and op == "==":
         return [
             "Message instances",
             "repr:",

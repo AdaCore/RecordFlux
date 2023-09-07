@@ -7,7 +7,7 @@ from pathlib import Path
 from rflx import __version__
 from rflx.const import CACHE_PATH
 from rflx.error import Subsystem, warn
-from rflx.model.message import AbstractMessage
+from rflx.model.message import Message
 
 DEFAULT_FILE = CACHE_PATH / "verification.json"
 
@@ -31,7 +31,7 @@ class Cache:
 
         self._load_cache()
 
-    def is_verified(self, message: AbstractMessage) -> bool:
+    def is_verified(self, message: Message) -> bool:
         if not self._enabled:
             return False
 
@@ -40,7 +40,7 @@ class Cache:
             and self._message_hash(message) in self._verified[message.full_name]
         )
 
-    def add_verified(self, message: AbstractMessage) -> None:
+    def add_verified(self, message: Message) -> None:
         if not self._enabled:
             return
 
@@ -75,6 +75,6 @@ class Cache:
             json.dump(self._verified, f)
 
     @staticmethod
-    def _message_hash(message: AbstractMessage) -> str:
+    def _message_hash(message: Message) -> str:
         types = "|".join(str(t) for t in message.types.values())
         return hashlib.md5(f"{__version__}|{message}|{types}".encode()).hexdigest()  # noqa: S324

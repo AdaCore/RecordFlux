@@ -19,4 +19,4 @@ from tests.data import models
     ],
 )
 def test_models(message: model.Message) -> None:
-    message.verify()
+    message._verify()  # noqa: SLF001

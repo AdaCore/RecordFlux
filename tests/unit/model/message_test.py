@@ -691,14 +691,15 @@ class NewType(Type):
     pass
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on contract")
 def test_invalid_message_field_type() -> None:
-    with pytest.raises(AssertionError):
-        Message(
-            "P::M",
-            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): NewType("P::T")},
-        )
+    structure = [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)]
+    types = {Field(ID("F", Location((1, 2)))): NewType("P::T")}
+
+    assert_message_model_error(
+        structure,
+        types,
+        "^<stdin>:1:2: model: error: message fields must have a scalar or composite type$",
+    )
 
 
 def test_unused_parameter() -> None:
@@ -3883,8 +3884,8 @@ def test_merge_message_checksums() -> None:
             Link(Field("F2"), FINAL, condition=ValidChecksum("F2")),
         ],
         {
-            Field("F1"): INTEGER,
-            Field("F2"): INTEGER,
+            Field("F1"): models.integer(),
+            Field("F2"): models.integer(),
         },
         checksums={ID("F2"): [Variable("F1")]},
     )
@@ -3898,12 +3899,12 @@ def test_merge_message_checksums() -> None:
         [],
         [
             (Field("NR"), inner_msg.identifier, []),
-            (Field("C"), INTEGER.identifier, []),
+            (Field("C"), models.integer().identifier, []),
         ],
         checksums={ID("C"): [Variable("NR_F1"), Variable("NR_F2")]},
     )
     assert_equal(
-        outer_msg.merged([OPAQUE, INTEGER, inner_msg]),
+        outer_msg.merged([OPAQUE, models.integer(), inner_msg]),
         UncheckedMessage(
             ID("P::Outer_Msg"),
             [
@@ -3914,9 +3915,9 @@ def test_merge_message_checksums() -> None:
             ],
             [],
             [
-                (Field("C"), INTEGER.identifier, []),
-                (Field("NR_F1"), INTEGER.identifier, []),
-                (Field("NR_F2"), INTEGER.identifier, []),
+                (Field("C"), models.integer().identifier, []),
+                (Field("NR_F1"), models.integer().identifier, []),
+                (Field("NR_F2"), models.integer().identifier, []),
             ],
             checksums={
                 ID("NR_F2"): [Variable("NR_F1")],
@@ -4973,9 +4974,6 @@ def test_possibly_always_true_refinement(
                     (Field("F3"), models.enumeration().identifier, []),
                     (Field("F4"), models.integer().identifier, []),
                 ],
-                None,
-                None,
-                None,
             ),
             Message(
                 ID("P::No_Ref"),
@@ -5042,9 +5040,6 @@ def test_unchecked_message_checked(unchecked: UncheckedMessage, expected: Messag
                     (Field("F3"), models.enumeration().identifier, []),
                     (Field("F4"), models.integer().identifier, []),
                 ],
-                None,
-                None,
-                None,
             ),
             r'^<stdin>:2:3: model: error: invalid format for identifier "T"$',
         ),
