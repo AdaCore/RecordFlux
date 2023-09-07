@@ -227,7 +227,24 @@ class AbstractMessage(mty.Type):
             if fields:
                 fields += ";"
 
-        return f"type {self.name}{parameters} is\n   message\n{indent(fields, 6)}\n   end message"
+        checksum_aspect = ""
+        if self.checksums:
+            checksums = ", ".join(
+                [
+                    f'{identifier} => ({", ".join(str(e) for e in expressions)})'
+                    for identifier, expressions in self.checksums.items()
+                ],
+            )
+            checksum_aspect = f"Checksum => ({checksums})"
+
+        aspects = ""
+        if checksum_aspect:
+            aspects = f" with\n{indent(checksum_aspect, 6)}"
+
+        return (
+            f"type {self.name}{parameters} is\n   message\n{indent(fields, 6)}\n   end message"
+            f"{aspects}"
+        )
 
     @property
     def is_null(self) -> bool:
@@ -419,9 +436,19 @@ class AbstractMessage(mty.Type):
             **{Field(prefix + f.identifier): t for f, t in self.field_types.items()},
         }
 
+        checksums = (
+            {prefix + i: [prefixed_expression(e) for e in e] for i, e in self.checksums.items()}
+            if self.checksums
+            else self.checksums
+        )
         byte_order = {Field(prefix + f.identifier): t for f, t in self.byte_order.items()}
 
-        return self.copy(structure=structure, types=types, byte_order=byte_order)
+        return self.copy(
+            structure=structure,
+            types=types,
+            checksums=checksums,
+            byte_order=byte_order,
+        )
 
     def typed_expression(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
         return typed_expression(expression, types, self._qualified_enum_literals, self._type_names)

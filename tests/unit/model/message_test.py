@@ -3874,6 +3874,63 @@ def test_merge_message_simple_derived() -> None:
     )
 
 
+def test_merge_message_checksums() -> None:
+    inner_msg = Message(
+        ID("P::Merge_Test_Byte_Order"),
+        [
+            Link(INITIAL, Field("F1")),
+            Link(Field("F1"), Field("F2")),
+            Link(Field("F2"), FINAL, condition=ValidChecksum("F2")),
+        ],
+        {
+            Field("F1"): INTEGER,
+            Field("F2"): INTEGER,
+        },
+        checksums={ID("F2"): [Variable("F1")]},
+    )
+    outer_msg = UncheckedMessage(
+        ID("P::Outer_Msg"),
+        [
+            Link(INITIAL, Field("NR")),
+            Link(Field("NR"), Field("C")),
+            Link(Field("C"), FINAL, condition=ValidChecksum("C")),
+        ],
+        [],
+        [
+            (Field("NR"), inner_msg.identifier, []),
+            (Field("C"), INTEGER.identifier, []),
+        ],
+        checksums={ID("C"): [Variable("NR_F1"), Variable("NR_F2")]},
+    )
+    assert_equal(
+        outer_msg.merged([OPAQUE, INTEGER, inner_msg]),
+        UncheckedMessage(
+            ID("P::Outer_Msg"),
+            [
+                Link(Field("C"), FINAL, condition=ValidChecksum("C")),
+                Link(INITIAL, Field("NR_F1")),
+                Link(Field("NR_F1"), Field("NR_F2")),
+                Link(Field("NR_F2"), Field("C"), condition=ValidChecksum("NR_F2")),
+            ],
+            [],
+            [
+                (Field("C"), INTEGER.identifier, []),
+                (Field("NR_F1"), INTEGER.identifier, []),
+                (Field("NR_F2"), INTEGER.identifier, []),
+            ],
+            checksums={
+                ID("NR_F2"): [Variable("NR_F1")],
+                ID("C"): [Variable("NR_F1"), Variable("NR_F2")],
+            },
+            byte_order={
+                Field("C"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F1"): ByteOrder.HIGH_ORDER_FIRST,
+                Field("NR_F2"): ByteOrder.HIGH_ORDER_FIRST,
+            },
+        ),
+    )
+
+
 def test_merge_message_byte_order() -> None:
     inner_msg = Message(
         ID("P::Merge_Test_Byte_Order"),
