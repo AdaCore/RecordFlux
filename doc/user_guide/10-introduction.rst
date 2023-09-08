@@ -141,7 +141,7 @@ The tool can be installed using either the system package manager (`python3-pip`
 
 For the formal verification of the generated code, the following SPARK Pro version is required:
 
--  SPARK Pro Wavefront 20230823
+-  SPARK Pro Wavefront 20230905
 
 If you plan to use the RecordFlux Modeller, GNAT Studio needs to be installed and set up.
 
