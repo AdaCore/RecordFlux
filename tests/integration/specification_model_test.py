@@ -553,7 +553,6 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
             Link(Field("Value"), FINAL),
         ],
         {Field("Tag"): tag, Field("Length"): length, Field("Value"): OPAQUE},
-        skip_verification=True,
     )
     session = Session(
         "Test::Session",

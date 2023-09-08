@@ -52,7 +52,7 @@ from rflx.model import (
 
 @lru_cache
 def null_message() -> Message:
-    return Message("Null::Message", [], {}, skip_verification=True)
+    return Message("Null::Message", [], {})
 
 
 @lru_cache
@@ -92,7 +92,6 @@ def tlv_message() -> Message:
             Link(Field("Value"), FINAL),
         ],
         {Field("Tag"): tlv_tag(), Field("Length"): tlv_length(), Field("Value"): OPAQUE},
-        skip_verification=True,
     )
 
 
@@ -160,7 +159,6 @@ def tlv_with_checksum_message() -> Message:
             Field("Checksum"): tlv_with_checksum_checksum(),
         },
         checksums={ID("Checksum"): [Variable("Tag"), Size("Value"), Variable("Value")]},
-        skip_verification=True,
     )
 
 
@@ -269,7 +267,6 @@ def ethernet_frame() -> Message:
             Field("Type_Length"): ethernet_type_length(),
             Field("Payload"): OPAQUE,
         },
-        skip_verification=True,
     )
 
 
@@ -302,7 +299,6 @@ def enumeration_message() -> Message:
         "Enumeration::Message",
         [Link(INITIAL, Field("Priority")), Link(Field("Priority"), FINAL)],
         {Field("Priority"): enumeration_priority()},
-        skip_verification=True,
     )
 
 
@@ -381,7 +377,6 @@ def sequence_message() -> Message:
             Field("Enumeration_Vector"): sequence_enumeration_vector(),
             Field("AV_Enumeration_Vector"): sequence_av_enumeration_vector(),
         },
-        skip_verification=True,
     )
 
 
@@ -395,7 +390,6 @@ def sequence_inner_message() -> Message:
             Link(Field("Payload"), FINAL),
         ],
         {Field("Length"): sequence_length(), Field("Payload"): OPAQUE},
-        skip_verification=True,
     )
 
 
@@ -414,7 +408,6 @@ def sequence_messages_message() -> Message:
             Link(Field("Messages"), FINAL),
         ],
         {Field("Length"): sequence_length(), Field("Messages"): sequence_inner_messages()},
-        skip_verification=True,
     )
 
 
@@ -431,7 +424,6 @@ def sequence_sequence_size_defined_by_message_size() -> Message:
             Field("Header"): sequence_enumeration(),
             Field("Vector"): sequence_integer_vector(),
         },
-        skip_verification=True,
     )
 
 
@@ -468,7 +460,6 @@ def expression_message() -> Message:
             ),
         ],
         {Field("Payload"): OPAQUE},
-        skip_verification=True,
     )
 
 
