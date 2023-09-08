@@ -16,7 +16,7 @@ project Pub_Sub is
          "--steps=0",
          "--timeout=180",
          "--memlimit=2000",
-         "--checks-as-errors",
+         "--checks-as-errors=on",
          "--warnings=error",
          "--counterexamples=off"
       );
