@@ -144,8 +144,8 @@ test: test_cross test_binary_size lib
 test_cross: build/arm/example/main build/riscv64/example/main libarm libriscv64
 
 test_binary_size: build/arm/example/main build/riscv64/example/main
-	tools/check_size.py arm build/arm/example/main .text 45000
-	tools/check_size.py riscv64 build/riscv64/example/main .text 37000
+	tools/check_size.py arm build/arm/example/main .text 46000
+	tools/check_size.py riscv64 build/riscv64/example/main .text 38000
 
 build/lib/libspdm.a: $(GENERATED)
 	gprbuild -j0 -P spdm

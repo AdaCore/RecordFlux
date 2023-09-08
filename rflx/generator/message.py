@@ -479,6 +479,108 @@ def create_valid_predecessors_invariant_function(
     )
 
 
+def create_valid_next_internal_function(
+    message: Message,
+    composite_fields: abc.Sequence[Field],
+    prefix: str,
+) -> UnitPart:
+    """
+    Create the function that tells us if a field can be set.
+
+    This is the case if one of its incoming links corresponds to
+    the field's registered predecessor and the corresponding condition
+    evaluates to True.
+    """
+    specification = FunctionSpecification(
+        "Valid_Next_Internal",
+        "Boolean",
+        [
+            Parameter(["Cursors"], "Field_Cursors"),
+            Parameter(["First"], const.TYPES_BIT_INDEX),
+            Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
+            Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
+            Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+            *common.message_parameters(message),
+            Parameter(["Fld"], "Field"),
+        ],
+    )
+
+    def link_expr(link: Link) -> Expr:
+        pred_cond = Equal(
+            Selected(
+                Indexed(
+                    Variable("Cursors"),
+                    Variable(link.target.affixed_name),
+                ),
+                "Predecessor",
+            ),
+            Variable(link.source.affixed_name),
+        )
+        if link.source == INITIAL:
+            return pred_cond
+        condition = link.condition.substituted(
+            common.substitution(message, prefix, embedded=True),
+        ).simplified()
+        return AndThen(
+            Call(
+                "Well_Formed" if link.source in composite_fields else "Valid",
+                [Indexed(Variable("Cursors"), Variable(link.source.affixed_name))],
+            ),
+            condition.ada_expr(),
+            pred_cond,
+        )
+
+    def valid_next_expr(fld: Field) -> Expr:
+        incoming = message.incoming(fld)
+        return Or(*[link_expr(lnk) for lnk in incoming])
+
+    param_args = [Variable(param.name) for param in message.parameter_types]
+
+    return UnitPart(
+        [],
+        private=common.wrap_warning(
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Fld"),
+                        [(Variable(f.affixed_name), valid_next_expr(f)) for f in message.fields],
+                    ),
+                    [
+                        Precondition(
+                            AndThen(
+                                Call(
+                                    "Cursors_Invariant",
+                                    [
+                                        Variable("Cursors"),
+                                        Variable("First"),
+                                        Variable("Verified_Last"),
+                                    ],
+                                ),
+                                Call(
+                                    "Valid_Predecessors_Invariant",
+                                    [
+                                        Variable("Cursors"),
+                                        Variable("First"),
+                                        Variable("Verified_Last"),
+                                        Variable("Written_Last"),
+                                        Variable("Buffer"),
+                                        *param_args,
+                                    ],
+                                ),
+                            ),
+                        ),
+                        Postcondition(TRUE),
+                    ],
+                ),
+            ],
+            [
+                "postcondition does not mention function result",
+            ],
+        ),
+    )
+
+
 def create_valid_context_function(
     message: Message,
     prefix: str,
@@ -2448,7 +2550,7 @@ def create_data_procedure(prefix: str, message: Message) -> UnitPart:
     )
 
 
-def create_valid_next_function() -> UnitPart:
+def create_valid_next_function(message: Message) -> UnitPart:
     specification = FunctionSpecification(
         "Valid_Next",
         "Boolean",
@@ -2460,9 +2562,17 @@ def create_valid_next_function() -> UnitPart:
         private=[
             ExpressionFunctionDeclaration(
                 specification,
-                AndThen(
-                    Call("Valid_Predecessor", [Variable("Ctx"), Variable("Fld")]),
-                    Call("Path_Condition", [Variable("Ctx"), Variable("Fld")]),
+                Call(
+                    "Valid_Next_Internal",
+                    [
+                        Variable("Ctx.Cursors"),
+                        Variable("Ctx.First"),
+                        Variable("Ctx.Verified_Last"),
+                        Variable("Ctx.Written_Last"),
+                        Variable("Ctx.Buffer"),
+                        *[Selected(Variable("Ctx"), fld.name) for fld in message.parameter_types],
+                        Variable("Fld"),
+                    ],
                 ),
             ),
         ],

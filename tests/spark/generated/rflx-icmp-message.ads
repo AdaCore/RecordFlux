@@ -1364,6 +1364,115 @@ private
 
    pragma Warnings (On, "unused variable ""*""");
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
+     ((case Fld is
+          when F_Tag =>
+             Cursors (F_Tag).Predecessor = F_Initial,
+          when F_Code_Destination_Unreachable =>
+             (Valid (Cursors (F_Tag))
+              and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
+              and then Cursors (F_Code_Destination_Unreachable).Predecessor = F_Tag),
+          when F_Code_Redirect =>
+             (Valid (Cursors (F_Tag))
+              and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
+              and then Cursors (F_Code_Redirect).Predecessor = F_Tag),
+          when F_Code_Time_Exceeded =>
+             (Valid (Cursors (F_Tag))
+              and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
+              and then Cursors (F_Code_Time_Exceeded).Predecessor = F_Tag),
+          when F_Code_Zero =>
+             (Valid (Cursors (F_Tag))
+              and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
+              and then Cursors (F_Code_Zero).Predecessor = F_Tag),
+          when F_Checksum =>
+             (Valid (Cursors (F_Code_Destination_Unreachable))
+              and then True
+              and then Cursors (F_Checksum).Predecessor = F_Code_Destination_Unreachable)
+             or (Valid (Cursors (F_Code_Redirect))
+                 and then True
+                 and then Cursors (F_Checksum).Predecessor = F_Code_Redirect)
+             or (Valid (Cursors (F_Code_Time_Exceeded))
+                 and then True
+                 and then Cursors (F_Checksum).Predecessor = F_Code_Time_Exceeded)
+             or (Valid (Cursors (F_Code_Zero))
+                 and then True
+                 and then Cursors (F_Checksum).Predecessor = F_Code_Zero),
+          when F_Gateway_Internet_Address =>
+             (Valid (Cursors (F_Checksum))
+              and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
+              and then Cursors (F_Gateway_Internet_Address).Predecessor = F_Checksum),
+          when F_Identifier =>
+             (Valid (Cursors (F_Checksum))
+              and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply)))
+              and then Cursors (F_Identifier).Predecessor = F_Checksum),
+          when F_Pointer =>
+             (Valid (Cursors (F_Checksum))
+              and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
+              and then Cursors (F_Pointer).Predecessor = F_Checksum),
+          when F_Unused_32 =>
+             (Valid (Cursors (F_Checksum))
+              and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench)))
+              and then Cursors (F_Unused_32).Predecessor = F_Checksum),
+          when F_Sequence_Number =>
+             (Valid (Cursors (F_Identifier))
+              and then True
+              and then Cursors (F_Sequence_Number).Predecessor = F_Identifier),
+          when F_Unused_24 =>
+             (Valid (Cursors (F_Pointer))
+              and then True
+              and then Cursors (F_Unused_24).Predecessor = F_Pointer),
+          when F_Originate_Timestamp =>
+             (Valid (Cursors (F_Sequence_Number))
+              and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
+                        or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply)))
+              and then Cursors (F_Originate_Timestamp).Predecessor = F_Sequence_Number),
+          when F_Data =>
+             (Valid (Cursors (F_Gateway_Internet_Address))
+              and then True
+              and then Cursors (F_Data).Predecessor = F_Gateway_Internet_Address)
+             or (Valid (Cursors (F_Sequence_Number))
+                 and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
+                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
+                 and then Cursors (F_Data).Predecessor = F_Sequence_Number)
+             or (Valid (Cursors (F_Unused_24))
+                 and then True
+                 and then Cursors (F_Data).Predecessor = F_Unused_24)
+             or (Valid (Cursors (F_Unused_32))
+                 and then True
+                 and then Cursors (F_Data).Predecessor = F_Unused_32),
+          when F_Receive_Timestamp =>
+             (Valid (Cursors (F_Originate_Timestamp))
+              and then True
+              and then Cursors (F_Receive_Timestamp).Predecessor = F_Originate_Timestamp),
+          when F_Transmit_Timestamp =>
+             (Valid (Cursors (F_Receive_Timestamp))
+              and then True
+              and then Cursors (F_Transmit_Timestamp).Predecessor = F_Receive_Timestamp)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer),
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -1842,8 +1951,7 @@ private
                  and Ctx.Cursors (Fld).Predecessor = F_Transmit_Timestamp)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
-     (Valid_Predecessor (Ctx, Fld)
-      and then Path_Condition (Ctx, Fld));
+     (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Ctx.Last - Field_First (Ctx, Fld) + 1);

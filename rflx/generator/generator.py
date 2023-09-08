@@ -478,6 +478,12 @@ class Generator:
                 self._prefix,
             ),
             self._executor.submit(
+                message_generator.create_valid_next_internal_function,
+                message,
+                composite_fields,
+                self._prefix,
+            ),
+            self._executor.submit(
                 message_generator.create_valid_context_function,
                 message,
                 self._prefix,
@@ -578,7 +584,7 @@ class Generator:
                 composite_fields,
             ),
             self._executor.submit(message_generator.create_invalid_successor_function, message),
-            self._executor.submit(message_generator.create_valid_next_function),
+            self._executor.submit(message_generator.create_valid_next_function, message),
             self._executor.submit(
                 message_generator.create_available_space_function,
                 self._prefix,

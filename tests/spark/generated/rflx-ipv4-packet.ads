@@ -1594,6 +1594,85 @@ private
 
    pragma Warnings (On, "unused variable ""*""");
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
+     ((case Fld is
+          when F_Version =>
+             Cursors (F_Version).Predecessor = F_Initial,
+          when F_IHL =>
+             (Valid (Cursors (F_Version))
+              and then True
+              and then Cursors (F_IHL).Predecessor = F_Version),
+          when F_DSCP =>
+             (Valid (Cursors (F_IHL))
+              and then True
+              and then Cursors (F_DSCP).Predecessor = F_IHL),
+          when F_ECN =>
+             (Valid (Cursors (F_DSCP))
+              and then True
+              and then Cursors (F_ECN).Predecessor = F_DSCP),
+          when F_Total_Length =>
+             (Valid (Cursors (F_ECN))
+              and then True
+              and then Cursors (F_Total_Length).Predecessor = F_ECN),
+          when F_Identification =>
+             (Valid (Cursors (F_Total_Length))
+              and then RFLX_Types.Base_Integer (Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Cursors (F_IHL).Value) * 4
+              and then Cursors (F_Identification).Predecessor = F_Total_Length),
+          when F_Flag_R =>
+             (Valid (Cursors (F_Identification))
+              and then True
+              and then Cursors (F_Flag_R).Predecessor = F_Identification),
+          when F_Flag_DF =>
+             (Valid (Cursors (F_Flag_R))
+              and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))
+              and then Cursors (F_Flag_DF).Predecessor = F_Flag_R),
+          when F_Flag_MF =>
+             (Valid (Cursors (F_Flag_DF))
+              and then True
+              and then Cursors (F_Flag_MF).Predecessor = F_Flag_DF),
+          when F_Fragment_Offset =>
+             (Valid (Cursors (F_Flag_MF))
+              and then True
+              and then Cursors (F_Fragment_Offset).Predecessor = F_Flag_MF),
+          when F_TTL =>
+             (Valid (Cursors (F_Fragment_Offset))
+              and then True
+              and then Cursors (F_TTL).Predecessor = F_Fragment_Offset),
+          when F_Protocol =>
+             (Valid (Cursors (F_TTL))
+              and then True
+              and then Cursors (F_Protocol).Predecessor = F_TTL),
+          when F_Header_Checksum =>
+             (Valid (Cursors (F_Protocol))
+              and then True
+              and then Cursors (F_Header_Checksum).Predecessor = F_Protocol),
+          when F_Source =>
+             (Valid (Cursors (F_Header_Checksum))
+              and then True
+              and then Cursors (F_Source).Predecessor = F_Header_Checksum),
+          when F_Destination =>
+             (Valid (Cursors (F_Source))
+              and then True
+              and then Cursors (F_Destination).Predecessor = F_Source),
+          when F_Options =>
+             (Valid (Cursors (F_Destination))
+              and then True
+              and then Cursors (F_Options).Predecessor = F_Destination),
+          when F_Payload =>
+             (Well_Formed (Cursors (F_Options))
+              and then True
+              and then Cursors (F_Payload).Predecessor = F_Options)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer),
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -1927,8 +2006,7 @@ private
               and Ctx.Cursors (Fld).Predecessor = F_Payload)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
-     (Valid_Predecessor (Ctx, Fld)
-      and then Path_Condition (Ctx, Fld));
+     (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Ctx.Last - Field_First (Ctx, Fld) + 1);

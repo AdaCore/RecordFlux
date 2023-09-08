@@ -791,6 +791,48 @@ private
 
    pragma Warnings (On, "unused variable ""*""");
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
+     ((case Fld is
+          when F_Copied =>
+             Cursors (F_Copied).Predecessor = F_Initial,
+          when F_Option_Class =>
+             (Valid (Cursors (F_Copied))
+              and then True
+              and then Cursors (F_Option_Class).Predecessor = F_Copied),
+          when F_Option_Number =>
+             (Valid (Cursors (F_Option_Class))
+              and then True
+              and then Cursors (F_Option_Number).Predecessor = F_Option_Class),
+          when F_Option_Length =>
+             (Valid (Cursors (F_Option_Number))
+              and then Cursors (F_Option_Number).Value > 1
+              and then Cursors (F_Option_Length).Predecessor = F_Option_Number),
+          when F_Option_Data =>
+             (Valid (Cursors (F_Option_Length))
+              and then ((RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
+                         and Cursors (F_Option_Number).Value = 4)
+                        or (RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
+                            and (Cursors (F_Option_Number).Value = 9
+                                 or Cursors (F_Option_Number).Value = 3
+                                 or Cursors (F_Option_Number).Value = 7))
+                        or (Cursors (F_Option_Length).Value = 11
+                            and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
+                            and Cursors (F_Option_Number).Value = 2)
+                        or (Cursors (F_Option_Length).Value = 4
+                            and RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
+                            and Cursors (F_Option_Number).Value = 8))
+              and then Cursors (F_Option_Data).Predecessor = F_Option_Length)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer),
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -1000,8 +1042,7 @@ private
                  and Ctx.Cursors (Fld).Predecessor = F_Option_Number)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
-     (Valid_Predecessor (Ctx, Fld)
-      and then Path_Condition (Ctx, Fld));
+     (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Ctx.Last - Field_First (Ctx, Fld) + 1);

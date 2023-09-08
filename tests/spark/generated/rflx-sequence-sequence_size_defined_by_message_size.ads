@@ -650,6 +650,25 @@ private
 
    pragma Warnings (On, "unused variable ""*""");
 
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
+     ((case Fld is
+          when F_Header =>
+             Cursors (F_Header).Predecessor = F_Initial,
+          when F_Vector =>
+             (Valid (Cursors (F_Header))
+              and then True
+              and then Cursors (F_Vector).Predecessor = F_Header)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer),
+     Post =>
+       True;
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -779,8 +798,7 @@ private
               and Ctx.Cursors (Fld).Predecessor = F_Vector)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
-     (Valid_Predecessor (Ctx, Fld)
-      and then Path_Condition (Ctx, Fld));
+     (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Ctx.Last - Field_First (Ctx, Fld) + 1);
