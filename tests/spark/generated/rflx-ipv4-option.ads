@@ -833,6 +833,32 @@ private
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "unused variable ""*""");
+
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Length'Base is
+     ((case Fld is
+          when F_Copied =>
+             1,
+          when F_Option_Class =>
+             2,
+          when F_Option_Number =>
+             5,
+          when F_Option_Length =>
+             8,
+          when F_Option_Data =>
+             (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld);
+
+   pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -992,17 +1018,7 @@ private
              True));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Fld is
-          when F_Copied =>
-             1,
-          when F_Option_Class =>
-             2,
-          when F_Option_Number =>
-             5,
-          when F_Option_Length =>
-             8,
-          when F_Option_Data =>
-             (RFLX_Types.Bit_Length (Ctx.Cursors (F_Option_Length).Value) - 2) * 8));
+     (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if Fld = F_Copied then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));

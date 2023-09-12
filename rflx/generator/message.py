@@ -581,6 +581,83 @@ def create_valid_next_internal_function(
     )
 
 
+def create_field_size_internal_function(message: Message, prefix: str) -> UnitPart:
+    specification = FunctionSpecification(
+        "Field_Size_Internal",
+        "RFLX_Types.Bit_Length'Base",
+        [
+            Parameter(["Cursors"], "Field_Cursors"),
+            Parameter(["First"], const.TYPES_BIT_INDEX),
+            Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
+            Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
+            Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+            *common.message_parameters(message),
+            Parameter(["Fld"], "Field"),
+        ],
+    )
+
+    param_args = [Variable(param.name) for param in message.parameter_types]
+
+    return UnitPart(
+        [],
+        private=common.wrap_warning(
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Fld"),
+                        [
+                            (
+                                Variable(f.affixed_name),
+                                common.conditional_field_size(f, message, prefix),
+                            )
+                            for f in message.fields
+                        ],
+                    ),
+                    [
+                        Precondition(
+                            AndThen(
+                                Call(
+                                    "Cursors_Invariant",
+                                    [
+                                        Variable("Cursors"),
+                                        Variable("First"),
+                                        Variable("Verified_Last"),
+                                    ],
+                                ),
+                                Call(
+                                    "Valid_Predecessors_Invariant",
+                                    [
+                                        Variable("Cursors"),
+                                        Variable("First"),
+                                        Variable("Verified_Last"),
+                                        Variable("Written_Last"),
+                                        Variable("Buffer"),
+                                        *param_args,
+                                    ],
+                                ),
+                                Call(
+                                    "Valid_Next_Internal",
+                                    [
+                                        Variable("Cursors"),
+                                        Variable("First"),
+                                        Variable("Verified_Last"),
+                                        Variable("Written_Last"),
+                                        Variable("Buffer"),
+                                        *param_args,
+                                        Variable("Fld"),
+                                    ],
+                                ),
+                            ),
+                        ),
+                    ],
+                ),
+            ],
+            ['unused variable "*"', 'formal parameter "*" is not referenced'],
+        ),
+    )
+
+
 def create_valid_context_function(
     message: Message,
     prefix: str,
@@ -1841,14 +1918,16 @@ def create_field_size_function(
         private=[
             ExpressionFunctionDeclaration(
                 specification,
-                Case(
-                    Variable("Fld"),
+                Call(
+                    "Field_Size_Internal",
                     [
-                        (
-                            Variable(f.affixed_name),
-                            common.conditional_field_size(f, message, prefix),
-                        )
-                        for f in message.fields
+                        Variable("Ctx.Cursors"),
+                        Variable("Ctx.First"),
+                        Variable("Ctx.Verified_Last"),
+                        Variable("Ctx.Written_Last"),
+                        Variable("Ctx.Buffer"),
+                        *[Selected(Variable("Ctx"), fld.name) for fld in message.parameter_types],
+                        Variable("Fld"),
                     ],
                 ),
             ),

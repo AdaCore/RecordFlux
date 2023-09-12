@@ -329,29 +329,6 @@ class SerializerGenerator:
                             Call(const.TYPES_TO_INDEX, [Variable("Last")]),
                         ),
                         *self._update_last(),
-                        # Improve provability of context predicate
-                        PragmaStatement(
-                            "Assert",
-                            [
-                                Equal(
-                                    Variable("Size"),
-                                    Case(
-                                        Variable("Fld"),
-                                        [
-                                            (
-                                                Variable(f.affixed_name),
-                                                common.conditional_field_size(
-                                                    f,
-                                                    message,
-                                                    self.prefix,
-                                                ),
-                                            )
-                                            for f in message.fields
-                                        ],
-                                    ),
-                                ),
-                            ],
-                        ),
                         IfStatement(
                             [
                                 (

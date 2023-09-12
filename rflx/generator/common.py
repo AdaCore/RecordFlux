@@ -987,11 +987,20 @@ def unchanged_cursor_before_or_invalid(
     )
 
 
-def conditional_field_size(field: model.Field, message: model.Message, prefix: str) -> Expr:
+def conditional_field_size(
+    field: model.Field,
+    message: model.Message,
+    prefix: str,
+) -> Expr:
     def substituted(expression: expr.Expr) -> Expr:
         return (
             expression.substituted(
-                substitution(message, prefix, target_type=const.TYPES_BIT_LENGTH),
+                substitution(
+                    message,
+                    prefix,
+                    target_type=const.TYPES_BIT_LENGTH,
+                    embedded=True,
+                ),
             )
             .simplified()
             .ada_expr()
@@ -1011,12 +1020,9 @@ def conditional_field_size(field: model.Field, message: model.Message, prefix: s
         [
             (
                 AndThen(
-                    Equal(
-                        Selected(
-                            Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                            "Predecessor",
-                        ),
-                        Variable(l.source.affixed_name),
+                    Call(
+                        "Well_Formed",
+                        [Indexed(Variable("Cursors"), Variable(l.source.affixed_name))],
                     ),
                     *([substituted(l.condition)] if l.condition != expr.TRUE else []),
                 ),

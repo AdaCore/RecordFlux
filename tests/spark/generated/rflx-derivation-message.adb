@@ -320,13 +320,6 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size, Written_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      pragma Assert (Size = (case Fld is
-                         when F_Tag =>
-                            8,
-                         when F_Length =>
-                            16,
-                         when F_Value =>
-                            RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value) * 8));
       if State_Valid then
          Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       else

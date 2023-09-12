@@ -409,43 +409,6 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size, Written_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      pragma Assert (Size = (case Fld is
-                         when F_Message_Type =>
-                            8,
-                         when F_Length =>
-                            16,
-                         when F_Data =>
-                            (if
-                                Ctx.Cursors (Fld).Predecessor = F_Length
-                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.Universal.MT_Data))
-                             then
-                                RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value) * 8
-                             elsif
-                                Ctx.Cursors (Fld).Predecessor = F_Message_Type
-                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
-                             then
-                                RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Last)
-                             else
-                                RFLX_Types.Unreachable),
-                         when F_Option_Types =>
-                            RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value) * 8,
-                         when F_Options =>
-                            (if
-                                Ctx.Cursors (Fld).Predecessor = F_Length
-                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.Universal.MT_Options))
-                             then
-                                RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value) * 8
-                             elsif
-                                Ctx.Cursors (Fld).Predecessor = F_Message_Type
-                                and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-                             then
-                                RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Last)
-                             else
-                                RFLX_Types.Unreachable),
-                         when F_Value =>
-                            8,
-                         when F_Values =>
-                            RFLX_Types.Bit_Length (Ctx.Cursors (F_Length).Value) * 8));
       if State_Valid then
          Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       else

@@ -541,48 +541,6 @@ is
       pragma Warnings (Off, "attribute Update is an obsolescent feature");
       Ctx := Ctx'Update (Verified_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size, Written_Last => ((Last + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
-      pragma Assert (Size = (case Fld is
-                         when F_Tag | F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
-                            8,
-                         when F_Checksum =>
-                            16,
-                         when F_Gateway_Internet_Address =>
-                            32,
-                         when F_Identifier =>
-                            16,
-                         when F_Pointer =>
-                            8,
-                         when F_Unused_32 =>
-                            32,
-                         when F_Sequence_Number =>
-                            16,
-                         when F_Unused_24 =>
-                            24,
-                         when F_Originate_Timestamp =>
-                            32,
-                         when F_Data =>
-                            (if
-                                Ctx.Cursors (Fld).Predecessor = F_Gateway_Internet_Address
-                             then
-                                224
-                             elsif
-                                Ctx.Cursors (Fld).Predecessor = F_Sequence_Number
-                                and then (RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-                                          or RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.ICMP.Echo_Request)))
-                             then
-                                RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Sequence_Number).Last)
-                             elsif
-                                Ctx.Cursors (Fld).Predecessor = F_Unused_24
-                             then
-                                224
-                             elsif
-                                Ctx.Cursors (Fld).Predecessor = F_Unused_32
-                             then
-                                224
-                             else
-                                RFLX_Types.Unreachable),
-                         when F_Receive_Timestamp | F_Transmit_Timestamp =>
-                            32));
       if State_Valid then
          Ctx.Cursors (Fld) := (State => S_Valid, First => First, Last => Last, Value => Val, Predecessor => Ctx.Cursors (Fld).Predecessor);
       else

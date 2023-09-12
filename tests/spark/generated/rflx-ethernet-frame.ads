@@ -888,6 +888,39 @@ private
 
    pragma Warnings (On, "postcondition does not mention function result");
 
+   pragma Warnings (Off, "unused variable ""*""");
+
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Length'Base is
+     ((case Fld is
+          when F_Destination | F_Source =>
+             48,
+          when F_Type_Length_TPID | F_TPID | F_TCI | F_Type_Length =>
+             16,
+          when F_Payload =>
+             (if
+                 Well_Formed (Cursors (F_Type_Length))
+                 and then Cursors (F_Type_Length).Value <= 1500
+              then
+                 RFLX_Types.Bit_Length (Cursors (F_Type_Length).Value) * 8
+              elsif
+                 Well_Formed (Cursors (F_Type_Length))
+                 and then Cursors (F_Type_Length).Value >= 1536
+              then
+                 RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Type_Length).Last)
+              else
+                 RFLX_Types.Unreachable)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld);
+
+   pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
    pragma Warnings (Off, "postcondition does not mention function result");
@@ -1076,24 +1109,7 @@ private
              and RFLX_Types.Base_Integer (Size) / 8 <= 1500));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
-     ((case Fld is
-          when F_Destination | F_Source =>
-             48,
-          when F_Type_Length_TPID | F_TPID | F_TCI | F_Type_Length =>
-             16,
-          when F_Payload =>
-             (if
-                 Ctx.Cursors (Fld).Predecessor = F_Type_Length
-                 and then Ctx.Cursors (F_Type_Length).Value <= 1500
-              then
-                 RFLX_Types.Bit_Length (Ctx.Cursors (F_Type_Length).Value) * 8
-              elsif
-                 Ctx.Cursors (Fld).Predecessor = F_Type_Length
-                 and then Ctx.Cursors (F_Type_Length).Value >= 1536
-              then
-                 RFLX_Types.Bit_Length (Ctx.Written_Last) - RFLX_Types.Bit_Length (Ctx.Cursors (F_Type_Length).Last)
-              else
-                 RFLX_Types.Unreachable)));
+     (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
      ((if
