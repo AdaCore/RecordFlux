@@ -475,12 +475,17 @@ async def test_go_to_definition(
 
 @pytest.mark.asyncio()
 async def test_code_lens(language_server: server.RecordFluxLanguageServer) -> None:
+    params = CodeLensParams(TextDocumentIdentifier((DATA_DIR / "message.rflx").absolute().as_uri()))
+
+    assert await server.code_lens(language_server, params) == []
+
     language_server.update_model()
 
-    assert await server.code_lens(
-        language_server,
-        CodeLensParams(TextDocumentIdentifier((DATA_DIR / "message.rflx").absolute().as_uri())),
-    ) == [
+    assert await server.code_lens(language_server, params) == []
+
+    language_server.verify()
+
+    assert await server.code_lens(language_server, params) == [
         CodeLens(
             range=Range(Position(21, 8), Position(32, 17)),
             command=Command(title="Show message graph", command="showMessageGraph", arguments=[8]),

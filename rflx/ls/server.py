@@ -168,6 +168,8 @@ class RecordFluxLanguageServer(LanguageServer):
             WorkDoneProgressBegin(title="Verification", percentage=0, cancellable=True),
         )
 
+        self.checked_model = Model()
+
         try:
             self.checked_model = self.unchecked_model.checked(self.cache, workers=self.workers)
         except error.RecordFluxError as e:
@@ -337,8 +339,8 @@ async def show_message_graph(ls: RecordFluxLanguageServer, parameters: list[int]
 async def code_lens(ls: RecordFluxLanguageServer, params: CodeLensParams) -> list[CodeLens]:
     result: list[CodeLens] = []
 
-    for index, declaration in enumerate(ls.unchecked_model.declarations):
-        if not isinstance(declaration, UncheckedMessage):
+    for index, declaration in enumerate(ls.checked_model.declarations):
+        if not isinstance(declaration, Message):
             continue
 
         location = to_lsp_location(declaration.location)
