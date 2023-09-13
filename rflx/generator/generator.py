@@ -549,11 +549,6 @@ class Generator:
                 scalar_fields,
             ),
             self._executor.submit(
-                message_generator.create_path_condition_function,
-                self._prefix,
-                message,
-            ),
-            self._executor.submit(
                 message_generator.create_field_condition_function,
                 self._prefix,
                 message,

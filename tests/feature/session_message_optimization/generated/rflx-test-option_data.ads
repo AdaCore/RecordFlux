@@ -257,16 +257,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.Test.Option_Data.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        RFLX.Test.Option_Data.Has_Buffer (Ctx)
@@ -771,13 +761,6 @@ private
              RFLX.Universal.Valid_Length (Val),
           when F_Data =>
              True));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial | F_Data | F_Final =>
-             True,
-          when F_Length =>
-             Ctx.Cursors (F_Length).Value > 1));
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is

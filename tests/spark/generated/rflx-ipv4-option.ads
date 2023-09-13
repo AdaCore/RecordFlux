@@ -258,16 +258,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.IPv4.Option.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
@@ -972,26 +962,6 @@ private
              RFLX.IPv4.Valid_Option_Length (Val),
           when F_Option_Data =>
              True));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial | F_Copied | F_Option_Class | F_Option_Data | F_Final =>
-             True,
-          when F_Option_Number =>
-             Ctx.Cursors (F_Option_Number).Value > 1,
-          when F_Option_Length =>
-             (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
-              and Ctx.Cursors (F_Option_Number).Value = 4)
-             or (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                 and (Ctx.Cursors (F_Option_Number).Value = 9
-                      or Ctx.Cursors (F_Option_Number).Value = 3
-                      or Ctx.Cursors (F_Option_Number).Value = 7))
-             or (Ctx.Cursors (F_Option_Length).Value = 11
-                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                 and Ctx.Cursors (F_Option_Number).Value = 2)
-             or (Ctx.Cursors (F_Option_Length).Value = 4
-                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                 and Ctx.Cursors (F_Option_Number).Value = 8)));
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is

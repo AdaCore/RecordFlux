@@ -255,16 +255,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.Ethernet.Frame.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length := 0) return Boolean with
      Pre =>
        RFLX.Ethernet.Frame.Has_Buffer (Ctx)
@@ -1076,26 +1066,6 @@ private
              RFLX.Ethernet.Valid_Type_Length (Val),
           when F_Payload =>
              True));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial | F_Destination | F_Source | F_TPID | F_TCI | F_Payload | F_Final =>
-             True,
-          when F_Type_Length_TPID =>
-             (case Fld is
-                 when F_TPID =>
-                    Ctx.Cursors (F_Type_Length_TPID).Value = 16#8100#,
-                 when F_Type_Length =>
-                    Ctx.Cursors (F_Type_Length_TPID).Value /= 16#8100#,
-                 when others =>
-                    False),
-          when F_Type_Length =>
-             (case Fld is
-                 when F_Payload =>
-                    Ctx.Cursors (F_Type_Length).Value <= 1500
-                    or Ctx.Cursors (F_Type_Length).Value >= 1536,
-                 when others =>
-                    False)));
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length := 0) return Boolean is
      ((case Fld is

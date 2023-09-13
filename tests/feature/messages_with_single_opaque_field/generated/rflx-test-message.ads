@@ -255,16 +255,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.Test.Message.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        RFLX.Test.Message.Has_Buffer (Ctx)
@@ -693,9 +683,6 @@ private
      (Ctx.Written_Last);
 
    function Valid_Value (Unused_Fld : Field; Unused_Val : RFLX_Types.Base_Integer) return Boolean is
-     (True);
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
      (True);
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean is

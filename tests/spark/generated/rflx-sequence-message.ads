@@ -258,16 +258,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.Sequence.Message.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        RFLX.Sequence.Message.Has_Buffer (Ctx)
@@ -625,7 +615,6 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Integer_Vector) = Predecessor (Ctx, F_Integer_Vector)'Old
-       and Path_Condition (Ctx, F_Integer_Vector) = Path_Condition (Ctx, F_Integer_Vector)'Old
        and Field_Last (Ctx, F_Integer_Vector) = Field_Last (Ctx, F_Integer_Vector)'Old
        and (for all F in Field range F_Length .. F_Length =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -664,7 +653,6 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
-       and Path_Condition (Ctx, F_Enumeration_Vector) = Path_Condition (Ctx, F_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_Enumeration_Vector) = Field_Last (Ctx, F_Enumeration_Vector)'Old
        and (for all F in Field range F_Length .. F_Integer_Vector =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -702,7 +690,6 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
-       and Path_Condition (Ctx, F_AV_Enumeration_Vector) = Path_Condition (Ctx, F_AV_Enumeration_Vector)'Old
        and Field_Last (Ctx, F_AV_Enumeration_Vector) = Field_Last (Ctx, F_AV_Enumeration_Vector)'Old
        and (for all F in Field range F_Length .. F_Enumeration_Vector =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -1064,9 +1051,6 @@ private
              RFLX.Sequence.Valid_Length (Val),
           when F_Integer_Vector | F_Enumeration_Vector | F_AV_Enumeration_Vector =>
              True));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     (True);
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is

@@ -406,10 +406,9 @@ class ParserGenerator:
                                             [Indexed(Variable("Ctx.Cursors"), Variable("Fld"))],
                                         ),
                                         Call(
-                                            "Valid_Predecessor",
+                                            "Valid_Next",
                                             [Variable("Ctx"), Variable("Fld")],
                                         ),
-                                        Call("Path_Condition", [Variable("Ctx"), Variable("Fld")]),
                                     ),
                                     [
                                         IfStatement(

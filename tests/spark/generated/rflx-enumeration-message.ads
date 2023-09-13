@@ -251,16 +251,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.Enumeration.Message.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        RFLX.Enumeration.Message.Has_Buffer (Ctx)
@@ -630,9 +620,6 @@ private
      ((case Fld is
           when F_Priority =>
              RFLX.Enumeration.Valid_Priority (Val)));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     (True);
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is

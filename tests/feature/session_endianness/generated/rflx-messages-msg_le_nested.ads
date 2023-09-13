@@ -251,16 +251,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.Messages.Msg_LE_Nested.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        RFLX.Messages.Msg_LE_Nested.Has_Buffer (Ctx)
@@ -736,9 +726,6 @@ private
              RFLX.Messages.Valid_Integer (Val),
           when F_X_B | F_Y =>
              RFLX.Messages.Valid_Enum_T (Val)));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     (True);
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is

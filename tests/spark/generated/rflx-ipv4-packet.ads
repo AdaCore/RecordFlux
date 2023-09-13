@@ -259,16 +259,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.IPv4.Packet.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx)
@@ -1372,7 +1362,6 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
-       and Path_Condition (Ctx, F_Options) = Path_Condition (Ctx, F_Options)'Old
        and Field_Last (Ctx, F_Options) = Field_Last (Ctx, F_Options)'Old
        and (for all F in Field range F_Version .. F_Destination =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -1924,15 +1913,6 @@ private
              RFLX.IPv4.Valid_Address (Val),
           when F_Options | F_Payload =>
              True));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial | F_Version | F_IHL | F_DSCP | F_ECN | F_Identification | F_Flag_DF | F_Flag_MF | F_Fragment_Offset | F_TTL | F_Protocol | F_Header_Checksum | F_Source | F_Destination | F_Options | F_Payload | F_Final =>
-             True,
-          when F_Total_Length =>
-             RFLX_Types.Base_Integer (Ctx.Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Ctx.Cursors (F_IHL).Value) * 4,
-          when F_Flag_R =>
-             RFLX_Types.Base_Integer (Ctx.Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))));
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is

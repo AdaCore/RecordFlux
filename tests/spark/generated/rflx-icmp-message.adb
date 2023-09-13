@@ -311,8 +311,7 @@ is
    begin
       if
          Invalid (Ctx.Cursors (Fld))
-         and then Valid_Predecessor (Ctx, Fld)
-         and then Path_Condition (Ctx, Fld)
+         and then Valid_Next (Ctx, Fld)
       then
          if Sufficient_Buffer_Length (Ctx, Fld) then
             Value := (if Composite_Field (Fld) then 0 else Get (Ctx, Fld));

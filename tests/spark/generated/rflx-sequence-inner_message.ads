@@ -255,16 +255,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.Sequence.Inner_Message.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
@@ -789,9 +779,6 @@ private
              RFLX.Sequence.Valid_Length (Val),
           when F_Payload =>
              True));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     (True);
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is

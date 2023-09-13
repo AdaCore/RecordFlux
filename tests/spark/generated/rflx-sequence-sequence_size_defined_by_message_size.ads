@@ -256,16 +256,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx)
@@ -524,7 +514,6 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Vector) = Predecessor (Ctx, F_Vector)'Old
-       and Path_Condition (Ctx, F_Vector) = Path_Condition (Ctx, F_Vector)'Old
        and Field_Last (Ctx, F_Vector) = Field_Last (Ctx, F_Vector)'Old
        and (for all F in Field range F_Header .. F_Header =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -775,9 +764,6 @@ private
              RFLX.Sequence.Valid_Enumeration (Val),
           when F_Vector =>
              True));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     (True);
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 from collections import abc
 from typing import Optional, Union
 
@@ -1771,95 +1770,6 @@ def create_valid_value_function(
     )
 
 
-def create_path_condition_function(prefix: str, message: Message) -> UnitPart:
-    """Check if the condition at the incoming link to the field is valid."""
-
-    def condition(field: Field, message: Message) -> Expr:
-        links = [l for l in message.outgoing(field) if l.target != FINAL]
-
-        if not links:
-            return TRUE
-
-        if all(l.condition == links[0].condition for l in links):
-            return (
-                links[0]
-                .condition.substituted(common.substitution(message, prefix))
-                .simplified()
-                .ada_expr()
-            )
-
-        return Case(
-            Variable("Fld"),
-            [
-                *[
-                    (
-                        target,
-                        expr.Or(*[c for _, c in conditions])
-                        .substituted(common.substitution(message, prefix))
-                        .simplified()
-                        .ada_expr(),
-                    )
-                    for target, conditions in itertools.groupby(
-                        [(Variable(l.target.affixed_name), l.condition) for l in links],
-                        lambda x: x[0],
-                    )
-                ],
-                (Variable("others"), FALSE),
-            ],
-        )
-
-    specification = FunctionSpecification(
-        "Path_Condition",
-        "Boolean",
-        [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
-    )
-
-    return UnitPart(
-        [
-            # Eng/RecordFlux/Workarounds#47
-            Pragma(
-                "Warnings",
-                [Variable("Off"), String("postcondition does not mention function result")],
-            ),
-            SubprogramDeclaration(
-                specification,
-                [
-                    Precondition(
-                        And(
-                            Call(
-                                prefix * message.identifier * "Valid_Predecessor",
-                                [Variable("Ctx"), Variable("Fld")],
-                            ),
-                        ),
-                    ),
-                    Postcondition(TRUE),
-                ],
-            ),
-            Pragma(
-                "Warnings",
-                [Variable("On"), String("postcondition does not mention function result")],
-            ),
-        ],
-        private=[
-            ExpressionFunctionDeclaration(
-                specification,
-                Case(
-                    Selected(Indexed(Variable("Ctx.Cursors"), Variable("Fld")), "Predecessor"),
-                    sorted(
-                        [
-                            (Variable(f.affixed_name), condition(f, message))
-                            for f in message.all_fields
-                        ],
-                        key=lambda x: x[1] != TRUE,
-                    ),
-                )
-                if any(l.condition != expr.TRUE for l in message.structure)
-                else TRUE,
-            ),
-        ],
-    )
-
-
 def create_field_size_function(
     prefix: str,
     message: Message,
@@ -3139,13 +3049,6 @@ def create_switch_procedures(
                                 for e in [
                                     Call(
                                         "Predecessor",
-                                        [
-                                            Variable("Ctx"),
-                                            Variable(f.affixed_name),
-                                        ],
-                                    ),
-                                    Call(
-                                        "Path_Condition",
                                         [
                                             Variable("Ctx"),
                                             Variable(f.affixed_name),

@@ -258,16 +258,6 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean with
-     Pre =>
-       RFLX.Universal.Message.Valid_Predecessor (Ctx, Fld),
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        RFLX.Universal.Message.Has_Buffer (Ctx)
@@ -918,7 +908,6 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Option_Types) = Predecessor (Ctx, F_Option_Types)'Old
-       and Path_Condition (Ctx, F_Option_Types) = Path_Condition (Ctx, F_Option_Types)'Old
        and Field_Last (Ctx, F_Option_Types) = Field_Last (Ctx, F_Option_Types)'Old
        and (for all F in Field range F_Message_Type .. F_Data =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -956,7 +945,6 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
-       and Path_Condition (Ctx, F_Options) = Path_Condition (Ctx, F_Options)'Old
        and Field_Last (Ctx, F_Options) = Field_Last (Ctx, F_Options)'Old
        and (for all F in Field range F_Message_Type .. F_Option_Types =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -993,7 +981,6 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Predecessor (Ctx, F_Values) = Predecessor (Ctx, F_Values)'Old
-       and Path_Condition (Ctx, F_Values) = Path_Condition (Ctx, F_Values)'Old
        and Field_Last (Ctx, F_Values) = Field_Last (Ctx, F_Values)'Old
        and (for all F in Field range F_Message_Type .. F_Value =>
                Context_Cursors_Index (Context_Cursors (Ctx), F) = Context_Cursors_Index (Context_Cursors (Ctx)'Old, F)),
@@ -1504,38 +1491,6 @@ private
              RFLX.Universal.Valid_Value (Val),
           when F_Values =>
              True));
-
-   function Path_Condition (Ctx : Context; Fld : Field) return Boolean is
-     ((case Ctx.Cursors (Fld).Predecessor is
-          when F_Initial | F_Data | F_Option_Types | F_Options | F_Value | F_Values | F_Final =>
-             True,
-          when F_Message_Type =>
-             (case Fld is
-                 when F_Data =>
-                    RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data)),
-                 when F_Length =>
-                    RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-                    and RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Null))
-                    and RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data)),
-                 when F_Options =>
-                    RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options)),
-                 when others =>
-                    False),
-          when F_Length =>
-             (case Fld is
-                 when F_Data =>
-                    RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data)),
-                 when F_Option_Types =>
-                    RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Option_Types)),
-                 when F_Options =>
-                    RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options)),
-                 when F_Value =>
-                    RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Value))
-                    and RFLX_Types.Base_Integer (Ctx.Cursors (F_Length).Value) = Universal.Value'Size / 8,
-                 when F_Values =>
-                    RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values)),
-                 when others =>
-                    False)));
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is
