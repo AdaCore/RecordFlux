@@ -1426,7 +1426,7 @@ class Attribute(Name):
         if isinstance(prefix, str):
             prefix = Variable(prefix)
 
-        self.prefix: Expr = prefix
+        self._prefix: Expr = prefix
         super().__init__(negative, location=prefix.location)
 
     @property
@@ -1436,6 +1436,10 @@ class Attribute(Name):
     @property
     def symbol(self) -> str:
         return self.__class__.__name__
+
+    @property
+    def prefix(self) -> Expr:
+        return self._prefix
 
     def __neg__(self) -> Attribute:
         return self.__class__(self.prefix, not self.negative)

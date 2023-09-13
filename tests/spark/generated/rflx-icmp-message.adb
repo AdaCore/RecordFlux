@@ -795,20 +795,20 @@ is
        and then RFLX.ICMP.Message.Field_First (Ctx, RFLX.ICMP.Message.F_Data) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Data)
-       and Field_Size (Ctx, F_Data) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_Data)
-       and Invalid (Ctx, F_Receive_Timestamp)
-       and Invalid (Ctx, F_Transmit_Timestamp)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
-       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
-       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
+       and then Well_Formed (Ctx, F_Data)
+       and then Field_Size (Ctx, F_Data) = RFLX_Types.To_Bit_Length (Length)
+       and then Ctx.Verified_Last = Field_Last (Ctx, F_Data)
+       and then Invalid (Ctx, F_Receive_Timestamp)
+       and then Invalid (Ctx, F_Transmit_Timestamp)
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
+       and then Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and then Get_Tag (Ctx) = Get_Tag (Ctx)'Old
+       and then Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
+       and then Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

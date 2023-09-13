@@ -1432,7 +1432,7 @@ class SerializerGenerator:
                                         ),
                                     ),
                                     Postcondition(
-                                        And(
+                                        AndThen(
                                             *self.composite_setter_postconditions(f),
                                             *self.public_setter_postconditions(message, f),
                                         ),
@@ -1477,7 +1477,7 @@ class SerializerGenerator:
                                         ),
                                     ),
                                     Postcondition(
-                                        And(
+                                        AndThen(
                                             *self.composite_setter_postconditions(f),
                                             Equal(
                                                 Call(
@@ -1597,7 +1597,7 @@ class SerializerGenerator:
                                 ),
                             ),
                             Postcondition(
-                                And(
+                                AndThen(
                                     *self.composite_setter_postconditions(f),
                                     Equal(
                                         Call(

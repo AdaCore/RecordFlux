@@ -1086,20 +1086,20 @@ is
        and then RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Data) >= RFLX_Types.To_Bit_Length (Length),
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Data)
-       and Field_Size (Ctx, F_Data) = RFLX_Types.To_Bit_Length (Length)
-       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
-       and Invalid (Ctx, F_Receive_Timestamp)
-       and Invalid (Ctx, F_Transmit_Timestamp)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
-       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
-       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
+       and then Well_Formed (Ctx, F_Data)
+       and then Field_Size (Ctx, F_Data) = RFLX_Types.To_Bit_Length (Length)
+       and then (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
+       and then Invalid (Ctx, F_Receive_Timestamp)
+       and then Invalid (Ctx, F_Transmit_Timestamp)
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
+       and then Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and then Get_Tag (Ctx) = Get_Tag (Ctx)'Old
+       and then Get_Checksum (Ctx) = Get_Checksum (Ctx)'Old
+       and then Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -1220,12 +1220,13 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if
-          Well_Formed (Cursors (F_Code_Destination_Unreachable))
-       then
-          (Valid (Cursors (F_Tag))
-           and then Cursors (F_Code_Destination_Unreachable).Predecessor = F_Tag
-           and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))))
+     ((if Well_Formed (Cursors (F_Tag)) then Cursors (F_Tag).Predecessor = F_Initial)
+      and then (if
+                   Well_Formed (Cursors (F_Code_Destination_Unreachable))
+                then
+                   (Valid (Cursors (F_Tag))
+                    and then Cursors (F_Code_Destination_Unreachable).Predecessor = F_Tag
+                    and then RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))))
       and then (if
                    Well_Formed (Cursors (F_Code_Redirect))
                 then
@@ -1508,6 +1509,98 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld);
 
    pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   pragma Warnings (Off, "no recursive call visible");
+
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
+     ((case Fld is
+          when F_Tag =>
+             First,
+          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
+             First + 8,
+          when F_Checksum =>
+             (if
+                 Well_Formed (Cursors (F_Code_Destination_Unreachable))
+                 and then True
+              then
+                 First + 16
+              elsif
+                 Well_Formed (Cursors (F_Code_Redirect))
+                 and then True
+              then
+                 First + 16
+              elsif
+                 Well_Formed (Cursors (F_Code_Time_Exceeded))
+                 and then True
+              then
+                 First + 16
+              elsif
+                 Well_Formed (Cursors (F_Code_Zero))
+                 and then True
+              then
+                 First + 16
+              else
+                 RFLX_Types.Unreachable),
+          when F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 =>
+             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 16,
+          when F_Sequence_Number =>
+             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 32,
+          when F_Unused_24 =>
+             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 24,
+          when F_Originate_Timestamp =>
+             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48,
+          when F_Data =>
+             (if
+                 Well_Formed (Cursors (F_Gateway_Internet_Address))
+                 and then True
+              then
+                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48
+              elsif
+                 Well_Formed (Cursors (F_Sequence_Number))
+                 and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
+                           or RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
+              then
+                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48
+              elsif
+                 Well_Formed (Cursors (F_Unused_24))
+                 and then True
+              then
+                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48
+              elsif
+                 Well_Formed (Cursors (F_Unused_32))
+                 and then True
+              then
+                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48
+              else
+                 RFLX_Types.Unreachable),
+          when F_Receive_Timestamp =>
+             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 80,
+          when F_Transmit_Timestamp =>
+             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 112))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld),
+     Post =>
+       True,
+     Subprogram_Variant =>
+       (Decreases =>
+         Fld);
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "no recursive call visible");
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
@@ -1829,7 +1922,7 @@ private
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     ((if Fld = F_Tag then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
+     (Field_First_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

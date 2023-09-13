@@ -450,23 +450,23 @@ is
        and then RFLX.Test.Message.Available_Space (Ctx, RFLX.Test.Message.F_Data) >= RFLX.Test.Message.Field_Size (Ctx, RFLX.Test.Message.F_Data),
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Data)
-       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
-       and Invalid (Ctx, F_Extension)
-       and (if
-               RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
-            then
-               Predecessor (Ctx, F_Extension) = F_Data
-               and Valid_Next (Ctx, F_Extension))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Length = Ctx.Length'Old
-       and Ctx.Extended = Ctx.Extended'Old
-       and Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
-       and Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
-       and Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
+       and then Well_Formed (Ctx, F_Data)
+       and then (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
+       and then Invalid (Ctx, F_Extension)
+       and then (if
+                    RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
+                 then
+                    Predecessor (Ctx, F_Extension) = F_Data
+                    and Valid_Next (Ctx, F_Extension))
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Ctx.Length = Ctx.Length'Old
+       and then Ctx.Extended = Ctx.Extended'Old
+       and then Predecessor (Ctx, F_Data) = Predecessor (Ctx, F_Data)'Old
+       and then Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
+       and then Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old;
 
    procedure Initialize_Extension (Ctx : in out Context) with
      Pre =>
@@ -476,17 +476,17 @@ is
        and then RFLX.Test.Message.Available_Space (Ctx, RFLX.Test.Message.F_Extension) >= RFLX.Test.Message.Field_Size (Ctx, RFLX.Test.Message.F_Extension),
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Extension)
-       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Extension))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Ctx.Length = Ctx.Length'Old
-       and Ctx.Extended = Ctx.Extended'Old
-       and Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
-       and Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
-       and Field_First (Ctx, F_Extension) = Field_First (Ctx, F_Extension)'Old;
+       and then Well_Formed (Ctx, F_Extension)
+       and then (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Extension))
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Ctx.Length = Ctx.Length'Old
+       and then Ctx.Extended = Ctx.Extended'Old
+       and then Predecessor (Ctx, F_Extension) = Predecessor (Ctx, F_Extension)'Old
+       and then Valid_Next (Ctx, F_Extension) = Valid_Next (Ctx, F_Extension)'Old
+       and then Field_First (Ctx, F_Extension) = Field_First (Ctx, F_Extension)'Old;
 
    procedure Set_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -665,12 +665,13 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean) return Boolean is
-     ((if
-          Well_Formed (Cursors (F_Extension))
-       then
-          (Well_Formed (Cursors (F_Data))
-           and then Cursors (F_Extension).Predecessor = F_Data
-           and then RFLX_Types.Base_Integer (To_Base_Integer (Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True)))))
+     ((if Well_Formed (Cursors (F_Data)) then Cursors (F_Data).Predecessor = F_Initial)
+      and then (if
+                   Well_Formed (Cursors (F_Extension))
+                then
+                   (Well_Formed (Cursors (F_Data))
+                    and then Cursors (F_Extension).Predecessor = F_Data
+                    and then RFLX_Types.Base_Integer (To_Base_Integer (Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True)))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
@@ -717,6 +718,39 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, Fld);
 
    pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   pragma Warnings (Off, "no recursive call visible");
+
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean; Fld : Field) return RFLX_Types.Bit_Index'Base is
+     ((case Fld is
+          when F_Data =>
+             First,
+          when F_Extension =>
+             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, F_Data) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, F_Data)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, Fld),
+     Post =>
+       True,
+     Subprogram_Variant =>
+       (Decreases =>
+         Fld);
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "no recursive call visible");
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
@@ -815,7 +849,7 @@ private
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Ctx.Length, Ctx.Extended, Fld));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     ((if Fld = F_Data then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
+     (Field_First_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Ctx.Length, Ctx.Extended, Fld));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

@@ -489,6 +489,11 @@ class Generator:
                 self._prefix,
             ),
             self._executor.submit(
+                message_generator.create_field_first_internal_function,
+                message,
+                self._prefix,
+            ),
+            self._executor.submit(
                 message_generator.create_valid_context_function,
                 message,
                 self._prefix,

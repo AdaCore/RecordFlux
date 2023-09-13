@@ -1196,31 +1196,31 @@ is
        and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Options) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Options),
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Options)
-       and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_Payload) = F_Options
-            and Valid_Next (Ctx, F_Payload))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
-       and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
-       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
-       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
-       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
-       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
-       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
-       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
-       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
-       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
-       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
-       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
-       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
-       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
-       and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old;
+       and then Well_Formed (Ctx, F_Options)
+       and then Invalid (Ctx, F_Payload)
+       and then (Predecessor (Ctx, F_Payload) = F_Options
+                 and Valid_Next (Ctx, F_Payload))
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
+       and then Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
+       and then Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and then Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and then Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and then Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and then Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and then Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and then Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and then Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and then Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and then Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and then Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and then Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and then Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and then Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and then Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old;
 
    procedure Initialize_Payload (Ctx : in out Context) with
      Pre =>
@@ -1230,29 +1230,29 @@ is
        and then RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload) >= RFLX.IPv4.Packet.Field_Size (Ctx, RFLX.IPv4.Packet.F_Payload),
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Payload)
-       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
-       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
-       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
-       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
-       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
-       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
-       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
-       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
-       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
-       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
-       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
-       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
-       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
-       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
-       and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
+       and then Well_Formed (Ctx, F_Payload)
+       and then (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Payload))
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
+       and then Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and then Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and then Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and then Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and then Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and then Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and then Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and then Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and then Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and then Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and then Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and then Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and then Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and then Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and then Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and then Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old;
 
    procedure Set_Payload (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -1480,11 +1480,12 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if
-          Well_Formed (Cursors (F_IHL))
-       then
-          (Valid (Cursors (F_Version))
-           and then Cursors (F_IHL).Predecessor = F_Version))
+     ((if Well_Formed (Cursors (F_Version)) then Cursors (F_Version).Predecessor = F_Initial)
+      and then (if
+                   Well_Formed (Cursors (F_IHL))
+                then
+                   (Valid (Cursors (F_Version))
+                    and then Cursors (F_IHL).Predecessor = F_Version))
       and then (if
                    Well_Formed (Cursors (F_DSCP))
                 then
@@ -1688,6 +1689,69 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld);
 
    pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   pragma Warnings (Off, "no recursive call visible");
+
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
+     ((case Fld is
+          when F_Version =>
+             First,
+          when F_IHL =>
+             First + 4,
+          when F_DSCP =>
+             First + 8,
+          when F_ECN =>
+             First + 14,
+          when F_Total_Length =>
+             First + 16,
+          when F_Identification =>
+             First + 32,
+          when F_Flag_R =>
+             First + 48,
+          when F_Flag_DF =>
+             First + 49,
+          when F_Flag_MF =>
+             First + 50,
+          when F_Fragment_Offset =>
+             First + 51,
+          when F_TTL =>
+             First + 64,
+          when F_Protocol =>
+             First + 72,
+          when F_Header_Checksum =>
+             First + 80,
+          when F_Source =>
+             First + 96,
+          when F_Destination =>
+             First + 128,
+          when F_Options =>
+             First + 160,
+          when F_Payload =>
+             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Options) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Options)))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld),
+     Post =>
+       True,
+     Subprogram_Variant =>
+       (Decreases =>
+         Fld);
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "no recursive call visible");
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
@@ -1922,7 +1986,7 @@ private
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     ((if Fld = F_Version then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
+     (Field_First_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);

@@ -404,18 +404,18 @@ is
        and then RFLX.Derivation.Message.Field_First (Ctx, RFLX.Derivation.Message.F_Value) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Value)
-       and Field_Size (Ctx, F_Value) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_Value)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
-       and Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
-       and Get_Tag (Ctx) = Get_Tag (Ctx)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Field_First (Ctx, F_Value) = Field_First (Ctx, F_Value)'Old
+       and then Well_Formed (Ctx, F_Value)
+       and then Field_Size (Ctx, F_Value) = RFLX_Types.To_Bit_Length (Length)
+       and then Ctx.Verified_Last = Field_Last (Ctx, F_Value)
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Value) = Predecessor (Ctx, F_Value)'Old
+       and then Valid_Next (Ctx, F_Value) = Valid_Next (Ctx, F_Value)'Old
+       and then Get_Tag (Ctx) = Get_Tag (Ctx)'Old
+       and then Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and then Field_First (Ctx, F_Value) = Field_First (Ctx, F_Value)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Value);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Value) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

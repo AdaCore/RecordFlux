@@ -5048,3 +5048,58 @@ def test_unchecked_message_checked(unchecked: UncheckedMessage, expected: Messag
 def test_unchecked_message_checked_error(unchecked: UncheckedMessage, expected: str) -> None:
     with pytest.raises(RecordFluxError, match=expected):
         unchecked.checked([OPAQUE, models.enumeration(), models.integer()])
+
+
+def test_message_field_first() -> None:
+    field_oracle = {
+        "Destination": (INITIAL, Number(0)),
+        "Source": (INITIAL, Number(48)),
+        "Type_Length_TPID": (INITIAL, Number(96)),
+        "TPID": (INITIAL, Number(96)),
+        "TCI": (INITIAL, Number(112)),
+        "Type_Length": (Field("Type_Length"), Number(0)),
+        "Payload": (Field("Payload"), Number(0)),
+    }
+    msg = models.ethernet_frame()
+    for fld_name, oracle in field_oracle.items():
+        assert msg.field_first(Field(fld_name)) == oracle
+
+
+def test_message_link_first() -> None:
+    msg = models.ethernet_frame()
+    link_oracle = {
+        ("Initial", "Destination"): (INITIAL, Number(0)),
+        ("Destination", "Source"): (INITIAL, Number(48)),
+        ("Source", "Type_Length_TPID"): (INITIAL, Number(96)),
+        ("Type_Length_TPID", "TPID"): (INITIAL, Number(96)),
+        ("Type_Length_TPID", "Type_Length"): (INITIAL, Number(96)),
+        ("TPID", "TCI"): (INITIAL, Number(112)),
+        ("TCI", "Type_Length"): (INITIAL, Number(128)),
+        ("Type_Length", "Payload"): (Field("Type_Length"), Number(16)),
+    }
+    for lnk in msg.structure:
+        if lnk.target != FINAL:
+            assert msg.link_first(lnk) == link_oracle[(lnk.source.name, lnk.target.name)]
+
+
+def test_message_link_first_complex() -> None:
+    lnk1 = Link(Field("Payload"), Field("Other"))
+    lnk2 = Link(Field("Other"), Field("Other2"))
+    msg = Message(
+        "Test::Message",
+        [
+            Link(INITIAL, Field("Size")),
+            Link(Field("Size"), Field("Payload"), size=Mul(Variable("Size"), Number(8))),
+            lnk1,
+            lnk2,
+            Link(Field("Other2"), FINAL),
+        ],
+        {
+            Field("Size"): models.integer(),
+            Field("Payload"): OPAQUE,
+            Field("Other"): models.integer(),
+            Field("Other2"): models.integer(),
+        },
+    )
+    assert msg.link_first(lnk1) == (Field("Payload"), Size(Variable("F_Payload")))
+    assert msg.link_first(lnk2) == (Field("Payload"), Add(Size(Variable("F_Payload")), Number(8)))

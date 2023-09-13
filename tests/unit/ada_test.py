@@ -848,6 +848,17 @@ def test_always_terminates() -> None:
     )
 
 
+def test_subprogram_variant() -> None:
+    assert (
+        str(ada.SubprogramVariant(ada.Decreases(ada.Variable("X"))))
+        == "Subprogram_Variant =>\n  (Decreases =>\n    X)"
+    )
+    assert (
+        str(ada.SubprogramVariant(ada.Increases(ada.Number(1))))
+        == "Subprogram_Variant =>\n  (Increases =>\n    1)"
+    )
+
+
 def test_declarative_items() -> None:
     assert str(
         ada.PackageDeclaration("P", declarations=[ada.ObjectDeclaration("X", "Boolean")]),

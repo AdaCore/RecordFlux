@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Functions `Valid_Next_Internal` and `Field_Size_Internal` (eng/recordflux/RecordFlux#1382)
+- Functions `Valid_Next_Internal`, `Field_Size_Internal`, `Field_First_Internal` (eng/recordflux/RecordFlux#1382)
 
 ### Removed
 

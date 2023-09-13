@@ -486,20 +486,20 @@ is
        and then RFLX.IPv4.Option.Field_First (Ctx, RFLX.IPv4.Option.F_Option_Data) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Option_Data)
-       and Field_Size (Ctx, F_Option_Data) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_Option_Data)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
-       and Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
-       and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
-       and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
-       and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
-       and Field_First (Ctx, F_Option_Data) = Field_First (Ctx, F_Option_Data)'Old
+       and then Well_Formed (Ctx, F_Option_Data)
+       and then Field_Size (Ctx, F_Option_Data) = RFLX_Types.To_Bit_Length (Length)
+       and then Ctx.Verified_Last = Field_Last (Ctx, F_Option_Data)
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
+       and then Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
+       and then Get_Copied (Ctx) = Get_Copied (Ctx)'Old
+       and then Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
+       and then Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
+       and then Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
+       and then Field_First (Ctx, F_Option_Data) = Field_First (Ctx, F_Option_Data)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Option_Data);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Option_Data) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

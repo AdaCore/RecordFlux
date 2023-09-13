@@ -120,6 +120,7 @@ class Message(mty.Type):
 
         self._field_types = {}
         self._parameter_types = {}
+        self._first: dict[Link, tuple[Field, expr.Expr]] = {}
         dependencies = _dependencies(types)
         self._unqualified_enum_literals = mty.unqualified_enum_literals(dependencies, self.package)
         self._qualified_enum_literals = mty.qualified_enum_literals(dependencies)
@@ -372,8 +373,8 @@ class Message(mty.Type):
 
             return result
 
-    def field_size(self, field: Field) -> expr.Number:
-        """Return field size if field size is fixed and fail otherwise."""
+    def field_size_opt(self, field: Field) -> Optional[expr.Number]:
+        """Return field size if field size is fixed and None otherwise."""
         if field == FINAL:
             return expr.Number(0)
 
@@ -391,7 +392,13 @@ class Message(mty.Type):
         size = sizes[0]
         if isinstance(size, expr.Number) and all(size == s for s in sizes):
             return size
+        return None
 
+    def field_size(self, field: Field) -> expr.Number:
+        """Return field size if field size is fixed and fail otherwise."""
+        result = self.field_size_opt(field)
+        if result is not None:
+            return result
         fail(
             f'unable to calculate size of field "{field.name}" of message "{self.identifier}"',
             Subsystem.MODEL,
@@ -807,6 +814,39 @@ class Message(mty.Type):
                 )
 
         return result
+
+    def link_first(self, link: Link) -> tuple[Field, expr.Expr]:
+        """
+        Express position of link target based on previous links.
+
+        Compute a pair (node, distance) to express the position of `link.target`,
+        assuming `link` was followed. The meaning is
+
+          link.target'first = node'first + distance
+
+        The distance is an expression that might contain references to sizes of
+        other fields, using `expr.Size(fld.affixed_name)`. These references are
+        to be replaced by the size of the corresponding field.
+        """
+        if link not in self._first:
+            result = self._compute_first(link)
+            self._first[link] = result
+            return result
+        return self._first[link]
+
+    def field_first(self, fld: Field) -> tuple[Field, expr.Expr]:
+        """
+        Express position of field based on predecessor fields.
+
+        Compute a pair (node, distance) to express the position of `fld`. See
+        the comment of `link_first` for the exact meaning of the distance and
+        contents of the distance expression. This function returns (fld, 0) if
+        `fld` has several incoming links.
+        """
+        incoming = [l for l in self.structure if l.target == fld]
+        if len(incoming) == 1:
+            return self.link_first(incoming[0])
+        return (fld, expr.Number(0))
 
     def _aggregate_constraints(self, expression: expr.Expr = expr.TRUE) -> list[expr.Expr]:
         return _aggregate_constraints(self.types, expression)
@@ -2099,6 +2139,17 @@ class Message(mty.Type):
             *self._link_size_expressions(link, ignore_implicit_sizes),
             *expression_list(link.condition),
         ]
+
+    def _compute_first(self, lnk: Link) -> tuple[Field, expr.Expr]:
+        if lnk.source == INITIAL:
+            return (INITIAL, expr.Number(0))
+        if lnk.first != expr.UNDEFINED:
+            return self.field_first(lnk.source)
+        root, dist = self.field_first(lnk.source)
+        source_size = self.field_size_opt(lnk.source)
+        if source_size is None:
+            return (lnk.source, expr.Size(lnk.source.affixed_name))
+        return (root, expr.Add(dist, source_size).simplified())
 
 
 class DerivedMessage(Message):

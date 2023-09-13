@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import abc
-from typing import Optional, Union
+from typing import Union
 
 from rflx import expression as expr
 from rflx.ada import (
@@ -22,6 +22,7 @@ from rflx.ada import (
     Component,
     Constrained,
     ContractCases,
+    Decreases,
     DefaultInitialCondition,
     Depends,
     Discriminant,
@@ -76,6 +77,7 @@ from rflx.ada import (
     Sub,
     SubprogramBody,
     SubprogramDeclaration,
+    SubprogramVariant,
     Succ,
     UnitPart,
     UseTypeClause,
@@ -427,7 +429,9 @@ def create_valid_predecessors_invariant_function(
                                                                 ),
                                                             ),
                                                         ],
-                                                    ),
+                                                    )
+                                                    if l.source != INITIAL
+                                                    else expr.TRUE,
                                                     expr.Equal(
                                                         expr.Selected(
                                                             expr.Indexed(
@@ -455,7 +459,6 @@ def create_valid_predecessors_invariant_function(
                                 ],
                             )
                             for f in message.fields
-                            if f not in message.direct_successors(INITIAL)
                         ],
                     ),
                     [
@@ -653,6 +656,164 @@ def create_field_size_internal_function(message: Message, prefix: str) -> UnitPa
                 ),
             ],
             ['unused variable "*"', 'formal parameter "*" is not referenced'],
+        ),
+    )
+
+
+def create_field_first_internal_function(message: Message, prefix: str) -> UnitPart:
+    def recursive_call(fld: Field) -> expr.Expr:
+        return expr.Call(
+            "Field_First_Internal",
+            [
+                expr.Variable("Cursors"),
+                expr.Variable("First"),
+                expr.Variable("Verified_Last"),
+                expr.Variable("Written_Last"),
+                expr.Variable("Buffer"),
+                *[expr.Variable(param.name) for param in message.parameter_types],
+                expr.Variable(fld.affixed_name),
+            ],
+        )
+
+    def field_size_internal_call(fld: expr.Variable) -> expr.Expr:
+        return expr.Call(
+            "Field_Size_Internal",
+            [
+                expr.Variable("Cursors"),
+                expr.Variable("First"),
+                expr.Variable("Verified_Last"),
+                expr.Variable("Written_Last"),
+                expr.Variable("Buffer"),
+                *[expr.Variable(param.name) for param in message.parameter_types],
+                fld,
+            ],
+        )
+
+    def field_size_substitution(exp: expr.Expr) -> expr.Expr:
+        if isinstance(exp, expr.Size) and isinstance(exp.prefix, expr.Variable):
+            return field_size_internal_call(exp.prefix)
+        return exp
+
+    def link_first_expr(link: Link) -> tuple[expr.Expr, expr.Expr]:
+        condition = link.condition.substituted(
+            common.substitution(message, prefix, embedded=True),
+        ).simplified()
+        precond = (
+            expr.AndThen(
+                expr.Call(
+                    "Well_Formed",
+                    [
+                        expr.Indexed(
+                            expr.Variable("Cursors"),
+                            expr.Variable(link.source.affixed_name),
+                        ),
+                    ],
+                ),
+                condition,
+            )
+            if link.source != INITIAL
+            else expr.TRUE
+        )
+        fld, dist = message.link_first(link)
+        assert fld != link.target
+        first = expr.Add(
+            expr.Variable("First") if fld == INITIAL else recursive_call(fld),
+            dist.substituted(field_size_substitution),
+        )
+        return (precond, first)
+
+    def fld_first_expr(fld: Field) -> expr.Expr:
+        first_node, dist = message.field_first(fld)
+        if first_node == fld and dist == expr.Number(0) and first_node != INITIAL:
+            incoming = message.incoming(fld)
+            first_expr = [link_first_expr(fld) for fld in incoming]
+            return expr.IfExpr(
+                first_expr,
+                expr.Call("RFLX_Types.Unreachable"),
+            )
+        assert first_node != fld
+        return expr.Add(
+            expr.Variable("First") if first_node == INITIAL else recursive_call(first_node),
+            dist.substituted(field_size_substitution),
+        ).simplified()
+
+    specification = FunctionSpecification(
+        "Field_First_Internal",
+        "RFLX_Types.Bit_Index'Base",
+        [
+            Parameter(["Cursors"], "Field_Cursors"),
+            Parameter(["First"], const.TYPES_BIT_INDEX),
+            Parameter(["Verified_Last"], const.TYPES_BIT_LENGTH),
+            Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
+            Parameter(["Buffer"], const.TYPES_BYTES_PTR),
+            *common.message_parameters(message),
+            Parameter(["Fld"], "Field"),
+        ],
+    )
+
+    param_args = [Variable(param.name) for param in message.parameter_types]
+
+    return UnitPart(
+        [],
+        private=common.wrap_warning(
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Fld"),
+                        [
+                            (Variable(f.affixed_name), fld_first_expr(f).ada_expr())
+                            for f in message.fields
+                        ],
+                    ),
+                    [
+                        Precondition(
+                            AndThen(
+                                Call(
+                                    "Cursors_Invariant",
+                                    [
+                                        Variable("Cursors"),
+                                        Variable("First"),
+                                        Variable("Verified_Last"),
+                                    ],
+                                ),
+                                Call(
+                                    "Valid_Predecessors_Invariant",
+                                    [
+                                        Variable("Cursors"),
+                                        Variable("First"),
+                                        Variable("Verified_Last"),
+                                        Variable("Written_Last"),
+                                        Variable("Buffer"),
+                                        *param_args,
+                                    ],
+                                ),
+                                Call(
+                                    "Valid_Next_Internal",
+                                    [
+                                        Variable("Cursors"),
+                                        Variable("First"),
+                                        Variable("Verified_Last"),
+                                        Variable("Written_Last"),
+                                        Variable("Buffer"),
+                                        *param_args,
+                                        Variable("Fld"),
+                                    ],
+                                ),
+                            ),
+                        ),
+                        Postcondition(TRUE),
+                        SubprogramVariant(Decreases(Variable("Fld"))),
+                    ],
+                ),
+            ],
+            [
+                # Eng/RecordFlux/Workarounds#47
+                "postcondition does not mention function result",
+                'unused variable "*"',
+                "no recursive call visible",
+                'formal parameter "*" is not referenced',
+            ],
         ),
     )
 
@@ -1846,57 +2007,6 @@ def create_field_size_function(
 
 
 def create_field_first_function(prefix: str, message: Message) -> UnitPart:
-    contiguous_first = expr.Add(
-        expr.Selected(
-            expr.Indexed(
-                expr.Variable(ID("Ctx") * "Cursors"),
-                expr.Selected(
-                    expr.Indexed(expr.Variable(ID("Ctx") * "Cursors"), expr.Variable("Fld")),
-                    "Predecessor",
-                ),
-            ),
-            "Last",
-        ),
-        expr.Number(1),
-    )
-
-    def first(link: Link, message: Message) -> tuple[Expr, Expr]:
-        def substituted(
-            expression: expr.Expr,
-            target_type: Optional[ID] = const.TYPES_BASE_INT,
-        ) -> Expr:
-            return (
-                expression.substituted(
-                    common.substitution(message, prefix, target_type=target_type),
-                )
-                .simplified()
-                .ada_expr()
-            )
-
-        if link.target == message.fields[0]:
-            return (
-                Equal(Variable("Fld"), Variable(link.target.affixed_name)),
-                Variable("Ctx.First"),
-            )
-
-        return (
-            AndThen(
-                Equal(Variable("Fld"), Variable(link.target.affixed_name)),
-                Equal(
-                    Selected(
-                        Indexed(Variable("Ctx.Cursors"), Variable("Fld")),
-                        "Predecessor",
-                    ),
-                    Variable(link.source.affixed_name),
-                ),
-                *([substituted(link.condition)] if link.condition != expr.TRUE else []),
-            ),
-            substituted(
-                link.first.substituted(lambda x: contiguous_first if x == expr.UNDEFINED else x),
-                target_type=None,
-            ),
-        )
-
     specification = FunctionSpecification(
         "Field_First",
         const.TYPES_BIT_INDEX,
@@ -1932,16 +2042,18 @@ def create_field_first_function(prefix: str, message: Message) -> UnitPart:
         private=[
             ExpressionFunctionDeclaration(
                 specification,
-                If(
+                Call(
+                    "Field_First_Internal",
                     [
-                        first(l, message)
-                        for l in message.structure
-                        if l.source == INITIAL or l.first != expr.UNDEFINED
+                        Variable("Ctx.Cursors"),
+                        Variable("Ctx.First"),
+                        Variable("Ctx.Verified_Last"),
+                        Variable("Ctx.Written_Last"),
+                        Variable("Ctx.Buffer"),
+                        *[Selected(Variable("Ctx"), fld.name) for fld in message.parameter_types],
+                        Variable("Fld"),
                     ],
-                    contiguous_first.ada_expr(),
-                )
-                if len(message.fields) > 1
-                else Variable("Ctx.First"),
+                ),
             ),
         ],
     )

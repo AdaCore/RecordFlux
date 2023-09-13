@@ -664,33 +664,33 @@ is
        and then RFLX.IPv4.Packet.Field_First (Ctx, RFLX.IPv4.Packet.F_Options) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Options)
-       and Field_Size (Ctx, F_Options) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_Options)
-       and Invalid (Ctx, F_Payload)
-       and (Predecessor (Ctx, F_Payload) = F_Options
-            and Valid_Next (Ctx, F_Payload))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
-       and Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
-       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
-       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
-       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
-       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
-       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
-       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
-       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
-       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
-       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
-       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
-       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
-       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
-       and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
+       and then Well_Formed (Ctx, F_Options)
+       and then Field_Size (Ctx, F_Options) = RFLX_Types.To_Bit_Length (Length)
+       and then Ctx.Verified_Last = Field_Last (Ctx, F_Options)
+       and then Invalid (Ctx, F_Payload)
+       and then (Predecessor (Ctx, F_Payload) = F_Options
+                 and Valid_Next (Ctx, F_Payload))
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Options) = Predecessor (Ctx, F_Options)'Old
+       and then Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
+       and then Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and then Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and then Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and then Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and then Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and then Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and then Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and then Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and then Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and then Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and then Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and then Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and then Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and then Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and then Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
@@ -719,30 +719,30 @@ is
        and then RFLX.IPv4.Packet.Field_First (Ctx, RFLX.IPv4.Packet.F_Payload) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Payload)
-       and Field_Size (Ctx, F_Payload) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_Payload)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
-       and Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
-       and Get_IHL (Ctx) = Get_IHL (Ctx)'Old
-       and Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
-       and Get_ECN (Ctx) = Get_ECN (Ctx)'Old
-       and Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
-       and Get_Identification (Ctx) = Get_Identification (Ctx)'Old
-       and Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
-       and Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
-       and Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
-       and Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
-       and Get_TTL (Ctx) = Get_TTL (Ctx)'Old
-       and Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
-       and Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
-       and Get_Source (Ctx) = Get_Source (Ctx)'Old
-       and Get_Destination (Ctx) = Get_Destination (Ctx)'Old
-       and Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
+       and then Well_Formed (Ctx, F_Payload)
+       and then Field_Size (Ctx, F_Payload) = RFLX_Types.To_Bit_Length (Length)
+       and then Ctx.Verified_Last = Field_Last (Ctx, F_Payload)
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Payload) = Predecessor (Ctx, F_Payload)'Old
+       and then Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
+       and then Get_IHL (Ctx) = Get_IHL (Ctx)'Old
+       and then Get_DSCP (Ctx) = Get_DSCP (Ctx)'Old
+       and then Get_ECN (Ctx) = Get_ECN (Ctx)'Old
+       and then Get_Total_Length (Ctx) = Get_Total_Length (Ctx)'Old
+       and then Get_Identification (Ctx) = Get_Identification (Ctx)'Old
+       and then Get_Flag_R (Ctx) = Get_Flag_R (Ctx)'Old
+       and then Get_Flag_DF (Ctx) = Get_Flag_DF (Ctx)'Old
+       and then Get_Flag_MF (Ctx) = Get_Flag_MF (Ctx)'Old
+       and then Get_Fragment_Offset (Ctx) = Get_Fragment_Offset (Ctx)'Old
+       and then Get_TTL (Ctx) = Get_TTL (Ctx)'Old
+       and then Get_Protocol (Ctx) = Get_Protocol (Ctx)'Old
+       and then Get_Header_Checksum (Ctx) = Get_Header_Checksum (Ctx)'Old
+       and then Get_Source (Ctx) = Get_Source (Ctx)'Old
+       and then Get_Destination (Ctx) = Get_Destination (Ctx)'Old
+       and then Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

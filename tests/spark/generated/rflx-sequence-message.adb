@@ -396,21 +396,21 @@ is
        and then RFLX.Sequence.Message.Field_First (Ctx, RFLX.Sequence.Message.F_Integer_Vector) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Integer_Vector)
-       and Field_Size (Ctx, F_Integer_Vector) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_Integer_Vector)
-       and Invalid (Ctx, F_Enumeration_Vector)
-       and Invalid (Ctx, F_AV_Enumeration_Vector)
-       and (Predecessor (Ctx, F_Enumeration_Vector) = F_Integer_Vector
-            and Valid_Next (Ctx, F_Enumeration_Vector))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Integer_Vector) = Predecessor (Ctx, F_Integer_Vector)'Old
-       and Valid_Next (Ctx, F_Integer_Vector) = Valid_Next (Ctx, F_Integer_Vector)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Field_First (Ctx, F_Integer_Vector) = Field_First (Ctx, F_Integer_Vector)'Old
+       and then Well_Formed (Ctx, F_Integer_Vector)
+       and then Field_Size (Ctx, F_Integer_Vector) = RFLX_Types.To_Bit_Length (Length)
+       and then Ctx.Verified_Last = Field_Last (Ctx, F_Integer_Vector)
+       and then Invalid (Ctx, F_Enumeration_Vector)
+       and then Invalid (Ctx, F_AV_Enumeration_Vector)
+       and then (Predecessor (Ctx, F_Enumeration_Vector) = F_Integer_Vector
+                 and Valid_Next (Ctx, F_Enumeration_Vector))
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Integer_Vector) = Predecessor (Ctx, F_Integer_Vector)'Old
+       and then Valid_Next (Ctx, F_Integer_Vector) = Valid_Next (Ctx, F_Integer_Vector)'Old
+       and then Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and then Field_First (Ctx, F_Integer_Vector) = Field_First (Ctx, F_Integer_Vector)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Integer_Vector);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Integer_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
@@ -439,20 +439,20 @@ is
        and then RFLX.Sequence.Message.Field_First (Ctx, RFLX.Sequence.Message.F_Enumeration_Vector) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Enumeration_Vector)
-       and Field_Size (Ctx, F_Enumeration_Vector) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_Enumeration_Vector)
-       and Invalid (Ctx, F_AV_Enumeration_Vector)
-       and (Predecessor (Ctx, F_AV_Enumeration_Vector) = F_Enumeration_Vector
-            and Valid_Next (Ctx, F_AV_Enumeration_Vector))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
-       and Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
+       and then Well_Formed (Ctx, F_Enumeration_Vector)
+       and then Field_Size (Ctx, F_Enumeration_Vector) = RFLX_Types.To_Bit_Length (Length)
+       and then Ctx.Verified_Last = Field_Last (Ctx, F_Enumeration_Vector)
+       and then Invalid (Ctx, F_AV_Enumeration_Vector)
+       and then (Predecessor (Ctx, F_AV_Enumeration_Vector) = F_Enumeration_Vector
+                 and Valid_Next (Ctx, F_AV_Enumeration_Vector))
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Enumeration_Vector) = Predecessor (Ctx, F_Enumeration_Vector)'Old
+       and then Valid_Next (Ctx, F_Enumeration_Vector) = Valid_Next (Ctx, F_Enumeration_Vector)'Old
+       and then Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and then Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Enumeration_Vector);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Enumeration_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
@@ -481,17 +481,17 @@ is
        and then RFLX.Sequence.Message.Field_First (Ctx, RFLX.Sequence.Message.F_AV_Enumeration_Vector) mod RFLX_Types.Byte'Size = 1,
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_AV_Enumeration_Vector)
-       and Field_Size (Ctx, F_AV_Enumeration_Vector) = RFLX_Types.To_Bit_Length (Length)
-       and Ctx.Verified_Last = Field_Last (Ctx, F_AV_Enumeration_Vector)
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
-       and Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
-       and Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old
+       and then Well_Formed (Ctx, F_AV_Enumeration_Vector)
+       and then Field_Size (Ctx, F_AV_Enumeration_Vector) = RFLX_Types.To_Bit_Length (Length)
+       and then Ctx.Verified_Last = Field_Last (Ctx, F_AV_Enumeration_Vector)
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_AV_Enumeration_Vector) = Predecessor (Ctx, F_AV_Enumeration_Vector)'Old
+       and then Valid_Next (Ctx, F_AV_Enumeration_Vector) = Valid_Next (Ctx, F_AV_Enumeration_Vector)'Old
+       and then Get_Length (Ctx) = Get_Length (Ctx)'Old
+       and then Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_AV_Enumeration_Vector);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_AV_Enumeration_Vector) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;

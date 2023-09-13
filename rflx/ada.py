@@ -1159,6 +1159,44 @@ class AlwaysTerminates(Aspect):
         return "" if self.expression is None else str(self.expression)
 
 
+class ChangeDirection(Base):
+    def __init__(self, expression: Expr) -> None:
+        self.expression = expression
+
+    def __str__(self) -> str:
+        return f"{self.direction} =>\n{indent(str(self.expression), 2)}"
+
+    @property
+    @abstractmethod
+    def direction(self) -> str:
+        raise NotImplementedError
+
+
+class Increases(ChangeDirection):
+    @property
+    def direction(self) -> str:
+        return "Increases"
+
+
+class Decreases(ChangeDirection):
+    @property
+    def direction(self) -> str:
+        return "Decreases"
+
+
+class SubprogramVariant(Aspect):
+    def __init__(self, direction: ChangeDirection) -> None:
+        self.direction = direction
+
+    @property
+    def mark(self) -> str:
+        return "Subprogram_Variant"
+
+    @property
+    def definition(self) -> str:
+        return f"({self.direction})"
+
+
 class DynamicPredicate(Aspect):
     def __init__(self, expression: Expr) -> None:
         self.expression = expression

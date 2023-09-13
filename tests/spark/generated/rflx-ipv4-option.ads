@@ -594,19 +594,19 @@ is
        and then RFLX.IPv4.Option.Available_Space (Ctx, RFLX.IPv4.Option.F_Option_Data) >= RFLX.IPv4.Option.Field_Size (Ctx, RFLX.IPv4.Option.F_Option_Data),
      Post =>
        Has_Buffer (Ctx)
-       and Well_Formed (Ctx, F_Option_Data)
-       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
-       and Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
-       and Get_Copied (Ctx) = Get_Copied (Ctx)'Old
-       and Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
-       and Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
-       and Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
-       and Field_First (Ctx, F_Option_Data) = Field_First (Ctx, F_Option_Data)'Old;
+       and then Well_Formed (Ctx, F_Option_Data)
+       and then (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Option_Data))
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Predecessor (Ctx, F_Option_Data) = Predecessor (Ctx, F_Option_Data)'Old
+       and then Valid_Next (Ctx, F_Option_Data) = Valid_Next (Ctx, F_Option_Data)'Old
+       and then Get_Copied (Ctx) = Get_Copied (Ctx)'Old
+       and then Get_Option_Class (Ctx) = Get_Option_Class (Ctx)'Old
+       and then Get_Option_Number (Ctx) = Get_Option_Number (Ctx)'Old
+       and then Get_Option_Length (Ctx) = Get_Option_Length (Ctx)'Old
+       and then Field_First (Ctx, F_Option_Data) = Field_First (Ctx, F_Option_Data)'Old;
 
    procedure Set_Option_Data (Ctx : in out Context; Data : RFLX_Types.Bytes) with
      Pre =>
@@ -727,11 +727,12 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
-     ((if
-          Well_Formed (Cursors (F_Option_Class))
-       then
-          (Valid (Cursors (F_Copied))
-           and then Cursors (F_Option_Class).Predecessor = F_Copied))
+     ((if Well_Formed (Cursors (F_Copied)) then Cursors (F_Copied).Predecessor = F_Initial)
+      and then (if
+                   Well_Formed (Cursors (F_Option_Class))
+                then
+                   (Valid (Cursors (F_Copied))
+                    and then Cursors (F_Option_Class).Predecessor = F_Copied))
       and then (if
                    Well_Formed (Cursors (F_Option_Number))
                 then
@@ -837,6 +838,45 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld);
 
    pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (Off, "postcondition does not mention function result");
+
+   pragma Warnings (Off, "unused variable ""*""");
+
+   pragma Warnings (Off, "no recursive call visible");
+
+   pragma Warnings (Off, "formal parameter ""*"" is not referenced");
+
+   function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
+     ((case Fld is
+          when F_Copied =>
+             First,
+          when F_Option_Class =>
+             First + 1,
+          when F_Option_Number =>
+             First + 3,
+          when F_Option_Length =>
+             First + 8,
+          when F_Option_Data =>
+             First + 16))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld),
+     Post =>
+       True,
+     Subprogram_Variant =>
+       (Decreases =>
+         Fld);
+
+   pragma Warnings (On, "postcondition does not mention function result");
+
+   pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "no recursive call visible");
 
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
@@ -982,7 +1022,7 @@ private
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index is
-     ((if Fld = F_Copied then Ctx.First else Ctx.Cursors (Ctx.Cursors (Fld).Predecessor).Last + 1));
+     (Field_First_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1);
