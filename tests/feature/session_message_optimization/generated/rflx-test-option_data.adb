@@ -80,7 +80,7 @@ is
      Pre =>
        RFLX.Test.Option_Data.Has_Buffer (Ctx)
        and RFLX.Test.Option_Data.Well_Formed (Ctx, Fld)
-       and RFLX.Test.Option_Data.Valid_Predecessor (Ctx, Fld);
+       and RFLX.Test.Option_Data.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

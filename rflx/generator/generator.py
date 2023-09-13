@@ -578,11 +578,6 @@ class Generator:
                 self._prefix,
                 message,
             ),
-            self._executor.submit(
-                message_generator.create_valid_predecessor_function,
-                message,
-                composite_fields,
-            ),
             self._executor.submit(message_generator.create_invalid_successor_function, message),
             self._executor.submit(message_generator.create_valid_next_function, message),
             self._executor.submit(

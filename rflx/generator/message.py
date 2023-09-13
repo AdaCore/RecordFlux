@@ -2099,10 +2099,6 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
                     Precondition(
                         AndThen(
                             Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
-                            Call(
-                                prefix * message.identifier * "Valid_Predecessor",
-                                [Variable("Ctx"), Variable("Fld")],
-                            ),
                             *(
                                 [
                                     Call(
@@ -2233,7 +2229,7 @@ def create_successor_function(prefix: str, message: Message) -> UnitPart:
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                             Call(
-                                prefix * message.identifier * "Valid_Predecessor",
+                                prefix * message.identifier * "Valid_Next",
                                 [Variable("Ctx"), Variable("Fld")],
                             ),
                         ),
@@ -2315,76 +2311,6 @@ def create_buffer_length_function(prefix: str, message: Message) -> UnitPart:
             ),
         ],
         private=[ExpressionFunctionDeclaration(specification, Length("Ctx.Buffer"))],
-    )
-
-
-def create_valid_predecessor_function(
-    message: Message,
-    composite_fields: abc.Sequence[Field],
-) -> UnitPart:
-    specification = FunctionSpecification(
-        "Valid_Predecessor",
-        "Boolean",
-        [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Virtual_Field")],
-    )
-
-    return UnitPart(
-        [
-            # Eng/RecordFlux/Workarounds#47
-            Pragma(
-                "Warnings",
-                [Variable("Off"), String("postcondition does not mention function result")],
-            ),
-            SubprogramDeclaration(specification, [Postcondition(TRUE)]),
-            Pragma(
-                "Warnings",
-                [Variable("On"), String("postcondition does not mention function result")],
-            ),
-        ],
-        private=[
-            ExpressionFunctionDeclaration(
-                specification,
-                Case(
-                    Variable("Fld"),
-                    [
-                        (
-                            Variable(f.affixed_name),
-                            Or(
-                                *[
-                                    expr.And(
-                                        expr.Call(
-                                            "Well_Formed" if p in composite_fields else "Valid",
-                                            [
-                                                expr.Indexed(
-                                                    expr.Variable(ID("Ctx") * "Cursors"),
-                                                    expr.Variable(p.affixed_name),
-                                                ),
-                                            ],
-                                        )
-                                        if p != INITIAL
-                                        else expr.TRUE,
-                                        expr.Equal(
-                                            expr.Selected(
-                                                expr.Indexed(
-                                                    expr.Variable(ID("Ctx") * "Cursors"),
-                                                    expr.Variable("Fld"),
-                                                ),
-                                                "Predecessor",
-                                            ),
-                                            expr.Variable(p.affixed_name),
-                                        ),
-                                    )
-                                    .simplified()
-                                    .ada_expr()
-                                    for p in message.direct_predecessors(f)
-                                ],
-                            ),
-                        )
-                        for f in message.all_fields
-                    ],
-                ),
-            ),
-        ],
     )
 
 

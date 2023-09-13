@@ -86,7 +86,7 @@ is
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (Ctx)
        and RFLX.UDP.Datagram.Well_Formed (Ctx, Fld)
-       and RFLX.UDP.Datagram.Valid_Predecessor (Ctx, Fld);
+       and RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

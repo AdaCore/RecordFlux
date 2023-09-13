@@ -123,7 +123,7 @@ is
      Pre =>
        RFLX.Universal.Message.Has_Buffer (Ctx)
        and RFLX.Universal.Message.Well_Formed (Ctx, Fld)
-       and RFLX.Universal.Message.Valid_Predecessor (Ctx, Fld);
+       and RFLX.Universal.Message.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

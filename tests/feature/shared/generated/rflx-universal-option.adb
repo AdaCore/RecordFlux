@@ -91,7 +91,7 @@ is
      Pre =>
        RFLX.Universal.Option.Has_Buffer (Ctx)
        and RFLX.Universal.Option.Well_Formed (Ctx, Fld)
-       and RFLX.Universal.Option.Valid_Predecessor (Ctx, Fld);
+       and RFLX.Universal.Option.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

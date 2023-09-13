@@ -166,7 +166,7 @@ is
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (Ctx)
        and RFLX.ICMP.Message.Well_Formed (Ctx, Fld)
-       and RFLX.ICMP.Message.Valid_Predecessor (Ctx, Fld);
+       and RFLX.ICMP.Message.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

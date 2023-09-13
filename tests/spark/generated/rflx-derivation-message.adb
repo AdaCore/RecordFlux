@@ -91,7 +91,7 @@ is
      Pre =>
        RFLX.Derivation.Message.Has_Buffer (Ctx)
        and RFLX.Derivation.Message.Well_Formed (Ctx, Fld)
-       and RFLX.Derivation.Message.Valid_Predecessor (Ctx, Fld);
+       and RFLX.Derivation.Message.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

@@ -112,7 +112,7 @@ is
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
        and RFLX.IPv4.Option.Well_Formed (Ctx, Fld)
-       and RFLX.IPv4.Option.Valid_Predecessor (Ctx, Fld);
+       and RFLX.IPv4.Option.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

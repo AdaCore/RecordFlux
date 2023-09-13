@@ -258,7 +258,6 @@ is
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length := 0) return Boolean with
      Pre =>
        RFLX.Ethernet.Frame.Has_Buffer (Ctx)
-       and then RFLX.Ethernet.Frame.Valid_Predecessor (Ctx, Fld)
        and then RFLX.Ethernet.Frame.Valid_Value (Fld, Val)
        and then RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld)
        and then RFLX.Ethernet.Frame.Sufficient_Space (Ctx, Fld),
@@ -301,14 +300,6 @@ is
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean with
      Post =>
        True;
 
@@ -1110,36 +1101,6 @@ private
              F_Initial,
           when others =>
              Ctx.Cursors (Fld).Predecessor));
-
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Destination =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Source =>
-             (Valid (Ctx.Cursors (F_Destination))
-              and Ctx.Cursors (Fld).Predecessor = F_Destination),
-          when F_Type_Length_TPID =>
-             (Valid (Ctx.Cursors (F_Source))
-              and Ctx.Cursors (Fld).Predecessor = F_Source),
-          when F_TPID =>
-             (Valid (Ctx.Cursors (F_Type_Length_TPID))
-              and Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID),
-          when F_TCI =>
-             (Valid (Ctx.Cursors (F_TPID))
-              and Ctx.Cursors (Fld).Predecessor = F_TPID),
-          when F_Type_Length =>
-             (Valid (Ctx.Cursors (F_TCI))
-              and Ctx.Cursors (Fld).Predecessor = F_TCI)
-             or (Valid (Ctx.Cursors (F_Type_Length_TPID))
-                 and Ctx.Cursors (Fld).Predecessor = F_Type_Length_TPID),
-          when F_Payload =>
-             (Valid (Ctx.Cursors (F_Type_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Type_Length),
-          when F_Final =>
-             (Well_Formed (Ctx.Cursors (F_Payload))
-              and Ctx.Cursors (Fld).Predecessor = F_Payload)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));

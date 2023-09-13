@@ -77,7 +77,7 @@ is
      Pre =>
        RFLX.Test.Message.Has_Buffer (Ctx)
        and RFLX.Test.Message.Well_Formed (Ctx, Fld)
-       and RFLX.Test.Message.Valid_Predecessor (Ctx, Fld);
+       and RFLX.Test.Message.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

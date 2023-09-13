@@ -91,7 +91,7 @@ is
      Pre =>
        RFLX.TLV.Message.Has_Buffer (Ctx)
        and RFLX.TLV.Message.Well_Formed (Ctx, Fld)
-       and RFLX.TLV.Message.Valid_Predecessor (Ctx, Fld);
+       and RFLX.TLV.Message.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

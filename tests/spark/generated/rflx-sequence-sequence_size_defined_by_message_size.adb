@@ -80,7 +80,7 @@ is
      Pre =>
        RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx)
        and RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Well_Formed (Ctx, Fld)
-       and RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Predecessor (Ctx, Fld);
+       and RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

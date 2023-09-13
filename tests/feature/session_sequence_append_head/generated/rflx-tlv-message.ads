@@ -258,7 +258,6 @@ is
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        RFLX.TLV.Message.Has_Buffer (Ctx)
-       and then RFLX.TLV.Message.Valid_Predecessor (Ctx, Fld)
        and then RFLX.TLV.Message.Valid_Value (Fld, Val)
        and then RFLX.TLV.Message.Valid_Next (Ctx, Fld)
        and then RFLX.TLV.Message.Sufficient_Space (Ctx, Fld),
@@ -301,14 +300,6 @@ is
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean with
      Post =>
        True;
 
@@ -828,24 +819,6 @@ private
              F_Initial,
           when others =>
              Ctx.Cursors (Fld).Predecessor));
-
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Tag =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Length =>
-             (Valid (Ctx.Cursors (F_Tag))
-              and Ctx.Cursors (Fld).Predecessor = F_Tag),
-          when F_Value =>
-             (Valid (Ctx.Cursors (F_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Length),
-          when F_Final =>
-             (Valid (Ctx.Cursors (F_Tag))
-              and Ctx.Cursors (Fld).Predecessor = F_Tag)
-             or (Well_Formed (Ctx.Cursors (F_Value))
-                 and Ctx.Cursors (Fld).Predecessor = F_Value)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));

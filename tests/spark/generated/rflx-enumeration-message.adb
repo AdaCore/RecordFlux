@@ -78,7 +78,7 @@ is
      Pre =>
        RFLX.Enumeration.Message.Has_Buffer (Ctx)
        and RFLX.Enumeration.Message.Well_Formed (Ctx, Fld)
-       and RFLX.Enumeration.Message.Valid_Predecessor (Ctx, Fld);
+       and RFLX.Enumeration.Message.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

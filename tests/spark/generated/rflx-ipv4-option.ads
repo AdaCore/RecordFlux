@@ -261,7 +261,6 @@ is
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        RFLX.IPv4.Option.Has_Buffer (Ctx)
-       and then RFLX.IPv4.Option.Valid_Predecessor (Ctx, Fld)
        and then RFLX.IPv4.Option.Valid_Value (Fld, Val)
        and then RFLX.IPv4.Option.Valid_Next (Ctx, Fld)
        and then RFLX.IPv4.Option.Sufficient_Space (Ctx, Fld),
@@ -304,14 +303,6 @@ is
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean with
      Post =>
        True;
 
@@ -1002,30 +993,6 @@ private
              F_Initial,
           when others =>
              Ctx.Cursors (Fld).Predecessor));
-
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Copied =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_Option_Class =>
-             (Valid (Ctx.Cursors (F_Copied))
-              and Ctx.Cursors (Fld).Predecessor = F_Copied),
-          when F_Option_Number =>
-             (Valid (Ctx.Cursors (F_Option_Class))
-              and Ctx.Cursors (Fld).Predecessor = F_Option_Class),
-          when F_Option_Length =>
-             (Valid (Ctx.Cursors (F_Option_Number))
-              and Ctx.Cursors (Fld).Predecessor = F_Option_Number),
-          when F_Option_Data =>
-             (Valid (Ctx.Cursors (F_Option_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Option_Length),
-          when F_Final =>
-             (Well_Formed (Ctx.Cursors (F_Option_Data))
-              and Ctx.Cursors (Fld).Predecessor = F_Option_Data)
-             or (Valid (Ctx.Cursors (F_Option_Number))
-                 and Ctx.Cursors (Fld).Predecessor = F_Option_Number)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));

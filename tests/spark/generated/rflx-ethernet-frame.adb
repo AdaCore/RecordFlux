@@ -114,7 +114,7 @@ is
      Pre =>
        RFLX.Ethernet.Frame.Has_Buffer (Ctx)
        and RFLX.Ethernet.Frame.Well_Formed (Ctx, Fld)
-       and RFLX.Ethernet.Frame.Valid_Predecessor (Ctx, Fld);
+       and RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld);
 
    pragma Warnings (On, "precondition is always False");
 

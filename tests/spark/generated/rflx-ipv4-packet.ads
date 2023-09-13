@@ -262,7 +262,6 @@ is
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (Ctx)
-       and then RFLX.IPv4.Packet.Valid_Predecessor (Ctx, Fld)
        and then RFLX.IPv4.Packet.Valid_Value (Fld, Val)
        and then RFLX.IPv4.Packet.Valid_Next (Ctx, Fld)
        and then RFLX.IPv4.Packet.Sufficient_Space (Ctx, Fld),
@@ -305,14 +304,6 @@ is
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Predecessor (Ctx : Context; Fld : Virtual_Field) return Virtual_Field with
-     Post =>
-       True;
-
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (Off, "postcondition does not mention function result");
-
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean with
      Post =>
        True;
 
@@ -1942,64 +1933,6 @@ private
              F_Initial,
           when others =>
              Ctx.Cursors (Fld).Predecessor));
-
-   function Valid_Predecessor (Ctx : Context; Fld : Virtual_Field) return Boolean is
-     ((case Fld is
-          when F_Initial =>
-             True,
-          when F_Version =>
-             Ctx.Cursors (Fld).Predecessor = F_Initial,
-          when F_IHL =>
-             (Valid (Ctx.Cursors (F_Version))
-              and Ctx.Cursors (Fld).Predecessor = F_Version),
-          when F_DSCP =>
-             (Valid (Ctx.Cursors (F_IHL))
-              and Ctx.Cursors (Fld).Predecessor = F_IHL),
-          when F_ECN =>
-             (Valid (Ctx.Cursors (F_DSCP))
-              and Ctx.Cursors (Fld).Predecessor = F_DSCP),
-          when F_Total_Length =>
-             (Valid (Ctx.Cursors (F_ECN))
-              and Ctx.Cursors (Fld).Predecessor = F_ECN),
-          when F_Identification =>
-             (Valid (Ctx.Cursors (F_Total_Length))
-              and Ctx.Cursors (Fld).Predecessor = F_Total_Length),
-          when F_Flag_R =>
-             (Valid (Ctx.Cursors (F_Identification))
-              and Ctx.Cursors (Fld).Predecessor = F_Identification),
-          when F_Flag_DF =>
-             (Valid (Ctx.Cursors (F_Flag_R))
-              and Ctx.Cursors (Fld).Predecessor = F_Flag_R),
-          when F_Flag_MF =>
-             (Valid (Ctx.Cursors (F_Flag_DF))
-              and Ctx.Cursors (Fld).Predecessor = F_Flag_DF),
-          when F_Fragment_Offset =>
-             (Valid (Ctx.Cursors (F_Flag_MF))
-              and Ctx.Cursors (Fld).Predecessor = F_Flag_MF),
-          when F_TTL =>
-             (Valid (Ctx.Cursors (F_Fragment_Offset))
-              and Ctx.Cursors (Fld).Predecessor = F_Fragment_Offset),
-          when F_Protocol =>
-             (Valid (Ctx.Cursors (F_TTL))
-              and Ctx.Cursors (Fld).Predecessor = F_TTL),
-          when F_Header_Checksum =>
-             (Valid (Ctx.Cursors (F_Protocol))
-              and Ctx.Cursors (Fld).Predecessor = F_Protocol),
-          when F_Source =>
-             (Valid (Ctx.Cursors (F_Header_Checksum))
-              and Ctx.Cursors (Fld).Predecessor = F_Header_Checksum),
-          when F_Destination =>
-             (Valid (Ctx.Cursors (F_Source))
-              and Ctx.Cursors (Fld).Predecessor = F_Source),
-          when F_Options =>
-             (Valid (Ctx.Cursors (F_Destination))
-              and Ctx.Cursors (Fld).Predecessor = F_Destination),
-          when F_Payload =>
-             (Well_Formed (Ctx.Cursors (F_Options))
-              and Ctx.Cursors (Fld).Predecessor = F_Options),
-          when F_Final =>
-             (Well_Formed (Ctx.Cursors (F_Payload))
-              and Ctx.Cursors (Fld).Predecessor = F_Payload)));
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean is
      (Valid_Next_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
