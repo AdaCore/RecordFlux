@@ -85,9 +85,16 @@ SPARK source files are generated into the directory specified by the `-d` switch
 The result can be included in the list of source directories and analyzed by `gnatprove` as usual (see the `SPARK User’s Guide <https://docs.adacore.com/live/wave/spark2014/html/spark2014_ug/>`_ for details).
 
 The Validator is available through the `rflx validate` subcommand on the command line.
-It can be used to check whether a message specification correctly formalizes real-world data.
+It can be used to check whether a message specification correctly formalizes real-world data, or vice versa, whether a given data sample corresponds to the specification.
 Two types of samples can be used: valid samples (which must be accepted by a specification) and invalid samples (which must be rejected).
-All samples must be raw binary files without any metadata which have a `.raw` file extension.
+Valid samples are passed as a list of values for the `-v` argument and invalid samples as a list of values for the `-i` argument.
+All samples must be raw binary files without any metadata.
+There are two ways how samples can be provided to the tool and the same rules apply for both the `-v` and `-i` argument.
+If all of the samples are in the same directory and have a `.raw` file extension, then it is sufficient to just provide this directory (or several such directories).
+Otherwise, the paths of the individual sample files must be provided.
+In the latter case the sample file can have any extension or even have no extension.
+However, if it has an extension, then it must be included in the path as well.
+The list of paths can contain any combination of files and directories.
 Raw packets can, e.g., be exported from packet analyzers like Wireshark or extracted from a PCAP file using `this script <https://github.com/AdaCore/RecordFlux/blob/main/tools/extract_packets.py>`__.
 To facilitate execution within a CI/CD pipeline, the `--abort-on-error` switch causes the tool to exit with an error code if any samples are rejected.
 Upon completion, the Validator will produce a report, with an option to display how much of a message has been covered:
@@ -107,7 +114,7 @@ The Visualizer can be used to create graphical representations of a formal Recor
 It is available on the command line through the `rflx graph` command.
 It creates images for all messages and protocol sessions found in the specifications passed on the command line and stores them in the output directory specified by the `-d` switch.
 By default, SVG images are created, but the `-f` switch may be used to select alternative formats like JPG, PNG or PDF.
-The `-i` switch may be used to filter out protocol session states which should not be included in the output, which can be helpful, for example, to eliminate error states which may complicate the non-error case unnecessarily.
+The `-i` switch may be used to filter out protocol session states which must not be included in the output, which can be helpful, for example, to eliminate error states which may complicate the non-error case unnecessarily.
 
 .. code:: console
 

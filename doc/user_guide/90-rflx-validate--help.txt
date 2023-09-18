@@ -1,7 +1,8 @@
-usage: rflx validate [-h] [--split-disjunctions] [-v VALID_SAMPLES_DIRECTORY]
-                     [-i INVALID_SAMPLES_DIRECTORY] [-c CHECKSUM_MODULE]
-                     [-o OUTPUT_FILE] [--abort-on-error] [--coverage]
-                     [--target-coverage PERCENTAGE]
+usage: rflx validate [-h] [--split-disjunctions]
+                     [-v VALID_SAMPLES_PATHS [VALID_SAMPLES_PATHS ...]]
+                     [-i INVALID_SAMPLES_PATHS [INVALID_SAMPLES_PATHS ...]]
+                     [-c CHECKSUM_MODULE] [-o OUTPUT_FILE] [--abort-on-error]
+                     [--coverage] [--target-coverage PERCENTAGE]
                      SPECIFICATION_FILE MESSAGE_IDENTIFIER
 
 positional arguments:
@@ -13,10 +14,10 @@ options:
   -h, --help            show this help message and exit
   --split-disjunctions  split disjunctions before model validation (may have
                         severe performance impact)
-  -v VALID_SAMPLES_DIRECTORY
-                        path to the directory containing known valid samples
-  -i INVALID_SAMPLES_DIRECTORY
-                        path to the directory containing known valid samples
+  -v VALID_SAMPLES_PATHS [VALID_SAMPLES_PATHS ...]
+                        known valid sample files or directories
+  -i INVALID_SAMPLES_PATHS [INVALID_SAMPLES_PATHS ...]
+                        known invalid sample files or directories
   -c CHECKSUM_MODULE    name of the module containing the checksum functions
   -o OUTPUT_FILE        path to output file for validation report in JSON
                         format (file must not exist)

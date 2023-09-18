@@ -64,17 +64,22 @@ class Validator:
     def validate(  # noqa: PLR0913
         self,
         message_identifier: ID,
-        directory_invalid: Optional[Path] = None,
-        directory_valid: Optional[Path] = None,
+        paths_invalid: Optional[list[Path]] = None,
+        paths_valid: Optional[list[Path]] = None,
         json_output: Optional[Path] = None,
         abort_on_error: bool = False,
         coverage: bool = False,
         target_coverage: float = 0.00,
     ) -> None:
-        if target_coverage < 0 or target_coverage > 100:
-            raise ValidationError(
-                f"target coverage must be between 0 and 100, got {target_coverage}",
-            )
+        self._check_arguments(
+            message_identifier,
+            paths_invalid,
+            paths_valid,
+            json_output,
+            abort_on_error,
+            coverage,
+            target_coverage,
+        )
 
         try:
             message_value = self._pyrflx.package(message_identifier.parent).new_message(
@@ -89,18 +94,27 @@ class Validator:
         incorrectly_classified = 0
         coverage_info = CoverageInformation(list(self._pyrflx), coverage)
 
+        paths = [
+            *[(p, True) for p in paths_valid or []],
+            *[(p, False) for p in paths_invalid or []],
+        ]
+
         with OutputWriter(json_output) as output_writer:
-            for directory_path, is_valid_directory in [
-                (directory_valid, True),
-                (directory_invalid, False),
-            ]:
-                directory = (
-                    sorted(directory_path.glob("*.raw")) if directory_path is not None else []
-                )
-                for path in directory:
+            for provided_path, is_valid in paths:
+                if provided_path.is_dir():
+                    files = sorted(provided_path.glob("*.raw"))
+                    if not files:
+                        raise ValidationError(
+                            f"{provided_path} contains no files with a .raw file extension, please "
+                            "provide a directory with .raw files or a list of individual files with"
+                            " any extension",
+                        )
+                else:
+                    files = [provided_path]
+                for path in files:
                     validation_result = self._validate_message(
                         path,
-                        is_valid_directory,
+                        is_valid,
                         message_value,
                     )
                     coverage_info.update(validation_result.parsed_message)
@@ -128,6 +142,37 @@ class Validator:
             )
         if len(error_msgs) > 0:
             raise ValidationError("\n".join(e for e in error_msgs))
+
+    def _check_arguments(
+        self,
+        _message_identifier: ID,
+        paths_invalid: Optional[list[Path]] = None,
+        paths_valid: Optional[list[Path]] = None,
+        json_output: Optional[Path] = None,
+        _abort_on_error: bool = False,
+        _coverage: bool = False,
+        target_coverage: float = 0.00,
+    ) -> None:
+        """Perform some additional sanity checks of validator specific arguments."""
+        if target_coverage < 0 or target_coverage > 100:
+            raise ValidationError(
+                f"target coverage must be between 0 and 100, got {target_coverage}",
+            )
+
+        if paths_valid is None and paths_invalid is None:
+            raise ValidationError("must provide directory with valid and/or invalid messages")
+
+        for path in [*(paths_valid or []), *(paths_invalid or [])]:
+            if not path.exists():
+                raise ValidationError(f"{path} does not exist")
+
+        if json_output is not None and json_output.exists():
+            if json_output.is_dir():
+                raise ValidationError(
+                    f"{json_output} is a directory, please specify a file for the validation"
+                    " report",
+                )
+            raise ValidationError(f"output file already exists: {json_output}")
 
     def _create_model(
         self,

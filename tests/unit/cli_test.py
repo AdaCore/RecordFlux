@@ -300,80 +300,6 @@ def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
         )
 
 
-def test_main_validate_no_test_data_provided(tmp_path: Path) -> None:
-    assert (
-        cli.main(
-            [
-                "rflx",
-                "validate",
-                str(tmp_path / "test.rflx"),
-                "Test::Message",
-            ],
-        )
-        == "cli: error: must provide directory with valid and/or invalid messages"
-    )
-
-
-def test_main_validate_output_file_exists(tmp_path: Path) -> None:
-    tmp_file = tmp_path / "test.json"
-    tmp_file.write_text("")
-    assert tmp_file.is_file()
-    assert (
-        cli.main(
-            [
-                "rflx",
-                "validate",
-                str(tmp_path / "test.rflx"),
-                "Test::Message",
-                "-v",
-                str(tmp_path),
-                "-i",
-                str(tmp_path),
-                "-o",
-                str(tmp_file),
-                "-c",
-                "checksum",
-            ],
-        )
-    ) == f"cli: error: output file already exists: {tmp_file}"
-
-
-def test_main_validate_path_does_not_exist(tmp_path: Path) -> None:
-    assert (
-        cli.main(
-            [
-                "rflx",
-                "validate",
-                str(tmp_path / "test.rflx"),
-                "Test::Message",
-                "-i",
-                str(tmp_path / "non_existent_dir"),
-                "-c",
-                "checksum",
-            ],
-        )
-    ) == f"cli: error: {tmp_path}/non_existent_dir does not exist or is not a directory"
-
-
-def test_main_validate_path_is_not_directory(tmp_path: Path) -> None:
-    tmp_file = tmp_path / "test.txt"
-    tmp_file.write_text("")
-    assert (
-        cli.main(
-            [
-                "rflx",
-                "validate",
-                str(tmp_file),
-                "Test::Message",
-                "-i",
-                str(tmp_file),
-                "-c",
-                "checksum",
-            ],
-        )
-    ) == f"cli: error: {tmp_file} does not exist or is not a directory"
-
-
 def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
     assert (
         cli.main(
@@ -684,9 +610,9 @@ class TestDuplicateArgs:
         "SPECIFICATION_FILE",
         "MESSAGE_IDENTIFIER",
         "-v",
-        "VALID_SAMPLES_DIRECTORY",
+        "VALID_SAMPLES_DIRECTORIES",
         "-i",
-        "INVALID_SAMPLES_DIRECTORY",
+        "INVALID_SAMPLES_DIRECTORIES",
         "-c",
         "CHECKSUM_MODULE",
         "-o",

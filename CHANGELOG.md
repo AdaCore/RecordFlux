@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Functions `Valid_Next_Internal`, `Field_Size_Internal`, `Field_First_Internal` (eng/recordflux/RecordFlux#1382)
+- `rflx validate` `-v` and `-i` options accept multiple directories (eng/recordflux/RecordFlux#1393)
+- `rflx validate` `-v` and `-i` options accept also files (eng/recordflux/RecordFlux#1418)
 
 ### Changed
 

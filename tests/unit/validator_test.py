@@ -162,10 +162,10 @@ def test_validate_error_msg_not_in_package() -> None:
         ValidationError,
         match=r'^message "Message" could not be found in package "Ethernet"$',
     ):
-        validator.validate(ID("Ethernet::Message"), None, None, None)
+        validator.validate(ID("Ethernet::Message"), [TEST_DIR / "ethernet/frame/valid"], None, None)
 
 
-def test_validate_cannot_open_output_file(tmp_path: Path) -> None:
+def test_validate_no_raw_files_in_valid_dir(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
@@ -175,15 +175,141 @@ def test_validate_cannot_open_output_file(tmp_path: Path) -> None:
         ValidationError,
         match=(
             r"^"
-            rf"cannot open output file {tmp_path}: \[Errno 21\] Is a directory: '{tmp_path}'"
+            rf"{tmp_path} contains no files with a .raw file extension, please provide a directory "
+            "with .raw files or a list of individual files with any extension"
             r"$"
         ),
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            TEST_DIR / "ethernet/frame/valid",
-            TEST_DIR / "ethernet/frame/invalid",
+            [
+                TEST_DIR / "ethernet/frame/valid",
+                tmp_path,
+            ],
+            [TEST_DIR / "ethernet/frame/invalid"],
+        )
+
+
+def test_validate_no_raw_files_in_invalid_dir(tmp_path: Path) -> None:
+    validator = Validator(
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
+    )
+    with pytest.raises(
+        ValidationError,
+        match=(
+            r"^"
+            rf"{tmp_path} contains no files with a .raw file extension, please provide a directory "
+            "with .raw files or a list of individual files with any extension"
+            r"$"
+        ),
+    ):
+        validator.validate(
+            ID("Ethernet::Frame"),
+            [TEST_DIR / "ethernet/frame/valid"],
+            [
+                TEST_DIR / "ethernet/frame/invalid",
+                tmp_path,
+            ],
+        )
+
+
+def test_validate_no_test_data_provided() -> None:
+    validator = Validator(
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
+    )
+    with pytest.raises(
+        ValidationError,
+        match=r"^must provide directory with valid and/or invalid messages$",
+    ):
+        validator.validate(ID("Ethernet::Message"), None, None, None)
+
+
+def test_validate_valid_samples_dir_does_not_exist(tmp_path: Path) -> None:
+    validator = Validator(
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
+    )
+    with pytest.raises(
+        ValidationError,
+        match=rf"^{tmp_path}/non_existent_dir does not exist$",
+    ):
+        validator.validate(ID("Ethernet::Message"), [tmp_path / "non_existent_dir"], None, None)
+
+
+def test_validate_invalid_samples_dir_does_not_exist(tmp_path: Path) -> None:
+    validator = Validator(
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
+    )
+    with pytest.raises(
+        ValidationError,
+        match=rf"^{tmp_path}/non_existent_dir does not exist$",
+    ):
+        validator.validate(ID("Ethernet::Message"), None, [tmp_path / "non_existent_dir"], None)
+
+
+def test_validate_output_is_a_dir(tmp_path: Path) -> None:
+    validator = Validator(
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
+    )
+    with pytest.raises(
+        ValidationError,
+        match=(rf"^{tmp_path} is a directory, please specify a file for the validation report$"),
+    ):
+        validator.validate(
+            ID("Ethernet::Frame"),
+            [TEST_DIR / "ethernet/frame/valid"],
+            None,
             tmp_path,
+        )
+
+
+def test_validate_output_file_exists(tmp_path: Path) -> None:
+    tmp_file = tmp_path / "test.json"
+    tmp_file.write_text("")
+    assert tmp_file.is_file()
+    validator = Validator(
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
+    )
+    with pytest.raises(
+        ValidationError,
+        match=rf"^output file already exists: {tmp_file}$",
+    ):
+        validator.validate(ID("Ethernet::Message"), [tmp_path], None, tmp_file)
+
+
+def test_validate_output_not_writable(tmp_path: Path) -> None:
+    tmp_path.chmod(0o555)
+    output_file = tmp_path / "output.txt"
+    validator = Validator(
+        [SPEC_DIR / "in_ethernet.rflx"],
+        CHECKSUM_MODULE,
+        skip_model_verification=True,
+    )
+    with pytest.raises(
+        ValidationError,
+        match=(
+            r"^"
+            rf"cannot open output file {output_file}: \[Errno 13\] Permission denied: "
+            rf"'{output_file}'"
+            r"$"
+        ),
+    ):
+        validator.validate(
+            ID("Ethernet::Frame"),
+            [TEST_DIR / "ethernet/frame/valid"],
+            None,
+            output_file,
         )
 
 
@@ -204,8 +330,8 @@ def test_validate_abort_on_error() -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            TEST_DIR / "ethernet/frame/valid",
-            TEST_DIR / "ethernet/frame/invalid",
+            [TEST_DIR / "ethernet/frame/valid"],
+            [TEST_DIR / "ethernet/frame/invalid"],
             abort_on_error=True,
         )
 
@@ -222,10 +348,10 @@ def test_validate_not_regular_file(tmp_path: Path) -> None:
         ValidationError,
         match=rf"^{subdir} is not a regular file$",
     ):
-        validator.validate(ID("Ethernet::Frame"), tmp_path)
+        validator.validate(ID("Ethernet::Frame"), [tmp_path])
 
 
-def test_validate_positive() -> None:
+def test_validate_positive_only() -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
@@ -233,12 +359,18 @@ def test_validate_positive() -> None:
     )
     validator.validate(
         ID("Ethernet::Frame"),
-        TEST_DIR / "ethernet/frame/invalid",
-        TEST_DIR / "ethernet/frame/valid",
+        None,
+        [TEST_DIR / "ethernet/frame/valid"],
     )
 
 
 def test_validate_positive_output(tmp_path: Path) -> None:
+    """
+    Test the JSON output on correctly classified samples.
+
+    Test the detailed validation report on a set of correctly classified samples that are collected
+    from multiple directories. The report should contain expected output for each file.
+    """
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
@@ -246,8 +378,18 @@ def test_validate_positive_output(tmp_path: Path) -> None:
     )
     validator.validate(
         ID("Ethernet::Frame"),
-        TEST_DIR / "ethernet/frame/invalid",
-        TEST_DIR / "ethernet/frame/valid",
+        [
+            TEST_DIR / "ethernet/frame/invalid",
+            TEST_DIR / "ethernet/frame/invalid2",
+            TEST_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_long.bin",
+            TEST_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_short.dat",
+        ],
+        [
+            TEST_DIR / "ethernet/frame/valid",
+            TEST_DIR / "ethernet/frame/valid2",
+            TEST_DIR / "ethernet/frame/valid3/ethernet_802.3.bin",
+            TEST_DIR / "ethernet/frame/valid3/ethernet_ipv4_udp.dat",
+        ],
         tmp_path / "output.json",
     )
     assert (tmp_path / "output.json").read_text() == (TEST_DIR / "output_positive.json").read_text(
@@ -255,11 +397,8 @@ def test_validate_positive_output(tmp_path: Path) -> None:
     )
 
 
-def test_validate_negative() -> None:
-    number = len(
-        list((TEST_DIR / "ethernet/frame/invalid").glob("*.raw"))
-        + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw")),
-    )
+def test_validate_negative_only() -> None:
+    number = len(list((TEST_DIR / "ethernet/frame/invalid").glob("*.raw")))
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
@@ -271,15 +410,25 @@ def test_validate_negative() -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            TEST_DIR / "ethernet/frame/valid",
-            TEST_DIR / "ethernet/frame/invalid",
+            None,
+            [TEST_DIR / "ethernet/frame/invalid"],
         )
 
 
 def test_validate_negative_output(tmp_path: Path) -> None:
+    """
+    Test the JSON output on incorrectly classified samples.
+
+    Test the detailed validation report on a set of incorrectly classified samples that are
+    collected from multiple directories. The report should contain expected output for each file.
+    """
     number = len(
         list((TEST_DIR / "ethernet/frame/invalid").glob("*.raw"))
-        + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw")),
+        + list((TEST_DIR / "ethernet/frame/invalid2").glob("*.raw"))
+        + list((TEST_DIR / "ethernet/frame/invalid3").iterdir())
+        + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw"))
+        + list((TEST_DIR / "ethernet/frame/valid2").glob("*.raw"))
+        + list((TEST_DIR / "ethernet/frame/valid3").iterdir()),
     )
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
@@ -292,8 +441,18 @@ def test_validate_negative_output(tmp_path: Path) -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            TEST_DIR / "ethernet/frame/valid",
-            TEST_DIR / "ethernet/frame/invalid",
+            [
+                TEST_DIR / "ethernet/frame/valid",
+                TEST_DIR / "ethernet/frame/valid2",
+                TEST_DIR / "ethernet/frame/valid3/ethernet_802.3.bin",
+                TEST_DIR / "ethernet/frame/valid3/ethernet_ipv4_udp.dat",
+            ],
+            [
+                TEST_DIR / "ethernet/frame/invalid",
+                TEST_DIR / "ethernet/frame/invalid2",
+                TEST_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_long.bin",
+                TEST_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_short.dat",
+            ],
             tmp_path / "output.json",
         )
     assert (tmp_path / "output.json").read_text() == (TEST_DIR / "output_negative.json").read_text(
@@ -309,8 +468,8 @@ def test_validate_coverage(capsys: pytest.CaptureFixture[str]) -> None:
     )
     validator.validate(
         ID("Ethernet::Frame"),
-        TEST_DIR / "ethernet/frame/invalid",
-        TEST_DIR / "ethernet/frame/valid",
+        [TEST_DIR / "ethernet/frame/invalid"],
+        [TEST_DIR / "ethernet/frame/valid"],
         coverage=True,
         target_coverage=100,
     )
@@ -356,8 +515,8 @@ def test_coverage_threshold_missed(capsys: pytest.CaptureFixture[str]) -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            TEST_DIR / "ethernet/frame/invalid",
-            TEST_DIR / "ethernet/frame/valid",
+            [TEST_DIR / "ethernet/frame/invalid"],
+            [TEST_DIR / "ethernet/frame/valid"],
             coverage=True,
             target_coverage=90,
         )
@@ -422,8 +581,8 @@ def test_validate_coverage_threshold_invalid() -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            TEST_DIR / "ethernet/frame/invalid",
-            TEST_DIR / "ethernet/frame/valid",
+            [TEST_DIR / "ethernet/frame/invalid"],
+            [TEST_DIR / "ethernet/frame/valid"],
             coverage=True,
             target_coverage=110,
         )
@@ -437,8 +596,8 @@ def test_validate_checksum_positive() -> None:
     )
     validator.validate(
         ID("Checksum_Message::Message"),
-        TEST_DIR / "checksum_message/invalid",
-        TEST_DIR / "checksum_message/valid",
+        [TEST_DIR / "checksum_message/invalid"],
+        [TEST_DIR / "checksum_message/valid"],
     )
 
 
@@ -451,8 +610,8 @@ def test_validate_pyrflx_checksum_negative() -> None:
     with pytest.raises(ValidationError, match=r"^3 messages were classified incorrectly$"):
         validator.validate(
             ID("Checksum_Message::Message"),
-            TEST_DIR / "checksum_message/valid",
-            TEST_DIR / "checksum_message/invalid",
+            [TEST_DIR / "checksum_message/valid"],
+            [TEST_DIR / "checksum_message/invalid"],
         )
 
 

@@ -288,17 +288,19 @@ def main(  # noqa: PLR0915
     parser_validate.add_argument(
         "-v",
         action=UniqueStore,
-        dest="valid_samples_directory",
+        dest="valid_samples_paths",
+        nargs="+",
         type=Path,
-        help="path to the directory containing known valid samples",
+        help="known valid sample files or directories",
         default=None,
     )
     parser_validate.add_argument(
         "-i",
         action=UniqueStore,
-        dest="invalid_samples_directory",
+        nargs="+",
+        dest="invalid_samples_paths",
         type=Path,
-        help="path to the directory containing known valid samples",
+        help="known invalid sample files or directories",
         default=None,
     )
     parser_validate.add_argument(
@@ -581,16 +583,6 @@ def graph(args: argparse.Namespace) -> None:
 
 
 def validate(args: argparse.Namespace) -> None:
-    if args.valid_samples_directory is None and args.invalid_samples_directory is None:
-        fail("must provide directory with valid and/or invalid messages", Subsystem.CLI)
-
-    for path in [args.valid_samples_directory, args.invalid_samples_directory]:
-        if path is not None and not path.is_dir():
-            fail(f"{path} does not exist or is not a directory", Subsystem.CLI)
-
-    if args.output_file is not None and args.output_file.exists():
-        fail(f"output file already exists: {args.output_file}", Subsystem.CLI)
-
     try:
         identifier = ID(args.message_identifier)
     except FatalError as e:
@@ -604,8 +596,8 @@ def validate(args: argparse.Namespace) -> None:
             args.split_disjunctions,
         ).validate(
             identifier,
-            args.invalid_samples_directory,
-            args.valid_samples_directory,
+            args.invalid_samples_paths,
+            args.valid_samples_paths,
             args.output_file,
             args.abort_on_error,
             args.coverage,

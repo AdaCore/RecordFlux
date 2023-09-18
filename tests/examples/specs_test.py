@@ -59,9 +59,14 @@ def test_validate_spec(spec: Path) -> None:
             directory_invalid = test_data_dir / "invalid"
             directory_valid = test_data_dir / "valid"
 
+            if not directory_invalid.is_dir():
+                warnings.warn(f"No invalid data found for {message_value.identifier}", stacklevel=1)
+            if not directory_valid.is_dir():
+                warnings.warn(f"No valid data found for {message_value.identifier}", stacklevel=1)
+
             validator.validate(
                 message_value.identifier,
-                directory_invalid,
-                directory_valid,
+                [directory_invalid] if directory_invalid.is_dir() else None,
+                [directory_valid] if directory_valid.is_dir() else None,
                 coverage=True,
             )
