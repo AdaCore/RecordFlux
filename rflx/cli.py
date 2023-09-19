@@ -305,7 +305,7 @@ def main(  # noqa: PLR0915
         "-c",
         action=UniqueStore,
         dest="checksum_module",
-        type=Path,
+        type=str,
         help="name of the module containing the checksum functions",
         default=None,
     )
