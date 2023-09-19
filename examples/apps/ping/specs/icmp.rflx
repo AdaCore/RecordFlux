@@ -42,8 +42,10 @@ package ICMP is
    type Pointer is range 0 .. 2 ** 8 - 1 with Size => 8;
    type Timestamp is range 0 .. 2 ** 32 - 1 with Size => 32;
    type Gateway_Internet_Address is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Unused_16 is range 0 .. 0 with Size => 16;
    type Unused_32 is range 0 .. 0 with Size => 32;
    type Unused_24 is range 0 .. 0 with Size => 24;
+   type Next_Hop_MTU is range 68 .. 2 ** 16 - 1 with Size => 16;
 
    type Message is
       message
@@ -72,9 +74,14 @@ package ICMP is
          Code_Zero : Code_Zero;
          Checksum : Checksum
             then Unused_32
-               if (Tag = Destination_Unreachable
+               if ((Tag = Destination_Unreachable
+                    and Code_Destination_Unreachable /= Fragmentation_Needed_DF_Set)
                    or Tag = Source_Quench
                    or Tag = Time_Exceeded)
+            then Unused_16
+               --  RFC 1191 PMTU discovery
+               if Tag = Destination_Unreachable
+                  and Code_Destination_Unreachable = Fragmentation_Needed_DF_Set
             then Identifier
                if (Tag = Echo_Request
                    or Tag = Echo_Reply
@@ -94,6 +101,10 @@ package ICMP is
             then Data
                with Size => 224;
          Unused_32 : Unused_32
+            then Data
+               with Size => 224;
+         Unused_16 : Unused_16;
+         Next_Hop_MTU : Next_Hop_MTU
             then Data
                with Size => 224;
          Identifier : Identifier;
