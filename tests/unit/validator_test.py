@@ -58,7 +58,7 @@ def test_initialize_pyrflx_checksum_missing_attribute() -> None:
         ValidationError,
         match=(
             r"^"
-            rf'missing attribute "checksum_function" in checksum module "{checksum_module}"'
+            rf'missing attribute "checksum_functions" in checksum module "{checksum_module}"'
             r"$"
         ),
     ):
@@ -143,7 +143,7 @@ def test_initialize_pyrflx_checksum_invalid_attribute_type() -> None:
     checksum_module = "tests.data.validator.checksum_invalid_attribute_type"
     with pytest.raises(
         ValidationError,
-        match=rf'^attribute "checksum_function" of "{checksum_module}" is not a dict$',
+        match=rf'^attribute "checksum_functions" of "{checksum_module}" is not a dict$',
     ):
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],

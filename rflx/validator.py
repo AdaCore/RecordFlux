@@ -246,11 +246,11 @@ class Validator:
             checksum_functions = checksum_module.checksum_functions
         except AttributeError as e:
             raise ValidationError(
-                f'missing attribute "checksum_function" in checksum module "{name}"',
+                f'missing attribute "checksum_functions" in checksum module "{name}"',
             ) from e
 
         if not isinstance(checksum_functions, dict):
-            raise ValidationError(f'attribute "checksum_function" of "{name}" is not a dict')
+            raise ValidationError(f'attribute "checksum_functions" of "{name}" is not a dict')
 
         for message_id, checksum_field_mapping in checksum_functions.items():
             if not isinstance(checksum_field_mapping, dict):
