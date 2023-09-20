@@ -1510,12 +1510,12 @@ def create_refinement(
     else:
         condition = expr.TRUE
 
-    refinement_id = model.Field(create_id(error, refinement.f_field, filename))
+    field = model.Field(create_id(error, refinement.f_field, filename))
 
     return model.UncheckedRefinement(
         package,
         pdu,
-        refinement_id,
+        field,
         sdu,
         condition,
         node_location(refinement, filename),

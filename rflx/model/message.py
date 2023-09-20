@@ -2937,12 +2937,29 @@ class UncheckedDerivedMessage(mty.UncheckedType):
 
 @dataclass
 class UncheckedRefinement(mty.UncheckedType):
-    identifier: ID
     pdu: ID
     field: Field
     sdu: ID
     condition: expr.Expr
     location: Optional[Location] = dataclass_field(default=None)
+
+    def __init__(  # noqa: PLR0913
+        self,
+        package: ID,
+        pdu: ID,
+        field: Field,
+        sdu: ID,
+        condition: expr.Expr = expr.TRUE,
+        location: Optional[Location] = None,
+    ) -> None:
+        super().__init__(
+            ID(package) * f"__REFINEMENT__{sdu.flat}__{pdu.flat}__{field.name}__",
+        )
+        self.pdu = pdu
+        self.field = field
+        self.sdu = sdu
+        self.condition = condition
+        self.location = location
 
     def checked(self, declarations: Sequence[TopLevelDeclaration]) -> Refinement:
         error = RecordFluxError()
@@ -2976,7 +2993,7 @@ class UncheckedRefinement(mty.UncheckedType):
 
         try:
             result = Refinement(
-                self.identifier,
+                self.package,
                 messages[self.pdu],
                 self.field,
                 messages[self.sdu],

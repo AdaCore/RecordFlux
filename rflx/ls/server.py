@@ -41,7 +41,7 @@ from rflx import __version__, error
 from rflx.common import assert_never
 from rflx.const import CACHE_PATH
 from rflx.graph import create_message_graph, write_graph
-from rflx.model import Message, Model, UncheckedMessage, UncheckedModel
+from rflx.model import Message, Model, UncheckedModel
 from rflx.model.cache import Cache
 from rflx.specification import Parser
 

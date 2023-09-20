@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,6 +15,8 @@ from rflx.identifier import ID
 from . import message, session, top_level_declaration, type_
 from .cache import Cache
 from .package import Package
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -31,6 +34,7 @@ class UncheckedModel(Base):
         declarations: list[top_level_declaration.TopLevelDeclaration] = []
 
         for d in self.declarations:
+            log.info("Verifying %s", d.identifier)
             try:
                 if isinstance(d, message.UncheckedMessage):
                     checked_message = d.checked(
@@ -46,7 +50,7 @@ class UncheckedModel(Base):
                     declarations.append(checked_session)
                 else:
                     declarations.append(d.checked(declarations))
-            except RecordFluxError as e:  # noqa: PERF203
+            except RecordFluxError as e:
                 error.extend(e)
 
         error += _check_duplicates(declarations)
