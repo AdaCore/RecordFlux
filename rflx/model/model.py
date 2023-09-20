@@ -5,7 +5,6 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from rflx import const
 from rflx.common import Base, unique, verbose_repr
@@ -13,7 +12,7 @@ from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
 
 from . import message, session, top_level_declaration, type_
-from .cache import Cache
+from .cache import Cache, Digest
 from .package import Package
 
 log = logging.getLogger(__name__)
@@ -36,20 +35,15 @@ class UncheckedModel(Base):
         for d in self.declarations:
             log.info("Verifying %s", d.identifier)
             try:
-                if isinstance(d, message.UncheckedMessage):
-                    checked_message = d.checked(
-                        declarations,
-                        skip_verification
-                        or cache.is_verified(d.checked(declarations, skip_verification=True)),
-                        workers,
-                    )
-                    declarations.append(checked_message)
-                    cache.add_verified(checked_message)
-                elif isinstance(d, session.UncheckedSession):
-                    checked_session = d.checked(declarations)
-                    declarations.append(checked_session)
-                else:
-                    declarations.append(d.checked(declarations))
+                unverified = d.checked(declarations, skip_verification=True)
+                digest = Digest(unverified)
+                checked = (
+                    unverified
+                    if skip_verification or cache.is_verified(digest)
+                    else d.checked(declarations, workers=workers)
+                )
+                declarations.append(checked)
+                cache.add_verified(digest)
             except RecordFluxError as e:
                 error.extend(e)
 
@@ -63,7 +57,7 @@ class UncheckedModel(Base):
 class Model(Base):
     def __init__(
         self,
-        declarations: Optional[Sequence[top_level_declaration.TopLevelDeclaration]] = None,
+        declarations: Sequence[top_level_declaration.TopLevelDeclaration] | None = None,
     ) -> None:
         self._declarations = declarations or []
 

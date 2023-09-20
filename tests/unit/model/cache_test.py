@@ -44,6 +44,7 @@ def test_verified(tmp_path: Path) -> None:
             ),
         },
     )
+    d1 = cache.Digest(m1)
     m2 = model.Message(
         "P::M",
         [
@@ -59,6 +60,7 @@ def test_verified(tmp_path: Path) -> None:
             ),
         },
     )
+    d2 = cache.Digest(m2)
     m3 = model.Message(
         "P::M",
         [
@@ -74,30 +76,32 @@ def test_verified(tmp_path: Path) -> None:
             ),
         },
     )
+    d3 = cache.Digest(m3)
     c = cache.Cache(tmp_path / "test.json")
-    assert not c.is_verified(m1)
-    assert not c.is_verified(m2)
-    assert not c.is_verified(m3)
-    c.add_verified(m1)
-    assert c.is_verified(m1)
-    assert not c.is_verified(m2)
-    assert not c.is_verified(m3)
-    c.add_verified(m2)
-    assert c.is_verified(m1)
-    assert c.is_verified(m2)
-    assert not c.is_verified(m3)
-    c.add_verified(m3)
-    assert c.is_verified(m1)
-    assert c.is_verified(m2)
-    assert c.is_verified(m3)
-    c.add_verified(m1)
-    assert c.is_verified(m1)
-    assert c.is_verified(m2)
-    assert c.is_verified(m3)
+    assert not c.is_verified(d1)
+    assert not c.is_verified(d2)
+    assert not c.is_verified(d3)
+    c.add_verified(d1)
+    assert c.is_verified(d1)
+    assert not c.is_verified(d2)
+    assert not c.is_verified(d3)
+    c.add_verified(d2)
+    assert c.is_verified(d1)
+    assert c.is_verified(d2)
+    assert not c.is_verified(d3)
+    c.add_verified(d3)
+    assert c.is_verified(d1)
+    assert c.is_verified(d2)
+    assert c.is_verified(d3)
+    c.add_verified(d1)
+    assert c.is_verified(d1)
+    assert c.is_verified(d2)
+    assert c.is_verified(d3)
 
 
 def test_verified_disabled(tmp_path: Path) -> None:
+    d = cache.Digest(models.tlv_message())
     c = cache.Cache(tmp_path / "test.json", enabled=False)
-    assert not c.is_verified(models.tlv_message())
-    c.add_verified(models.tlv_message())
-    assert not c.is_verified(models.tlv_message())
+    assert not c.is_verified(d)
+    c.add_verified(d)
+    assert not c.is_verified(d)

@@ -5,6 +5,7 @@ import itertools
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Generator, Iterable, Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Final, Optional
@@ -914,12 +915,17 @@ class UncheckedSession(UncheckedTopLevelDeclaration):
     parameters: Sequence[decl.FormalDeclaration]
     location: Optional[Location]
 
-    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> Session:
+    def checked(
+        self,
+        declarations: Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,  # noqa: ARG002
+        workers: int = 1,  # noqa: ARG002
+    ) -> Session:
         return Session(
             self.identifier,
-            self.states,
-            self.declarations,
-            self.parameters,
+            deepcopy(self.states),
+            deepcopy(self.declarations),
+            deepcopy(self.parameters),
             [d for d in declarations if isinstance(d, mty.Type)],
             self.location,
         )

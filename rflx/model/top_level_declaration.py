@@ -55,5 +55,10 @@ class UncheckedTopLevelDeclaration(Base):
         return self.identifier.parent
 
     @abstractmethod
-    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> TopLevelDeclaration:
+    def checked(
+        self,
+        declarations: Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,
+        workers: int = 1,
+    ) -> TopLevelDeclaration:
         raise NotImplementedError

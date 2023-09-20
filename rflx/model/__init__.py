@@ -1,4 +1,4 @@
-from .cache import Cache as Cache
+from .cache import Cache as Cache, Digest as Digest
 from .message import (
     FINAL as FINAL,
     INITIAL as INITIAL,

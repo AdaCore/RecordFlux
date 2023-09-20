@@ -31,6 +31,7 @@ from rflx.model import (
     UncheckedMessage,
     UncheckedModel,
 )
+from rflx.model.cache import Digest
 from rflx.model.top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
 from tests.data import models
 
@@ -488,7 +489,7 @@ def test_unchecked_model_checked(
     messages = [d for d in expected if isinstance(d, Message)]
     if messages:
         for d in messages:
-            cache.is_verified(d)
+            cache.is_verified(Digest(d))
     else:
         assert not cache._verified  # noqa: SLF001
 

@@ -2224,6 +2224,7 @@ class Refinement(mty.Type):
         sdu: Message,
         condition: expr.Expr = expr.TRUE,
         location: Optional[Location] = None,
+        skip_verification: bool = False,
     ) -> None:
         super().__init__(
             ID(package) * "__REFINEMENT__"
@@ -2237,7 +2238,9 @@ class Refinement(mty.Type):
         self.condition = condition
 
         self._normalize()
-        self._verify()
+
+        if not skip_verification:
+            self._verify()
 
         self.error.propagate()
 
@@ -2901,7 +2904,12 @@ class UncheckedDerivedMessage(mty.UncheckedType):
     base_identifier: ID
     location: Optional[Location] = dataclass_field(default=None)
 
-    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> DerivedMessage:
+    def checked(
+        self,
+        declarations: Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,  # noqa: ARG002
+        workers: int = 1,  # noqa: ARG002
+    ) -> DerivedMessage:
         base_types = [
             t
             for t in declarations
@@ -2970,7 +2978,12 @@ class UncheckedRefinement(mty.UncheckedType):
         self.condition = condition
         self.location = location
 
-    def checked(self, declarations: Sequence[TopLevelDeclaration]) -> Refinement:
+    def checked(
+        self,
+        declarations: Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,
+        workers: int = 1,  # noqa: ARG002
+    ) -> Refinement:
         error = RecordFluxError()
         messages = {t.identifier: t for t in declarations if isinstance(t, Message)}
 
@@ -3008,6 +3021,7 @@ class UncheckedRefinement(mty.UncheckedType):
                 messages[self.sdu],
                 self.condition,
                 self.location,
+                skip_verification,
             )
         except RecordFluxError as e:
             error.extend(e)

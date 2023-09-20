@@ -628,7 +628,12 @@ class UncheckedType(UncheckedTopLevelDeclaration):
     identifier: ID
 
     @abstractmethod
-    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Type:
+    def checked(
+        self,
+        declarations: ty.Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,
+        workers: int = 1,
+    ) -> Type:
         raise NotImplementedError
 
 
@@ -640,7 +645,12 @@ class UncheckedInteger(UncheckedType):
     size: expr.Expr
     location: Optional[Location]
 
-    def checked(self, _declarations: ty.Sequence[TopLevelDeclaration]) -> Integer:
+    def checked(
+        self,
+        _declarations: ty.Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,  # noqa: ARG002
+        workers: int = 1,  # noqa: ARG002
+    ) -> Integer:
         return Integer(self.identifier, self.first, self.last, self.size, self.location)
 
 
@@ -652,7 +662,12 @@ class UncheckedEnumeration(UncheckedType):
     always_valid: bool
     location: Optional[Location]
 
-    def checked(self, _declarations: ty.Sequence[TopLevelDeclaration]) -> Enumeration:
+    def checked(
+        self,
+        _declarations: ty.Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,  # noqa: ARG002
+        workers: int = 1,  # noqa: ARG002
+    ) -> Enumeration:
         return Enumeration(
             self.identifier,
             self.literals,
@@ -668,7 +683,12 @@ class UncheckedSequence(UncheckedType):
     element_identifier: ID
     location: Optional[Location]
 
-    def checked(self, declarations: ty.Sequence[TopLevelDeclaration]) -> Sequence:
+    def checked(
+        self,
+        declarations: ty.Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,  # noqa: ARG002
+        workers: int = 1,  # noqa: ARG002
+    ) -> Sequence:
         element_type = next(
             (
                 t
@@ -692,7 +712,12 @@ class UncheckedOpaque(UncheckedType):
     identifier: ID
     location: Optional[Location]
 
-    def checked(self, _declarations: ty.Sequence[TopLevelDeclaration]) -> Opaque:
+    def checked(
+        self,
+        _declarations: ty.Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,  # noqa: ARG002
+        workers: int = 1,  # noqa: ARG002
+    ) -> Opaque:
         return Opaque(location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)))
 
 
