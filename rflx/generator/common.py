@@ -87,6 +87,12 @@ def substitution(
         if isinstance(expression, expr.String):
             return expr.Aggregate(*expression.elements)
 
+        if isinstance(expression, expr.And):
+            return expr.AndThen(*[func(t) for t in expression.terms])
+
+        if isinstance(expression, expr.Or):
+            return expr.OrElse(*[func(t) for t in expression.terms])
+
         if isinstance(expression, (expr.Equal, expr.NotEqual)):
             field = None
             aggregate = None

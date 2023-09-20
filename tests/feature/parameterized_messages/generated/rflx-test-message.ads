@@ -819,7 +819,7 @@ private
      ((case Fld is
           when F_Data =>
              RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
-             or RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)),
+             or else RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)),
           when F_Extension =>
              True));
 
@@ -863,12 +863,12 @@ private
    function Well_Formed_Message (Ctx : Context) return Boolean is
      ((Well_Formed (Ctx, F_Data)
        and then RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)))
-      or Well_Formed (Ctx, F_Extension));
+      or else Well_Formed (Ctx, F_Extension));
 
    function Valid_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Data)
        and then RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)))
-      or Valid (Ctx, F_Extension));
+      or else Valid (Ctx, F_Extension));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      ((for some F in Field =>

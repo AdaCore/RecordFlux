@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `Predecessor` field from `Field_Cursor` record (eng/recordflux/RecordFlux#1387)
 
+### Fixed
+
+- Code generation for accesses to optional fields whose presence is ensured by a condition (eng/recordflux/RecordFlux#1420)
+
 ### Removed
 
 - Functions `Valid_Predecessor` and `Path_Condition` (eng/recordflux/RecordFlux#1382)

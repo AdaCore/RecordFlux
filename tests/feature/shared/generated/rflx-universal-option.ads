@@ -809,7 +809,7 @@ private
      ((case Fld is
           when F_Option_Type =>
              Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))
-             or Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data)),
+             or else Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data)),
           when F_Length | F_Data =>
              True));
 
@@ -852,13 +852,13 @@ private
 
    function Well_Formed_Message (Ctx : Context) return Boolean is
      (Well_Formed (Ctx, F_Data)
-      or (Valid (Ctx, F_Option_Type)
-          and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))));
+      or else (Valid (Ctx, F_Option_Type)
+               and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Data)
-      or (Valid (Ctx, F_Option_Type)
-          and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))));
+      or else (Valid (Ctx, F_Option_Type)
+               and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Null))));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      ((for some F in Field =>

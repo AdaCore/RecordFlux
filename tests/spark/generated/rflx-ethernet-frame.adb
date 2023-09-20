@@ -105,7 +105,7 @@ is
           when F_Payload =>
              (if
                  RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                 and RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500
+                 and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500
               then
                  F_Final
               else

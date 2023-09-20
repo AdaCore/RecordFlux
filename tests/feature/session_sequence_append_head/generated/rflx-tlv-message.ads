@@ -809,7 +809,7 @@ private
      ((case Fld is
           when F_Tag =>
              Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Error))
-             or Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Data)),
+             or else Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Data)),
           when F_Length | F_Value =>
              True));
 
@@ -853,12 +853,12 @@ private
    function Well_Formed_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Tag)
        and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Error)))
-      or Well_Formed (Ctx, F_Value));
+      or else Well_Formed (Ctx, F_Value));
 
    function Valid_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Tag)
        and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.TLV.Msg_Error)))
-      or Valid (Ctx, F_Value));
+      or else Valid (Ctx, F_Value));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      ((for some F in Field =>

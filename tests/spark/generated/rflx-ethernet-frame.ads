@@ -1056,10 +1056,10 @@ private
              True,
           when F_Type_Length =>
              Val <= 1500
-             or Val >= 1536,
+             or else Val >= 1536,
           when F_Payload =>
              RFLX_Types.Base_Integer (Size) / 8 >= 46
-             and RFLX_Types.Base_Integer (Size) / 8 <= 1500));
+             and then RFLX_Types.Base_Integer (Size) / 8 <= 1500));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
@@ -1100,13 +1100,13 @@ private
 
    function Well_Formed_Message (Ctx : Context) return Boolean is
      (Well_Formed (Ctx, F_Payload)
-      and then (RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                and RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500));
+      and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+      and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500);
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_Payload)
-      and then (RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                and RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500));
+      and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
+      and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500);
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      ((for some F in Field =>

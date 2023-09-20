@@ -120,3 +120,52 @@ def test_message_large_number_of_fields(tmp_path: Path) -> None:
       end Test;
    """
     utils.assert_provable_code_string(spec, tmp_path, units=["rflx-test-repr.adb"])
+
+
+def test_message_access_to_optional_field_in_condition(tmp_path: Path) -> None:
+    spec = """\
+      package Test is
+
+         type Tag is
+            (A => 0,
+             B => 1)
+         with Size => 8;
+
+         type Code_A is
+            (AA => 0,
+             AB => 1)
+         with Size => 8;
+
+         type Code_B is
+            (BA => 0,
+             BB => 1)
+         with Size => 8;
+
+         type T is range 0 .. 2 ** 16 - 1 with Size => 16;
+
+         type Message is
+            message
+               Tag : Tag
+                  then Code_A
+                     if Tag = A
+                  then Code_B
+                     if Tag = B;
+               Code_A : Code_A
+                  then X;
+               Code_B : Code_B
+                  then X;
+               X : T
+                  then Z
+                     if Tag = A
+                        and Code_A /= AA
+                  then Z
+                     if Tag = A
+                        and Code_A = AA
+                  then Z
+                     if Tag /= A;
+               Z : T;
+            end message;
+
+      end Test;
+   """
+    utils.assert_provable_code_string(spec, tmp_path, units=["rflx.test.message"])
