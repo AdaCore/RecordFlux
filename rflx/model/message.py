@@ -2162,6 +2162,8 @@ class DerivedMessage(Message):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
+        skip_verification: bool = False,
+        workers: int = 1,
     ) -> None:
         super().__init__(
             identifier,
@@ -2170,6 +2172,8 @@ class DerivedMessage(Message):
             checksums if checksums else copy(base.checksums),
             byte_order if byte_order else copy(base.byte_order),
             location if location else base.location,
+            skip_verification,
+            workers,
         )
         self.base = base
 
@@ -2932,7 +2936,12 @@ class UncheckedDerivedMessage(mty.UncheckedType):
                 ],
             ).propagate()
 
-        return DerivedMessage(self.identifier, base_messages[0], location=self.location)
+        return DerivedMessage(
+            self.identifier,
+            base_messages[0],
+            location=self.location,
+            skip_verification=True,  # Prevent that the base message is verified again
+        )
 
 
 @dataclass
