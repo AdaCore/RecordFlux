@@ -4,7 +4,7 @@ import site
 import subprocess
 from pathlib import Path
 
-from setuptools import setup
+from setuptools import find_packages, setup
 from wheel.bdist_wheel import bdist_wheel
 
 # https://github.com/pypa/pip/issues/7953
@@ -78,7 +78,7 @@ setup(
         "Topic :: Software Development :: Code Generators",
         "Topic :: System :: Networking",
     ],
-    packages=["rflx", "rflx_ide", "rflx_lang"],
+    packages=[*find_packages(include=["rflx*"]), "rflx_ide", "rflx_lang"],
     package_dir={"rflx_ide": "ide", "rflx_lang": "generated/python/librflxlang"},
     package_data={"rflx_lang": ["librflxlang.so", "py.typed", "*.pyi"]},
     include_package_data=True,
