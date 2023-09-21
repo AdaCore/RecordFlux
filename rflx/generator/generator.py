@@ -496,7 +496,6 @@ class Generator:
             self._executor.submit(
                 message_generator.create_valid_context_function,
                 message,
-                self._prefix,
             ),
             self._executor.submit(message_generator.create_context_type, message),
             self._executor.submit(message_generator.create_initialize_procedure, message),

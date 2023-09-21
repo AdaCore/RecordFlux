@@ -581,8 +581,8 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Priority))
                  then
-                    (Cursors (F_Priority).Last - Cursors (F_Priority).First + 1 = 8
-                     and then Cursors (F_Priority).First = First))))
+                    Cursors (F_Priority).Last - Cursors (F_Priority).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Priority)
+                    and then Cursors (F_Priority).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Priority))))
     with
      Post =>
        True;

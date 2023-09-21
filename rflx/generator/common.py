@@ -322,7 +322,6 @@ def substitution_facts(
 
 def message_structure_invariant(
     message: model.Message,
-    prefix: str,
     embedded: bool = False,
 ) -> Expr:
     """
@@ -338,96 +337,63 @@ def message_structure_invariant(
     def prefixed(name: str) -> expr.Expr:
         return expr.Selected(expr.Variable("Ctx"), name) if not embedded else expr.Variable(name)
 
-    def link_property(link: model.Link, unique: bool) -> Expr:
-        field_type = message.types[link.target]
-        condition = link.condition.substituted(substitution(message, prefix, embedded)).simplified()
-        size = (
-            field_type.size
-            if isinstance(field_type, model.Scalar)
-            else link.size.substituted(
-                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_LENGTH),
-            ).simplified()
-        )
-        first = (
-            prefixed("First")
-            if link.source == model.INITIAL
-            else link.first.substituted(
-                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_INDEX),
-            )
-            .substituted(
-                mapping={
-                    expr.UNDEFINED: expr.Add(
-                        expr.Selected(
-                            expr.Indexed(
-                                prefixed("Cursors"),
-                                expr.Variable(link.source.affixed_name),
+    def field_property(fld: model.Field) -> Expr:
+        return AndThen(
+            Equal(
+                Add(
+                    Sub(
+                        Selected(
+                            Indexed(
+                                prefixed("Cursors").ada_expr(),
+                                Variable(fld.affixed_name),
                             ),
                             "Last",
                         ),
-                        expr.Number(1),
+                        Selected(
+                            Indexed(
+                                prefixed("Cursors").ada_expr(),
+                                Variable(fld.affixed_name),
+                            ),
+                            "First",
+                        ),
                     ),
-                },
-            )
-            .simplified()
-        )
-        precond = (
-            AndThen(
+                    Number(1),
+                ),
                 Call(
-                    "Well_Formed",
-                    [Indexed(Variable("Cursors"), Variable(link.source.affixed_name))],
+                    "Field_Size_Internal",
+                    [
+                        Variable("Cursors"),
+                        Variable("First"),
+                        Variable("Verified_Last"),
+                        Variable("Written_Last"),
+                        Variable("Buffer"),
+                        *[Variable(fld.name) for fld in message.parameter_types],
+                        Variable(fld.affixed_name),
+                    ],
                 ),
-                condition.ada_expr(),
-            )
-            if link.source != model.INITIAL and not unique
-            else TRUE
-        )
-
-        return If(
-            [
-                (
-                    precond,
-                    AndThen(
-                        Equal(
-                            Add(
-                                Sub(
-                                    Selected(
-                                        Indexed(
-                                            prefixed("Cursors").ada_expr(),
-                                            Variable(link.target.affixed_name),
-                                        ),
-                                        "Last",
-                                    ),
-                                    Selected(
-                                        Indexed(
-                                            prefixed("Cursors").ada_expr(),
-                                            Variable(link.target.affixed_name),
-                                        ),
-                                        "First",
-                                    ),
-                                ),
-                                Number(1),
-                            ),
-                            size.ada_expr(),
-                        ),
-                        Equal(
-                            Selected(
-                                Indexed(
-                                    prefixed("Cursors").ada_expr(),
-                                    Variable(link.target.affixed_name),
-                                ),
-                                "First",
-                            ),
-                            first.ada_expr(),
-                        ),
+            ),
+            Equal(
+                Selected(
+                    Indexed(
+                        prefixed("Cursors").ada_expr(),
+                        Variable(fld.affixed_name),
                     ),
+                    "First",
                 ),
-            ],
+                Call(
+                    "Field_First_Internal",
+                    [
+                        Variable("Cursors"),
+                        Variable("First"),
+                        Variable("Verified_Last"),
+                        Variable("Written_Last"),
+                        Variable("Buffer"),
+                        *[Variable(fld.name) for fld in message.parameter_types],
+                        Variable(fld.affixed_name),
+                    ],
+                ),
+            ),
         )
-
-    def field_property(fld: model.Field) -> Expr:
-        incoming = message.incoming(fld)
-        unique = len(incoming) == 1
-        return AndThen(*[link_property(link, unique) for link in incoming])
 
     def map_invariant(fld: model.Field) -> Expr:
         return If(
@@ -447,7 +413,6 @@ def message_structure_invariant(
 
 def context_predicate(
     message: model.Message,
-    prefix: str,
 ) -> Expr:
     def invalid_successors_invariant() -> Expr:
         """
@@ -529,7 +494,7 @@ def context_predicate(
             ],
         ),
         invalid_successors_invariant(),
-        message_structure_invariant(message, prefix, embedded=True),
+        message_structure_invariant(message, embedded=True),
     )
 
 

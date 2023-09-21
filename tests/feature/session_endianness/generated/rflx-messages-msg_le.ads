@@ -621,13 +621,13 @@ private
       and then ((if
                     Well_Formed (Cursors (F_C))
                  then
-                    (Cursors (F_C).Last - Cursors (F_C).First + 1 = 32
-                     and then Cursors (F_C).First = First))
+                    Cursors (F_C).Last - Cursors (F_C).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_C)
+                    and then Cursors (F_C).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_C))
                 and then (if
                              Well_Formed (Cursors (F_D))
                           then
-                             (Cursors (F_D).Last - Cursors (F_D).First + 1 = 32
-                              and then Cursors (F_D).First = Cursors (F_C).Last + 1))))
+                             Cursors (F_D).Last - Cursors (F_D).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_D)
+                             and then Cursors (F_D).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_D))))
     with
      Post =>
        True;

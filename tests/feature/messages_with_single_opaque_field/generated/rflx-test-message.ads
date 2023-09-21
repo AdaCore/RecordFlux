@@ -644,8 +644,8 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Data))
                  then
-                    (Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last - First + 1)
-                     and then Cursors (F_Data).First = First))))
+                    Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Data)
+                    and then Cursors (F_Data).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Data))))
     with
      Post =>
        True;

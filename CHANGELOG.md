@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Syntax for passing repeated `-i` and `-v` options to `rflx validate` (eng/recordflux/RecordFlux#1441)
 - Simplified setter code and removed internal `Successor` function (eng/recordflux/RecordFlux#1448)
+- Simplified `Valid_Context` predicate (eng/recordflux/RecordFlux#1382)
 
 ### Fixed
 

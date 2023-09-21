@@ -872,28 +872,28 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Copied))
                  then
-                    (Cursors (F_Copied).Last - Cursors (F_Copied).First + 1 = 1
-                     and then Cursors (F_Copied).First = First))
+                    Cursors (F_Copied).Last - Cursors (F_Copied).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Copied)
+                    and then Cursors (F_Copied).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Copied))
                 and then (if
                              Well_Formed (Cursors (F_Option_Class))
                           then
-                             (Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1 = 2
-                              and then Cursors (F_Option_Class).First = Cursors (F_Copied).Last + 1))
+                             Cursors (F_Option_Class).Last - Cursors (F_Option_Class).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Class)
+                             and then Cursors (F_Option_Class).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Class))
                 and then (if
                              Well_Formed (Cursors (F_Option_Number))
                           then
-                             (Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1 = 5
-                              and then Cursors (F_Option_Number).First = Cursors (F_Option_Class).Last + 1))
+                             Cursors (F_Option_Number).Last - Cursors (F_Option_Number).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Number)
+                             and then Cursors (F_Option_Number).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Number))
                 and then (if
                              Well_Formed (Cursors (F_Option_Length))
                           then
-                             (Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1 = 8
-                              and then Cursors (F_Option_Length).First = Cursors (F_Option_Number).Last + 1))
+                             Cursors (F_Option_Length).Last - Cursors (F_Option_Length).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Length)
+                             and then Cursors (F_Option_Length).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Length))
                 and then (if
                              Well_Formed (Cursors (F_Option_Data))
                           then
-                             (Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8
-                              and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))
+                             Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Data)
+                             and then Cursors (F_Option_Data).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Data))))
     with
      Post =>
        True;

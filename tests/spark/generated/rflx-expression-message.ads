@@ -653,8 +653,8 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Payload))
                  then
-                    (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = 16
-                     and then Cursors (F_Payload).First = First))))
+                    Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Payload)
+                    and then Cursors (F_Payload).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Payload))))
     with
      Post =>
        True;

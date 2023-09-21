@@ -939,58 +939,38 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Destination))
                  then
-                    (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1 = 48
-                     and then Cursors (F_Destination).First = First))
+                    Cursors (F_Destination).Last - Cursors (F_Destination).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Destination)
+                    and then Cursors (F_Destination).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Destination))
                 and then (if
                              Well_Formed (Cursors (F_Source))
                           then
-                             (Cursors (F_Source).Last - Cursors (F_Source).First + 1 = 48
-                              and then Cursors (F_Source).First = Cursors (F_Destination).Last + 1))
+                             Cursors (F_Source).Last - Cursors (F_Source).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Source)
+                             and then Cursors (F_Source).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Source))
                 and then (if
                              Well_Formed (Cursors (F_Type_Length_TPID))
                           then
-                             (Cursors (F_Type_Length_TPID).Last - Cursors (F_Type_Length_TPID).First + 1 = 16
-                              and then Cursors (F_Type_Length_TPID).First = Cursors (F_Source).Last + 1))
+                             Cursors (F_Type_Length_TPID).Last - Cursors (F_Type_Length_TPID).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Type_Length_TPID)
+                             and then Cursors (F_Type_Length_TPID).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Type_Length_TPID))
                 and then (if
                              Well_Formed (Cursors (F_TPID))
                           then
-                             (Cursors (F_TPID).Last - Cursors (F_TPID).First + 1 = 16
-                              and then Cursors (F_TPID).First = RFLX_Types.Bit_Index (Cursors (F_Type_Length_TPID).First)))
+                             Cursors (F_TPID).Last - Cursors (F_TPID).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_TPID)
+                             and then Cursors (F_TPID).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_TPID))
                 and then (if
                              Well_Formed (Cursors (F_TCI))
                           then
-                             (Cursors (F_TCI).Last - Cursors (F_TCI).First + 1 = 16
-                              and then Cursors (F_TCI).First = Cursors (F_TPID).Last + 1))
+                             Cursors (F_TCI).Last - Cursors (F_TCI).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_TCI)
+                             and then Cursors (F_TCI).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_TCI))
                 and then (if
                              Well_Formed (Cursors (F_Type_Length))
                           then
-                             (if
-                                 Well_Formed (Cursors (F_TCI))
-                                 and then True
-                              then
-                                 Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1 = 16
-                                 and then Cursors (F_Type_Length).First = Cursors (F_TCI).Last + 1)
-                             and then (if
-                                          Well_Formed (Cursors (F_Type_Length_TPID))
-                                          and then Cursors (F_Type_Length_TPID).Value /= 16#8100#
-                                       then
-                                          Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1 = 16
-                                          and then Cursors (F_Type_Length).First = RFLX_Types.Bit_Index (Cursors (F_Type_Length_TPID).First)))
+                             Cursors (F_Type_Length).Last - Cursors (F_Type_Length).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Type_Length)
+                             and then Cursors (F_Type_Length).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Type_Length))
                 and then (if
                              Well_Formed (Cursors (F_Payload))
                           then
-                             (if
-                                 Well_Formed (Cursors (F_Type_Length))
-                                 and then Cursors (F_Type_Length).Value <= 1500
-                              then
-                                 Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Type_Length).Value) * 8
-                                 and then Cursors (F_Payload).First = Cursors (F_Type_Length).Last + 1)
-                             and then (if
-                                          Well_Formed (Cursors (F_Type_Length))
-                                          and then Cursors (F_Type_Length).Value >= 1536
-                                       then
-                                          Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Type_Length).Last)
-                                          and then Cursors (F_Payload).First = Cursors (F_Type_Length).Last + 1))))
+                             Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Payload)
+                             and then Cursors (F_Payload).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Payload))))
     with
      Post =>
        True;

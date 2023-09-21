@@ -708,13 +708,13 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Length))
                  then
-                    (Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
-                     and then Cursors (F_Length).First = First))
+                    Cursors (F_Length).Last - Cursors (F_Length).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length)
+                    and then Cursors (F_Length).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length))
                 and then (if
                              Well_Formed (Cursors (F_Messages))
                           then
-                             (Cursors (F_Messages).Last - Cursors (F_Messages).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
-                              and then Cursors (F_Messages).First = Cursors (F_Length).Last + 1))))
+                             Cursors (F_Messages).Last - Cursors (F_Messages).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Messages)
+                             and then Cursors (F_Messages).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Messages))))
     with
      Post =>
        True;
