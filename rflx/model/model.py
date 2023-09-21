@@ -47,21 +47,19 @@ class UncheckedModel(Base):
             except RecordFluxError as e:
                 error.extend(e)
 
-        error += _check_duplicates(declarations)
-        error += _check_conflicts(declarations)
-        error.propagate()
-
-        return Model(declarations)
+        return Model(declarations, error)
 
 
 class Model(Base):
     def __init__(
         self,
         declarations: Sequence[top_level_declaration.TopLevelDeclaration] | None = None,
+        error: RecordFluxError | None = None,
     ) -> None:
         self._declarations = declarations or []
 
-        error = _check_duplicates(self._declarations)
+        error = error or RecordFluxError()
+        error += _check_duplicates(self._declarations)
         self._declarations = self._add_type_dependencies(self._declarations)
         error += _check_conflicts(self._declarations)
         error.propagate()
