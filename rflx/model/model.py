@@ -14,6 +14,7 @@ from rflx.identifier import ID
 from . import message, session, top_level_declaration, type_
 from .cache import Cache, Digest
 from .package import Package
+from .type_ import BUILTIN_TYPES
 
 log = logging.getLogger(__name__)
 
@@ -222,29 +223,32 @@ def _check_conflicts(
         if isinstance(d, type_.Enumeration)
         for l in d.literals
     ]
-    name_conflicts = [
-        (l, d)
-        for l in literals
-        for d in declarations
-        if (l.parent == d.package or type_.is_builtin_type(d.identifier))
-        and l.name == d.identifier.name
-    ]
-    for literal, conflicting_type in name_conflicts:
-        error.extend(
-            [
-                (
-                    f'literal "{literal.name}" conflicts with type declaration',
-                    Subsystem.MODEL,
-                    Severity.ERROR,
-                    literal.location,
-                ),
-                (
-                    f'conflicting type "{conflicting_type.identifier}"',
-                    Subsystem.MODEL,
-                    Severity.INFO,
-                    conflicting_type.location,
-                ),
-            ],
-        )
+    name_conflicts = {
+        *(set(literals) & {d.identifier for d in declarations}),
+        *({l.name for l in literals} & {t.name for t in BUILTIN_TYPES}),
+    }
+    if name_conflicts:
+        for literal, conflicting_type in [
+            (l, d)
+            for l in literals
+            for d in declarations
+            if {l, l.name} & name_conflicts and l.name == d.identifier.name
+        ]:
+            error.extend(
+                [
+                    (
+                        f'literal "{literal.name}" conflicts with type declaration',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        literal.location,
+                    ),
+                    (
+                        f'conflicting type "{conflicting_type.identifier}"',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        conflicting_type.location,
+                    ),
+                ],
+            )
 
     return error
