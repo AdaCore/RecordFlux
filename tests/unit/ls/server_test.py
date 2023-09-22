@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Final, Optional
 
@@ -13,6 +14,7 @@ from lsprotocol.types import (
     DiagnosticSeverity,
     DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
+    DidSaveTextDocumentParams,
     Location,
     Position,
     Range,
@@ -183,10 +185,8 @@ def test_update_model_error_in_parser(tmp_path: Path, monkeypatch: pytest.Monkey
     ls.update_model()
 
     assert published_diagnostics == [
-        (document.absolute().as_uri(), []),
         *(
-            2
-            * [
+            [
                 (
                     document.absolute().as_uri(),
                     [
@@ -221,7 +221,6 @@ def test_update_model_error_in_unchecked_model(
     ls.update_model()
 
     assert published_diagnostics == [
-        (document.absolute().as_uri(), []),
         (
             document.absolute().as_uri(),
             [
@@ -313,7 +312,63 @@ async def test_did_open(
 ) -> None:
     update_model_called = []
     verify_called = []
+
+    def update_model_mock(ls: server.RecordFluxLanguageServer) -> None:
+        update_model_called.append(True)
+        ls._document_state["uri"] = hash("text")  # noqa: SLF001
+
     monkeypatch.setattr(
+        server.RecordFluxLanguageServer,
+        "update_model",
+        update_model_mock,
+    )
+    monkeypatch.setattr(  # pragma: no branch
+        server.RecordFluxLanguageServer,
+        "verify",
+        lambda _: verify_called.append(True),
+    )
+
+    text_document = TextDocumentItem("uri", "", 0, "text")
+
+    await server.did_open(
+        language_server,
+        DidOpenTextDocumentParams(text_document),
+    )
+
+    assert any(update_model_called)
+    assert any(verify_called)
+
+    update_model_called.clear()
+    verify_called.clear()
+
+    await server.did_open(
+        language_server,
+        DidOpenTextDocumentParams(text_document),
+    )
+
+    assert not any(update_model_called)
+    assert not any(verify_called)
+
+    update_model_called.clear()
+    verify_called.clear()
+    text_document.text = "changed"
+
+    await server.did_open(
+        language_server,
+        DidOpenTextDocumentParams(text_document),
+    )
+
+    assert any(update_model_called)
+
+
+@pytest.mark.asyncio()
+async def test_did_save(
+    language_server: server.RecordFluxLanguageServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    update_model_called = []
+    verify_called = []
+    monkeypatch.setattr(  # pragma: no branch
         server.RecordFluxLanguageServer,
         "update_model",
         lambda _: update_model_called.append(True),
@@ -324,13 +379,19 @@ async def test_did_open(
         lambda _: verify_called.append(True),
     )
 
-    await server.did_open(
+    await server.did_save(
         language_server,
-        DidOpenTextDocumentParams(TextDocumentItem("", "", 0, "")),
+        DidSaveTextDocumentParams(TextDocumentIdentifier("")),
+    )
+    await server.did_save(
+        language_server,
+        DidSaveTextDocumentParams(TextDocumentIdentifier("")),
     )
 
-    assert any(update_model_called)
-    assert any(verify_called)
+    await asyncio.sleep(2)  # Wait for debounce interval to elapse
+
+    assert len(update_model_called) == 1
+    assert len(verify_called) == 1
 
 
 @pytest.mark.asyncio()
@@ -340,7 +401,7 @@ async def test_did_change(
 ) -> None:
     update_model_called = []
     verify_called = []
-    monkeypatch.setattr(
+    monkeypatch.setattr(  # pragma: no branch
         server.RecordFluxLanguageServer,
         "update_model",
         lambda _: update_model_called.append(True),
@@ -355,9 +416,15 @@ async def test_did_change(
         language_server,
         DidChangeTextDocumentParams(VersionedTextDocumentIdentifier(0, ""), []),
     )
+    await server.did_change(
+        language_server,
+        DidChangeTextDocumentParams(VersionedTextDocumentIdentifier(0, ""), []),
+    )
 
-    assert any(update_model_called)
-    assert any(verify_called)
+    await asyncio.sleep(2)  # Wait for debounce interval to elapse
+
+    assert len(update_model_called) == 1
+    assert not verify_called
 
 
 @pytest.mark.asyncio()
@@ -365,6 +432,8 @@ async def test_go_to_definition(
     language_server: server.RecordFluxLanguageServer,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    language_server.update_model()
+
     positions: dict[tuple[int, int], Location] = {
         (19, 41): Location(
             (DATA_DIR / "message.rflx").absolute().as_uri(),
@@ -406,6 +475,8 @@ async def test_go_to_definition(
 
 @pytest.mark.asyncio()
 async def test_code_lens(language_server: server.RecordFluxLanguageServer) -> None:
+    language_server.update_model()
+
     assert await server.code_lens(
         language_server,
         CodeLensParams(TextDocumentIdentifier((DATA_DIR / "message.rflx").absolute().as_uri())),
@@ -460,6 +531,8 @@ async def test_show_message_graph(
 
 @pytest.mark.asyncio()
 async def test_semantic_tokens(language_server: server.RecordFluxLanguageServer) -> None:
+    language_server.update_model()
+
     params = SemanticTokensParams(
         TextDocumentIdentifier((DATA_DIR / "message.rflx").absolute().as_uri()),
     )

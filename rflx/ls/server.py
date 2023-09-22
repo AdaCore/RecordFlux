@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import functools
+import inspect
+import threading
 import uuid
 from collections import defaultdict
 from pathlib import Path
-from typing import Final, Optional
+from typing import Callable, Final, Iterable, Optional
 from urllib.parse import unquote, urlparse
 
 from lsprotocol.types import (
@@ -11,6 +14,7 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_DEFINITION,
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_OPEN,
+    TEXT_DOCUMENT_DID_SAVE,
     TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
     CodeLens,
     CodeLensParams,
@@ -20,12 +24,14 @@ from lsprotocol.types import (
     DiagnosticSeverity,
     DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
+    DidSaveTextDocumentParams,
     Location,
     Position,
     Range,
     SemanticTokens,
     SemanticTokensLegend,
     SemanticTokensParams,
+    TextDocumentItem,
     WorkDoneProgressBegin,
     WorkDoneProgressEnd,
 )
@@ -85,7 +91,6 @@ def to_lsp_severity(severity: error.Severity) -> Optional[DiagnosticSeverity]:
 
 
 def initialize_lexer(language_server: RecordFluxLanguageServer, uri: str) -> LSLexer:
-    language_server.update_model()
     document = language_server.workspace.get_document(uri)
     lexer = LSLexer(language_server.model)
     lexer.tokenize(document.source, document.path)
@@ -103,8 +108,12 @@ class RecordFluxLanguageServer(LanguageServer):
         self.model = LSModel(self.unchecked_model)
         self.cache = Cache()
 
+        self._document_state: dict[str, int] = {}
         self._parser: Parser
         self._error: error.RecordFluxError
+
+    def needs_update_for_document(self, document: TextDocumentItem) -> bool:
+        return hash(document.text) != self._document_state.get(document.uri, None)
 
     def update_model(self) -> None:
         token = str(uuid.uuid4())
@@ -114,37 +123,38 @@ class RecordFluxLanguageServer(LanguageServer):
             WorkDoneProgressBegin(title="Update", percentage=0, cancellable=False),
         )
 
-        files: list[Path] = []
-
-        for folder_uri in list(self.workspace.folders):
-            folder_path = Path(unquote(urlparse(folder_uri).path))
-            for file in folder_path.rglob("*.rflx"):
-                if file.is_file():
-                    files.append(file)
-                    self.publish_diagnostics(file.as_uri(), [])
+        workspace_files = [
+            file
+            for folder_uri in list(self.workspace.folders)
+            for file in Path(unquote(urlparse(folder_uri).path)).rglob("*.rflx")
+            if file.is_file()
+        ]
 
         if len(self.workspace.folders) == 0:
             for document_uri in self.workspace.documents:
                 document_path = Path(unquote(urlparse(document_uri).path))
-                files.append(document_path)
-                self.publish_diagnostics(document_uri, [])
+                workspace_files.append(document_path)
 
         self._parser = Parser(cached=True, workers=self.workers)
 
         self._error = error.RecordFluxError()
 
-        for path in files:
+        for path in workspace_files:
             document = self.workspace.get_document(path.as_uri())
+            self._document_state[document.uri] = hash(document.source)
             try:
                 self._parser.parse_string(document.source, path)
             except error.RecordFluxError as e:
                 self._error.extend(e)
 
-        self._publish_errors_as_diagnostics(self._error)
-
         self.unchecked_model = self._parser.create_unchecked_model()
 
-        self._publish_errors_as_diagnostics(self._error + self.unchecked_model.error)
+        self._error.extend(self.unchecked_model.error)
+
+        self._publish_errors_as_diagnostics(self._error)
+        self._reset_diagnostics(
+            set(workspace_files) - {e.location.source for e in self._error.errors if e.location},
+        )
 
         self.model = LSModel(self.unchecked_model)
 
@@ -180,20 +190,80 @@ class RecordFluxLanguageServer(LanguageServer):
         for uri, diag in diagnostics.items():
             self.publish_diagnostics(uri, diag)
 
+    def _reset_diagnostics(self, files: Iterable[Path]) -> None:
+        for f in files:
+            self.publish_diagnostics(f.as_uri(), [])
+
+
+# TODO(eng/recordflux/RecordFlux#1424): Use typing.ParamSpec instead of ... and object
+def debounce(  # type: ignore[misc]
+    interval_s: int,
+    keyed_by: Optional[str] = None,
+) -> Callable[[Callable[..., None]], Callable[..., None]]:
+    """
+    Debounce calls to this function until interval_s seconds have passed.
+
+    Based on decorator from https://github.com/python-lsp/python-lsp-server.
+    """
+
+    def wrapper(func: Callable[..., None]) -> Callable[..., None]:  # type: ignore[misc]
+        timers: dict[object, threading.Timer] = {}
+        lock = threading.Lock()
+
+        @functools.wraps(func)
+        def debounced(*args: object, **kwargs: object) -> None:
+            sig = inspect.signature(func)
+            call_args = sig.bind(*args, **kwargs)
+            key = call_args.arguments[keyed_by] if keyed_by else None
+
+            def run() -> None:
+                with lock:
+                    del timers[key]
+                return func(*args, **kwargs)
+
+            with lock:
+                old_timer = timers.get(key)
+                if old_timer:
+                    old_timer.cancel()
+
+                timer = threading.Timer(interval_s, run)
+                timers[key] = timer
+                timer.start()
+
+        return debounced
+
+    return wrapper
+
+
+@debounce(1, keyed_by="_uri")
+def update_model_debounced(ls: RecordFluxLanguageServer, _uri: str) -> None:
+    ls.update_model()
+
+
+@debounce(1, keyed_by="_uri")
+def verify_debounced(ls: RecordFluxLanguageServer, _uri: str) -> None:
+    ls.thread_pool_executor.submit(ls.verify)
+
 
 server = RecordFluxLanguageServer()
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls: RecordFluxLanguageServer, _params: DidOpenTextDocumentParams) -> None:
-    ls.update_model()
-    ls.thread_pool_executor.submit(ls.verify)
+async def did_open(ls: RecordFluxLanguageServer, params: DidOpenTextDocumentParams) -> None:
+    if ls.needs_update_for_document(params.text_document):
+        ls.update_model()
+        ls.thread_pool_executor.submit(ls.verify)
+
+
+@server.feature(TEXT_DOCUMENT_DID_SAVE)
+async def did_save(ls: RecordFluxLanguageServer, params: DidSaveTextDocumentParams) -> None:
+    update_model_debounced(ls, params.text_document.uri)
+    verify_debounced(ls, params.text_document.uri)
 
 
 @server.feature(TEXT_DOCUMENT_DID_CHANGE)
-async def did_change(ls: RecordFluxLanguageServer, _params: DidChangeTextDocumentParams) -> None:
-    ls.update_model()
-    ls.thread_pool_executor.submit(ls.verify)
+async def did_change(ls: RecordFluxLanguageServer, params: DidChangeTextDocumentParams) -> None:
+    update_model_debounced(ls, params.text_document.uri)
 
 
 @server.feature(TEXT_DOCUMENT_DEFINITION)
@@ -265,8 +335,6 @@ async def show_message_graph(ls: RecordFluxLanguageServer, parameters: list[int]
 
 @server.feature(TEXT_DOCUMENT_CODE_LENS)
 async def code_lens(ls: RecordFluxLanguageServer, params: CodeLensParams) -> list[CodeLens]:
-    ls.update_model()
-
     result: list[CodeLens] = []
 
     for index, declaration in enumerate(ls.unchecked_model.declarations):

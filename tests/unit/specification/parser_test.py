@@ -1905,6 +1905,24 @@ def test_parse_error_context_dependency_cycle_2() -> None:
     )
 
 
+def test_parse_string_error_context_dependency_cycle() -> None:
+    p = parser.Parser()
+    p.parse_string(Path(f"{SPEC_DIR}/context_cycle.rflx").read_text())
+    p.parse_string(Path(f"{SPEC_DIR}/context_cycle_1.rflx").read_text())
+    p.parse_string(Path(f"{SPEC_DIR}/context_cycle_2.rflx").read_text())
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:1:6: parser: error: dependency cycle when including "Context_Cycle_1"\n'
+            r'<stdin>:1:6: parser: info: when including "Context_Cycle_2"\n'
+            r'<stdin>:1:6: parser: info: when including "Context_Cycle_3"'
+            r"$"
+        ),
+    ):
+        p.parse_string(Path(f"{SPEC_DIR}/context_cycle_3.rflx").read_text())
+
+
 def test_parse_error_message_undefined_message_field() -> None:
     assert_error_string(
         """\

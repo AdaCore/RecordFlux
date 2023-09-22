@@ -1690,9 +1690,14 @@ class Parser:
 
                 error.propagate()
 
-                self._specifications = _sort_specs_topologically(
-                    {**self._specifications, spec.package: spec},
-                )
+                self._specifications[spec.package] = spec
+
+                if not _check_for_dependency_cycles(
+                    error,
+                    [spec],
+                    self._specifications,
+                ):
+                    self._specifications = _sort_specs_topologically(self._specifications)
 
             error.extend(style.check_string(string, filename))
 

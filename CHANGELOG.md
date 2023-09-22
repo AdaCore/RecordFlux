@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Removed `Predecessor` field from `Field_Cursor` record (eng/recordflux/RecordFlux#1387)
+- Improve stability and performance of language server (eng/recordflux/RecordFlux#1417)
 
 ### Fixed
 
