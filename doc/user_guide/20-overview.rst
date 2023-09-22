@@ -214,10 +214,10 @@ Scalar Types
 To limit the size and allowed values of a numeric field in a message, we need to define a type that has the desired properties.
 For the `Identifier` field we define a type that can represent values from 1 to 4000, inclusive, and whose instances occupy 12 bits:
 
-.. doc-check: rflx,basic_declaration
+.. doc-check: rflx,basic_declarations
 .. code:: rflx
 
-   type Identifier is range 1 .. 16#F_A0# with Size => 12
+   type Identifier is range 1 .. 16#F_A0# with Size => 12;
 
 Numbers, like in SPARK, are base 10 by default, but can be represented in arbitrary bases by using the `<base>#<value>#` notation.
 In the above example we represent the upper limit of 4000 by its hexadecimal representation `16#F_A0#`.
@@ -240,7 +240,7 @@ We could proceed and define the Type field of our protocol as a 4 bit numeric va
 While we could even express the fact that the type field must not be zero by choosing 1 as the lower limit, there would still be values that will be accepted (e.g. 2) but which are invalid according to the protocol specification.
 An enumeration type is much better suited to represent discrete choices as in the Command field:
 
-.. doc-check: rflx,basic_declaration
+.. doc-check: rflx,basic_declarations
 .. code:: rflx
 
    type Command is
@@ -253,7 +253,7 @@ An enumeration type is much better suited to represent discrete choices as in th
       ERROR_NO_SUBSCRIBERS => 13,
       ERROR_MESSAGE_TOO_LONG => 14,
       SUCCESS => 15
-   ) with Size => 4
+   ) with Size => 4;
 
 As before, the `type` keyword introduces a type named `Command` with a storage size of 4 bits.
 The possible choices for the enumeration type are listed in parenthesis as pairs of name and value, separated by an arrow (`=>`).
@@ -282,13 +282,13 @@ The edges of those messages carry information about conditions, the starting pos
 Just like scalars, messages are also types.
 The specification for our pub-sub message is as follows:
 
-.. doc-check: rflx,basic_declaration
+.. doc-check: rflx,basic_declarations
 .. code:: rflx
 
-   type Length is range 0 .. 2 ** 8 - 1 with Size => 8
+   type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
 
 
-.. doc-check: rflx,basic_declaration
+.. doc-check: rflx,basic_declarations
 .. code:: rflx
 
    type Message is
@@ -302,7 +302,7 @@ The specification for our pub-sub message is as follows:
          Length : Length;
          Payload : Opaque
             with Size => 8 * Length;
-      end message
+      end message;
 
 This contains quite a few new constructs – let’s unpack them one by one.
 The `Length` type is an integer type as we have used it for the `Identifier` previously.
@@ -761,10 +761,11 @@ To prove our program using `gnatprove`, we need to extend our project file to co
             "--steps=0",
             "--timeout=180",
             "--memlimit=2000",
-            "--checks-as-errors",
+            "--checks-as-errors=on",
             "--warnings=error",
             "--counterexamples=off"
          );
+      end Prove;
       for Main use ("main.adb");
    end Pub_Sub;
 
