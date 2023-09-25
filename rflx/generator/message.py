@@ -2616,6 +2616,8 @@ def create_equal_function(
     scalar_fields: abc.Mapping[Field, Type],
     composite_fields: abc.Sequence[Field],
 ) -> UnitPart:
+    if not composite_fields:
+        return UnitPart()
     specification = FunctionSpecification(
         "Equal",
         "Boolean",

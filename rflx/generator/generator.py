@@ -604,18 +604,12 @@ class Generator:
                 self._prefix,
                 message,
             ),
-            *(
-                [
-                    self._executor.submit(
-                        message_generator.create_equal_function,
-                        self._prefix,
-                        message,
-                        scalar_fields,
-                        composite_fields,
-                    ),
-                ]
-                if composite_fields
-                else []
+            self._executor.submit(
+                message_generator.create_equal_function,
+                self._prefix,
+                message,
+                scalar_fields,
+                composite_fields,
             ),
             self._executor.submit(
                 message_generator.create_reset_dependent_fields_procedure,
