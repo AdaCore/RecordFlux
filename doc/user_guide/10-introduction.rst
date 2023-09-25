@@ -123,11 +123,12 @@ A successful installation of the native toolchain can be verified on the command
    Copyright (C) 2004-2022, AdaCore
    ...
 
-If FSF GNAT is used, the GNATcoll iconv binding must be installed separately.
-In all cases, the following dependencies are required:
+The following external dependencies must be installed:
 
 -  GMP, `libgmp-dev` (Debian/Ubuntu), `gmp-devel` (Fedora) or `gmp` (Arch Linux)
 -  Graphviz (if graph visualization is used), `graphviz` in most distributions.
+
+If FSF GNAT is used, the `GNATcoll iconv binding <https://docs.adacore.com/live/wave/gnatcoll-iconv/html/gnatcoll-iconv_ug/index.html>`__ must also be installed.
 
 To run RecordFlux one of the following Python versions is needed:
 
@@ -164,6 +165,12 @@ To check whether the installation was successful and the RecordFlux executable i
    RecordFlux 0.9.0
    RecordFlux-parser 0.13.0
    ...
+
+Once installed, the following command can be used to upgrade RecordFlux to the latest available version:
+
+.. code:: console
+
+   $ pip3 install RecordFlux --upgrade
 
 VS Code Extension
 ~~~~~~~~~~~~~~~~~

@@ -81,7 +81,7 @@ An enumeration type represents a value out of a list of possible values.
 
 .. productionlist::
    enumeration_type: type `name` is ( `literals` ) with `enumeration_aspects`
-   literals: `literal` { , `enumeration_literal` }
+   literals: `enumeration_literal` { , `enumeration_literal` }
    enumeration_literal: `name` [=> `number`]
    enumeration_aspects: `enumeration_aspect` { , `enumeration_aspect` }
    enumeration_aspect: `size_aspect` | `always_valid_aspect`
