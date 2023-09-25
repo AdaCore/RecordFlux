@@ -1667,8 +1667,9 @@ class Parser:
             include_paths,
         )
 
-        if not _check_for_dependency_cycles(error, specifications, self._specifications):
-            self._specifications = _sort_specs_topologically(self._specifications)
+        _check_for_dependency_cycles(error, specifications, self._specifications)
+
+        self._specifications = _sort_specs_topologically(self._specifications)
 
         error.propagate()
 
@@ -1692,12 +1693,9 @@ class Parser:
 
                 self._specifications[spec.package] = spec
 
-                if not _check_for_dependency_cycles(
-                    error,
-                    [spec],
-                    self._specifications,
-                ):
-                    self._specifications = _sort_specs_topologically(self._specifications)
+                _check_for_dependency_cycles(error, [spec], self._specifications)
+
+                self._specifications = _sort_specs_topologically(self._specifications)
 
             error.extend(style.check_string(string, filename))
 
@@ -1953,7 +1951,11 @@ def _check_for_dependency_cycle(
 def _sort_specs_topologically(
     specifications: Mapping[ID, SpecificationFile],
 ) -> OrderedDict[ID, SpecificationFile]:
-    """(Reverse) Topologically sort specifications using Kahn's algorithm."""
+    """
+    (Reverse) Topologically sort specifications using Kahn's algorithm.
+
+    Specifications which are part of a cycle will be removed.
+    """
 
     result: list[ID] = []
     incoming: dict[ID, set[ID]] = {f: set() for f in specifications}
@@ -1972,7 +1974,5 @@ def _sort_specs_topologically(
             visited.add(c.name)
             if c.name in incoming and incoming[c.name] <= visited:
                 specs.append(c.name)
-
-    assert not (set(specifications) - visited), "dependency cycle"
 
     return OrderedDict((f, specifications[f]) for f in result)

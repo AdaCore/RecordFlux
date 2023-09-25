@@ -1881,16 +1881,23 @@ def test_parse_error_unexpected_exception_in_parser(monkeypatch: pytest.MonkeyPa
 
 
 def test_parse_error_context_dependency_cycle() -> None:
-    assert_error_files(
-        [f"{SPEC_DIR}/context_cycle.rflx"],
-        f"^"
-        f"{SPEC_DIR}/context_cycle.rflx:1:6: parser: error: dependency cycle when "
-        f'including "Context_Cycle_1"\n'
-        f'{SPEC_DIR}/context_cycle_1.rflx:1:6: parser: info: when including "Context_Cycle_2"\n'
-        f'{SPEC_DIR}/context_cycle_2.rflx:1:6: parser: info: when including "Context_Cycle_3"\n'
-        f'{SPEC_DIR}/context_cycle_3.rflx:1:6: parser: info: when including "Context_Cycle_1"'
-        f"$",
-    )
+    p = parser.Parser()
+
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            f"{SPEC_DIR}/context_cycle.rflx:1:6: parser: error: dependency cycle when "
+            f'including "Context_Cycle_1"\n'
+            f'{SPEC_DIR}/context_cycle_1.rflx:1:6: parser: info: when including "Context_Cycle_2"\n'
+            f'{SPEC_DIR}/context_cycle_2.rflx:1:6: parser: info: when including "Context_Cycle_3"\n'
+            f'{SPEC_DIR}/context_cycle_3.rflx:1:6: parser: info: when including "Context_Cycle_1"'
+            r"$"
+        ),
+    ):
+        p.parse(Path(f"{SPEC_DIR}/context_cycle.rflx"))
+
+    p.parse(Path(f"{SPEC_DIR}/integer_type.rflx"))
 
 
 def test_parse_error_context_dependency_cycle_2() -> None:
@@ -1910,6 +1917,7 @@ def test_parse_string_error_context_dependency_cycle() -> None:
     p.parse_string(Path(f"{SPEC_DIR}/context_cycle.rflx").read_text())
     p.parse_string(Path(f"{SPEC_DIR}/context_cycle_1.rflx").read_text())
     p.parse_string(Path(f"{SPEC_DIR}/context_cycle_2.rflx").read_text())
+
     with pytest.raises(
         RecordFluxError,
         match=(
@@ -1921,6 +1929,8 @@ def test_parse_string_error_context_dependency_cycle() -> None:
         ),
     ):
         p.parse_string(Path(f"{SPEC_DIR}/context_cycle_3.rflx").read_text())
+
+    p.parse_string(Path(f"{SPEC_DIR}/integer_type.rflx").read_text())
 
 
 def test_parse_error_message_undefined_message_field() -> None:
