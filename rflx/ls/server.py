@@ -5,7 +5,6 @@ import inspect
 import threading
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Final, Iterable, Mapping, Optional
 from urllib.parse import unquote, urlparse
@@ -93,20 +92,20 @@ def to_lsp_severity(severity: error.Severity) -> Optional[DiagnosticSeverity]:
 
 def initialize_lexer(language_server: RecordFluxLanguageServer, uri: str) -> LSLexer:
     document = language_server.workspace.get_document(uri)
-    lexer = LSLexer(language_server.state[Path(document.path).parent].model)
+    lexer = LSLexer(language_server.models[Path(document.path).parent].ls_model)
     lexer.tokenize(document.source, document.path)
     return lexer
 
 
-@dataclass
-class State:
-    unchecked_model: UncheckedModel = field(
-        default_factory=lambda: UncheckedModel([], error.RecordFluxError()),
-    )
-    checked_model: Model = field(default_factory=lambda: Model())
-    model: LSModel = field(
-        default_factory=lambda: LSModel(UncheckedModel([], error.RecordFluxError())),
-    )
+class Models:
+    def __init__(self, unchecked_model: UncheckedModel) -> None:
+        self.unchecked_model = unchecked_model
+        self.checked_model = Model()
+        self.ls_model = LSModel(unchecked_model)
+
+    def verify(self, cache: Cache, workers: int) -> None:
+        self.checked_model = Model()
+        self.checked_model = self.unchecked_model.checked(cache, workers=workers)
 
 
 class RecordFluxLanguageServer(LanguageServer):
@@ -115,19 +114,19 @@ class RecordFluxLanguageServer(LanguageServer):
     def __init__(self, workers: int = 1) -> None:
         super().__init__("RecordFlux Language Server", __version__)
         self.workers = workers
-        self.cache = Cache()
-        self._state: dict[Path, State] = defaultdict(State)
-        self._error: error.RecordFluxError
+        self._cache = Cache()
+        self._models: dict[Path, Models] = {}
         self._document_state: dict[str, int] = {}
+        self._error: error.RecordFluxError
 
     @property
-    def state(self) -> Mapping[Path, State]:
-        return self._state
+    def models(self) -> Mapping[Path, Models]:
+        return self._models
 
     def needs_update_for_document(self, document: TextDocumentItem) -> bool:
         return hash(document.text) != self._document_state.get(document.uri, None)
 
-    def update_model(self, document_uri: str) -> None:
+    def update(self, document_uri: str) -> None:
         token = str(uuid.uuid4())
         self.progress.create(token)
         self.progress.begin(
@@ -135,20 +134,9 @@ class RecordFluxLanguageServer(LanguageServer):
             WorkDoneProgressBegin(title="RecordFlux Update", percentage=0, cancellable=False),
         )
 
-        directory = Path(unquote(urlparse(document_uri).path)).parent
-
-        workspace_files = [
-            file
-            for folder_uri in list(self.workspace.folders)
-            for file in Path(unquote(urlparse(folder_uri).path)).rglob("*.rflx")
-            if file.is_file() and file.parent == directory
-        ]
-
-        if len(self.workspace.folders) == 0:
-            for document_uri in self.workspace.documents:
-                document_path = Path(unquote(urlparse(document_uri).path))
-                workspace_files.append(document_path)
-
+        document_path = Path(unquote(urlparse(document_uri).path))
+        directory = document_path.parent
+        workspace_files = self._workspace_files()
         parser = Parser(cached=True, workers=self.workers)
 
         self._error = error.RecordFluxError()
@@ -161,16 +149,15 @@ class RecordFluxLanguageServer(LanguageServer):
             except error.RecordFluxError as e:
                 self._error.extend(e)
 
-        self._state[directory].unchecked_model = parser.create_unchecked_model()
+        unchecked_model = parser.create_unchecked_model()
 
-        self._error.extend(self._state[directory].unchecked_model.error)
+        self._error.extend(unchecked_model.error)
 
         self._publish_errors_as_diagnostics(self._error)
         self._reset_diagnostics(
             set(workspace_files) - {e.location.source for e in self._error.errors if e.location},
         )
-
-        self._state[directory].model = LSModel(self._state[directory].unchecked_model)
+        self._models[directory] = Models(unchecked_model)
 
         self.progress.end(token, WorkDoneProgressEnd(message="RecordFlux Update Completed"))
 
@@ -184,13 +171,8 @@ class RecordFluxLanguageServer(LanguageServer):
 
         directory = Path(unquote(urlparse(document_uri).path)).parent
 
-        self._state[directory].checked_model = Model()
-
         try:
-            self._state[directory].checked_model = self._state[directory].unchecked_model.checked(
-                self.cache,
-                workers=self.workers,
-            )
+            self._models[directory].verify(self._cache, workers=self.workers)
         except error.RecordFluxError as e:
             self._error.extend(e)
 
@@ -214,6 +196,21 @@ class RecordFluxLanguageServer(LanguageServer):
     def _reset_diagnostics(self, files: Iterable[Path]) -> None:
         for f in files:
             self.publish_diagnostics(f.as_uri(), [])
+
+    def _workspace_files(self) -> list[Path]:
+        workspace_files = [
+            file
+            for folder_uri in list(self.workspace.folders)
+            for file in Path(unquote(urlparse(folder_uri).path)).rglob("*.rflx")
+            if file.is_file()
+        ]
+
+        if len(self.workspace.folders) == 0:
+            for document_uri in self.workspace.documents:
+                document_path = Path(unquote(urlparse(document_uri).path))
+                workspace_files.append(document_path)
+
+        return workspace_files
 
 
 # TODO(eng/recordflux/RecordFlux#1424): Use typing.ParamSpec instead of ... and object
@@ -258,7 +255,7 @@ def debounce(  # type: ignore[misc]
 
 @debounce(1, keyed_by="uri")
 def update_model_debounced(ls: RecordFluxLanguageServer, uri: str) -> None:
-    ls.update_model(uri)
+    ls.update(uri)
 
 
 @debounce(1, keyed_by="uri")
@@ -272,7 +269,7 @@ server = RecordFluxLanguageServer()
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls: RecordFluxLanguageServer, params: DidOpenTextDocumentParams) -> None:
     if ls.needs_update_for_document(params.text_document):
-        ls.update_model(params.text_document.uri)
+        ls.update(params.text_document.uri)
         ls.thread_pool_executor.submit(lambda: ls.verify(params.text_document.uri))
 
 
@@ -347,7 +344,7 @@ async def show_message_graph(ls: RecordFluxLanguageServer, parameters: list[obje
     assert isinstance(parameters[1], int)
 
     directory = Path(parameters[0])
-    message = ls.state[directory].checked_model.declarations[parameters[1]]
+    message = ls.models[directory].checked_model.declarations[parameters[1]]
 
     assert isinstance(message, Message)
 
@@ -361,9 +358,13 @@ async def show_message_graph(ls: RecordFluxLanguageServer, parameters: list[obje
 @server.feature(TEXT_DOCUMENT_CODE_LENS)
 async def code_lens(ls: RecordFluxLanguageServer, params: CodeLensParams) -> list[CodeLens]:
     directory = Path(unquote(urlparse(params.text_document.uri).path)).parent
+
+    if directory not in ls.models:
+        return []
+
     result: list[CodeLens] = []
 
-    for index, declaration in enumerate(ls.state[directory].checked_model.declarations):
+    for index, declaration in enumerate(ls.models[directory].checked_model.declarations):
         if not isinstance(declaration, Message):
             continue
 

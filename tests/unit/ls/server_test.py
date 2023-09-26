@@ -143,7 +143,7 @@ def test_to_lsp_severity_error() -> None:
         assert server.to_lsp_severity(None)  # type: ignore[arg-type]
 
 
-def test_update_model_directory(tmp_path: Path) -> None:
+def test_update_directory(tmp_path: Path) -> None:
     (tmp_path / "directory.rflx").mkdir()
 
     ls = server.RecordFluxLanguageServer()
@@ -153,10 +153,10 @@ def test_update_model_directory(tmp_path: Path) -> None:
         workspace_folders=[WorkspaceFolder(tmp_path.absolute().as_uri(), "tmp_path")],
     )  # type: ignore[no-untyped-call]
     document_uri = (tmp_path / "message.rflx").absolute().as_uri()
-    ls.update_model(document_uri)
+    ls.update(document_uri)
 
 
-def test_update_model_no_folders(tmp_path: Path) -> None:
+def test_update_no_folders(tmp_path: Path) -> None:
     document = tmp_path / "test.rflx"
     document.write_text("")
     document_uri = document.absolute().as_uri()
@@ -168,10 +168,10 @@ def test_update_model_no_folders(tmp_path: Path) -> None:
         workspace_folders=[],
     )  # type: ignore[no-untyped-call]
     ls.lsp.workspace.put_document(TextDocumentItem(document_uri, "", 0, ""))
-    ls.update_model(document_uri)
+    ls.update(document_uri)
 
 
-def test_update_model_error_in_parser(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_update_error_in_parser(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     published_diagnostics: list[tuple[str, list[Diagnostic]]] = []
     mock_publish_diagnostics(published_diagnostics, monkeypatch)
 
@@ -185,7 +185,7 @@ def test_update_model_error_in_parser(tmp_path: Path, monkeypatch: pytest.Monkey
         None,
         workspace_folders=[WorkspaceFolder(tmp_path.absolute().as_uri(), "tmp_path")],
     )  # type: ignore[no-untyped-call]
-    ls.update_model(document_uri)
+    ls.update(document_uri)
 
     assert published_diagnostics == [
         *(
@@ -205,7 +205,7 @@ def test_update_model_error_in_parser(tmp_path: Path, monkeypatch: pytest.Monkey
     ]
 
 
-def test_update_model_error_in_unchecked_model(
+def test_update_error_in_unchecked_model(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -222,7 +222,7 @@ def test_update_model_error_in_unchecked_model(
         None,
         workspace_folders=[WorkspaceFolder(tmp_path.absolute().as_uri(), "tmp_path")],
     )  # type: ignore[no-untyped-call]
-    ls.update_model(document_uri)
+    ls.update(document_uri)
 
     assert published_diagnostics == [
         (
@@ -254,7 +254,7 @@ def test_verify(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         None,
         workspace_folders=[WorkspaceFolder(tmp_path.absolute().as_uri(), "tmp_path")],
     )  # type: ignore[no-untyped-call]
-    ls.update_model(document_uri)
+    ls.update(document_uri)
     ls.verify(document_uri)
 
     assert published_diagnostics == [
@@ -315,17 +315,17 @@ async def test_did_open(
     language_server: server.RecordFluxLanguageServer,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    update_model_called = []
+    update_called = []
     verify_called = []
 
-    def update_model_mock(ls: server.RecordFluxLanguageServer, document_uri: str) -> None:
-        update_model_called.append(True)
+    def update_mock(ls: server.RecordFluxLanguageServer, document_uri: str) -> None:
+        update_called.append(True)
         ls._document_state[document_uri] = hash("text")  # noqa: SLF001
 
     monkeypatch.setattr(
         server.RecordFluxLanguageServer,
-        "update_model",
-        update_model_mock,
+        "update",
+        update_mock,
     )
     monkeypatch.setattr(  # pragma: no branch
         server.RecordFluxLanguageServer,
@@ -340,10 +340,10 @@ async def test_did_open(
         DidOpenTextDocumentParams(text_document),
     )
 
-    assert any(update_model_called)
+    assert any(update_called)
     assert any(verify_called)
 
-    update_model_called.clear()
+    update_called.clear()
     verify_called.clear()
 
     await server.did_open(
@@ -351,10 +351,10 @@ async def test_did_open(
         DidOpenTextDocumentParams(text_document),
     )
 
-    assert not any(update_model_called)
+    assert not any(update_called)
     assert not any(verify_called)
 
-    update_model_called.clear()
+    update_called.clear()
     verify_called.clear()
     text_document.text = "changed"
 
@@ -363,7 +363,7 @@ async def test_did_open(
         DidOpenTextDocumentParams(text_document),
     )
 
-    assert any(update_model_called)
+    assert any(update_called)
 
 
 @pytest.mark.asyncio()
@@ -371,12 +371,12 @@ async def test_did_save(
     language_server: server.RecordFluxLanguageServer,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    update_model_called = []
+    update_called = []
     verify_called = []
     monkeypatch.setattr(  # pragma: no branch
         server.RecordFluxLanguageServer,
-        "update_model",
-        lambda _ls, _document_uri: update_model_called.append(True),
+        "update",
+        lambda _ls, _document_uri: update_called.append(True),
     )
     monkeypatch.setattr(  # pragma: no branch
         server.RecordFluxLanguageServer,
@@ -395,7 +395,7 @@ async def test_did_save(
 
     await asyncio.sleep(2)  # Wait for debounce interval to elapse
 
-    assert len(update_model_called) == 1
+    assert len(update_called) == 1
     # TODO(eng/recordflux/RecordFlux#1425): Fix debouncing for optimized tests in CI
     # assert len(verify_called) == 1
 
@@ -405,12 +405,12 @@ async def test_did_change(
     language_server: server.RecordFluxLanguageServer,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    update_model_called = []
+    update_called = []
     verify_called = []
     monkeypatch.setattr(  # pragma: no branch
         server.RecordFluxLanguageServer,
-        "update_model",
-        lambda _ls, _document_uri: update_model_called.append(True),
+        "update",
+        lambda _ls, _document_uri: update_called.append(True),
     )
     monkeypatch.setattr(  # pragma: no branch
         server.RecordFluxLanguageServer,
@@ -429,7 +429,7 @@ async def test_did_change(
 
     await asyncio.sleep(2)  # Wait for debounce interval to elapse
 
-    assert len(update_model_called) == 1
+    assert len(update_called) == 1
     assert not verify_called
 
 
@@ -439,7 +439,7 @@ async def test_go_to_definition(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     document_uri = (DATA_DIR / "message.rflx").absolute().as_uri()
-    language_server.update_model(document_uri)
+    language_server.update(document_uri)
 
     positions: dict[tuple[int, int], Location] = {
         (19, 41): Location(
@@ -487,7 +487,7 @@ async def test_code_lens(language_server: server.RecordFluxLanguageServer) -> No
 
     assert await server.code_lens(language_server, params) == []
 
-    language_server.update_model(document_uri)
+    language_server.update(document_uri)
 
     assert await server.code_lens(language_server, params) == []
 
@@ -552,11 +552,13 @@ async def test_show_message_graph(
 
     document_uri = (DATA_DIR / "message.rflx").absolute().as_uri()
 
-    language_server.update_model(document_uri)
+    language_server.update(document_uri)
     language_server.verify(document_uri)
     index, identifier = next(  # pragma: no branch
         (i, d.identifier.name)
-        for i, d in enumerate(language_server.state[DATA_DIR.absolute()].checked_model.declarations)
+        for i, d in enumerate(
+            language_server.models[DATA_DIR.absolute()].checked_model.declarations,
+        )
         if isinstance(d, Message)
     )
     await server.show_message_graph(language_server, [str(DATA_DIR.absolute()), index])
@@ -568,7 +570,7 @@ async def test_show_message_graph(
 async def test_semantic_tokens(language_server: server.RecordFluxLanguageServer) -> None:
     document_uri = (DATA_DIR / "message.rflx").absolute().as_uri()
 
-    language_server.update_model(document_uri)
+    language_server.update(document_uri)
 
     params = SemanticTokensParams(
         TextDocumentIdentifier(document_uri),
