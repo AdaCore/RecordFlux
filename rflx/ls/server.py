@@ -120,7 +120,7 @@ class RecordFluxLanguageServer(LanguageServer):
         self.progress.create(token)
         self.progress.begin(
             token,
-            WorkDoneProgressBegin(title="Update", percentage=0, cancellable=False),
+            WorkDoneProgressBegin(title="RecordFlux Update", percentage=0, cancellable=False),
         )
 
         workspace_files = [
@@ -158,14 +158,14 @@ class RecordFluxLanguageServer(LanguageServer):
 
         self.model = LSModel(self.unchecked_model)
 
-        self.progress.end(token, WorkDoneProgressEnd(message="Completed"))
+        self.progress.end(token, WorkDoneProgressEnd(message="RecordFlux Update Completed"))
 
     def verify(self) -> None:
         token = str(uuid.uuid4())
         self.progress.create(token)
         self.progress.begin(
             token,
-            WorkDoneProgressBegin(title="Verification", percentage=0, cancellable=True),
+            WorkDoneProgressBegin(title="RecordFlux Verification", percentage=0, cancellable=True),
         )
 
         self.checked_model = Model()
@@ -177,7 +177,7 @@ class RecordFluxLanguageServer(LanguageServer):
 
         self._publish_errors_as_diagnostics(self._error)
 
-        self.progress.end(token, WorkDoneProgressEnd(message="Completed"))
+        self.progress.end(token, WorkDoneProgressEnd(message="RecordFlux Verification Completed"))
 
     def _publish_errors_as_diagnostics(self, errors: error.RecordFluxError) -> None:
         diagnostics = defaultdict(list)
