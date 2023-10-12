@@ -52,7 +52,7 @@ from rflx.model import (
 
 @lru_cache
 def null_message() -> Message:
-    return Message("Null::Message", [], {})
+    return Message("Null_Msg::Message", [], {})
 
 
 @lru_cache

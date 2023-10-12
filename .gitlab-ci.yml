@@ -7,7 +7,8 @@ variables:
    GNAT_VERSION: "23.2"
    GNAT_BUILD_DATE: "all"
    GNAT_PLATFORM: "x86_64-linux"
-   SPARK_BUILD_DATE: "20230905"
+   SPARK_VERSION: "24.0"
+   SPARK_BUILD_DATE: "all"
    PYTHON_VERSION: "3.10"
    NODE_VERSION: "20.5.1"
 
@@ -49,8 +50,11 @@ workflow:
     - *setup_gnat
 
 .setup_spark: &setup_spark
-    - anod install spark2014 --build-date $SPARK_BUILD_DATE
-    - eval `anod printenv spark2014`
+    - e3-cathod components --setup $SPARK_VERSION --build-date $SPARK_BUILD_DATE --platform $GNAT_PLATFORM --component spark2014 --download
+    - tar -xzf spark-pro-$SPARK_VERSION-$GNAT_PLATFORM-bin.tar.gz
+    - cd spark-pro-$SPARK_VERSION-$GNAT_PLATFORM-bin && ./doinstall $CI_PROJECT_DIR/spark-pro-$SPARK_VERSION-$GNAT_PLATFORM && cd ..
+    - export PATH=$CI_PROJECT_DIR/spark-pro-$SPARK_VERSION-$GNAT_PLATFORM/bin:$PATH
+    - gnatprove --version
 
 .setup_python_venv: &setup_python_venv
     - python$PYTHON_VERSION -m venv --clear .venv$PYTHON_VERSION

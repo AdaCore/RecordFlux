@@ -20,4 +20,7 @@ def test_provability(feature: str, tmp_path: Path) -> None:
         assert model.sessions[0].identifier == ID("Test::Session")
         units = ["main.adb", "lib.adb", "rflx-test-session.adb"]
         create_complement(config, feature, tmp_path)
-    assert_provable_code(model, integration, tmp_path, main=MAIN, units=[*units, *config.prove])
+        main = MAIN
+    else:
+        main = None
+    assert_provable_code(model, integration, tmp_path, main=main, units=[*units, *config.prove])
