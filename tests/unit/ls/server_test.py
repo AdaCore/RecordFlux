@@ -21,6 +21,7 @@ from lsprotocol.types import (
     SemanticTokensParams,
     TextDocumentIdentifier,
     TextDocumentItem,
+    TextDocumentSyncKind,
     VersionedTextDocumentIdentifier,
     WorkspaceFolder,
 )
@@ -62,11 +63,11 @@ VALID_LSP_TOKEN_CATEGORIES: Final = {
 @pytest.fixture()
 def language_server() -> server.RecordFluxLanguageServer:
     language_server = server.RecordFluxLanguageServer()
-    language_server.lsp.workspace = Workspace(
+    language_server.lsp._workspace = Workspace(  # noqa: SLF001
         DATA_DIR.absolute().as_uri(),
-        None,
+        TextDocumentSyncKind.None_,
         workspace_folders=[WorkspaceFolder(DATA_DIR.absolute().as_uri(), "data")],
-    )  # type: ignore[no-untyped-call]
+    )
     return language_server
 
 
@@ -147,11 +148,11 @@ def test_update_directory(tmp_path: Path) -> None:
     (tmp_path / "directory.rflx").mkdir()
 
     ls = server.RecordFluxLanguageServer()
-    ls.lsp.workspace = Workspace(
+    ls.lsp._workspace = Workspace(  # noqa: SLF001
         tmp_path.absolute().as_uri(),
-        None,
+        TextDocumentSyncKind.None_,
         workspace_folders=[WorkspaceFolder(tmp_path.absolute().as_uri(), "tmp_path")],
-    )  # type: ignore[no-untyped-call]
+    )
     document_uri = (tmp_path / "message.rflx").absolute().as_uri()
     ls.update(document_uri)
 
@@ -162,12 +163,14 @@ def test_update_no_folders(tmp_path: Path) -> None:
     document_uri = document.absolute().as_uri()
 
     ls = server.RecordFluxLanguageServer()
-    ls.lsp.workspace = Workspace(
+    ls.lsp._workspace = Workspace(  # noqa: SLF001
         tmp_path.absolute().as_uri(),
-        None,
+        TextDocumentSyncKind.None_,
         workspace_folders=[],
-    )  # type: ignore[no-untyped-call]
-    ls.lsp.workspace.put_document(TextDocumentItem(document_uri, "", 0, ""))
+    )
+    ls.lsp._workspace.put_document(  # type: ignore[no-untyped-call]  # noqa: SLF001
+        TextDocumentItem(document_uri, "", 0, ""),
+    )
     ls.update(document_uri)
 
 
@@ -180,11 +183,11 @@ def test_update_error_in_parser(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     document_uri = document.absolute().as_uri()
 
     ls = server.RecordFluxLanguageServer()
-    ls.lsp.workspace = Workspace(
+    ls.lsp._workspace = Workspace(  # noqa: SLF001
         tmp_path.absolute().as_uri(),
-        None,
+        TextDocumentSyncKind.None_,
         workspace_folders=[WorkspaceFolder(tmp_path.absolute().as_uri(), "tmp_path")],
-    )  # type: ignore[no-untyped-call]
+    )
     ls.update(document_uri)
 
     assert published_diagnostics == [
@@ -217,11 +220,11 @@ def test_update_error_in_unchecked_model(
     document_uri = document.absolute().as_uri()
 
     ls = server.RecordFluxLanguageServer()
-    ls.lsp.workspace = Workspace(
+    ls.lsp._workspace = Workspace(  # noqa: SLF001
         tmp_path.absolute().as_uri(),
-        None,
+        TextDocumentSyncKind.None_,
         workspace_folders=[WorkspaceFolder(tmp_path.absolute().as_uri(), "tmp_path")],
-    )  # type: ignore[no-untyped-call]
+    )
     ls.update(document_uri)
 
     assert published_diagnostics == [
@@ -249,11 +252,11 @@ def test_verify(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     document_uri = document.absolute().as_uri()
 
     ls = server.RecordFluxLanguageServer()
-    ls.lsp.workspace = Workspace(
+    ls.lsp._workspace = Workspace(  # noqa: SLF001
         tmp_path.absolute().as_uri(),
-        None,
+        TextDocumentSyncKind.None_,
         workspace_folders=[WorkspaceFolder(tmp_path.absolute().as_uri(), "tmp_path")],
-    )  # type: ignore[no-untyped-call]
+    )
     ls.update(document_uri)
     ls.verify(document_uri)
 

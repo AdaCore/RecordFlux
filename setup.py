@@ -91,7 +91,7 @@ setup(
         "importlib_resources >=6, <7",  # TODO(eng/recordflux/RecordFlux#1359): Remove
         "pydantic >=1, <2",
         "pydotplus >=2, <3",
-        "pygls >=1.0, <1.1",
+        "pygls >=1.1, <1.2",
         "ruamel.yaml >=0.17, <0.18",
         "z3-solver >=4, <5",
     ],

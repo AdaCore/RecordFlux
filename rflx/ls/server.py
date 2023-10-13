@@ -91,7 +91,7 @@ def to_lsp_severity(severity: error.Severity) -> Optional[DiagnosticSeverity]:
 
 
 def initialize_lexer(language_server: RecordFluxLanguageServer, uri: str) -> LSLexer:
-    document = language_server.workspace.get_document(uri)
+    document = language_server.workspace.get_text_document(uri)
     lexer = LSLexer(language_server.models[Path(document.path).parent].ls_model)
     lexer.tokenize(document.source, document.path)
     return lexer
@@ -142,7 +142,7 @@ class RecordFluxLanguageServer(LanguageServer):
         self._error = error.RecordFluxError()
 
         for path in workspace_files:
-            document = self.workspace.get_document(path.as_uri())
+            document = self.workspace.get_text_document(path.as_uri())
             self._document_state[document.uri] = hash(document.source)
             try:
                 parser.parse_string(document.source, path)
