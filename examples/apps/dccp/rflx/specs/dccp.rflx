@@ -1,0 +1,321 @@
+--  Datagram Congestion Control Protocol (DCCP)
+--  Written Specification: RFC 4340
+
+--  The DCCP message structure is as outlined below.
+--  The header ranges from 12 to 1020 bytes (up to Options, below).
+-- +---------------------------------------+  -.
+-- |            Generic Header             |   |
+-- +---------------------------------------+   |
+-- | Additional Fields (depending on type) |   +- DCCP Header
+-- +---------------------------------------+   |
+-- |          Options (optional)           |   |
+-- +=======================================+  -'
+-- |         Application Data Area         |
+-- +---------------------------------------+
+
+package DCCP is
+
+   type Port_Type is range 0 .. 2 ** 16 - 1 with Size => 16;
+
+   -- start offset at 3 since this is the smallest packet size possible
+   type Data_Offset_Type is range 3 .. 2 ** 8 - 1 with Size => 8;
+   type Checksum_Type is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type CCVal_Type is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type Checksum_Coverage_Type is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type Reserved_3_Type is range 0 .. 2 ** 3 - 1 with Size => 3;
+
+   type Type_Field is
+   (
+      DCCP_REQUEST => 0,
+      DCCP_RESPONSE => 1,
+      DCCP_DATA => 2,
+      DCCP_ACK => 3,
+      DCCP_DATA_ACK => 4,
+      DCCP_CLOSEREQ => 5,
+      DCCP_CLOSE => 6,
+      DCCP_RESET => 7,
+      DCCP_SYNC => 8,
+      DCCP_SYNCACK => 9
+   ) with Size => 4;
+
+   type CsCov_Type is range 0 .. 2 ** 4 - 1 with Size => 4;
+
+   type Ext_Seq_Type is
+   (
+      EXTENDED => 1,
+      NOT_EXTENDED => 0
+   ) with Size => 1;
+
+   type Sequence_Number_Long_Type is range 0 .. 2 ** 48 - 1 with Size => 48;
+   type Sequence_Number_Short_Type is range 0 .. 2 ** 24 - 1 with Size => 24;
+
+   type Reserved_8_Type is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Reserved_16_Type is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Ack_Number_Long_Type is range 0 .. 2 ** 48 - 1 with Size => 48;
+   type Ack_Number_Short_Type is range 0 .. 2 ** 24 - 1 with Size => 24;
+
+   type Service_Code_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
+
+   type Reset_Code_Type is
+   (
+      UNSPECIFIED => 0,
+      CLOSED => 1,
+      ABORTED => 2,
+      NO_CONNECTION => 3,
+      PACKET_ERROR => 4,
+      OPTION_ERROR => 5,
+      MANDATORY_ERROR => 6,
+      CONNECTION_REFUSED => 7,
+      BAD_SERVICE_CODE => 8,
+      TOO_BUSY => 9,
+      BAD_INIT_COOKIE => 10,
+      AGGRESSION_PENALTY => 11
+      --  12 - 127 is RESERVED
+      --  128 - 255 are CCID-specific codes
+   ) with Size => 8;
+
+   type Data_Type is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Opt_Type is
+   (
+      --  SINGLE-BYTE OPTIONS
+      PADDING => 0,
+      MANDATORY => 1,
+      SLOW_RECEIVER => 2,
+      --  3 - 31 are RESERVED
+
+      --  MULTI-BYTE OPTIONS (followed by length and, optionally, data)
+      CHANGE_L => 32,
+      CONFIRM_L => 33,
+      CHANGE_R => 34,
+      CONFIRM_R => 35,
+      INIT_COOKIE => 36,
+      NDP_COUNT => 37,
+      ACK_VECTOR_0 => 38,
+      ACK_VECTOR_1 => 39,
+      DATA_DROPPED => 40,
+      TIMESTAMP => 41,
+      TIMESTAMP_ECHO => 42,
+      ELAPSED_TIME => 43,
+      DATA_CHECKSUM => 44,
+      --  45 - 127 is RESERVED
+      --  128 - 255 are CCID-specific options
+      CCID3_LOSS_EVT_RATE => 192,
+      CCID3_RCV_RATE => 194
+   ) with Size => 8;
+
+   type Option_Length_Type is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Option_Feature_Type is
+   (
+      FEATURE_RESERVED => 0,
+      CCID => 1,
+      ALLOW_SHORT_SEQNOS => 2,
+      SEQUENCE_WINDOW => 3,
+      ECN_INCAPABLE => 4,
+      ACK_RATIO => 5,
+      SEND_ACK_VECTOR => 6,
+      SEND_NDP_COUNT => 7,
+      MINIMUM_CHECKSUM_COVERAGE => 8,
+      CHECK_DATA_CHECKSUM => 9
+      --  10 - 127 RESERVED
+      --  128 - 255 CCID-Specific Features
+   ) with Size => 8;
+
+   type Receive_Rate_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Loss_Rate_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Timestamp_Option_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Timestamp_Echo_Option_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
+
+   type Option is
+      message
+         --  *****************
+         --  OPTIONS SUBHEADER
+         --  *****************
+         Option_Type : Opt_Type
+            then Option_Length
+               if (Option_Type /= PADDING
+                  and Option_Type /= MANDATORY
+                  and Option_Type /= SLOW_RECEIVER)
+            then null
+               if (Option_Type = PADDING
+                  or Option_Type = MANDATORY
+                  or Option_Type = SLOW_RECEIVER);
+
+         Option_Length : Option_Length_Type
+            then Option_Feature
+               if (Option_Type = CHANGE_L
+                  or Option_Type = CHANGE_R
+                  or Option_Type = CONFIRM_L
+                  or Option_Type = CONFIRM_R)
+            then Timestamp_Option
+               if (Option_Type = TIMESTAMP)
+            then Timestamp_Echo_Opt
+               if (Option_Type = TIMESTAMP_ECHO)
+            then Receive_Rate
+               if (Option_Type = CCID3_RCV_RATE)
+            then Loss_Event_Rate
+               if (Option_Type = CCID3_LOSS_EVT_RATE)
+            then NDP_Count_Opt
+               with Size => ((Option_Length * 8) - 16)
+               if Option_Length >= 3 and Option_Type = NDP_COUNT
+            then Elapsed_Time_Opt
+               with Size => ((Option_Length * 8) - 16)
+               if Option_Length >= 4 and Option_Type = ELAPSED_TIME;
+
+         Option_Feature : Option_Feature_Type
+            then Option_Value
+               with Size => 8 --  at least 1 byte
+
+            then null
+               --  RFC 4340, Para 6.2:  Confirm options w/unk or invalid feature #s skip the Option_Value
+               if (Option_Type = CONFIRM_L or Option_Type = CONFIRM_R)
+                  --  invalid feature range (before/after)
+                  and (Option_Feature < FEATURE_RESERVED or Option_Feature > 255);
+
+         Option_Value : Opaque
+            then null;
+
+         Timestamp_Option : Timestamp_Option_Type
+            then null;
+
+         Receive_Rate : Receive_Rate_Type
+            then null;
+
+         Loss_Event_Rate : Loss_Rate_Type
+            then null;
+
+         NDP_Count_Opt : Opaque
+            then null;
+
+         Timestamp_Echo_Opt : Timestamp_Echo_Option_Type
+            then Elapsed_Time_Opt
+               with Size => ((Option_Length * 8) - 48)
+               if Option_Length >= 8 and Option_Type = TIMESTAMP_ECHO;
+
+         Elapsed_Time_Opt : Opaque;
+
+      end message;
+
+   type Options is sequence of Option;
+
+   --  RFC 4340, Para 5.1: Generic Header
+   type Packet is
+      message
+         --  **************
+         --  GENERIC HEADER
+         --  **************
+         Source_Port : Port_Type;
+         Destination_Port : Port_Type;
+         Data_Offset : Data_Offset_Type;
+         CCVal : CCVal_Type;
+         CsCov : Checksum_Coverage_Type;
+         Checksum : Checksum_Type;
+         Res_3 : Reserved_3_Type;
+         Packet_Type : Type_Field;
+
+         --  value for X determines whether to use long or short sequence
+         X : Ext_Seq_Type
+            then Res_8
+               if X = EXTENDED
+            then Sequence_Number_Short
+               if X = NOT_EXTENDED;
+
+         --  Only 'present' if X = EXTENDED
+         Res_8 : Reserved_8_Type;
+         Sequence_Number_Long : Sequence_Number_Long_Type
+            then Ack_Reserved_Long
+               if Packet_Type /= DCCP_DATA and Packet_Type /= DCCP_REQUEST
+            then Service_Code
+               if Packet_Type = DCCP_REQUEST
+            then Options
+               with Size => (Data_Offset * 32) - (Sequence_Number_Long'Last - Message'First + 1)
+               if Packet_Type = DCCP_DATA
+                  and ((Data_Offset * 32) > Sequence_Number_Long'Last - Message'First + 1)
+            then Data
+               if Packet_Type = DCCP_DATA
+                  and ((Data_Offset * 32) = Sequence_Number_Long'Last - Message'First + 1);
+
+         --  Only 'present' if X = NOT_EXTENDED
+         Sequence_Number_Short : Sequence_Number_Short_Type
+            then Ack_Reserved_Short
+               if Packet_Type /= DCCP_DATA and Packet_Type /= DCCP_REQUEST
+            then Options
+               with Size => (Data_Offset * 32) - (Sequence_Number_Short'Last - Message'First + 1)
+               if Packet_Type = DCCP_DATA
+                  and ((Data_Offset * 32) > Sequence_Number_Short'Last - Message'First + 1)
+            then Data
+               if Packet_Type = DCCP_DATA
+                  and ((Data_Offset * 32) = Sequence_Number_Short'Last - Message'First + 1);
+
+          --  *************************************************************
+          --  LONGER ACKNOWLEDGEMENT NUMBER SUBHEADER (when X = 1/EXTENDED)
+          --  *************************************************************
+         Ack_Reserved_Long : Reserved_16_Type;
+         Ack_Number_Long : Ack_Number_Long_Type
+            then Service_Code
+               if Packet_Type = DCCP_RESPONSE
+            then Reset_Code
+               if Packet_Type = DCCP_RESET
+            then Options
+               with Size => (Data_Offset * 32) - (Ack_Number_Long'Last - Message'First + 1)
+               if (Packet_Type = DCCP_ACK
+                  or Packet_Type = DCCP_DATA_ACK
+                  or Packet_Type = DCCP_CLOSE
+                  or Packet_Type = DCCP_CLOSEREQ
+                  or Packet_Type = DCCP_SYNC
+                  or Packet_Type = DCCP_SYNCACK)
+                  and ((Data_Offset * 32) > Ack_Number_Long'Last - Message'First + 1)
+            then Data
+               if (Packet_Type = DCCP_ACK
+                  or Packet_Type = DCCP_DATA_ACK
+                  or Packet_Type = DCCP_CLOSE
+                  or Packet_Type = DCCP_CLOSEREQ
+                  or Packet_Type = DCCP_SYNC
+                  or Packet_Type = DCCP_SYNCACK)
+                  and ((Data_Offset * 32) = Ack_Number_Long'Last - Message'First + 1);
+
+         --  ******************************************************************
+         --  SHORTER ACKNOWLEDGEMENT NUMBER SUBHEADER (when X = 0/NOT_EXTENDED)
+         --  ******************************************************************
+         Ack_Reserved_Short : Reserved_8_Type;
+         Ack_Number_Short : Ack_Number_Short_Type
+            then Options
+               with Size => (Data_Offset * 32) - (Ack_Number_Short'Last - Message'First + 1)
+               if (Packet_Type = DCCP_ACK
+                  or Packet_Type = DCCP_DATA_ACK
+                  or Packet_Type = DCCP_CLOSE
+                  or Packet_Type = DCCP_CLOSEREQ)
+                  and ((Data_Offset * 32) > Ack_Number_Short'Last - Message'First + 1)
+            then Data
+               if (Packet_Type = DCCP_ACK
+                  or Packet_Type = DCCP_DATA_ACK
+                  or Packet_Type = DCCP_CLOSE
+                  or Packet_Type = DCCP_CLOSEREQ)
+                  and ((Data_Offset * 32) = Ack_Number_Short'Last - Message'First + 1);
+
+          --  RFC 4340, Para 5.2:  DCCP-Request Packets (X=1)
+          Service_Code : Service_Code_Type
+            then Options
+               with Size => (Data_Offset * 32) - (Service_Code'Last - Message'First + 1)
+               if (Data_Offset * 32) > Service_Code'Last - Message'First + 1
+            then Data
+               if (Data_Offset * 32) = Service_Code'Last - Message'First + 1;
+
+         --  RFC 4340, Para 5.6:  DCCP-Reset Packets
+         Reset_Code : Reset_Code_Type;
+         Data_1 : Data_Type;
+         Data_2 : Data_Type;
+         Data_3 : Data_Type
+            then Options
+               with Size => (Data_Offset * 32) - (Data_3'Last - Message'First + 1)
+               if (Data_Offset * 32) > Data_3'Last - Message'First + 1
+            then Data
+               if (Data_Offset * 32) = Data_3'Last - Message'First + 1;
+
+         Options : Options;
+
+         Data : Opaque;
+
+      end message;
+
+end DCCP;
