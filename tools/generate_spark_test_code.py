@@ -47,7 +47,7 @@ def main() -> None:
 def generate_spark_tests() -> None:
     remove_ada_files(OUTPUT_DIRECTORY)
 
-    parser = Parser()
+    parser = Parser(cached=True)
     parser.parse(*SPECIFICATION_FILES)
     model = merge_models([parser.create_model(), *models.spark_test_models()])
     Generator(
@@ -85,7 +85,7 @@ def generate(feature_test: Path) -> None:
 
     remove_ada_files(output_directory)
 
-    parser = Parser()
+    parser = Parser(cached=True)
     parser.parse(feature_test / "test.rflx")
     Generator(
         "RFLX",
