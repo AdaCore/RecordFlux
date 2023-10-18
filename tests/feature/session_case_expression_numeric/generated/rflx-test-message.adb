@@ -184,10 +184,8 @@ is
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
        and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
-       and then (case Fld is
-                    when F_Value =>
-                       Get_Value (Ctx) = To_Actual (Val)
-                       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and then (Ctx.Cursors (Fld).Value = Val
+                 and then (if Fld in F_Value and then Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
    is
       First : RFLX_Types.Bit_Index;
       Last : RFLX_Types.Bit_Length;
@@ -224,10 +222,8 @@ is
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
-       and (case Fld is
-               when F_Value =>
-                  Get_Value (Ctx) = To_Actual (Val)
-                  and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (Ctx.Cursors (Fld).Value = Val
+            and then (if Fld in F_Value and then Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old

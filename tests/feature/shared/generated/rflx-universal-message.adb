@@ -320,54 +320,12 @@ is
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
        and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
-       and then (case Fld is
-                    when F_Message_Type =>
-                       Get_Message_Type (Ctx) = To_Actual (Val)
-                       and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
-                            then
-                               Valid_Next (Ctx, F_Data))
-                       and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-                               and then RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Null))
-                               and then RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
-                            then
-                               Valid_Next (Ctx, F_Length))
-                       and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-                            then
-                               Valid_Next (Ctx, F_Options))
-                       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
-                    when F_Length =>
-                       Get_Length (Ctx) = To_Actual (Val)
-                       and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
-                            then
-                               Valid_Next (Ctx, F_Data))
-                       and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Option_Types))
-                            then
-                               Valid_Next (Ctx, F_Option_Types))
-                       and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
-                            then
-                               Valid_Next (Ctx, F_Options))
-                       and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Value))
-                               and then RFLX_Types.Base_Integer (Get_Length (Ctx)) = Universal.Value'Size / 8
-                            then
-                               Valid_Next (Ctx, F_Value))
-                       and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values))
-                            then
-                               Valid_Next (Ctx, F_Values)),
-                    when F_Data | F_Option_Types | F_Options =>
-                       (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
-                    when F_Value =>
-                       Get_Value (Ctx) = To_Actual (Val)
-                       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
-                    when F_Values =>
-                       (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and then (Ctx.Cursors (Fld).Value = Val
+                 and then (if
+                              Fld in F_Data | F_Message_Type | F_Option_Types | F_Options | F_Value | F_Values
+                              and then Well_Formed_Message (Ctx)
+                           then
+                              Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and then (for all F in Field =>
                     (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
    is
@@ -407,54 +365,12 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
        and Invalid_Successor (Ctx, Fld)
-       and (case Fld is
-               when F_Message_Type =>
-                  Get_Message_Type (Ctx) = To_Actual (Val)
-                  and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
-                       then
-                          Valid_Next (Ctx, F_Data))
-                  and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-                          and then RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Null))
-                          and then RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
-                       then
-                          Valid_Next (Ctx, F_Length))
-                  and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-                       then
-                          Valid_Next (Ctx, F_Options))
-                  and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
-               when F_Length =>
-                  Get_Length (Ctx) = To_Actual (Val)
-                  and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
-                       then
-                          Valid_Next (Ctx, F_Data))
-                  and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Option_Types))
-                       then
-                          Valid_Next (Ctx, F_Option_Types))
-                  and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
-                       then
-                          Valid_Next (Ctx, F_Options))
-                  and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Value))
-                          and then RFLX_Types.Base_Integer (Get_Length (Ctx)) = Universal.Value'Size / 8
-                       then
-                          Valid_Next (Ctx, F_Value))
-                  and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Message_Type (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values))
-                       then
-                          Valid_Next (Ctx, F_Values)),
-               when F_Data | F_Option_Types | F_Options =>
-                  (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
-               when F_Value =>
-                  Get_Value (Ctx) = To_Actual (Val)
-                  and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
-               when F_Values =>
-                  (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (Ctx.Cursors (Fld).Value = Val
+            and then (if
+                         Fld in F_Data | F_Message_Type | F_Option_Types | F_Options | F_Value | F_Values
+                         and then Well_Formed_Message (Ctx)
+                      then
+                         Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and (for all F in Field =>
                (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

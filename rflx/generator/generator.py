@@ -678,7 +678,6 @@ class Generator:
             self._executor.submit(
                 serializer_generator.create_set_procedure,
                 message,
-                scalar_fields,
                 composite_fields,
             ),
             self._executor.submit(

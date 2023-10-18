@@ -235,12 +235,12 @@ is
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
        and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
-       and then (case Fld is
-                    when F_Length =>
-                       Get_Length (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Messages),
-                    when F_Messages =>
-                       (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and then (Ctx.Cursors (Fld).Value = Val
+                 and then (if
+                              Fld in F_Messages
+                              and then Well_Formed_Message (Ctx)
+                           then
+                              Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and then (for all F in Field =>
                     (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
    is
@@ -280,12 +280,12 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
        and Invalid_Successor (Ctx, Fld)
-       and (case Fld is
-               when F_Length =>
-                  Get_Length (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Messages),
-               when F_Messages =>
-                  (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (Ctx.Cursors (Fld).Value = Val
+            and then (if
+                         Fld in F_Messages
+                         and then Well_Formed_Message (Ctx)
+                      then
+                         Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and (for all F in Field =>
                (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

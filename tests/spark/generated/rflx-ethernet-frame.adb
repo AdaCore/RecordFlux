@@ -299,28 +299,12 @@ is
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
        and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
-       and then (case Fld is
-                    when F_Destination =>
-                       Get_Destination (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Source),
-                    when F_Source =>
-                       Get_Source (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Type_Length_TPID),
-                    when F_Type_Length_TPID =>
-                       Get_Type_Length_TPID (Ctx) = To_Actual (Val)
-                       and (if Get_Type_Length_TPID (Ctx) = 16#8100# then Valid_Next (Ctx, F_TPID))
-                       and (if Get_Type_Length_TPID (Ctx) /= 16#8100# then Valid_Next (Ctx, F_Type_Length)),
-                    when F_TPID =>
-                       Valid_Next (Ctx, F_TCI),
-                    when F_TCI =>
-                       Get_TCI (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Type_Length),
-                    when F_Type_Length =>
-                       Get_Type_Length (Ctx) = To_Actual (Val)
-                       and (if Get_Type_Length (Ctx) <= 1500 then Valid_Next (Ctx, F_Payload))
-                       and (if Get_Type_Length (Ctx) >= 1536 then Valid_Next (Ctx, F_Payload)),
-                    when F_Payload =>
-                       (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and then (Ctx.Cursors (Fld).Value = Val
+                 and then (if
+                              Fld in F_Payload
+                              and then Well_Formed_Message (Ctx)
+                           then
+                              Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and then (for all F in Field =>
                     (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
    is
@@ -360,28 +344,12 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
        and Invalid_Successor (Ctx, Fld)
-       and (case Fld is
-               when F_Destination =>
-                  Get_Destination (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Source),
-               when F_Source =>
-                  Get_Source (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Type_Length_TPID),
-               when F_Type_Length_TPID =>
-                  Get_Type_Length_TPID (Ctx) = To_Actual (Val)
-                  and (if Get_Type_Length_TPID (Ctx) = 16#8100# then Valid_Next (Ctx, F_TPID))
-                  and (if Get_Type_Length_TPID (Ctx) /= 16#8100# then Valid_Next (Ctx, F_Type_Length)),
-               when F_TPID =>
-                  Valid_Next (Ctx, F_TCI),
-               when F_TCI =>
-                  Get_TCI (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Type_Length),
-               when F_Type_Length =>
-                  Get_Type_Length (Ctx) = To_Actual (Val)
-                  and (if Get_Type_Length (Ctx) <= 1500 then Valid_Next (Ctx, F_Payload))
-                  and (if Get_Type_Length (Ctx) >= 1536 then Valid_Next (Ctx, F_Payload)),
-               when F_Payload =>
-                  (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (Ctx.Cursors (Fld).Value = Val
+            and then (if
+                         Fld in F_Payload
+                         and then Well_Formed_Message (Ctx)
+                      then
+                         Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and (for all F in Field =>
                (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

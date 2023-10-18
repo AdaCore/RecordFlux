@@ -264,21 +264,12 @@ is
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
        and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
-       and then (case Fld is
-                    when F_Source_Port =>
-                       Get_Source_Port (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Destination_Port),
-                    when F_Destination_Port =>
-                       Get_Destination_Port (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Length),
-                    when F_Length =>
-                       Get_Length (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Checksum),
-                    when F_Checksum =>
-                       Get_Checksum (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Payload),
-                    when F_Payload =>
-                       (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and then (Ctx.Cursors (Fld).Value = Val
+                 and then (if
+                              Fld in F_Payload
+                              and then Well_Formed_Message (Ctx)
+                           then
+                              Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and then (for all F in Field =>
                     (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
    is
@@ -318,21 +309,12 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
        and Invalid_Successor (Ctx, Fld)
-       and (case Fld is
-               when F_Source_Port =>
-                  Get_Source_Port (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Destination_Port),
-               when F_Destination_Port =>
-                  Get_Destination_Port (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Length),
-               when F_Length =>
-                  Get_Length (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Checksum),
-               when F_Checksum =>
-                  Get_Checksum (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Payload),
-               when F_Payload =>
-                  (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (Ctx.Cursors (Fld).Value = Val
+            and then (if
+                         Fld in F_Payload
+                         and then Well_Formed_Message (Ctx)
+                      then
+                         Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and (for all F in Field =>
                (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

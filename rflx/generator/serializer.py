@@ -14,7 +14,6 @@ from rflx.ada import (
     Assignment,
     Call,
     CallStatement,
-    Case,
     ChoiceList,
     Constrained,
     Div,
@@ -219,7 +218,6 @@ class SerializerGenerator:
     def create_set_procedure(
         self,
         message: Message,
-        scalar_fields: Mapping[Field, Scalar],
         composite_fields: list[Field],
     ) -> UnitPart:
         if not self.requires_set_procedure(message):
@@ -490,7 +488,7 @@ class SerializerGenerator:
                                     ],
                                     Call("Well_Formed", [Variable("Ctx"), Variable("Fld")]),
                                 ),
-                                self.scalar_setter_and_getter_relation(message, scalar_fields),
+                                self.scalar_setter_and_getter_relation(message),
                                 *(
                                     [
                                         common.unchanged_cursor_before_or_invalid(
@@ -815,7 +813,7 @@ class SerializerGenerator:
                                     if len(message.fields) > 1
                                     else []
                                 ),
-                                self.scalar_setter_and_getter_relation(message, scalar_fields),
+                                self.scalar_setter_and_getter_relation(message),
                                 *(
                                     [
                                         common.unchanged_cursor_before_or_invalid(
@@ -1740,64 +1738,52 @@ class SerializerGenerator:
     def scalar_setter_and_getter_relation(
         self,
         message: Message,
-        scalar_fields: Mapping[Field, Scalar],
     ) -> Expr:
-        return Case(
-            Variable("Fld"),
-            [
-                (
-                    Variable(f.affixed_name),
-                    And(
-                        *(
-                            [
-                                Equal(
-                                    Call(
-                                        f"Get_{f.name}",
-                                        [Variable("Ctx")],
-                                    ),
-                                    Call(
-                                        "To_Actual",
-                                        [Variable("Val")],
-                                    ),
-                                ),
-                            ]
-                            if f in scalar_fields and int(scalar_fields[f].value_count) > 1
-                            else []
-                        ),
-                        *common.valid_path_to_next_field_condition(message, f, self.prefix),
-                        *(
-                            [
-                                If(
-                                    [
-                                        (
-                                            Call(
-                                                "Well_Formed_Message",
-                                                [Variable("Ctx")],
-                                            ),
-                                            Equal(
-                                                Call(
-                                                    "Message_Last",
-                                                    [Variable("Ctx")],
-                                                ),
-                                                Call(
-                                                    "Field_Last",
-                                                    [
-                                                        Variable("Ctx"),
-                                                        Variable("Fld"),
-                                                    ],
-                                                ),
-                                            ),
-                                        ),
+        return AndThen(
+            Equal(
+                Selected(
+                    Indexed(
+                        Selected(Variable("Ctx"), "Cursors"),
+                        Variable("Fld"),
+                    ),
+                    "Value",
+                ),
+                Variable("Val"),
+            ),
+            If(
+                [
+                    (
+                        AndThen(
+                            In(
+                                Variable("Fld"),
+                                ChoiceList(
+                                    *[
+                                        Variable(f.affixed_name)
+                                        for f in message.direct_predecessors(FINAL)
                                     ],
                                 ),
-                            ]
-                            if f in message.direct_predecessors(FINAL)
-                            else []
+                            ),
+                            Call(
+                                "Well_Formed_Message",
+                                [Variable("Ctx")],
+                            ),
+                        ),
+                        Equal(
+                            Call(
+                                "Message_Last",
+                                [Variable("Ctx")],
+                            ),
+                            Call(
+                                "Field_Last",
+                                [
+                                    Variable("Ctx"),
+                                    Variable("Fld"),
+                                ],
+                            ),
                         ),
                     ),
-                )
-                for f in message.fields
-            ],
+                ],
+            ),
         )
 
     @staticmethod

@@ -338,61 +338,12 @@ is
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
        and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
-       and then (case Fld is
-                    when F_Version =>
-                       Valid_Next (Ctx, F_IHL),
-                    when F_IHL =>
-                       Get_IHL (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_DSCP),
-                    when F_DSCP =>
-                       Get_DSCP (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_ECN),
-                    when F_ECN =>
-                       Get_ECN (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Total_Length),
-                    when F_Total_Length =>
-                       Get_Total_Length (Ctx) = To_Actual (Val)
-                       and (if
-                               RFLX_Types.Base_Integer (Get_Total_Length (Ctx)) >= RFLX_Types.Base_Integer (Get_IHL (Ctx)) * 4
-                            then
-                               Valid_Next (Ctx, F_Identification)),
-                    when F_Identification =>
-                       Get_Identification (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Flag_R),
-                    when F_Flag_R =>
-                       Get_Flag_R (Ctx) = To_Actual (Val)
-                       and (if
-                               RFLX_Types.Base_Integer (To_Base_Integer (Get_Flag_R (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (False))
-                            then
-                               Valid_Next (Ctx, F_Flag_DF)),
-                    when F_Flag_DF =>
-                       Get_Flag_DF (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Flag_MF),
-                    when F_Flag_MF =>
-                       Get_Flag_MF (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Fragment_Offset),
-                    when F_Fragment_Offset =>
-                       Get_Fragment_Offset (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_TTL),
-                    when F_TTL =>
-                       Get_TTL (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Protocol),
-                    when F_Protocol =>
-                       Get_Protocol (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Header_Checksum),
-                    when F_Header_Checksum =>
-                       Get_Header_Checksum (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Source),
-                    when F_Source =>
-                       Get_Source (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Destination),
-                    when F_Destination =>
-                       Get_Destination (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Options),
-                    when F_Options =>
-                       Valid_Next (Ctx, F_Payload),
-                    when F_Payload =>
-                       (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and then (Ctx.Cursors (Fld).Value = Val
+                 and then (if
+                              Fld in F_Payload
+                              and then Well_Formed_Message (Ctx)
+                           then
+                              Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and then (for all F in Field =>
                     (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
    is
@@ -432,61 +383,12 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
        and Invalid_Successor (Ctx, Fld)
-       and (case Fld is
-               when F_Version =>
-                  Valid_Next (Ctx, F_IHL),
-               when F_IHL =>
-                  Get_IHL (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_DSCP),
-               when F_DSCP =>
-                  Get_DSCP (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_ECN),
-               when F_ECN =>
-                  Get_ECN (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Total_Length),
-               when F_Total_Length =>
-                  Get_Total_Length (Ctx) = To_Actual (Val)
-                  and (if
-                          RFLX_Types.Base_Integer (Get_Total_Length (Ctx)) >= RFLX_Types.Base_Integer (Get_IHL (Ctx)) * 4
-                       then
-                          Valid_Next (Ctx, F_Identification)),
-               when F_Identification =>
-                  Get_Identification (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Flag_R),
-               when F_Flag_R =>
-                  Get_Flag_R (Ctx) = To_Actual (Val)
-                  and (if
-                          RFLX_Types.Base_Integer (To_Base_Integer (Get_Flag_R (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (False))
-                       then
-                          Valid_Next (Ctx, F_Flag_DF)),
-               when F_Flag_DF =>
-                  Get_Flag_DF (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Flag_MF),
-               when F_Flag_MF =>
-                  Get_Flag_MF (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Fragment_Offset),
-               when F_Fragment_Offset =>
-                  Get_Fragment_Offset (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_TTL),
-               when F_TTL =>
-                  Get_TTL (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Protocol),
-               when F_Protocol =>
-                  Get_Protocol (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Header_Checksum),
-               when F_Header_Checksum =>
-                  Get_Header_Checksum (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Source),
-               when F_Source =>
-                  Get_Source (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Destination),
-               when F_Destination =>
-                  Get_Destination (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Options),
-               when F_Options =>
-                  Valid_Next (Ctx, F_Payload),
-               when F_Payload =>
-                  (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (Ctx.Cursors (Fld).Value = Val
+            and then (if
+                         Fld in F_Payload
+                         and then Well_Formed_Message (Ctx)
+                      then
+                         Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and (for all F in Field =>
                (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old

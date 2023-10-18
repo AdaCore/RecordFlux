@@ -300,36 +300,12 @@ is
        and then Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and then Sufficient_Space (Ctx, Fld)
        and then (if State_Valid and Size > 0 then Valid (Ctx, Fld) else Well_Formed (Ctx, Fld))
-       and then (case Fld is
-                    when F_Copied =>
-                       Get_Copied (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Option_Class),
-                    when F_Option_Class =>
-                       Get_Option_Class (Ctx) = To_Actual (Val)
-                       and Valid_Next (Ctx, F_Option_Number),
-                    when F_Option_Number =>
-                       Get_Option_Number (Ctx) = To_Actual (Val)
-                       and (if Get_Option_Number (Ctx) > 1 then Valid_Next (Ctx, F_Option_Length))
-                       and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
-                    when F_Option_Length =>
-                       Get_Option_Length (Ctx) = To_Actual (Val)
-                       and (if
-                               (RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
-                                and then Get_Option_Number (Ctx) = 4)
-                               or else (RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                        and then (Get_Option_Number (Ctx) = 9
-                                                  or else Get_Option_Number (Ctx) = 3
-                                                  or else Get_Option_Number (Ctx) = 7))
-                               or else (Get_Option_Length (Ctx) = 11
-                                        and then RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                        and then Get_Option_Number (Ctx) = 2)
-                               or else (Get_Option_Length (Ctx) = 4
-                                        and then RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                        and then Get_Option_Number (Ctx) = 8)
-                            then
-                               Valid_Next (Ctx, F_Option_Data)),
-                    when F_Option_Data =>
-                       (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and then (Ctx.Cursors (Fld).Value = Val
+                 and then (if
+                              Fld in F_Option_Data | F_Option_Number
+                              and then Well_Formed_Message (Ctx)
+                           then
+                              Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and then (for all F in Field =>
                     (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
    is
@@ -369,36 +345,12 @@ is
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
        and Invalid_Successor (Ctx, Fld)
-       and (case Fld is
-               when F_Copied =>
-                  Get_Copied (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Option_Class),
-               when F_Option_Class =>
-                  Get_Option_Class (Ctx) = To_Actual (Val)
-                  and Valid_Next (Ctx, F_Option_Number),
-               when F_Option_Number =>
-                  Get_Option_Number (Ctx) = To_Actual (Val)
-                  and (if Get_Option_Number (Ctx) > 1 then Valid_Next (Ctx, F_Option_Length))
-                  and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)),
-               when F_Option_Length =>
-                  Get_Option_Length (Ctx) = To_Actual (Val)
-                  and (if
-                          (RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
-                           and then Get_Option_Number (Ctx) = 4)
-                          or else (RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                   and then (Get_Option_Number (Ctx) = 9
-                                             or else Get_Option_Number (Ctx) = 3
-                                             or else Get_Option_Number (Ctx) = 7))
-                          or else (Get_Option_Length (Ctx) = 11
-                                   and then RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                   and then Get_Option_Number (Ctx) = 2)
-                          or else (Get_Option_Length (Ctx) = 4
-                                   and then RFLX_Types.Base_Integer (To_Base_Integer (Get_Option_Class (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                   and then Get_Option_Number (Ctx) = 8)
-                       then
-                          Valid_Next (Ctx, F_Option_Data)),
-               when F_Option_Data =>
-                  (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, Fld)))
+       and (Ctx.Cursors (Fld).Value = Val
+            and then (if
+                         Fld in F_Option_Data | F_Option_Number
+                         and then Well_Formed_Message (Ctx)
+                      then
+                         Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and (for all F in Field =>
                (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
