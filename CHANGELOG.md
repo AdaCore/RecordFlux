@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for SPARK Pro 24.0 (eng/recordflux/RecordFlux#1409)
 
+### Fixed
+
+- User defined `GNATCOLL_ICONV_OPT` environment variable is ignored (AdaCore/RecordFlux#1289, eng/recordflux/RecordFlux#1437)
+
 ### Removed
 
 - Support for SPARK Pro Wavefront 20230905 (eng/recordflux/RecordFlux#1409)

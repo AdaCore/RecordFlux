@@ -27,7 +27,8 @@ class BuildParser(bdist_wheel):  # type: ignore[misc]
                 "generated/adasat",
             ],
         )
-        env["GNATCOLL_ICONV_OPT"] = "-v"
+        if "GNATCOLL_ICONV_OPT" not in env:
+            env["GNATCOLL_ICONV_OPT"] = "-v"
         subprocess.run(
             [
                 "gprbuild",
