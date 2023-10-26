@@ -360,10 +360,12 @@ verification_apps:
       - APP:
         - "ping"
         - "dhcp_client"
+        - "spdm_responder"
   script:
     - *update_timestamps_of_generated_code
     - *setup_gnat
     - *setup_spark
+    - *setup_gnat_cross
     - *setup_python
     - timeout -k 60 27600 make -C examples/apps/${APP} prove
   cache:
