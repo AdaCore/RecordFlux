@@ -120,7 +120,7 @@ def test_invalid_ada_api_style() -> None:
         CheckDocError,
         match=(
             r"^<stdin>:5: error in code block\n"
-            r"main.adb:2:25: \(style\) space required\n"
+            r"main.adb:2:25: \(style\) space required( \[-gnatyt\])?\n"
             r"(gprbuild: [*][*][*] compilation phase failed\n)?$"
         ),
     ):
