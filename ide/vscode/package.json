@@ -25,12 +25,6 @@
 	},
 	"main": "./out/extension",
 	"contributes": {
-		"commands": [
-			{
-				"command": "languageServerExample.test_recordflux_lsp",
-				"title": "RecordFlux LSP test"
-			}
-		],
 		"languages": [
 			{
 				"id": "recordflux",
@@ -51,51 +45,7 @@
 				"scopeName": "source.recordflux",
 				"path": "./syntax/recordflux.tmLanguage.json"
 			}
-		],
-		"configuration": {
-			"type": "object",
-			"title": "Example configuration",
-			"properties": {
-				"languageServerExample.maxNumberOfProblems": {
-					"scope": "resource",
-					"type": "number",
-					"default": 100,
-					"description": "Controls the maximum number of problems produced by the server."
-				},
-				"languageServerExample.port": {
-					"type": "number",
-					"default": 7000,
-					"scope": "window",
-					"description": "The WebSocket port to stream LSP log data into."
-				},
-				"languageServerExample.trace.server": {
-					"scope": "window",
-					"type": "object",
-					"description": "Traces the communication between VS Code and the language server.",
-					"properties": {
-						"verbosity": {
-							"type": "string",
-							"description": "Controls the verbosity of the trace.",
-							"enum": [
-								"off",
-								"message",
-								"verbose"
-							],
-							"default": "verbose"
-						},
-						"format": {
-							"type": "string",
-							"description": "Controls the output format of the trace.",
-							"enum": [
-								"text",
-								"json"
-							],
-							"default": "json"
-						}
-					}
-				}
-			}
-		}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
