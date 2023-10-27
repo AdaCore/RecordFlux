@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - User defined `GNATCOLL_ICONV_OPT` environment variable is ignored (AdaCore/RecordFlux#1289, eng/recordflux/RecordFlux#1437)
+- Fix fatal errors caused by condition on message type field (AdaCore/RecordFlux#1291, eng/recordflux/RecordFlux#1438)
 
 ### Removed
 

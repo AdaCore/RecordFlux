@@ -2549,7 +2549,12 @@ class UncheckedMessage(mty.UncheckedType):
             if not inner_message:
                 return message
 
-            message = self._merge_inner_message(message, *inner_message, message_arguments)
+            message = self._merge_inner_message(
+                message,
+                *inner_message,
+                message_arguments,
+                declarations,
+            )
 
     def _check_message_arguments(
         self,
@@ -2604,6 +2609,7 @@ class UncheckedMessage(mty.UncheckedType):
         field: Field,
         inner_message: Message,
         message_arguments: Mapping[ID, Mapping[ID, expr.Expr]],
+        declarations: Sequence[TopLevelDeclaration],
     ) -> UncheckedMessage:
         inner_message = self._replace_message_attributes(inner_message.prefixed(f"{field.name}_"))
 
@@ -2616,16 +2622,35 @@ class UncheckedMessage(mty.UncheckedType):
             else {}
         )
         structure = []
+        message_types = message.types(declarations)
+        message_dependencies = _dependencies(message_types)
+        message_unqualified_enum_literals = mty.unqualified_enum_literals(
+            message_dependencies,
+            message.package,
+        )
+        message_qualified_enum_literals = mty.qualified_enum_literals(message_dependencies)
+        message_qualified_type_names = mty.qualified_type_names(message_dependencies)
         inner_message_types = inner_message.types
-        dependencies = _dependencies(inner_message_types)
-        inner_message_qualified_enum_literals = mty.qualified_enum_literals(dependencies)
-        inner_message_qualified_type_names = mty.qualified_type_names(dependencies)
+        inner_message_dependencies = _dependencies(inner_message_types)
+        inner_message_qualified_enum_literals = mty.qualified_enum_literals(
+            inner_message_dependencies,
+        )
+        inner_message_qualified_type_names = mty.qualified_type_names(inner_message_dependencies)
+
+        def substitute_message_variables(expression: expr.Expr) -> expr.Expr:
+            return substitute_variables(
+                expression,
+                message_unqualified_enum_literals,
+                message_qualified_enum_literals,
+                message_qualified_type_names,
+                message.package,
+            )
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
             return typed_expression(
                 expression,
-                inner_message_types,
-                inner_message_qualified_enum_literals,
+                {**message_types, **inner_message_types},
+                {**message_qualified_enum_literals, **inner_message_qualified_enum_literals},
                 inner_message_qualified_type_names,
             )
 
@@ -2655,8 +2680,10 @@ class UncheckedMessage(mty.UncheckedType):
                                 final_link.condition,
                             )
                             .substituted(mapping=substitution)
+                            .substituted(substitute_message_variables)
                             .substituted(typed_variable)
                         )
+                        merged_condition.check_type(rty.Any()).propagate()
                         proof = merged_condition.check(
                             [
                                 *message_constraints(),

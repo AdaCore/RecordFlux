@@ -3771,7 +3771,7 @@ def test_merge_message_complex() -> None:
 def test_merge_message_recursive() -> None:
     assert_equal(
         deepcopy(M_DBL_REF).merged(
-            [models.integer(), models.enumeration(), msg_no_ref(), msg_smpl_ref()],
+            [OPAQUE, models.integer(), models.enumeration(), msg_no_ref(), msg_smpl_ref()],
         ),
         UncheckedMessage(
             ID("P::Dbl_Ref"),
@@ -4425,6 +4425,120 @@ def test_merge_message_type_message_size_attribute_in_outer_message() -> None:
     )
 
     assert outer.checked([OPAQUE, inner]) == expected
+
+
+def test_merge_message_with_condition_on_message_type_field() -> None:
+    inner = Message(
+        ID("P::I"),
+        [
+            Link(
+                INITIAL,
+                Field("I"),
+                size=Number(128),
+            ),
+            Link(
+                Field("I"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("I"): OPAQUE,
+        },
+    )
+
+    enumeration = Enumeration(
+        "P::Enumeration",
+        [("E1", Number(1)), ("E2", Number(2)), ("E3", Number(3))],
+        Number(8),
+        always_valid=False,
+    )
+    padding = Integer("P::Padding", Number(0), Number(0), Number(7))
+
+    outer = UncheckedMessage(
+        ID("P::O"),
+        [
+            Link(INITIAL, Field("Flag")),
+            Link(Field("Flag"), Field("Padding")),
+            Link(Field("Padding"), Field("Payload")),
+            Link(
+                Field("Payload"),
+                FINAL,
+                condition=And(
+                    Equal(Variable("Flag"), TRUE),
+                    Equal(Variable("Parameter"), Variable("E1")),
+                ),
+            ),
+        ],
+        [
+            (Field("Parameter"), enumeration.identifier, []),
+        ],
+        [
+            (Field("Flag"), BOOLEAN.identifier, []),
+            (Field("Padding"), padding.identifier, []),
+            (Field("Payload"), inner.identifier, []),
+        ],
+    )
+
+    expected = Message(
+        ID("P::O"),
+        [
+            Link(INITIAL, Field("Flag")),
+            Link(Field("Flag"), Field("Padding")),
+            Link(Field("Padding"), Field("Payload_I"), size=Number(128)),
+            Link(
+                Field("Payload_I"),
+                FINAL,
+                condition=And(
+                    Equal(Variable("Flag"), TRUE),
+                    Equal(Variable("Parameter"), Literal("P::E1")),
+                ),
+            ),
+        ],
+        {
+            Field("Parameter"): enumeration,
+            Field("Flag"): BOOLEAN,
+            Field("Padding"): padding,
+            Field("Payload_I"): OPAQUE,
+        },
+    )
+
+    assert outer.checked([BOOLEAN, OPAQUE, enumeration, padding, inner]) == expected
+
+
+def test_merge_message_with_illegal_condition_on_message_type_field() -> None:
+    inner = Message(
+        ID("P::I"),
+        [
+            Link(INITIAL, Field("I")),
+            Link(Field("I"), FINAL),
+        ],
+        {
+            Field("I"): models.integer(),
+        },
+    )
+
+    outer = UncheckedMessage(
+        ID("P::O"),
+        [
+            Link(INITIAL, Field("O")),
+            Link(Field("O"), FINAL, condition=Equal(TRUE, Number(1, location=Location((1, 2))))),
+        ],
+        [],
+        [
+            (Field("O"), inner.identifier, []),
+        ],
+    )
+
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            "^"
+            '<stdin>:1:2: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+            r"<stdin>:1:2: model: info: found type universal integer \(1\)"
+            "$"
+        ),
+    ):
+        outer.checked([inner])
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
