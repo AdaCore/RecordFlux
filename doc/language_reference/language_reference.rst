@@ -268,7 +268,7 @@ A type refinement describes under which condition a specific message can be expe
 Only fields of type ``Opaque`` can be refined.
 Types defined in other packages are referenced by a qualified name in the form ``Package_Name::Message_Type_Name``.
 The condition can refer to fields of the refined type.
-To indicate that a refined field is empty (i.e. does not exit) under a certain condition, a null message can be used as message type.
+To indicate that a refined field is empty (i.e. does not exist) under a certain condition, a null message can be used as message type.
 
 **Example**
 
