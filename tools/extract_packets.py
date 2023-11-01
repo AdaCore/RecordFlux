@@ -4,6 +4,7 @@
 Extract all packets of a specified protocol layer from a PCAP file.
 
 The byte representation of each packet is written into a separate file.
+For more information run this script with the -h option.
 """
 
 from __future__ import annotations
@@ -29,7 +30,23 @@ def main(argv: Sequence[str]) -> Union[bool, str]:
         for c in pyclbr.readmodule(f"scapy.layers.{p.name}")
     ]
 
-    arg_parser = argparse.ArgumentParser()
+    arg_parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""
+Extract all packets of a specified protocol layer from a PCAP file.
+
+The PCAP file contains a capture of several networks packets with metadata. See
+https://en.wikipedia.org/wiki/Pcap and
+https://datatracker.ietf.org/doc/draft-ietf-opsawg-pcap for more information on
+the file format.
+
+The current script can be used to (a) split the capture into individual packets
+and (b) extract only the sub-packets from a given layer. The byte
+representation of each extracted packet is written into a separate file.
+
+The script is based on Scapy https://scapy.net/.
+""",
+    )
     arg_parser.add_argument(
         "-l",
         "--layers",
