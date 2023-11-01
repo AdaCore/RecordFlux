@@ -988,6 +988,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Seq_Ctx.First = Seq_Ctx.First'Old
        and Seq_Ctx.Last = Seq_Ctx.Last'Old
+       and RFLX.Universal.Option_Types.Valid (Seq_Ctx) = RFLX.Universal.Option_Types.Valid (Seq_Ctx)'Old
+       and RFLX.Universal.Option_Types.Size (Seq_Ctx) = RFLX.Universal.Option_Types.Size (Seq_Ctx)'Old
        and Field_First (Ctx, F_Option_Types) = Field_First (Ctx, F_Option_Types)'Old
        and Field_Size (Ctx, F_Option_Types) = Field_Size (Ctx, F_Option_Types)'Old
        and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old
@@ -1024,6 +1026,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Seq_Ctx.First = Seq_Ctx.First'Old
        and Seq_Ctx.Last = Seq_Ctx.Last'Old
+       and RFLX.Universal.Options.Valid (Seq_Ctx) = RFLX.Universal.Options.Valid (Seq_Ctx)'Old
+       and RFLX.Universal.Options.Size (Seq_Ctx) = RFLX.Universal.Options.Size (Seq_Ctx)'Old
        and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
        and Field_Size (Ctx, F_Options) = Field_Size (Ctx, F_Options)'Old
        and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old
@@ -1057,6 +1061,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Seq_Ctx.First = Seq_Ctx.First'Old
        and Seq_Ctx.Last = Seq_Ctx.Last'Old
+       and RFLX.Universal.Values.Valid (Seq_Ctx) = RFLX.Universal.Values.Valid (Seq_Ctx)'Old
+       and RFLX.Universal.Values.Size (Seq_Ctx) = RFLX.Universal.Values.Size (Seq_Ctx)'Old
        and Field_First (Ctx, F_Values) = Field_First (Ctx, F_Values)'Old
        and Field_Size (Ctx, F_Values) = Field_Size (Ctx, F_Values)'Old
        and Context_Cursor (Ctx, F_Message_Type) = Context_Cursor (Ctx, F_Message_Type)'Old

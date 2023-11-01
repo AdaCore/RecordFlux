@@ -526,6 +526,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Seq_Ctx.First = Seq_Ctx.First'Old
        and Seq_Ctx.Last = Seq_Ctx.Last'Old
+       and RFLX.Sequence.Inner_Messages.Valid (Seq_Ctx) = RFLX.Sequence.Inner_Messages.Valid (Seq_Ctx)'Old
+       and RFLX.Sequence.Inner_Messages.Size (Seq_Ctx) = RFLX.Sequence.Inner_Messages.Size (Seq_Ctx)'Old
        and Field_First (Ctx, F_Messages) = Field_First (Ctx, F_Messages)'Old
        and Field_Size (Ctx, F_Messages) = Field_Size (Ctx, F_Messages)'Old
        and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old,

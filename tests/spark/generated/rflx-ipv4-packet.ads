@@ -1345,6 +1345,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Seq_Ctx.First = Seq_Ctx.First'Old
        and Seq_Ctx.Last = Seq_Ctx.Last'Old
+       and RFLX.IPv4.Options.Valid (Seq_Ctx) = RFLX.IPv4.Options.Valid (Seq_Ctx)'Old
+       and RFLX.IPv4.Options.Size (Seq_Ctx) = RFLX.IPv4.Options.Size (Seq_Ctx)'Old
        and Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
        and Field_Size (Ctx, F_Options) = Field_Size (Ctx, F_Options)'Old
        and Context_Cursor (Ctx, F_Version) = Context_Cursor (Ctx, F_Version)'Old

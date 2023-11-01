@@ -703,6 +703,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Seq_Ctx.First = Seq_Ctx.First'Old
        and Seq_Ctx.Last = Seq_Ctx.Last'Old
+       and RFLX.Sequence.Integer_Vector.Valid (Seq_Ctx) = RFLX.Sequence.Integer_Vector.Valid (Seq_Ctx)'Old
+       and RFLX.Sequence.Integer_Vector.Size (Seq_Ctx) = RFLX.Sequence.Integer_Vector.Size (Seq_Ctx)'Old
        and Field_First (Ctx, F_Integer_Vector) = Field_First (Ctx, F_Integer_Vector)'Old
        and Field_Size (Ctx, F_Integer_Vector) = Field_Size (Ctx, F_Integer_Vector)'Old
        and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old,
@@ -735,6 +737,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Seq_Ctx.First = Seq_Ctx.First'Old
        and Seq_Ctx.Last = Seq_Ctx.Last'Old
+       and RFLX.Sequence.Enumeration_Vector.Valid (Seq_Ctx) = RFLX.Sequence.Enumeration_Vector.Valid (Seq_Ctx)'Old
+       and RFLX.Sequence.Enumeration_Vector.Size (Seq_Ctx) = RFLX.Sequence.Enumeration_Vector.Size (Seq_Ctx)'Old
        and Field_First (Ctx, F_Enumeration_Vector) = Field_First (Ctx, F_Enumeration_Vector)'Old
        and Field_Size (Ctx, F_Enumeration_Vector) = Field_Size (Ctx, F_Enumeration_Vector)'Old
        and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old
@@ -766,6 +770,8 @@ is
        and Ctx.Last = Ctx.Last'Old
        and Seq_Ctx.First = Seq_Ctx.First'Old
        and Seq_Ctx.Last = Seq_Ctx.Last'Old
+       and RFLX.Sequence.AV_Enumeration_Vector.Valid (Seq_Ctx) = RFLX.Sequence.AV_Enumeration_Vector.Valid (Seq_Ctx)'Old
+       and RFLX.Sequence.AV_Enumeration_Vector.Size (Seq_Ctx) = RFLX.Sequence.AV_Enumeration_Vector.Size (Seq_Ctx)'Old
        and Field_First (Ctx, F_AV_Enumeration_Vector) = Field_First (Ctx, F_AV_Enumeration_Vector)'Old
        and Field_Size (Ctx, F_AV_Enumeration_Vector) = Field_Size (Ctx, F_AV_Enumeration_Vector)'Old
        and Context_Cursor (Ctx, F_Length) = Context_Cursor (Ctx, F_Length)'Old

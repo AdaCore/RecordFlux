@@ -3137,6 +3137,14 @@ def create_update_procedures(
                                     Variable("Seq_Ctx.First"),
                                     Variable("Seq_Ctx.Last"),
                                     Call(
+                                        prefix * common.sequence_name(message, f) * "Valid",
+                                        [Variable("Seq_Ctx")],
+                                    ),
+                                    Call(
+                                        prefix * common.sequence_name(message, f) * "Size",
+                                        [Variable("Seq_Ctx")],
+                                    ),
+                                    Call(
                                         "Field_First",
                                         [
                                             Variable("Ctx"),
