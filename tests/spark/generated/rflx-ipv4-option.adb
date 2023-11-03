@@ -68,54 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Copied =>
-             F_Option_Class,
-          when F_Option_Class =>
-             F_Option_Number,
-          when F_Option_Number =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                 and then Ctx.Cursors (F_Option_Number).Value = 1
-              then
-                 F_Final
-              elsif
-                 Ctx.Cursors (F_Option_Number).Value > 1
-              then
-                 F_Option_Length
-              else
-                 F_Initial),
-          when F_Option_Length =>
-             (if
-                 (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Debugging_And_Measurement))
-                  and then Ctx.Cursors (F_Option_Number).Value = 4)
-                 or else (RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                          and then (Ctx.Cursors (F_Option_Number).Value = 9
-                                    or else Ctx.Cursors (F_Option_Number).Value = 3
-                                    or else Ctx.Cursors (F_Option_Number).Value = 7))
-                 or else (Ctx.Cursors (F_Option_Length).Value = 11
-                          and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                          and then Ctx.Cursors (F_Option_Number).Value = 2)
-                 or else (Ctx.Cursors (F_Option_Length).Value = 4
-                          and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                          and then Ctx.Cursors (F_Option_Number).Value = 8)
-              then
-                 F_Option_Data
-              else
-                 F_Initial),
-          when F_Option_Data =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.IPv4.Option.Has_Buffer (Ctx)
-       and RFLX.IPv4.Option.Well_Formed (Ctx, Fld)
-       and RFLX.IPv4.Option.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Copied =>
@@ -429,7 +381,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Option_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Option_Data)) := (State => S_Invalid, others => <>);
    end Initialize_Option_Data_Private;
 
    procedure Initialize_Option_Data (Ctx : in out Context) is

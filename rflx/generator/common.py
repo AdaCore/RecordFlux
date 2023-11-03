@@ -708,19 +708,6 @@ def initialize_field_statements(
                 ("Value", Number(0)),
             ),
         ),
-        Assignment(
-            Indexed(
-                Variable("Ctx.Cursors"),
-                Call(
-                    "Successor",
-                    [Variable("Ctx"), Variable(field.affixed_name)],
-                ),
-            ),
-            NamedAggregate(
-                ("State", Variable("S_Invalid")),
-                ("others", Variable("<>")),
-            ),
-        ),
     ]
 
 

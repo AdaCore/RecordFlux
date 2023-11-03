@@ -67,31 +67,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Data =>
-             (if
-                 RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
-              then
-                 F_Extension
-              elsif
-                 RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False))
-              then
-                 F_Final
-              else
-                 F_Initial),
-          when F_Extension =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.Test.Message.Has_Buffer (Ctx)
-       and RFLX.Test.Message.Well_Formed (Ctx, Fld)
-       and RFLX.Test.Message.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < RFLX_Types.Bit_Length'Last
@@ -258,7 +233,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, others => <>);
    end Initialize_Data_Private;
 
    procedure Initialize_Data (Ctx : in out Context) is
@@ -297,7 +271,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Extension) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Extension)) := (State => S_Invalid, others => <>);
    end Initialize_Extension_Private;
 
    procedure Initialize_Extension (Ctx : in out Context) is

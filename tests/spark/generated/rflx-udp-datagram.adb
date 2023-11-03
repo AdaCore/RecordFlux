@@ -68,28 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Source_Port =>
-             F_Destination_Port,
-          when F_Destination_Port =>
-             F_Length,
-          when F_Length =>
-             F_Checksum,
-          when F_Checksum =>
-             F_Payload,
-          when F_Payload =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.UDP.Datagram.Has_Buffer (Ctx)
-       and RFLX.UDP.Datagram.Well_Formed (Ctx, Fld)
-       and RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Source_Port =>
@@ -393,7 +371,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Payload) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, others => <>);
    end Initialize_Payload_Private;
 
    procedure Initialize_Payload (Ctx : in out Context) is

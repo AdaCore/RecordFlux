@@ -68,22 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Length =>
-             F_Messages,
-          when F_Messages =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.Sequence.Messages_Message.Has_Buffer (Ctx)
-       and RFLX.Sequence.Messages_Message.Well_Formed (Ctx, Fld)
-       and RFLX.Sequence.Messages_Message.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Length =>
@@ -356,7 +340,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Messages) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Messages)) := (State => S_Invalid, others => <>);
    end Initialize_Messages_Private;
 
    procedure Initialize_Messages (Ctx : in out Context) is
@@ -375,7 +358,6 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Messages) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-         Ctx.Cursors (Successor (Ctx, F_Messages)) := (State => S_Invalid, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");

@@ -68,108 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Tag =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
-              then
-                 F_Code_Destination_Unreachable
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
-              then
-                 F_Code_Redirect
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
-              then
-                 F_Code_Time_Exceeded
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
-              then
-                 F_Code_Zero
-              else
-                 F_Initial),
-          when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
-             F_Checksum,
-          when F_Checksum =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
-              then
-                 F_Gateway_Internet_Address
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-              then
-                 F_Identifier
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Parameter_Problem))
-              then
-                 F_Pointer
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Time_Exceeded))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Source_Quench))
-              then
-                 F_Unused_32
-              else
-                 F_Initial),
-          when F_Gateway_Internet_Address =>
-             F_Data,
-          when F_Identifier =>
-             F_Sequence_Number,
-          when F_Pointer =>
-             F_Unused_24,
-          when F_Unused_32 =>
-             F_Data,
-          when F_Sequence_Number =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request))
-              then
-                 F_Data
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Request))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Information_Reply))
-              then
-                 F_Final
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
-                 or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply))
-              then
-                 F_Originate_Timestamp
-              else
-                 F_Initial),
-          when F_Unused_24 =>
-             F_Data,
-          when F_Originate_Timestamp =>
-             F_Receive_Timestamp,
-          when F_Data =>
-             F_Final,
-          when F_Receive_Timestamp =>
-             F_Transmit_Timestamp,
-          when F_Transmit_Timestamp =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.ICMP.Message.Has_Buffer (Ctx)
-       and RFLX.ICMP.Message.Well_Formed (Ctx, Fld)
-       and RFLX.ICMP.Message.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Tag =>
@@ -572,7 +470,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, others => <>);
    end Initialize_Data_Private;
 
    procedure Initialize_Data (Ctx : in out Context; Length : RFLX_Types.Length) is

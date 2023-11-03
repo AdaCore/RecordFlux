@@ -68,26 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Length =>
-             F_Integer_Vector,
-          when F_Integer_Vector =>
-             F_Enumeration_Vector,
-          when F_Enumeration_Vector =>
-             F_AV_Enumeration_Vector,
-          when F_AV_Enumeration_Vector =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.Sequence.Message.Has_Buffer (Ctx)
-       and RFLX.Sequence.Message.Well_Formed (Ctx, Fld)
-       and RFLX.Sequence.Message.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Length =>
@@ -387,7 +367,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Integer_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Integer_Vector)) := (State => S_Invalid, others => <>);
    end Initialize_Integer_Vector_Private;
 
    procedure Initialize_Integer_Vector (Ctx : in out Context) is
@@ -427,7 +406,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Enumeration_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Enumeration_Vector)) := (State => S_Invalid, others => <>);
    end Initialize_Enumeration_Vector_Private;
 
    procedure Initialize_Enumeration_Vector (Ctx : in out Context) is
@@ -465,7 +443,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_AV_Enumeration_Vector)) := (State => S_Invalid, others => <>);
    end Initialize_AV_Enumeration_Vector_Private;
 
    procedure Initialize_AV_Enumeration_Vector (Ctx : in out Context) is
@@ -484,7 +461,6 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Integer_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-         Ctx.Cursors (Successor (Ctx, F_Integer_Vector)) := (State => S_Invalid, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
@@ -503,7 +479,6 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Enumeration_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-         Ctx.Cursors (Successor (Ctx, F_Enumeration_Vector)) := (State => S_Invalid, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
@@ -522,7 +497,6 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_AV_Enumeration_Vector) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-         Ctx.Cursors (Successor (Ctx, F_AV_Enumeration_Vector)) := (State => S_Invalid, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");

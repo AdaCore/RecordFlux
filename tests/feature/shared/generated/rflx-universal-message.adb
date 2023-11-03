@@ -68,65 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Message_Type =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
-              then
-                 F_Data
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Null))
-              then
-                 F_Final
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-                 and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Null))
-                 and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) /= RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
-              then
-                 F_Length
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-              then
-                 F_Options
-              else
-                 F_Initial),
-          when F_Length =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
-              then
-                 F_Data
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Option_Types))
-              then
-                 F_Option_Types
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
-              then
-                 F_Options
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Value))
-                 and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Length).Value) = Universal.Value'Size / 8
-              then
-                 F_Value
-              elsif
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values))
-              then
-                 F_Values
-              else
-                 F_Initial),
-          when F_Data | F_Option_Types | F_Options | F_Value | F_Values =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.Universal.Message.Has_Buffer (Ctx)
-       and RFLX.Universal.Message.Well_Formed (Ctx, Fld)
-       and RFLX.Universal.Message.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Message_Type =>
@@ -496,7 +437,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, others => <>);
    end Initialize_Data_Private;
 
    procedure Initialize_Data (Ctx : in out Context; Length : RFLX_Types.Length) is
@@ -538,7 +478,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Option_Types) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Option_Types)) := (State => S_Invalid, others => <>);
    end Initialize_Option_Types_Private;
 
    procedure Initialize_Option_Types (Ctx : in out Context) is
@@ -578,7 +517,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Options) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, others => <>);
    end Initialize_Options_Private;
 
    procedure Initialize_Options (Ctx : in out Context; Length : RFLX_Types.Length) is
@@ -617,7 +555,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Values) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Values)) := (State => S_Invalid, others => <>);
    end Initialize_Values_Private;
 
    procedure Initialize_Values (Ctx : in out Context) is
@@ -655,7 +592,6 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Option_Types) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-         Ctx.Cursors (Successor (Ctx, F_Option_Types)) := (State => S_Invalid, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
@@ -674,7 +610,6 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Options) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-         Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
@@ -693,7 +628,6 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Values) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-         Ctx.Cursors (Successor (Ctx, F_Values)) := (State => S_Invalid, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");

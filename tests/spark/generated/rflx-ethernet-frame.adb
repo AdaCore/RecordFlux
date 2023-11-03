@@ -68,56 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Destination =>
-             F_Source,
-          when F_Source =>
-             F_Type_Length_TPID,
-          when F_Type_Length_TPID =>
-             (if
-                 Ctx.Cursors (F_Type_Length_TPID).Value = 16#8100#
-              then
-                 F_TPID
-              elsif
-                 Ctx.Cursors (F_Type_Length_TPID).Value /= 16#8100#
-              then
-                 F_Type_Length
-              else
-                 F_Initial),
-          when F_TPID =>
-             F_TCI,
-          when F_TCI =>
-             F_Type_Length,
-          when F_Type_Length =>
-             (if
-                 Ctx.Cursors (F_Type_Length).Value <= 1500
-              then
-                 F_Payload
-              elsif
-                 Ctx.Cursors (F_Type_Length).Value >= 1536
-              then
-                 F_Payload
-              else
-                 F_Initial),
-          when F_Payload =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 >= 46
-                 and then RFLX_Types.Base_Integer (Ctx.Cursors (F_Payload).Last - Ctx.Cursors (F_Payload).First + 1) / 8 <= 1500
-              then
-                 F_Final
-              else
-                 F_Initial)))
-    with
-     Pre =>
-       RFLX.Ethernet.Frame.Has_Buffer (Ctx)
-       and RFLX.Ethernet.Frame.Well_Formed (Ctx, Fld)
-       and RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Destination =>
@@ -431,7 +381,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Payload) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, others => <>);
    end Initialize_Payload_Private;
 
    procedure Initialize_Payload (Ctx : in out Context; Length : RFLX_Types.Length) is

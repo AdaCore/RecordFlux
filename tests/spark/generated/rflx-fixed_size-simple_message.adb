@@ -68,27 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Message_Type =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.OT_Data))
-              then
-                 F_Data
-              else
-                 F_Initial),
-          when F_Data =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.Fixed_Size.Simple_Message.Has_Buffer (Ctx)
-       and RFLX.Fixed_Size.Simple_Message.Well_Formed (Ctx, Fld)
-       and RFLX.Fixed_Size.Simple_Message.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Message_Type =>
@@ -386,7 +365,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Data) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Data)) := (State => S_Invalid, others => <>);
    end Initialize_Data_Private;
 
    procedure Initialize_Data (Ctx : in out Context) is

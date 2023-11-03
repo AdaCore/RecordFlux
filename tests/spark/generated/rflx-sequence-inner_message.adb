@@ -68,22 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Length =>
-             F_Payload,
-          when F_Payload =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
-       and RFLX.Sequence.Inner_Message.Well_Formed (Ctx, Fld)
-       and RFLX.Sequence.Inner_Message.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Length =>
@@ -368,7 +352,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Payload) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, others => <>);
    end Initialize_Payload_Private;
 
    procedure Initialize_Payload (Ctx : in out Context) is

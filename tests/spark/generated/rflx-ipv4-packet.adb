@@ -68,62 +68,6 @@ is
       Data := Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last));
    end Data;
 
-   pragma Warnings (Off, "precondition is always False");
-
-   function Successor (Ctx : Context; Fld : Field) return Virtual_Field is
-     ((case Fld is
-          when F_Version =>
-             F_IHL,
-          when F_IHL =>
-             F_DSCP,
-          when F_DSCP =>
-             F_ECN,
-          when F_ECN =>
-             F_Total_Length,
-          when F_Total_Length =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Total_Length).Value) >= RFLX_Types.Base_Integer (Ctx.Cursors (F_IHL).Value) * 4
-              then
-                 F_Identification
-              else
-                 F_Initial),
-          when F_Identification =>
-             F_Flag_R,
-          when F_Flag_R =>
-             (if
-                 RFLX_Types.Base_Integer (Ctx.Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))
-              then
-                 F_Flag_DF
-              else
-                 F_Initial),
-          when F_Flag_DF =>
-             F_Flag_MF,
-          when F_Flag_MF =>
-             F_Fragment_Offset,
-          when F_Fragment_Offset =>
-             F_TTL,
-          when F_TTL =>
-             F_Protocol,
-          when F_Protocol =>
-             F_Header_Checksum,
-          when F_Header_Checksum =>
-             F_Source,
-          when F_Source =>
-             F_Destination,
-          when F_Destination =>
-             F_Options,
-          when F_Options =>
-             F_Payload,
-          when F_Payload =>
-             F_Final))
-    with
-     Pre =>
-       RFLX.IPv4.Packet.Has_Buffer (Ctx)
-       and RFLX.IPv4.Packet.Well_Formed (Ctx, Fld)
-       and RFLX.IPv4.Packet.Valid_Next (Ctx, Fld);
-
-   pragma Warnings (On, "precondition is always False");
-
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Version =>
@@ -551,7 +495,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Options) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, others => <>);
    end Initialize_Options_Private;
 
    procedure Initialize_Options (Ctx : in out Context) is
@@ -602,7 +545,6 @@ is
       Ctx := Ctx'Update (Verified_Last => Last, Written_Last => Last);
       pragma Warnings (On, "attribute Update is an obsolescent feature");
       Ctx.Cursors (F_Payload) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-      Ctx.Cursors (Successor (Ctx, F_Payload)) := (State => S_Invalid, others => <>);
    end Initialize_Payload_Private;
 
    procedure Initialize_Payload (Ctx : in out Context) is
@@ -640,7 +582,6 @@ is
          Ctx := Ctx'Update (Verified_Last => Last, Written_Last => RFLX_Types.Bit_Length'Max (Ctx.Written_Last, Last));
          pragma Warnings (On, "attribute Update is an obsolescent feature");
          Ctx.Cursors (F_Options) := (State => S_Well_Formed, First => First, Last => Last, Value => 0);
-         Ctx.Cursors (Successor (Ctx, F_Options)) := (State => S_Invalid, others => <>);
       end if;
       Take_Buffer (Ctx, Buffer);
       pragma Warnings (Off, "unused assignment to ""Buffer""");
