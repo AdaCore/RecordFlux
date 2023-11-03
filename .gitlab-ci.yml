@@ -169,7 +169,24 @@ code_generation:
 .update_timestamps_of_generated_code: &update_timestamps_of_generated_code
     - touch examples/apps/*/build/generated/*
 
-tests:
+tests_rflx:
+  extends: .testing
+  needs:
+    - setup
+    - code_generation
+  services:
+     - image:recordflux
+     - cpu:8
+     - mem:16
+  script:
+    - git fetch --unshallow
+    - *update_timestamps_of_generated_code
+    - *setup_gnat
+    - *setup_gnat_cross
+    - *setup_python
+    - make test_rflx
+
+tests_examples:
   extends: .testing
   needs:
     - setup
@@ -177,14 +194,14 @@ tests:
   services:
      - image:recordflux
      - cpu:4
-     - mem:32
+     - mem:16
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
-    - make test
+    - make test_examples
 
 python_compatibility:
   extends: .testing

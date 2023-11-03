@@ -119,9 +119,13 @@ check_contracts:
 check_doc:
 	tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
 
-.PHONY: test test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
+.PHONY: test test_rflx test_examples test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
 
-test: test_coverage test_unit_coverage test_language_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
+test: test_rflx test_examples
+
+test_rflx: test_coverage test_unit_coverage test_language_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
+
+test_examples: test_specs test_apps
 
 # A separate invocation of `coverage report` is needed to exclude `$(GENERATED_DIR)` in the coverage report.
 # Currently, pytest's CLI does not allow the specification of omitted directories
