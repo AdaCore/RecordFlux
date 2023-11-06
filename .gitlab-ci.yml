@@ -409,3 +409,20 @@ gnat_wave_compatibility:
     - *setup_python_venv
     - *setup_python
     - make test_compilation
+
+spark_wave_compatibility:
+  extends: .scheduled_job
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE == "spark-wave"
+  services:
+     - image:recordflux
+     - cpu:8
+     - mem:16
+  script:
+    - git fetch --unshallow
+    - anod install spark2014
+    - eval `anod printenv spark2014`
+    - gnatprove --version
+    - *setup_python
+    - make prove_tests
+    - make prove_python_tests
