@@ -715,13 +715,13 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Message_Type))
                  then
-                    Cursors (F_Message_Type).Last - Cursors (F_Message_Type).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Message_Type)
-                    and then Cursors (F_Message_Type).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Message_Type))
+                    (Cursors (F_Message_Type).Last - Cursors (F_Message_Type).First + 1 = 8
+                     and then Cursors (F_Message_Type).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Data))
                           then
-                             Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Data)
-                             and then Cursors (F_Data).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Data))))
+                             (Cursors (F_Data).Last - Cursors (F_Data).First + 1 = 24
+                              and then Cursors (F_Data).First = Cursors (F_Message_Type).Last + 1))))
     with
      Post =>
        True;

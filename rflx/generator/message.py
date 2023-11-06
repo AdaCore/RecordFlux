@@ -794,6 +794,7 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
 
 def create_valid_context_function(
     message: Message,
+    prefix: str,
 ) -> UnitPart:
     specification = FunctionSpecification(
         "Valid_Context",
@@ -831,7 +832,7 @@ def create_valid_context_function(
             ),
             ExpressionFunctionDeclaration(
                 specification,
-                common.context_predicate(message),
+                common.context_predicate(message, prefix),
                 [Postcondition(TRUE)],
             ),
             Pragma(

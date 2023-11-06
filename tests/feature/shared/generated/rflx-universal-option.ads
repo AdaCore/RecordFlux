@@ -740,18 +740,18 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Option_Type))
                  then
-                    Cursors (F_Option_Type).Last - Cursors (F_Option_Type).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Type)
-                    and then Cursors (F_Option_Type).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Type))
+                    (Cursors (F_Option_Type).Last - Cursors (F_Option_Type).First + 1 = 8
+                     and then Cursors (F_Option_Type).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Length))
                           then
-                             Cursors (F_Length).Last - Cursors (F_Length).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length)
-                             and then Cursors (F_Length).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length))
+                             (Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
+                              and then Cursors (F_Length).First = Cursors (F_Option_Type).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Data))
                           then
-                             Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Data)
-                             and then Cursors (F_Data).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Data))))
+                             (Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                              and then Cursors (F_Data).First = Cursors (F_Length).Last + 1))))
     with
      Post =>
        True;

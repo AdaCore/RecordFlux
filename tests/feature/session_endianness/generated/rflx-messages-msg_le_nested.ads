@@ -664,18 +664,18 @@ private
       and then ((if
                     Well_Formed (Cursors (F_X_A))
                  then
-                    Cursors (F_X_A).Last - Cursors (F_X_A).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_X_A)
-                    and then Cursors (F_X_A).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_X_A))
+                    (Cursors (F_X_A).Last - Cursors (F_X_A).First + 1 = 32
+                     and then Cursors (F_X_A).First = First))
                 and then (if
                              Well_Formed (Cursors (F_X_B))
                           then
-                             Cursors (F_X_B).Last - Cursors (F_X_B).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_X_B)
-                             and then Cursors (F_X_B).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_X_B))
+                             (Cursors (F_X_B).Last - Cursors (F_X_B).First + 1 = 32
+                              and then Cursors (F_X_B).First = Cursors (F_X_A).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Y))
                           then
-                             Cursors (F_Y).Last - Cursors (F_Y).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Y)
-                             and then Cursors (F_Y).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Y))))
+                             (Cursors (F_Y).Last - Cursors (F_Y).First + 1 = 32
+                              and then Cursors (F_Y).First = Cursors (F_X_B).Last + 1))))
     with
      Post =>
        True;

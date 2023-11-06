@@ -710,13 +710,13 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Header))
                  then
-                    Cursors (F_Header).Last - Cursors (F_Header).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Header)
-                    and then Cursors (F_Header).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Header))
+                    (Cursors (F_Header).Last - Cursors (F_Header).First + 1 = 8
+                     and then Cursors (F_Header).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Vector))
                           then
-                             Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Vector)
-                             and then Cursors (F_Vector).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Vector))))
+                             (Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Header).Last)
+                              and then Cursors (F_Vector).First = Cursors (F_Header).Last + 1))))
     with
      Post =>
        True;

@@ -1377,38 +1377,58 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Message_Type))
                  then
-                    Cursors (F_Message_Type).Last - Cursors (F_Message_Type).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Message_Type)
-                    and then Cursors (F_Message_Type).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Message_Type))
+                    (Cursors (F_Message_Type).Last - Cursors (F_Message_Type).First + 1 = 8
+                     and then Cursors (F_Message_Type).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Length))
                           then
-                             Cursors (F_Length).Last - Cursors (F_Length).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length)
-                             and then Cursors (F_Length).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length))
+                             (Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
+                              and then Cursors (F_Length).First = Cursors (F_Message_Type).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Data))
                           then
-                             Cursors (F_Data).Last - Cursors (F_Data).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Data)
-                             and then Cursors (F_Data).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Data))
+                             (if
+                                 Well_Formed (Cursors (F_Length))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
+                              then
+                                 Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                                 and then Cursors (F_Data).First = Cursors (F_Length).Last + 1)
+                             and then (if
+                                          Well_Formed (Cursors (F_Message_Type))
+                                          and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
+                                       then
+                                          Cursors (F_Data).Last - Cursors (F_Data).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Message_Type).Last)
+                                          and then Cursors (F_Data).First = Cursors (F_Message_Type).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Option_Types))
                           then
-                             Cursors (F_Option_Types).Last - Cursors (F_Option_Types).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Types)
-                             and then Cursors (F_Option_Types).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Types))
+                             (Cursors (F_Option_Types).Last - Cursors (F_Option_Types).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                              and then Cursors (F_Option_Types).First = Cursors (F_Length).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Options))
                           then
-                             Cursors (F_Options).Last - Cursors (F_Options).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Options)
-                             and then Cursors (F_Options).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Options))
+                             (if
+                                 Well_Formed (Cursors (F_Length))
+                                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
+                              then
+                                 Cursors (F_Options).Last - Cursors (F_Options).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                                 and then Cursors (F_Options).First = Cursors (F_Length).Last + 1)
+                             and then (if
+                                          Well_Formed (Cursors (F_Message_Type))
+                                          and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
+                                       then
+                                          Cursors (F_Options).Last - Cursors (F_Options).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Message_Type).Last)
+                                          and then Cursors (F_Options).First = Cursors (F_Message_Type).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Value))
                           then
-                             Cursors (F_Value).Last - Cursors (F_Value).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Value)
-                             and then Cursors (F_Value).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Value))
+                             (Cursors (F_Value).Last - Cursors (F_Value).First + 1 = 8
+                              and then Cursors (F_Value).First = Cursors (F_Length).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Values))
                           then
-                             Cursors (F_Values).Last - Cursors (F_Values).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Values)
-                             and then Cursors (F_Values).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Values))))
+                             (Cursors (F_Values).Last - Cursors (F_Values).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                              and then Cursors (F_Values).First = Cursors (F_Length).Last + 1))))
     with
      Post =>
        True;

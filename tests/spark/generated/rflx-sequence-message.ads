@@ -966,23 +966,23 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Length))
                  then
-                    Cursors (F_Length).Last - Cursors (F_Length).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length)
-                    and then Cursors (F_Length).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length))
+                    (Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 8
+                     and then Cursors (F_Length).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Integer_Vector))
                           then
-                             Cursors (F_Integer_Vector).Last - Cursors (F_Integer_Vector).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Integer_Vector)
-                             and then Cursors (F_Integer_Vector).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Integer_Vector))
+                             (Cursors (F_Integer_Vector).Last - Cursors (F_Integer_Vector).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                              and then Cursors (F_Integer_Vector).First = Cursors (F_Length).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Enumeration_Vector))
                           then
-                             Cursors (F_Enumeration_Vector).Last - Cursors (F_Enumeration_Vector).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Enumeration_Vector)
-                             and then Cursors (F_Enumeration_Vector).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Enumeration_Vector))
+                             (Cursors (F_Enumeration_Vector).Last - Cursors (F_Enumeration_Vector).First + 1 = 16
+                              and then Cursors (F_Enumeration_Vector).First = Cursors (F_Integer_Vector).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_AV_Enumeration_Vector))
                           then
-                             Cursors (F_AV_Enumeration_Vector).Last - Cursors (F_AV_Enumeration_Vector).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_AV_Enumeration_Vector)
-                             and then Cursors (F_AV_Enumeration_Vector).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_AV_Enumeration_Vector))))
+                             (Cursors (F_AV_Enumeration_Vector).Last - Cursors (F_AV_Enumeration_Vector).First + 1 = 16
+                              and then Cursors (F_AV_Enumeration_Vector).First = Cursors (F_Enumeration_Vector).Last + 1))))
     with
      Post =>
        True;

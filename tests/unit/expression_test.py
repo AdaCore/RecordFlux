@@ -2244,10 +2244,6 @@ def test_selected_z3expr() -> None:
     assert Selected(Variable("X"), "Y", negative=True).z3expr() == -z3.Int("X.Y")
 
 
-def test_selected_neg() -> None:
-    assert -Selected(Variable("X"), "Y") == Selected(Variable("X"), "Y", negative=True)
-
-
 def test_selected_to_ir() -> None:
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=rty.BOOLEAN).to_ir(
         id_generator(),

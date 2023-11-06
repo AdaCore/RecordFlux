@@ -33,7 +33,6 @@ project Ping is
    package Prove is
       for Proof_Switches ("Ada") use Defaults.Proof_Switches;
       for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--prover=Z3,altergo,cvc5,colibri", "--timeout=120");
-      for Proof_Switches ("rflx-icmp-message.adb") use ("--timeout=120");
    end Prove;
 
 end Ping;

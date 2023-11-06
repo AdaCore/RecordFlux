@@ -740,18 +740,18 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Tag))
                  then
-                    Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Tag)
-                    and then Cursors (F_Tag).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Tag))
+                    (Cursors (F_Tag).Last - Cursors (F_Tag).First + 1 = 8
+                     and then Cursors (F_Tag).First = First))
                 and then (if
                              Well_Formed (Cursors (F_Length))
                           then
-                             Cursors (F_Length).Last - Cursors (F_Length).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length)
-                             and then Cursors (F_Length).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length))
+                             (Cursors (F_Length).Last - Cursors (F_Length).First + 1 = 16
+                              and then Cursors (F_Length).First = Cursors (F_Tag).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Value))
                           then
-                             Cursors (F_Value).Last - Cursors (F_Value).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Value)
-                             and then Cursors (F_Value).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Value))))
+                             (Cursors (F_Value).Last - Cursors (F_Value).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8
+                              and then Cursors (F_Value).First = Cursors (F_Length).Last + 1))))
     with
      Post =>
        True;

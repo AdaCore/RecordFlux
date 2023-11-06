@@ -1672,88 +1672,88 @@ private
       and then ((if
                     Well_Formed (Cursors (F_Version))
                  then
-                    Cursors (F_Version).Last - Cursors (F_Version).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Version)
-                    and then Cursors (F_Version).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Version))
+                    (Cursors (F_Version).Last - Cursors (F_Version).First + 1 = 4
+                     and then Cursors (F_Version).First = First))
                 and then (if
                              Well_Formed (Cursors (F_IHL))
                           then
-                             Cursors (F_IHL).Last - Cursors (F_IHL).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_IHL)
-                             and then Cursors (F_IHL).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_IHL))
+                             (Cursors (F_IHL).Last - Cursors (F_IHL).First + 1 = 4
+                              and then Cursors (F_IHL).First = Cursors (F_Version).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_DSCP))
                           then
-                             Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_DSCP)
-                             and then Cursors (F_DSCP).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_DSCP))
+                             (Cursors (F_DSCP).Last - Cursors (F_DSCP).First + 1 = 6
+                              and then Cursors (F_DSCP).First = Cursors (F_IHL).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_ECN))
                           then
-                             Cursors (F_ECN).Last - Cursors (F_ECN).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_ECN)
-                             and then Cursors (F_ECN).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_ECN))
+                             (Cursors (F_ECN).Last - Cursors (F_ECN).First + 1 = 2
+                              and then Cursors (F_ECN).First = Cursors (F_DSCP).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Total_Length))
                           then
-                             Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Total_Length)
-                             and then Cursors (F_Total_Length).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Total_Length))
+                             (Cursors (F_Total_Length).Last - Cursors (F_Total_Length).First + 1 = 16
+                              and then Cursors (F_Total_Length).First = Cursors (F_ECN).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Identification))
                           then
-                             Cursors (F_Identification).Last - Cursors (F_Identification).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Identification)
-                             and then Cursors (F_Identification).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Identification))
+                             (Cursors (F_Identification).Last - Cursors (F_Identification).First + 1 = 16
+                              and then Cursors (F_Identification).First = Cursors (F_Total_Length).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Flag_R))
                           then
-                             Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Flag_R)
-                             and then Cursors (F_Flag_R).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Flag_R))
+                             (Cursors (F_Flag_R).Last - Cursors (F_Flag_R).First + 1 = 1
+                              and then Cursors (F_Flag_R).First = Cursors (F_Identification).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Flag_DF))
                           then
-                             Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Flag_DF)
-                             and then Cursors (F_Flag_DF).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Flag_DF))
+                             (Cursors (F_Flag_DF).Last - Cursors (F_Flag_DF).First + 1 = 1
+                              and then Cursors (F_Flag_DF).First = Cursors (F_Flag_R).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Flag_MF))
                           then
-                             Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Flag_MF)
-                             and then Cursors (F_Flag_MF).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Flag_MF))
+                             (Cursors (F_Flag_MF).Last - Cursors (F_Flag_MF).First + 1 = 1
+                              and then Cursors (F_Flag_MF).First = Cursors (F_Flag_DF).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Fragment_Offset))
                           then
-                             Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Fragment_Offset)
-                             and then Cursors (F_Fragment_Offset).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Fragment_Offset))
+                             (Cursors (F_Fragment_Offset).Last - Cursors (F_Fragment_Offset).First + 1 = 13
+                              and then Cursors (F_Fragment_Offset).First = Cursors (F_Flag_MF).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_TTL))
                           then
-                             Cursors (F_TTL).Last - Cursors (F_TTL).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_TTL)
-                             and then Cursors (F_TTL).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_TTL))
+                             (Cursors (F_TTL).Last - Cursors (F_TTL).First + 1 = 8
+                              and then Cursors (F_TTL).First = Cursors (F_Fragment_Offset).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Protocol))
                           then
-                             Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Protocol)
-                             and then Cursors (F_Protocol).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Protocol))
+                             (Cursors (F_Protocol).Last - Cursors (F_Protocol).First + 1 = 8
+                              and then Cursors (F_Protocol).First = Cursors (F_TTL).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Header_Checksum))
                           then
-                             Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Header_Checksum)
-                             and then Cursors (F_Header_Checksum).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Header_Checksum))
+                             (Cursors (F_Header_Checksum).Last - Cursors (F_Header_Checksum).First + 1 = 16
+                              and then Cursors (F_Header_Checksum).First = Cursors (F_Protocol).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Source))
                           then
-                             Cursors (F_Source).Last - Cursors (F_Source).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Source)
-                             and then Cursors (F_Source).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Source))
+                             (Cursors (F_Source).Last - Cursors (F_Source).First + 1 = 32
+                              and then Cursors (F_Source).First = Cursors (F_Header_Checksum).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Destination))
                           then
-                             Cursors (F_Destination).Last - Cursors (F_Destination).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Destination)
-                             and then Cursors (F_Destination).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Destination))
+                             (Cursors (F_Destination).Last - Cursors (F_Destination).First + 1 = 32
+                              and then Cursors (F_Destination).First = Cursors (F_Source).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Options))
                           then
-                             Cursors (F_Options).Last - Cursors (F_Options).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Options)
-                             and then Cursors (F_Options).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Options))
+                             (Cursors (F_Options).Last - Cursors (F_Options).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_IHL).Value) - 5) * 32
+                              and then Cursors (F_Options).First = Cursors (F_Destination).Last + 1))
                 and then (if
                              Well_Formed (Cursors (F_Payload))
                           then
-                             Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Payload)
-                             and then Cursors (F_Payload).First = Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Payload))))
+                             (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = RFLX_Types.Bit_Length (Cursors (F_Total_Length).Value) * 8 + RFLX_Types.Bit_Length (Cursors (F_IHL).Value) * (-32)
+                              and then Cursors (F_Payload).First = Cursors (F_Options).Last + 1))))
     with
      Post =>
        True;
