@@ -2,7 +2,7 @@ with Socket;
 with Msg_Write;
 
 procedure DCCP_Client with
-  SPARK_Mode => On
+  SPARK_Mode
 is
    Channel : Socket.Channel := Socket.Initialize (1234);
 begin

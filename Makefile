@@ -167,6 +167,7 @@ test_compilation:
 	$(MAKE) -C examples/apps/ping build
 	$(MAKE) -C examples/apps/dhcp_client build
 	$(MAKE) -C examples/apps/spdm_responder lib
+	$(MAKE) -C examples/apps/dccp build
 	$(PYTEST) tests/compilation
 	$(MAKE) -C tests/spark test NOPREFIX=1
 	$(MAKE) -C tests/spark clean
@@ -334,6 +335,7 @@ clean:
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C examples/apps/spdm_responder clean
+	$(MAKE) -C examples/apps/dccp clean
 	$(MAKE) -C doc/language_reference clean
 	$(MAKE) -C doc/user_guide clean
 	$(MAKE) -C ide/vscode clean

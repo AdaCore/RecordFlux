@@ -1,0 +1,43 @@
+with "../../../defaults";
+
+project Build is
+
+   for Languages use ("RecordFlux", "Ada");
+   for Source_Dirs use ("src", "build/generated", "specs");
+   for Object_Dir use "build/obj";
+   for Create_Missing_Dirs use "True";
+   for Main use ("dccp_client.adb", "dccp_server.adb");
+
+   package Builder is
+      for Default_Switches ("Ada") use Defaults.Builder_Switches;
+      for Global_Configuration_Pragmas use "common.adc";
+   end Builder;
+
+   package Compiler is
+      for Driver ("RecordFlux") use "";
+      for Default_Switches ("Ada") use Defaults.Compiler_Switches;
+   end Compiler;
+
+   package Binder is
+      for Default_Switches ("Ada") use Defaults.Binder_Switches;
+   end Binder;
+
+   package Naming is
+      for Spec_Suffix ("RecordFlux") use ".rflx";
+   end Naming;
+
+   package RecordFlux is
+      for Output_Dir use "build/generated";
+   end RecordFlux;
+
+   package Prove is
+      for Proof_Switches ("Ada") use Defaults.Proof_Switches &
+         (
+            "--prover=z3,cvc5,altergo,colibri"
+         );
+      for Proof_Switches ("msg_write.adb") use ("--timeout=300", "--memlimit=5000");
+      for Proof_Switches ("rflx-dccp-packet.adb") use ("--timeout=360", "--memlimit=5000");
+      for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--timeout=120");
+   end Prove;
+
+end Build;

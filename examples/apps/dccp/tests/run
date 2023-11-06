@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -x
+
+build/obj/dccp_server &
+SERVER_PID=$!
+
+timeout 3 build/obj/dccp_client
+SUCCESS=$?
+
+kill -9 $SERVER_PID
+exit $SUCCESS
+
+trap "kill -9 $SERVER_PID" SIGINT SIGTERM EXIT

@@ -5,7 +5,7 @@ with RFLX.DCCP.Option;
 with RFLX.DCCP.Options;
 
 package body Msg_Read with
-  SPARK_Mode => On
+  SPARK_Mode
 is
    use RFLX.RFLX_Builtin_Types;
    use type DCCP.Ext_Seq_Type;
@@ -17,7 +17,7 @@ is
    pragma Warnings (Off, "subprogram ""Print_Data"" has no effect");
 
    procedure Print_Data_Block (Data_Block : RFLX.RFLX_Types.Bytes) with
-     Annotate => (GNATprove, Always_Return);
+     Always_Terminates;
 
    procedure Print_Data is new DCCP.Packet.Generic_Get_Data (Print_Data_Block);
 
@@ -125,7 +125,7 @@ is
       and then DCCP.Packet.Well_Formed_Message (Ctx) and then not Ctx'Constrained
       and then DCCP.Packet.Valid (Ctx, DCCP.Packet.F_Options),
      Post => RFLX.DCCP.Packet.Has_Buffer (Ctx) and then not Ctx'Constrained,
-     Annotate => (GNATprove, Might_Not_Return)
+     Always_Terminates => False
    is
       Opt_Type_Field : DCCP.Opt_Type;
       Options_Sequence_Context : DCCP.Options.Context;

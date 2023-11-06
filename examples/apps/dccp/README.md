@@ -1,7 +1,5 @@
 # DCCP
 
-## Getting started
-
 This project provides a simplified example set for a DCCP specification with a "client" and "server" application. Additional details about what each application does are described below.
 
 ## DCCP Server
@@ -37,32 +35,32 @@ Once the client is running and prints out message status information, the server
 
 ## DCCP Specification
 
-RecordFlux was used to generate the "DCCP specification" for this project. Note that the DCCP protocol was **NOT** implemented in its entirety. The core of the protocol is the **Generic Header**; a fairly simple implementation of this is implemented in RecordFlux. A small portion of **Additional Fields** and **Options** are also implemented so as to align with the Wireshark sample data set. Additionally, the **Application Data Area** of the protocol is lightly implemented here based on Wireshark data.
+Note that the DCCP protocol was **NOT** implemented in its entirety. The core of the protocol is the **Generic Header**; a fairly simple implementation of this is implemented in RecordFlux. A small portion of **Additional Fields** and **Options** are also implemented so as to align with the Wireshark sample data set. Additionally, the **Application Data Area** of the protocol is lightly implemented here based on Wireshark data.
 
-The DCCP Specification file is located in the **\specs** folder of each application.
+The DCCP Specification file is located in the `specs` directory.
 
-The message graph (generated from the specification file) is located in the **\out** folder of each application. This provides a visual graph of the message itself, which can be useful for understanding and/or message interpretation.
+The message graph (generated from the specification file) is located in the `graphs` directory. This provides a visual graph of the message itself, which can be useful for understanding and/or message interpretation.
 
 ## HOWTO: Generate a Message Graph
 
 To generate a message graph using RecordFlux, locate the message spec and enter the following into the terminal window:
 
-`rflx graph -d ./out dccp.rflx`
+`rflx graph -d graphs specs/dccp.rflx`
 
-For the above, **out** is the output directory for the graph and **dccp.rflx** is the spec file.
+For the above, `graphs` is the output directory for the graph and `dccp.rflx` is the spec file.
 
 ## HOWTO: Generate Code Files from a Specification
 
 To generate code files for the RecordFlux specification, locate the message spec and enter the following into the terminal window:
 
-`rflx generate -d ./generated/ dccp.rflx`
+`rflx generate -d build/generated specs/dccp.rflx`
 
-For the above, **generated** is the output directory for the generated code files and **dccp.rflx** is the spec file.
+For the above, `build/generated` is the output directory for the generated code files and `dccp.rflx` is the spec file.
 
 ## HOWTO: Validate the Specification
 
 RecordFlux provides the ability to validate a message specification with real world files in a RAW format. To run validate and generate a corresponding report, locate the message spec and enter the following into the terminal window:
 
-`rflx validate --coverage -v ./test/valid/ dccp.rflx DCCP::Header`
+`rflx validate --coverage -v tests/samples/valid -- specs/dccp.rflx DCCP::Packet`
 
-For the above, **./test/valid** is the folder in which "valid" sample RAW files are located and **dccp.rflx** is the spec file.
+For the above, `tests/samples/valid` is the directory in which "valid" sample RAW files are located and `dccp.rflx` is the spec file.

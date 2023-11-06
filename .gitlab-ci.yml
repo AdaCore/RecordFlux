@@ -361,6 +361,7 @@ verification_apps:
         - "ping"
         - "dhcp_client"
         - "spdm_responder"
+        - "dccp"
   script:
     - *update_timestamps_of_generated_code
     - *setup_gnat

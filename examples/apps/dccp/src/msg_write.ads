@@ -1,7 +1,7 @@
 with Socket;
 
 package Msg_Write with
-  SPARK_Mode => On
+  SPARK_Mode
 is
    procedure Send_Request (Channel : Socket.Channel)
      with Pre => Socket.Is_Open (Channel);

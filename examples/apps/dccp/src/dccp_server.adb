@@ -5,7 +5,8 @@ with Socket;
 with Msg_Read;
 
 procedure DCCP_Server with
-  SPARK_Mode => On, Annotate => (GNATprove, Might_Not_Return)
+  SPARK_Mode,
+  Always_Terminates => False
 is
    use RFLX;
 

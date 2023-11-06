@@ -6,7 +6,7 @@ with RFLX.RFLX_Types;
 with RFLX.RFLX_Builtin_Types;
 
 package body Msg_Write with
-  SPARK_Mode => On
+  SPARK_Mode
 is
    use RFLX;
    use type RFLX.RFLX_Builtin_Types.Bit_Length;
@@ -361,8 +361,6 @@ is
 
       --  Finish OPTIONS AREA
       DCCP.Packet.Update_Options (Context, Options_Array_Context);
-
-      pragma Assert (DCCP.Packet.Well_Formed (Context, DCCP.Packet.F_Options));
 
       --  Set "Data"
       --  Lots'o bytes

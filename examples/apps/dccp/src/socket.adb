@@ -71,9 +71,9 @@ is
    end Close;
 
    procedure Send (Chan : Channel; Data : RFLX.RFLX_Types.Bytes) is
-      Last      : Ada.Streams.Stream_Element_Offset;
-      Address   : GNAT.Sockets.Sock_Addr_Type;
-      Send_Data : Ada.Streams.Stream_Element_Array (1 .. Data'Length);
+      Unused_Last : Ada.Streams.Stream_Element_Offset;
+      Address     : GNAT.Sockets.Sock_Addr_Type;
+      Send_Data   : Ada.Streams.Stream_Element_Array (1 .. Data'Length);
       use type Ada.Streams.Stream_Element_Offset;
    begin
 
@@ -88,7 +88,7 @@ is
       Address.Addr := GNAT.Sockets.Inet_Addr ("127.0.0.1");
 
       GNAT.Sockets.Send_Socket
-        (Socket => Chan.Socket, Item => Send_Data, Last => Last,
+        (Socket => Chan.Socket, Item => Send_Data, Last => Unused_Last,
          To     => Address);
    end Send;
 end Socket;
