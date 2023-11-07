@@ -1,5 +1,5 @@
 -- AUTOMATICALLY GENERATED. DO NOT EDIT.
--- Generation date: 2022-10-05
+-- Generation date: 2023-11-03
 -- Address Resolution Protocol (ARP) Parameters
 -- Registry last updated on 2016-07-20
 
@@ -87,10 +87,10 @@ package Arp_Parameters is
 
    type Hardware_Types is
       (-- Ref: Jon_Postel
-       Ethernet_10Mb => 1,
+       Ethernet => 1,
 
        -- Ref: Jon_Postel
-       Experimental_Ethernet_3Mb => 2,
+       Experimental_Ethernet => 2,
 
        -- Ref: Philip_Koch
        Amateur_Radio_AX_25 => 3,
@@ -120,7 +120,7 @@ package Arp_Parameters is
        LocalTalk => 11,
 
        -- xref = Joseph Murdock
-       LocalNet_IBM_PCNet_Or_SYTEK_LocalNET => 12,
+       LocalNet => 12,
 
        -- Ref: Rajiv_Dhingra
        Ultra_Link => 13,
@@ -132,7 +132,7 @@ package Arp_Parameters is
        Frame_Relay => 15,
 
        -- xref = [JXB2]
-       Asynchronous_Transmission_Mode_ATM_16 => 16,
+       Asynchronous_Transmission_Mode_16 => 16,
 
        -- Ref: Jon_Postel
        HDLC => 17,
@@ -141,13 +141,13 @@ package Arp_Parameters is
        Fibre_Channel => 18,
 
        -- Ref: rfc2225
-       Asynchronous_Transmission_Mode_ATM_19 => 19,
+       Asynchronous_Transmission_Mode_19 => 19,
 
        -- Ref: Jon_Postel
        Serial_Line => 20,
 
        -- Ref: Mike_Burrows
-       Asynchronous_Transmission_Mode_ATM_21 => 21,
+       Asynchronous_Transmission_Mode_21 => 21,
 
        -- Ref: Herb_Jensen
        MIL_STD_188_220 => 22,
@@ -181,11 +181,11 @@ package Arp_Parameters is
        IPsec_Tunnel => 31,
 
        -- Ref: rfc4391
-       InfiniBand_TM => 32,
+       InfiniBand => 32,
 
        -- xref = Jeff Anderson, Telecommunications Industry of America (TIA) TR-8.5
        --  Formulating Group, <cja015&motorola.com>, June 2004
-       TIA_102_Project_25_Common_Air_Interface_CAI => 33,
+       TIA_102_Project_25_Common_Air_Interface => 33,
 
        -- Ref: Scott_Guthery_2
        Wiegand_Interface => 34,

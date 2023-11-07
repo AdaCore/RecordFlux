@@ -162,7 +162,8 @@ def _convert_registry_to_enum_type(
         assert isinstance(name_element.text, str)
 
         rflx_value, bit_length = _normalize_value(value_element.text)
-        rflx_name = _normalize_name(name_element.text)
+
+        rflx_name = _normalize_literal_name(name_element.text)
 
         if bit_length > enum_literal_highest_bit_len:
             enum_literal_highest_bit_len = bit_length
@@ -366,6 +367,26 @@ def _normalize_name(description_text: str) -> str:
     t: dict[str, Union[int, str, None]] = {c: " " for c in string.punctuation + "\n"}
     name = description_text.translate(str.maketrans(t))
     return "_".join([s[0].upper() + s[1:] for s in name.split()])
+
+
+def _normalize_literal_name(description_text: str) -> str:
+    """
+    Normalize the given text to be used as the name of an enum literal.
+
+    The input text is expected to be a potentially multiline string that
+    sometimes contains additional comments in parentheses. Only the part up to
+    the first parenthesis is kept. The rest is normalized in the same way
+    as in _normalize_name. In addition, if the original string contains either
+    "(deprecated)" or "(obsolete)", then those words are prefixed to the
+    normalized name.
+    """
+    description_prefix = re.sub(r"\(.*", "", description_text, flags=re.S)
+    rflx_name = _normalize_name(description_prefix)
+    if re.search(r"\(obsolete\)", description_text, re.IGNORECASE | re.S):
+        rflx_name = "Obsolete_" + rflx_name
+    if re.search(r"\(deprecated\)", description_text, re.IGNORECASE | re.S):
+        rflx_name = "Deprecated_" + rflx_name
+    return rflx_name
 
 
 def _normalize_value(value: str) -> tuple[str, int]:

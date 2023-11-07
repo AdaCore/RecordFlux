@@ -1,5 +1,5 @@
 -- AUTOMATICALLY GENERATED. DO NOT EDIT.
--- Generation date: 2023-09-10
+-- Generation date: 2023-11-03
 -- Transport Layer Security (TLS) Extensions
 -- Registry last updated on 2023-07-13
 
@@ -74,7 +74,7 @@ package Tls_Extensiontype_Values is
        -- rec = Y
        -- Ref: rfc8422
        -- Ref: rfc7919
-       Supported_Groups_Renamed_From_Elliptic_Curves => 10,
+       Supported_Groups => 10,
 
        -- tls13 = -
        -- dtls-only = N
@@ -225,7 +225,7 @@ package Tls_Extensiontype_Values is
        -- rec = Y
        -- Ref: rfc5077
        -- Ref: rfc8447
-       Session_Ticket_Renamed_From_SessionTicket_TLS => 35,
+       Session_Ticket => 35,
 
        -- tls13 = -
        -- dtls-only = N
@@ -321,7 +321,7 @@ package Tls_Extensiontype_Values is
        -- dtls-only = Y
        -- rec = N
        -- Ref: rfc9146
-       Connection_Id_Deprecated => 53,
+       Deprecated_Connection_Id => 53,
 
        -- tls13 = CH, SH
        -- dtls-only = Y

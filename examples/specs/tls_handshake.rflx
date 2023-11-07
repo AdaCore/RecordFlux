@@ -120,12 +120,12 @@ package TLS_Handshake is
                   Tag /= Tls_Extensiontype_Values::Token_Binding and
                   Tag /= Tls_Extensiontype_Values::Cached_Info and
                   Tag /= Tls_Extensiontype_Values::Tls_Lts and
-                  Tag /= Tls_Extensiontype_Values::Session_Ticket_Renamed_From_SessionTicket_TLS and
+                  Tag /= Tls_Extensiontype_Values::Session_Ticket and
                   Tag /= Tls_Extensiontype_Values::TLMSP and
                   Tag /= Tls_Extensiontype_Values::TLMSP_Proxying and
                   Tag /= Tls_Extensiontype_Values::TLMSP_Delegate and
                   Tag /= Tls_Extensiontype_Values::Oid_Filters and
-                  Tag /= Tls_Extensiontype_Values::Connection_Id_Deprecated and
+                  Tag /= Tls_Extensiontype_Values::Deprecated_Connection_Id and
                   Tag /= Tls_Extensiontype_Values::Connection_Id and
                   Tag /= Tls_Extensiontype_Values::Sequence_Number_Encryption_Algorithms and
                   Tag /= Tls_Extensiontype_Values::Renegotiation_Info
@@ -167,12 +167,12 @@ package TLS_Handshake is
                   Tag /= Tls_Extensiontype_Values::Token_Binding and
                   Tag /= Tls_Extensiontype_Values::Cached_Info and
                   Tag /= Tls_Extensiontype_Values::Tls_Lts and
-                  Tag /= Tls_Extensiontype_Values::Session_Ticket_Renamed_From_SessionTicket_TLS and
+                  Tag /= Tls_Extensiontype_Values::Session_Ticket and
                   Tag /= Tls_Extensiontype_Values::TLMSP and
                   Tag /= Tls_Extensiontype_Values::TLMSP_Proxying and
                   Tag /= Tls_Extensiontype_Values::TLMSP_Delegate and
                   Tag /= Tls_Extensiontype_Values::Oid_Filters and
-                  Tag /= Tls_Extensiontype_Values::Connection_Id_Deprecated and
+                  Tag /= Tls_Extensiontype_Values::Deprecated_Connection_Id and
                   Tag /= Tls_Extensiontype_Values::Renegotiation_Info
                );
          Data_Length : Data_Length;
@@ -317,7 +317,7 @@ package TLS_Handshake is
                   --
                   Tag = Tls_Extensiontype_Values::Server_Name or
                   Tag = Tls_Extensiontype_Values::Max_Fragment_Length or
-                  Tag = Tls_Extensiontype_Values::Supported_Groups_Renamed_From_Elliptic_Curves or
+                  Tag = Tls_Extensiontype_Values::Supported_Groups or
                   Tag = Tls_Extensiontype_Values::Use_Srtp or
                   Tag = Tls_Extensiontype_Values::Heartbeat or
                   Tag = Tls_Extensiontype_Values::Application_Layer_Protocol_Negotiation or
@@ -821,10 +821,10 @@ package TLS_Handshake is
       end message;
 
    for TLS_Handshake use (Payload => New_Session_Ticket)
-      if Tag = TLS_Parameters::New_Session_Ticket_Renamed_From_NewSessionTicket;
+      if Tag = TLS_Parameters::New_Session_Ticket;
 
    for DTLS_Handshake use (Payload => New_Session_Ticket)
-      if Tag = TLS_Parameters::New_Session_Ticket_Renamed_From_NewSessionTicket;
+      if Tag = TLS_Parameters::New_Session_Ticket;
 
    type Key_Update_Request is (
       Update_Not_Requested => 0,
@@ -1062,11 +1062,11 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Supported_Groups)
-      if Tag = TLS_ExtensionType_Values::Supported_Groups_Renamed_From_Elliptic_Curves;
+      if Tag = TLS_ExtensionType_Values::Supported_Groups;
    for CH_Extension_DTLS use (Data => Supported_Groups)
-      if Tag = TLS_ExtensionType_Values::Supported_Groups_Renamed_From_Elliptic_Curves;
+      if Tag = TLS_ExtensionType_Values::Supported_Groups;
    for EE_Extension use (Data => Supported_Groups)
-      if Tag = TLS_ExtensionType_Values::Supported_Groups_Renamed_From_Elliptic_Curves;
+      if Tag = TLS_ExtensionType_Values::Supported_Groups;
 
    -- Key Share Extension
 

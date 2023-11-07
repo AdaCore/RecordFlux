@@ -1,5 +1,5 @@
 -- AUTOMATICALLY GENERATED. DO NOT EDIT.
--- Generation date: 2023-08-24
+-- Generation date: 2023-11-03
 -- Transport Layer Security (TLS) Parameters
 -- Registry last updated on 2023-07-19
 
@@ -1989,7 +1989,7 @@ package Tls_Parameters is
        -- Ref: rfc4507
        -- Ref: rfc8446
        -- Ref: rfc8447
-       New_Session_Ticket_Renamed_From_NewSessionTicket => 4,
+       New_Session_Ticket => 4,
 
        -- dtls = Y
        -- Ref: rfc8446
@@ -2287,7 +2287,7 @@ package Tls_Parameters is
        -- dtls = Y
        -- rec = N
        -- Ref: draft-kwiatkowski-tls-ecdhe-kyber-01
-       -- comment = Combining Secp256r1 ECDH with pre-standards version of Kyber768
+       -- comment = Combining secp256r1 ECDH with pre-standards version of Kyber768
        SecP256r1Kyber768Draft00 => 25498,
 
        -- dtls = Y

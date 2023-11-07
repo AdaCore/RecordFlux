@@ -1,6 +1,7 @@
 -- AUTOMATICALLY GENERATED. DO NOT EDIT.
--- Generation date: 2022-10-05
--- Dynamic Host Configuration Protocol (DHCP) and Bootstrap Protocol (BOOTP) Parameters
+-- Generation date: 2023-11-03
+-- Dynamic Host Configuration Protocol (DHCP) and Bootstrap Protocol (BOOTP)
+-- Parameters
 -- Registry last updated on 2021-01-15
 
 package Bootp_Dhcp_Parameters is
@@ -571,47 +572,46 @@ package Bootp_Dhcp_Parameters is
        V_I_Vendor_Specific_Information => 125,
 
        -- Ref: rfc4578
-       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = PXE_Undefined
        -- alternative_name = Etherboot_Signature_6_Bytes_E4_45_74_68_00_00
        -- alternative_name = DOCSIS_Full_Security_Server_IP_Address
-       -- alternative_name = TFTP_Server_IP_Address_For_IP_Phone_Software_Load
+       -- alternative_name = TFTP_Server_IP_Address
        BOOTP_Vendor_Extensions_And_DHCP_Options_128 => 128,
 
        -- Ref: rfc4578
-       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = PXE_Undefined
        -- alternative_name = Kernel_Options_Variable_Length_String
        -- alternative_name = Call_Server_IP_Address
        BOOTP_Vendor_Extensions_And_DHCP_Options_129 => 129,
 
        -- Ref: rfc4578
-       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = PXE_Undefined
        -- alternative_name = Ethernet_Interface_Variable_Length_String
-       -- alternative_name = Discrimination_String_To_Identify_Vendor
+       -- alternative_name = Discrimination_String
        BOOTP_Vendor_Extensions_And_DHCP_Options_130 => 130,
 
        -- Ref: rfc4578
-       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = PXE_Undefined
        -- alternative_name = Remote_Statistics_Server_IP_Address
        BOOTP_Vendor_Extensions_And_DHCP_Options_131 => 131,
 
        -- Ref: rfc4578
-       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = PXE_Undefined
        -- alternative_name = IEEE_802_1Q_VLAN_ID
        BOOTP_Vendor_Extensions_And_DHCP_Options_132 => 132,
 
        -- Ref: rfc4578
-       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = PXE_Undefined
        -- alternative_name = IEEE_802_1D_P_Layer_2_Priority
        BOOTP_Vendor_Extensions_And_DHCP_Options_133 => 133,
 
        -- Ref: rfc4578
-       -- alternative_name = PXE_Undefined_Vendor_Specific
-       -- alternative_name =
-       --  Diffserv_Code_Point_DSCP_For_VoIP_Signalling_And_Media_Streams
+       -- alternative_name = PXE_Undefined
+       -- alternative_name = Diffserv_Code_Point
        BOOTP_Vendor_Extensions_And_DHCP_Options_134 => 134,
 
        -- Ref: rfc4578
-       -- alternative_name = PXE_Undefined_Vendor_Specific
+       -- alternative_name = PXE_Undefined
        -- alternative_name = HTTP_Proxy_For_Phone_Specific_Applications
        BOOTP_Vendor_Extensions_And_DHCP_Options_135 => 135,
 
@@ -733,11 +733,11 @@ package Bootp_Dhcp_Parameters is
        -- description = Manufacturer Usage Descriptions
        -- Ref: rfc8520
        OPTION_MUD_URL_V4 => 161,
-       Etherboot_Tentatively_Assigned_2005_06_23 => 175,
-       IP_Telephone_Tentatively_Assigned_2005_06_23 => 176,
+       Etherboot => 175,
+       IP_Telephone => 176,
 
-       -- alternative_name = Etherboot_Tentatively_Assigned_2005_06_23
-       -- alternative_name = PacketCable_And_CableHome_Replaced_By_122
+       -- alternative_name = Etherboot
+       -- alternative_name = PacketCable_And_CableHome
        BOOTP_Vendor_Extensions_And_DHCP_Options_177 => 177,
 
        -- length = 4
@@ -777,7 +777,7 @@ package Bootp_Dhcp_Parameters is
        Subnet_Allocation_Option => 220,
 
        -- Ref: rfc6607
-       Virtual_Subnet_Selection_VSS_Option => 221,
+       Virtual_Subnet_Selection => 221,
 
        -- length = 0
        -- description = None
@@ -976,10 +976,10 @@ package Bootp_Dhcp_Parameters is
        Vertical_Datum_WGS_84_Defined_By_EPSG_CRS_Code_4327 => 1,
 
        -- Ref: rfc6225
-       Vertical_Datum_NAD83_Defined_By_EPSG_CRS_Code_4269_With_North_American_Vertical_Datum_Of_1988_NAVD88 => 2,
+       Vertical_Datum_NAD83_Defined_By_EPSG_CRS_Code_4269_With_North_American_Vertical_Datum_Of_1988 => 2,
 
        -- Ref: rfc6225
-       Vertical_Datum_NAD83_Defined_By_EPSG_CRS_Code_4269_With_Mean_Lower_Low_Water_MLLW_As_Associated_Vert_3 => 3)
+       Vertical_Datum_NAD83_Defined_By_EPSG_CRS_Code_4269_With_Mean_Lower_Low_Water => 3)
    with Size => 3;
 
    type GeoLoc_Option_Version_Registry is
@@ -1065,7 +1065,7 @@ package Bootp_Dhcp_Parameters is
        DHCPv4_Delayed_Authentication => 1,
 
        -- Ref: rfc8415
-       DHCPv6_Delayed_Authentication_Obsolete => 2,
+       Obsolete_DHCPv6_Delayed_Authentication => 2,
 
        -- Ref: rfc8415
        DHCPv6_Reconfigure_Key_Authentication => 3)
@@ -1094,14 +1094,14 @@ package Bootp_Dhcp_Parameters is
 
    type VSS_Type_Options is
       (-- Ref: rfc6607
-       Network_Virtual_Terminal_NVT_ASCII_VPN_Identifier => 0,
+       Network_Virtual_Terminal => 0,
 
        -- Ref: rfc2685
        -- Ref: rfc6607
        RFC2685_VPN_ID => 1,
 
        -- Ref: rfc6926
-       All_VPNs_Wildcard => 254,
+       All_VPNs => 254,
 
        -- Ref: rfc6607
        Global_Default_VPN => 255)

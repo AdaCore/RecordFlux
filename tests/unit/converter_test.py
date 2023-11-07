@@ -401,6 +401,62 @@ def test_convert_iana_invalid_no_registry_id(tmp_path: Path) -> None:
             """,
             id="with skipped registry",
         ),
+        pytest.param(
+            """
+                <registry xmlns="http://www.iana.org/assignments" id="test_registry">
+                    <title>Test registry</title>
+                    <registry id="test1000">
+                        <title>Test registry 1000</title>
+                        <record>
+                            <value>1001</value>
+                            <name>Long name
+                                  (with
+                                  extra information in
+                                  parentheses)
+                                  and even more text
+                            </name>
+                        </record>
+                        <record>
+                            <value>1002</value>
+                            <name>DHCPv6 Delayed Authentication (Obsolete)
+                            </name>
+                        </record>
+                        <record>
+                            <value>1003</value>
+                            <name>DHCPv6-multiline Delayed Authentication
+                                  (Obsolete)
+                            </name>
+                        </record>
+                        <record>
+                            <value>1004</value>
+                            <name>SWIPE (deprecated)
+                            </name>
+                        </record>
+                        <record>
+                            <value>1005</value>
+                            <name>SWIPE-multiline
+                                  (deprecated)
+                            </name>
+                        </record>
+                    </registry>
+                </registry>
+            """,
+            """\
+                -- Test registry
+                package Test_Registry is
+
+                   type Test_Registry_1000 is
+                      (Long_Name => 1001,
+                       Obsolete_DHCPv6_Delayed_Authentication => 1002,
+                       Obsolete_DHCPv6_Multiline_Delayed_Authentication => 1003,
+                       Deprecated_SWIPE => 1004,
+                       Deprecated_SWIPE_Multiline => 1005)
+                   with Size => 10;
+
+                end Test_Registry;
+            """,
+            id="with extra name parts",
+        ),
     ],
 )
 def test_convert_iana(xml_str: str, rflx_str: str, tmp_path: Path) -> None:

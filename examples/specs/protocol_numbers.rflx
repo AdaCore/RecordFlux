@@ -1,5 +1,5 @@
 -- AUTOMATICALLY GENERATED. DO NOT EDIT.
--- Generation date: 2022-10-05
+-- Generation date: 2023-11-03
 -- Protocol Numbers
 -- Registry last updated on 2021-02-26
 
@@ -69,7 +69,7 @@ package Protocol_Numbers is
 
        -- description = ARGUS
        -- Ref: Robert_W_Scheifler
-       ARGUS_Deprecated => 13,
+       Deprecated_ARGUS => 13,
 
        -- description = EMCON
        -- xref = <mystery contact>
@@ -258,7 +258,7 @@ package Protocol_Numbers is
 
        -- description = IP with Encryption
        -- Ref: John_Ioannidis
-       SWIPE_Deprecated => 53,
+       Deprecated_SWIPE => 53,
 
        -- description = NBMA Address Resolution Protocol
        -- Ref: rfc1735
@@ -439,7 +439,7 @@ package Protocol_Numbers is
 
        -- description = Mobile Internetworking Control Pro.
        -- Ref: John_Ioannidis
-       MICP_Deprecated => 95,
+       Deprecated_MICP => 95,
 
        -- description = Semaphore Communications Sec. Pro.
        -- Ref: Howard_Hart
@@ -550,7 +550,7 @@ package Protocol_Numbers is
        -- description = Simple Multicast Protocol
        -- Ref: Jon_Crowcroft
        -- Ref: draft-perlman-simple-multicast
-       SM_Deprecated => 122,
+       Deprecated_SM => 122,
 
        -- description = Performance Transparency Protocol
        -- Ref: Michael_Welzl
