@@ -85,11 +85,6 @@ package SPDM_Responder is
             with Size => Length * 8;
       end message;
 
-   type Measurement_Summary is
-      message
-         Data : SPDM::Measurement_Record;
-      end message;
-
    type Session_Phase is
       (Session_Error     => 0,
        No_Session        => 1,
