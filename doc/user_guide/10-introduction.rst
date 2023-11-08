@@ -21,7 +21,7 @@ It is not possible to express or check precise invariants characterizing the des
 Consequently, many implementations contain severe security vulnerabilities waiting to be discovered and exploited by malicious actors.
 
 Using standardized formats and protocols and relying on widespread implementations with good quality assurance can help to lower the risk of zero-day exploits.
-However, high profile vulnerabilities in commonly used protocol stacks, as found in Ripple20 or Amnesia:33, demonstrate that this by no means guarantees good security.
+However, high profile vulnerabilities in commonly used protocol stacks, as found in `Ripple20 <https://www.jsof-tech.com/disclosures/ripple20/>`__ or `Amnesia:33 <https://www.forescout.com/research-labs/amnesia33/>`__, demonstrate that this by no means guarantees good security.
 
 While standard implementations receive at least a certain level of scrutiny by the open source community and independent researchers, the situation is even worse for custom data formats and protocol implementations.
 Specifications (if present at all) and implementations are often only reviewed by a few people.
