@@ -99,7 +99,8 @@ Raw packets can, e.g., be exported from packet analyzers like Wireshark or extra
 To facilitate execution within a CI/CD pipeline, the `--abort-on-error` switch causes the tool to exit with an error code if any samples are rejected.
 Upon completion, the Validator will produce a report, with an option to display how much of a message has been covered:
 
-.. image:: images/RecordFlux-Validator_Example.png
+.. literalinclude:: validator_example.txt
+   :language: console
 
 If more complex validation beyond checking messages is required, the Simulator can be used.
 It allows loading RecordFlux message specifications into a Python program and using the resulting model to parse and generate messages at runtime.

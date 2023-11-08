@@ -1,0 +1,48 @@
+$ rflx validate \
+    --coverage \
+    -i tests/examples/data/http_2/frame/invalid \
+    -v tests/examples/data/http_2/frame/valid \
+    examples/specs/http_2.rflx HTTP_2::Frame
+
+Parsing examples/specs/http_2.rflx
+Processing HTTP_2
+[...]
+Verifying HTTP_2::Frame
+tests/examples/data/http_2/frame/valid/GOAWAY_58.raw                             PASSED
+tests/examples/data/http_2/frame/valid/GOAWAY_66.raw                             PASSED
+tests/examples/data/http_2/frame/valid/HEADERS_26.raw                            PASSED
+[...]
+tests/examples/data/http_2/frame/valid/PING_44.raw                               PASSED
+tests/examples/data/http_2/frame/valid/PING_45.raw                               PASSED
+tests/examples/data/http_2/frame/valid/PING_48.raw                               PASSED
+tests/examples/data/http_2/frame/valid/PING_49.raw                               PASSED
+tests/examples/data/http_2/frame/valid/PUSH_PROMISE_63.raw                       PASSED
+tests/examples/data/http_2/frame/valid/RST_STREAM_64.raw                         PASSED
+tests/examples/data/http_2/frame/valid/SETTINGS_0.raw                            PASSED
+[...]
+tests/examples/data/http_2/frame/valid/WINDOW_UPDATE_10.raw                      PASSED
+[...]
+
+--------------------------------------------------------------------------------
+                     RecordFlux Validation Coverage Report
+Directory: .
+--------------------------------------------------------------------------------
+File                                          Links       Used        Coverage
+http_2.rflx                                      56         37          66.07%
+--------------------------------------------------------------------------------
+TOTAL                                            56         37          66.07%
+--------------------------------------------------------------------------------
+
+================================================================================
+                                Uncovered Links
+================================================================================
+
+                                  http_2.rflx
+--------------------------------------------------------------------------------
+http_2.rflx:141:13: missing link     Stream_Identifier     ->      Pad_Length
+http_2.rflx:143:13: missing link     Stream_Identifier     ->   Application_Data
+http_2.rflx:146:13: missing link     Stream_Identifier     ->    Exclusive_Flag
+http_2.rflx:151:13: missing link     Stream_Identifier     ->    Exclusive_Flag
+http_2.rflx:170:13: missing link        Pad_Length         ->   Application_Data
+[...]
+http_2.rflx:69:13: missing link Settings_Value_Enable_Push ->        Final
