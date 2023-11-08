@@ -35,4 +35,4 @@ test: node_modules out/extension.js
 .PHONY: clean
 
 clean:
-	rm -rf *.vsix .vscode-test/ node_modules/ out/ package-lock.json
+	rm -rf *.vsix .vscode-test/ node_modules/ out/
