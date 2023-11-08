@@ -9,7 +9,7 @@ variables:
    GNAT_PLATFORM: "x86_64-linux"
    SPARK_VERSION: "24.0"
    SPARK_BUILD_DATE: "all"
-   PYTHON_VERSION: "3.10"
+   PYTHON_VERSION: "3.11"
    NODE_VERSION: "20.5.1"
 
    # If set to 1, the packaging of RecordFlux including the compilation of the langkit-based parser will be tested.
@@ -68,25 +68,12 @@ setup:
      - mem:4
   artifacts:
     paths:
-      - .venv3.8
-      - .venv3.9
-      - .venv3.10
-      - .venv3.11
+      - .venv$PYTHON_VERSION
       - alr
   script:
     - git fetch --unshallow
     - *setup_alire
     - *setup_gnat
-    - export PYTHON_VERSION=3.8
-    - *setup_python_venv
-    - make clean
-    - export PYTHON_VERSION=3.9
-    - *setup_python_venv
-    - make clean
-    - export PYTHON_VERSION=3.10
-    - *setup_python_venv
-    - make clean
-    - export PYTHON_VERSION=3.11
     - *setup_python_venv
 
 ###########
@@ -215,9 +202,9 @@ python_compatibility:
         - "3.8"
         - "3.9"
         - "3.10"
-        - "3.11"
   script:
     - *setup_gnat
+    - *setup_python_venv
     - *setup_python
     - make test_coverage
 
