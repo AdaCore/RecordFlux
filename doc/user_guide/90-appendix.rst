@@ -56,6 +56,14 @@ If a tool invocation produces a bug box, please include its complete content and
 As an AdaCore customer, please open a ticket in GNAT Tracker.
 
 
+Background
+----------
+
+More information about the theoretical background of RecordFlux can be found in our paper:
+
+   Reiher T., Senier A., Castrillon J., Strufe T. (2020) RecordFlux: Formal Message Specification and Generation of Verifiable Binary Parsers. In: Arbab F., Jongmans SS. (eds) Formal Aspects of Component Software. FACS 2019. Lecture Notes in Computer Science, vol 12018. Springer, Cham (`paper <https://doi.org/10.1007/978-3-030-40914-2_9>`_, `preprint <https://arxiv.org/abs/1910.02146>`_)
+
+
 GNU FDL
 -------
 
