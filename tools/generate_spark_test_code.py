@@ -49,7 +49,7 @@ def generate_spark_tests() -> None:
 
     parser = Parser(cached=True)
     parser.parse(*SPECIFICATION_FILES)
-    model = merge_models([parser.create_model(), *models.spark_test_models()])
+    model = merge_models([parser.create_model(), *[m() for m in models.spark_test_models()]])
     Generator(
         "RFLX",
         reproducible=True,

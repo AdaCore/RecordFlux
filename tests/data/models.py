@@ -9,7 +9,9 @@ error.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import lru_cache
+from typing import Final
 
 from rflx.error import Location
 from rflx.expression import (
@@ -621,10 +623,13 @@ def universal_options() -> Sequence:
     return Sequence("Universal::Options", universal_option())
 
 
+UNIVERSAL_MESSAGE_ID: Final = ID("Universal::Message")
+
+
 @lru_cache
 def universal_message() -> Message:
     return Message(
-        "Universal::Message",
+        UNIVERSAL_MESSAGE_ID,
         [
             Link(INITIAL, Field("Message_Type")),
             Link(
@@ -826,16 +831,22 @@ def session() -> Session:
     )
 
 
-def spark_test_models() -> list[Model]:
-    """Return models corresponding to generated code in tests/spark/generated."""
+def spark_test_models() -> list[Callable[[], Model]]:
+    """
+    Return callables that create models corresponding to generated code in tests/spark/generated.
+
+    Using callable functions instead of the models directly enables the caller to postpone the
+    time-consuming creation of the models to a later time. For instance, when using this function to
+    parameterize a test function, no model creation is necessary during collection time.
+    """
     return [
-        derivation_model(),
-        enumeration_model(),
-        ethernet_model(),
-        expression_model(),
-        null_message_in_tlv_message_model(),
-        null_model(),
-        sequence_model(),
-        tlv_model(),
-        Model(fixed_size_simple_message().dependencies),
+        derivation_model,
+        enumeration_model,
+        ethernet_model,
+        expression_model,
+        null_message_in_tlv_message_model,
+        null_model,
+        sequence_model,
+        tlv_model,
+        lambda: Model(fixed_size_simple_message().dependencies),
     ]

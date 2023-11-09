@@ -1,3 +1,5 @@
+from typing import Callable
+
 import pytest
 
 import rflx.typing_ as rty
@@ -403,22 +405,22 @@ def test_sequence_dependencies() -> None:
     ("element_type", "error"),
     [
         (
-            Sequence("P::B", models.integer(), Location((3, 4))),
+            lambda: Sequence("P::B", models.integer(), Location((3, 4))),
             r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
             r'<stdin>:3:4: model: info: type "B" must be scalar or message',
         ),
         (
-            OPAQUE,
+            lambda: OPAQUE,
             r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
             r'__BUILTINS__:0:0: model: info: type "Opaque" must be scalar or message',
         ),
         (
-            Message("P::B", [], {}, location=Location((3, 4))),
+            lambda: Message("P::B", [], {}, location=Location((3, 4))),
             r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
             r"<stdin>:3:4: model: info: null messages must not be used as sequence element",
         ),
         (
-            Message(
+            lambda: Message(
                 "P::B",
                 [Link(INITIAL, Field("A"), size=Size("Message")), Link(Field("A"), FINAL)],
                 {Field("A"): OPAQUE},
@@ -429,7 +431,7 @@ def test_sequence_dependencies() -> None:
             ' on "Message\'Size" or "Message\'Last"',
         ),
         (
-            Message(
+            lambda: Message(
                 "P::B",
                 [
                     Link(INITIAL, Field("A"), condition=Equal(Size("Message"), Number(8))),
@@ -444,9 +446,9 @@ def test_sequence_dependencies() -> None:
         ),
     ],
 )
-def test_sequence_invalid_element_type(element_type: Type, error: str) -> None:
+def test_sequence_invalid_element_type(element_type: Callable[[], Type], error: str) -> None:
     with pytest.raises(RecordFluxError, match=f"^{error}$"):
-        Sequence("P::A", element_type, Location((1, 2)))
+        Sequence("P::A", element_type(), Location((1, 2)))
 
 
 def test_sequence_unsupported_element_type() -> None:

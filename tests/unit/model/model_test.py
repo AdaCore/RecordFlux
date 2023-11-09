@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from copy import copy
 from pathlib import Path
 
@@ -173,23 +173,26 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
 @pytest.mark.parametrize(
     ("types", "model"),
     [
-        ([models.tlv_message()], models.tlv_model()),
-        ([models.tlv_with_checksum_message()], models.tlv_with_checksum_model()),
-        ([models.ethernet_frame()], models.ethernet_model()),
-        ([models.enumeration_message()], models.enumeration_model()),
-        ([models.universal_refinement()], models.universal_model()),
+        ([models.tlv_message], models.tlv_model),
+        ([models.tlv_with_checksum_message], models.tlv_with_checksum_model),
+        ([models.ethernet_frame], models.ethernet_model),
+        ([models.enumeration_message], models.enumeration_model),
+        ([models.universal_refinement], models.universal_model),
         (
             [
-                models.sequence_message(),
-                models.sequence_messages_message(),
-                models.sequence_sequence_size_defined_by_message_size(),
+                models.sequence_message,
+                models.sequence_messages_message,
+                models.sequence_sequence_size_defined_by_message_size,
             ],
-            models.sequence_model(),
+            models.sequence_model,
         ),
     ],
 )
-def test_init_introduce_type_dependencies(types: Sequence[Type], model: Model) -> None:
-    assert Model(types).types == model.types
+def test_init_introduce_type_dependencies(
+    types: Sequence[Callable[[], Type]],
+    model: Callable[[], Model],
+) -> None:
+    assert Model([t() for t in types]).types == model().types
 
 
 def test_invalid_enumeration_type_identical_literals() -> None:
@@ -407,7 +410,7 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
         ([], []),
         (
             [mty.UncheckedInteger(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))],
-            [mty.Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))],
+            [lambda: mty.Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))],
         ),
         (
             [
@@ -427,14 +430,14 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
                 ),
             ],
             [
-                mty.Integer(
+                lambda: mty.Integer(
                     ID("P::I"),
                     Number(0),
                     Number(128),
                     Number(8),
                     Location((1, 2)),
                 ),
-                mty.Enumeration(
+                lambda: mty.Enumeration(
                     ID("P::E"),
                     [(ID("A"), Number(0)), (ID("B"), Number(1))],
                     Number(8),
@@ -462,8 +465,8 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
                 ),
             ],
             [
-                OPAQUE,
-                Message(
+                lambda: OPAQUE,
+                lambda: Message(
                     "P::M",
                     [
                         Link(INITIAL, Field("F"), size=Number(16)),
@@ -479,14 +482,16 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
 )
 def test_unchecked_model_checked(
     unchecked: list[UncheckedTopLevelDeclaration],
-    expected: list[TopLevelDeclaration],
+    expected: list[Callable[[], TopLevelDeclaration]],
     tmp_path: Path,
 ) -> None:
     cache = Cache(tmp_path / "test.json")
 
-    assert UncheckedModel(unchecked, RecordFluxError()).checked(cache=cache) == Model(expected)
+    declarations = [d() for d in expected]
 
-    messages = [d for d in expected if isinstance(d, Message)]
+    assert UncheckedModel(unchecked, RecordFluxError()).checked(cache=cache) == Model(declarations)
+
+    messages = [d for d in declarations if isinstance(d, Message)]
     if messages:
         for d in messages:
             cache.is_verified(Digest(d))

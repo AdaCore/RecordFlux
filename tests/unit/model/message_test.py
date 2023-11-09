@@ -120,36 +120,39 @@ M_SMPL_REF_DERI = UncheckedDerivedMessage(
     M_SMPL_REF.identifier,
 )
 
-PARAMETERIZED_MESSAGE = Message(
-    "P::M",
-    [
-        Link(
-            INITIAL,
-            Field("F1"),
-            size=Mul(Variable("P1"), Number(8)),
-        ),
-        Link(
-            Field("F1"),
-            FINAL,
-            condition=Equal(Variable("P2"), Variable("One")),
-        ),
-        Link(
-            Field("F1"),
-            Field("F2"),
-            condition=Equal(Variable("P2"), Variable("Two")),
-        ),
-        Link(
-            Field("F2"),
-            FINAL,
-        ),
-    ],
-    {
-        Field("P1"): models.integer(),
-        Field("P2"): models.enumeration(),
-        Field("F1"): OPAQUE,
-        Field("F2"): models.integer(),
-    },
-)
+
+@lru_cache
+def parameterized_message() -> Message:
+    return Message(
+        "P::M",
+        [
+            Link(
+                INITIAL,
+                Field("F1"),
+                size=Mul(Variable("P1"), Number(8)),
+            ),
+            Link(
+                Field("F1"),
+                FINAL,
+                condition=Equal(Variable("P2"), Variable("One")),
+            ),
+            Link(
+                Field("F1"),
+                Field("F2"),
+                condition=Equal(Variable("P2"), Variable("Two")),
+            ),
+            Link(
+                Field("F2"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("P1"): models.integer(),
+            Field("P2"): models.enumeration(),
+            Field("F1"): OPAQUE,
+            Field("F2"): models.integer(),
+        },
+    )
 
 
 @lru_cache
@@ -182,16 +185,16 @@ def test_invalid_identifier() -> None:
 @pytest.mark.parametrize(
     "parameter_type",
     [
-        models.null_message(),
-        models.tlv_message(),
-        models.sequence_integer_vector(),
-        models.sequence_inner_messages(),
-        OPAQUE,
+        models.null_message,
+        models.tlv_message,
+        models.sequence_integer_vector,
+        models.sequence_inner_messages,
+        lambda: OPAQUE,
     ],
 )
-def test_invalid_parameter_type_composite(parameter_type: Type) -> None:
+def test_invalid_parameter_type_composite(parameter_type: abc.Callable[[], Type]) -> None:
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
-    types = {Field(ID("P", Location((1, 2)))): parameter_type, Field("X"): models.integer()}
+    types = {Field(ID("P", Location((1, 2)))): parameter_type(), Field("X"): models.integer()}
 
     assert_message_model_error(
         structure,
@@ -417,7 +420,7 @@ def test_cycle() -> None:
 
 def test_parameters() -> None:
     assert not models.ethernet_frame().parameters
-    assert PARAMETERIZED_MESSAGE.parameters == (
+    assert parameterized_message().parameters == (
         Field("P1"),
         Field("P2"),
     )
@@ -433,21 +436,21 @@ def test_fields() -> None:
         Field("Type_Length"),
         Field("Payload"),
     )
-    assert PARAMETERIZED_MESSAGE.fields == (
+    assert parameterized_message().fields == (
         Field("F1"),
         Field("F2"),
     )
 
 
 def test_parameter_types() -> None:
-    assert PARAMETERIZED_MESSAGE.parameter_types == {
+    assert parameterized_message().parameter_types == {
         Field("P1"): models.integer(),
         Field("P2"): models.enumeration(),
     }
 
 
 def test_field_types() -> None:
-    assert PARAMETERIZED_MESSAGE.field_types == {
+    assert parameterized_message().field_types == {
         Field("F1"): OPAQUE,
         Field("F2"): models.integer(),
     }
@@ -4838,7 +4841,7 @@ def test_boolean_variable_as_condition() -> None:
     ("message", "condition"),
     [
         (
-            Message(
+            lambda: Message(
                 "P::M",
                 [
                     Link(INITIAL, Field("Tag")),
@@ -4856,7 +4859,7 @@ def test_boolean_variable_as_condition() -> None:
             ),
         ),
         (
-            Message(
+            lambda: Message(
                 "P::M",
                 [
                     Link(INITIAL, Field("Tag")),
@@ -4876,7 +4879,7 @@ def test_boolean_variable_as_condition() -> None:
         ),
     ],
 )
-def test_always_true_refinement(message: Message, condition: Expr) -> None:
+def test_always_true_refinement(message: abc.Callable[[], Message], condition: Expr) -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
@@ -4886,7 +4889,7 @@ def test_always_true_refinement(message: Message, condition: Expr) -> None:
     ):
         Refinement(
             "In_Message",
-            message,
+            message(),
             Field(ID("Value", location=Location((10, 20)))),
             models.message(),
             condition,
@@ -4897,7 +4900,7 @@ def test_always_true_refinement(message: Message, condition: Expr) -> None:
     ("message", "condition"),
     [
         (
-            Message(
+            lambda: Message(
                 "P::M",
                 [
                     Link(INITIAL, Field("Tag")),
@@ -4915,7 +4918,7 @@ def test_always_true_refinement(message: Message, condition: Expr) -> None:
             ),
         ),
         (
-            Message(
+            lambda: Message(
                 "P::M",
                 [
                     Link(INITIAL, Field("Tag")),
@@ -4935,7 +4938,7 @@ def test_always_true_refinement(message: Message, condition: Expr) -> None:
         ),
     ],
 )
-def test_always_false_refinement(message: Message, condition: Expr) -> None:
+def test_always_false_refinement(message: abc.Callable[[], Message], condition: Expr) -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
@@ -4945,7 +4948,7 @@ def test_always_false_refinement(message: Message, condition: Expr) -> None:
     ):
         Refinement(
             "In_Message",
-            message,
+            message(),
             Field(ID("Value", location=Location((10, 20)))),
             models.message(),
             condition,
@@ -5057,69 +5060,62 @@ def test_possibly_always_true_refinement(
     ) in captured.out
 
 
-@pytest.mark.parametrize(
-    ("unchecked", "expected"),
-    [
-        (
-            UncheckedMessage(
-                ID("P::No_Ref"),
-                [
-                    Link(INITIAL, Field("F1"), size=Number(16)),
-                    Link(Field("F1"), Field("F2")),
-                    Link(
-                        Field("F2"),
-                        Field("F3"),
-                        LessEqual(Variable("F2"), Number(100)),
-                        first=First("F2"),
-                    ),
-                    Link(
-                        Field("F2"),
-                        Field("F4"),
-                        GreaterEqual(Variable("F2"), Number(200)),
-                        first=First("F2"),
-                    ),
-                    Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
-                    Link(Field("F4"), FINAL),
-                ],
-                [],
-                [
-                    (Field("F1"), OPAQUE.identifier, []),
-                    (Field("F2"), models.integer().identifier, []),
-                    (Field("F3"), models.enumeration().identifier, []),
-                    (Field("F4"), models.integer().identifier, []),
-                ],
+def test_unchecked_message_checked() -> None:
+    unchecked = UncheckedMessage(
+        ID("P::No_Ref"),
+        [
+            Link(INITIAL, Field("F1"), size=Number(16)),
+            Link(Field("F1"), Field("F2")),
+            Link(
+                Field("F2"),
+                Field("F3"),
+                LessEqual(Variable("F2"), Number(100)),
+                first=First("F2"),
             ),
-            Message(
-                ID("P::No_Ref"),
-                [
-                    Link(INITIAL, Field("F1"), size=Number(16)),
-                    Link(Field("F1"), Field("F2")),
-                    Link(
-                        Field("F2"),
-                        Field("F3"),
-                        LessEqual(Variable("F2"), Number(100)),
-                        first=First("F2"),
-                    ),
-                    Link(
-                        Field("F2"),
-                        Field("F4"),
-                        GreaterEqual(Variable("F2"), Number(200)),
-                        first=First("F2"),
-                    ),
-                    Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
-                    Link(Field("F4"), FINAL),
-                ],
-                {
-                    Field("F1"): OPAQUE,
-                    Field("F2"): models.integer(),
-                    Field("F3"): models.enumeration(),
-                    Field("F4"): models.integer(),
-                },
+            Link(
+                Field("F2"),
+                Field("F4"),
+                GreaterEqual(Variable("F2"), Number(200)),
+                first=First("F2"),
             ),
-        ),
-    ],
-)
-def test_unchecked_message_checked(unchecked: UncheckedMessage, expected: Message) -> None:
+            Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
+            Link(Field("F4"), FINAL),
+        ],
+        [],
+        [
+            (Field("F1"), OPAQUE.identifier, []),
+            (Field("F2"), models.integer().identifier, []),
+            (Field("F3"), models.enumeration().identifier, []),
+            (Field("F4"), models.integer().identifier, []),
+        ],
+    )
+    expected = Message(
+        ID("P::No_Ref"),
+        [
+            Link(INITIAL, Field("F1"), size=Number(16)),
+            Link(Field("F1"), Field("F2")),
+            Link(
+                Field("F2"),
+                Field("F3"),
+                LessEqual(Variable("F2"), Number(100)),
+                first=First("F2"),
+            ),
+            Link(
+                Field("F2"),
+                Field("F4"),
+                GreaterEqual(Variable("F2"), Number(200)),
+                first=First("F2"),
+            ),
+            Link(Field("F3"), FINAL, Equal(Variable("F3"), Variable("One"))),
+            Link(Field("F4"), FINAL),
+        ],
+        {
+            Field("F1"): OPAQUE,
+            Field("F2"): models.integer(),
+            Field("F3"): models.enumeration(),
+            Field("F4"): models.integer(),
+        },
+    )
     assert unchecked.checked([OPAQUE, models.enumeration(), models.integer()]) == expected
 
 

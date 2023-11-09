@@ -1927,7 +1927,7 @@ def test_type_error_in_renaming_declaration() -> None:
             [
                 decl.VariableDeclaration(
                     "M",
-                    models.universal_message().identifier,
+                    models.UNIVERSAL_MESSAGE_ID,
                     location=Location((1, 2)),
                 ),
             ],
@@ -1943,7 +1943,7 @@ def test_type_error_in_renaming_declaration() -> None:
                 stmt.Read(
                     "C1",
                     expr.MessageAggregate(
-                        models.universal_message().identifier,
+                        models.UNIVERSAL_MESSAGE_ID,
                         {"Message_Type": expr.Variable("Universal::MT_Null")},
                     ),
                     location=Location((1, 2)),
@@ -2835,107 +2835,100 @@ def test_message_assignment_from_function() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    ("unchecked", "expected"),
-    [
-        (
-            UncheckedSession(
-                ID("P::S"),
-                [
-                    State(
-                        "A",
-                        declarations=[],
-                        actions=[stmt.Read("X", expr.Variable("M"))],
-                        transitions=[
-                            Transition("B"),
-                        ],
-                    ),
-                    State(
-                        "B",
-                        declarations=[
-                            decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
-                        ],
-                        actions=[],
-                        transitions=[
-                            Transition(
-                                "null",
-                                condition=expr.And(
-                                    expr.Equal(expr.Variable("Z"), expr.TRUE),
-                                    expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
-                                ),
-                                description="rfc1149.txt+45:4-47:8",
-                            ),
-                            Transition("A"),
-                        ],
-                        description="rfc1149.txt+51:4-52:9",
-                    ),
+def test_unchecked_session_checked() -> None:
+    unchecked = UncheckedSession(
+        ID("P::S"),
+        [
+            State(
+                "A",
+                declarations=[],
+                actions=[stmt.Read("X", expr.Variable("M"))],
+                transitions=[
+                    Transition("B"),
                 ],
-                [
-                    decl.VariableDeclaration("M", "TLV::Message"),
-                    decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
-                ],
-                [
-                    decl.ChannelDeclaration("X", readable=True, writable=True),
-                    decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
-                    decl.FunctionDeclaration(
-                        "G",
-                        [decl.Argument("P", BOOLEAN.identifier)],
-                        BOOLEAN.identifier,
-                    ),
-                ],
-                Location((1, 2)),
             ),
-            Session(
-                "P::S",
-                [
-                    State(
-                        "A",
-                        declarations=[],
-                        actions=[stmt.Read("X", expr.Variable("M"))],
-                        transitions=[
-                            Transition("B"),
-                        ],
-                    ),
-                    State(
-                        "B",
-                        declarations=[
-                            decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
-                        ],
-                        actions=[],
-                        transitions=[
-                            Transition(
-                                "null",
-                                condition=expr.And(
-                                    expr.Equal(expr.Variable("Z"), expr.TRUE),
-                                    expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
-                                ),
-                                description="rfc1149.txt+45:4-47:8",
-                            ),
-                            Transition("A"),
-                        ],
-                        description="rfc1149.txt+51:4-52:9",
-                    ),
+            State(
+                "B",
+                declarations=[
+                    decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
                 ],
-                [
-                    decl.VariableDeclaration("M", "TLV::Message"),
-                    decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
-                ],
-                [
-                    decl.ChannelDeclaration("X", readable=True, writable=True),
-                    decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
-                    decl.FunctionDeclaration(
-                        "G",
-                        [decl.Argument("P", BOOLEAN.identifier)],
-                        BOOLEAN.identifier,
+                actions=[],
+                transitions=[
+                    Transition(
+                        "null",
+                        condition=expr.And(
+                            expr.Equal(expr.Variable("Z"), expr.TRUE),
+                            expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                        ),
+                        description="rfc1149.txt+45:4-47:8",
                     ),
+                    Transition("A"),
                 ],
-                [BOOLEAN, models.tlv_message()],
-                Location((1, 2)),
+                description="rfc1149.txt+51:4-52:9",
             ),
-        ),
-    ],
-)
-def test_unchecked_session_checked(unchecked: UncheckedSession, expected: Session) -> None:
+        ],
+        [
+            decl.VariableDeclaration("M", "TLV::Message"),
+            decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
+        ],
+        [
+            decl.ChannelDeclaration("X", readable=True, writable=True),
+            decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
+            decl.FunctionDeclaration(
+                "G",
+                [decl.Argument("P", BOOLEAN.identifier)],
+                BOOLEAN.identifier,
+            ),
+        ],
+        Location((1, 2)),
+    )
+    expected = Session(
+        "P::S",
+        [
+            State(
+                "A",
+                declarations=[],
+                actions=[stmt.Read("X", expr.Variable("M"))],
+                transitions=[
+                    Transition("B"),
+                ],
+            ),
+            State(
+                "B",
+                declarations=[
+                    decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("Y")),
+                ],
+                actions=[],
+                transitions=[
+                    Transition(
+                        "null",
+                        condition=expr.And(
+                            expr.Equal(expr.Variable("Z"), expr.TRUE),
+                            expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                        ),
+                        description="rfc1149.txt+45:4-47:8",
+                    ),
+                    Transition("A"),
+                ],
+                description="rfc1149.txt+51:4-52:9",
+            ),
+        ],
+        [
+            decl.VariableDeclaration("M", "TLV::Message"),
+            decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
+        ],
+        [
+            decl.ChannelDeclaration("X", readable=True, writable=True),
+            decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
+            decl.FunctionDeclaration(
+                "G",
+                [decl.Argument("P", BOOLEAN.identifier)],
+                BOOLEAN.identifier,
+            ),
+        ],
+        [BOOLEAN, models.tlv_message()],
+        Location((1, 2)),
+    )
     assert (
         unchecked.checked(
             [BOOLEAN, models.tlv_message()],
