@@ -320,7 +320,7 @@ parser: $(GENERATED_DIR)/python/librflxlang/librflxlang.so
 
 $(GENERATED_DIR)/python/librflxlang/librflxlang.so: export GPR_PROJECT_PATH := \
 	$(GPR_PROJECT_PATH):$(GENERATED_DIR)/langkit/langkit/support:$(GENERATED_DIR)/gnatcoll-bindings/gmp:$(GENERATED_DIR)/gnatcoll-bindings/iconv:$(GENERATED_DIR)/adasat
-$(GENERATED_DIR)/python/librflxlang/librflxlang.so: export GNATCOLL_ICONV_OPT := -v
+$(GENERATED_DIR)/python/librflxlang/librflxlang.so: export GNATCOLL_ICONV_OPT ?= -v
 $(GENERATED_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | $(GENERATED_DIR)/python/librflxlang
 	gprbuild -p -j0 -P$(GENERATED_DIR)/librflxlang.gpr \
 		-XLIBRARY_TYPE=static-pic \

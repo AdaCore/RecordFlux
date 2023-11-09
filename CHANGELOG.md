@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Proving of validity of message field after update with valid sequence (eng/recordflux/RecordFlux#1444)
+- User defined `GNATCOLL_ICONV_OPT` environment variable is ignored in Makefile (AdaCore/RecordFlux#1292, eng/recordflux/RecordFlux#1453)
 
 ## [0.15.0] - 2023-11-08
 
