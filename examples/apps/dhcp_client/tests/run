@@ -3,7 +3,8 @@
 set -x
 set -o pipefail
 
-dnsmasq --no-daemon --dhcp-leasefile=build/dnsmasq.leases --port=1053 --dhcp-alternate-port --conf-file=$(dirname "$(realpath $0)")/dnsmasq.conf &
+ip a a 10.0.0.100/8 dev lo
+dnsmasq --no-daemon --dhcp-leasefile=build/dnsmasq.leases --port=1053 --conf-file=$(dirname "$(realpath $0)")/dnsmasq.conf &
 DNSMASQ_PID=$!
 
 sleep 2

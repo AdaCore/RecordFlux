@@ -4,12 +4,12 @@ SPECS = $(wildcard specs/*.rflx)
 GENERATED = build/generated/rflx-dhcp_client.ads
 BIN = build/obj/dhcp_client
 BIN_OPTIMIZED = build/obj_optimized/dhcp_client
+CWD := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 
 .PHONY: test build prove generate clean test_binary_size
 
 test: $(BIN) test_binary_size
-	# TODO(eng/recordflux/RecordFlux#1447): Fix tests
-	# tests/run
+	../../../devutils/linux/run $(CWD) tests/run
 
 test_binary_size: $(BIN_OPTIMIZED)
 	test $(shell size -A -d build/obj_optimized/dhcp_client | grep .text | awk '{ print $$2 }') -le 173000
