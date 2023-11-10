@@ -106,13 +106,13 @@ The following versions of GNAT are supported:
 
 -  GNAT Pro 22.2, 23.2 or 24.0
 -  GNAT Community 2021
--  FSF GNAT 11.2 or 12.1
+-  FSF GNAT 11.2, 12.2 or 13.2
 
 For compiling the generated code, one of the following versions of GNAT is required:
 
 -  GNAT Pro 21.2, 22.2, 23.2 or 24.0
 -  GNAT Community 2021
--  FSF GNAT 11.2 or 12.1
+-  FSF GNAT 11.2, 12.2 or 13.2
 
 A successful installation of the native toolchain can be verified on the command line as follows:
 

@@ -248,7 +248,9 @@ gnat_fsf_compatibility:
     matrix:
       - GNAT_VERSION: "11.2.4"
         CLEAN_RECORDFLUX_SETUP: 1
-      - GNAT_VERSION: "12.1.2"
+      - GNAT_VERSION: "12.2.1"
+        CLEAN_RECORDFLUX_SETUP: 1
+      - GNAT_VERSION: "13.2.1"
         CLEAN_RECORDFLUX_SETUP: 1
   script:
     - git fetch --unshallow

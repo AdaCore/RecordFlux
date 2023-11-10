@@ -25,8 +25,11 @@ abstract project Defaults is
          GNATA  := "";  -- Eng/RecordFlux/Workarounds#49
       when "pro21.2" | "pro22.2" =>
          GNATA  := "";  -- Eng/RecordFlux/Workarounds#49
-      when "fsf11.2.4" | "fsf12.1.2" =>
+      when "fsf11.2.4" | "fsf12.2.1" =>
          GNATA  := "";  -- Eng/RecordFlux/Workarounds#49
+      when "fsf13.2.1" =>
+         GNATVO := "";  -- Eng/RecordFlux/Workarounds#51
+         GNATA  := "";  -- Eng/RecordFlux/Workarounds#52
       when others =>
    end case;
 
