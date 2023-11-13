@@ -49,9 +49,12 @@ templates_path = ["../_templates"]
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["../_static"]
 html_css_files = ["css/custom.css"]
-html_logo = ""
-html_favicon = ""
+html_logo = "../images/adacore-logo-white.png"
+html_favicon = "../images/favicon.ico"
+# https://sphinx-rtd-theme.readthedocs.io/en/stable/configuring.html#theme-options
 html_theme_options = {
+    # Use AdaCore blue in the Table Of Content
+    "style_nav_header_background": "#12284c",
     "light_css_variables": {
         "color-brand-primary": "#00a650",
         "color-brand-content": "#00a650",
