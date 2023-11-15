@@ -265,6 +265,7 @@ class Message(mty.Type):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
+        skip_verification: Optional[bool] = None,
     ) -> Message:
         return Message(
             identifier if identifier else self.identifier,
@@ -273,7 +274,7 @@ class Message(mty.Type):
             checksums if checksums else copy(self.checksums),
             byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
-            skip_verification=self._skip_verification,
+            skip_verification if skip_verification else self._skip_verification,
         )
 
     @property
@@ -478,6 +479,7 @@ class Message(mty.Type):
             types=types,
             checksums=checksums,
             byte_order=byte_order,
+            skip_verification=True,
         )
 
     def typed_expression(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
@@ -2193,6 +2195,7 @@ class DerivedMessage(Message):
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
+        skip_verification: Optional[bool] = None,
     ) -> DerivedMessage:
         return DerivedMessage(
             identifier if identifier else self.identifier,
@@ -2202,6 +2205,7 @@ class DerivedMessage(Message):
             checksums if checksums else copy(self.checksums),
             byte_order if byte_order else copy(self.byte_order),
             location if location else self.location,
+            skip_verification if skip_verification else self._skip_verification,
         )
 
 

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Improve parallelization of message verification (eng/recordflux/RecordFlux#444)
+- Improve message verification (eng/recordflux/RecordFlux#1476)
 
 ### Fixed
 
