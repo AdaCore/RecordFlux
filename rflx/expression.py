@@ -6,7 +6,6 @@ import operator
 from abc import abstractmethod
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
-from copy import copy
 from dataclasses import dataclass
 from enum import Enum
 from itertools import groupby
@@ -100,8 +99,7 @@ class ProofJob:
 
 class ParallelProofs:
     def __init__(self, workers: int) -> None:
-        self._proofs: list[list[ProofJob]] = []
-        self._current: list[ProofJob] = []
+        self._proofs: list[ProofJob] = []
         self._workers = workers
 
     def add(  # noqa: PLR0913
@@ -123,7 +121,7 @@ class ParallelProofs:
         When add_unsat is set to True, unsatisfied facts will added as extra info messages.
         This option should only be set to True if ProofResult.UNSAT is considered an error.
         """
-        self._current.append(
+        self._proofs.append(
             ProofJob(
                 goal,
                 facts,
@@ -136,32 +134,24 @@ class ParallelProofs:
             ),
         )
 
-    def push(self) -> None:
-        if self._current:
-            self._proofs.append(copy(self._current))
-            self._current.clear()
-
     @staticmethod
-    def check_proof(jobs: Sequence[ProofJob]) -> RecordFluxError:
+    def check_proof(job: ProofJob) -> RecordFluxError:
         result = RecordFluxError()
-        for job in jobs:
-            proof = job.goal.check(job.facts)
-            result.extend(job.results[proof.result])
-            if job.add_unsat and proof.result != ProofResult.SAT:
-                result.extend(
-                    [
-                        (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
-                        for m, locn in proof.error
-                    ],
-                )
+        proof = job.goal.check(job.facts)
+        result.extend(job.results[proof.result])
+        if job.add_unsat and proof.result != ProofResult.SAT:
+            result.extend(
+                [
+                    (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
+                    for m, locn in proof.error
+                ],
+            )
         return result
 
     def check(self, error: RecordFluxError) -> None:
-        self.push()
         with ProcessPoolExecutor(max_workers=self._workers, mp_context=MP_CONTEXT) as executor:
             for e in executor.map(ParallelProofs.check_proof, self._proofs):
                 error.extend(e)
-        error.propagate()
 
 
 class Expr(DBC, Base):

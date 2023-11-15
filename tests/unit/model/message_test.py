@@ -1090,6 +1090,7 @@ def test_sequence_aggregate_invalid_element_type() -> None:
 
 
 def test_opaque_not_byte_aligned() -> None:
+    t = Integer("P::T", Number(0), Number(3), Number(4))
     o = Field(ID("O", location=Location((44, 3))))
     with pytest.raises(
         RecordFluxError,
@@ -1100,8 +1101,17 @@ def test_opaque_not_byte_aligned() -> None:
     ):
         Message(
             "P::M",
-            [Link(INITIAL, Field("P")), Link(Field("P"), o, size=Number(128)), Link(o, FINAL)],
-            {Field("P"): Integer("P::T", Number(0), Number(3), Number(2)), o: OPAQUE},
+            [
+                Link(INITIAL, Field("P")),
+                Link(Field("P"), o, size=Number(128)),
+                Link(o, Field("Q")),
+                Link(Field("Q"), FINAL),
+            ],
+            {
+                Field("P"): t,
+                o: OPAQUE,
+                Field("Q"): t,
+            },
         )
 
 

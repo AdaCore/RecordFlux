@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for FSF GNAT 13.2 (eng/recordflux/RecordFlux#1458)
 
+### Changed
+
+- Improve parallelization of message verification (eng/recordflux/RecordFlux#444)
+
 ### Fixed
 
 - Proving of validity of message field after update with valid sequence (eng/recordflux/RecordFlux#1444)

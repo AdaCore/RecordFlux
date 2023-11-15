@@ -1216,14 +1216,19 @@ class Message(mty.Type):
 
             self.error.propagate()
 
-            self._prove_static_conditions()
-            self._prove_conflicting_conditions()
+            proofs = expr.ParallelProofs(self._workers)
+
+            self._prove_static_conditions(proofs)
+            self._prove_conflicting_conditions(proofs)
+            self._prove_coverage(proofs)
+            self._prove_overlays(proofs)
+            self._prove_field_positions(proofs)
+            self._prove_message_size(proofs)
+
+            proofs.check(self.error)
+
             self._prove_reachability()
             self._prove_contradictions()
-            self._prove_coverage()
-            self._prove_overlays()
-            self._prove_field_positions()
-            self._prove_message_size()
 
             self.error.propagate()
 
@@ -1615,8 +1620,7 @@ class Message(mty.Type):
                 ],
             )
 
-    def _prove_static_conditions(self) -> None:
-        proofs = expr.ParallelProofs(self._workers)
+    def _prove_static_conditions(self, proofs: expr.ParallelProofs) -> None:
         for l in self._structure:
             if l.condition == expr.TRUE:
                 continue
@@ -1653,10 +1657,8 @@ class Message(mty.Type):
                 unsat_error=unsat_error,
                 unknown_error=unknown_error,
             )
-        proofs.check(self.error)
 
-    def _prove_conflicting_conditions(self) -> None:
-        proofs = expr.ParallelProofs(self._workers)
+    def _prove_conflicting_conditions(self, proofs: expr.ParallelProofs) -> None:
         for f in (INITIAL, *self.fields):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
@@ -1699,8 +1701,6 @@ class Message(mty.Type):
                                 sat_error=error,
                                 unknown_error=error,
                             )
-            proofs.push()
-        proofs.check(self.error)
 
     def _prove_reachability(self) -> None:
         def has_final(field: Field) -> bool:
@@ -1812,7 +1812,7 @@ class Message(mty.Type):
                         ],
                     )
 
-    def _prove_coverage(self) -> None:
+    def _prove_coverage(self, proofs: expr.ParallelProofs) -> None:
         """
         Prove that the fields of a message cover all message bits.
 
@@ -1825,7 +1825,6 @@ class Message(mty.Type):
         effectively pruning the range that this field covers from the bit range of the message. For
         the overall expression, prove that it is false for all f, i.e. no bits are left.
         """
-        proofs = expr.ParallelProofs(self._workers)
         for path in [p[:-1] for p in self.paths(FINAL) if p]:
             facts: Sequence[expr.Expr]
 
@@ -1877,10 +1876,8 @@ class Message(mty.Type):
                 ],
             )
             proofs.add(expr.TRUE, facts, sat_error=error, unknown_error=error)
-        proofs.check(self.error)
 
-    def _prove_overlays(self) -> None:
-        proofs = expr.ParallelProofs(self._workers)
+    def _prove_overlays(self, proofs: expr.ParallelProofs) -> None:
         for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self.paths(f) if p]:
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
@@ -1908,11 +1905,8 @@ class Message(mty.Type):
                         unknown_error=error,
                         add_unsat=True,
                     )
-            proofs.push()
-        proofs.check(self.error)
 
-    def _prove_field_positions(self) -> None:
-        proofs = expr.ParallelProofs(self._workers)
+    def _prove_field_positions(self, proofs: expr.ParallelProofs) -> None:
         for f in (*self.fields, FINAL):
             for path in self.paths(f):
                 last = path[-1]
@@ -2025,12 +2019,9 @@ class Message(mty.Type):
                             sat_error=error,
                             unknown_error=error,
                         )
-                proofs.push()
-        proofs.check(self.error)
 
-    def _prove_message_size(self) -> None:
+    def _prove_message_size(self, proofs: expr.ParallelProofs) -> None:
         """Prove that all paths lead to a message with a size that is a multiple of 8 bit."""
-        proofs = expr.ParallelProofs(self._workers)
         type_constraints = self.type_constraints(expr.TRUE)
         field_size_constraints = [
             expr.Equal(expr.Mod(expr.Size(f.name), expr.Number(8)), expr.Number(0))
@@ -2073,7 +2064,6 @@ class Message(mty.Type):
                 sat_error=error,
                 unknown_error=error,
             )
-        proofs.check(self.error)
 
     def _prove_path_property(self, prop: expr.Expr, path: Sequence[Link]) -> expr.Proof:
         conditions = [l.condition for l in path if l.condition != expr.TRUE]
