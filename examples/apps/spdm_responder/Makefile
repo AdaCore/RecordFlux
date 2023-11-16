@@ -1,6 +1,8 @@
 SHELL := /bin/bash
 
-GENERATED = build/generated/rflx-spdm.ads
+BUILD_DIR = build
+
+GENERATED = $(BUILD_DIR)/generated/rflx-spdm.ads
 
 SOURCE_SPECIFICATIONS = \
 	specs/spdm_responder.rflx \
@@ -33,44 +35,44 @@ check_spec: $(SPECIFICATIONS) | $(INTEGRATION_FILES) $(RFLX)
 
 test: test_cross test_binary_size lib
 
-test_cross: build/arm/example/main build/riscv64/example/main libarm libriscv64
+test_cross: $(BUILD_DIR)/arm/example/main $(BUILD_DIR)/riscv64/example/main libarm libriscv64
 
-test_binary_size: build/arm/example/main build/riscv64/example/main
-	tools/check_size.py arm build/arm/example/main .text 46000
-	tools/check_size.py riscv64 build/riscv64/example/main .text 38000
+test_binary_size: $(BUILD_DIR)/arm/example/main $(BUILD_DIR)/riscv64/example/main
+	tools/check_size.py arm $(BUILD_DIR)/arm/example/main .text 46000
+	tools/check_size.py riscv64 $(BUILD_DIR)/riscv64/example/main .text 38000
 
-build/lib/libspdm.a: $(GENERATED)
+$(BUILD_DIR)/lib/libspdm.a: $(GENERATED)
 	gprbuild -j0 -P spdm
 
-build/%/lib/libspdm.a: $(GENERATED)
+$(BUILD_DIR)/%/lib/libspdm.a: $(GENERATED)
 	gprbuild -j0 -P spdm -XTARGET=$*
 
-build/%/example/main: $(GENERATED)
+$(BUILD_DIR)/%/example/main: $(GENERATED)
 	gprbuild -j0 -P build.gpr -XTARGET=$*
 	test -f $@
 
-build/generated:
-	mkdir -p build/generated
+$(BUILD_DIR)/generated:
+	mkdir -p $(BUILD_DIR)/generated
 
 # The verification of the SPDM specification occasionally gets stuck in the CI. The code generation
 # is attempted twice to decrease the occurrence of unsuccessful pipelines.
-build/generated/%: $(SPECIFICATIONS) | build/generated $(INTEGRATION_FILES) $(RFLX)
-	timeout -k 60 1200 $(RFLX) generate $^ -d build/generated; \
+$(BUILD_DIR)/generated/%: $(SPECIFICATIONS) | $(BUILD_DIR)/generated $(INTEGRATION_FILES) $(RFLX)
+	timeout -k 60 1200 $(RFLX) generate $^ -d $(BUILD_DIR)/generated; \
 	RC=$$?; \
 	if [ $$RC -eq 124 ]; \
 	then \
-		timeout -k 60 1200 $(RFLX) generate $^ -d build/generated; \
+		timeout -k 60 1200 $(RFLX) generate $^ -d $(BUILD_DIR)/generated; \
 	else \
 		(exit $$RC); \
 	fi
 
 .PHONY: lib libarm libriscv64
 
-lib: build/lib/libspdm.a
+lib: $(BUILD_DIR)/lib/libspdm.a
 
-libarm: build/arm/lib/libspdm.a
+libarm: $(BUILD_DIR)/arm/lib/libspdm.a
 
-libriscv64: build/riscv64/lib/libspdm.a
+libriscv64: $(BUILD_DIR)/riscv64/lib/libspdm.a
 
 .PHONY: prove
 
@@ -85,4 +87,4 @@ generate: $(GENERATED)
 .PHONY: clean
 
 clean:
-	rm -rf build
+	rm -rf $(BUILD_DIR)

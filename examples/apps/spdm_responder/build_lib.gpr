@@ -19,9 +19,9 @@ project Build_Lib is
 
    for Library_Name use "responder";
    for Library_Kind use "static";
-   Build_Dir := "../build/" & Target_Arch & Stack_Check_Path;
-   for Object_Dir use Build_Dir & "/example";
-   for Library_Dir use Build_Dir & "/examplelib";
+   Build_Dir := "build/" & Target_Arch & Stack_Check_Path;
+   for Object_Dir use Build_Dir & "/example/obj/lib";
+   for Library_Dir use Build_Dir & "/example/lib";
    for Library_Standalone use "standard";
    for Library_Interface use ("responder");
 

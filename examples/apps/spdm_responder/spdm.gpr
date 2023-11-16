@@ -20,7 +20,7 @@ project SPDM is
          for Target use Target_Arch & "-elf";
          for Runtime ("Ada") use "light-spike";
       when others =>
-         Build_Dir := "build";
+         Build_Dir := "build/default";
    end case;
 
    for Object_Dir use Build_Dir & "/obj";
