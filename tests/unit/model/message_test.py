@@ -418,6 +418,25 @@ def test_cycle() -> None:
     )
 
 
+def test_direct_cycle() -> None:
+    t = Integer("P::T", Number(0), Number(1), Number(1))
+
+    structure = [
+        Link(INITIAL, Field("X")),
+        Link(Field("X"), Field("Y")),
+        Link(Field(ID("Y", Location((3, 5)))), Field("X")),
+    ]
+
+    types = {Field("X"): t, Field("Y"): t}
+
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle$',
+        location=Location((10, 8)),
+    )
+
+
 def test_parameters() -> None:
     assert not models.ethernet_frame().parameters
     assert parameterized_message().parameters == (
@@ -1461,36 +1480,12 @@ def test_no_valid_path() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:11:6: model: error: unreachable field "F2" in "P::M"\n'
-        r"<stdin>:11:6: model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
-        r'<stdin>:11:9: model: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:12:7: model: error: unreachable field "F3" in "P::M"\n'
-        r"<stdin>:12:7: model: info: path 0 [(]F1 -> F2 -> F3[)]:\n"
-        r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
-        r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
-        r"<stdin>:12:7: model: info: path 1 [(]F1 -> F3[)]:\n"
-        r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:12:10: model: info: unsatisfied "F1 <= 80"\n'
-        r'model: error: unreachable field "Final" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2 -> F3 -> Final[)]:\n"
-        r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
-        r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
-        r"model: info: path 1 [(]F1 -> F3 -> Final[)]:\n"
-        r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:23:5: model: info: unsatisfied "F1 <= 80"\n'
-        r'<stdin>:22:4: model: error: contradicting condition in "P::M"\n'
+        r'<stdin>:11:6: model: error: unreachable field "F2"\n'
         r'<stdin>:10:8: model: info: on path: "F1"\n'
         r'<stdin>:11:9: model: info: on path: "F2"\n'
         r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:23:5: model: error: contradicting condition in "P::M"\n'
-        r'<stdin>:10:8: model: info: on path: "F1"\n'
-        r'<stdin>:11:9: model: info: on path: "F2"\n'
-        r'<stdin>:13:10: model: info: on path: "F3"\n'
-        r'<stdin>:20:2: model: info: unsatisfied "F1 <= 80"\n'
-        r'<stdin>:22:4: model: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:23:5: model: error: contradicting condition in "P::M"\n'
+        r'<stdin>:12:7: model: error: unreachable field "F3"\n'
         r'<stdin>:10:8: model: info: on path: "F1"\n'
         r'<stdin>:12:10: model: info: on path: "F3"\n'
         r'<stdin>:21:3: model: info: unsatisfied "F1 > 80"\n'
@@ -1499,28 +1494,27 @@ def test_no_valid_path() -> None:
     )
 
 
-def test_invalid_path_1(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_invalid_path_1() -> None:
     f1 = Field(ID("F1", Location((20, 10))))
     structure = [
         Link(INITIAL, f1),
         Link(f1, FINAL, condition=Equal(Number(1), Number(2), Location((5, 10)))),
     ]
     types = {
-        Field("F1"): models.integer(),
+        f1: models.integer(),
     }
-    monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'<stdin>:5:10: model: error: contradicting condition in "P::M"\n'
+        r'<stdin>:20:10: model: error: unreachable field "F1"\n'
         r'<stdin>:20:10: model: info: on path: "F1"\n'
         r'<stdin>:5:10: model: info: unsatisfied "1 = 2"'
         r"$",
     )
 
 
-def test_invalid_path_2(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_invalid_path_2() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), condition=Equal(Number(1), Number(2))),
@@ -1530,23 +1524,18 @@ def test_invalid_path_2(monkeypatch: pytest.MonkeyPatch) -> None:
         Field("F1"): models.integer(),
         Field("F2"): models.integer(),
     }
-    monkeypatch.setattr(Message, "_prove_reachability", lambda _: None)
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "F1"\n'
         r'model: info: on path: "F1"\n'
-        r'model: info: unsatisfied "1 = 2"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
         r'model: info: unsatisfied "1 = 2"'
         r"$",
     )
 
 
-def test_contradiction() -> None:
+def test_unreachable() -> None:
     integer = Integer("P::Integer", Number(1), Number(100), Number(8))
     structure = [
         Link(INITIAL, Field("F1")),
@@ -1561,15 +1550,10 @@ def test_contradiction() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "F1"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 <= 100"\n'
-        r'model: info: unsatisfied "F1 > 1000"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
-        r'model: info: unsatisfied "F1 > 1000"\n'
-        r'model: info: unsatisfied "F1 <= 100"'
+        r'model: info: unsatisfied "F1 > 1000"'
         r"$",
     )
 
@@ -1588,13 +1572,8 @@ def test_invalid_type_condition_range_low() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "F1"\n'
         r'model: info: on path: "F1"\n'
-        r'model: info: unsatisfied "F1 >= 1"\n'
-        r'model: info: unsatisfied "F1 < 1"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
         r'model: info: unsatisfied "F1 >= 1"\n'
         r'model: info: unsatisfied "F1 < 1"'
         r"$",
@@ -1616,15 +1595,10 @@ def test_invalid_type_condition_range_high() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "F1"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: unsatisfied "F1 <= 100"\n'
-        r'model: info: unsatisfied "F1 > 200"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
-        r'model: info: unsatisfied "F1 > 200"\n'
-        r'model: info: unsatisfied "F1 <= 100"'
+        r'model: info: unsatisfied "F1 > 200"'
         r"$",
     )
 
@@ -2178,7 +2152,7 @@ def test_no_path_to_final_transitive() -> None:
     )
 
 
-def test_conditionally_unreachable_field_mod_first() -> None:
+def test_unreachable_field_mod_first() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), Greater(First("F1"), First("Message"))),
@@ -2192,178 +2166,107 @@ def test_conditionally_unreachable_field_mod_first() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F1" in "P::M"\n'
-        r"model: info: path 0 [(]F1[)]:\n"
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "F2" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "Final" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "F1"\n'
         r'model: info: on path: "F1"\n'
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First = Message\'First"'
-        r"$",
-    )
-
-
-def test_conditionally_unreachable_field_mod_last() -> None:
-    structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
-    ]
-    types = {
-        Field("F1"): models.integer(),
-        Field("F2"): models.integer(),
-    }
-    assert_message_model_error(
-        structure,
-        types,
-        r"^"
-        r'model: error: unreachable field "F2" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
-        r'model: error: unreachable field "Final" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
-        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
-        r"$",
-    )
-
-
-def test_conditionally_unreachable_field_range_first() -> None:
-    structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), Greater(First("F1"), First("Message"))),
-        Link(Field("F2"), FINAL),
-    ]
-    types = {
-        Field("F1"): models.integer(),
-        Field("F2"): models.integer(),
-    }
-    assert_message_model_error(
-        structure,
-        types,
-        r"^"
-        r'model: error: unreachable field "F1" in "P::M"\n'
-        r"model: info: path 0 [(]F1[)]:\n"
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "F2" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "Final" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First = Message\'First"'
-        r"$",
-    )
-
-
-def test_conditionally_unreachable_field_range_last() -> None:
-    structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
-    ]
-    types = {
-        Field("F1"): models.integer(),
-        Field("F2"): models.integer(),
-    }
-    assert_message_model_error(
-        structure,
-        types,
-        r"^"
-        r'model: error: unreachable field "F2" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
-        r'model: error: unreachable field "Final" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
-        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
-        r"$",
-    )
-
-
-def test_conditionally_unreachable_field_enum_first() -> None:
-    structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), Greater(First("F1"), First("Message"))),
-        Link(Field("F2"), FINAL),
-    ]
-    types = {
-        Field("F1"): models.enumeration(),
-        Field("F2"): models.enumeration(),
-    }
-    assert_message_model_error(
-        structure,
-        types,
-        r"^"
-        r'model: error: unreachable field "F1" in "P::M"\n'
-        r"model: info: path 0 [(]F1[)]:\n"
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "F2" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: unreachable field "Final" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'model: info: unsatisfied "F1\'First > Message\'First"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
         r'model: info: unsatisfied "F1\'First = Message\'First"\n'
         r'model: info: unsatisfied "F1\'First > Message\'First"'
         r"$",
     )
 
 
-def test_conditionally_unreachable_field_enum_last() -> None:
+def test_unreachable_field_mod_last() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2")),
+        Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
+    ]
+    types = {
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
+    }
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F2"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
+        r"$",
+    )
+
+
+def test_unreachable_field_range_first() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), Greater(First("F1"), First("Message"))),
+        Link(Field("F2"), FINAL),
+    ]
+    types = {
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
+    }
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F1"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"'
+        r"$",
+    )
+
+
+def test_unreachable_field_range_last() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2")),
+        Link(Field("F2"), FINAL, Equal(Last("F1"), Last("Message"))),
+    ]
+    types = {
+        Field("F1"): models.integer(),
+        Field("F2"): models.integer(),
+    }
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F2"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: on path: "F2"\n'
+        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'model: info: unsatisfied "F1\'Last = Message\'Last"'
+        r"$",
+    )
+
+
+def test_unreachable_field_enum_first() -> None:
+    structure = [
+        Link(INITIAL, Field("F1")),
+        Link(Field("F1"), Field("F2"), Greater(First("F1"), First("Message"))),
+        Link(Field("F2"), FINAL),
+    ]
+    types = {
+        Field("F1"): models.enumeration(),
+        Field("F2"): models.enumeration(),
+    }
+    assert_message_model_error(
+        structure,
+        types,
+        r"^"
+        r'model: error: unreachable field "F1"\n'
+        r'model: info: on path: "F1"\n'
+        r'model: info: unsatisfied "F1\'First = Message\'First"\n'
+        r'model: info: unsatisfied "F1\'First > Message\'First"'
+        r"$",
+    )
+
+
+def test_unreachable_field_enum_last() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2")),
@@ -2377,17 +2280,7 @@ def test_conditionally_unreachable_field_enum_last() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F2" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
-        r'model: error: unreachable field "Final" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2 -> Final[)]:\n"
-        r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'model: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'model: info: unsatisfied "F1\'Last = Message\'Last"\n'
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "F2"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: on path: "F2"\n'
         r'model: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
@@ -2397,7 +2290,7 @@ def test_conditionally_unreachable_field_enum_last() -> None:
     )
 
 
-def test_conditionally_unreachable_field_outgoing() -> None:
+def test_unreachable_field_outgoing() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
         Link(Field("F1"), Field("F2"), LessEqual(Variable("F1"), Number(32))),
@@ -2412,11 +2305,7 @@ def test_conditionally_unreachable_field_outgoing() -> None:
         structure,
         types,
         r"^"
-        r'model: error: unreachable field "F2" in "P::M"\n'
-        r"model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'model: info: unsatisfied "F1 <= 32"\n'
-        r'model: info: unsatisfied "F1 > 32"\n'
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "F2"\n'
         r'model: info: on path: "F1"\n'
         r'model: info: on path: "F2"\n'
         r'model: info: unsatisfied "F1 <= 32"\n'
@@ -2425,9 +2314,9 @@ def test_conditionally_unreachable_field_outgoing() -> None:
     )
 
 
-def test_conditionally_unreachable_field_outgoing_multi() -> None:
+def test_unreachable_field_outgoing_multi() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
+        Link(INITIAL, Field(ID("F1", Location((86, 13))))),
         Link(
             Field("F1"),
             Field(ID("F2", Location((91, 13)))),
@@ -2438,9 +2327,8 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
             Field("F2"),
             Field("F3"),
             And(
-                Greater(Variable("F1"), Number(32)),
+                Greater(Variable("F1"), Number(32), location=Location((22, 34))),
                 LessEqual(Variable("F1"), Number(48)),
-                location=Location((22, 34)),
             ),
         ),
         Link(Field("F2"), FINAL, Greater(Variable("F1"), Number(48))),
@@ -2455,20 +2343,11 @@ def test_conditionally_unreachable_field_outgoing_multi() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:90:12: model: error: unreachable field "F2" in "P::M"\n'
-        r"<stdin>:90:12: model: info: path 0 [(]F1 -> F2[)]:\n"
-        r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
-        r'<stdin>:91:13: model: info: unsatisfied "[(]F1 > 32 and F1 <= 48[)] or F1 > 48"\n'
-        r'<stdin>:22:34: model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
+        r'<stdin>:90:12: model: error: unreachable field "F2"\n'
+        r'<stdin>:86:13: model: info: on path: "F1"\n'
         r'<stdin>:91:13: model: info: on path: "F2"\n'
         r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
-        r'<stdin>:22:34: model: info: unsatisfied "F1 > 32 and F1 <= 48"\n'
-        r'model: error: contradicting condition in "P::M"\n'
-        r'model: info: on path: "F1"\n'
-        r'<stdin>:91:13: model: info: on path: "F2"\n'
-        r'<stdin>:66:3: model: info: unsatisfied "F1 <= 32"\n'
-        r'model: info: unsatisfied "F1 > 48"'
+        r'<stdin>:22:34: model: info: unsatisfied "F1 > 32"'
         r"$",
     )
 
@@ -2524,10 +2403,10 @@ def test_aggregate_equal_invalid_size1() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "Magic"\n'
         r'model: info: on path: "Magic"\n'
-        r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
-        r'model: info: unsatisfied "Magic\'Size = 40"'
+        r'model: info: unsatisfied "Magic\'Size = 40"\n'
+        r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"'
         r"$",
     )
 
@@ -2548,10 +2427,10 @@ def test_aggregate_equal_invalid_size2() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "Magic"\n'
         r'model: info: on path: "Magic"\n'
-        r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
-        r'model: info: unsatisfied "Magic\'Size = 40"'
+        r'model: info: unsatisfied "Magic\'Size = 40"\n'
+        r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"'
         r"$",
     )
 
@@ -2590,10 +2469,10 @@ def test_aggregate_inequal_invalid_size() -> None:
         structure,
         types,
         r"^"
-        r'model: error: contradicting condition in "P::M"\n'
+        r'model: error: unreachable field "Magic"\n'
         r'model: info: on path: "Magic"\n'
-        r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
-        r'model: info: unsatisfied "Magic\'Size = 40"'
+        r'model: info: unsatisfied "Magic\'Size = 40"\n'
+        r'model: info: unsatisfied "2 [*] 8 = Magic\'Size"'
         r"$",
     )
 
@@ -2631,7 +2510,7 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
         ),
     ]
     types = {
-        Field("Magic"): Sequence(
+        magic: Sequence(
             "P::Arr",
             Integer("P::Integer", Number(0), Number(127), Number(8), location=Location((66, 3))),
         ),
@@ -2640,11 +2519,11 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:17:3: model: error: contradicting condition in "P::M"\n'
+        r'<stdin>:3:5: model: error: unreachable field "Magic"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
+        r'<stdin>:19:17: model: info: unsatisfied "Magic\'Size = 40"\n'
         r'<stdin>:17:3: model: info: unsatisfied "2 [*] Integer\'Size = Magic\'Size"\n'
-        r'<stdin>:66:3: model: info: unsatisfied "Integer\'Size = 8"\n'
-        r'<stdin>:19:17: model: info: unsatisfied "Magic\'Size = 40"'
+        r'<stdin>:66:3: model: info: unsatisfied "Integer\'Size = 8"'
         r"$",
     )
 
@@ -2680,17 +2559,17 @@ def test_aggregate_equal_invalid_size_field() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:10:5: model: error: contradicting condition in "P::M"\n'
+        r'<stdin>:17:3: model: error: unreachable field "Magic"\n'
         r'<stdin>:2:5: model: info: on path: "Length"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
-        r'<stdin>:6:5: model: info: unsatisfied "Magic\'Size = 8 [*] Length"\n'
         r'<stdin>:10:5: model: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
-        r'<stdin>:5:10: model: info: unsatisfied "Length >= 10"'
+        r'<stdin>:5:10: model: info: unsatisfied "Length >= 10"\n'
+        r'<stdin>:6:5: model: info: unsatisfied "Magic\'Size = 8 [*] Length"'
         r"$",
     )
 
 
-def test_no_contradiction_multi() -> None:
+def test_no_unreachable_field_multi() -> None:
     structure = [
         Link(INITIAL, Field("F0")),
         Link(Field("F0"), Field("F1"), condition=Equal(Variable("F0"), Number(1))),

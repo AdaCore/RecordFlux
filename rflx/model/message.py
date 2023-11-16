@@ -1008,6 +1008,35 @@ class Message(mty.Type):
                     ],
                 )
 
+        def has_final(field: Field, seen: Optional[set[Field]] = None) -> bool:
+            """Return True if the field has a path to the final field or a cycle was found."""
+
+            if seen is None:
+                seen = set()
+
+            if field in seen:
+                return True
+
+            seen = {field, *seen}
+
+            if field == FINAL:
+                return True
+
+            return any(has_final(o.target, seen) for o in self.outgoing(field))
+
+        for f in (INITIAL, *sorted(structure_fields)):
+            if not has_final(f):
+                self.error.extend(
+                    [
+                        (
+                            f'no path to FINAL for field "{f.name}" in "{self.identifier}"',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            f.identifier.location,
+                        ),
+                    ],
+                )
+
         duplicate_links = defaultdict(list)
         for link in self.structure:
             duplicate_links[(link.source, link.target, link.condition)].append(link)
@@ -1230,7 +1259,6 @@ class Message(mty.Type):
             proofs.check(self.error)
 
             self._prove_reachability()
-            self._prove_contradictions()
 
             self.error.propagate()
 
@@ -1705,99 +1733,51 @@ class Message(mty.Type):
                             )
 
     def _prove_reachability(self) -> None:
-        def has_final(field: Field) -> bool:
-            if field == FINAL:
-                return True
-            return any(has_final(o.target) for o in self.outgoing(field))
+        """
+        Find all fields that are unreachable due to contradictions on all paths to the field.
 
-        for f in (INITIAL, *self.fields):
-            if not has_final(f):
-                self.error.extend(
-                    [
-                        (
-                            f'no path to FINAL for field "{f.name}" in "{self.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            f.identifier.location,
-                        ),
-                    ],
-                )
+        Fields that can only be reached via an unreachable field, and are therefore unreachable due
+        to the same problem, are not mentioned in the resulting error message.
+        """
+
+        def is_covered(path: tuple[Link, ...], subpaths: set[tuple[Link, ...]]) -> bool:
+            """Check if `path` starts with any subpath contained in `subpaths`."""
+            return any(
+                p for p in subpaths if len(p) < len(path) and all(a == b for a, b in zip(p, path))
+            )
+
+        unreachable: set[tuple[Link, ...]] = set()
 
         for f in (*self.fields, FINAL):
             paths = []
             for path in self.paths(f):
+                if is_covered(path, unreachable):
+                    continue
+
                 facts = [fact for link in path for fact in self._link_expressions(link)]
-                last_field = path[-1].target
-                outgoing = self.outgoing(last_field)
-                if last_field != FINAL and outgoing:
-                    facts.append(
-                        expr.Or(
-                            *[o.condition for o in outgoing],
-                            location=last_field.identifier.location,
-                        ),
-                    )
-                proof = expr.TRUE.check(facts)
+                outgoing = self.outgoing(path[-1].target)
+                condition = expr.Or(*[o.condition for o in outgoing]) if outgoing else expr.TRUE
+                proof = condition.check(
+                    [*facts, *self.message_constraints(), *self.type_constraints(condition)],
+                )
                 if proof.result == expr.ProofResult.SAT:
                     break
 
                 paths.append((path, proof.error))
+                unreachable.add(path)
             else:
-                error = []
-                error.append(
-                    (
-                        f'unreachable field "{f.name}" in "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        f.identifier.location,
-                    ),
-                )
-                for index, (path, errors) in enumerate(sorted(paths)):
+                if paths:
+                    error = []
                     error.append(
                         (
-                            f"path {index} (" + " -> ".join([l.target.name for l in path]) + "):",
+                            f'unreachable field "{f.identifier}"',
                             Subsystem.MODEL,
-                            Severity.INFO,
+                            Severity.ERROR,
                             f.identifier.location,
                         ),
                     )
-                    error.extend(
-                        [
-                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
-                            for m, l in errors
-                        ],
-                    )
-                self.error.extend(error)
-
-    def _prove_contradictions(self) -> None:
-        for f in (INITIAL, *self.fields):
-            contradictions = []
-            paths = 0
-            for path in self.paths(f):
-                facts = [fact for link in path for fact in self._link_expressions(link)]
-                for c in self.outgoing(f):
-                    paths += 1
-                    contradiction = c.condition
-                    constraints = self.message_constraints() + self.type_constraints(contradiction)
-                    proof = contradiction.check([*constraints, *facts])
-                    if proof.result == expr.ProofResult.SAT:
-                        continue
-
-                    contradictions.append((path, c.condition, proof.error))
-
-            if paths == len(contradictions):
-                for path, cond, errors in sorted(contradictions):
-                    self.error.extend(
-                        [
-                            (
-                                f'contradicting condition in "{self.identifier}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                cond.location,
-                            ),
-                        ],
-                    )
-                    self.error.extend(
-                        [
+                    for path, errors in sorted(paths):
+                        error.extend(
                             (
                                 f'on path: "{l.target.identifier}"',
                                 Subsystem.MODEL,
@@ -1805,14 +1785,12 @@ class Message(mty.Type):
                                 l.target.identifier.location,
                             )
                             for l in path
-                        ],
-                    )
-                    self.error.extend(
-                        [
+                        )
+                        error.extend(
                             (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
                             for m, l in errors
-                        ],
-                    )
+                        )
+                    self.error.extend(error)
 
     def _prove_coverage(self, proofs: expr.ParallelProofs) -> None:
         """
@@ -3092,13 +3070,17 @@ def _aggregate_constraints(
     types: Mapping[Field, mty.Type],
     expression: expr.Expr = expr.TRUE,
 ) -> list[expr.Expr]:
-    def get_constraints(aggregate: expr.Aggregate, field: expr.Variable) -> Sequence[expr.Expr]:
+    def get_constraints(
+        aggregate: expr.Aggregate,
+        field: expr.Variable,
+        location: Optional[Location],
+    ) -> Sequence[expr.Expr]:
         comp = types[Field(field.name)]
         assert isinstance(comp, mty.Composite)
         result = expr.Equal(
             expr.Mul(aggregate.length, comp.element_size),
             expr.Size(field),
-            location=expression.location,
+            location=location,
         )
         if isinstance(comp, mty.Sequence) and isinstance(comp.element_type, mty.Scalar):
             return [
@@ -3111,9 +3093,9 @@ def _aggregate_constraints(
     for r in expression.findall(lambda x: isinstance(x, (expr.Equal, expr.NotEqual))):
         assert isinstance(r, (expr.Equal, expr.NotEqual))
         if isinstance(r.left, expr.Aggregate) and isinstance(r.right, expr.Variable):
-            aggregate_constraints.extend(get_constraints(r.left, r.right))
+            aggregate_constraints.extend(get_constraints(r.left, r.right, r.location))
         if isinstance(r.left, expr.Variable) and isinstance(r.right, expr.Aggregate):
-            aggregate_constraints.extend(get_constraints(r.right, r.left))
+            aggregate_constraints.extend(get_constraints(r.right, r.left, r.location))
 
     return aggregate_constraints
 

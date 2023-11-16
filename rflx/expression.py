@@ -70,16 +70,35 @@ class Proof:
     @property
     def error(self) -> list[tuple[str, Optional[Location]]]:
         assert self._result != ProofResult.SAT
+
         if self._result == ProofResult.UNKNOWN:
             assert self._unknown_reason is not None
             return [(self._unknown_reason, None)]
+
         solver = z3.SolverFor(self._logic)
         solver.set(unsat_core=True)
+
         facts = {f"H{index}": fact for index, fact in enumerate(self._facts)}
+
+        # Track facts for proof goals in disjunctive normal form
+        if isinstance(self._expr, Or):
+            for term in self._expr.terms:
+                index_start = len(facts)
+                if isinstance(term, And):
+                    facts.update(
+                        {
+                            f"H{index}": fact
+                            for index, fact in enumerate(term.terms, start=index_start)
+                        },
+                    )
+                else:
+                    facts.update({f"H{index_start}": term})
+        else:
+            solver.assert_and_track(self._expr.z3expr(), "goal")
+
         for name, fact in facts.items():
             solver.assert_and_track(fact.z3expr(), name)
 
-        solver.assert_and_track(self._expr.z3expr(), "goal")
         facts["goal"] = self._expr
         result = solver.check()
         assert result == z3.unsat, f"result should be unsat (is {result})"
