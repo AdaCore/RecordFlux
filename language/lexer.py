@@ -253,6 +253,9 @@ rflx_lexer.add_rules(
     (Literal("=>"), Token.Arrow),
     (Pattern(r'"[^"]*"'), Token.StringLiteral),
     (Pattern(r"[0-9]+(_?[0-9]+)*"), Token.Numeral),
-    (Pattern(r"[0-9]+#[0-9A-F]+(_?[0-9A-F]+)*#"), Token.Numeral),
-    (Pattern(r"[a-zA-Z][a-zA-Z0-9_]*"), Token.UnqualifiedIdentifier),
+    (Pattern(r"2#[01]+(_?[01]+)*#"), Token.Numeral),
+    (Pattern(r"8#[0-7]+(_?[0-7]+)*#"), Token.Numeral),
+    (Pattern(r"10#[0-9]+(_?[0-9]+)*#"), Token.Numeral),
+    (Pattern(r"16#[0-9A-F]+(_?[0-9A-F]+)*#"), Token.Numeral),
+    (Pattern(r"[a-zA-Z](_?[a-zA-Z0-9]+)*"), Token.UnqualifiedIdentifier),
 )

@@ -153,6 +153,19 @@ def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
+    ("string", "error"),
+    [
+        ("3#100#", '<stdin>:1:2: parser: error: End of input expected, got "Hash"'),
+        ("2#555#", '<stdin>:1:2: parser: error: End of input expected, got "Hash"'),
+        ("50#123#", '<stdin>:1:3: parser: error: End of input expected, got "Hash"'),
+    ],
+)
+def test_invalid_expression_numeric_literal(string: str, error: expr.Expr) -> None:
+    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
+        parse_math_expression(string, extended=False)
+
+
+@pytest.mark.parametrize(
     ("string", "expected"),
     [("X", expr.Variable("X")), ("X::Y", expr.Variable("X::Y"))],
 )
@@ -160,6 +173,27 @@ def test_variable(string: str, expected: decl.Declaration) -> None:
     actual = parse_expression(string, lang.GrammarRule.variable_rule)
     assert actual == expected
     assert actual.location
+
+
+@pytest.mark.parametrize(
+    ("string", "error"),
+    [
+        (
+            "Double__Underscore",
+            "<stdin>:1:7: parser: error: Invalid token, ignored\n"
+            "<stdin>:1:8: parser: error: Invalid token, ignored\n"
+            '<stdin>:1:9: parser: error: End of input expected, got "Unqualified_Identifier"',
+        ),
+        (
+            "Trailing_Underscore_ < 5",
+            "<stdin>:1:20: parser: error: Invalid token, ignored\n"
+            '<stdin>:1:22: parser: error: End of input expected, got "Lt"',
+        ),
+    ],
+)
+def test_invalid_variable(string: str, error: str) -> None:
+    with pytest.raises(RecordFluxError, match=rf"^{error}$"):
+        parse_expression(string, lang.GrammarRule.variable_rule)
 
 
 @pytest.mark.parametrize(
