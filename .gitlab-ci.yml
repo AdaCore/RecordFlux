@@ -203,6 +203,7 @@ python_compatibility:
         - "3.9"
         - "3.10"
   script:
+    - git fetch --unshallow
     - *setup_gnat
     - *setup_python_venv
     - *setup_python
