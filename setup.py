@@ -104,7 +104,6 @@ setup(
             "pytest-asyncio==0.21",
             "pytest-timeout >=2, <3",
             "scapy ==2.4.5",
-            "setuptools_scm >8, <9",
             "sphinx >=4.5, <5",
             "sphinx-rtd-theme >= 1.1.1, <1.2",
             "tqdm >=4.61.1, <4.63",

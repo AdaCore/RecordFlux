@@ -212,7 +212,7 @@ prove_property_tests: $(GNATPROVE_CACHE_DIR)
 
 install_build_deps:
 	pip3 install -U "pip>=22.2"
-	pip3 install packaging setuptools_scm wheel build contrib/langkit
+	pip3 install packaging "setuptools>=64" setuptools_scm wheel build contrib/langkit
 
 install: install_build_deps $(SDIST)
 	$(MAKE) -C devutils install_devel
