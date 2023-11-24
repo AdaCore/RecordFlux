@@ -1,7 +1,6 @@
 variables:
    ANOD_DEFAULT_SANDBOX_DIR: /it/wave
 
-   CI_FRAGMENTS_GIT: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/it/ci-fragments
    RECORDFLUX_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
 
    GNAT_VERSION: "24.0"
