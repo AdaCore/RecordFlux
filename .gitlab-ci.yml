@@ -143,8 +143,8 @@ code_generation:
   extends: .testing
   services:
      - image:recordflux
-     - cpu:4
-     - mem:4
+     - cpu:16
+     - mem:16
   script:
     - *setup_python
     - make generate_apps
