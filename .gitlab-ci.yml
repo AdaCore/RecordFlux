@@ -172,7 +172,24 @@ tests_rflx:
     - *setup_python
     - make test_rflx
 
-tests_examples:
+tests_example_apps:
+  extends: .testing
+  needs:
+    - setup
+    - code_generation
+  services:
+     - image:recordflux
+     - cpu:4
+     - mem:8
+  script:
+    - git fetch --unshallow
+    - *update_timestamps_of_generated_code
+    - *setup_gnat
+    - *setup_gnat_cross
+    - *setup_python
+    - make test_apps
+
+tests_example_specs:
   extends: .testing
   needs:
     - setup
@@ -187,7 +204,7 @@ tests_examples:
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
-    - make test_examples
+    - make test_specs
 
 python_compatibility:
   extends: .testing
