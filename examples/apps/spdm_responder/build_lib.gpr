@@ -106,7 +106,7 @@ project Build_Lib is
 
    package Prove is
       for Proof_Switches ("Ada") use Defaults.Proof_Switches;
-      for Proof_Switches ("responder.adb") use ("--prover=z3,cvc4", "--steps=64000", "--memlimit=6000", "--timeout=600");
+      for Proof_Switches ("responder.adb") use ("--prover=z3,cvc5", "--steps=64000", "--memlimit=6000", "--timeout=600");
    end Prove;
 
 end Build_Lib;
