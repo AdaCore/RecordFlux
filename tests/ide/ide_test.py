@@ -103,31 +103,17 @@ def test_multiple_errors() -> None:
             f'{path}:8:9: model: info: invalid base message type "RFLX_Invalid::R"',
             f'{path}:125:21: model: error: undefined base message "RFLX_Invalid::Ref1"'
             " in derived message",
-            f'{path}:132:19: model: error: undefined variable "F1"',
-            f"{path}:132:19: model: info: on path Length -> Data",
-            f'{path}:136:19: model: error: undefined variable "F1"',
-            f"{path}:136:25: model: error: expected integer type",
-            f"{path}:136:25: model: info: found aggregate with element type universal integer"
-            " (5 .. 20)",
-            f"{path}:136:19: model: info: on path Length -> Data -> F1",
-            f'{path}:144:24: model: error: expected integer type "RFLX_Invalid::R" (5 .. 23)',
-            f"{path}:144:24: model: info: found aggregate with element type universal integer"
-            " (1 .. 100)",
-            f"{path}:144:19: model: info: on path Length -> Data -> F1 -> F2 -> Final",
             f'{path}:140:19: model: error: invalid use of size attribute for "1"',
             f'{path}:156:10: model: error: name conflict for "F2_F1" in "RFLX_Invalid::M5"',
             f'{path}:147:9: model: info: when merging message "RFLX_Invalid::M4"',
             f'{path}:154:10: model: info: into field "F2"',
-            f'{path}:168:27: model: error: expected sequence type "RFLX_Invalid::R_Sequence"'
-            ' with element integer type "RFLX_Invalid::R" (5 .. 23)',
-            f"{path}:168:27: model: info: found aggregate with element type universal integer"
-            " (1 .. 1000)",
-            f"{path}:168:19: model: info: on path Length -> Data1 -> Data2",
-            f'{path}:172:27: model: error: expected sequence type "__INTERNAL__::Opaque"'
-            ' with element integer type "Byte" (0 .. 255)',
-            f"{path}:172:27: model: info: found aggregate with element type universal integer"
-            " (1 .. 1000)",
-            f"{path}:172:19: model: info: on path Length -> Data1 -> Data2 -> Final",
+            f'{path}:164:10: model: error: unreachable field "Data1"',
+            f'{path}:161:10: model: info: on path: "Length"',
+            f'{path}:162:18: model: info: on path: "Data1"',
+            f"{path}:168:19: model: info: unsatisfied \"3 * R'Size = Data1'Size\"",
+            f'{path}:8:9: model: info: unsatisfied "R\'Size = 16"',
+            f'{path}:8:9: model: info: unsatisfied "Length <= 23"',
+            f'{path}:163:29: model: info: unsatisfied "Data1\'Size = Length"',
             f'{path}:175:36: model: error: undefined element type "RFLX_Invalid::M5"',
             f'{path}:181:17: model: error: undefined type "RFLX_Invalid::M5_Sequence"',
             f'{path}:192:10: model: error: conflicting conditions for field "F1"',

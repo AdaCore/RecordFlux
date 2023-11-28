@@ -3,6 +3,7 @@ from __future__ import annotations
 import itertools
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
+from concurrent.futures import ProcessPoolExecutor
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
 from enum import Enum
@@ -11,6 +12,7 @@ from typing import Optional, Union
 import rflx.typing_ as rty
 from rflx import expression as expr
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
+from rflx.const import MP_CONTEXT
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail
 from rflx.identifier import ID, StrID
 from rflx.model.top_level_declaration import TopLevelDeclaration
@@ -1241,8 +1243,13 @@ class Message(mty.Type):
 
             self.error.propagate()
 
-            self._verify_expression_types()
             self._verify_expressions()
+
+            self.error.propagate()
+
+            valid_paths = self._determine_valid_paths()
+
+            self._verify_expression_types(valid_paths)
             self._verify_checksums()
 
             self.error.propagate()
@@ -1253,14 +1260,39 @@ class Message(mty.Type):
             self._prove_conflicting_conditions(proofs)
             self._prove_coverage(proofs)
             self._prove_overlays(proofs)
-            self._prove_field_positions(proofs)
+            self._prove_field_positions(proofs, valid_paths)
             self._prove_message_size(proofs)
 
             proofs.check(self.error)
 
-            self._prove_reachability()
-
+            self._prove_reachability(valid_paths)
             self.error.propagate()
+
+    def _determine_valid_paths(self) -> set[tuple[Link, ...]]:
+        """Return all paths without contradictions."""
+
+        paths = []
+        facts = []
+
+        for field in (*self.fields, FINAL):
+            for path in self.paths(field):
+                paths.append(path)
+                facts.append(
+                    [
+                        *[fact for link in path for fact in self._link_expressions(link)],
+                        *self.message_constraints(),
+                        *self.type_constraints(expr.TRUE),
+                    ],
+                )
+
+        result = set()
+
+        with ProcessPoolExecutor(max_workers=self._workers, mp_context=MP_CONTEXT) as executor:
+            for i, e in enumerate(executor.map(prove, facts)):
+                if e == expr.ProofResult.SAT:
+                    result.add(paths[i])
+
+        return result
 
     def _max_value(self, target: expr.Expr, path: tuple[Link, ...]) -> expr.Number:
         message_size = expr.Add(
@@ -1384,7 +1416,7 @@ class Message(mty.Type):
                             ],
                         )
 
-    def _verify_expression_types(self) -> None:
+    def _verify_expression_types(self, valid_paths: set[tuple[Link, ...]]) -> None:
         types: dict[Field, mty.Type] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
@@ -1397,16 +1429,13 @@ class Message(mty.Type):
             return expression
 
         for p in self.paths(FINAL):
+            if p not in valid_paths:
+                # Skip type checking on paths with contradictions to prevent false positives about
+                # undefined variables in cases where an optional field F is accessed on an
+                # independent optional path that is present only if F is present.
+                continue
+
             types = {f: t for f, t in self.types.items() if f in self.parameters}
-
-            try:
-                # check for contradictions in conditions of path
-                proof = self._prove_path_property(expr.TRUE, p)
-                if proof.result == expr.ProofResult.UNSAT:
-                    break
-            except expr.Z3TypeError:
-                pass
-
             path = []
 
             for l in [
@@ -1732,7 +1761,7 @@ class Message(mty.Type):
                                 unknown_error=error,
                             )
 
-    def _prove_reachability(self) -> None:
+    def _prove_reachability(self, valid_paths: set[tuple[Link, ...]]) -> None:
         """
         Find all fields that are unreachable due to contradictions on all paths to the field.
 
@@ -1740,19 +1769,28 @@ class Message(mty.Type):
         to the same problem, are not mentioned in the resulting error message.
         """
 
-        def is_covered(path: tuple[Link, ...], subpaths: set[tuple[Link, ...]]) -> bool:
-            """Check if `path` starts with any subpath contained in `subpaths`."""
+        def starts_with(path: tuple[Link, ...], paths: set[tuple[Link, ...]]) -> bool:
+            """Check if any path of `paths` is a proper prefix of `path`."""
             return any(
-                p for p in subpaths if len(p) < len(path) and all(a == b for a, b in zip(p, path))
+                p for p in paths if len(p) < len(path) and all(a == b for a, b in zip(p, path))
             )
 
-        unreachable: set[tuple[Link, ...]] = set()
+        def is_proper_prefix(path: tuple[Link, ...], paths: set[tuple[Link, ...]]) -> bool:
+            """Check if `path` is a proper prefix of any path of `paths`."""
+            return any(
+                p for p in paths if len(p) > len(path) and all(a == b for a, b in zip(p, path))
+            )
 
-        for f in (*self.fields, FINAL):
+        unreachable_paths: set[tuple[Link, ...]] = set()
+
+        for f in self.fields:
             paths = []
             for path in self.paths(f):
-                if is_covered(path, unreachable):
+                if starts_with(path, unreachable_paths):
                     continue
+
+                if is_proper_prefix(path, valid_paths):
+                    break
 
                 facts = [fact for link in path for fact in self._link_expressions(link)]
                 outgoing = self.outgoing(path[-1].target)
@@ -1760,11 +1798,10 @@ class Message(mty.Type):
                 proof = condition.check(
                     [*facts, *self.message_constraints(), *self.type_constraints(condition)],
                 )
-                if proof.result == expr.ProofResult.SAT:
-                    break
+                assert proof.result != expr.ProofResult.SAT
 
                 paths.append((path, proof.error))
-                unreachable.add(path)
+                unreachable_paths.add(path)
             else:
                 if paths:
                     error = []
@@ -1886,9 +1923,16 @@ class Message(mty.Type):
                         add_unsat=True,
                     )
 
-    def _prove_field_positions(self, proofs: expr.ParallelProofs) -> None:
+    def _prove_field_positions(
+        self,
+        proofs: expr.ParallelProofs,
+        valid_paths: set[tuple[Link, ...]],
+    ) -> None:
         for f in (*self.fields, FINAL):
             for path in self.paths(f):
+                if path not in valid_paths:
+                    continue
+
                 last = path[-1]
                 field_size = self._target_size(last)
                 negative = expr.Less(field_size, expr.Number(0), last.size.location)
@@ -1901,12 +1945,6 @@ class Message(mty.Type):
                 facts = [fact for link in path for fact in self._link_expressions(link)]
                 facts.extend(self.type_constraints(negative))
                 facts.extend(self.type_constraints(start))
-
-                proof = expr.TRUE.check(facts)
-
-                # Only check positions of reachable paths
-                if proof.result != expr.ProofResult.SAT:
-                    continue
 
                 path_message = " -> ".join([l.target.name for l in path])
                 error = RecordFluxError(
@@ -2018,7 +2056,11 @@ class Message(mty.Type):
                 ],
             )
             facts = [
-                *[fact for link in path for fact in self._link_expressions(link)],
+                *[
+                    fact
+                    for link in path
+                    for fact in self._link_expressions(link, ignore_implicit_sizes=True)
+                ],
                 *type_constraints,
                 *field_size_constraints,
             ]
@@ -2108,6 +2150,7 @@ class Message(mty.Type):
         return [
             *self._link_size_expressions(link, ignore_implicit_sizes),
             *expression_list(link.condition),
+            *self._aggregate_constraints(link.condition),
         ]
 
     def _compute_first(self, lnk: Link) -> tuple[Field, expr.Expr]:
@@ -3076,7 +3119,10 @@ def _aggregate_constraints(
         location: Optional[Location],
     ) -> Sequence[expr.Expr]:
         comp = types[Field(field.name)]
-        assert isinstance(comp, mty.Composite)
+
+        if not isinstance(comp, mty.Composite):
+            return []
+
         result = expr.Equal(
             expr.Mul(aggregate.length, comp.element_size),
             expr.Size(field),
@@ -3198,3 +3244,9 @@ def all_types_declared(
         not undeclared_types
     ), f'undeclared types for message "{message.identifier}": {", ".join(undeclared_types)}'
     return True
+
+
+def prove(
+    facts: list[expr.Expr],
+) -> expr.ProofResult:
+    return expr.TRUE.check(facts).result

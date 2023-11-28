@@ -1045,7 +1045,7 @@ def test_sequence_aggregate_out_of_range() -> None:
     f = Field("F")
 
     structure = [
-        Link(INITIAL, f, size=Number(18)),
+        Link(INITIAL, f),
         Link(
             f,
             FINAL,
@@ -1769,11 +1769,7 @@ def test_invalid_first_forward_reference() -> None:
     assert_message_model_error(
         structure,
         types,
-        r"^"
-        r'<stdin>:10:20: model: error: undefined variable "F3"\n'
-        r"<stdin>:10:20: model: info: on path F1 -> F2\n"
-        r'<stdin>:10:20: model: error: invalid First for field "F2"'
-        r"$",
+        r'^<stdin>:10:20: model: error: invalid First for field "F2"$',
     )
 
 
@@ -2592,7 +2588,14 @@ def test_no_unreachable_field_multi() -> None:
     Message("P::M", structure, types)
 
 
-def test_discontiguous_optional_fields() -> None:
+@pytest.mark.parametrize(
+    "condition",
+    [
+        Equal(Variable("Flag"), Number(1)),
+        And(Equal(Variable("Flag"), Number(1)), Greater(Variable("Opt1"), Number(0))),
+    ],
+)
+def test_discontiguous_optional_fields(condition: Expr) -> None:
     structure = [
         Link(INITIAL, Field("Flag")),
         Link(
@@ -2609,13 +2612,13 @@ def test_discontiguous_optional_fields() -> None:
         Link(
             Field("Data"),
             Field("Opt2"),
-            condition=Equal(Variable("Flag"), Number(1)),
+            condition=condition,
             size=Mul(Variable("Opt1"), Number(8)),
         ),
         Link(
             Field("Data"),
             FINAL,
-            condition=NotEqual(Variable("Flag"), Number(1)),
+            condition=Equal(Variable("Flag"), Number(0)),
         ),
         Link(
             Field("Opt2"),
@@ -2629,6 +2632,60 @@ def test_discontiguous_optional_fields() -> None:
         Field("Opt2"): OPAQUE,
     }
     Message("P::M", structure, types)
+
+
+def test_discontiguous_optional_fields_error() -> None:
+    # TODO(eng/recordflux/RecordFlux#499): Enable disjunctions with references to optional fields
+    structure = [
+        Link(INITIAL, Field("Flag")),
+        Link(
+            Field("Flag"),
+            Field("Opt1"),
+            condition=Equal(Variable("Flag"), Number(1)),
+        ),
+        Link(
+            Field("Flag"),
+            Field("Data"),
+            condition=NotEqual(Variable("Flag"), Number(1)),
+        ),
+        Link(Field("Opt1"), Field("Data")),
+        Link(
+            Field("Data"),
+            Field("Opt2"),
+            condition=Or(
+                And(Equal(Variable("Flag"), Number(1)), Greater(Variable("Opt1"), Number(100))),
+                Greater(Variable("Flag"), Number(1)),
+            ),
+            size=Mul(Variable("Opt1"), Number(8)),
+        ),
+        Link(
+            Field("Data"),
+            FINAL,
+            condition=Equal(Variable("Flag"), Number(0)),
+        ),
+        Link(
+            Field("Opt2"),
+            FINAL,
+        ),
+    ]
+    types = {
+        Field("Flag"): models.integer(),
+        Field("Opt1"): models.integer(),
+        Field("Data"): models.integer(),
+        Field("Opt2"): OPAQUE,
+    }
+    assert_message_model_error(
+        structure,
+        types,
+        (
+            r"^"
+            r'model: error: undefined variable "Opt1"\n'
+            r"model: info: on path Flag -> Data -> Opt2\n"
+            r'model: error: undefined variable "Opt1"\n'
+            r"model: info: on path Flag -> Data -> Opt2"
+            r"$"
+        ),
+    )
 
 
 @pytest.mark.parametrize(

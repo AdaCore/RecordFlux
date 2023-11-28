@@ -74,10 +74,11 @@ package ICMP is
          Code_Zero : Code_Zero;
          Checksum : Checksum
             then Unused_32
-               if ((Tag = Destination_Unreachable
-                    and Code_Destination_Unreachable /= Fragmentation_Needed_DF_Set)
-                   or Tag = Source_Quench
-                   or Tag = Time_Exceeded)
+               if Tag = Destination_Unreachable
+                  and Code_Destination_Unreachable /= Fragmentation_Needed_DF_Set
+            then Unused_32
+               if Tag = Source_Quench
+                  or Tag = Time_Exceeded
             then Unused_16
                --  RFC 1191 PMTU discovery
                if Tag = Destination_Unreachable
