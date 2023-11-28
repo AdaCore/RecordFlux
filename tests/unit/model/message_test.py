@@ -1941,7 +1941,7 @@ def test_field_coverage_1(monkeypatch: pytest.MonkeyPatch) -> None:
     ]
 
     types = {Field("F1"): models.integer(), Field("F2"): models.integer()}
-    monkeypatch.setattr(Message, "_verify_expressions", lambda _: None)
+    monkeypatch.setattr(Message, "_verify_links", lambda _: None)
     assert_message_model_error(
         structure,
         types,
@@ -1974,7 +1974,7 @@ def test_field_coverage_2(monkeypatch: pytest.MonkeyPatch) -> None:
         Field("F3"): models.integer(),
         Field("F4"): models.integer(),
     }
-    monkeypatch.setattr(Message, "_verify_expressions", lambda _: None)
+    monkeypatch.setattr(Message, "_verify_links", lambda _: None)
     assert_message_model_error(
         structure,
         types,
@@ -1996,7 +1996,7 @@ def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
     ]
 
     types = {Field("F1"): models.integer(), Field("F2"): models.integer()}
-    monkeypatch.setattr(Message, "_verify_expressions", lambda _: None)
+    monkeypatch.setattr(Message, "_verify_links", lambda _: None)
     assert_message_model_error(
         structure,
         types,
@@ -2518,8 +2518,8 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
         r'<stdin>:3:5: model: error: unreachable field "Magic"\n'
         r'<stdin>:3:5: model: info: on path: "Magic"\n'
         r'<stdin>:19:17: model: info: unsatisfied "Magic\'Size = 40"\n'
-        r'<stdin>:17:3: model: info: unsatisfied "2 [*] Integer\'Size = Magic\'Size"\n'
-        r'<stdin>:66:3: model: info: unsatisfied "Integer\'Size = 8"'
+        r'<stdin>:66:3: model: info: unsatisfied "Integer\'Size = 8"\n'
+        r'<stdin>:17:3: model: info: unsatisfied "2 [*] Integer\'Size = Magic\'Size"'
         r"$",
     )
 

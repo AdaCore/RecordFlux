@@ -389,7 +389,7 @@ class Message(mty.Type):
             return field_type.size
 
         sizes = [
-            l.size.substituted(mapping=to_mapping(self.type_constraints(expr.TRUE))).simplified()
+            l.size.substituted(mapping=to_mapping(self.message_constraints)).simplified()
             for l in self.incoming(field)
         ]
         size = sizes[0]
@@ -487,17 +487,12 @@ class Message(mty.Type):
     def typed_expression(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
         return typed_expression(expression, types, self._qualified_enum_literals, self._type_names)
 
-    def type_constraints(self, expression: expr.Expr) -> list[expr.Expr]:
-        return type_constraints(
-            self.types,
-            self._qualified_enum_literals,
-            self._type_names,
-            expression,
-        )
+    @property
+    def message_constraints(self) -> list[expr.Expr]:
+        return message_constraints(self.types, self._qualified_enum_literals, self._type_names)
 
-    @staticmethod
-    def message_constraints() -> list[expr.Expr]:
-        return message_constraints()
+    def aggregate_constraints(self, expression: expr.Expr) -> list[expr.Expr]:
+        return aggregate_constraints(expression, self.types)
 
     def is_possibly_empty(self, field: Field) -> bool:
         if isinstance(self.types[field], mty.Scalar):
@@ -699,7 +694,7 @@ class Message(mty.Type):
                         ),
                     )
         facts: list[expr.Expr] = [*values, *aggregate_sizes, *composite_sizes]
-        type_constraints = to_mapping(self._aggregate_constraints() + self._type_size_constraints())
+        type_constraints = to_mapping(self._type_size_constraints())
         definite_fields = set.intersection(*[{l.target for l in path} for path in possible_paths])
         optional_fields = set(fields) - definite_fields
         conditional_field_size = []
@@ -725,7 +720,7 @@ class Message(mty.Type):
                 link_size_expressions = [
                     fact
                     for link in path
-                    for fact in self._link_size_expressions(link, ignore_implicit_sizes=True)
+                    for fact in self._link_size_constraints(link, ignore_implicit_sizes=True)
                 ]
 
                 path_condition = (
@@ -851,9 +846,6 @@ class Message(mty.Type):
         if len(incoming) == 1:
             return self.link_first(incoming[0])
         return (fld, expr.Number(0))
-
-    def _aggregate_constraints(self, expression: expr.Expr = expr.TRUE) -> list[expr.Expr]:
-        return _aggregate_constraints(self.types, expression)
 
     def _type_size_constraints(self) -> list[expr.Expr]:
         return _type_size_constraints(self._type_names)
@@ -1240,10 +1232,7 @@ class Message(mty.Type):
             self._verify_use_of_literals()
             self._verify_use_of_type_names()
             self._verify_message_types()
-
-            self.error.propagate()
-
-            self._verify_expressions()
+            self._verify_links()
 
             self.error.propagate()
 
@@ -1279,9 +1268,8 @@ class Message(mty.Type):
                 paths.append(path)
                 facts.append(
                     [
-                        *[fact for link in path for fact in self._link_expressions(link)],
-                        *self.message_constraints(),
-                        *self.type_constraints(expr.TRUE),
+                        *self._path_constraints(path),
+                        *self.message_constraints,
                     ],
                 )
 
@@ -1302,13 +1290,12 @@ class Message(mty.Type):
                 if link.target != FINAL and link.first == expr.UNDEFINED
             ],
         )
-        link_expressions = [fact for link in path for fact in self._link_expressions(link)]
         return expr.max_value(
             target,
             [
                 expr.Equal(expr.Size("Message"), message_size),
-                *link_expressions,
-                *self.type_constraints(expr.TRUE),
+                *self._path_constraints(path),
+                *self.message_constraints,
             ],
         )
 
@@ -1477,14 +1464,13 @@ class Message(mty.Type):
                             ],
                         )
 
-    def _verify_expressions(self) -> None:
-        for f in (INITIAL, *self.fields):
-            for l in self.outgoing(f):
-                self._check_attributes(l.condition)
-                self._check_first_expression(l)
-                self._check_size_expression(l)
+    def _verify_links(self) -> None:
+        for link in self.structure:
+            self._verify_attributes(link.condition)
+            self._verify_link_first(link)
+            self._verify_link_size(link)
 
-    def _check_attributes(self, expression: expr.Expr) -> None:
+    def _verify_attributes(self, expression: expr.Expr) -> None:
         for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):
             if isinstance(a, expr.Size) and not (
                 (
@@ -1507,7 +1493,7 @@ class Message(mty.Type):
                     ],
                 )
 
-    def _check_first_expression(self, link: Link) -> None:
+    def _verify_link_first(self, link: Link) -> None:
         if link.first not in (expr.UNDEFINED, expr.First(link.source.identifier)):
             self.error.extend(
                 [
@@ -1520,7 +1506,7 @@ class Message(mty.Type):
                 ],
             )
 
-    def _check_size_expression(self, link: Link) -> None:
+    def _verify_link_size(self, link: Link) -> None:
         if link.target == FINAL and link.size != expr.UNDEFINED:
             self.error.extend(
                 [
@@ -1686,7 +1672,8 @@ class Message(mty.Type):
             facts = [
                 expr.Equal(l.condition, expr.FALSE),
                 self.path_condition(l.source),
-                *self.type_constraints(l.condition),
+                *self.message_constraints,
+                *self.aggregate_constraints(l.condition),
             ]
             unsat_error = RecordFluxError(
                 [
@@ -1751,8 +1738,9 @@ class Message(mty.Type):
                         )
                         for path in self.paths(f):
                             facts = [
-                                *self.type_constraints(conflict),
-                                *[fact for link in path for fact in self._link_expressions(link)],
+                                *self.message_constraints,
+                                *self.aggregate_constraints(conflict),
+                                *self._path_constraints(path),
                             ]
                             proofs.add(
                                 conflict,
@@ -1792,11 +1780,15 @@ class Message(mty.Type):
                 if is_proper_prefix(path, valid_paths):
                     break
 
-                facts = [fact for link in path for fact in self._link_expressions(link)]
+                facts = self._path_constraints(path)
                 outgoing = self.outgoing(path[-1].target)
                 condition = expr.Or(*[o.condition for o in outgoing]) if outgoing else expr.TRUE
                 proof = condition.check(
-                    [*facts, *self.message_constraints(), *self.type_constraints(condition)],
+                    [
+                        *facts,
+                        *self.aggregate_constraints(condition),
+                        *self.message_constraints,
+                    ],
                 )
                 assert proof.result != expr.ProofResult.SAT
 
@@ -1869,8 +1861,8 @@ class Message(mty.Type):
                 expr.Equal(self._target_last(path[-1]), expr.Last("Message"), self.location),
             )
 
-            # Constraints for links and types
-            facts.extend([f for l in path for f in self._link_expressions(l)])
+            # Constraints for links on path
+            facts.extend(self._path_constraints(path))
 
             # Coverage expression must be False, i.e. no bits left
             error = RecordFluxError(
@@ -1898,7 +1890,7 @@ class Message(mty.Type):
         for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self.paths(f) if p]:
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
-                    facts = [f for l in p for f in self._link_expressions(l)]
+                    facts = self._path_constraints(p)
                     overlaid = expr.Equal(
                         self._target_last(l),
                         expr.Last(l.first.prefix),
@@ -1942,9 +1934,12 @@ class Message(mty.Type):
                     last.source.identifier.location,
                 )
 
-                facts = [fact for link in path for fact in self._link_expressions(link)]
-                facts.extend(self.type_constraints(negative))
-                facts.extend(self.type_constraints(start))
+                facts = [
+                    *self._path_constraints(path),
+                    *self.message_constraints,
+                    *self.aggregate_constraints(negative),
+                    *self.aggregate_constraints(start),
+                ]
 
                 path_message = " -> ".join([l.target.name for l in path])
                 error = RecordFluxError(
@@ -2000,8 +1995,8 @@ class Message(mty.Type):
                             start_aligned,
                             [
                                 *facts,
-                                *self.message_constraints(),
-                                *self.type_constraints(start_aligned),
+                                *self.message_constraints,
+                                *self.aggregate_constraints(start_aligned),
                             ],
                             sat_error=error,
                             unknown_error=error,
@@ -2031,8 +2026,8 @@ class Message(mty.Type):
                             is_multiple_of_element_size,
                             [
                                 *facts,
-                                *self.message_constraints(),
-                                *self.type_constraints(is_multiple_of_element_size),
+                                *self.message_constraints,
+                                *self.aggregate_constraints(is_multiple_of_element_size),
                             ],
                             sat_error=error,
                             unknown_error=error,
@@ -2040,7 +2035,7 @@ class Message(mty.Type):
 
     def _prove_message_size(self, proofs: expr.ParallelProofs) -> None:
         """Prove that all paths lead to a message with a size that is a multiple of 8 bit."""
-        type_constraints = self.type_constraints(expr.TRUE)
+        message_constraints = self.message_constraints
         field_size_constraints = [
             expr.Equal(expr.Mod(expr.Size(f.name), expr.Number(8)), expr.Number(0))
             for f, t in self.types.items()
@@ -2056,12 +2051,8 @@ class Message(mty.Type):
                 ],
             )
             facts = [
-                *[
-                    fact
-                    for link in path
-                    for fact in self._link_expressions(link, ignore_implicit_sizes=True)
-                ],
-                *type_constraints,
+                *self._path_constraints(path),
+                *message_constraints,
                 *field_size_constraints,
             ]
             error = RecordFluxError(
@@ -2092,7 +2083,9 @@ class Message(mty.Type):
         sizes = [
             expr.Equal(expr.Size(l.target.name), l.size) for l in path if l.size != expr.UNDEFINED
         ]
-        return prop.check([*self.type_constraints(prop), *conditions, *sizes])
+        return prop.check(
+            [*self.message_constraints, *self.aggregate_constraints(prop), *conditions, *sizes],
+        )
 
     @staticmethod
     def _target_first(link: Link) -> expr.Expr:
@@ -2114,7 +2107,7 @@ class Message(mty.Type):
             link.target.identifier.location,
         )
 
-    def _link_size_expressions(
+    def _link_size_constraints(
         self,
         link: Link,
         ignore_implicit_sizes: bool = False,
@@ -2146,11 +2139,14 @@ class Message(mty.Type):
             ),
         ]
 
-    def _link_expressions(self, link: Link, ignore_implicit_sizes: bool = False) -> list[expr.Expr]:
+    def _path_constraints(self, path: tuple[Link, ...]) -> list[expr.Expr]:
+        return [fact for link in path for fact in self._link_constraints(link)]
+
+    def _link_constraints(self, link: Link) -> list[expr.Expr]:
         return [
-            *self._link_size_expressions(link, ignore_implicit_sizes),
+            *self._link_size_constraints(link),
             *expression_list(link.condition),
-            *self._aggregate_constraints(link.condition),
+            *self.aggregate_constraints(link.condition),
         ]
 
     def _compute_first(self, lnk: Link) -> tuple[Field, expr.Expr]:
@@ -2349,8 +2345,9 @@ class Refinement(mty.Type):
             ]:
                 proof = expr.TRUE.check(
                     [
-                        *self.pdu.type_constraints(self.condition),
-                        *self.pdu.type_constraints(self.pdu.path_condition(self.field)),
+                        *self.pdu.message_constraints,
+                        *self.pdu.aggregate_constraints(self.condition),
+                        *self.pdu.aggregate_constraints(self.pdu.path_condition(self.field)),
                         self.pdu.path_condition(self.field),
                         cond,
                     ],
@@ -2701,13 +2698,12 @@ class UncheckedMessage(mty.UncheckedType):
                         merged_condition.check_type(rty.Any()).propagate()
                         proof = merged_condition.check(
                             [
-                                *message_constraints(),
-                                *type_constraints(
+                                *message_constraints(
                                     inner_message_types,
                                     inner_message_qualified_enum_literals,
                                     inner_message_qualified_type_names,
-                                    merged_condition,
                                 ),
+                                *aggregate_constraints(merged_condition, inner_message_types),
                                 inner_message.path_condition(final_link.source),
                             ],
                         )
@@ -3096,23 +3092,24 @@ def typed_expression(
     return expression
 
 
-def type_constraints(
+def message_constraints(
     types: Mapping[Field, mty.Type],
     qualified_enum_literals: Mapping[ID, mty.Enumeration],
     qualified_type_names: Mapping[ID, mty.Type],
-    expression: expr.Expr,
 ) -> list[expr.Expr]:
     return [
-        *_aggregate_constraints(types, expression),
+        *_message_size_and_position_constraints(),
         *_scalar_constraints(types, qualified_enum_literals),
         *_type_size_constraints(qualified_type_names),
     ]
 
 
-def _aggregate_constraints(
+def aggregate_constraints(
+    expression: expr.Expr,
     types: Mapping[Field, mty.Type],
-    expression: expr.Expr = expr.TRUE,
 ) -> list[expr.Expr]:
+    """Return resulting field sizes for all relations that compare a field with an aggregate."""
+
     def get_constraints(
         aggregate: expr.Aggregate,
         field: expr.Variable,
@@ -3172,7 +3169,7 @@ def _type_size_constraints(qualified_type_names: Mapping[ID, mty.Type]) -> list[
     ]
 
 
-def message_constraints() -> list[expr.Expr]:
+def _message_size_and_position_constraints() -> list[expr.Expr]:
     return [
         expr.Equal(expr.Mod(expr.First("Message"), expr.Number(8)), expr.Number(1)),
         expr.Equal(expr.Mod(expr.Size("Message"), expr.Number(8)), expr.Number(0)),
