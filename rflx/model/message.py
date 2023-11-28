@@ -7,6 +7,7 @@ from concurrent.futures import ProcessPoolExecutor
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
 from enum import Enum
+from functools import cached_property
 from typing import Optional, Union
 
 import rflx.typing_ as rty
@@ -487,7 +488,7 @@ class Message(mty.Type):
     def typed_expression(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
         return typed_expression(expression, types, self._qualified_enum_literals, self._type_names)
 
-    @property
+    @cached_property
     def message_constraints(self) -> list[expr.Expr]:
         return message_constraints(self.types, self._qualified_enum_literals, self._type_names)
 
