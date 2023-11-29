@@ -10,10 +10,10 @@ CWD := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 test: test_python test_spark
 
 test_python:
-	../../../devutils/linux/run $(CWD) timeout 30 ./ping.sh $$(dirname $$(command -v python3)) 127.0.0.1 | sed '/64 bytes from 127\.0\.0\.1: icmp_seq=0/q; $$q1'
+	../../../devutils/linux/run $(CWD) timeout 60 tests/python_test.sh $$(dirname $$(command -v python3))
 
 test_spark: $(BIN)
-	../../../devutils/linux/run $(CWD) timeout 3 build/obj/ping 127.0.0.1 | sed '/64 bytes from 127\.0\.0\.1: icmp_seq=0/q; $$q1'
+	../../../devutils/linux/run $(CWD) timeout 60 tests/spark_test.sh
 
 build: $(BIN)
 
