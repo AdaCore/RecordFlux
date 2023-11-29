@@ -332,7 +332,7 @@ $(GENERATED_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | 
 .PHONY: clean clean_all
 
 clean:
-	rm -rf $(BUILD_DIR)/[^_]* $(GENERATED_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
+	rm -rf $(BUILD_DIR)/[^_]* .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C examples/apps/spdm_responder clean
@@ -342,4 +342,4 @@ clean:
 	$(MAKE) -C ide/vscode clean
 
 clean_all: clean
-	rm -rf $(BUILD_DIR)/*
+	rm -rf $(BUILD_DIR)/* $(GENERATED_DIR)
