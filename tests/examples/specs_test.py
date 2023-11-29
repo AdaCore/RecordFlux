@@ -20,7 +20,7 @@ def test_spec(spec: Path, tmp_path: Path) -> None:
         ["rflx", "generate", "--ignore-unsupported-checksum", "-d", tmp_path, spec],
         check=True,
     )
-    subprocess.run(["gprbuild", "-U"], check=True, cwd=tmp_path)
+    subprocess.run(["gprbuild", "-U", "-j0"], check=True, cwd=tmp_path)
 
 
 @pytest.mark.parametrize("registry_file", EX_IANA_REGISTRIES_DIR.glob("*.xml"))
