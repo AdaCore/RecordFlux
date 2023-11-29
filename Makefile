@@ -253,7 +253,7 @@ generate:
 	tools/generate_spark_test_code.py
 
 generate_apps:
-	$(foreach app,$(APPS),($(MAKE) -C examples/apps/$(app) generate || exit) & $(app)_pid=$$!;) $(foreach app,$(APPS),wait $$$(app)_pid;)
+	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) generate || exit;)
 
 .PHONY: doc html_doc pdf_doc
 
