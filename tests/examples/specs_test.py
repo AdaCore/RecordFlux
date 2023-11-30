@@ -16,6 +16,7 @@ EX_IANA_REGISTRIES_DIR = EX_SPEC_DIR / "iana_registries"
 
 @pytest.mark.parametrize("spec", EX_SPEC_DIR.glob("*.rflx"))
 def test_spec(spec: Path, tmp_path: Path) -> None:
+    # TODO(eng/recordflux/RecordFlux#1485): Ensure reproducible test results by disabling caching
     subprocess.run(
         ["rflx", "generate", "--ignore-unsupported-checksum", "-d", tmp_path, spec],
         check=True,
