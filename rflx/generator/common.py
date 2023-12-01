@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import enum
+import math
+import textwrap
 from collections.abc import Callable
 from typing import Optional
 
@@ -1067,3 +1069,24 @@ def wrap_warning(expr_list: list[Declaration], warnings: list[str]) -> list[Decl
             for s in warnings
         ],
     ]
+
+
+def comment_box(lines: list[str], width: int = 78) -> str:
+    result = f"{'-' * width}\n"
+    for line in lines:
+        if len(line) == 0:
+            result += f"--{' ' * (width - 5)} --\n"
+
+        elif len(line) <= width - 6:
+            space = width - 6 - len(line)
+            left_space = " " * math.floor(space / 2)
+            right_space = " " * math.ceil(space / 2)
+            result += f"-- {left_space}{line}{right_space} --\n"
+
+        else:
+            for l in textwrap.wrap(line, width=width - 6):
+                space = width - 6 - len(l)
+                result += f"-- {l}{' ' * space} --\n"
+
+    result += f"{'-' * width}\n"
+    return result

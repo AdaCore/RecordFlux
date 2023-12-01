@@ -2180,3 +2180,48 @@ def test_generate_string_substitution() -> None:
         expr.Number(98),
         expr.Number(99),
     )
+
+
+@pytest.mark.parametrize(
+    ("lines", "width", "result"),
+    [
+        (
+            ["TEST"],
+            10,
+            textwrap.dedent(
+                """\
+                    ----------
+                    -- TEST --
+                    ----------
+                """,
+            ),
+        ),
+        (
+            [
+                "",
+                "Lorem ipsum",
+                "",
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor"
+                " incididunt ut labore et dolore magna aliqua.",
+                "",
+            ],
+            40,
+            textwrap.dedent(
+                """\
+                    ----------------------------------------
+                    --                                    --
+                    --            Lorem ipsum             --
+                    --                                    --
+                    -- Lorem ipsum dolor sit amet,        --
+                    -- consectetur adipiscing elit, sed   --
+                    -- do eiusmod tempor incididunt ut    --
+                    -- labore et dolore magna aliqua.     --
+                    --                                    --
+                    ----------------------------------------
+                """,
+            ),
+        ),
+    ],
+)
+def test_comment_box(lines: list[str], width: int, result: str) -> None:
+    assert common.comment_box(lines, width) == result
