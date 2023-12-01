@@ -1,7 +1,7 @@
 package TLS_Heartbeat is
 
    type Message_Type is (Heartbeat_Request => 1, Heartbeat_Response => 2) with Size => 8;
-   type Length is range 0 .. 2**14 - 20 with Size => 16;
+   type Length is range 0 .. 2 ** 14 - 20 with Size => 16;
 
    type Heartbeat_Message is
       message
@@ -10,9 +10,8 @@ package TLS_Heartbeat is
          Payload : Opaque
             with Size => Payload_Length * 8;
          Padding : Opaque
-            with Size => Message'Size - Payload_Length * 8 - Message_Type'Size - Payload_Length'Size
             then null
-               if Message'Size / 8 <= 2**14 and Padding'Size / 8 >= 16;
+               if Message'Size / 8 <= 2 ** 14 and Padding'Size / 8 >= 16;
       end message;
 
 end TLS_Heartbeat;

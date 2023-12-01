@@ -3533,3 +3533,8 @@ def test_parse_error_short_form_condition() -> None:
         r"^<stdin>:6:16: parser: error: short form condition is not supported anymore\n"
         r'<stdin>:6:16: parser: info: add condition to all outgoing links of field "A" instead$',
     )
+
+
+def test_parse_only() -> None:
+    p = parser.Parser()
+    p.parse(*(SPEC_DIR / "parse_only").glob("*"))

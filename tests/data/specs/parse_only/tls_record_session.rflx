@@ -1,3 +1,5 @@
+-- style: disable = line-length
+
 with GreenTLS;
 with TLS_Alert;
 with TLS_Record;
@@ -193,8 +195,11 @@ package TLS_Record_Session is
 
       state Handshake_Alert is
       begin
-         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::Alert, Legacy_Record_Version => TLS_Record::TLS_1_2, Length => Alert_Message'Size, Fragment => Alert_Message)
-            where Alert_Message = TLS_Alert::Alert'(Level => TLS_Alert::Fatal, Description => GreenTLS::Alert_Message (Handshake_Control_Message.Data).Description);
+         Alert_Message := TLS_Alert::Alert'(Level => TLS_Alert::Fatal, Description => GreenTLS::Alert_Message (Handshake_Control_Message.Data).Description);
+         TLS_Record_Message := TLS_Record::TLS_Record'(Tag => TLS_Record::Alert,
+                                                       Legacy_Record_Version => TLS_Record::TLS_1_2,
+                                                       Length => Alert_Message'Size,
+                                                       Fragment => Alert_Message);
       transition
          goto Network_Out_Send
       end Handshake_Alert;
@@ -332,8 +337,8 @@ package TLS_Record_Session is
          Success : Boolean;
       begin
          Network_Receive_Enabled := False;
-         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::Application_Alert, Length => M'Size, Data => M)
-            where M = GreenTLS::Alert_Message'(Description => Alert_Message.Description));
+         M := GreenTLS::Alert_Message'(Description => Alert_Message.Description);
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::Application_Alert, Length => M'Size, Data => M));
       transition
          goto Error_Internal_Error
             if Success = False
@@ -462,8 +467,8 @@ package TLS_Record_Session is
 
       state Error_Send_Local is
       begin
-         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::Application_Alert, Length => Data'Size, Data => Data)
-            where Data = GreenTLS::Alert_Message'(Description => Error));
+         Data := GreenTLS::Alert_Message'(Description => Error);
+         Application_Control_Channel'Write (GreenTLS::Application_Control_Message'(Tag => GreenTLS::Application_Alert, Length => Data'Size, Data => Data));
       transition
          goto Error_Send_Remote
             if Network_Send_Enabled = True
@@ -490,7 +495,7 @@ package TLS_Record_Session is
          Client_Key_Update_Message'Reset;
          Server_Key_Update_Message'Reset;
       transition
-         goto Terminated
+         goto null
       end Terminating;
    end Client;
 
