@@ -227,6 +227,46 @@ def test_main_generate_debug(
     assert result == [expected]
 
 
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        ([], False),
+        (["--reproducible"], True),
+    ],
+)
+def test_main_generate_reproducible(
+    args: list[str],
+    expected: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    result = []
+
+    def generator_mock(
+        self: object,  # noqa: ARG001
+        prefix: str,  # noqa: ARG001
+        workers: int,  # noqa: ARG001
+        reproducible: bool,
+        debug: generator.Debug,  # noqa: ARG001
+        ignore_unsupported_checksum: bool,  # noqa: ARG001
+    ) -> None:
+        result.append(reproducible)
+
+    monkeypatch.setattr(generator.Generator, "__init__", generator_mock)
+    monkeypatch.setattr(
+        generator.Generator,
+        "generate",
+        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005, E501
+    )
+    assert (
+        cli.main(
+            ["rflx", "generate", "-d", str(tmp_path), *args, MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+        )
+        == 0
+    )
+    assert result == [expected]
+
+
 def test_main_graph(tmp_path: Path) -> None:
     assert (
         cli.main(["rflx", "graph", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]) == 0
@@ -566,12 +606,17 @@ def test_main_convert_iana(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
         source: TextIOWrapper,
         always_valid: bool,
         output_dir: Path,
-        _reproducible: bool = False,
+        reproducible: bool = False,
     ) -> None:
-        result.append((data, source.name, always_valid, output_dir))
+        result.append((data, source.name, always_valid, output_dir, reproducible))
 
     monkeypatch.setattr(iana, "convert", convert_mock)
-    assert cli.main(["rflx", "convert", "iana", "-d", str(tmp_path / "1"), IANA_XML_FILE]) == 0
+    assert (
+        cli.main(
+            ["rflx", "convert", "--reproducible", "iana", "-d", str(tmp_path / "1"), IANA_XML_FILE],
+        )
+        == 0
+    )
     assert (
         cli.main(
             ["rflx", "convert", "iana", "-d", str(tmp_path / "2"), "--always-valid", IANA_XML_FILE],
@@ -581,8 +626,8 @@ def test_main_convert_iana(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
     data = Path(IANA_XML_FILE).read_text(encoding="utf-8")
     assert result == [
-        (data, IANA_XML_FILE, False, tmp_path / "1"),
-        (data, IANA_XML_FILE, True, tmp_path / "2"),
+        (data, IANA_XML_FILE, False, tmp_path / "1", True),
+        (data, IANA_XML_FILE, True, tmp_path / "2", False),
     ]
 
 

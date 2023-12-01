@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for FSF GNAT 13.2 (eng/recordflux/RecordFlux#1458)
+- `--reproducible` option to `rflx generate` and `rflx convert` (eng/recordflux/RecordFlux#1489)
 
 ### Changed
 

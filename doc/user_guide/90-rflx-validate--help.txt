@@ -9,13 +9,13 @@ positional arguments:
   MESSAGE_IDENTIFIER    identifier of the top-level message (e.g.,
                         Package::Message)
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --split-disjunctions  split disjunctions before model validation (may have
                         severe performance impact)
-  -v VALID_SAMPLE_PATH  known valid sample files or directories
+  -v VALID_SAMPLE_PATH  known valid sample file or directory
   -i INVALID_SAMPLE_PATH
-                        known invalid sample files or directories
+                        known invalid sample file or directory
   -c CHECKSUM_MODULE    name of the module containing the checksum functions
   -o OUTPUT_FILE        path to output file for validation report in JSON
                         format (file must not exist)

@@ -1,8 +1,9 @@
-usage: rflx convert [-h] {iana} ...
+usage: rflx convert [-h] [--reproducible] {iana} ...
 
 positional arguments:
   {iana}
-    iana      convert IANA registry into RecordFlux specifications
+    iana          convert IANA registry into RecordFlux specifications
 
 options:
-  -h, --help  show this help message and exit
+  -h, --help      show this help message and exit
+  --reproducible  ensure reproducible output

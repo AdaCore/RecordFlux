@@ -1950,7 +1950,11 @@ def test_session_to_ada_expr_equality(
     )
 
 
-def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
+def test_generate_unused_valid_function_parameter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(Generator, "_license_header", "")
     types = [
         mty.Integer(
             "P::T",
@@ -1962,7 +1966,7 @@ def test_generate_unused_valid_function_parameter(tmp_path: Path) -> None:
             size=expr.Number(constants.MAX_SCALAR_SIZE),
         ),
     ]
-    Generator(reproducible=True).generate(
+    Generator().generate(
         Model(types),
         Integration(),
         tmp_path,
@@ -2117,7 +2121,9 @@ def test_generate_enumeration_base_type_use(
     always_valid: bool,
     expected: str,
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(Generator, "_license_header", "")
     types = [
         mty.Enumeration(
             "P::T",
@@ -2126,7 +2132,7 @@ def test_generate_enumeration_base_type_use(
             always_valid=always_valid,
         ),
     ]
-    Generator(reproducible=True).generate(
+    Generator().generate(
         Model(types),
         Integration(),
         tmp_path,

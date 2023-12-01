@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import re
 import shutil
 import sys
@@ -221,6 +220,11 @@ def main(  # noqa: PLR0915
         type=Path,
     )
     parser_generate.add_argument(
+        "--reproducible",
+        action="store_true",
+        help="ensure reproducible output",
+    )
+    parser_generate.add_argument(
         "files",
         metavar="SPECIFICATION_FILE",
         type=Path,
@@ -362,6 +366,11 @@ def main(  # noqa: PLR0915
         "convert",
         help="convert foreign specifications into RecordFlux specifications",
     )
+    parser_convert.add_argument(
+        "--reproducible",
+        action="store_true",
+        help="ensure reproducible output",
+    )
 
     convert_subparsers = parser_convert.add_subparsers(dest="subcommand")
 
@@ -497,7 +506,7 @@ def generate(args: argparse.Namespace) -> None:
     Generator(
         args.prefix,
         workers=args.workers,
-        reproducible=os.environ.get("RFLX_REPRODUCIBLE") is not None,
+        reproducible=args.reproducible,
         debug=Debug.BUILTIN
         if args.debug == "built-in"
         else Debug.EXTERNAL
@@ -634,7 +643,7 @@ def convert_iana(args: argparse.Namespace) -> None:
         args.file,
         args.always_valid,
         args.output_directory,
-        os.environ.get("RFLX_REPRODUCIBLE") is not None,
+        args.reproducible,
     )
 
 
