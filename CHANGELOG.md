@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.16.0] - 2023-12-05
 
 ### Added
 
@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Improve parallelization of message verification (eng/recordflux/RecordFlux#444)
-- Improve message verification (eng/recordflux/RecordFlux#1476)
+- Improve parallelization of message verification (AdaCore/RecordFlux#444, eng/recordflux/RecordFlux#444)
+- Improve message verification (AdaCore/RecordFlux#420, AdaCore/RecordFlux#1090, eng/recordflux/RecordFlux#420, eng/recordflux/RecordFlux#1090, eng/recordflux/RecordFlux#1476)
 
 ### Fixed
 
@@ -434,7 +434,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2019-05-14
 
-[Unreleased]: https://github.com/AdaCore/RecordFlux/compare/v0.15.0...HEAD
+[0.16.0]: https://github.com/AdaCore/RecordFlux/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/AdaCore/RecordFlux/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/AdaCore/RecordFlux/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/AdaCore/RecordFlux/compare/v0.12.0...v0.13.0
