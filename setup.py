@@ -93,7 +93,7 @@ setup(
         "pydotplus >=2, <3",
         "pygls >=1.1, <2",
         "ruamel.yaml >=0.17, <0.18",
-        "z3-solver >=4, <5",
+        "z3-solver >=4, <4.12.3",
     ],
     extras_require={
         "devel": [
