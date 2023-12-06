@@ -1933,61 +1933,6 @@ def test_incongruent_overlay() -> None:
     )
 
 
-def test_field_coverage_1(monkeypatch: pytest.MonkeyPatch) -> None:
-    structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), first=Add(First("Message"), Number(64))),
-        Link(Field("F2"), FINAL),
-    ]
-
-    types = {Field("F1"): models.integer(), Field("F2"): models.integer()}
-    monkeypatch.setattr(Message, "_verify_links", lambda _: None)
-    assert_message_model_error(
-        structure,
-        types,
-        r"^"
-        r"model: error: path does not cover whole message\n"
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"'
-        r"$",
-    )
-
-
-def test_field_coverage_2(monkeypatch: pytest.MonkeyPatch) -> None:
-    structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), Field("F4"), Greater(Variable("F1"), Number(100))),
-        Link(
-            Field("F2"),
-            Field("F3"),
-            LessEqual(Variable("F1"), Number(100)),
-            first=Add(Last("F2"), Number(64)),
-        ),
-        Link(Field("F3"), Field("F4")),
-        Link(Field("F4"), FINAL),
-    ]
-
-    types = {
-        Field("F1"): models.integer(),
-        Field("F2"): models.integer(),
-        Field("F3"): models.integer(),
-        Field("F4"): models.integer(),
-    }
-    monkeypatch.setattr(Message, "_verify_links", lambda _: None)
-    assert_message_model_error(
-        structure,
-        types,
-        r"^"
-        r"model: error: path does not cover whole message\n"
-        r'model: info: on path: "F1"\n'
-        r'model: info: on path: "F2"\n'
-        r'model: info: on path: "F3"\n'
-        r'model: info: on path: "F4"'
-        r"$",
-    )
-
-
 def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
     structure = [
         Link(INITIAL, Field("F1")),

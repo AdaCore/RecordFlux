@@ -1248,7 +1248,6 @@ class Message(mty.Type):
 
             self._prove_static_conditions(proofs)
             self._prove_conflicting_conditions(proofs)
-            self._prove_coverage(proofs)
             self._prove_overlays(proofs)
             self._prove_field_positions(proofs, valid_paths)
             self._prove_message_size(proofs)
@@ -1821,71 +1820,6 @@ class Message(mty.Type):
                             for m, l in errors
                         )
                     self.error.extend(error)
-
-    def _prove_coverage(self, proofs: expr.ParallelProofs) -> None:
-        """
-        Prove that the fields of a message cover all message bits.
-
-        This ensures that there are no holes in the message definition.
-
-        Idea: Let f be the bits covered by the message. By definition
-            (1) f >= Message'First and f <= Message'Last
-        holds. For every field add a conjunction of the form
-            (2) Not(f >= Field'First and f <= Field'Last),
-        effectively pruning the range that this field covers from the bit range of the message. For
-        the overall expression, prove that it is false for all f, i.e. no bits are left.
-        """
-        for path in [p[:-1] for p in self.paths(FINAL) if p]:
-            facts: Sequence[expr.Expr]
-
-            # Calculate (1)
-            facts = [
-                expr.GreaterEqual(expr.Variable("f"), expr.First("Message")),
-                expr.LessEqual(expr.Variable("f"), expr.Last("Message")),
-            ]
-            # Calculate (2) for all fields
-            facts.extend(
-                [
-                    expr.Not(
-                        expr.And(
-                            expr.GreaterEqual(expr.Variable("f"), self._target_first(l)),
-                            expr.LessEqual(expr.Variable("f"), self._target_last(l)),
-                            location=l.location,
-                        ),
-                    )
-                    for l in path
-                ],
-            )
-
-            # Define that the end of the last field of a path is the end of the message
-            facts.append(
-                expr.Equal(self._target_last(path[-1]), expr.Last("Message"), self.location),
-            )
-
-            # Constraints for links on path
-            facts.extend(self._path_constraints(path))
-
-            # Coverage expression must be False, i.e. no bits left
-            error = RecordFluxError(
-                [
-                    (
-                        "path does not cover whole message",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.identifier.location,
-                    ),
-                    *[
-                        (
-                            f'on path: "{l.target.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            l.target.identifier.location,
-                        )
-                        for l in path
-                    ],
-                ],
-            )
-            proofs.add(expr.TRUE, facts, sat_error=error, unknown_error=error)
 
     def _prove_overlays(self, proofs: expr.ParallelProofs) -> None:
         for f in (INITIAL, *self.fields):
