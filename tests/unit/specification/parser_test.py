@@ -1835,16 +1835,18 @@ def test_parse_error_inconsistent_package_identifiers() -> None:
 
 def test_parse_error_incorrect_name() -> None:
     assert_error_files(
-        [f"{SPEC_DIR}/incorrect_name.rflx"],
-        f"^{SPEC_DIR}/incorrect_name.rflx:1:9: parser: error: file name does not match unit name"
+        [f"{SPEC_DIR}/invalid/incorrect_name.rflx"],
+        f"^{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: parser: error: "
+        "file name does not match unit name"
         r' "Test", should be "test.rflx"$',
     )
 
 
 def test_parse_error_incorrect_specification() -> None:
     assert_error_files(
-        [f"{SPEC_DIR}/incorrect_specification.rflx"],
-        f"^{SPEC_DIR}/incorrect_specification.rflx:3:10: parser: error: Expected 'is', got ';'$",
+        [f"{SPEC_DIR}/invalid/incorrect_specification.rflx"],
+        f"^{SPEC_DIR}/invalid/incorrect_specification.rflx:3:10: parser: error: "
+        "Expected 'is', got ';'$",
     )
 
 
@@ -1868,36 +1870,41 @@ def test_parse_error_context_dependency_cycle() -> None:
         RecordFluxError,
         match=(
             r"^"
-            f"{SPEC_DIR}/context_cycle.rflx:1:6: parser: error: dependency cycle when "
+            f"{SPEC_DIR}/invalid/context_cycle.rflx:1:6: parser: error: dependency cycle when "
             f'including "Context_Cycle_1"\n'
-            f'{SPEC_DIR}/context_cycle_1.rflx:1:6: parser: info: when including "Context_Cycle_2"\n'
-            f'{SPEC_DIR}/context_cycle_2.rflx:1:6: parser: info: when including "Context_Cycle_3"\n'
-            f'{SPEC_DIR}/context_cycle_3.rflx:1:6: parser: info: when including "Context_Cycle_1"'
+            f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: "
+            'parser: info: when including "Context_Cycle_2"\n'
+            f"{SPEC_DIR}/invalid/context_cycle_2.rflx:1:6: "
+            'parser: info: when including "Context_Cycle_3"\n'
+            f"{SPEC_DIR}/invalid/context_cycle_3.rflx:1:6: "
+            'parser: info: when including "Context_Cycle_1"'
             r"$"
         ),
     ):
-        p.parse(Path(f"{SPEC_DIR}/context_cycle.rflx"))
+        p.parse(Path(f"{SPEC_DIR}/invalid/context_cycle.rflx"))
 
     p.parse(Path(f"{SPEC_DIR}/integer_type.rflx"))
 
 
 def test_parse_error_context_dependency_cycle_2() -> None:
     assert_error_files(
-        [f"{SPEC_DIR}/context_cycle_1.rflx"],
+        [f"{SPEC_DIR}/invalid/context_cycle_1.rflx"],
         f"^"
-        f"{SPEC_DIR}/context_cycle_1.rflx:1:6: parser: error: dependency cycle when "
+        f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: parser: error: dependency cycle when "
         f'including "Context_Cycle_2"\n'
-        f'{SPEC_DIR}/context_cycle_2.rflx:1:6: parser: info: when including "Context_Cycle_3"\n'
-        f'{SPEC_DIR}/context_cycle_3.rflx:1:6: parser: info: when including "Context_Cycle_1"'
+        f"{SPEC_DIR}/invalid/context_cycle_2.rflx:1:6: "
+        'parser: info: when including "Context_Cycle_3"\n'
+        f"{SPEC_DIR}/invalid/context_cycle_3.rflx:1:6: "
+        'parser: info: when including "Context_Cycle_1"'
         f"$",
     )
 
 
 def test_parse_string_error_context_dependency_cycle() -> None:
     p = parser.Parser()
-    p.parse_string(Path(f"{SPEC_DIR}/context_cycle.rflx").read_text())
-    p.parse_string(Path(f"{SPEC_DIR}/context_cycle_1.rflx").read_text())
-    p.parse_string(Path(f"{SPEC_DIR}/context_cycle_2.rflx").read_text())
+    p.parse_string(Path(f"{SPEC_DIR}/invalid/context_cycle.rflx").read_text())
+    p.parse_string(Path(f"{SPEC_DIR}/invalid/context_cycle_1.rflx").read_text())
+    p.parse_string(Path(f"{SPEC_DIR}/invalid/context_cycle_2.rflx").read_text())
 
     with pytest.raises(
         RecordFluxError,
@@ -1909,7 +1916,7 @@ def test_parse_string_error_context_dependency_cycle() -> None:
             r"$"
         ),
     ):
-        p.parse_string(Path(f"{SPEC_DIR}/context_cycle_3.rflx").read_text())
+        p.parse_string(Path(f"{SPEC_DIR}/invalid/context_cycle_3.rflx").read_text())
 
     p.parse_string(Path(f"{SPEC_DIR}/integer_type.rflx").read_text())
 
