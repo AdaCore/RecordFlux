@@ -412,7 +412,7 @@ def test_fail_fast() -> None:
                         "--max-errors",
                         "5",
                         "check",
-                        str(SPEC_DIR / "multiple_errors.rflx"),
+                        str(SPEC_DIR / "invalid/multiple_errors.rflx"),
                     ],
                 ),
             ).split("\n"),

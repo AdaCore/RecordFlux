@@ -529,15 +529,18 @@ def test_dependency_order_after_dependency_cycle() -> None:
         RecordFluxError,
         match=(
             r"^"
-            f"{SPEC_DIR}/context_cycle.rflx:1:6: parser: error: dependency cycle when "
+            f"{SPEC_DIR}/invalid/context_cycle.rflx:1:6: parser: error: dependency cycle when "
             f'including "Context_Cycle_1"\n'
-            f'{SPEC_DIR}/context_cycle_1.rflx:1:6: parser: info: when including "Context_Cycle_2"\n'
-            f'{SPEC_DIR}/context_cycle_2.rflx:1:6: parser: info: when including "Context_Cycle_3"\n'
-            f'{SPEC_DIR}/context_cycle_3.rflx:1:6: parser: info: when including "Context_Cycle_1"'
+            f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: "
+            'parser: info: when including "Context_Cycle_2"\n'
+            f"{SPEC_DIR}/invalid/context_cycle_2.rflx:1:6: "
+            'parser: info: when including "Context_Cycle_3"\n'
+            f"{SPEC_DIR}/invalid/context_cycle_3.rflx:1:6: "
+            'parser: info: when including "Context_Cycle_1"'
             r"$"
         ),
     ):
-        p.parse(Path(f"{SPEC_DIR}/context_cycle.rflx"))
+        p.parse(Path(f"{SPEC_DIR}/invalid/context_cycle.rflx"))
 
     p.parse(Path(f"{SPEC_DIR}/in_ethernet.rflx"))
     p.create_model()

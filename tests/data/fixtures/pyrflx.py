@@ -29,7 +29,7 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{SPEC_DIR}/parameterized.rflx",
             f"{SPEC_DIR}/endianness.rflx",
             f"{SPEC_DIR}/low_order.rflx",
-            f"{SPEC_DIR}/aggregate_in_relation.rflx",
+            f"{SPEC_DIR}/invalid/aggregate_in_relation.rflx",
         ],
         skip_model_verification=True,
     )
