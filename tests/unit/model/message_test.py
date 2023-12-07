@@ -2765,6 +2765,27 @@ def test_field_size() -> None:
         message.field_size(Field("X"))
 
 
+def test_target_last_opt() -> None:
+    link_ia = Link(INITIAL, Field("A"))
+    link_ab = Link(Field("A"), Field("B"), size=Mul(Size("A"), Number(8)))
+    link_bc = Link(Field("B"), Field("C"))
+    message = Message(
+        "P::M",
+        [link_ia, link_ab, link_bc, Link(Field("C"), FINAL)],
+        {Field("A"): models.integer(), Field("B"): OPAQUE, Field("C"): OPAQUE},
+        location=Location((30, 10)),
+    )
+    assert message._target_last_opt(link_ia) == Sub(  # noqa: SLF001
+        Add(First("Message"), Number(8)),
+        Number(1),
+    )
+    assert message._target_last_opt(link_ab) == Sub(  # noqa: SLF001
+        Add(Add(Last("A"), Number(1)), Mul(Size("A"), Number(8))),
+        Number(1),
+    )
+    assert message._target_last_opt(link_bc) is None  # noqa: SLF001
+
+
 def test_copy() -> None:
     message = Message(
         "P::M",

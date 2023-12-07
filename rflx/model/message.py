@@ -875,7 +875,7 @@ class Message(mty.Type):
         parameters = type_fields - structure_fields - {INITIAL, FINAL}
 
         for f, t in types.items():
-            if f in structure_fields and not isinstance(t, (mty.Scalar, mty.Composite)):
+            if f in structure_fields and not isinstance(t, (mty.Scalar, mty.Composite, Message)):
                 self.error.extend(
                     [
                         (
@@ -2035,9 +2035,24 @@ class Message(mty.Type):
             return link.size
         return self.field_size(link.target)
 
+    def _target_size_opt(self, link: Link) -> Optional[expr.Expr]:
+        if link.size != expr.UNDEFINED:
+            return link.size
+        return self.field_size_opt(link.target)
+
     def _target_last(self, link: Link) -> expr.Expr:
         return expr.Sub(
             expr.Add(self._target_first(link), self._target_size(link)),
+            expr.Number(1),
+            link.target.identifier.location,
+        )
+
+    def _target_last_opt(self, link: Link) -> Optional[expr.Expr]:
+        size = self._target_size_opt(link)
+        if not size:
+            return None
+        return expr.Sub(
+            expr.Add(self._target_first(link), size),
             expr.Number(1),
             link.target.identifier.location,
         )
@@ -2049,19 +2064,31 @@ class Message(mty.Type):
     ) -> list[expr.Expr]:
         name = link.target.name
         target_first = self._target_first(link)
-        target_size = self._target_size(link)
-        target_last = self._target_last(link)
+        target_size = self._target_size_opt(link)
+        target_last = self._target_last_opt(link)
+        include_sizes = not (
+            ignore_implicit_sizes
+            and target_size
+            and (expr.Size("Message") in target_size or expr.Last("Message") in target_size)
+        )
         return [
             expr.Equal(expr.First(name), target_first, target_first.location or self.location),
             *(
                 [
-                    expr.Equal(expr.Size(name), target_size, target_size.location or self.location),
+                    expr.Equal(
+                        expr.Size(name),
+                        target_size,
+                        target_size.location or self.location,
+                    ),
+                ]
+                if include_sizes and target_size
+                else []
+            ),
+            *(
+                [
                     expr.Equal(expr.Last(name), target_last, target_last.location or self.location),
                 ]
-                if not (
-                    ignore_implicit_sizes
-                    and (expr.Size("Message") in target_size or expr.Last("Message") in target_size)
-                )
+                if include_sizes and target_last
                 else []
             ),
             expr.GreaterEqual(expr.First("Message"), expr.Number(0), self.location),
