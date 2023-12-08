@@ -719,9 +719,7 @@ class Message(mty.Type):
 
             for path in paths_to_field:
                 link_size_expressions = [
-                    fact
-                    for link in path
-                    for fact in self._link_size_constraints(link, ignore_implicit_sizes=True)
+                    fact for link in path for fact in self._link_size_constraints(link)
                 ]
 
                 path_condition = (
@@ -2060,15 +2058,13 @@ class Message(mty.Type):
     def _link_size_constraints(
         self,
         link: Link,
-        ignore_implicit_sizes: bool = False,
     ) -> list[expr.Expr]:
         name = link.target.name
         target_first = self._target_first(link)
         target_size = self._target_size_opt(link)
         target_last = self._target_last_opt(link)
         include_sizes = not (
-            ignore_implicit_sizes
-            and target_size
+            target_size
             and (expr.Size("Message") in target_size or expr.Last("Message") in target_size)
         )
         return [
