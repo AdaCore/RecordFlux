@@ -7,6 +7,7 @@ Setup
 
 Additionally to the dependencies listed in the `User's Guide <https://docs.adacore.com/live/wave/recordflux/html/recordflux_ug/index.html>`_ the following software is required:
 
+- `Pipenv <https://pipenv.pypa.io/>`_
 - `AUnit <https://github.com/AdaCore/aunit>`_ (if FSF GNAT is used)
 - `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_
 - `Node.js <https://nodejs.org/>`_ 20.5.0 or higher (see `nvm <https://github.com/nvm-sh/nvm>`_ for an alternative installation method)
@@ -26,14 +27,17 @@ The configuration of the development tools is managed in a separate repository a
 
    $ make init
 
-``pip`` can be used to install the Python project in editable mode.
-The use of a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_ is recommended.
+Pipenv installs the Python project in a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_.
 
 .. code:: console
 
-   $ python3 -m venv .venv
-   $ . .venv/bin/activate
    $ make install_devel
+
+The virtual environment is activated by spawing a shell using Pipenv.
+
+.. code:: console
+
+   $ pipenv shell
 
 **Note:**
 An editable installation is used, so all changes to the Python source code take effect immediately and no reinstallation is required.
@@ -70,6 +74,15 @@ Make targets for common development tasks are:
 - ``clean_all`` Remove all generated files and editable installations
 
 Additional tools can be found in ``tools/``.
+
+Deterministic development and test environment
+==============================================
+
+Pipenv locks the dependencies to ensure deterministic test results.
+`pipenv lock` creates the lock file `Pipfile.lock` based on the packages listed in `Pipfile`.
+Pipenv does not yet support lock files for multiple environments (`pypa/pipenv#5130 <https://github.com/pypa/pipenv/issues/5130>`_).
+Thus, `Pipfile.lock` may need to be manually modified to be compatible with all supported Python versions.
+A good starting point is a lock file created with the oldest supported Python version.
 
 VS Code extension
 =================

@@ -5,7 +5,6 @@ from functools import singledispatchmethod
 from typing import Optional, Union, cast
 
 import rflx_lang
-
 from rflx import const
 from rflx.identifier import ID
 

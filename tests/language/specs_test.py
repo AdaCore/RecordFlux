@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import pytest
-import rflx_lang as lang
 
+import rflx_lang as lang
 from tests.const import EX_SPEC_DIR, SPEC_DIR
 
 

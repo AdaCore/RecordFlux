@@ -9,8 +9,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Optional, Union
 
 import pytest
-import rflx_lang as lang
 
+import rflx_lang as lang
 from rflx import ada
 from rflx.common import STDIN
 from rflx.error import Location, RecordFluxError

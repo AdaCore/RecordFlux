@@ -218,20 +218,18 @@ prove_property_tests: $(GNATPROVE_CACHE_DIR)
 .PHONY: install_build_deps install install_devel upgrade_devel install_devel_edge install_git_hooks install_gnat printenv_gnat
 
 install_build_deps:
-	pip3 install -U "pip>=22.2"
-	pip3 install packaging "setuptools>=64" setuptools_scm wheel build contrib/langkit
+	pipenv run pip install -U "pip>=22.2"
+	pipenv run pip install packaging "setuptools>=64" setuptools_scm wheel build contrib/langkit
 
 install: install_build_deps $(SDIST)
-	$(MAKE) -C devutils install_devel
-	pip3 install --force-reinstall "$(SDIST)[devel]"
+	pipenv run $(MAKE) -C devutils install_devel
+	pipenv run pip install --force-reinstall "$(SDIST)[devel]"
 
 install_devel: install_build_deps parser
-	$(MAKE) -C devutils install_devel
-	rm -rf $(BUILD_DIR)/__editable__.*
-	pip3 install --force-reinstall -e ".[devel]" --config-settings editable_mode=strict
+	pipenv sync -v
 
 install_devel_edge: install_devel
-	$(MAKE) -C devutils install_devel_edge
+	pipenv run $(MAKE) -C devutils install_devel_edge
 
 install_git_hooks:
 	install -m 755 tools/pre-{commit,push} .git/hooks/
@@ -339,7 +337,7 @@ $(GENERATED_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | 
 .PHONY: clean clean_all
 
 clean:
-	rm -rf $(BUILD_DIR)/[^_]* .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache crashes
+	rm -rf $(BUILD_DIR) crashes .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C examples/apps/spdm_responder clean
@@ -348,5 +346,6 @@ clean:
 	$(MAKE) -C doc/user_guide clean
 	$(MAKE) -C ide/vscode clean
 
-clean_all: clean
-	rm -rf $(BUILD_DIR)/* $(GENERATED_DIR)
+clean_all:
+	$(MAKE) clean
+	rm -rf $(GENERATED_DIR)

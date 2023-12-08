@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from rflx_lang import GrammarRule
 
+from rflx_lang import GrammarRule
 from tests.language.utils import parse
 
 

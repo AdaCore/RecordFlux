@@ -56,9 +56,15 @@ workflow:
     - gnatprove --version
 
 .setup_python_venv: &setup_python_venv
+    - export PATH=$HOME/.local/bin:$PATH
+    - pip install --user pipenv==11.9
     - python$PYTHON_VERSION -m venv --clear .venv$PYTHON_VERSION
     - . .venv$PYTHON_VERSION/bin/activate
-    - make init install
+    - if [ "$SCHEDULE" = "nightly" ]; then
+        make init install;
+      else
+        make init install_devel;
+      fi
 
 setup:
   services:
@@ -69,6 +75,7 @@ setup:
     paths:
       - .venv$PYTHON_VERSION
       - alr
+      - generated
   script:
     - git fetch --unshallow
     - *setup_alire
@@ -87,10 +94,16 @@ setup:
 
 .setup_python: &setup_python
     - export PATH=/it/e3/bin:$PATH
+    - export PATH=$HOME/.local/bin:$PATH
+    - pip install --user pipenv==11.9
     - if [ $CLEAN_RECORDFLUX_SETUP -eq 1 ]; then
         python$PYTHON_VERSION -m venv --clear .venv;
         . .venv/bin/activate;
-        make init install;
+        if [ "$SCHEDULE" = "nightly" ]; then
+          make init install;
+        else
+          make init install_devel;
+        fi
       else
         . .venv$PYTHON_VERSION/bin/activate;
         make init;

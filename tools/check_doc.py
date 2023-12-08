@@ -21,7 +21,6 @@ import textwrap
 from pathlib import Path
 from typing import Optional
 
-from rflx_lang import AnalysisContext, GrammarRule
 from ruamel.yaml import YAML
 from ruamel.yaml.parser import ParserError
 
@@ -29,6 +28,7 @@ from rflx.common import STDIN
 from rflx.error import RecordFluxError
 from rflx.specification import Parser, style
 from rflx.specification.parser import diagnostics_to_error
+from rflx_lang import AnalysisContext, GrammarRule
 from tests.const import GENERATED_DIR
 
 

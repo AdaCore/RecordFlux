@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 
 import pytest
-import rflx_lang as lang
 
+import rflx_lang as lang
 from language.lexer import rflx_lexer
 from tests.language.utils import parse, to_dict
 

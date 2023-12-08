@@ -8,9 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional, Union
 
-import rflx_lang as lang
-
 import rflx.typing_ as rty
+import rflx_lang as lang
 from rflx import expression as expr, model
 from rflx.common import STDIN, unique
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
