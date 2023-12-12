@@ -359,7 +359,7 @@ class AllocatorGenerator:
             return state.identifier.name
         return None
 
-    def _allocate_local_slots(  # noqa: PLR0912
+    def _allocate_local_slots(
         self,
     ) -> list[SlotInfo]:
         """
@@ -378,58 +378,82 @@ class AllocatorGenerator:
             location: Optional[Location]
             size: int
 
-        alloc_requirements_per_state: list[list[AllocationRequirement]] = []
-        for s in self._session.states:
-            state_requirements = []
-            for a in s.actions:
-                if isinstance(a, ir.VarDecl) and self._needs_allocation(a.type_):
-                    state_requirements.append(
+        def determine_allocation_requirements(
+            statements: Sequence[ir.Stmt],
+            state: ir.State,
+        ) -> list[AllocationRequirement]:
+            alloc_requirements = []
+
+            for statement in statements:
+                if isinstance(statement, ir.VarDecl) and self._needs_allocation(statement.type_):
+                    alloc_requirements.append(
                         AllocationRequirement(
-                            a.location,
-                            self.get_size(a.identifier, s.identifier.name),
+                            statement.location,
+                            self.get_size(statement.identifier, state.identifier.name),
                         ),
                     )
                 if (
-                    isinstance(a, ir.Assign)
-                    and isinstance(a.expression, ir.Comprehension)
-                    and isinstance(a.expression.sequence.type_, rty.Sequence)
-                    and isinstance(a.expression.sequence.type_.element, rty.Message)
-                    and isinstance(a.expression.sequence, (ir.Var, ir.FieldAccess))
+                    isinstance(statement, ir.Assign)
+                    and isinstance(statement.expression, ir.Comprehension)
+                    and isinstance(statement.expression.sequence.type_, rty.Sequence)
+                    and isinstance(statement.expression.sequence.type_.element, rty.Message)
+                    and isinstance(statement.expression.sequence, (ir.Var, ir.FieldAccess))
                 ):
-                    if isinstance(a.expression.sequence, ir.FieldAccess):
-                        identifier = a.expression.sequence.message
+                    if isinstance(statement.expression.sequence, ir.FieldAccess):
+                        identifier = statement.expression.sequence.message
                     else:
-                        assert isinstance(a.expression.sequence, ir.Var)
-                        identifier = a.expression.sequence.identifier
-                    state_requirements.append(
+                        assert isinstance(statement.expression.sequence, ir.Var)
+                        identifier = statement.expression.sequence.identifier
+                    alloc_requirements.append(
                         AllocationRequirement(
-                            a.location,
-                            self.get_size(identifier, self._scope(s, identifier)),
+                            statement.location,
+                            self.get_size(identifier, self._scope(state, identifier)),
                         ),
                     )
-                if isinstance(a, ir.Assign) and isinstance(a.expression, ir.Head):
-                    identifier = a.expression.prefix
-                    state_requirements.append(
+                if isinstance(statement, ir.Assign) and isinstance(statement.expression, ir.Head):
+                    identifier = statement.expression.prefix
+                    alloc_requirements.append(
                         AllocationRequirement(
-                            a.location,
-                            self.get_size(identifier, self._scope(s, identifier)),
+                            statement.location,
+                            self.get_size(identifier, self._scope(state, identifier)),
                         ),
                     )
-                if isinstance(a, ir.Assign) and isinstance(a.expression, ir.Find):
-                    if isinstance(a.expression.sequence, ir.Var):
-                        identifier = a.expression.sequence.identifier
-                    elif isinstance(a.expression.sequence, ir.FieldAccess):
-                        identifier = a.expression.sequence.message
+                if isinstance(statement, ir.Assign) and isinstance(statement.expression, ir.Find):
+                    if isinstance(statement.expression.sequence, ir.Var):
+                        identifier = statement.expression.sequence.identifier
+                    elif isinstance(statement.expression.sequence, ir.FieldAccess):
+                        identifier = statement.expression.sequence.message
                     else:
                         assert False
-                    state_requirements.append(
+                    alloc_requirements.append(
                         AllocationRequirement(
-                            a.location,
-                            self.get_size(identifier, self._scope(s, identifier)),
+                            statement.location,
+                            self.get_size(identifier, self._scope(state, identifier)),
+                        ),
+                    )
+                if isinstance(statement, ir.Assign) and isinstance(
+                    statement.expression,
+                    (ir.Comprehension, ir.Find),
+                ):
+                    alloc_requirements.extend(
+                        determine_allocation_requirements(
+                            statement.expression.selector.stmts,
+                            state,
+                        ),
+                    )
+                    alloc_requirements.extend(
+                        determine_allocation_requirements(
+                            statement.expression.condition.stmts,
+                            state,
                         ),
                     )
 
-            alloc_requirements_per_state.append(state_requirements)
+            return alloc_requirements
+
+        alloc_requirements_per_state = [
+            determine_allocation_requirements(state.actions, state)
+            for state in self._session.states
+        ]
 
         for state_requirements in alloc_requirements_per_state:
             state_requirements.sort(key=lambda x: x.size, reverse=True)

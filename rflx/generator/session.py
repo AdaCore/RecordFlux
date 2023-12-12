@@ -666,6 +666,7 @@ class SessionGenerator:
                             )
                             for declaration in composite_globals
                             if isinstance(declaration.type_, (rty.Message, rty.Sequence))
+                            and declaration.type_ != rty.OPAQUE
                         ],
                         *(
                             [
@@ -812,7 +813,7 @@ class SessionGenerator:
             ]
 
             for d in declarations:
-                if isinstance(d.type_, (rty.Message, rty.Sequence)):
+                if isinstance(d.type_, (rty.Message, rty.Sequence)) and d.type_ != rty.OPAQUE:
                     identifier = context_id(d.identifier, is_global)
                     type_identifier = self._ada_type(d.type_.identifier)
                     invariant.extend(
@@ -2329,7 +2330,7 @@ class SessionGenerator:
                 ir.CaseExpr,
             ),
         ) and (
-            isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration))
+            isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
             or expression.type_ == rty.OPAQUE
         ):
             assert isinstance(

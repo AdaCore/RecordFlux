@@ -3861,14 +3861,26 @@ def _to_ir_basic_expr(
             assert isinstance(expression.type_, rty.Any)
             result_expr = ir.ObjVar(result_id, expression.type_, origin=expression)
 
-        result_type = result_expr.type_
+        if isinstance(result_expr.type_, rty.Aggregate):
+            # TODO(eng/recordflux/RecordFlux#1497): Support comparisons of opaque fields
+            result_stmts = [  # pragma: no cover
+                *result.stmts,
+                ir.VarDecl(
+                    result_id,
+                    rty.OPAQUE,
+                    ir.ComplexExpr([], result.expr),
+                    origin=expression,
+                ),
+            ]
+        else:
+            result_type = result_expr.type_
 
-        assert isinstance(result_type, rty.NamedType)
+            assert isinstance(result_type, rty.NamedType)
 
-        result_stmts = [
-            *result.stmts,
-            ir.VarDecl(result_id, result_type, None, origin=expression),
-            ir.Assign(result_id, result.expr, result_type, origin=expression),
-        ]
+            result_stmts = [
+                *result.stmts,
+                ir.VarDecl(result_id, result_type, None, origin=expression),
+                ir.Assign(result_id, result.expr, result_type, origin=expression),
+            ]
 
     return (result_stmts, result_expr)

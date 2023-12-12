@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from rflx.error import RecordFluxError
 from rflx.generator import Debug
 from rflx.integration import Integration
 from rflx.model import Model, Session, State, Transition
@@ -923,3 +924,59 @@ def test_session_message_field_access_in_transition(tmp_path: Path) -> None:
             """,
         tmp_path,
     )
+
+
+@pytest.mark.parametrize(
+    ("global_decl", "local_decl", "value"),
+    [
+        ("Key : Opaque := [0, 1, 0];", "", "Key"),
+        ("", "Key : Opaque := [0, 1, 0];", "Key"),
+        ("", "", "[0, 1, 0]"),
+    ],
+)
+def test_session_comparing_opaque_values_in_comprehension(
+    global_decl: str,
+    local_decl: str,
+    value: str,
+    tmp_path: Path,
+) -> None:
+    spec = f"""\
+package Test is
+
+   type Message is
+      message
+         Key : Opaque
+            with Size => 3 * 8;
+      end message;
+
+   type Messages is sequence of Message;
+
+   generic
+   session Session is
+      {global_decl}
+   begin
+      state S is
+        Ms_1     : Messages;
+        Ms_2     : Messages;
+        {local_decl}
+      begin
+        Ms_2 :=
+            [for M in Ms_1
+             if M.Key = {value} =>
+             M];
+      transition
+         goto null
+      exception
+         goto null
+      end S;
+
+   end Session;
+
+end Test;
+    """
+    # TODO(eng/recordflux/RecordFlux#1497): Support comparisons of opaque fields
+    with pytest.raises(
+        RecordFluxError,
+        match=r"^<stdin>:22:17: model: error: comparisons of opaque fields not yet supported$",
+    ):
+        utils.assert_compilable_code_string(spec, tmp_path)

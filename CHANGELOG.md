@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fatal error when comparing opaque fields (AdaCore/RecordFlux#1294, eng/recordflux/RecordFlux#1497)
+
 ### Removed
 
 - Verification of message bit coverage (eng/recordflux/RecordFlux#1495)

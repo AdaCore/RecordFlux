@@ -12,7 +12,7 @@ from typing import Final, Optional
 
 from rflx import expression as expr, ir, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
-from rflx.error import Location, Severity, Subsystem
+from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID, id_generator
 
 from . import (
@@ -675,6 +675,35 @@ class Session(AbstractSession):
         declarations: Mapping[ID, decl.Declaration],
         local_declarations: Mapping[ID, decl.Declaration],
     ) -> None:
+        self._validate_io_states(actions, local_declarations)
+
+        for a in actions:
+            try:
+                type_ = declarations[a.identifier].type_
+            except KeyError:
+                type_ = rty.Undefined()
+
+            self.error.extend(
+                a.check_type(
+                    type_,
+                    lambda x: self._typify_variable(x, declarations),
+                ),
+            )
+
+            self._reference_variable_declaration(a.variables(), declarations)
+
+            if isinstance(a, stmt.Assignment):
+                a.expression.substituted(lambda e: error_on_unsupported_expression(e, self.error))
+            else:
+                assert isinstance(a, stmt.AttributeStatement)
+                for e in a.parameters:
+                    e.substituted(lambda e: error_on_unsupported_expression(e, self.error))
+
+    def _validate_io_states(
+        self,
+        actions: Sequence[stmt.Statement],
+        local_declarations: Mapping[ID, decl.Declaration],
+    ) -> None:
         io_statements = [a for a in actions if isinstance(a, stmt.ChannelAttributeStatement)]
 
         if io_statements:
@@ -769,21 +798,6 @@ class Session(AbstractSession):
                         ],
                     )
 
-        for a in actions:
-            try:
-                type_ = declarations[a.identifier].type_
-            except KeyError:
-                type_ = rty.Undefined()
-
-            self.error.extend(
-                a.check_type(
-                    type_,
-                    lambda x: self._typify_variable(x, declarations),
-                ),
-            )
-
-            self._reference_variable_declaration(a.variables(), declarations)
-
     def _validate_transitions(
         self,
         state: State,
@@ -793,6 +807,8 @@ class Session(AbstractSession):
             t.condition = t.condition.substituted(lambda x: self._typify_variable(x, declarations))
             self.error.extend(t.condition.check_type(rty.BOOLEAN))
             self._reference_variable_declaration(t.condition.variables(), declarations)
+
+            t.condition.substituted(lambda e: error_on_unsupported_expression(e, self.error))
 
         if not state.exception_transition and state.has_exceptions:
             self.error.extend(
@@ -932,3 +948,21 @@ class UncheckedSession(UncheckedTopLevelDeclaration):
 
 
 FINAL_STATE: Final[State] = State("Final")
+
+
+def error_on_unsupported_expression(expression: expr.Expr, error: RecordFluxError) -> expr.Expr:
+    # TODO(eng/recordflux/RecordFlux#1497): Support comparisons of opaque fields
+    if isinstance(expression, (expr.Equal, expr.NotEqual)):
+        for e in [expression.left, expression.right]:
+            if isinstance(e, expr.Selected) and e.type_ == rty.OPAQUE:
+                error.extend(
+                    [
+                        (
+                            "comparisons of opaque fields not yet supported",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            expression.left.location,
+                        ),
+                    ],
+                )
+    return expression

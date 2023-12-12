@@ -2042,6 +2042,50 @@ def test_conflicting_actions(
     )
 
 
+def test_unsupported_expression() -> None:
+    assert_session_model_error(
+        states=[
+            State(
+                "Start",
+                actions=[
+                    stmt.VariableAssignment(
+                        "R",
+                        expr.Equal(
+                            expr.Selected(expr.Variable("M"), "Data", location=Location((1, 2))),
+                            expr.Aggregate(expr.Number(0), expr.Number(1)),
+                        ),
+                    ),
+                ],
+                transitions=[
+                    Transition(
+                        target=ID("null"),
+                        condition=expr.Equal(
+                            expr.Selected(expr.Variable("M"), "Data", location=Location((3, 4))),
+                            expr.Aggregate(expr.Number(0), expr.Number(1)),
+                        ),
+                    ),
+                    Transition(
+                        target=ID("null"),
+                    ),
+                ],
+                exception_transition=Transition(target=ID("null")),
+            ),
+        ],
+        declarations=[
+            decl.VariableDeclaration("M", models.universal_message().identifier),
+            decl.VariableDeclaration("R", BOOLEAN.identifier),
+        ],
+        parameters=[],
+        types=[BOOLEAN, models.universal_message()],
+        regex=(
+            r"^"
+            r"<stdin>:1:2: model: error: comparisons of opaque fields not yet supported\n"
+            r"<stdin>:3:4: model: error: comparisons of opaque fields not yet supported"
+            r"$"
+        ),
+    )
+
+
 def test_missing_exception_transition() -> None:
     assert_session_model_error(
         states=[
