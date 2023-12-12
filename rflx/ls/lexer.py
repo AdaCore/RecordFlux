@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from functools import singledispatchmethod
 from typing import Optional, Union, cast
 
-import rflx_lang
-from rflx import const
+from rflx import const, lang
 from rflx.identifier import ID
 
 from .model import LSModel, Symbol, SymbolCategory
@@ -101,23 +100,23 @@ class LSLexer:
     def tokenize(self, source: str, path: str = "<stdin>") -> None:
         """Convert a string into a list of tokens that can be accessed via the tokens property."""
 
-        unit = rflx_lang.AnalysisContext().get_from_buffer(
+        unit = lang.AnalysisContext().get_from_buffer(
             path,
             source,
-            rule=rflx_lang.GrammarRule.main_rule_rule,
+            rule=lang.GrammarRule.main_rule_rule,
         )
 
         state = State(set(), None, [], None, None, top_level=False)
         self._process_ast_node(unit.root, state)
 
     @singledispatchmethod
-    def _process_ast_node(self, node: Optional[rflx_lang.RFLXNode], state: State) -> None:
+    def _process_ast_node(self, node: Optional[lang.RFLXNode], state: State) -> None:
         if node is None:
             return
 
         self._process_children(node, state)
 
-    def _process_children(self, node: rflx_lang.RFLXNode, state: State) -> None:
+    def _process_children(self, node: lang.RFLXNode, state: State) -> None:
         for child in node.children:
             self._process_ast_node(child, state)
 
@@ -156,14 +155,14 @@ class LSLexer:
         return None
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.ID, state: State) -> None:
+    def _(self, node: lang.ID, state: State) -> None:
         if node.f_package is not None:
             state.foreign_package = ID(node.f_package.text)
         self._process_children(node, state)
         state.foreign_package = None
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.UnqualifiedID, state: State) -> None:
+    def _(self, node: lang.UnqualifiedID, state: State) -> None:
         symbol = self._identify_symbol(node.text, state)
 
         self._tokens.append(
@@ -176,34 +175,34 @@ class LSLexer:
         )
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.VariableDecl, state: State) -> None:
+    def _(self, node: lang.VariableDecl, state: State) -> None:
         self._process_ast_node(node.f_identifier, state)
         state.top_level = True
         self._process_ast_node(node.f_type_identifier, state)
         state.top_level = False
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.Parameter, state: State) -> None:
+    def _(self, node: lang.Parameter, state: State) -> None:
         self._process_ast_node(node.f_identifier, state)
         state.top_level = True
         self._process_ast_node(node.f_type_identifier, state)
         state.top_level = False
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.ContextItem, state: State) -> None:
+    def _(self, node: lang.ContextItem, state: State) -> None:
         state.imports.add(ID(node.f_item.text))
         self._process_children(node, state)
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.PackageNode, state: State) -> None:
+    def _(self, node: lang.PackageNode, state: State) -> None:
         state.current_package = ID(node.f_identifier.text)
         self._process_children(node, state)
         state.current_package = None
 
     # Python 3.11 directly supports single dispatch with typing.Union
-    @_process_ast_node.register(rflx_lang.TypeDecl)
-    @_process_ast_node.register(rflx_lang.SessionDecl)
-    def _(self, node: Union[rflx_lang.TypeDecl, rflx_lang.SessionDecl], state: State) -> None:
+    @_process_ast_node.register(lang.TypeDecl)
+    @_process_ast_node.register(lang.SessionDecl)
+    def _(self, node: Union[lang.TypeDecl, lang.SessionDecl], state: State) -> None:
         partial_identifier = ID(node.f_identifier.text)
         identifier = (
             state.current_package * partial_identifier
@@ -211,18 +210,18 @@ class LSLexer:
             else partial_identifier
         )
 
-        if node.is_a(rflx_lang.SessionDecl):
+        if node.is_a(lang.SessionDecl):
             state.current_session = identifier
 
         state.declarations.append(identifier)
         self._process_children(node, state)
         state.declarations.pop()
 
-        if node.is_a(rflx_lang.SessionDecl):
+        if node.is_a(lang.SessionDecl):
             state.current_session = None
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.MessageField, state: State) -> None:
+    def _(self, node: lang.MessageField, state: State) -> None:
         self._process_ast_node(node.f_identifier, state)
         state.top_level = True
         self._process_ast_node(node.f_type_identifier, state)
@@ -233,10 +232,10 @@ class LSLexer:
         self._process_ast_node(node.f_type_identifier, state)
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.RefinementDecl, state: State) -> None:
+    def _(self, node: lang.RefinementDecl, state: State) -> None:
         name = node.f_pdu.f_name
         # TODO(eng/recordflux/RecordFlux#1371): Invalid type annotation for optional field
-        if cast(Optional[rflx_lang.UnqualifiedID], node.f_pdu.f_package) is None:
+        if cast(Optional[lang.UnqualifiedID], node.f_pdu.f_package) is None:
             message_identifier = (
                 state.current_package * ID(name.text)
                 if state.current_package is not None
@@ -249,14 +248,14 @@ class LSLexer:
         state.declarations.pop()
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.FormalFunctionDecl, state: State) -> None:
+    def _(self, node: lang.FormalFunctionDecl, state: State) -> None:
         assert state.current_session is not None
         state.declarations.append(state.current_session * ID(node.f_identifier.text))
         self._process_children(node, state)
         state.declarations.pop()
 
     @_process_ast_node.register
-    def _(self, node: rflx_lang.State, state: State) -> None:
+    def _(self, node: lang.State, state: State) -> None:
         assert state.current_session is not None
         state.declarations.append(state.current_session * ID(node.f_identifier.text))
         self._process_children(node, state)

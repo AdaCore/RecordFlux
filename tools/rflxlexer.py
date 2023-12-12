@@ -5,7 +5,7 @@ from typing import Iterator, Optional
 import pygments.lexer
 import pygments.token
 
-import rflx_lang as lang
+from rflx import lang
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 
 # TODO(eng/recordflux/RecordFlux#1411): Obtain mapping from langkit parser

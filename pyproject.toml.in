@@ -1,0 +1,101 @@
+[tool.poetry]
+name = "RecordFlux"
+version = "0.0.0"
+description = "A toolset for the formal specification and generation of verifiable binary parsers, message generators and protocol state machines."
+license = "AGPL-3.0"
+authors = [
+    "Tobias Reiher <reiher@adacore.com>"
+]
+readme = ["README.md"]
+homepage = "https://www.adacore.com/recordflux"
+repository = "https://github.com/AdaCore/RecordFlux"
+documentation = "https://www.adacore.com/documentation#SPARK"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Ada",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Communications",
+    "Topic :: Security",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: System :: Networking",
+]
+packages = [
+    { include  = "rflx" },
+]
+include = [
+    { path = "generated/adasat/*.gpr", format = "sdist" },
+    { path = "generated/adasat/src/*.ad?", format = "sdist" },
+    { path = "generated/gnatcoll-bindings/gmp/*.ad?", format = "sdist" },
+    { path = "generated/gnatcoll-bindings/gmp/*.c", format = "sdist" },
+    { path = "generated/gnatcoll-bindings/gmp/*.gpr", format = "sdist" },
+    { path = "generated/gnatcoll-bindings/iconv/*.ad?", format = "sdist" },
+    { path = "generated/gnatcoll-bindings/iconv/*.c", format = "sdist" },
+    { path = "generated/gnatcoll-bindings/iconv/*.gpr", format = "sdist" },
+    { path = "generated/langkit/langkit/support/*.ad?", format = "sdist" },
+    { path = "generated/langkit/langkit/support/*.gpr", format = "sdist" },
+    { path = "generated/librflxlang.gpr", format = "sdist" },
+    { path = "generated/src/*", format = "sdist" },
+    { path = "rflx/ide/vscode/recordflux.vsix" },
+    { path = "rflx/lang/__init__.py" },
+    { path = "rflx/lang/py.typed" },
+]
+exclude = [
+    "rflx/ide/vscode",
+    "rflx/lang/librflxlang.so",
+]
+
+[tool.poetry.build]
+script = "build.py"
+generate-setup-file = true
+
+[tool.poetry.dependencies]
+python = ">=3.8, <3.12"
+attrs = ">=22.1, <24"
+icontract = ">=2.3.4, <3"
+importlib_resources = ">=6, <7"  # TODO(eng/recordflux/RecordFlux#1359): Remove
+pydantic = ">=1, <2"
+pydotplus = ">=2, <3"
+pygls = ">=1.1, <2"
+"ruamel.yaml" = ">=0.17, <0.18"
+setuptools = ">=41"  # required by z3-solver
+z3-solver = ">=4, <4.12.3"
+
+[tool.poetry.group.dev.dependencies]
+recordflux-devutils = {path = "devutils", extras = ["devel"]}
+langkit = {path = "contrib/langkit"}
+cobrafuzz = "==1.0.12"
+furo = "==2022.4.7"
+hypothesis = ">=6.14, <6.24"
+lark = "==1.1.8"
+pyicontract-lint = ">=2.1.2, <2.2"
+pytest-asyncio = "==0.21"
+pytest-timeout = ">=2, <3"
+scapy = "==2.4.5"
+sphinx = ">=4.5, <5"
+sphinx-rtd-theme = ">=1.1.1, <1.2"
+sphinxcontrib-applehelp = "==1.0.4"  # required by sphinx 4
+sphinxcontrib-devhelp = "==1.0.2"  # required by sphinx 4
+sphinxcontrib-htmlhelp = "==2.0.1"  # required by sphinx 4
+sphinxcontrib-qthelp = "==1.0.3"  # required by sphinx 4
+sphinxcontrib-serializinghtml = "==1.1.5"  # required by sphinx 4
+tqdm = ">=4.61.1, <4.63"
+types-Pygments = ">=2.15, <2.16"
+
+[tool.poetry.scripts]
+rflx = "rflx.cli:run"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+bump = true
+
+[build-system]
+requires = ["poetry-core>=1", "poetry-dynamic-versioning>=1,<2", "setuptools", "wheel"]

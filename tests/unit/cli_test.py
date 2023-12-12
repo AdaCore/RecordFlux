@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
+import sys
 from argparse import ArgumentParser
 from collections.abc import Callable
 from io import TextIOWrapper
@@ -55,6 +57,18 @@ def raise_unexpected_exception() -> None:
 
 def raise_fatal_error() -> None:
     fatal_fail("TEST", Subsystem.CLI)
+
+
+def test_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    expected = ["rflx", "foo", "bar"]
+    monkeypatch.setattr(sys, "argv", expected)
+
+    provided = []
+    monkeypatch.setattr(cli, "main", lambda x: provided.extend(x))
+
+    cli.run()
+
+    assert provided == expected
 
 
 def test_main_noarg() -> None:
@@ -552,7 +566,7 @@ def test_install_vscode_extension(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
     run_called = []
     vscode_extension = tmp_path / "recordflux.vsix"
 
-    monkeypatch.setattr(cli, "run", lambda x: run_called.append(x))
+    monkeypatch.setattr(subprocess, "run", lambda x: run_called.append(x))
     monkeypatch.setattr(cli, "vscode_extension", lambda: vscode_extension)
 
     with pytest.raises(SystemExit, match=r"^2$"):

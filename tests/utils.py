@@ -10,8 +10,7 @@ from typing import Optional, Union
 
 import pytest
 
-import rflx_lang as lang
-from rflx import ada
+from rflx import ada, lang
 from rflx.common import STDIN
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr

@@ -1,8 +1,7 @@
-usage: rflx install [-h] [--gnat-studio-dir GNAT_STUDIO_DIR]
-                    {gnatstudio,vscode}
+usage: rflx install [-h] [--gnat-studio-dir GNAT_STUDIO_DIR] {gnatstudio}
 
 positional arguments:
-  {gnatstudio,vscode}
+  {gnatstudio}
 
 options:
   -h, --help            show this help message and exit

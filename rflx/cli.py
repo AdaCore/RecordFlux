@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import shutil
+import subprocess
 import sys
 import traceback
 from collections.abc import Sequence
@@ -12,7 +13,6 @@ from enum import Enum
 from importlib import metadata
 from multiprocessing import cpu_count
 from pathlib import Path
-from subprocess import run
 from typing import Optional, Union
 
 import importlib_resources
@@ -126,6 +126,10 @@ class UniqueStore(argparse.Action):
             # Perform the 'store' action.
             # Note: This should be equivalent to the logic in argparse._StoreAction__call__(..).
             setattr(namespace, self.dest, values)
+
+
+def run() -> None:
+    main(sys.argv)
 
 
 def main(  # noqa: PLR0915
@@ -627,7 +631,7 @@ def validate(args: argparse.Namespace) -> None:
 def install(args: argparse.Namespace) -> None:
     if args.ide is IDE.GNATSTUDIO:
         # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
-        gnatstudio_dir = importlib_resources.files("rflx_ide") / "gnatstudio"
+        gnatstudio_dir = importlib_resources.files("rflx") / "ide" / "gnatstudio"
         plugins_dir = args.gnat_studio_dir / "plug-ins"
         if not plugins_dir.exists():
             plugins_dir.mkdir(parents=True, exist_ok=True)
@@ -636,7 +640,7 @@ def install(args: argparse.Namespace) -> None:
 
     elif args.ide is IDE.VSCODE:
         with importlib_resources.as_file(vscode_extension()) as extension:
-            run(["code", "--install-extension", extension, "--force"])
+            subprocess.run(["code", "--install-extension", extension, "--force"])
 
     else:
         assert_never(args.ide)  # pragma: no cover
@@ -660,7 +664,7 @@ def run_language_server(args: argparse.Namespace) -> None:
 
 def vscode_extension() -> Traversable:
     # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
-    path = importlib_resources.files("rflx_ide") / "vscode" / "recordflux.vsix"
+    path = importlib_resources.files("rflx") / "ide" / "vscode" / "recordflux.vsix"
     assert isinstance(path, Traversable)
     return path
 

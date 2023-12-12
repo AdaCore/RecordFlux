@@ -2,8 +2,7 @@ from pathlib import Path
 
 import pytest
 
-import rflx_lang as lang
-from rflx import expression as expr, model
+from rflx import expression as expr, lang, model
 from rflx.common import STDIN
 from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID

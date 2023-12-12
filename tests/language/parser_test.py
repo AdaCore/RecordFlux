@@ -4,8 +4,8 @@ import re
 
 import pytest
 
-import rflx_lang as lang
 from language.lexer import rflx_lexer
+from rflx import lang
 from tests.language.utils import parse, to_dict
 
 

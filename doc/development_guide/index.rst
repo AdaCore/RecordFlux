@@ -7,11 +7,17 @@ Setup
 
 Additionally to the dependencies listed in the `User's Guide <https://docs.adacore.com/live/wave/recordflux/html/recordflux_ug/index.html>`_ the following software is required:
 
-- `Pipenv <https://pipenv.pypa.io/>`_
 - `AUnit <https://github.com/AdaCore/aunit>`_ (if FSF GNAT is used)
 - `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_
 - `Node.js <https://nodejs.org/>`_ 20.5.0 or higher (see `nvm <https://github.com/nvm-sh/nvm>`_ for an alternative installation method)
 - `TeX Live <https://tug.org/texlive/>`_ (to create the PDF documentation)
+- `Poetry <https://python-poetry.org/>`_ with `dynamic versioning plugin <https://github.com/mtkennerly/poetry-dynamic-versioning>`_ can be installed using `pipx <https://pipx.pypa.io/>`_:
+
+.. code:: console
+
+   $ pipx install poetry==1.7.1
+   $ pipx inject poetry poetry-dynamic-versioning==1.2.0
+   $ pipx inject poetry poetry-plugin-export==1.6.0
 
 The FSF GNAT and all Ada dependencies can be installed using Alire.
 
@@ -20,24 +26,23 @@ The FSF GNAT and all Ada dependencies can be installed using Alire.
    $ make install_gnat
    $ eval `make printenv_gnat`
 
-
 The configuration of the development tools is managed in a separate repository and must be downloaded and set up once.
 
 .. code:: console
 
    $ make init
 
-Pipenv installs the Python project in a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_.
+Poetry installs the Python project in a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_.
 
 .. code:: console
 
    $ make install_devel
 
-The virtual environment is activated by spawing a shell using Pipenv.
+The virtual environment is activated by spawing a shell using Poetry.
 
 .. code:: console
 
-   $ pipenv shell
+   $ poetry shell
 
 **Note:**
 An editable installation is used, so all changes to the Python source code take effect immediately and no reinstallation is required.
@@ -78,11 +83,8 @@ Additional tools can be found in ``tools/``.
 Deterministic development and test environment
 ==============================================
 
-Pipenv locks the dependencies to ensure deterministic test results.
-`pipenv lock` creates the lock file `Pipfile.lock` based on the packages listed in `Pipfile`.
-Pipenv does not yet support lock files for multiple environments (`pypa/pipenv#5130 <https://github.com/pypa/pipenv/issues/5130>`_).
-Thus, `Pipfile.lock` may need to be manually modified to be compatible with all supported Python versions.
-A good starting point is a lock file created with the oldest supported Python version.
+Poetry locks the dependencies to ensure deterministic test results.
+`poetry lock` creates the lock file `poetry.lock` based on the dependencies listed in `pyproject.toml`.
 
 VS Code extension
 =================

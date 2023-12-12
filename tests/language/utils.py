@@ -1,6 +1,6 @@
 from typing import Any
 
-from rflx_lang import AnalysisContext
+from rflx.lang import AnalysisContext
 
 
 def to_dict(node: Any) -> Any:  # type: ignore[misc]
