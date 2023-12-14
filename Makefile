@@ -357,15 +357,13 @@ $(GENERATED_DIR)/python/librflxlang: $(wildcard language/*.py) pyproject.toml
 .PHONY: clean clean_all
 
 clean:
-	rm -rf $(BUILD_DIR) crashes .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
+	rm -rf $(BUILD_DIR) crashes .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache doc/language_reference/build doc/user_guide/build
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C examples/apps/spdm_responder clean
 	$(MAKE) -C examples/apps/dccp clean
-	$(MAKE) -C doc/language_reference clean
-	$(MAKE) -C doc/user_guide clean
 	$(MAKE) -C rflx/ide/vscode clean
 
 clean_all:
-	rm -rf $(GENERATED_DIR) rflx/lang pyproject.toml
 	$(MAKE) clean
+	rm -rf $(GENERATED_DIR) rflx/lang pyproject.toml
