@@ -444,6 +444,20 @@ def test_sequence_dependencies() -> None:
             r"<stdin>:3:4: model: info: messages used as sequence element must not depend"
             ' on "Message\'Size" or "Message\'Last"',
         ),
+        (
+            lambda: Message(
+                "P::B",
+                [
+                    Link(INITIAL, Field("A"), condition=Variable("P")),
+                    Link(Field("A"), FINAL),
+                ],
+                {Field("P"): BOOLEAN, Field("A"): models.integer()},
+                location=Location((3, 4)),
+            ),
+            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
+            r"<stdin>:3:4: model: info: parameterized messages must not be used"
+            r" as sequence element",
+        ),
     ],
 )
 def test_sequence_invalid_element_type(element_type: Callable[[], Type], error: str) -> None:

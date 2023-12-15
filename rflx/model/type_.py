@@ -561,6 +561,19 @@ class Sequence(Composite):
                     ],
                 )
 
+            if element_type.parameters:
+                self.error.extend(
+                    [
+                        error_entry,
+                        (
+                            "parameterized messages must not be used as sequence element",
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            element_type.location,
+                        ),
+                    ],
+                )
+
             if any(
                 bool(e.findall(lambda x: x in [expr.Size("Message"), expr.Last("Message")]))
                 for l in element_type.structure
