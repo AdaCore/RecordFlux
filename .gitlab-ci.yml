@@ -174,6 +174,11 @@ tests_rflx:
     - *setup_gnat_cross
     - *setup_python
     - make test_rflx
+  artifacts:
+    expose_as: "Distribution archives"
+    paths:
+      - dist
+      - ide/vscode/recordflux.vsix
 
 tests_example_apps:
   extends: .testing
@@ -395,6 +400,11 @@ html_documentation:
     - *setup_gnat
     - *setup_python
     - make html_doc
+  artifacts:
+    expose_as: "HTML documentation"
+    paths:
+      - doc/language_reference/build/html
+      - doc/user_guide/build/html
 
 pdf_documentation:
   extends: .testing
@@ -404,6 +414,11 @@ pdf_documentation:
     - *setup_gnat
     - *setup_python
     - make pdf_doc
+  artifacts:
+    expose_as: "PDF documentation"
+    paths:
+      - doc/language_reference/build/latex/language_reference.pdf
+      - doc/user_guide/build/latex/user_guide.pdf
 
 ##################
 # Scheduled jobs #
