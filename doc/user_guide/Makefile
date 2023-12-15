@@ -7,28 +7,39 @@ BUILDDIR      = build
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help regenerate_help Makefile
+.PHONY: help check_help regenerate_help clean_help Makefile
 
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-HELP_FILES = \
-   90-rflx--help.txt \
-   90-rflx-check--help.txt \
-   90-rflx-generate--help.txt \
-   90-rflx-graph--help.txt \
-   90-rflx-validate--help.txt \
-   90-rflx-install--help.txt \
-   90-rflx-convert--help.txt \
-   90-rflx-run_ls--help.txt
+SHELL = /bin/bash
+COMMANDS = $(shell rflx |& sed -n 's/.*{\(.*\)}.*/\1/p' | tr ',' ' ')
+
+help_file = 90-rflx-$(1)--help.txt
+
+EXPECTED_HELP_FILES = 90-rflx--help.txt $(foreach CMD,$(COMMANDS),$(call help_file,$(CMD)))
+EXISTING_HELP_FILES = $(wildcard 90-rflx-*-help.txt)
+UNEXPECTED_HELP_FILES = $(filter-out $(EXPECTED_HELP_FILES),$(EXISTING_HELP_FILES))
+MISSING_HELP_FILES = $(filter-out $(EXISTING_HELP_FILES),$(EXPECTED_HELP_FILES))
+
+REPLACE_WORKERS = sed "s/workers (default: [0-9]*)/workers (default: NPROC)/"
+CHECK = diff 90-rflx--help.txt <(rflx --help | $(REPLACE_WORKERS)) && $(foreach CMD,$(COMMANDS),diff $(call help_file,$(CMD)) <(rflx $(CMD) --help) &&) exit
+
+check_help:
+	@test -z "$(MISSING_HELP_FILES)" || ( echo "Missing help files: $(MISSING_HELP_FILES)" && exit 1 )
+	@test -z "$(UNEXPECTED_HELP_FILES)" || ( echo "Unexpected help files: $(UNEXPECTED_HELP_FILES)" && exit 1 )
+	@( $(CHECK) ) || ( echo "Help texts are outdated" && exit 1 )
 
 90-rflx-%--help.txt::
 	@rflx $* --help > $@
 
 90-rflx--help.txt:
-	@rflx --help > $@
+	@rflx --help | $(REPLACE_WORKERS) > $@
 
 # Regenerate rflx help texts for the documentation
 # We do not do this automatically. The results are checked in as we don't
 # have rflx available during documentation creation.
-regenerate_help:: $(HELP_FILES)
+regenerate_help:: clean_help $(EXPECTED_HELP_FILES)
+
+clean_help:
+	@rm -f 90-rflx-*-help.txt

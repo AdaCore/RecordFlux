@@ -20,6 +20,6 @@ options:
   --version
   --no-verification     skip time-consuming verification of model
   --max-errors NUM      exit after at most NUM errors
-  --workers NUM         parallelize proofs among NUM workers (default: 20)
+  --workers NUM         parallelize proofs among NUM workers (default: NPROC)
   --unsafe              allow unsafe options (WARNING: may lead to erronous
                         behavior)

@@ -118,6 +118,7 @@ check_contracts:
 
 check_doc:
 	tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
+	$(MAKE) -C doc/user_guide check_help
 
 .PHONY: test test_rflx test_examples test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
 
