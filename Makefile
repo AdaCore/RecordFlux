@@ -119,6 +119,8 @@ check_contracts:
 check_doc:
 	tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
 	$(MAKE) -C doc/user_guide check_help
+	tools/check_grammar.py --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json examples/specs/*.rflx examples/apps/*/specs/*.rflx tests/data/specs/*.rflx tests/data/specs/parse_only/*.rflx
+	tools/check_grammar.py --invalid --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json tests/data/specs/invalid/{incorrect_comment_only,incorrect_empty_file,incorrect_specification}.rflx
 
 .PHONY: test test_rflx test_examples test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
 
@@ -138,7 +140,7 @@ test_coverage:
 
 test_unit_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tools --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/tools
-	coverage report --fail-under=94.68 --show-missing --skip-covered --omit="$(GENERATED_DIR)/*"
+	coverage report --fail-under=95.0 --show-missing --skip-covered --omit="$(GENERATED_DIR)/*"
 
 test_language_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx_lang --cov-branch --cov-fail-under=73.8 --cov-report=term-missing:skip-covered tests/language
