@@ -56,40 +56,10 @@ class State(enum.Enum):
 
 
 class StyleChecker:
-    def __init__(self, filname: Path):
-        self._filename = filname
+    def __init__(self, filename: Path):
+        self._filename = filename
         self._previous: Optional[tuple[int, str]] = None
         self._headings_re = re.compile(r"^(=+|-+|~+|\^+|\*+|\"+)$")
-
-    def _skip(self, line: str, previous_line: str, previous_lineno: int) -> bool:
-        # Headings
-        if self._headings_re.match(line):
-            if re.match(r"^$", previous_line):
-                return True
-            if len(line) != len(previous_line):
-                raise CheckDocError(
-                    f"{self._filename}:{previous_lineno}: "
-                    "heading marker length does not match heading length",
-                )
-            return True
-
-        # Empty lines
-        if re.match(r"^$", previous_line):
-            return True
-
-        # Lines without spaces
-        if " " not in previous_line:
-            return True
-
-        # Sphinx directives
-        if re.match(r"^(\.\.|- |\s+|\*\*)", previous_line):
-            return True
-
-        # Template elements
-        if re.match(r"{[^}]*}", previous_line):
-            return True
-
-        return False
 
     def check(self, lineno: int, line: str) -> None:
         if not self._previous:
@@ -127,6 +97,153 @@ class StyleChecker:
             # Handle final line
             self.check(*self._previous)
 
+    def _skip(self, line: str, previous_line: str, previous_lineno: int) -> bool:
+        # Headings
+        if self._headings_re.match(line):
+            if re.match(r"^$", previous_line):
+                return True
+            if len(line) != len(previous_line):
+                raise CheckDocError(
+                    f"{self._filename}:{previous_lineno}: "
+                    "heading marker length does not match heading length",
+                )
+            return True
+
+        # Empty lines
+        if re.match(r"^$", previous_line):
+            return True
+
+        # Lines without spaces
+        if " " not in previous_line:
+            return True
+
+        # Sphinx directives
+        if re.match(r"^(\.\.|- |\s+|\*\*)", previous_line):
+            return True
+
+        # Template elements
+        if re.match(r"{[^}]*}", previous_line):
+            return True
+
+        return False
+
+
+class CodeChecker:
+    def __init__(self, filename: Path):
+        self._filename = filename
+
+    def check(
+        self,
+        lineno: Optional[int],
+        block: str,
+        code_type: Optional[CodeBlockType],
+        indent: int,
+        subtype: Optional[str] = None,
+    ) -> None:
+        assert lineno
+        # Remove trailing empty line as this is an error for RecordFlux style checks. It could be
+        # filtered out in the code block parser, but that would complicate things significantly.
+        block = textwrap.indent(textwrap.dedent(block).rstrip("\n"), indent * " ")
+        try:
+            if code_type == CodeBlockType.IGNORE:
+                pass
+            elif code_type == CodeBlockType.RFLX:
+                self._check_rflx(block, subtype)
+            elif code_type == CodeBlockType.ADA:
+                self._check_ada(block, subtype)
+            elif code_type == CodeBlockType.PYTHON:
+                self._check_python(block)
+            elif code_type == CodeBlockType.YAML:
+                self._check_yaml(block)
+            elif code_type == CodeBlockType.UNKNOWN:
+                # ignore code blocks of unknown type
+                pass
+            else:
+                raise NotImplementedError(f"Unsupported code type: {code_type}\n{block}")
+        except CheckDocError as error:
+            raise CheckDocError(
+                f"{self._filename}:{lineno}: error in code block\n{error}",
+            ) from error
+
+    def _check_rflx(self, block: str, subtype: Optional[str] = None) -> None:
+        try:
+            if subtype is None:
+                parser = Parser()
+                parser.parse_string(block)
+                parser.create_model()
+            else:
+                if not hasattr(GrammarRule, f"{subtype}_rule"):
+                    raise CheckDocError(f'invalid code block subtype "{subtype}"')
+                parse(data=block, rule=getattr(GrammarRule, f"{subtype}_rule"))
+        except RecordFluxError as rflx_error:
+            raise CheckDocError(str(rflx_error)) from rflx_error
+
+    def _check_ada(self, block: str, subtype: Optional[str] = None) -> None:
+        args = []
+        unit = "main"
+
+        if subtype is None:
+            data = block
+        elif subtype == "declaration":
+            data = f"procedure {unit.title()} is {block} begin null; end {unit.title()};"
+        elif subtype == "api":
+            args = ["-gnats", "-gnaty", "-gnatwe"]
+            formated_block = textwrap.indent(textwrap.dedent(block), "   ")
+            data = f"package {unit.title()} is\n{formated_block}\nend {unit.title()};"
+        else:
+            raise CheckDocError(f"invalid Ada subtype '{subtype}'")
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmpdir = Path(tmpdirname).resolve()
+
+            (tmpdir / f"{unit}.adb").write_text(data, encoding="utf-8")
+            os.symlink(GENERATED_DIR.resolve(), tmpdir / "generated", target_is_directory=True)
+
+            result = subprocess.run(
+                [
+                    "gprbuild",
+                    "-j0",
+                    "--no-project",
+                    "-q",
+                    "-u",
+                    "--src-subdirs=generated",
+                    unit,
+                    *args,
+                ],
+                check=False,
+                capture_output=True,
+                encoding="utf-8",
+                cwd=tmpdir,
+            )
+            try:
+                result.check_returncode()
+            except subprocess.CalledProcessError as gprbuild_error:
+                raise CheckDocError(result.stderr) from gprbuild_error
+
+    def _check_python(self, block: str) -> None:
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmpdir = Path(tmpdirname)
+            filename = tmpdir / "test.py"
+            filename.write_text(block, encoding="utf-8")
+
+            result = subprocess.run(
+                ["python3", filename],
+                check=False,
+                capture_output=True,
+                encoding="utf-8",
+            )
+            try:
+                result.check_returncode()
+            except subprocess.CalledProcessError as python_error:
+                raise CheckDocError(result.stderr) from python_error
+
+    def _check_yaml(self, block: str) -> None:
+        yaml = YAML(typ="safe")
+        try:
+            yaml.load(block)
+        except ParserError as yaml_error:
+            raise CheckDocError(f"{yaml_error}") from yaml_error
+
 
 def parse_code_block_type(type_str: str) -> CodeBlockType:
     normalized = type_str.lower()
@@ -150,15 +267,16 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
     doc_check_type: Optional[CodeBlockType] = None
     indent: int = 0
     subtype: Optional[str] = None
-    checker = StyleChecker(filename)
+    style_checker = StyleChecker(filename)
+    code_checker = CodeChecker(filename)
 
     for lineno, line in enumerate(content.splitlines(), start=1):
-        checker.check(lineno, line)
+        style_checker.check(lineno, line)
 
         if state == State.INSIDE:
             match = re.match(r"^\S", line)
             if match:
-                check_code(filename, block_start, block, doc_check_type, indent, subtype)
+                code_checker.check(block_start, block, doc_check_type, indent, subtype)
                 state = State.OUTSIDE
                 doc_check_type = None
                 indent = 0
@@ -222,11 +340,11 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
             state = State.INSIDE
             continue
 
-    checker.finish()
-
     if state == State.INSIDE:
-        check_code(filename, block_start, block, doc_check_type, indent, subtype)
+        code_checker.check(block_start, block, doc_check_type, indent, subtype)
         found = True
+
+    style_checker.finish()
 
     return found
 
@@ -243,33 +361,6 @@ def check_files(files: list[Path]) -> None:
         raise CheckDocError(f"No code blocks found (checked {files_str})")
 
 
-def check_code(
-    filename: Path,
-    lineno: Optional[int],
-    block: str,
-    code_type: Optional[CodeBlockType],
-    indent: int,
-    subtype: Optional[str] = None,
-) -> None:
-    assert lineno
-    # Remove trailing empty line as this is an error for RecordFlux style checks. It could be
-    # filtered  out in the code block parser, but that would complicate things significantly.
-    block = textwrap.indent(textwrap.dedent(block).rstrip("\n"), indent * " ")
-    try:
-        if code_type == CodeBlockType.IGNORE:
-            pass
-        elif code_type == CodeBlockType.RFLX:
-            check_rflx_code(block, subtype)
-        elif code_type == CodeBlockType.ADA:
-            check_ada_code(block, subtype)
-        elif code_type == CodeBlockType.PYTHON:
-            check_python_code(block)
-        elif code_type == CodeBlockType.YAML:
-            check_yaml_code(block)
-    except CheckDocError as error:
-        raise CheckDocError(f"{filename}:{lineno}: error in code block\n{error}") from error
-
-
 def parse(data: str, rule: str) -> None:
     unit = AnalysisContext().get_from_buffer("<stdin>", data, rule=rule)
     error = RecordFluxError()
@@ -277,80 +368,6 @@ def parse(data: str, rule: str) -> None:
         error.propagate()
     error.extend(style.check_string(data))
     error.propagate()
-
-
-def check_rflx_code(block: str, subtype: Optional[str] = None) -> None:
-    try:
-        if subtype is None:
-            parser = Parser()
-            parser.parse_string(block)
-            parser.create_model()
-        else:
-            if not hasattr(GrammarRule, f"{subtype}_rule"):
-                raise CheckDocError(f'invalid code block subtype "{subtype}"')
-            parse(data=block, rule=getattr(GrammarRule, f"{subtype}_rule"))
-    except RecordFluxError as rflx_error:
-        raise CheckDocError(str(rflx_error)) from rflx_error
-
-
-def check_ada_code(block: str, subtype: Optional[str] = None) -> None:
-    args = []
-    unit = "main"
-
-    if subtype is None:
-        data = block
-    elif subtype == "declaration":
-        data = f"procedure {unit.title()} is {block} begin null; end {unit.title()};"
-    elif subtype == "api":
-        args = ["-gnats", "-gnaty", "-gnatwe"]
-        formated_block = textwrap.indent(textwrap.dedent(block), "   ")
-        data = f"package {unit.title()} is\n{formated_block}\nend {unit.title()};"
-    else:
-        raise CheckDocError(f"invalid Ada subtype '{subtype}'")
-
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        tmpdir = Path(tmpdirname).resolve()
-
-        (tmpdir / f"{unit}.adb").write_text(data, encoding="utf-8")
-        os.symlink(GENERATED_DIR.resolve(), tmpdir / "generated", target_is_directory=True)
-
-        result = subprocess.run(
-            ["gprbuild", "-j0", "--no-project", "-q", "-u", "--src-subdirs=generated", unit, *args],
-            check=False,
-            capture_output=True,
-            encoding="utf-8",
-            cwd=tmpdir,
-        )
-        try:
-            result.check_returncode()
-        except subprocess.CalledProcessError as gprbuild_error:
-            raise CheckDocError(result.stderr) from gprbuild_error
-
-
-def check_python_code(block: str) -> None:
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        tmpdir = Path(tmpdirname)
-        filename = tmpdir / "test.py"
-        filename.write_text(block, encoding="utf-8")
-
-        result = subprocess.run(
-            ["python3", filename],
-            check=False,
-            capture_output=True,
-            encoding="utf-8",
-        )
-        try:
-            result.check_returncode()
-        except subprocess.CalledProcessError as python_error:
-            raise CheckDocError(result.stderr) from python_error
-
-
-def check_yaml_code(block: str) -> None:
-    yaml = YAML(typ="safe")
-    try:
-        yaml.load(block)
-    except ParserError as yaml_error:
-        raise CheckDocError(f"{yaml_error}") from yaml_error
 
 
 def main() -> None:
