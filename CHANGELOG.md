@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Various inaccuracies in LRM (eng/recordflux/RecordFlux#958)
+- Erroneous acceptance of consecutive / trailing underscores (eng/recordflux/RecordFlux#1468)
+- Fatal error when digit in numeric literal exceeds base (eng/recordflux/RecordFlux#1469)
+- Fatal error when unsupported base is used in numeric literal (eng/recordflux/RecordFlux#1470)
 - Missing diagnostics provided by language server
 - `--split-disjunctions` options of `rflx validate`
 
