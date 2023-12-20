@@ -136,7 +136,7 @@ checks:
   services:
      - image:recordflux
      - cpu:2
-     - mem:4
+     - mem:8
   script:
     - *setup_gnat
     - *setup_python
@@ -396,10 +396,11 @@ html_documentation:
   extends: .testing
   services:
      - image:recordflux
+     - mem:8
   script:
     - *setup_gnat
     - *setup_python
-    - make html_doc
+    - make build_html_doc
   artifacts:
     expose_as: "HTML documentation"
     paths:
@@ -410,10 +411,11 @@ pdf_documentation:
   extends: .testing
   services:
      - image:recordflux
+     - mem:8
   script:
     - *setup_gnat
     - *setup_python
-    - make pdf_doc
+    - make build_pdf_doc
   artifacts:
     expose_as: "PDF documentation"
     paths:
