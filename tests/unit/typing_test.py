@@ -213,7 +213,7 @@ def test_undefined_integer_is_compatible(
         (
             UniversalInteger(),
             Integer("A", Bounds(10, 100)),
-            UndefinedInteger(),
+            Integer("A", Bounds(10, 100)),
         ),
         (
             UniversalInteger(Bounds(20, 80)),
@@ -302,7 +302,7 @@ def test_universal_integer_is_compatible(
         (
             Integer("A", Bounds(10, 100)),
             UniversalInteger(Bounds(0, 200)),
-            UndefinedInteger(),
+            Integer("A", Bounds(10, 100)),
         ),
         (Integer("A"), Undefined(), Undefined()),
         (Integer("A"), ENUMERATION_B, Undefined()),
@@ -404,7 +404,7 @@ def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> No
         (
             Integer("A", Bounds(10, 100)),
             UniversalInteger(Bounds(0, 200)),
-            False,
+            True,
         ),
         (Integer("A"), Undefined(), False),
         (Integer("A"), ENUMERATION_B, False),
@@ -716,7 +716,7 @@ def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> No
                 Integer("A", Bounds(10, 100)),
                 UniversalInteger(Bounds(20, 200)),
             ],
-            UndefinedInteger(),
+            Integer("A", Bounds(10, 100)),
         ),
         (
             [

@@ -169,9 +169,7 @@ class UniversalInteger(BoundedInteger):
         if isinstance(other, UniversalInteger) and self.bounds != other.bounds:
             return UniversalInteger(Bounds.union(self.bounds, other.bounds))
         if isinstance(other, Integer):
-            if self.bounds in other.bounds:
-                return other
-            return UndefinedInteger()
+            return other
         if other == Any() or other == AnyInteger() or self == other:
             return self
         return Undefined()
@@ -188,21 +186,17 @@ class Integer(BoundedInteger, NamedType):
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}" ({self.bounds})'
 
     def is_compatible_strong(self, other: Type) -> bool:
-        # TODO(eng/recordflux/RecordFlux#1352): Fix determination of compatibility
         return (
             self == other
             or other == Any()
             or other == AnyInteger()
-            or (isinstance(other, UniversalInteger) and other.bounds in self.bounds)
+            or isinstance(other, UniversalInteger)
         )
 
     def common_type(self, other: Type) -> Type:
-        # TODO(eng/recordflux/RecordFlux#1352): Fix determination of common type
         if isinstance(other, UndefinedInteger):
             return UndefinedInteger()
         if isinstance(other, UniversalInteger):
-            if other.bounds not in self.bounds:
-                return UndefinedInteger()
             return self
         if isinstance(other, Integer) and (
             self.identifier != other.identifier or self.bounds != other.bounds
@@ -231,11 +225,26 @@ class Aggregate(Composite):
         return (
             other == Any()
             or isinstance(other, Aggregate)
-            or (isinstance(other, Sequence) and self.element.is_compatible_strong(other.element))
+            or (
+                isinstance(other, Sequence)
+                and (
+                    other.element == Any()
+                    or (
+                        isinstance(self.element, BoundedInteger)
+                        and isinstance(other.element, BoundedInteger)
+                        and self.element.is_compatible_strong(other.element)
+                        and self.element.bounds in other.element.bounds
+                    )
+                    or (
+                        not isinstance(self.element, BoundedInteger)
+                        and self.element.is_compatible_strong(other.element)
+                    )
+                )
+            )
         )
 
     def common_type(self, other: Type) -> Type:
-        if isinstance(other, Sequence) and self.element.is_compatible_strong(other.element):
+        if isinstance(other, Sequence) and self.is_compatible(other):
             return other
         if isinstance(other, Aggregate) and self.element != other.element:
             return Aggregate(self.element.common_type(other.element))
@@ -256,7 +265,22 @@ class Sequence(Composite, NamedType):
     def is_compatible(self, other: Type) -> bool:
         return (
             other == Any()
-            or (isinstance(other, Aggregate) and other.element.is_compatible_strong(self.element))
+            or (
+                isinstance(other, Aggregate)
+                and (
+                    other.element == Any()
+                    or (
+                        isinstance(self.element, BoundedInteger)
+                        and isinstance(other.element, BoundedInteger)
+                        and other.element.is_compatible_strong(self.element)
+                        and other.element.bounds in self.element.bounds
+                    )
+                    or (
+                        not isinstance(self.element, BoundedInteger)
+                        and other.element.is_compatible_strong(self.element)
+                    )
+                )
+            )
             or (
                 isinstance(other, Sequence)
                 and self.identifier == other.identifier
@@ -265,7 +289,7 @@ class Sequence(Composite, NamedType):
         )
 
     def common_type(self, other: Type) -> Type:
-        if isinstance(other, Aggregate) and self.element.is_compatible_strong(other.element):
+        if isinstance(other, Aggregate) and self.is_compatible(other):
             return self
         if other == Any() or self == other:
             return self

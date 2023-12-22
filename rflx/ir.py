@@ -793,8 +793,8 @@ class FieldPresent(FieldAccessAttr, BoolExpr):
 @define(eq=False)
 class FieldSize(FieldAccessAttr, IntExpr):
     @property
-    def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger()
+    def type_(self) -> rty.Integer:
+        return rty.BIT_LENGTH
 
     def to_z3_expr(self) -> z3.ArithRef:
         return z3.Int(str(self))
@@ -944,7 +944,7 @@ class Mul(BinaryIntExpr):
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         v_id = next(variable_id)
-        v_type = to_integer(self.right.type_)
+        v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
             if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None

@@ -104,7 +104,7 @@ is
       -- tests/feature/session_variable_initialization/test.rflx:24:10
       Ctx.P.Global := Ctx.P.Uninitialized_Global + 20;
       -- tests/feature/session_variable_initialization/test.rflx:27:51
-      T_1 := RFLX.RFLX_Types.Base_Integer (Universal.Value'Size);
+      T_1 := Universal.Value'Size;
       -- tests/feature/session_variable_initialization/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));

@@ -517,7 +517,7 @@ def test_session_create_abstract_functions_error(
                         "P.S_Allocator.Initialize",
                         [ada.Variable("Ctx.P.Slots"), ada.Variable("Ctx.P.Memory")],
                     ),
-                    ada.Assignment("Ctx.P.X", ada.Conversion("P.T", ada.Number(1))),
+                    ada.Assignment("Ctx.P.X", ada.Number(1)),
                 ],
                 finalization=[
                     ada.CallStatement("P.S_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
@@ -755,7 +755,7 @@ class EvaluatedDeclarationStr:
             True,
             EvaluatedDeclarationStr(
                 global_declarations="X : P.T := 1;",
-                initialization="X := P.T (1);",
+                initialization="X := 1;",
             ),
         ),
         (
@@ -1144,7 +1144,7 @@ Universal.Message.Reset (X_Ctx);
 pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type));
 Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
 pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length));
-Universal.Message.Set_Length (X_Ctx, Universal.Length (0));
+Universal.Message.Set_Length (X_Ctx, 0);
 if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (0 * RFLX_Types.Byte'Size)) then
    Universal.Message.Set_Data_Empty (X_Ctx);
 else

@@ -2554,17 +2554,17 @@ def test_comprehension_to_ir() -> None:
             ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
             ir.ComplexExpr(
                 [
-                    ir.VarDecl("T_0", rty.BASE_INTEGER),
+                    ir.VarDecl("T_0", INT_TY),
                     ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
                 ],
-                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
+                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
             ),
             ir.ComplexBoolExpr(
                 [
-                    ir.VarDecl("T_1", rty.BASE_INTEGER),
+                    ir.VarDecl("T_1", INT_TY),
                     ir.Assign("T_1", ir.Sub(ir.IntVar("X", INT_TY), ir.IntVal(1)), rty.BOOLEAN),
                 ],
-                ir.Less(ir.IntVar("T_1", rty.BASE_INTEGER), ir.IntVal(100)),
+                ir.Less(ir.IntVar("T_1", INT_TY), ir.IntVal(100)),
             ),
         ),
     )
@@ -2798,14 +2798,14 @@ def test_message_aggregate_to_ir(  # type: ignore[misc]
         MSG_TY,
     ).to_ir(id_generator()) == ir.ComplexExpr(
         [
-            ir.VarDecl("T_0", rty.BASE_INTEGER),
-            ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
+            ir.VarDecl("T_0", INT_TY),
+            ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
         ],
         ir_agg(
             "X",
             {
                 ID("Y"): ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
-                ID("Z"): ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
+                ID("Z"): ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
             },
             MSG_TY,
         ),

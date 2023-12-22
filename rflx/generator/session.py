@@ -3200,9 +3200,7 @@ class SessionGenerator:
                 arguments.append(argument)
             else:
                 arguments.append(
-                    Call(t.identifier, [self._to_ada_expr(a, is_global)])
-                    if isinstance(t, rty.Integer) and not a.type_.is_compatible_strong(t)
-                    else self._to_ada_expr(a, is_global),
+                    self._to_ada_expr(self._convert_type(a, t), is_global),
                 )
 
         call = [

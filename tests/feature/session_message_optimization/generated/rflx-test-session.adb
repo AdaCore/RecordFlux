@@ -201,7 +201,7 @@ is
       -- tests/feature/session_message_optimization/test.rflx:60:20
       T_14 := RFLX.RFLX_Types.Base_Integer (Test.Option_Data.Field_Size_Length (Option_Data));
       -- tests/feature/session_message_optimization/test.rflx:60:46
-      T_15 := RFLX.RFLX_Types.Base_Integer (Universal.Length'Size);
+      T_15 := Universal.Length'Size;
       -- tests/feature/session_message_optimization/test.rflx:60:20
       T_16 := T_14 = T_15;
       -- tests/feature/session_message_optimization/test.rflx:56:16
