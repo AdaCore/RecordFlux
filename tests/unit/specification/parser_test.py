@@ -1845,21 +1845,6 @@ def test_parse_error_incorrect_name() -> None:
     )
 
 
-def test_parse_error_illegal_redefinition() -> None:
-    # Eng/RecordFlux/RecordFlux#1208
-    error = r'^<stdin>:2:4: model: error: illegal redefinition of built-in type "Boolean"$'
-    with pytest.raises(RecordFluxError, match=error):
-        parser.Parser().parse_string(
-            textwrap.dedent(
-                """\
-                package Test is
-                   type Boolean is range 0 .. 1 with Size => 2;
-                end Test;
-                """,
-            ),
-        )
-
-
 def test_parse_error_incorrect_specification() -> None:
     assert_error_files(
         [f"{SPEC_DIR}/incorrect_specification.rflx"],

@@ -12,6 +12,7 @@ from rflx.error import Location, RecordFluxError
 from rflx.expression import Equal, Number
 from rflx.identifier import ID
 from rflx.model import (
+    BOOLEAN,
     BUILTIN_TYPES,
     FINAL,
     INITIAL,
@@ -34,6 +35,38 @@ from rflx.model import (
 from rflx.model.cache import Digest
 from rflx.model.top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
 from tests.data import models
+
+
+def test_illegal_redefinition_of_builtin_type() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:1:2: model: error: illegal redefinition of built-in type "Boolean"\n'
+            r'<stdin>:3:4: model: error: illegal redefinition of built-in type "Opaque"'
+            r"$"
+        ),
+    ):
+        Model(
+            [
+                BOOLEAN,
+                OPAQUE,
+                Integer(
+                    ID("P::Boolean"),
+                    Number(0),
+                    Number(255),
+                    Number(8),
+                    location=Location((1, 2)),
+                ),
+                Integer(
+                    ID("P::Opaque"),
+                    Number(0),
+                    Number(255),
+                    Number(8),
+                    location=Location((3, 4)),
+                ),
+            ],
+        )
 
 
 def test_name_conflict_types() -> None:

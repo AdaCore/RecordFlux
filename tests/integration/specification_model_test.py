@@ -126,7 +126,7 @@ def test_illegal_redefinition() -> None:
            type Boolean is range 0 .. 1 with Size => 2;
         end Test;
         """,
-        r'^<stdin>:2:4: model: error: illegal redefinition of built-in type "Boolean"$',
+        r'^<stdin>:2:9: model: error: illegal redefinition of built-in type "Boolean"$',
     )
 
 

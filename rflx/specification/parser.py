@@ -1563,21 +1563,6 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
                     ),
                 ],
             )
-    for t in package.f_declarations:
-        # Eng/RecordFlux/RecordFlux#1208
-        if isinstance(t, lang.TypeDecl) and model.is_builtin_type(
-            create_id(error, t.f_identifier, name).name,
-        ):
-            error.extend(
-                [
-                    (
-                        f'illegal redefinition of built-in type "{t.f_identifier.text}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        node_location(t, name),
-                    ),
-                ],
-            )
 
 
 @dataclass(frozen=True)
@@ -1825,10 +1810,8 @@ class Parser:
 
         for t in spec.f_package_declaration.f_declarations:
             if isinstance(t, lang.TypeDecl):
-                identifier = model.internal_type_identifier(
-                    create_id(error, t.f_identifier, filename),
-                    package_id,
-                )
+                type_id = create_id(error, t.f_identifier, filename)
+                identifier = ID(package_id * type_id, location=type_id.location)
                 if t.f_definition.kind_name != "MessageTypeDef" and t.f_parameters:
                     error.extend(
                         [

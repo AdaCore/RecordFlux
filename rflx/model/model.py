@@ -145,7 +145,22 @@ def _check_duplicates(
     seen: dict[ID, top_level_declaration.TopLevelDeclaration] = {}
 
     for d in declarations:
-        if d.identifier in seen:
+        if d.package in (const.BUILTINS_PACKAGE, const.INTERNAL_PACKAGE):
+            continue
+
+        if type_.is_builtin_type(d.identifier.name) or type_.is_internal_type(d.identifier.name):
+            error.extend(
+                [
+                    (
+                        f'illegal redefinition of built-in type "{d.identifier.name}"',
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        d.location,
+                    ),
+                ],
+            )
+
+        elif d.identifier in seen:
             error.extend(
                 [
                     (

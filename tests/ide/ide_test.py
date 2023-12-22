@@ -43,14 +43,12 @@ def test_multiple_errors() -> None:
             f'{path}:6:9: parser: info: previous identifier was "RFLX_Invalid"',
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid",'
             ' should be "rflx_invalid.rflx"',
-            f'{path}:31:4: model: error: illegal redefinition of built-in type "Boolean"',
             f'{path}:6:9: parser: error: illegal prefix "RFLX" in package identifier'
             ' "RFLX_Invalid"',
             f'{path}:295:5: parser: error: inconsistent package identifier "Inconsistent"',
             f'{path}:6:9: parser: info: previous identifier was "RFLX_Invalid"',
             f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid", should'
             ' be "rflx_invalid.rflx"',
-            f'{path}:31:4: model: error: illegal redefinition of built-in type "Boolean"',
             f'{path}:6:9: parser: error: illegal identifier "RFLX_Invalid"',
             f'{path}:6:9: parser: info: identifiers starting with "RFLX_" are reserved for'
             " internal use",
@@ -144,8 +142,7 @@ def test_multiple_errors() -> None:
             f'{path}:290:30: model: error: undefined variable "Undef_Var"',
             f'{path}:28:9: model: error: name conflict for type "RFLX_Invalid::R"',
             f'{path}:8:9: model: info: previous occurrence of "RFLX_Invalid::R"',
-            f'{path}:31:9: model: error: name conflict for type "__BUILTINS__::Boolean"',
-            '__BUILTINS__:0:0: model: info: previous occurrence of "__BUILTINS__::Boolean"',
+            f'{path}:31:9: model: error: illegal redefinition of built-in type "Boolean"',
             f"{path}:44:9: model: error: conflicting literals: False, True",
             '__BUILTINS__:0:0: model: info: previous occurrence of "False"',
             '__BUILTINS__:0:0: model: info: previous occurrence of "True"',
