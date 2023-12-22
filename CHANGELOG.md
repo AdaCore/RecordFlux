@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fatal error when comparing opaque fields (AdaCore/RecordFlux#1294, eng/recordflux/RecordFlux#1497)
+- Fatal error when GraphViz is missing (eng/recordflux/RecordFlux#1499)
 - Missing rejection of sequences of parameterized messages (eng/recordflux/RecordFlux#1439)
 
 ### Removed

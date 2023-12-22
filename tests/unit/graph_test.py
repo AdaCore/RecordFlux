@@ -1,7 +1,9 @@
 from pathlib import Path
 
-from pydotplus import Dot
+import pytest
+from pydotplus import Dot, InvocationException  # type: ignore[attr-defined]
 
+from rflx.error import RecordFluxError
 from rflx.expression import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Sub, Variable
 from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
@@ -244,3 +246,21 @@ def test_session_graph(tmp_path: Path) -> None:
         """
 
     assert_graph(create_session_graph(s, ignore=[r"^IGNORED_"]), expected_filtered, tmp_path)
+
+
+def test_missing_graphviz(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def write_mock(self: object, path: object, format: str = "") -> object:  # noqa: ARG001, A002
+        raise InvocationException("GraphViz not found")
+
+    monkeypatch.setattr(Dot, "write", write_mock)
+
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r"graph: error: GraphViz not found\n"
+            r"graph: info: GraphViz is required for creating graphs"
+            r"$"
+        ),
+    ):
+        write_graph(Dot(""), tmp_path / "graph")
