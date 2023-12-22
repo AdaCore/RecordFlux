@@ -63,11 +63,11 @@ def test_ignore_unsupported_checksum(capsys: pytest.CaptureFixture[str], tmp_pat
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_unexpected_type(tmp_path: Path) -> None:
+def test_unexpected_declaration(tmp_path: Path) -> None:
     class TestType(mty.Type):
         pass
 
-    with pytest.raises(AssertionError, match='unexpected type "TestType"'):
+    with pytest.raises(AssertionError, match='unexpected declaration "TestType"'):
         Generator().generate(Model([TestType("P::T")]), Integration(), tmp_path)
 
 

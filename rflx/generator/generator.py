@@ -276,22 +276,22 @@ class Generator:
     def _generate(self, model: Model, integration: Integration) -> dict[ID, Unit]:
         units: dict[ID, Unit] = {}
 
-        for t in model.types:
-            if t.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
+        for d in model.declarations:
+            if d.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
                 continue
 
-            log.info("Generating %s", t.identifier)
+            log.info("Generating %s", d.identifier)
 
-            if t.package not in units:
-                unit = self._create_unit(t.package, terminating=False)
-                units[t.package] = unit
+            if d.package not in units:
+                unit = self._create_unit(self._prefix, d.package, terminating=False)
+                units[d.package] = unit
 
-            if isinstance(t, (Scalar, Composite)):
-                units.update(self._create_type(t, t.package, units))
+            if isinstance(d, (Scalar, Composite)):
+                units.update(self._create_type(self._prefix, d, d.package, units))
 
-            elif isinstance(t, Message):
+            elif isinstance(d, Message):
                 # Eng/RecordFlux/RecordFlux#276
-                for c in t.checksums:
+                for c in d.checksums:
                     if not self._ignore_unsupported_checksum:
                         fail(
                             "unsupported checksum (consider --ignore-unsupported-checksum option)",
@@ -305,22 +305,16 @@ class Generator:
                             location=c.location,
                         )
 
-                units.update(self._create_message(t))
+                units.update(self._create_message(self._prefix, d, self._executor))
 
-            elif isinstance(t, Refinement):
-                units.update(self._create_refinement(t, units))
+            elif isinstance(d, Refinement):
+                units.update(self._create_refinement(d, units))
+
+            elif isinstance(d, Session):
+                units.update(self._create_session(d, integration))
 
             else:
-                assert False, f'unexpected type "{type(t).__name__}"'
-
-        for s in model.sessions:
-            log.info("Generating %s", s.identifier)
-
-            if s.package not in units:
-                unit = self._create_unit(s.package, terminating=False)
-                units[s.package] = unit
-
-            units.update(self._create_session(s, integration))
+                assert False, f'unexpected declaration "{type(d).__name__}"'
 
         return units
 
@@ -330,6 +324,7 @@ class Generator:
 
         if allocator_generator.required:
             unit = self._create_unit(
+                self._prefix,
                 allocator_generator.unit_identifier,
                 allocator_generator.declaration_context,
                 allocator_generator.body_context,
@@ -344,6 +339,7 @@ class Generator:
             debug=self._debug,
         )
         unit = self._create_unit(
+            self._prefix,
             session_generator.unit_identifier,
             session_generator.declaration_context,
             session_generator.body_context,
@@ -355,8 +351,9 @@ class Generator:
 
         return units
 
+    @staticmethod
     def _create_unit(  # noqa: PLR0913
-        self,
+        prefix: str,
         identifier: ID,
         declaration_context: Optional[abc.Sequence[ContextItem]] = None,
         body_context: Optional[abc.Sequence[ContextItem]] = None,
@@ -373,7 +370,7 @@ class Generator:
         return PackageUnit(
             [*configuration_pragmas, *const.CONFIGURATION_PRAGMAS, *declaration_context],
             PackageDeclaration(
-                self._prefix * identifier,
+                prefix * identifier,
                 formal_parameters=formal_parameters,
                 aspects=[
                     SparkMode(),
@@ -382,7 +379,7 @@ class Generator:
                 ],
             ),
             [*configuration_pragmas, *const.CONFIGURATION_PRAGMAS, *body_context],
-            PackageBody(self._prefix * identifier, aspects=[SparkMode()]),
+            PackageBody(prefix * identifier, aspects=[SparkMode()]),
         )
 
     @staticmethod
@@ -395,26 +392,32 @@ class Generator:
 
         return InstantiationUnit(context, instantiation)
 
-    def _create_message(self, message: Message) -> dict[ID, Unit]:  # noqa: PLR0912
+    @classmethod
+    def _create_message(  # noqa: PLR0912
+        cls,
+        prefix: str,
+        message: Message,
+        executor: ProcessPoolExecutor,
+    ) -> dict[ID, Unit]:
         units: dict[ID, Unit] = {}
 
         if not message.fields:
             return units
 
-        context: list[ContextItem] = [WithClause(self._prefix * const.TYPES_PACKAGE)]
+        context: list[ContextItem] = [WithClause(prefix * const.TYPES_PACKAGE)]
         body_context: list[ContextItem] = []
 
         if any(t.package == BUILTINS_PACKAGE for t in message.types.values()):
             context.extend(
                 [
-                    WithClause(self._prefix * const.BUILTIN_TYPES_PACKAGE),
-                    WithClause(self._prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
-                    UsePackageClause(self._prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
+                    WithClause(prefix * const.BUILTIN_TYPES_PACKAGE),
+                    WithClause(prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
+                    UsePackageClause(prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                 ],
             )
 
         if any(isinstance(field_type, Scalar) for field_type in message.field_types.values()):
-            body_context.append(WithClause(self._prefix * const.TYPES_OPERATIONS_PACKAGE))
+            body_context.append(WithClause(prefix * const.TYPES_OPERATIONS_PACKAGE))
 
         for field_type in message.types.values():
             if field_type.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
@@ -423,15 +426,15 @@ class Generator:
             if isinstance(field_type, Scalar) and field_type.package != message.package:
                 context.extend(
                     [
-                        WithClause(self._prefix * field_type.package),
-                        UsePackageClause(self._prefix * field_type.package),
+                        WithClause(prefix * field_type.package),
+                        UsePackageClause(prefix * field_type.package),
                     ],
                 )
 
             elif isinstance(field_type, Sequence):
-                context.append(WithClause(self._prefix * field_type.identifier))
+                context.append(WithClause(prefix * field_type.identifier))
 
-        unit = self._create_unit(message.identifier, context, body_context=body_context)
+        unit = cls._create_unit(prefix, message.identifier, context, body_context=body_context)
         units[message.identifier] = unit
 
         scalar_fields = {}
@@ -455,171 +458,171 @@ class Generator:
                 else:
                     fields_with_explicit_size.append(f)
 
-        parser_generator = ParserGenerator(self._prefix)
-        serializer_generator = SerializerGenerator(self._prefix)
+        parser_generator = ParserGenerator(prefix)
+        serializer_generator = SerializerGenerator(prefix)
 
         futures = [
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_use_type_clause,
                 composite_fields,
                 serializer_generator.requires_set_procedure(message),
             ),
-            self._executor.submit(message_generator.create_allow_unevaluated_use_of_old),
-            self._executor.submit(message_generator.create_field_type, message),
-            self._executor.submit(message_generator.create_state_type),
-            self._executor.submit(message_generator.create_cursor_type),
-            self._executor.submit(message_generator.create_cursor_validation_functions),
-            self._executor.submit(
+            executor.submit(message_generator.create_allow_unevaluated_use_of_old),
+            executor.submit(message_generator.create_field_type, message),
+            executor.submit(message_generator.create_state_type),
+            executor.submit(message_generator.create_cursor_type),
+            executor.submit(message_generator.create_cursor_validation_functions),
+            executor.submit(
                 message_generator.create_cursors_invariant_function,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_valid_predecessors_invariant_function,
                 message,
                 composite_fields,
-                self._prefix,
+                prefix,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_valid_next_internal_function,
                 message,
                 composite_fields,
-                self._prefix,
+                prefix,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_field_size_internal_function,
                 message,
-                self._prefix,
+                prefix,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_field_first_internal_function,
                 message,
-                self._prefix,
+                prefix,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_valid_context_function,
                 message,
-                self._prefix,
+                prefix,
             ),
-            self._executor.submit(message_generator.create_context_type, message),
-            self._executor.submit(message_generator.create_initialize_procedure, message),
-            self._executor.submit(
+            executor.submit(message_generator.create_context_type, message),
+            executor.submit(message_generator.create_initialize_procedure, message),
+            executor.submit(
                 message_generator.create_restricted_initialize_procedure,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_initialized_function,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(message_generator.create_reset_procedure, self._prefix, message),
-            self._executor.submit(
+            executor.submit(message_generator.create_reset_procedure, prefix, message),
+            executor.submit(
                 message_generator.create_restricted_reset_procedure,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_take_buffer_procedure,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(message_generator.create_copy_procedure, self._prefix, message),
-            self._executor.submit(message_generator.create_read_function, self._prefix, message),
-            self._executor.submit(
+            executor.submit(message_generator.create_copy_procedure, prefix, message),
+            executor.submit(message_generator.create_read_function, prefix, message),
+            executor.submit(
                 message_generator.create_generic_read_procedure,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_generic_write_procedure,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(message_generator.create_has_buffer_function),
-            self._executor.submit(
+            executor.submit(message_generator.create_has_buffer_function),
+            executor.submit(
                 message_generator.create_buffer_length_function,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(message_generator.create_size_function),
-            self._executor.submit(message_generator.create_byte_size_function),
-            self._executor.submit(
+            executor.submit(message_generator.create_size_function),
+            executor.submit(message_generator.create_byte_size_function),
+            executor.submit(
                 message_generator.create_message_last_function,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(message_generator.create_written_last_function),
-            self._executor.submit(message_generator.create_data_procedure, self._prefix, message),
-            self._executor.submit(
+            executor.submit(message_generator.create_written_last_function),
+            executor.submit(message_generator.create_data_procedure, prefix, message),
+            executor.submit(
                 message_generator.create_valid_value_function,
-                self._prefix,
+                prefix,
                 message,
                 scalar_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_field_condition_function,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_field_size_function,
-                self._prefix,
+                prefix,
                 message,
                 scalar_fields,
                 composite_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_field_first_function,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_field_last_function,
-                self._prefix,
+                prefix,
                 message,
                 scalar_fields,
                 composite_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_invalid_successor_function,
                 message,
                 SerializerGenerator.requires_set_procedure(message),
             ),
-            self._executor.submit(message_generator.create_valid_next_function, message),
-            self._executor.submit(
+            executor.submit(message_generator.create_valid_next_function, message),
+            executor.submit(
                 message_generator.create_available_space_function,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_sufficient_space_function,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_sufficient_buffer_length_function,
-                self._prefix,
+                prefix,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_equal_function,
-                self._prefix,
+                prefix,
                 message,
                 scalar_fields,
                 composite_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_reset_dependent_fields_procedure,
-                self._prefix,
+                prefix,
                 message,
             ),
             *(
                 [
-                    self._executor.submit(
+                    executor.submit(
                         message_generator.create_composite_field_function,
                         scalar_fields,
                         composite_fields,
                     ),
                 ]
-                if self._requires_composite_field_function(
+                if cls._requires_composite_field_function(
                     message,
                     scalar_fields,
                     composite_fields,
@@ -627,101 +630,101 @@ class Generator:
                 )
                 else []
             ),
-            self._executor.submit(
+            executor.submit(
                 parser_generator.create_get_function,
                 message,
                 scalar_fields,
                 composite_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 parser_generator.create_verify_procedure,
                 message,
                 scalar_fields,
                 composite_fields,
             ),
-            self._executor.submit(parser_generator.create_verify_message_procedure, message),
-            self._executor.submit(parser_generator.create_present_function),
-            self._executor.submit(parser_generator.create_well_formed_function),
-            self._executor.submit(parser_generator.create_valid_function),
-            self._executor.submit(parser_generator.create_incomplete_function),
-            self._executor.submit(parser_generator.create_invalid_function),
-            self._executor.submit(parser_generator.create_well_formed_message_function, message),
-            self._executor.submit(parser_generator.create_valid_message_function, message),
-            self._executor.submit(parser_generator.create_incomplete_message_function),
-            self._executor.submit(
+            executor.submit(parser_generator.create_verify_message_procedure, message),
+            executor.submit(parser_generator.create_present_function),
+            executor.submit(parser_generator.create_well_formed_function),
+            executor.submit(parser_generator.create_valid_function),
+            executor.submit(parser_generator.create_incomplete_function),
+            executor.submit(parser_generator.create_invalid_function),
+            executor.submit(parser_generator.create_well_formed_message_function, message),
+            executor.submit(parser_generator.create_valid_message_function, message),
+            executor.submit(parser_generator.create_incomplete_message_function),
+            executor.submit(
                 parser_generator.create_scalar_getter_functions,
                 message,
                 scalar_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 parser_generator.create_opaque_getter_functions,
                 message,
                 opaque_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 parser_generator.create_opaque_getter_procedures,
                 message,
                 opaque_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 parser_generator.create_generic_opaque_getter_procedures,
                 message,
                 opaque_fields,
             ),
-            self._executor.submit(serializer_generator.create_valid_size_function, message),
-            self._executor.submit(serializer_generator.create_valid_length_function, message),
-            self._executor.submit(
+            executor.submit(serializer_generator.create_valid_size_function, message),
+            executor.submit(serializer_generator.create_valid_length_function, message),
+            executor.submit(
                 serializer_generator.create_set_procedure,
                 message,
                 composite_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 serializer_generator.create_scalar_setter_procedures,
                 message,
                 scalar_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 serializer_generator.create_composite_setter_empty_procedures,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 serializer_generator.create_sequence_setter_procedures,
                 message,
                 sequence_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 serializer_generator.create_composite_initialize_procedures,
                 message,
                 fields_with_explicit_size,
                 fields_with_implicit_size,
             ),
-            self._executor.submit(serializer_generator.create_opaque_setter_procedures, message),
-            self._executor.submit(
+            executor.submit(serializer_generator.create_opaque_setter_procedures, message),
+            executor.submit(
                 serializer_generator.create_generic_opaque_setter_procedures,
                 message,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_switch_procedures,
-                self._prefix,
+                prefix,
                 message,
                 sequence_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_complete_functions,
-                self._prefix,
+                prefix,
                 message,
                 sequence_fields,
             ),
-            self._executor.submit(
+            executor.submit(
                 message_generator.create_update_procedures,
-                self._prefix,
+                prefix,
                 message,
                 sequence_fields,
             ),
-            self._executor.submit(message_generator.create_cursor_function),
-            self._executor.submit(message_generator.create_cursors_function),
-            self._executor.submit(message_generator.create_cursors_index_function),
-            self._executor.submit(message_generator.create_structure, self._prefix, message),
+            executor.submit(message_generator.create_cursor_function),
+            executor.submit(message_generator.create_cursors_function),
+            executor.submit(message_generator.create_cursors_index_function),
+            executor.submit(message_generator.create_structure, prefix, message),
         ]
 
         for future in futures:
@@ -755,6 +758,7 @@ class Generator:
             unit = units[identifier]
         else:
             unit = self._create_unit(
+                self._prefix,
                 identifier,
                 [WithClause(self._prefix * const.TYPES_PACKAGE)] if not null_sdu else [],
             )
@@ -829,8 +833,10 @@ class Generator:
 
         return result
 
+    @classmethod
     def _create_type(
-        self,
+        cls,
+        prefix: str,
         field_type: Type,
         message_package: ID,
         units: abc.Mapping[ID, Unit],
@@ -844,25 +850,26 @@ class Generator:
         assert isinstance(unit, PackageUnit)
 
         if isinstance(field_type, (Integer, Enumeration)):
-            unit.declaration_context.append(WithClause(self._prefix * const.TYPES))
+            unit.declaration_context.append(WithClause(prefix * const.TYPES))
 
         if isinstance(field_type, Integer):
             unit += UnitPart(integer_types(field_type))
-            unit += self._integer_functions(field_type)
+            unit += cls._integer_functions(prefix, field_type)
         elif isinstance(field_type, Enumeration):
             unit += UnitPart(enumeration_types(field_type))
-            unit += self._enumeration_functions(field_type)
+            unit += cls._enumeration_functions(prefix, field_type)
         elif isinstance(field_type, Sequence):
-            result.update(self._create_sequence(field_type))
+            result.update(cls._create_sequence(prefix, field_type))
         else:
             assert False, f'unexpected type "{type(field_type).__name__}"'
 
         return result
 
-    def _create_sequence(self, sequence_type: Sequence) -> dict[ID, Unit]:
-        context, package = common.create_sequence_instantiation(sequence_type, self._prefix)
+    @classmethod
+    def _create_sequence(cls, prefix: str, sequence_type: Sequence) -> dict[ID, Unit]:
+        context, package = common.create_sequence_instantiation(sequence_type, prefix)
         return {
-            package.identifier: self._create_instantiation_unit(
+            package.identifier: cls._create_instantiation_unit(
                 [
                     Pragma("SPARK_Mode"),
                     *context,
@@ -874,7 +881,7 @@ class Generator:
                         "Warnings",
                         [Variable("Off"), String('unit "*RFLX_Types" is not referenced')],
                     ),
-                    WithClause(self._prefix * const.TYPES_PACKAGE),
+                    WithClause(prefix * const.TYPES_PACKAGE),
                     Pragma(
                         "Warnings",
                         [Variable("On"), String('unit "*RFLX_Types" is not referenced')],
@@ -884,7 +891,8 @@ class Generator:
             ),
         }
 
-    def _integer_functions(self, integer: Integer) -> UnitPart:
+    @classmethod
+    def _integer_functions(cls, prefix: str, integer: Integer) -> UnitPart:
         specification: list[Declaration] = []
 
         constraints = (
@@ -915,10 +923,10 @@ class Generator:
                 ],
             )
         else:
-            specification.append(UseTypeClause(self._prefix * const.TYPES_BASE_INT))
+            specification.append(UseTypeClause(prefix * const.TYPES_BASE_INT))
 
         specification.append(
-            self._type_validation_function(integer.name, "Val", constraints.ada_expr()),
+            cls._type_validation_function(prefix, integer.name, "Val", constraints.ada_expr()),
         )
 
         if constraints == expr.TRUE:
@@ -932,11 +940,12 @@ class Generator:
                 ],
             )
 
-        specification.extend(self._integer_conversion_functions(integer))
+        specification.extend(cls._integer_conversion_functions(prefix, integer))
 
         return UnitPart(specification)
 
-    def _enumeration_functions(self, enum: Enumeration) -> UnitPart:
+    @classmethod
+    def _enumeration_functions(cls, prefix: str, enum: Enumeration) -> UnitPart:
         incomplete = len(enum.literals) < 2**MAX_SCALAR_SIZE
 
         specification: list[Declaration] = []
@@ -955,10 +964,11 @@ class Generator:
         )
 
         if validation_expression != TRUE:
-            specification.append(UseTypeClause(self._prefix * const.TYPES_BASE_INT))
+            specification.append(UseTypeClause(prefix * const.TYPES_BASE_INT))
 
         specification.append(
-            self._type_validation_function(
+            cls._type_validation_function(
+                prefix,
                 enum.name,
                 "Val" if validation_expression != TRUE else "Unused_Val",
                 validation_expression,
@@ -990,11 +1000,11 @@ class Generator:
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base_Integer",
-                    self._prefix * const.TYPES_BASE_INT,
+                    prefix * const.TYPES_BASE_INT,
                     [
                         Parameter(
                             ["Enum"],
-                            self._prefix
+                            prefix
                             * (
                                 common.full_enum_name(enum)
                                 if enum.always_valid
@@ -1012,8 +1022,8 @@ class Generator:
 
         conversion_function = FunctionSpecification(
             "To_Actual",
-            self._prefix * enum.identifier,
-            [Parameter(["Val"], self._prefix * const.TYPES_BASE_INT)],
+            prefix * enum.identifier,
+            [Parameter(["Val"], prefix * const.TYPES_BASE_INT)],
         )
         precondition = Precondition(Call(f"Valid_{enum.name}", [Variable("Val")]))
         conversion_cases: list[tuple[Expr, Expr]] = []
@@ -1023,7 +1033,7 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Actual",
-                        self._prefix * enum.identifier,
+                        prefix * enum.identifier,
                         [Parameter(["Enum"], common.enum_name(enum))],
                     ),
                     Aggregate(TRUE, Variable("Enum")),
@@ -1050,8 +1060,8 @@ class Generator:
                 ExpressionFunctionDeclaration(
                     FunctionSpecification(
                         "To_Base_Integer",
-                        self._prefix * const.TYPES_BASE_INT,
-                        [Parameter(["Val"], self._prefix * enum.identifier)],
+                        prefix * const.TYPES_BASE_INT,
+                        [Parameter(["Val"], prefix * enum.identifier)],
                     ),
                     If(
                         [(Variable("Val.Known"), Call("To_Base_Integer", [Variable("Val.Enum")]))],
@@ -1063,11 +1073,7 @@ class Generator:
             conversion_cases.extend(
                 [
                     *[(value.ada_expr(), Variable(key)) for key, value in enum.literals.items()],
-                    *(
-                        [(Variable("others"), Last(self._prefix * enum.identifier))]
-                        if incomplete
-                        else []
-                    ),
+                    *([(Variable("others"), Last(prefix * enum.identifier))] if incomplete else []),
                 ],
             )
 
@@ -1533,8 +1539,9 @@ class Generator:
             + "\n"
         )
 
+    @staticmethod
     def _type_validation_function(
-        self,
+        prefix: str,
         type_name: str,
         enum_value: str,
         validation_expression: Expr,
@@ -1543,28 +1550,29 @@ class Generator:
             FunctionSpecification(
                 f"Valid_{type_name}",
                 "Boolean",
-                [Parameter([enum_value], self._prefix * const.TYPES_BASE_INT)],
+                [Parameter([enum_value], prefix * const.TYPES_BASE_INT)],
             ),
             validation_expression,
         )
 
-    def _integer_conversion_functions(self, integer: Integer) -> list[Subprogram]:
+    @staticmethod
+    def _integer_conversion_functions(prefix: str, integer: Integer) -> list[Subprogram]:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Base_Integer",
-                    self._prefix * const.TYPES_BASE_INT,
-                    [Parameter(["Val"], self._prefix * integer.identifier)],
+                    prefix * const.TYPES_BASE_INT,
+                    [Parameter(["Val"], prefix * integer.identifier)],
                 ),
-                Call(self._prefix * const.TYPES_BASE_INT, [Variable("Val")]),
+                Call(prefix * const.TYPES_BASE_INT, [Variable("Val")]),
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
                     "To_Actual",
-                    self._prefix * integer.identifier,
-                    [Parameter(["Val"], self._prefix * const.TYPES_BASE_INT)],
+                    prefix * integer.identifier,
+                    [Parameter(["Val"], prefix * const.TYPES_BASE_INT)],
                 ),
-                Call(self._prefix * integer.identifier, [Variable("Val")]),
+                Call(prefix * integer.identifier, [Variable("Val")]),
                 [Precondition(Call(f"Valid_{integer.name}", [Variable("Val")]))],
             ),
         ]
