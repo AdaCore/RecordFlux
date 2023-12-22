@@ -1,10 +1,8 @@
 {
-	"editor.insertSpaces": false,
-	"[python]": {
-		"editor.defaultFormatter": "ms-python.black-formatter"
-	},
-	"python.formatting.provider": "none",
-	"python.analysis.extraPaths": [
-		"./server/src"
-	]
+    "editor.insertSpaces": false,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.formatting.provider": "none",
+    "python.analysis.extraPaths": ["./server/src"]
 }

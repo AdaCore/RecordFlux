@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import * as util from 'util';
-import { Disposable, LogOutputChannel } from 'vscode';
+import * as util from "util";
+import { Disposable, LogOutputChannel } from "vscode";
 
 type Arguments = unknown[];
 class OutputChannelLogger {
-    constructor(private readonly channel: LogOutputChannel) { }
+    constructor(private readonly channel: LogOutputChannel) {}
 
     public traceLog(...data: Arguments): void {
         this.channel.appendLine(util.format(...data));

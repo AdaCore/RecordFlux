@@ -2,7 +2,7 @@ VSIX ?= recordflux.vsix
 
 .PHONY: all
 
-all: test
+all: check test
 
 .PHONY: dist
 
@@ -26,6 +26,16 @@ node_modules: package.json
 
 out/extension.js: src/extension.ts $(wildcard tests/*.ts)
 	npm run compile
+
+.PHONY: check
+
+check: node_modules
+	npx prettier -c .
+
+.PHONY: format
+
+format:
+	npx prettier -w .
 
 .PHONY: test
 

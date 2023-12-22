@@ -1,13 +1,11 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es2019",
-		"lib": [
-			"ES2019"
-		],
-		"noImplicitAny": true,
-		"noImplicitReturns": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true
-	},
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2019",
+        "lib": ["ES2019"],
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
+    }
 }

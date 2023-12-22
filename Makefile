@@ -152,7 +152,7 @@ test_tools:
 test_ide:
 	$(PYTEST) tests/ide
 	# TODO(eng/recordflux/RecordFlux#1361): Execute `test` instead of `build`
-	$(MAKE) -C ide/vscode build
+	$(MAKE) -C ide/vscode check build
 
 test_optimized:
 	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation

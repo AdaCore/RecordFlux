@@ -1,79 +1,84 @@
 {
-	"name": "recordflux",
-	"displayName": "RecordFlux",
-	"description": "Language support for RecordFlux",
-	"author": "AdaCore",
-	"license": "GNU Affero General Public License",
-	"version": "0.0.0",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/AdaCore/RecordFlux"
-	},
-	"serverInfo": {
-		"name": "RecordFlux LS",
-		"module": "rflx"
-	},
-	"publisher": "AdaCore",
-	"categories": [
-		"Programming Languages"
-	],
-	"keywords": [
-		"multi-root ready"
-	],
-	"engines": {
-		"vscode": "^1.77.0"
-	},
-	"main": "./out/extension",
-	"contributes": {
-		"languages": [
-			{
-				"id": "recordflux",
-				"aliases": [
-					"RecordFlux",
-					"recordflux",
-					"rflx"
-				],
-				"extensions": [
-					".rflx"
-				],
-				"configuration": "./language-configuration.json"
-			}
-		],
-		"grammars": [
-			{
-				"language": "recordflux",
-				"scopeName": "source.recordflux",
-				"path": "./syntax/recordflux.tmLanguage.json"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile:client": "tsc -p ./tsconfig.json",
-		"compile": "npm run compile:client",
-		"watch:client": "tsc -w -p ./tsconfig.json",
-		"lint": "eslint ./src --ext .ts,.tsx",
-		"test": "sh ./scripts/e2e.sh"
-	},
-	"dependencies": {
-		"fs-extra": "^11.1.1",
-		"vscode-languageclient": "8.1.0-next.6",
-		"ws": "8.12.0"
-	},
-	"devDependencies": {
-		"@types/fs-extra": "^11.0.1",
-		"@types/glob": "8.0.0",
-		"@types/mocha": "^10.0.1",
-		"@types/node": "^16.11.7",
-		"@types/vscode": "1.74.0",
-		"@types/ws": "8.5.4",
-		"@typescript-eslint/eslint-plugin": "^5.48.2",
-		"@typescript-eslint/parser": "^5.48.2",
-		"@vscode/test-electron": "2.2.2",
-		"@vscode/vsce": "^2.20.1",
-		"eslint": "^8.26.0",
-		"glob": "8.1.0",
-		"mocha": "^10.2.0",
-		"typescript": "^4.9.4"
-	}
+    "name": "recordflux",
+    "displayName": "RecordFlux",
+    "description": "Language support for RecordFlux",
+    "author": "AdaCore",
+    "license": "GNU Affero General Public License",
+    "version": "0.0.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AdaCore/RecordFlux"
+    },
+    "serverInfo": {
+        "name": "RecordFlux LS",
+        "module": "rflx"
+    },
+    "publisher": "AdaCore",
+    "categories": [
+        "Programming Languages"
+    ],
+    "keywords": [
+        "multi-root ready"
+    ],
+    "engines": {
+        "vscode": "^1.77.0"
+    },
+    "main": "./out/extension",
+    "contributes": {
+        "languages": [
+            {
+                "id": "recordflux",
+                "aliases": [
+                    "RecordFlux",
+                    "recordflux",
+                    "rflx"
+                ],
+                "extensions": [
+                    ".rflx"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "recordflux",
+                "scopeName": "source.recordflux",
+                "path": "./syntax/recordflux.tmLanguage.json"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile:client": "tsc -p ./tsconfig.json",
+        "compile": "npm run compile:client",
+        "watch:client": "tsc -w -p ./tsconfig.json",
+        "lint": "eslint ./src --ext .ts,.tsx",
+        "test": "sh ./scripts/e2e.sh"
+    },
+    "dependencies": {
+        "fs-extra": "^11.1.1",
+        "vscode-languageclient": "8.1.0-next.6",
+        "ws": "8.12.0"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^11.0.1",
+        "@types/glob": "8.0.0",
+        "@types/mocha": "^10.0.1",
+        "@types/node": "^16.11.7",
+        "@types/vscode": "1.74.0",
+        "@types/ws": "8.5.4",
+        "@typescript-eslint/eslint-plugin": "^5.48.2",
+        "@typescript-eslint/parser": "^5.48.2",
+        "@vscode/test-electron": "2.2.2",
+        "@vscode/vsce": "^2.20.1",
+        "eslint": "^8.26.0",
+        "glob": "8.1.0",
+        "mocha": "^10.2.0",
+        "prettier": "3.1.1",
+        "typescript": "^4.9.4"
+    },
+    "prettier": {
+        "trailingComma": "es5",
+        "tabWidth": 4
+    }
 }
