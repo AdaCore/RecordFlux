@@ -321,6 +321,7 @@ package body RFLX.TLV_Tests is
              Length                       : out RFLX_Builtin_Types.Length;
              Unused_Context_Buffer_Length :     RFLX_Builtin_Types.Length;
              Unused_Offset                :     RFLX_Builtin_Types.Length)
+         with Post => Length = 7 and Length <= Buffer'Length
          is
          begin
             Assert (Buffer'Length = 7, "Invalid buffer length");
