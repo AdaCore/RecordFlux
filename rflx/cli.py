@@ -600,7 +600,7 @@ def validate(args: argparse.Namespace) -> None:
             [args.specification],
             args.checksum_module,
             args.no_verification,
-            args.split_disjunctions,
+            split_disjunctions=args.split_disjunctions,
         ).validate(
             identifier,
             args.invalid_sample_path,

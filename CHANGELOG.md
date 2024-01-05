@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Missing diagnostics provided by language server
+- `--split-disjunctions` options of `rflx validate`
 
 ## [0.17.0] - 2024-01-03
 

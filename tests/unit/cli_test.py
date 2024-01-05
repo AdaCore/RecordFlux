@@ -23,6 +23,17 @@ SESSION_SPEC_FILE = str(SPEC_DIR / "session.rflx")
 IANA_XML_FILE = str(DATA_DIR / "bootp-dhcp-parameters.xml")
 
 
+def validator_mock(
+    self: object,  # noqa: ARG001
+    files: object,  # noqa: ARG001
+    checksum_module: Optional[str] = None,  # noqa: ARG001
+    skip_model_verification: bool = False,  # noqa: ARG001
+    skip_message_verification: bool = False,  # noqa: ARG001
+    split_disjunctions: bool = False,  # noqa: ARG001
+) -> None:
+    return None
+
+
 def raise_parser_error() -> None:
     fail("TEST", Subsystem.PARSER, Severity.ERROR, Location((8, 22)))
 
@@ -341,7 +352,7 @@ def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
 
 
 def test_main_validate(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
+    monkeypatch.setattr(validator.Validator, "__init__", validator_mock)
     monkeypatch.setattr(
         validator.Validator,
         "validate",
@@ -418,7 +429,7 @@ def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
 
 
 def test_main_validate_non_fatal_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
+    monkeypatch.setattr(validator.Validator, "__init__", validator_mock)
     monkeypatch.setattr(
         validator.Validator,
         "validate",
@@ -442,7 +453,7 @@ def test_main_validate_non_fatal_error(monkeypatch: pytest.MonkeyPatch, tmp_path
 
 
 def test_main_validate_validation_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
+    monkeypatch.setattr(validator.Validator, "__init__", validator_mock)
     monkeypatch.setattr(
         validator.Validator,
         "validate",
@@ -468,7 +479,7 @@ def test_main_validate_fatal_error(
     tmp_path: Path,
     raise_error: Callable[[], None],
 ) -> None:
-    monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
+    monkeypatch.setattr(validator.Validator, "__init__", validator_mock)
     monkeypatch.setattr(
         validator.Validator,
         "validate",
