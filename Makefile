@@ -149,7 +149,7 @@ test_property:
 	$(PYTEST) tests/property
 
 test_tools:
-	$(PYTEST) tests/tools
+	$(PYTEST) --cov=tools --cov-branch --cov-fail-under=43.6 --cov-report=term-missing:skip-covered tests/tools
 
 test_ide:
 	$(PYTEST) tests/ide
@@ -193,6 +193,10 @@ test_installation: $(SDIST)
 	$(BUILD_DIR)/venv/bin/rflx --version
 	HOME=$(BUILD_DIR)/test_installation $(BUILD_DIR)/venv/bin/rflx install gnatstudio
 	test -f $(BUILD_DIR)/test_installation/.gnatstudio/plug-ins/recordflux.py
+
+fuzz_parser: FUZZER_RUNS=-1
+fuzz_parser:
+	./tools/fuzz_driver.py --state-dir $(BUILD_DIR)/fuzzer --corpus-dir $(MAKEFILE_DIR) --runs=$(FUZZER_RUNS)
 
 .PHONY: prove prove_tests prove_python_tests prove_apps prove_property_tests
 
@@ -335,7 +339,7 @@ $(GENERATED_DIR)/python/librflxlang/librflxlang.so: $(wildcard language/*.py) | 
 .PHONY: clean clean_all
 
 clean:
-	rm -rf $(BUILD_DIR)/[^_]* .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache
+	rm -rf $(BUILD_DIR)/[^_]* .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache crashes
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C examples/apps/spdm_responder clean

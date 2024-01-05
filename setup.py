@@ -98,6 +98,7 @@ setup(
     extras_require={
         "devel": [
             "build >= 0.9, <1",
+            "cobrafuzz ==1.0.12",
             "furo == 2022.4.7",
             "hypothesis >=6.14, <6.24",
             "lark ==1.1.8",
