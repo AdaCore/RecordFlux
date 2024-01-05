@@ -15,6 +15,7 @@ from rflx.model import (
     Integer,
     Link,
     Message,
+    NeverVerify,
     Opaque,
     Sequence,
     Type,
@@ -91,7 +92,7 @@ def test_attributes(pyrflx_: PyRFLX) -> None:
 def test_no_verification(icmp_message_value: MessageValue) -> None:
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "icmp.rflx"],
-        skip_model_verification=True,
+        NeverVerify(),
         skip_message_verification=True,
     )
     icmp_message_value_unv = pyrflx_.package("ICMP").new_message("Message")
@@ -1038,7 +1039,7 @@ def test_checksum_message_first(icmp_checksum_message_first: MessageValue) -> No
 def test_checksum_no_verification() -> None:
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "icmp.rflx"],
-        skip_model_verification=True,
+        NeverVerify(),
         skip_message_verification=True,
     )
     icmp_message = pyrflx_.package("ICMP").new_message("Message")._type
@@ -1296,7 +1297,7 @@ def test_message_size(message_size_value: MessageValue) -> None:
 def test_message_size_unverified() -> None:
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "message_size.rflx"],
-        skip_model_verification=True,
+        NeverVerify(),
         skip_message_verification=True,
     )
     message = pyrflx_.package("Message_Size").new_message("M")
@@ -1391,7 +1392,7 @@ def test_parameterized_message(parameterized_package: Package) -> None:
 def test_parameterized_message_no_verification() -> None:
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "parameterized.rflx"],
-        skip_model_verification=True,
+        NeverVerify(),
         skip_message_verification=True,
     )
     message_unv = pyrflx_.package("Parameterized").new_message(

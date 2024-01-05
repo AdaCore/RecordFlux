@@ -24,27 +24,17 @@ class Cache:
     verified. The state of the cache is persisted on disk and restored on initialization.
     """
 
-    def __init__(self, file: Path = DEFAULT_FILE, enabled: bool = True) -> None:
+    def __init__(self, file: Path = DEFAULT_FILE) -> None:
         self._file = file
-        self._enabled = enabled
-
-        if not enabled:
-            return
 
         self._verified: dict[str, list[str]] = {}
 
         self._load_cache()
 
     def is_verified(self, digest: Digest) -> bool:
-        if not self._enabled:
-            return False
-
         return digest.key in self._verified and digest.value in self._verified[digest.key]
 
     def add_verified(self, digest: Digest) -> None:
-        if not self._enabled:
-            return
-
         if not digest.value:
             return
 
@@ -76,6 +66,28 @@ class Cache:
         self._file.parent.mkdir(parents=True, exist_ok=True)
         with self._file.open("w", encoding="utf-8") as f:
             json.dump(self._verified, f)
+
+
+class AlwaysVerify(Cache):
+    def __init__(self) -> None:
+        pass
+
+    def is_verified(self, digest: Digest) -> bool:  # noqa: ARG002
+        return False
+
+    def add_verified(self, digest: Digest) -> None:
+        pass
+
+
+class NeverVerify(Cache):
+    def __init__(self) -> None:
+        warn("model verification skipped", Subsystem.MODEL)
+
+    def is_verified(self, digest: Digest) -> bool:  # noqa: ARG002
+        return True
+
+    def add_verified(self, digest: Digest) -> None:
+        pass
 
 
 class Digest:

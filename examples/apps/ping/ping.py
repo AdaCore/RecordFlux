@@ -9,6 +9,7 @@ import socket
 import sys
 import time
 
+from rflx.model import NeverVerify
 from rflx.pyrflx import MessageValue, PyRFLX, utils
 
 
@@ -33,7 +34,7 @@ def icmp_checksum(message: bytes, **kwargs: object) -> int:
     return utils.internet_checksum(checksum_bytes)
 
 
-PYRFLX = PyRFLX.from_specs(["specs/ipv4.rflx"], skip_model_verification=True)
+PYRFLX = PyRFLX.from_specs(["specs/ipv4.rflx"], NeverVerify())
 ICMP = PYRFLX.package("ICMP")
 ICMP.set_checksum_functions({"Message": {"Checksum": icmp_checksum}})
 IP = PYRFLX.package("IPv4")

@@ -13,10 +13,10 @@ import rflx_lang as lang
 import rflx.typing_ as rty
 from rflx import expression as expr, model
 from rflx.common import STDIN, unique
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, warn
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
-from rflx.model import Cache, declaration as decl, statement as stmt
+from rflx.model import AlwaysVerify, Cache, declaration as decl, statement as stmt
 from rflx.specification.const import RESERVED_WORDS
 
 from . import style
@@ -1609,18 +1609,14 @@ class SpecificationFile:
 class Parser:
     def __init__(
         self,
-        skip_verification: bool = False,
-        cached: bool = False,
+        cache: Optional[Cache] = None,
         workers: int = 1,
         integration_files_dir: Optional[Path] = None,
     ) -> None:
-        if skip_verification:
-            warn("model verification skipped", Subsystem.MODEL)
-        self.skip_verification = skip_verification
+        self._cache = AlwaysVerify() if cache is None else cache
         self._workers = workers
         self._specifications: OrderedDict[ID, SpecificationFile] = OrderedDict()
         self._integration: Integration = Integration(integration_files_dir)
-        self._cache = Cache(enabled=not skip_verification and cached)
 
     def parse(self, *specfiles: Path) -> None:
         error = RecordFluxError()
@@ -1696,7 +1692,10 @@ class Parser:
     def create_model(self) -> model.Model:
         unchecked_model = self.create_unchecked_model()
         error = unchecked_model.error
-        checked_model = unchecked_model.checked(self._cache, self.skip_verification, self._workers)
+        checked_model = unchecked_model.checked(
+            self._cache,
+            self._workers,
+        )
         self._integration.validate(checked_model, error)
         error.propagate()
         return checked_model

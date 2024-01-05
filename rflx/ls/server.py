@@ -141,7 +141,7 @@ class RecordFluxLanguageServer(LanguageServer):
         document_path = Path(unquote(urlparse(document_uri).path))
         directory = document_path.parent
         workspace_files = self._workspace_files()
-        parser = Parser(cached=True, workers=self.workers)
+        parser = Parser(self._cache, workers=self.workers)
 
         self._error = error.RecordFluxError()
 

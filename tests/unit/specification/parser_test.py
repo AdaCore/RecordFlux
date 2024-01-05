@@ -198,12 +198,6 @@ def test_create_model() -> None:
     p.create_model()
 
 
-def test_create_model_cached() -> None:
-    p = parser.Parser(cached=True)
-    p.parse(SPEC_DIR / "tlv.rflx")
-    p.create_model()
-
-
 def test_parse_string_error() -> None:
     p = parser.Parser()
     with pytest.raises(

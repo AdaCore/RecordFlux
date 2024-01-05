@@ -1,4 +1,9 @@
-from .cache import Cache as Cache, Digest as Digest
+from .cache import (
+    AlwaysVerify as AlwaysVerify,
+    Cache as Cache,
+    Digest as Digest,
+    NeverVerify as NeverVerify,
+)
 from .message import (
     FINAL as FINAL,
     INITIAL as INITIAL,

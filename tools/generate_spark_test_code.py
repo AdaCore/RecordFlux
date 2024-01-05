@@ -11,7 +11,7 @@ from pathlib import Path
 from rflx.common import unique
 from rflx.generator import Generator
 from rflx.integration import Integration
-from rflx.model import Model
+from rflx.model import Cache, Model
 from rflx.specification import Parser
 from tests.const import FEATURE_DIR, SPEC_DIR
 from tests.data import models
@@ -47,7 +47,7 @@ def main() -> None:
 def generate_spark_tests() -> None:
     remove_ada_files(OUTPUT_DIRECTORY)
 
-    parser = Parser(cached=True)
+    parser = Parser(Cache())
     parser.parse(*SPECIFICATION_FILES)
     model = merge_models([parser.create_model(), *[m() for m in models.spark_test_models()]])
     Generator(
@@ -85,7 +85,7 @@ def generate(feature_test: Path) -> None:
 
     remove_ada_files(output_directory)
 
-    parser = Parser(cached=True)
+    parser = Parser(Cache())
     parser.parse(feature_test / "test.rflx")
     Generator(
         "RFLX",

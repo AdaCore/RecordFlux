@@ -99,9 +99,17 @@ def test_verified(tmp_path: Path) -> None:
     assert c.is_verified(d3)
 
 
-def test_verified_disabled(tmp_path: Path) -> None:
+def test_always_verify() -> None:
     d = cache.Digest(models.tlv_message())
-    c = cache.Cache(tmp_path / "test.json", enabled=False)
+    c = cache.AlwaysVerify()
     assert not c.is_verified(d)
     c.add_verified(d)
     assert not c.is_verified(d)
+
+
+def test_never_verify() -> None:
+    d = cache.Digest(models.tlv_message())
+    c = cache.NeverVerify()
+    assert c.is_verified(d)
+    c.add_verified(d)
+    assert c.is_verified(d)

@@ -14,7 +14,7 @@ from ruamel.yaml.main import YAML
 
 from rflx import expression as expr
 from rflx.identifier import ID, StrID
-from rflx.model import Link, Message, Model, Refinement, type_ as mty
+from rflx.model import AlwaysVerify, Cache, Link, Message, Model, Refinement, type_ as mty
 from rflx.pyrflx import ChecksumFunction, Package, PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
 from rflx.specification import Parser
@@ -25,13 +25,13 @@ class Validator:
         self,
         files: Iterable[Union[str, Path]],
         checksum_module: Optional[str] = None,
-        skip_model_verification: bool = False,
+        cache: Optional[Cache] = None,
         skip_message_verification: bool = False,
         split_disjunctions: bool = False,
     ):
         model = self._create_model(
             [Path(f) for f in files],
-            skip_model_verification,
+            AlwaysVerify() if cache is None else cache,
             split_disjunctions,
         )
         checksum_functions = self._parse_checksum_module(checksum_module)
@@ -177,13 +177,13 @@ class Validator:
     def _create_model(
         self,
         files: Sequence[Path],
-        skip_model_verification: bool,
+        cache: Cache,
         split_disjunctions: bool,
     ) -> Model:
         for f in files:
             if not f.is_file():
                 raise ValidationError(f'specification file not found: "{f}"')
-        parser = Parser(skip_model_verification)
+        parser = Parser(cache)
         parser.parse(*files)
         model = parser.create_model()
         if split_disjunctions:

@@ -27,7 +27,6 @@ class UncheckedModel(Base):
     def checked(
         self,
         cache: Cache,
-        skip_verification: bool = False,
         workers: int = 1,
     ) -> Model:
         error = RecordFluxError(self.error)
@@ -40,7 +39,7 @@ class UncheckedModel(Base):
                 digest = Digest(unverified)
                 checked = (
                     unverified
-                    if skip_verification or cache.is_verified(digest)
+                    if cache.is_verified(digest)
                     else d.checked(declarations, workers=workers)
                 )
                 declarations.append(checked)

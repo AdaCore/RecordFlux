@@ -9,6 +9,7 @@ from time import perf_counter
 
 from tqdm import tqdm  # type: ignore[import]
 
+from rflx.model import NeverVerify
 from rflx.pyrflx import PyRFLX
 
 
@@ -18,7 +19,7 @@ class Benchmark:
         start = perf_counter()
         self.__pyrflx = PyRFLX.from_specs(
             [str(specdir / "ipv4.rflx"), str(specdir / "icmp.rflx")],
-            skip_model_verification=True,
+            NeverVerify(),
             skip_message_verification=True,
         )
         self.__ipv4 = self.__pyrflx.package("IPv4")

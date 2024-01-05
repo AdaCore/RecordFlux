@@ -7,7 +7,7 @@ from typing import Optional, Union
 
 from rflx.error import FatalError
 from rflx.identifier import ID, StrID
-from rflx.model import Model
+from rflx.model import Cache, Model
 from rflx.specification import Parser
 
 from .error import PyRFLXError
@@ -46,14 +46,14 @@ class PyRFLX:
     def from_specs(
         cls,
         files: Iterable[Union[str, Path]],
-        skip_model_verification: bool = False,
+        cache: Optional[Cache] = None,
         skip_message_verification: bool = False,
     ) -> PyRFLX:
         paths = list(map(Path, files))
         for p in paths:
             if not p.is_file():
                 raise FileNotFoundError(f'file not found: "{p}"')
-        parser = Parser(skip_model_verification)
+        parser = Parser(cache)
         parser.parse(*paths)
         model = parser.create_model()
         return cls(model, None, skip_message_verification)

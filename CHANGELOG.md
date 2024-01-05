@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Pragma marking all generated files as Ada 2012 (eng/recordflux/RecordFlux#1509, AdaCore/RecordFlux#1293)
+- `--no-caching` option to `rflx` (eng/recordflux/RecordFlux#1488)
+- Model verification caching to validator
 
 ### Fixed
 

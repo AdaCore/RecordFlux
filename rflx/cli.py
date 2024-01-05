@@ -35,7 +35,7 @@ from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
 from rflx.integration import Integration
 from rflx.ls.server import server
-from rflx.model import Message, Model, Session
+from rflx.model import AlwaysVerify, Cache, Message, Model, NeverVerify, Session
 from rflx.pyrflx import PyRFLXError
 from rflx.specification import Parser
 from rflx.validator import ValidationError, Validator
@@ -139,6 +139,11 @@ def main(  # noqa: PLR0915
         help="disable logging to standard output",
     )
     parser.add_argument("--version", action="store_true")
+    parser.add_argument(
+        "--no-caching",
+        action="store_true",
+        help=("ignore verification cache"),
+    )
     parser.add_argument(
         "--no-verification",
         action="store_true",
@@ -483,7 +488,7 @@ class Requirement:
 
 
 def check(args: argparse.Namespace) -> None:
-    parse(args.files, args.no_verification, args.workers)
+    parse(args.files, args.no_caching, args.no_verification, args.workers)
 
 
 def generate(args: argparse.Namespace) -> None:
@@ -498,6 +503,7 @@ def generate(args: argparse.Namespace) -> None:
 
     model, integration = parse(
         args.files,
+        args.no_caching,
         args.no_verification,
         args.workers,
         args.integration_files_dir,
@@ -524,13 +530,13 @@ def generate(args: argparse.Namespace) -> None:
 
 def parse(
     files: Sequence[Path],
-    skip_verification: bool = False,
+    no_caching: bool,
+    no_verification: bool,
     workers: int = 1,
     integration_files_dir: Optional[Path] = None,
 ) -> tuple[Model, Integration]:
     parser = Parser(
-        skip_verification,
-        cached=True,
+        cache(no_caching, no_verification),
         workers=workers,
         integration_files_dir=integration_files_dir,
     )
@@ -562,7 +568,7 @@ def graph(args: argparse.Namespace) -> None:
     if not args.output_directory.is_dir():
         fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
 
-    model, _ = parse(args.files, args.no_verification)
+    model, _ = parse(args.files, args.no_caching, args.no_verification)
 
     for d in model.declarations:
         filename = args.output_directory.joinpath(d.identifier.flat).with_suffix(f".{args.format}")
@@ -599,7 +605,7 @@ def validate(args: argparse.Namespace) -> None:
         Validator(
             [args.specification],
             args.checksum_module,
-            args.no_verification,
+            cache(args.no_caching, args.no_verification),
             split_disjunctions=args.split_disjunctions,
         ).validate(
             identifier,
@@ -657,3 +663,7 @@ def vscode_extension() -> Traversable:
     path = importlib_resources.files("rflx_ide") / "vscode" / "recordflux.vsix"
     assert isinstance(path, Traversable)
     return path
+
+
+def cache(no_caching: bool, no_verification: bool) -> Cache:
+    return NeverVerify() if no_verification else (AlwaysVerify() if no_caching else Cache())

@@ -7,6 +7,7 @@ import pytest
 
 from rflx import expression as expr
 from rflx.identifier import ID
+from rflx.model import NeverVerify
 from rflx.pyrflx import PyRFLX
 from rflx.validator import ValidationError, Validator
 from tests.const import SPEC_DIR
@@ -20,7 +21,11 @@ def test_initialize_pyrflx_spec_file_not_found() -> None:
         ValidationError,
         match=r'^specification file not found: "non_existent_file.rflx"$',
     ):
-        Validator(["non_existent_file.rflx"], CHECKSUM_MODULE, skip_model_verification=True)
+        Validator(
+            ["non_existent_file.rflx"],
+            CHECKSUM_MODULE,
+            NeverVerify(),
+        )
 
 
 def test_initialize_pyrflx_checksum_import_error() -> None:
@@ -37,7 +42,7 @@ def test_initialize_pyrflx_checksum_import_error() -> None:
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],
             "tests/checksum",
-            skip_model_verification=True,
+            NeverVerify(),
         )
 
 
@@ -48,7 +53,7 @@ def test_initialize_pyrflx_checksum_no_checksum_provided() -> None:
     ):
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],
-            skip_model_verification=True,
+            cache=NeverVerify(),
         )
 
 
@@ -65,7 +70,7 @@ def test_initialize_pyrflx_checksum_missing_attribute() -> None:
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],
             checksum_module,
-            skip_model_verification=True,
+            NeverVerify(),
         )
 
 
@@ -77,7 +82,7 @@ def test_initialize_pyrflx_checksum_missing_field() -> None:
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],
             "tests.data.validator.checksum_missing_field",
-            skip_model_verification=True,
+            NeverVerify(),
         )
 
 
@@ -89,7 +94,7 @@ def test_initialize_pyrflx_checksum_invalid_function_type() -> None:
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],
             "tests.data.validator.checksum_invalid_function_type",
-            skip_model_verification=True,
+            NeverVerify(),
         )
 
 
@@ -101,7 +106,7 @@ def test_initialize_pyrflx_checksum_invalid_field_dict_type() -> None:
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],
             "tests.data.validator.checksum_invalid_field_dict_type",
-            skip_model_verification=True,
+            NeverVerify(),
         )
 
 
@@ -118,7 +123,7 @@ def test_initialize_pyrflx_checksum_invalid_message() -> None:
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],
             "tests.data.validator.checksum_invalid_message",
-            skip_model_verification=True,
+            NeverVerify(),
         )
 
 
@@ -135,7 +140,7 @@ def test_initialize_pyrflx_checksum_invalid_field() -> None:
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],
             "tests.data.validator.checksum_invalid_field",
-            skip_model_verification=True,
+            NeverVerify(),
         )
 
 
@@ -148,7 +153,7 @@ def test_initialize_pyrflx_checksum_invalid_attribute_type() -> None:
         Validator(
             [SPEC_DIR / "checksum_message.rflx"],
             checksum_module,
-            skip_model_verification=True,
+            NeverVerify(),
         )
 
 
@@ -156,7 +161,7 @@ def test_validate_error_msg_not_in_package() -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -169,7 +174,7 @@ def test_validate_no_raw_files_in_valid_dir(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -194,7 +199,7 @@ def test_validate_no_raw_files_in_invalid_dir(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -219,7 +224,7 @@ def test_validate_no_test_data_provided() -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -232,7 +237,7 @@ def test_validate_valid_samples_dir_does_not_exist(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -245,7 +250,7 @@ def test_validate_invalid_samples_dir_does_not_exist(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -258,7 +263,7 @@ def test_validate_output_is_a_dir(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -279,7 +284,7 @@ def test_validate_output_file_exists(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -294,7 +299,7 @@ def test_validate_output_not_writable(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -317,7 +322,7 @@ def test_validate_abort_on_error() -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -342,7 +347,7 @@ def test_validate_not_regular_file(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -355,7 +360,7 @@ def test_validate_positive_only() -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     validator.validate(
         ID("Ethernet::Frame"),
@@ -374,7 +379,7 @@ def test_validate_positive_output(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     validator.validate(
         ID("Ethernet::Frame"),
@@ -402,7 +407,7 @@ def test_validate_negative_only() -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -433,7 +438,7 @@ def test_validate_negative_output(tmp_path: Path) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -464,7 +469,7 @@ def test_validate_coverage(capsys: pytest.CaptureFixture[str]) -> None:
     validator = Validator(
         [SPEC_DIR / "ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     validator.validate(
         ID("Ethernet::Frame"),
@@ -506,7 +511,7 @@ def test_coverage_threshold_missed(capsys: pytest.CaptureFixture[str]) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
         split_disjunctions=True,
     )
     with pytest.raises(
@@ -573,7 +578,7 @@ def test_validate_coverage_threshold_invalid() -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(
         ValidationError,
@@ -592,7 +597,7 @@ def test_validate_checksum_positive() -> None:
     validator = Validator(
         [SPEC_DIR / "checksum_message.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     validator.validate(
         ID("Checksum_Message::Message"),
@@ -605,7 +610,7 @@ def test_validate_pyrflx_checksum_negative() -> None:
     validator = Validator(
         [SPEC_DIR / "checksum_message.rflx"],
         CHECKSUM_MODULE,
-        skip_model_verification=True,
+        NeverVerify(),
     )
     with pytest.raises(ValidationError, match=r"^3 messages were classified incorrectly$"):
         validator.validate(
@@ -616,9 +621,9 @@ def test_validate_pyrflx_checksum_negative() -> None:
 
 
 def test_validate_message_original_and_parsed_not_equal() -> None:
-    validator = Validator([], skip_model_verification=True)
+    validator = Validator([], cache=NeverVerify())
     ethernet_too_short_value = (
-        PyRFLX.from_specs([SPEC_DIR / "ethernet.rflx"], skip_model_verification=True)
+        PyRFLX.from_specs([SPEC_DIR / "ethernet.rflx"], cache=NeverVerify())
         .package("Ethernet")
         .new_message("Frame")
     )
@@ -634,9 +639,9 @@ def test_validate_message_original_and_parsed_not_equal() -> None:
 
 
 def test_validate_message_parameterized_message() -> None:
-    validator = Validator([], skip_model_verification=True)
+    validator = Validator([], cache=NeverVerify())
     message = (
-        PyRFLX.from_specs(["tests/data/specs/parameterized.rflx"], skip_model_verification=True)
+        PyRFLX.from_specs(["tests/data/specs/parameterized.rflx"], cache=NeverVerify())
         .package("Parameterized")
         .new_message("Message")
     )
@@ -791,9 +796,9 @@ def test_expand_expression(expression: expr.Expr, expected: Sequence[expr.Expr])
 
 
 def test_parameterized_message_missing_parameter() -> None:
-    validator = Validator([], skip_model_verification=True)
+    validator = Validator([], cache=NeverVerify())
     message = (
-        PyRFLX.from_specs(["tests/data/specs/parameterized.rflx"], skip_model_verification=True)
+        PyRFLX.from_specs(["tests/data/specs/parameterized.rflx"], cache=NeverVerify())
         .package("Parameterized")
         .new_message("Message")
     )
@@ -817,9 +822,9 @@ def test_parameterized_message_missing_parameter() -> None:
 
 
 def test_parameterized_message_excess_parameter() -> None:
-    validator = Validator([], skip_model_verification=True)
+    validator = Validator([], cache=NeverVerify())
     message = (
-        PyRFLX.from_specs(["tests/data/specs/parameterized.rflx"], skip_model_verification=True)
+        PyRFLX.from_specs(["tests/data/specs/parameterized.rflx"], cache=NeverVerify())
         .package("Parameterized")
         .new_message("Message")
     )

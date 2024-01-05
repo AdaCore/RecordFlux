@@ -26,6 +26,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID
 from rflx.model import FINAL, Link, Message
+from rflx.model.cache import NeverVerify
 from rflx.model.message import INITIAL, Field
 from rflx.model.model import Model
 from rflx.model.type_ import OPAQUE
@@ -265,7 +266,7 @@ def test_no_verification_ethernet(ethernet_frame_value: MessageValue) -> None:
     assert ethernet_frame_value.valid_message
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "ethernet.rflx"],
-        skip_model_verification=True,
+        NeverVerify(),
         skip_message_verification=True,
     )
     frame_unv = pyrflx_.package("Ethernet").new_message("Frame")
@@ -293,7 +294,7 @@ def test_no_verification_sequence_nested_messages(
 
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "sequence_message.rflx"],
-        skip_model_verification=True,
+        NeverVerify(),
         skip_message_verification=True,
     )
     sequence_message_package_unv = pyrflx_.package("Sequence_Message")

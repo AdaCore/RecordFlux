@@ -59,4 +59,4 @@ def test_parse_no_subsequent_errors_caused_by_style_errors(tmp_path: Path) -> No
             r"$"
         ),
     ):
-        cli.parse([a])
+        cli.parse([a], no_caching=True, no_verification=False)

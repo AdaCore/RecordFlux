@@ -7,6 +7,7 @@ from xml.etree import ElementTree
 import pytest
 
 from rflx.converter import iana
+from rflx.model import NeverVerify
 from rflx.validator import Validator
 from tests.const import EX_SPEC_DIR
 
@@ -16,9 +17,8 @@ EX_IANA_REGISTRIES_DIR = EX_SPEC_DIR / "iana_registries"
 
 @pytest.mark.parametrize("spec", EX_SPEC_DIR.glob("*.rflx"))
 def test_spec(spec: Path, tmp_path: Path) -> None:
-    # TODO(eng/recordflux/RecordFlux#1485): Ensure reproducible test results by disabling caching
     subprocess.run(
-        ["rflx", "generate", "--ignore-unsupported-checksum", "-d", tmp_path, spec],
+        ["rflx", "--no-caching", "generate", "--ignore-unsupported-checksum", "-d", tmp_path, spec],
         check=True,
     )
     subprocess.run(["gprbuild", "-U", "-j0"], check=True, cwd=tmp_path)
@@ -42,7 +42,7 @@ def test_iana_specs_synchronized(registry_file: Path) -> None:
 
 @pytest.mark.parametrize("spec", EX_SPEC_DIR.glob("*.rflx"))
 def test_validate_spec(spec: Path) -> None:
-    validator = Validator([spec], "examples.specs.checksum", skip_model_verification=True)
+    validator = Validator([spec], "examples.specs.checksum", NeverVerify())
 
     # Eng/RecordFlux/RecordFlux#833
     for package in validator._pyrflx:  # noqa: SLF001

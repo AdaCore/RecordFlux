@@ -31,7 +31,7 @@ def fixture_pyrflx() -> pyrflx.PyRFLX:
             f"{SPEC_DIR}/low_order.rflx",
             f"{SPEC_DIR}/aggregate_in_relation.rflx",
         ],
-        skip_model_verification=True,
+        model.NeverVerify(),
     )
 
 
