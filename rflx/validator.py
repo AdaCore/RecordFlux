@@ -26,7 +26,6 @@ class Validator:
         files: Iterable[Union[str, Path]],
         checksum_module: Optional[str] = None,
         cache: Optional[Cache] = None,
-        skip_message_verification: bool = False,
         split_disjunctions: bool = False,
     ):
         model = self._create_model(
@@ -57,7 +56,7 @@ class Validator:
             )
 
         try:
-            self._pyrflx = PyRFLX(model, checksum_functions, skip_message_verification)
+            self._pyrflx = PyRFLX(model, checksum_functions)
         except PyRFLXError as e:
             raise ValidationError(f"invalid checksum definition: {e}") from e
 

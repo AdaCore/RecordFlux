@@ -28,7 +28,6 @@ def validator_mock(
     files: object,  # noqa: ARG001
     checksum_module: Optional[str] = None,  # noqa: ARG001
     cache: Optional[object] = None,  # noqa: ARG001
-    skip_message_verification: bool = False,  # noqa: ARG001
     split_disjunctions: bool = False,  # noqa: ARG001
 ) -> None:
     return None

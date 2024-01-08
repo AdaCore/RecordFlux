@@ -24,6 +24,17 @@ class PyRFLX:
         checksum_functions: Optional[Mapping[StrID, Mapping[str, ChecksumFunction]]] = None,
         skip_message_verification: bool = False,
     ) -> None:
+        """
+        Initialize PyRFLX.
+
+        Arguments:
+        ---------
+        model: The RecordFlux model.
+        checksum_functions: A mapping of field identifiers to checksum functions.
+        skip_message_verification: Disable some runtime checks for messages to optimize performance.
+                                   This can lead to unexpected errors if an invalid field value is
+                                   set.
+        """
         self._packages: dict[str, Package] = {}
         messages: dict[ID, MessageValue] = {}
 
