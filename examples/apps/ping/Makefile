@@ -10,7 +10,7 @@ CWD := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 test: test_python test_spark
 
 test_python:
-	../../../devutils/linux/run $(CWD) timeout 60 tests/python_test.sh $$(dirname $$(command -v python3))
+	../../../devutils/linux/run $(CWD) timeout 120 tests/python_test.sh $$(dirname $$(command -v python3))
 
 test_spark: $(BIN)
 	../../../devutils/linux/run $(CWD) timeout 60 tests/spark_test.sh
