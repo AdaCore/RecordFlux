@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -359,7 +360,11 @@ def main(  # noqa: PLR0915
     parser_install.add_argument(
         "ide",
         type=IDE.ide,
-        choices=[ide for ide in IDE if ide != IDE.VSCODE or vscode_extension().is_file()],
+        choices=[
+            ide
+            for ide in IDE
+            if ide != IDE.VSCODE or vscode_extension().is_file() or os.environ.get("RFLX_TESTING")
+        ],
     )
     parser_install.add_argument(
         "--gnat-studio-dir",

@@ -25,6 +25,7 @@ MISSING_HELP_FILES = $(filter-out $(EXISTING_HELP_FILES),$(EXPECTED_HELP_FILES))
 NORMALIZE = sed -e "s/workers (default: [0-9]*)/workers (default: NPROC)/" -e "s/optional arguments:/options:/"
 CHECK = diff 90-rflx--help.txt <(rflx --help | $(NORMALIZE)) && $(foreach CMD,$(COMMANDS),diff $(call help_file,$(CMD)) <(rflx $(CMD) --help | $(NORMALIZE)) &&) exit
 
+check_help: export RFLX_TESTING=1
 check_help:
 	@test -z "$(MISSING_HELP_FILES)" || ( echo "Missing help files: $(MISSING_HELP_FILES)" && exit 1 )
 	@test -z "$(UNEXPECTED_HELP_FILES)" || ( echo "Unexpected help files: $(UNEXPECTED_HELP_FILES)" && exit 1 )
@@ -39,6 +40,7 @@ check_help:
 # Regenerate rflx help texts for the documentation
 # We do not do this automatically. The results are checked in as we don't
 # have rflx available during documentation creation.
+regenerate_help:: export RFLX_TESTING=1
 regenerate_help:: clean_help $(EXPECTED_HELP_FILES)
 
 clean_help:
