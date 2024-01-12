@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Pragma marking all generated files as Ada 2012 (eng/recordflux/RecordFlux#1509, AdaCore/RecordFlux#1293)
 
+### Fixed
+
+- Missing diagnostics provided by language server
+
 ## [0.17.0] - 2024-01-03
 
 ### Fixed

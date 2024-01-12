@@ -211,7 +211,9 @@ def test_parse_string_error() -> None:
         match=(
             r"^"
             r'a/b.rflx:1:9: parser: error: file name does not match unit name "A",'
-            r' should be "a.rflx"'
+            r' should be "a.rflx"\n'
+            r"a/b.rflx:2:0: style: error: unexpected keyword indentation \(expected 3 or 6\)"
+            r" \[indentation\]"
             r"$"
         ),
     ):

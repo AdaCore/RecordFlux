@@ -1671,8 +1671,6 @@ class Parser:
                 spec = SpecificationFile.create(error, unit.root, filename)
                 _check_for_duplicate_specifications(error, [*self._specifications.values(), spec])
 
-                error.propagate()
-
                 self._specifications[spec.package] = spec
 
                 _check_for_dependency_cycles(error, [spec], self._specifications)

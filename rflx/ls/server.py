@@ -39,7 +39,7 @@ from pygls.server import LanguageServer
 
 from rflx import __version__, error
 from rflx.common import assert_never
-from rflx.const import CACHE_PATH
+from rflx.const import BUILTINS_PACKAGE, CACHE_PATH, INTERNAL_PACKAGE
 from rflx.graph import create_message_graph, write_graph
 from rflx.model import Message, Model, UncheckedModel
 from rflx.model.cache import Cache
@@ -65,7 +65,11 @@ LSP_TOKEN_CATEGORIES: Final = {
 
 
 def to_lsp_location(location: Optional[error.Location]) -> Optional[Location]:
-    if location is None or location.source is None:
+    if (
+        location is None
+        or location.source is None
+        or location.source.name in [str(BUILTINS_PACKAGE), str(INTERNAL_PACKAGE)]
+    ):
         return None
 
     source = location.source.absolute().as_uri()
@@ -259,7 +263,8 @@ def update_model_debounced(ls: RecordFluxLanguageServer, uri: str) -> None:
 
 
 @debounce(1, keyed_by="uri")
-def verify_debounced(ls: RecordFluxLanguageServer, uri: str) -> None:
+def update_model_and_verify_debounced(ls: RecordFluxLanguageServer, uri: str) -> None:
+    ls.update(uri)
     ls.thread_pool_executor.submit(lambda: ls.verify(uri))
 
 
@@ -275,8 +280,7 @@ async def did_open(ls: RecordFluxLanguageServer, params: DidOpenTextDocumentPara
 
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
 async def did_save(ls: RecordFluxLanguageServer, params: DidSaveTextDocumentParams) -> None:
-    update_model_debounced(ls, params.text_document.uri)
-    verify_debounced(ls, params.text_document.uri)
+    update_model_and_verify_debounced(ls, params.text_document.uri)
 
 
 @server.feature(TEXT_DOCUMENT_DID_CHANGE)
