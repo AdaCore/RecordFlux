@@ -9,6 +9,7 @@
 ------------------------------------------------------------------------------
 
 pragma Restrictions (No_Streams);
+pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.B.Session_Allocator;

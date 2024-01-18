@@ -73,6 +73,7 @@ TYPES_OPERATIONS = TYPES_OPERATIONS_PACKAGE
 UNREACHABLE = ada.Call(TYPES * "Unreachable")
 
 CONFIGURATION_PRAGMAS = [
+    ada.Pragma("Ada_2012"),
     ada.Pragma("Style_Checks", [ada.String("N3aAbCdefhiIklnOprStux")]),
     # Eng/RecordFlux/RecordFlux#508
     ada.Pragma("Warnings", [ada.Variable("Off"), ada.String("redundant conversion")]),

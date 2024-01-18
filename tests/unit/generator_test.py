@@ -1976,6 +1976,7 @@ def test_generate_unused_valid_function_parameter(
     assert (tmp_path / "p.ads").exists()
     assert (tmp_path / "p.ads").read_text() == textwrap.dedent(
         '''\
+        pragma Ada_2012;
         pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
         pragma Warnings (Off, "redundant conversion");
         with RFLX_Types;
@@ -2019,6 +2020,7 @@ def test_generate_unused_valid_function_parameter(
         (
             False,
             """\
+            pragma Ada_2012;
             pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
             pragma Warnings (Off, "redundant conversion");
             with RFLX_Types;
@@ -2062,6 +2064,7 @@ def test_generate_unused_valid_function_parameter(
         (
             True,
             """\
+            pragma Ada_2012;
             pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
             pragma Warnings (Off, "redundant conversion");
             with RFLX_Types;
