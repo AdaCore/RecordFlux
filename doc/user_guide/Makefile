@@ -10,7 +10,7 @@ help:
 .PHONY: help check_help regenerate_help clean_help Makefile
 
 %: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) -W --keep-going -n $(O)
 
 SHELL = /bin/bash
 COMMANDS = $(shell rflx |& sed -n 's/.*{\(.*\)}.*/\1/p' | tr ',' ' ')
