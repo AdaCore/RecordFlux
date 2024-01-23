@@ -1662,16 +1662,15 @@ class Parser:
         unit = lang.AnalysisContext().get_from_buffer(str(filename), string, rule=rule)
 
         if not diagnostics_to_error(unit.diagnostics, error, filename):
-            if unit.root is not None:
-                assert isinstance(unit.root, lang.Specification)
-                spec = SpecificationFile.create(error, unit.root, filename)
-                _check_for_duplicate_specifications(error, [*self._specifications.values(), spec])
+            assert isinstance(unit.root, lang.Specification)
+            spec = SpecificationFile.create(error, unit.root, filename)
+            _check_for_duplicate_specifications(error, [*self._specifications.values(), spec])
 
-                self._specifications[spec.package] = spec
+            self._specifications[spec.package] = spec
 
-                _check_for_dependency_cycles(error, [spec], self._specifications)
+            _check_for_dependency_cycles(error, [spec], self._specifications)
 
-                self._specifications = _sort_specs_topologically(self._specifications)
+            self._specifications = _sort_specs_topologically(self._specifications)
 
             error.extend(style.check_string(string, filename))
 
@@ -1718,9 +1717,6 @@ class Parser:
             return None
 
         error.extend(style.check(filename))
-
-        if not unit.root:
-            return None
 
         assert isinstance(unit.root, lang.Specification)
 

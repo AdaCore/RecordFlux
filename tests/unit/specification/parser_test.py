@@ -217,19 +217,20 @@ def test_parse_string_error() -> None:
         )
 
 
-def test_parse_string_empty() -> None:
+@pytest.mark.parametrize(
+    ("value", "error"),
+    [
+        ("", "<stdin>:1:1: parser: error: Expected 'package', got Termination"),
+        ("\n", "<stdin>:2:1: parser: error: Expected 'package', got Termination"),
+    ],
+)
+def test_parse_string_empty_file_error(value: str, error: str) -> None:
     p = parser.Parser()
-    p.parse_string("")
-
-
-def test_parse_string_empty_file() -> None:
-    p = parser.Parser()
-    p.parse_string("\n")
-
-
-@pytest.mark.parametrize("spec", ["empty_file", "comment_only"])
-def test_parse_empty_specfication(spec: str) -> None:
-    assert_ast_files([f"{SPEC_DIR}/{spec}.rflx"], {})
+    with pytest.raises(
+        RecordFluxError,
+        match=(rf"^{error}$"),
+    ):
+        p.parse_string(value)
 
 
 def test_parse_duplicate_specifications() -> None:
@@ -276,10 +277,6 @@ def test_parse_context_spec() -> None:
             "Context": {
                 "_kind": "Specification",
                 "context_clause": [
-                    {
-                        "_kind": "ContextItem",
-                        "item": {"_kind": "UnqualifiedID", "_value": "Empty_File"},
-                    },
                     {
                         "_kind": "ContextItem",
                         "item": {"_kind": "UnqualifiedID", "_value": "Empty_Package"},
@@ -2224,7 +2221,7 @@ def test_parse_error_invalid_context_clause(tmp_path: Path) -> None:
         p.parse(test_file)
 
 
-@pytest.mark.parametrize("spec", ["empty_file", "comment_only", "empty_package", "context"])
+@pytest.mark.parametrize("spec", ["empty_package", "context"])
 def test_create_model_no_messages(spec: str) -> None:
     assert_messages_files([f"{SPEC_DIR}/{spec}.rflx"], [])
 
@@ -3431,11 +3428,7 @@ def test_parse_order_of_include_paths(tmp_path: Path) -> None:
 
     with pytest.raises(
         RecordFluxError,
-        match=(
-            r"^"
-            rf'{invalid}:1:1: parser: error: End of input expected, got "Unqualified_Identifier"'
-            r"$"
-        ),
+        match=(rf"^{invalid}:1:1: parser: error: Expected 'package', got 'First'$"),
     ):
         parser.Parser().parse(b, a)
 

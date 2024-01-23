@@ -198,7 +198,7 @@ def test_update_error_in_parser(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
                     [
                         Diagnostic(
                             Range(Position(0, 0), Position(0, 7)),
-                            'End of input expected, got "Unqualified_Identifier"',
+                            "Expected 'package', got 'First'",
                             DiagnosticSeverity.Error,
                         ),
                     ],

@@ -6,7 +6,7 @@ from language.lexer import rflx_lexer as lexer
 grammar = Grammar("main_rule")
 
 grammar.add_rules(
-    main_rule=Opt(grammar.specification),
+    main_rule=grammar.specification,
     unqualified_identifier=ast.UnqualifiedID(
         Or(
             lexer.Package,
