@@ -1,0 +1,4 @@
+**Syntax**
+
+.. productionlist::
+   start/

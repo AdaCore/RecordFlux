@@ -1,0 +1,4 @@
+**Syntax**
+
+.. productionlist::
+   root: "foo"

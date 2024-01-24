@@ -100,6 +100,7 @@ setup(
             "build >= 0.9, <1",
             "furo == 2022.4.7",
             "hypothesis >=6.14, <6.24",
+            "lark ==1.1.8",
             "pyicontract-lint >=2.1.2, <2.2",
             "pytest-asyncio==0.21",
             "pytest-timeout >=2, <3",
