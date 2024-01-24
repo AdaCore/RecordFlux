@@ -8,33 +8,311 @@ General
 
 The specification language describes protocol message formats based on types.
 For each type of the specification language a description of its syntax and semantics and an example is given.
+
 A simple variant of Backus-Naur Form is used to describe the syntax.
-Reserved keywords and literals are marked in **bold**.
-References to syntactic categories are :ref:`highlighted<highlighted>`.
-To convey some semantic information the name of some syntactic categories are prefixed by a non-highlighted part.
-Syntactic categories with prefixes are equivalent to the category without the prefix.
-The following basic elements are used to describe the syntax of the language:
 
-.. productionlist::
-   name: A name consists of alphanumeric characters and underscores.
-       : By convention a name starts with a capital and after each underscore
-       : follows a capital as well (e.g., `Mixed_Case_With_Underscores`).
-   number: A number consists of numerical digits. An underscore can be added
-         : between two digits to improve readability (e.g., `1_234`).
-   string: A string literal is a sequence of characters delimited by double
-         : quotes (e.g., `"String"`).
-   mathematical_expression : A mathematical expression consists of numbers and
-                           : names combined by mathematical operators
-                           : (addition "+", subtraction "-", multiplication "*",
-                           : division "/", exponentiation "**").
-   boolean_expression: A boolean expression consists of relations
-                     : ("<", "<=", "=", "/=", ">=", ">") between names and
-                     : numbers combined by boolean operators (conjunction "and",
-                     : disjunction "or").
+- Optional elements are enclosed in \[brackets\].
+- Elements which occur zero or more times are enclosed in {curly brackets}.
+- Terms are grouped using (parentheses).
+- Alternatives are delimited by the `|` character.
+- Reserved keywords and literals are marked in 'single quotes' or "double quotes".
+- Literal ranges denote a character range from a start character to an end character separated by `..` (e.g. `"a" .. "f"`).
+- A production can use a non-formal verbal description starting with a `#` sign (e.g. `# All non-whitespace Unicode characters`).
+- Non-terminals are referenced using hyperlinks (e.g. *prefix_*\ non_terminal_).
 
+To convey some semantic information regarding the usage of the non-terminal in a given context its name can be prefixed by an identifier when referencing it.
+Non-terminals with prefixes are equivalent to the respective non-terminals without the prefix.
+
+See the section :ref:`variable-declaration` for an example.
+
+Basic Elements
+==============
+
+The following basic elements are used to describe the syntax of the language.
 The type system is inspired by Ada, but differs in some details.
 In contrast to Ada, integer variables are considered type-compatible.
 Explicit type conversions of integer variables are neither required nor supported.
+
+Comments
+--------
+
+Comments are started with two dashes (`--`) and extend to the end of the line.
+Block comments do not exist in RecordFlux.
+
+Names
+-----
+
+**Syntax**
+
+.. productionlist::
+   name: `letter` { [ "_" ] `alphanum` { `alphanum` } }
+   alphanum: `letter` | `dec_digit`
+   letter: "A" .. "Z" | "a" .. "z"
+   qualified_name: `name` { "::" `name` }
+
+By convention a name starts with a capital and after each underscore follows a capital as well.
+A qualified name starts with the package hierachy the respective entity is located in, separated by `::`.
+
+**Example**
+
+.. doc-check: rflx,unqualified_identifier,3
+.. code:: rflx
+
+   Mixed_Case_With_Underscores
+
+Numbers
+-------
+
+**Syntax**
+
+.. productionlist::
+   number: `baseless_number`
+         : | `bin_number`
+         : | `oct_number`
+         : | `dec_number`
+         : | `hex_number`
+   baseless_number: `dec_digit`
+                  : { [ "_" ] `dec_digit` { `dec_digit` } }
+   bin_digit: "0" | "1"
+   oct_digit: "0" .. "7"
+   dec_digit: "0" .. "9"
+   hex_digit: `dec_digit` | "A" .. "F"
+   bin_number: "2" "#" `bin_digit`
+             : { [ "_" ] `bin_digit` { `bin_digit` } } "#"
+   oct_number: "8" "#" `oct_digit`
+             : { [ "_" ] `oct_digit` { `oct_digit` } } "#"
+   dec_number: "10" "#" `dec_digit`
+             : { [ "_" ] `dec_digit` { `dec_digit` } } "#"
+   hex_number: "16" "#" `hex_digit`
+             : { [ "_" ] `hex_digit` { `hex_digit` } } "#"
+
+**Static Semantics**
+
+A baseless number (one not containing a "#" symbol) is considered base 10.
+Numbers with an explicit base (2, 8, 10, or 16) are considered to have that respective base.
+
+**Example**
+
+.. doc-check: rflx,numeric_literal,3
+.. code:: rflx
+
+   16#DEAD_C0DE#
+
+
+Strings
+-------
+
+**Syntax**
+
+
+.. productionlist::
+   string: '"' { `character` } '"'
+   character: # Any Unicode character except QUOTATION MARK
+
+**Static Semantics**
+
+Internally, strings are UTF-8 encoded.
+There is currently no way to represent the QUOTATION MARK character (U+0022).
+
+**Example**
+
+.. doc-check: rflx,string_literal,3
+.. code:: rflx
+
+   "Hello World"
+
+
+Mathematical Expressions
+------------------------
+
+Expressions of this category yield an integer result.
+
+**Syntax**
+
+.. productionlist::
+   math_expression: ( `math_expression`
+                  :   ( "+" | "-" ) `math_unop_term` )
+                  : | `math_unop_term`
+   math_unop_term: ( "-" `math_term` ) | `math_term`
+   math_term: ( `math_term`
+            :   ( "*" | "/" | "mod" )
+            :     `math_factor` )
+            : | `math_factor`
+   math_factor: ( `math_primary` "**" `math_primary` )
+              : | `math_suffix`
+   math_suffix: ( `math_suffix` "'" `math_attribute` )
+              : | `math_primary`
+   math_attribute: "First" | "Size" | "Last"
+   math_primary: `number`
+               : | `qualified_name`
+               : | `selected`
+               : | `paren_math_expression`
+   paren_math_expression: "(" `math_expression` ")"
+
+**Example**
+
+.. doc-check: rflx,simple_expr,3
+.. code:: rflx
+
+   (2 ** (V'First + 23) - 12) + 1
+
+
+Sequence Expressions
+--------------------
+
+**Syntax**
+
+.. productionlist::
+   seq_expression: `seq_paren_expression`
+                 : | `comprehension`
+                 : | `aggregate`
+                 : | `selected`
+                 : | `string`
+                 : | `qualified_name`
+   seq_paren_expression: "(" `seq_expression` ")"
+
+
+Boolean Expressions
+-------------------
+
+Expressions of this category yield a boolean result.
+Standard boolean expressions are used in then-clauses and refinements of messages.
+
+**Syntax**
+
+.. productionlist::
+   bool_expression: ( `bool_expression`
+                  :   ( "and" | "or" ) `bool_unop_term` )
+                  : | `bool_unop_term`
+   bool_unop_term: ( "not" `bool_term` ) | `bool_term`
+   bool_term: "True"
+            : | "False"
+            : | `bool_suffix`
+            : | `qualified_name`
+            : | `bool_relation`
+            : | `math_relation`
+            : | `seq_relation`
+            : | `bool_paren_expression`
+   bool_suffix: `name` "'" `bool_attribute`
+   bool_attribute: "Valid_Checksum"
+   bool_relation: `bool_expression`
+                : ( "=" | "/=" ) `bool_expression`
+   math_relation: `math_expression`
+                : ( "=" | "/=" | "<=" | "<" | ">=" | ">" )
+                : `math_expression`
+   seq_relation: `seq_expression`
+               : ( "=" | "/=" ) `seq_expression`
+   seq_membership: `expression`
+                 : ( "in" | "not in" ) `seq_expression`
+   bool_paren_expression: "(" `bool_expression` ")"
+
+**Static Semantics**
+
+The semantics of the ``Valid_Checksum`` attribute is explained in the section :ref:`message-types`.
+
+**Example**
+
+.. doc-check: rflx,expression,3
+.. code:: rflx
+
+   V < 20 and U = True
+
+
+Extended Boolean Expressions
+----------------------------
+
+Expressions of this category yield a boolean result.
+Extended boolean expressions are used in sessions.
+
+**Syntax**
+
+.. productionlist::
+   ext_bool_expression: ( `ext_bool_expression`
+                      :   ( "and" | "or" )
+                      :   `ext_bool_unop_term` )
+                      : | `ext_bool_unop_term`
+   ext_bool_unop_term: ( "not" `ext_bool_term` )
+                     : | `ext_bool_term`
+   ext_bool_term: "True"
+                : | "False"
+                : | `ext_bool_suffix`
+                : | `qualified_name`
+                : | `ext_bool_relation`
+                : | `math_relation`
+                : | `seq_relation`
+                : | `seq_membership`
+                : | `quantified_expression`
+                : | `selected`
+                : | `ext_bool_paren_expression`
+   ext_bool_suffix: `expression` "'" `ext_bool_attribute`
+   ext_bool_attribute: "Valid" | "Has_Data" | "Present"
+   ext_bool_relation: `ext_bool_expression`
+                    : ( "=" | "/=" )
+                    : `ext_bool_expression`
+   ext_bool_paren_expression: "(" `ext_bool_expression` ")"
+
+**Static Semantics**
+
+The Valid attribute allows to determine the validity of a message or sequence.
+
+..
+    Valid attribute [§S-E-AT-V]
+
+    Expressions:
+
+    * Mathematical Expressions [§S-E-AT-V-ME]
+    * Boolean Expressions [§S-E-AT-V-BE]
+    * Literals [§S-E-AT-V-L]
+    * Variables [§S-E-AT-V-V]
+    * Message Aggregates [§S-E-AT-V-MA]
+    * Aggregates [§S-E-AT-V-A]
+    * Valid Attributes [§S-E-AT-V-VAT]
+    * Opaque Attributes [§S-E-AT-V-OAT]
+    * Size Attributes [§S-E-AT-V-SAT]
+    * Head Attributes [§S-E-AT-V-HAT]
+    * Has_Data Attributes [§S-E-AT-V-HDAT]
+    * Selected Expressions [§S-E-AT-V-S]
+    * List Comprehensions [§S-E-AT-V-LC]
+    * Quantified Expressions [§S-E-AT-V-Q]
+    * Calls [§S-E-AT-V-CL]
+    * Conversions [§S-E-AT-V-CV]
+
+
+Whether a channel contains data can be checked with the Has_Data attribute.
+
+..
+    Has_Data attribute [§S-E-AT-HD]
+
+    Expressions:
+
+    * Mathematical Expressions [§S-E-AT-HD-ME]
+    * Boolean Expressions [§S-E-AT-HD-BE]
+    * Literals [§S-E-AT-HD-L]
+    * Variables [§S-E-AT-HD-V]
+    * Message Aggregates [§S-E-AT-HD-MA]
+    * Aggregates [§S-E-AT-HD-A]
+    * Valid Attributes [§S-E-AT-HD-VAT]
+    * Opaque Attributes [§S-E-AT-HD-OAT]
+    * Size Attributes [§S-E-AT-HD-SAT]
+    * Head Attributes [§S-E-AT-HD-HAT]
+    * Has_Data Attributes [§S-E-AT-HD-HDAT]
+    * Selected Expressions [§S-E-AT-HD-S]
+    * List Comprehensions [§S-E-AT-HD-LC]
+    * Quantified Expressions [§S-E-AT-HD-Q]
+    * Calls [§S-E-AT-HD-CL]
+    * Conversions [§S-E-AT-HD-CV]
+
+
+Sizes
+-----
+
+A size aspect defines the size of a type or message field in bits.
+
+**Syntax**
+
+.. productionlist::
+   size_aspect: "Size" "=>" `math_expression`
+
 
 ..
     Types [§T]
@@ -48,14 +326,16 @@ Integer Types
 ..
     Integers [§T-I]
 
-An integer type is used to represent numbers.
+An integer type is used to represent whole numbers.
 
 **Syntax**
 
 .. productionlist::
-   integer_type: type `name` is range `first` .. `last` with Size => `number`
-   first: `mathematical_expression`
-   last: `mathematical_expression`
+   integer_type: "type" `name` "is"
+               : "range" `first` ".." `last`
+               : "with" `size_aspect`
+   first: `math_expression`
+   last: `math_expression`
 
 **Static Semantics**
 
@@ -80,12 +360,16 @@ An enumeration type represents a value out of a list of possible values.
 **Syntax**
 
 .. productionlist::
-   enumeration_type: type `name` is ( `literals` ) with `enumeration_aspects`
-   literals: `enumeration_literal` { , `enumeration_literal` }
-   enumeration_literal: `name` [=> `number`]
-   enumeration_aspects: `enumeration_aspect` { , `enumeration_aspect` }
+   enumeration_type: "type" `name` "is" "(" `literals` ")"
+                   : "with" `enumeration_aspects`
+   literals: `enumeration_literal`
+           : { "," `enumeration_literal` }
+   enumeration_literal: `name` [ "=>" `number` ]
+   enumeration_aspects: `enumeration_aspect`
+                      : { "," `enumeration_aspect` }
    enumeration_aspect: `size_aspect` | `always_valid_aspect`
-   always_valid_aspect: Always_Valid [ => ( True | False ) ]
+   always_valid_aspect: "Always_Valid"
+                      : [ "=>" ( "True" | "False" ) ]
 
 **Static Semantics**
 
@@ -123,6 +407,24 @@ Boolean
 
 ``Boolean`` is a built-in enumeration type with the literals ``False => 0`` and ``True => 1`` with a size of 1 bit.
 
+Parameters and Arguments
+========================
+
+Parameters define the objects directly visible within functions or parameterized messages and their associated types.
+
+.. productionlist::
+   parameter: `name` ":" `qualified_name`
+   parameter_list: "(" `parameter` { ";" `parameter` } ")"
+
+Named arguments associate a parameter with an expression.
+
+.. productionlist::
+   named_argument: parameter_`name` "=>" `expression`
+   named_argument_list: `named_argument`
+                      : { "," `named_argument` }
+
+.. _message-types:
+
 Message Types
 =============
 
@@ -135,40 +437,45 @@ Additional `then clauses <#grammar-token-then_clause>`_ enable the definition of
 **Syntax**
 
 .. productionlist::
-   message_type: type `name` [ ( `parameter` { , `parameter` } ) ] is
-               :  ( message
+   message_type: "type" `name` [ `parameter_list` ] "is"
+               :  ( "message"
                :     [ `null_field` ]
                :       `field`
                :     { `field` }
-               :    end message [ with
+               :    "end" "message" [ "with"
                :       `message_aspects` ]
-               :  | null message )
-   parameter: parameter_`name` : `type_name`
-   type_name: `qualified_name`
-   field: field_`name` : `type_name` [ ( `type_argument` { , `type_argument` } ) ]
-        :  [ with `aspects` ]
-        :  { `then_clause` } ;
-   type_argument: `named_argument`
-   null_field: null `then_clause` ;
-   target_field: field_`name` | null
-   then_clause: then `target_field`
-              :  [ with `aspects` ]
-              :  [ if `condition` ]
-   aspects: `aspect` { , `aspect` }
+               :  | "null" "message" )
+   field: `name` ":" `qualified_name`
+        :  [ "(" `named_argument_list` ")" ]
+        :  [ "with" `aspects` ]
+        :  { `then_clause` } ";"
+   null_field: "null" `then_clause` ";"
+   target_field: field_`name` | "null"
+   then_clause: "then" `target_field`
+              :  [ "with" `aspects` ]
+              :  [ "if" `bool_expression` ]
+   aspects: `aspect` { "," `aspect` }
    aspect: `first_aspect` | `size_aspect`
-   first_aspect: First => `mathematical_expression`
-   size_aspect: Size => `mathematical_expression`
-   condition: `boolean_expression`
-   message_aspects: `message_aspect` { , `message_aspect` }
+   first_aspect: "First" "=>" `math_expression`
+   message_aspects: `message_aspect` { "," `message_aspect` }
    message_aspect: `checksum_aspect` | `byteorder_aspect`
-   checksum_aspect: Checksum => ( `checksum_definition` { , `checksum_definition` } )
-   checksum_definition: `name` => ( `checksum_element` { , `checksum_element` } )
-   checksum_element: `name` | `name`'Size | `field_range`
-   field_range: `field_range_first` .. `field_range_last`
-   field_range_first: `name`'First | `name`'Last + 1
-   field_range_last: `name`'Last | `name`'First - 1
-   byteorder_aspect: Byte_Order => `byteorder_definition`
-   byteorder_definition: High_Order_First | Low_Order_First
+   checksum_aspect: "Checksum" "=>"
+                  :     "(" `checksum_definition`
+                  :       { "," `checksum_definition` } ")"
+   checksum_definition: `name` "=>"
+                      :   "(" `checksum_element`
+                      :     { "," `checksum_element` } ")"
+   checksum_element: `name`
+                   : | `name` "'" "Size"
+                   : | `field_range`
+   field_range: `field_range_first` ".." `field_range_last`
+   field_range_first: `name` "'" "First"
+                    : | `name` "'" "Last" "+" "1"
+   field_range_last: `name` "'" "Last"
+                   : | `name` "'" "First" "-" "1"
+   byteorder_aspect: "Byte_Order" "=>" `byteorder_definition`
+   byteorder_definition: "High_Order_First"
+                       : | "Low_Order_First"
 
 **Static Semantics**
 
@@ -197,7 +504,7 @@ If no size aspect is given, the field size is implicitly defined by the availabl
 Opaque fields and sequence fields must be byte aligned.
 The size of a message must be a multiple of 8 bit.
 
-A checksum aspect specifies which parts of a message is covered by a checksum.
+A checksum aspect specifies which parts of a message are covered by a checksum.
 The definition of the checksum calculation is not part of the specification.
 Code based on the message specification must provide a function which is able to verify a checksum using the specified checksum elements.
 A checksum element can be a field value, a field size or a range of fields.
@@ -254,9 +561,12 @@ A type refinement describes the relation of an opaque field in a message type to
 **Syntax**
 
 .. productionlist::
-   type_refinement: for refined_`type_name` use ( refined_field_`name` => message_`type_name` )
-                  :  [ if `condition` ]
-   qualified_name: `name` { :: `name` }
+   type_refinement: "for" refined_`qualified_name` "use"
+                  : "("
+                  : refined_field_`name`
+                  : "=>" message_`qualified_name`
+                  : ")"
+                  : [ "if" `bool_expression` ]
 
 **Static Semantics**
 
@@ -285,8 +595,8 @@ A type derivation enables the creation of a new message type based on an existin
 **Syntax**
 
 .. productionlist::
-   type_derivation: type `name` is new `base_type_name`
-   base_type_name: `qualified_name`
+   type_derivation: "type" `name` "is"
+                  : "new" base_type_`qualified_name`
 
 **Static Semantics**
 
@@ -311,7 +621,8 @@ A sequence type represents a list of similar elements.
 **Syntax**
 
 .. productionlist::
-   sequence_type: type `name` is sequence of element_`type_name`
+   sequence_type: "type" `name` "is" "sequence"
+                : "of" element_`qualified_name`
 
 **Static Semantics**
 
@@ -344,15 +655,14 @@ The main part of a session definition are the state definitions.
 **Syntax**
 
 .. productionlist::
-   session:
-          : generic
-          :  { `session_parameter` }
-          : session `name` is
-          :  { `session_declaration` }
-          : begin
-          :    `state`
-          :  { `state` }
-          : end `name`
+   session: "generic"
+          : { `session_parameter` }
+          : "session" `name` "is"
+          : { `session_declaration` }
+          : "begin"
+          : `state`
+          : { `state` }
+          : "end" `name`
 
 **Example**
 
@@ -393,7 +703,9 @@ Functions and channels can be defined as session parameters.
 **Syntax**
 
 .. productionlist::
-   session_parameter: ( `function_declaration` | `channel_declaration` ) ;
+   session_parameter: ( `function_declaration`
+                    : | `channel_declaration`
+                    : ) ";"
 
 Functions
 ^^^^^^^^^
@@ -406,15 +718,17 @@ Functions enable the execution of externally defined code.
 **Syntax**
 
 .. productionlist::
-   function_declaration: with function `name` [ ( `parameter` { , `parameter` } ) ]
+   function_declaration: "with" "function" `name`
+                       : [ `parameter_list` ]
+                       : "return" type_`qualified_name`
 
 **Static Semantics**
 
 Allowed parameter types:
 
--  Scalars
--  Definite messages
--  Opaque fields of messages
+- Scalars
+- Definite messages
+- Opaque fields of messages
 
 ..
     Allowed parameter types [§S-P-F-P]
@@ -464,8 +778,10 @@ Channels provide a way for communicating with other systems using messages.
 **Syntax**
 
 .. productionlist::
-   channel_declaration: `name` : Channel with `channel_aspect` { , `channel_aspect` }
-   channel_aspect: Readable | Writable
+   channel_declaration: `name` ":" "Channel" "with"
+                      : `channel_aspect`
+                      : { "," `channel_aspect` }
+   channel_aspect: "Readable" | "Writable"
 
 **Static Semantics**
 
@@ -494,7 +810,11 @@ Variables and renamings can be globally declared (i.e. for the scope of the com
 **Syntax**
 
 .. productionlist::
-   session_declaration: ( `variable_declaration` | `renaming_declaration` ) ;
+   session_declaration: ( `variable_declaration`
+                      : | `renaming_declaration`
+                      : ) ";"
+
+.. _variable-declaration:
 
 Variable Declaration
 ^^^^^^^^^^^^^^^^^^^^
@@ -507,7 +827,9 @@ A declared variable must have a type and can be optionally initialized using an 
 **Syntax**
 
 .. productionlist::
-   variable_declaration: variable_`name` : `type_name` [ := initialization_`expression` ]
+   variable_declaration: variable_`name`
+                       : ":" type_`qualified_name`
+                       : [ ":=" initialization_`expression` ]
 
 ..
     Types [§S-D-V-T]:
@@ -553,7 +875,10 @@ Renaming Declaration
 **Syntax**
 
 .. productionlist::
-   renaming_declaration: `name` : message_`type_name` renames message_variable_`name` . field_`name`
+   renaming_declaration: `name` ":" message_`qualified_name`
+                       : "renames"
+                       : message_variable_`name`
+                       : "." field_`name`
 
 **Example**
 
@@ -567,25 +892,30 @@ States
 
 ..
     States [§S-S]
+    State Declarations [§S-S-D]
+    Variable declarations [§S-S-D-V]
+    Renaming declarations [§S-S-D-R]
 
 A state defines the to be executed actions and the transitions to subsequent states.
+
+Variable declarations and renaming declarations in a state have a state-local scope, i.e., local declarations cannot be accessed from other states.
 
 **Syntax**
 
 .. productionlist::
-         state: state `name`
-              :  [ with `description_aspect` ]
-              : is
-              :  { `state_declaration` }
-              : begin
-              :  { `state_action` }
-              : transition
-              :  { `conditional_transition` }
-              :    `transition`
-              :[ exception
-              :     `transition` ]
-              :  end `name`
-         description_aspect: Desc => `string`
+   state: "state" `name`
+        : [ "with" `description_aspect` ]
+        : "is"
+        : { local_`session_declaration` }
+        : "begin"
+        : { `state_action` }
+        : "transition"
+        : { `conditional_transition` }
+        : `transition`
+        :[ "exception"
+        :    `transition` ]
+        : "end" `name` ";"
+   description_aspect: "Desc" "=>" `string`
 
 **Static Semantics**
 
@@ -598,51 +928,6 @@ An exception transition must be defined just in case any action might lead to a 
 - Insufficient memory for appending an element to a sequence or extending a sequence by another sequence
 
 Exception transitions are currently also used for other cases.
-This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
-
-**Dynamic Semantics**
-
-After entering a state the declarations and actions of the state are executed.
-If a non-recoverable error occurs, the execution is aborted and the state is changed based on the exception transition.
-When all action were executed successfully, the conditions of the transitions are checked in the given order.
-If a condition is fulfilled, the corresponding transition is taken to change the state.
-If no condition could be fulfilled or no conditional transitions were defined, the default transition is used.
-
-**Example**
-
-.. doc-check: rflx,state,6
-.. code:: rflx
-
-   state A
-      with Desc => "rfc1149.txt+51:4-52:9"
-   is
-      Z : Boolean := Y;
-      M : TLV::Message;
-   begin
-      X'Read (M);
-   transition
-      goto B
-         with Desc => "rfc1149.txt+45:4-47:8"
-         if Z = True and G (F) = True
-      goto A
-   end A
-
-State Declarations
-^^^^^^^^^^^^^^^^^^
-
-..
-    State Declarations [§S-S-D]
-    Variable declarations [§S-S-D-V]
-    Renaming declarations [§S-S-D-R]
-
-Variable declarations and renaming declarations in a state have a state-local scope, i.e., local declarations cannot be accessed from other states.
-
-**Syntax**
-
-.. productionlist::
-   state_declaration: ( `variable_declaration` | `renaming_declaration` ) ;
-
-**Static Semantics**
 
 A local declaration must not hide a global declaration.
 
@@ -674,6 +959,34 @@ A local declaration must not hide a global declaration.
     * Calls [§S-S-D-V-E-CL]
     * Conversions [§S-S-D-V-E-CV]
 
+
+**Dynamic Semantics**
+
+After entering a state the declarations and actions of the state are executed.
+If a non-recoverable error occurs, the execution is aborted and the state is changed based on the exception transition.
+When all action were executed successfully, the conditions of the transitions are checked in the given order.
+If a condition is fulfilled, the corresponding transition is taken to change the state.
+If no condition could be fulfilled or no conditional transitions were defined, the default transition is used.
+
+**Example**
+
+.. doc-check: rflx,state,6
+.. code:: rflx
+
+   state A
+      with Desc => "rfc1149.txt+51:4-52:9"
+   is
+      Z : Boolean := Y;
+      M : TLV::Message;
+   begin
+      X'Read (M);
+   transition
+      goto B
+         with Desc => "rfc1149.txt+45:4-47:8"
+         if Z = True and G (F) = True
+      goto A
+   end A
+
 State Transitions
 ^^^^^^^^^^^^^^^^^
 
@@ -689,9 +1002,10 @@ The transition target must be either a state name or `null`, which represents th
 
 .. productionlist::
    conditional_transition: `transition`
-                         :    if conditional_`expression`
-   transition: goto state_`name`
-             :  [ with `description_aspect` ]
+                         : "if"
+                         : conditional_`ext_bool_expression`
+   transition: "goto" state_`name`
+             : [ "with" `description_aspect` ]
 
 ..
     Condition expressions:
@@ -709,7 +1023,6 @@ The transition target must be either a state name or `null`, which represents th
     * Head Attributes [§S-S-T-HAT]
     * Has_Data Attributes [§S-S-T-HDAT]
     * Field Valid Attributes [§S-S-T-FVAT]
-    * Field Present Attributes [§S-S-T-FPAT]
     * Selected Expressions [§S-S-T-S]
     * List Comprehensions [§S-S-T-LC]
     * Quantified Expressions [§S-S-T-Q]
@@ -736,7 +1049,14 @@ The state actions are executed after entering a state.
 **Syntax**
 
 .. productionlist::
-   state_action: ( `assignment` | `append` | `extend` | `reset` | `read` | `write` ) ;
+   state_action: ( `message_field_assignment`
+               : | `assignment`
+               : | `append`
+               : | `extend`
+               : | `reset`
+               : | `read`
+               : | `write`
+               : ) ";"
 
 Assignment Statements
 """""""""""""""""""""
@@ -749,7 +1069,7 @@ An assignment sets the value of variable.
 **Syntax**
 
 .. productionlist::
-   assignment: variable_`name` := `expression`
+   assignment: variable_`name` ":=" `expression`
 
 ..
     Expressions:
@@ -793,7 +1113,8 @@ A message field assignment sets the value of a message field.
 **Syntax**
 
 .. productionlist::
-   message_field_assignment: variable_`name`.field_`name` := `expression`
+   message_field_assignment: variable_`name` "." field_`name`
+                           : ":=" `expression`
 
 ..
     Expressions:
@@ -839,7 +1160,7 @@ An element is added to the end of a sequence using the Append attribute.
 **Syntax**
 
 .. productionlist::
-   append: sequence_`name`'Append ( `expression` )
+   append: sequence_`name` "'" "Append" "(" `expression` ")"
 
 ..
     Expressions:
@@ -883,7 +1204,7 @@ The Extend attributes adds a sequence of elements to the end of a sequence.
 **Syntax**
 
 .. productionlist::
-   extend: sequence_`name`'Extend ( `expression` )
+   extend: sequence_`name` "'" "Extend" "(" `expression` ")"
 
 ..
     Expressions:
@@ -927,7 +1248,7 @@ The state of a message or sequence can be cleared using the Reset attribute.
 **Syntax**
 
 .. productionlist::
-   reset: `name`'Reset [ ( `named_argument_list` ) ]
+   reset: `name` "'" "Reset" [ "(" `named_argument_list` ")" ]
 
 ..
     Expressions:
@@ -975,7 +1296,7 @@ The read attribute statement is used to retrieve a message from a channel.
 **Syntax**
 
 .. productionlist::
-   read: channel_`name`'Read ( `expression` )
+   read: channel_`name` "'" "Read" "(" `expression` ")"
 
 ..
     Expressions:
@@ -1015,7 +1336,7 @@ A message can be sent through a channel using a write attribute statement.
 **Syntax**
 
 .. productionlist::
-   write: channel_`name`'Write ( `expression` )
+   write: channel_`name` "'" "Write" "(" `expression` ")"
 
 ..
     Expressions:
@@ -1040,7 +1361,6 @@ A message can be sent through a channel using a write attribute statement.
 **Dynamic Semantics**
 
 Writing an invalid message leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
@@ -1058,23 +1378,18 @@ Expressions
 **Syntax**
 
 .. productionlist::
-   expression: `literal` | `variable` | `mathematical_expression` | `boolean_expression` | `message_aggregate` | `aggregate` | `attribute_reference` | `selected` | `comprehension` | `quantified_expression` | `call` | `conversion` | `case_expression`
+   expression: `math_expression`
+             : | `ext_bool_expression`
+             : | `message_aggregate`
+             : | `attribute_reference`
+             : | `selected`
+             : | `seq_expression`
+             : | `comprehension`
+             : | `conversion`
+             : | `call`
+             : | `case_expression`
+             : | `name`
 
-Literals
-^^^^^^^^
-
-**Syntax**
-
-.. productionlist::
-   literal: `name` | `number`
-
-Variables
-^^^^^^^^^
-
-**Syntax**
-
-.. productionlist::
-   variable: `name`
 
 Message Aggregates
 ^^^^^^^^^^^^^^^^^^
@@ -1082,16 +1397,16 @@ Message Aggregates
 **Syntax**
 
 .. productionlist::
-   message_aggregate: message_`type_name`'( `message_aggregate_association_list` )
-   message_aggregate_association_list: `named_argument_list` | null message
-   named_argument: parameter_`name` => `expression`
-   named_argument_list: `named_argument` { , `named_argument` }
+   message_aggregate: message_`qualified_name` "'"
+                    : "("
+                    : `message_aggregate_association_list`
+                    : ")"
+   message_aggregate_association_list: `named_argument_list`
+                                     : | "null" "message"
 
 **Dynamic Semantics**
 
 An invalid condition during message creation leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
-
 Insufficient memory during the message creation leads to an exception transition.
 
 **Example**
@@ -1120,7 +1435,7 @@ An aggregate is a collection of elements.
 **Syntax**
 
 .. productionlist::
-   aggregate: [ `number` { , `number` } ]
+   aggregate: "[" [ `number` { "," `number` } ] "]"
 
 ..
     Types [§S-E-A-T]:
@@ -1169,34 +1484,11 @@ Attribute Expressions
 **Syntax**
 
 .. productionlist::
-   attribute_reference: `expression`'`attribute_designator`
-   attribute_designator: Valid | Opaque | Head | Has_Data
+   attribute_reference: `expression`
+                      : "'" `attribute_designator`
+   attribute_designator: "Opaque" | "Head"
 
 **Static Semantics**
-
-The Valid attribute allows to determine the validity of a message or sequence.
-
-..
-    Valid attribute [§S-E-AT-V]
-
-    Expressions:
-
-    * Mathematical Expressions [§S-E-AT-V-ME]
-    * Boolean Expressions [§S-E-AT-V-BE]
-    * Literals [§S-E-AT-V-L]
-    * Variables [§S-E-AT-V-V]
-    * Message Aggregates [§S-E-AT-V-MA]
-    * Aggregates [§S-E-AT-V-A]
-    * Valid Attributes [§S-E-AT-V-VAT]
-    * Opaque Attributes [§S-E-AT-V-OAT]
-    * Size Attributes [§S-E-AT-V-SAT]
-    * Head Attributes [§S-E-AT-V-HAT]
-    * Has_Data Attributes [§S-E-AT-V-HDAT]
-    * Selected Expressions [§S-E-AT-V-S]
-    * List Comprehensions [§S-E-AT-V-LC]
-    * Quantified Expressions [§S-E-AT-V-Q]
-    * Calls [§S-E-AT-V-CL]
-    * Conversions [§S-E-AT-V-CV]
 
 The byte representation of a message can be retrieved using the Opaque attribute.
 
@@ -1221,7 +1513,7 @@ The byte representation of a message can be retrieved using the Opaque attribute
     * Calls [§S-E-AT-O-CL]
     * Conversions [§S-E-AT-O-CV]
 
-The Head attribute allows to get the first element of a sequence.
+The Head attribute returns the first element of a sequence.
 
 ..
     Head attribute [§S-E-AT-H]
@@ -1250,41 +1542,16 @@ The Head attribute allows to get the first element of a sequence.
     * Calls [§S-E-AT-H-CL]
     * Conversions [§S-E-AT-H-CV]
 
-Whether a channel contains data can be checked with the Has_Data attribute.
-
-..
-    Has_Data attribute [§S-E-AT-HD]
-
-    Expressions:
-
-    * Mathematical Expressions [§S-E-AT-HD-ME]
-    * Boolean Expressions [§S-E-AT-HD-BE]
-    * Literals [§S-E-AT-HD-L]
-    * Variables [§S-E-AT-HD-V]
-    * Message Aggregates [§S-E-AT-HD-MA]
-    * Aggregates [§S-E-AT-HD-A]
-    * Valid Attributes [§S-E-AT-HD-VAT]
-    * Opaque Attributes [§S-E-AT-HD-OAT]
-    * Size Attributes [§S-E-AT-HD-SAT]
-    * Head Attributes [§S-E-AT-HD-HAT]
-    * Has_Data Attributes [§S-E-AT-HD-HDAT]
-    * Selected Expressions [§S-E-AT-HD-S]
-    * List Comprehensions [§S-E-AT-HD-LC]
-    * Quantified Expressions [§S-E-AT-HD-Q]
-    * Calls [§S-E-AT-HD-CL]
-    * Conversions [§S-E-AT-HD-CV]
-
 **Dynamic Semantics**
 
 The use of the Opaque attribute on an invalid message or the use of the Head attribute on an empty sequence leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
 .. doc-check: rflx,extended_suffix
 .. code:: rflx
 
-   Message'Valid
+   Message'Opaque
 
 Selected Expressions
 ^^^^^^^^^^^^^^^^^^^^
@@ -1297,7 +1564,7 @@ The Selected expression is used to get a value of a message field.
 **Syntax**
 
 .. productionlist::
-   selected: message_`expression` . field_`name`
+   selected: message_`expression` "." field_`name`
 
 ..
     Expressions:
@@ -1322,7 +1589,6 @@ The Selected expression is used to get a value of a message field.
 **Dynamic Semantics**
 
 Accesses to message fields that were detected as invalid during parsing lead to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
@@ -1337,12 +1603,16 @@ List Comprehensions
 ..
     List Comprehensions [§S-E-LC]
 
-A list comprehension provides a way to create a new sequence based on an exisiting sequence.
+A list comprehension provides a way to create a new sequence based on an existing sequence.
 
 **Syntax**
 
 .. productionlist::
-   comprehension: [ for `name` in iterable_`expression` => selector_`expression` when condition_`expression` ]
+   comprehension: "["
+                : "for" `name` "in" iterable_`expression`
+                : [ "if" condition_`ext_bool_expression` ]
+                : "=>" selector_`expression`
+                : "]"
 
 ..
     * Source: Scalar sequence [§S-E-LC-SSS]
@@ -1361,7 +1631,6 @@ A list comprehension provides a way to create a new sequence based on an exisiti
 **Dynamic Semantics**
 
 An access to an invalid element in iterable `expression <#grammar-token-expression>`_ leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
@@ -1381,8 +1650,11 @@ Quantified expressions enable reasoning about properties of sequences.
 **Syntax**
 
 .. productionlist::
-   quantified_expression: for `quantifier` in iterable_`expression` => predicate_`expression`
-   quantifier: all | some
+   quantified_expression: "for" `quantifier` `name`
+                        : "in" iterable_`expression`
+                        : "=>"
+                        : predicate_`ext_bool_expression`
+   quantifier: "all" | "some"
 
 ..
     Iterable expressions [§S-E-Q-I]:
@@ -1441,7 +1713,9 @@ All functions which are declared in the session parameters can be called.
 **Syntax**
 
 .. productionlist::
-   call: `name` [ ( argument_`expression` { , argument_`expression` } ) ]
+   call: `qualified_name`
+       : [ "(" argument_`expression`
+       :   { "," argument_`expression` } ")" ]
 
 ..
     Argument expressions:
@@ -1482,7 +1756,8 @@ An opaque field of a message can be converted to a message.
 **Syntax**
 
 .. productionlist::
-   conversion: message_`type_name` ( message_`expression` . field_`name` )
+   conversion: message_`qualified_name`
+             : "(" message_`expression` "." field_`name` ")"
 
 **Static Semantics**
 
@@ -1511,7 +1786,6 @@ A conversion is only allowed if a refinement for the message field and the inten
 **Dynamic Semantics**
 
 An invalid condition of a refinement leads to an exception transition.
-This behavior will change in the future (cf. `#569 <https://github.com/AdaCore/RecordFlux/issues/569>`_).
 
 **Example**
 
@@ -1531,11 +1805,13 @@ A `case expression <#grammar-token-case_expression>`_ selects one of several alt
 **Syntax**
 
 .. productionlist::
-   case_expression: ( case selecting_`expression`
-                  : is `case_expression_alternative` { ,
-                  : `case_expression_alternative` } )
-   case_expression_alternative: when `discrete_choice_list` => dependent_`expression`
-   discrete_choice_list: `discrete_choice` { | `discrete_choice` }
+   case_expression: "(" "case" selecting_`expression`
+                  : "is" `case_expression_alternative` { ","
+                  : `case_expression_alternative` } ")"
+   case_expression_alternative: "when" `discrete_choice_list`
+                              : "=>" dependent_`expression`
+   discrete_choice_list: `discrete_choice`
+                       : { "|" `discrete_choice` }
    discrete_choice: `number` | `qualified_name`
 
 **Static Semantics**
@@ -1561,10 +1837,16 @@ A package is used to structure a specification.
 **Syntax**
 
 .. productionlist::
-   package: package `name` is
-          :    { `basic_declaration` }
-          : end `name` ;
-   basic_declaration: ( `integer_type` | `enumeration_type` | `message_type` | `type_refinement` | `type_derivation` | `sequence_type` | `session` ) ;
+   package: "package" `name` "is"
+          : { `basic_declaration` }
+          : "end" `name` ";"
+   basic_declaration: ( `integer_type`
+                    :  | `enumeration_type`
+                    :  | `message_type`
+                    :  | `type_refinement`
+                    :  | `type_derivation`
+                    :  | `sequence_type`
+                    :  | `session` ) ";"
 
 **Static Semantics**
 
@@ -1647,7 +1929,7 @@ The context clause is used to specify the relation to other packages and consist
 **Syntax**
 
 .. productionlist::
-   context: { with package_`name` ; }
+   context: { "with" package_`name` ";" }
 
 **Static Semantics**
 
@@ -1671,8 +1953,7 @@ The file name must match the package name in lower case characters.
 **Syntax**
 
 .. productionlist::
-   file: `context`
-       : `package`
+   file: `context` `package`
 
 **Example**
 
@@ -1690,3 +1971,6 @@ File: ``in_ethernet.rflx``.
          if Ether_Type = Ethernet::ET_IPv4;
 
    end In_Ethernet;
+
+
+.. _non_terminal:
