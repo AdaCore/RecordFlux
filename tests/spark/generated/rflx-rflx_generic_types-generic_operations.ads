@@ -24,7 +24,7 @@ is
    use type U64;
 
    function Extract
-      (Buffer : Bytes_Ptr;
+      (Buffer : Bytes;
        First  : Index;
        Last   : Index;
        Off    : Offset;
@@ -32,8 +32,7 @@ is
        BO     : Byte_Order) return U64
    with
      Pre =>
-       (Buffer /= null
-        and then First >= Buffer'First
+       (First >= Buffer'First
         and then Last <= Buffer'Last
         and then Size in 1 .. U64'Size
         and then First <= Last
@@ -45,7 +44,7 @@ is
        (if Size < U64'Size then Extract'Result < 2**Size);
 
    function Extract
-      (Buffer : Bytes_Ptr;
+      (Buffer : Bytes;
        First  : Index;
        Last   : Index;
        Off    : Offset;
@@ -53,8 +52,7 @@ is
        BO     : Byte_Order) return Base_Integer
    with
      Pre =>
-       (Buffer /= null
-        and then First >= Buffer'First
+       (First >= Buffer'First
         and then Last <= Buffer'Last
         and then Size in 1 .. 63
         and then First <= Last
@@ -67,7 +65,7 @@ is
 
    procedure Insert
       (Val    : U64;
-       Buffer : Bytes_Ptr;
+       Buffer : in out Bytes;
        First  : Index;
        Last   : Index;
        Off    : Offset;
@@ -75,8 +73,7 @@ is
        BO     : Byte_Order)
    with
      Pre =>
-       (Buffer /= null
-        and then First >= Buffer'First
+       (First >= Buffer'First
         and then Last <= Buffer'Last
         and then Size in 1 .. U64'Size
         and then Fits_Into (Val, Size)
@@ -84,11 +81,11 @@ is
         and then Last - First <= Index'Last - 1
         and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)),
      Post =>
-       (Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last);
+       (Buffer'First = Buffer'Old'First and Buffer'Last = Buffer'Old'Last);
 
    procedure Insert
       (Val    : Base_Integer;
-       Buffer : Bytes_Ptr;
+       Buffer : in out Bytes;
        First  : Index;
        Last   : Index;
        Off    : Offset;
@@ -96,8 +93,7 @@ is
        BO     : Byte_Order)
    with
      Pre =>
-       (Buffer /= null
-        and then First >= Buffer'First
+       (First >= Buffer'First
         and then Last <= Buffer'Last
         and then Size in 1 .. 63
         and then Fits_Into (Val, Size)
@@ -105,6 +101,6 @@ is
         and then Last - First <= Index'Last - 1
         and then Length ((Offset'Pos (Off) + Size - 1) / Byte'Size) < Length (Last - First + 1)),
      Post =>
-       (Buffer'First = Buffer.all'Old'First and Buffer'Last = Buffer.all'Old'Last);
+       (Buffer'First = Buffer'Old'First and Buffer'Last = Buffer'Old'Last);
 
 end RFLX.RFLX_Generic_Types.Generic_Operations;

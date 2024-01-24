@@ -713,7 +713,7 @@ class SerializerGenerator:
                             const.TYPES_OPERATIONS * "Insert",
                             [
                                 Variable("Val"),
-                                Variable("Ctx.Buffer"),
+                                Variable("Ctx.Buffer.all"),
                                 Variable("Buffer_First"),
                                 Variable("Buffer_Last"),
                                 Variable("Offset"),

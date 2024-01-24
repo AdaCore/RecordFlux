@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--no-caching` option to `rflx` (eng/recordflux/RecordFlux#1488)
 - Model verification caching to validator
 
+### Changed
+
+- Insert/Extract functions now accept Byte array instead of access type (eng/recordflux/RecordFlux#1515)
+
 ### Fixed
 
 - Various inaccuracies in LRM (eng/recordflux/RecordFlux#958)

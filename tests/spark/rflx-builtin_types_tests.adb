@@ -75,7 +75,7 @@ package body RFLX.Builtin_Types_Tests is
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First => 170);
+      Buffer : constant Bytes := (Index'First => 170);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'First, Buffer'Last, Dynamic_Offset (0), 1,
@@ -103,14 +103,13 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.High_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (1), "Invalid conversion with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_1;
 
    procedure Test_Extract_Modular_Integer_8 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(255, 255, 0);
+      Buffer : constant Bytes := (255, 255, 0);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'Last, Buffer'Last, 0, 8,
@@ -141,14 +140,13 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.High_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (255), "Invalid conversion with offset 0");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_8;
 
    procedure Test_Extract_Modular_Integer_13 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(255, 255, 0);
+      Buffer : constant Bytes := (255, 255, 0);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'First + 1, Buffer'Last, 0, 13,
@@ -176,14 +174,13 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.High_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (8190), "Invalid conversion with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_13;
 
    procedure Test_Extract_Modular_Integer_62 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(255, 255, 255, 255, 255, 255, 255, 255, 0);
+      Buffer : constant Bytes := (255, 255, 255, 255, 255, 255, 255, 255, 0);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'First + 1, Buffer'Last, 0, 62,
@@ -214,14 +211,13 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.High_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (4611686018427387903), "Invalid conversion with offset 0");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_62;
 
    procedure Test_Extract_Modular_Integer_64 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(255, 255, 255, 255, 255, 255, 255, 255, 0);
+      Buffer : constant Bytes := (255, 255, 255, 255, 255, 255, 255, 255, 0);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'First + 1, Buffer'Last, 0, 64,
@@ -252,14 +248,13 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.High_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (18446744073709551615), "Invalid conversion with offset 0");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_64;
 
    procedure Test_Extract_Modular_Integer_1_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First => 170);
+      Buffer : constant Bytes := (Index'First => 170);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'First, Buffer'Last, Dynamic_Offset (0), 1,
@@ -287,14 +282,13 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.Low_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (1), "Invalid conversion with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_1_LE;
 
    procedure Test_Extract_Modular_Integer_8_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(255, 255, 0);
+      Buffer : constant Bytes := (255, 255, 0);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'Last, Buffer'Last, 0, 8,
@@ -325,14 +319,13 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.Low_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (255), "Invalid conversion with offset 0");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_8_LE;
 
    procedure Test_Extract_Modular_Integer_13_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(255, 255, 0);
+      Buffer : constant Bytes := (255, 255, 0);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'First + 1, Buffer'Last, 0, 13,
@@ -360,14 +353,13 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.Low_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (4095), "Invalid conversion with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_13_LE;
 
    procedure Test_Extract_Modular_Integer_62_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(255, 255, 255, 255, 255, 255, 255, 255, 0);
+      Buffer : constant Bytes := (255, 255, 255, 255, 255, 255, 255, 255, 0);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'First + 1, Buffer'Last, 0, 62,
@@ -398,14 +390,13 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.Low_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (4611686018427387903), "Invalid conversion with offset 0");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_62_LE;
 
    procedure Test_Extract_Modular_Integer_64_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(255, 255, 255, 255, 255, 255, 255, 255, 0);
+      Buffer : constant Bytes := (255, 255, 255, 255, 255, 255, 255, 255, 0);
       R : RFLX_Types.U64;
    begin
       R := RFLX_Types.Operations.Extract (Buffer, Buffer'First + 1, Buffer'Last, 0, 64,
@@ -436,771 +427,762 @@ package body RFLX.Builtin_Types_Tests is
                                           RFLX_Types.Low_Order_First);
       Assert (R'Image, RFLX_Types.U64'Image (18446744073709551615), "Invalid conversion with offset 0");
 
-      RFLX_Types.Free (Buffer);
    end Test_Extract_Modular_Integer_64_LE;
 
    procedure Test_Insert_Modular_Integer_1 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 2 => 0);
+      Buffer : Bytes := (Index'First .. Index'First + 2 => 0);
    begin
-      Buffer.all := (0, 0, 0);
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (0), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (1, 0, 0), "Invalid insertion in zero-initialized buffer with offset 0");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (1, 0, 0), "Invalid insertion in zero-initialized buffer with offset 0");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (1), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (2, 0, 0), "Invalid insertion in zero-initialized buffer with offset 1");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (2, 0, 0), "Invalid insertion in zero-initialized buffer with offset 1");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (2), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (4, 0, 0), "Invalid insertion in zero-initialized buffer with offset 2");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (4, 0, 0), "Invalid insertion in zero-initialized buffer with offset 2");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (3), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (8, 0, 0), "Invalid insertion in zero-initialized buffer with offset 3");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (8, 0, 0), "Invalid insertion in zero-initialized buffer with offset 3");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (4), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (16, 0, 0), "Invalid insertion in zero-initialized buffer with offset 4");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (16, 0, 0), "Invalid insertion in zero-initialized buffer with offset 4");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (5), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (32, 0, 0), "Invalid insertion in zero-initialized buffer with offset 5");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (32, 0, 0), "Invalid insertion in zero-initialized buffer with offset 5");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (6), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (64, 0, 0), "Invalid insertion in zero-initialized buffer with offset 6");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (64, 0, 0), "Invalid insertion in zero-initialized buffer with offset 6");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (7), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (128, 0, 0), "Invalid insertion in zero-initialized buffer with offset 7");
+      Assert (Buffer, (128, 0, 0), "Invalid insertion in zero-initialized buffer with offset 7");
 
-      Buffer.all := (255, 255, 255);
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (0), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (254, 255, 255), "Invalid insertion in filled buffer with offset 0");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (254, 255, 255), "Invalid insertion in filled buffer with offset 0");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (1), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (253, 255, 255), "Invalid insertion in filled buffer with offset 1");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (253, 255, 255), "Invalid insertion in filled buffer with offset 1");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (2), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (251, 255, 255), "Invalid insertion in filled buffer with offset 2");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (251, 255, 255), "Invalid insertion in filled buffer with offset 2");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (3), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (247, 255, 255), "Invalid insertion in filled buffer with offset 3");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (247, 255, 255), "Invalid insertion in filled buffer with offset 3");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (4), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (239, 255, 255), "Invalid insertion in filled buffer with offset 4");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (239, 255, 255), "Invalid insertion in filled buffer with offset 4");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (5), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (223, 255, 255), "Invalid insertion in filled buffer with offset 5");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (223, 255, 255), "Invalid insertion in filled buffer with offset 5");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (6), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (191, 255, 255), "Invalid insertion in filled buffer with offset 6");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (191, 255, 255), "Invalid insertion in filled buffer with offset 6");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (7), 1, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (127, 255, 255), "Invalid insertion in filled buffer with offset 7");
+      Assert (Buffer, (127, 255, 255), "Invalid insertion in filled buffer with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Insert_Modular_Integer_1;
 
    procedure Test_Insert_Modular_Integer_2 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 2 => 0);
+      Buffer : Bytes := (Index'First .. Index'First + 2 => 0);
    begin
-      Buffer.all := (0, 0, 0);
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First,
                                     Buffer'First, 0, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (1, 0, 0), "Invalid insertion in zero-initialized buffer with offset 0");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (1, 0, 0), "Invalid insertion in zero-initialized buffer with offset 0");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First,
                                     Buffer'First, 1, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (2, 0, 0), "Invalid insertion in zero-initialized buffer with offset 1");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (2, 0, 0), "Invalid insertion in zero-initialized buffer with offset 1");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First,
                                     Buffer'First, 2, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (4, 0, 0), "Invalid insertion in zero-initialized buffer with offset 2");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (4, 0, 0), "Invalid insertion in zero-initialized buffer with offset 2");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First,
                                     Buffer'First, 3, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (8, 0, 0), "Invalid insertion in zero-initialized buffer with offset 3");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (8, 0, 0), "Invalid insertion in zero-initialized buffer with offset 3");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First,
                                     Buffer'First, 4, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (16, 0, 0), "Invalid insertion in zero-initialized buffer with offset 4");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (16, 0, 0), "Invalid insertion in zero-initialized buffer with offset 4");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First,
                                     Buffer'First, 5, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (32, 0, 0), "Invalid insertion in zero-initialized buffer with offset 5");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (32, 0, 0), "Invalid insertion in zero-initialized buffer with offset 5");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First,
                                     Buffer'First, 6, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (64, 0, 0), "Invalid insertion in zero-initialized buffer with offset 6");
+      Assert (Buffer, (64, 0, 0), "Invalid insertion in zero-initialized buffer with offset 6");
 
-      Buffer.all := (255, 255, 255);
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First,
                                     Buffer'First, 0, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (254, 255, 255), "Invalid insertion in filled buffer with offset 0");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (254, 255, 255), "Invalid insertion in filled buffer with offset 0");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First,
                                     Buffer'First, 1, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (253, 255, 255), "Invalid insertion in filled buffer with offset 1");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (253, 255, 255), "Invalid insertion in filled buffer with offset 1");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First,
                                     Buffer'First, 2, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (251, 255, 255), "Invalid insertion in filled buffer with offset 2");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (251, 255, 255), "Invalid insertion in filled buffer with offset 2");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First,
                                     Buffer'First, 3, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (247, 255, 255), "Invalid insertion in filled buffer with offset 3");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (247, 255, 255), "Invalid insertion in filled buffer with offset 3");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First,
                                     Buffer'First, 4, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (239, 255, 255), "Invalid insertion in filled buffer with offset 4");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (239, 255, 255), "Invalid insertion in filled buffer with offset 4");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First,
                                     Buffer'First, 5, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (223, 255, 255), "Invalid insertion in filled buffer with offset 5");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (223, 255, 255), "Invalid insertion in filled buffer with offset 5");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First,
                                     Buffer'First, 6, 2, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (191, 255, 255), "Invalid insertion in filled buffer with offset 6");
+      Assert (Buffer, (191, 255, 255), "Invalid insertion in filled buffer with offset 6");
 
-      RFLX_Types.Free (Buffer);
    end Test_Insert_Modular_Integer_2;
 
    procedure Test_Insert_Modular_Integer_13 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 2 => 0);
+      Buffer : Bytes := (Index'First .. Index'First + 2 => 0);
    begin
-      Buffer.all := (0, 0, 0);
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1,
                                     Buffer'Last, 0, 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 21, 85), "Invalid insertion in zero-initialized buffer with offset 0");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 21, 85), "Invalid insertion in zero-initialized buffer with offset 0");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1,
                                     Buffer'Last, 1, 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 42, 170), "Invalid insertion in zero-initialized buffer with offset 1");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 42, 170), "Invalid insertion in zero-initialized buffer with offset 1");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1,
                                     Buffer'Last, 2, 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 85, 84), "Invalid insertion in zero-initialized buffer with offset 2");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 85, 84), "Invalid insertion in zero-initialized buffer with offset 2");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1,
                                     Buffer'Last, 3, 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 170, 168), "Invalid insertion in zero-initialized buffer with offset 3");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 170, 168), "Invalid insertion in zero-initialized buffer with offset 3");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (4), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (1, 85, 80), "Invalid insertion in zero-initialized buffer with offset 4");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (1, 85, 80), "Invalid insertion in zero-initialized buffer with offset 4");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (5), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (2, 170, 160), "Invalid insertion in zero-initialized buffer with offset 5");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (2, 170, 160), "Invalid insertion in zero-initialized buffer with offset 5");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (6), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (5, 85, 64), "Invalid insertion in zero-initialized buffer with offset 6");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (5, 85, 64), "Invalid insertion in zero-initialized buffer with offset 6");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (7), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (10, 170, 128), "Invalid insertion in zero-initialized buffer with offset 7");
+      Assert (Buffer, (10, 170, 128), "Invalid insertion in zero-initialized buffer with offset 7");
 
-      Buffer.all := (255, 255, 255);
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1,
                                     Buffer'Last, 0, 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (255, 245, 85), "Invalid insertion in filled buffer with offset 0");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 245, 85), "Invalid insertion in filled buffer with offset 0");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1,
                                     Buffer'Last, 1, 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (255, 234, 171), "Invalid insertion in filled buffer with offset 1");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 234, 171), "Invalid insertion in filled buffer with offset 1");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1,
                                     Buffer'Last, 2, 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (255, 213, 87), "Invalid insertion in filled buffer with offset 2");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 213, 87), "Invalid insertion in filled buffer with offset 2");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1,
                                     Buffer'Last, 3, 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (255, 170, 175), "Invalid insertion in filled buffer with offset 3");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 170, 175), "Invalid insertion in filled buffer with offset 3");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (4), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (255, 85, 95), "Invalid insertion in filled buffer with offset 4");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 85, 95), "Invalid insertion in filled buffer with offset 4");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (5), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (254, 170, 191), "Invalid insertion in filled buffer with offset 5");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (254, 170, 191), "Invalid insertion in filled buffer with offset 5");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (6), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (253, 85, 127), "Invalid insertion in filled buffer with offset 6");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (253, 85, 127), "Invalid insertion in filled buffer with offset 6");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (7), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (250, 170, 255), "Invalid insertion in filled buffer with offset 7");
+      Assert (Buffer, (250, 170, 255), "Invalid insertion in filled buffer with offset 7");
 
-      Buffer.all := (0, 0, 0);
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (0), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 0, 255), "Invalid insertion of 0000011111111 with offset 0");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 0, 255), "Invalid insertion of 0000011111111 with offset 0");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (1), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 1, 254), "Invalid insertion of 0000011111111 with offset 1");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 1, 254), "Invalid insertion of 0000011111111 with offset 1");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (2), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 3, 252), "Invalid insertion of 0000011111111 with offset 2");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 3, 252), "Invalid insertion of 0000011111111 with offset 2");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (3), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 7, 248), "Invalid insertion of 0000011111111 with offset 3");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 7, 248), "Invalid insertion of 0000011111111 with offset 3");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (4), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 15, 240), "Invalid insertion of 0000011111111 with offset 4");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 15, 240), "Invalid insertion of 0000011111111 with offset 4");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (5), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 31, 224), "Invalid insertion of 0000011111111 with offset 5");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 31, 224), "Invalid insertion of 0000011111111 with offset 5");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (6), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 63, 192), "Invalid insertion of 0000011111111 with offset 6");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 63, 192), "Invalid insertion of 0000011111111 with offset 6");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First,
                                     Buffer'Last, Dynamic_Offset (7), 13, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 127, 128), "Invalid insertion of 0000011111111 with offset 7");
+      Assert (Buffer, (0, 127, 128), "Invalid insertion of 0000011111111 with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Insert_Modular_Integer_13;
 
    procedure Test_Insert_Modular_Integer_64 (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 8 => 0);
+      Buffer : Bytes := (Index'First .. Index'First + 8 => 0);
    begin
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer, Buffer'First + 1, Buffer'Last,
                                     0, 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 170, 170, 170, 170, 170, 170, 170, 170),
+      Assert (Buffer, (0, 170, 170, 170, 170, 170, 170, 170, 170),
               "Invalid insertion in zero-initialized buffer with offset 0");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (1), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (1, 85, 85, 85, 85, 85, 85, 85, 84),
+      Assert (Buffer, (1, 85, 85, 85, 85, 85, 85, 85, 84),
               "Invalid insertion in zero-initialized buffer with offset 1");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (2), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (2, 170, 170, 170, 170, 170, 170, 170, 168),
+      Assert (Buffer, (2, 170, 170, 170, 170, 170, 170, 170, 168),
               "Invalid insertion in zero-initialized buffer with offset 2");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (3), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (5, 85, 85, 85, 85, 85, 85, 85, 80),
+      Assert (Buffer, (5, 85, 85, 85, 85, 85, 85, 85, 80),
               "Invalid insertion in zero-initialized buffer with offset 3");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (4), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (10, 170, 170, 170, 170, 170, 170, 170, 160),
+      Assert (Buffer, (10, 170, 170, 170, 170, 170, 170, 170, 160),
               "Invalid insertion in zero-initialized buffer with offset 4");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (5), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (21, 85, 85, 85, 85, 85, 85, 85, 64),
+      Assert (Buffer, (21, 85, 85, 85, 85, 85, 85, 85, 64),
               "Invalid insertion in zero-initialized buffer with offset 5");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (6), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (42, 170, 170, 170, 170, 170, 170, 170, 128),
+      Assert (Buffer, (42, 170, 170, 170, 170, 170, 170, 170, 128),
               "Invalid insertion in zero-initialized buffer with offset 6");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (7), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (85, 85, 85, 85, 85, 85, 85, 85, 0),
+      Assert (Buffer, (85, 85, 85, 85, 85, 85, 85, 85, 0),
               "Invalid insertion in zero-initialized buffer with offset 7");
 
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First + 1, Buffer'Last, 0, 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (255, 170, 170, 170, 170, 170, 170, 170, 170),
+      Assert (Buffer, (255, 170, 170, 170, 170, 170, 170, 170, 170),
               "Invalid insertion in filled buffer with offset 0");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (1), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (255, 85, 85, 85, 85, 85, 85, 85, 85),
+      Assert (Buffer, (255, 85, 85, 85, 85, 85, 85, 85, 85),
               "Invalid insertion in filled buffer with offset 1");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (2), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (254, 170, 170, 170, 170, 170, 170, 170, 171),
+      Assert (Buffer, (254, 170, 170, 170, 170, 170, 170, 170, 171),
               "Invalid insertion in filled buffer with offset 2");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (3), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (253, 85, 85, 85, 85, 85, 85, 85, 87),
+      Assert (Buffer, (253, 85, 85, 85, 85, 85, 85, 85, 87),
               "Invalid insertion in filled buffer with offset 3");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (4), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (250, 170, 170, 170, 170, 170, 170, 170, 175),
+      Assert (Buffer, (250, 170, 170, 170, 170, 170, 170, 170, 175),
               "Invalid insertion in filled buffer with offset 4");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (5), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (245, 85, 85, 85, 85, 85, 85, 85, 95),
+      Assert (Buffer, (245, 85, 85, 85, 85, 85, 85, 85, 95),
               "Invalid insertion in filled buffer with offset 5");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (6), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (234, 170, 170, 170, 170, 170, 170, 170, 191),
+      Assert (Buffer, (234, 170, 170, 170, 170, 170, 170, 170, 191),
               "Invalid insertion in filled buffer with offset 6");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (7), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (213, 85, 85, 85, 85, 85, 85, 85, 127),
+      Assert (Buffer, (213, 85, 85, 85, 85, 85, 85, 85, 127),
               "Invalid insertion in filled buffer with offset 7");
 
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (0), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 0, 0, 0, 0, 255, 255, 255, 255),
+      Assert (Buffer, (0, 0, 0, 0, 0, 255, 255, 255, 255),
               "Invalid insertion off one-sided pattern with offset 0");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (1), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 0, 0, 0, 1, 255, 255, 255, 254),
+      Assert (Buffer, (0, 0, 0, 0, 1, 255, 255, 255, 254),
               "Invalid insertion off one-sided pattern with offset 1");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (2), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 0, 0, 0, 3, 255, 255, 255, 252),
+      Assert (Buffer, (0, 0, 0, 0, 3, 255, 255, 255, 252),
               "Invalid insertion off one-sided pattern with offset 2");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (3), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 0, 0, 0, 7, 255, 255, 255, 248),
+      Assert (Buffer, (0, 0, 0, 0, 7, 255, 255, 255, 248),
               "Invalid insertion off one-sided pattern with offset 3");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (4), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 0, 0, 0, 15, 255, 255, 255, 240),
+      Assert (Buffer, (0, 0, 0, 0, 15, 255, 255, 255, 240),
               "Invalid insertion off one-sided pattern with offset 4");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (5), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 0, 0, 0, 31, 255, 255, 255, 224),
+      Assert (Buffer, (0, 0, 0, 0, 31, 255, 255, 255, 224),
               "Invalid insertion off one-sided pattern with offset 5");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (6), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 0, 0, 0, 63, 255, 255, 255, 192),
+      Assert (Buffer, (0, 0, 0, 0, 63, 255, 255, 255, 192),
               "Invalid insertion off one-sided pattern with offset 6");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (7), 64, RFLX_Types.High_Order_First);
-      Assert (Buffer.all, (0, 0, 0, 0, 127, 255, 255, 255, 128),
+      Assert (Buffer, (0, 0, 0, 0, 127, 255, 255, 255, 128),
               "Invalid insertion off one-sided pattern with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Insert_Modular_Integer_64;
 
    procedure Test_Insert_Modular_Integer_1_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 2 => 0);
+      Buffer : Bytes := (Index'First .. Index'First + 2 => 0);
    begin
-      Buffer.all := (0, 0, 0);
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (0), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (1, 0, 0), "Invalid insertion in zero-initialized buffer with offset 0");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (1, 0, 0), "Invalid insertion in zero-initialized buffer with offset 0");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (1), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (2, 0, 0), "Invalid insertion in zero-initialized buffer with offset 1");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (2, 0, 0), "Invalid insertion in zero-initialized buffer with offset 1");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (2), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (4, 0, 0), "Invalid insertion in zero-initialized buffer with offset 2");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (4, 0, 0), "Invalid insertion in zero-initialized buffer with offset 2");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (3), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (8, 0, 0), "Invalid insertion in zero-initialized buffer with offset 3");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (8, 0, 0), "Invalid insertion in zero-initialized buffer with offset 3");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (4), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (16, 0, 0), "Invalid insertion in zero-initialized buffer with offset 4");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (16, 0, 0), "Invalid insertion in zero-initialized buffer with offset 4");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (5), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (32, 0, 0), "Invalid insertion in zero-initialized buffer with offset 5");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (32, 0, 0), "Invalid insertion in zero-initialized buffer with offset 5");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (6), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (64, 0, 0), "Invalid insertion in zero-initialized buffer with offset 6");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (64, 0, 0), "Invalid insertion in zero-initialized buffer with offset 6");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (7), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (128, 0, 0), "Invalid insertion in zero-initialized buffer with offset 7");
+      Assert (Buffer, (128, 0, 0), "Invalid insertion in zero-initialized buffer with offset 7");
 
-      Buffer.all := (255, 255, 255);
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (0), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (254, 255, 255), "Invalid insertion in filled buffer with offset 0");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (254, 255, 255), "Invalid insertion in filled buffer with offset 0");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (1), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (253, 255, 255), "Invalid insertion in filled buffer with offset 1");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (253, 255, 255), "Invalid insertion in filled buffer with offset 1");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (2), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (251, 255, 255), "Invalid insertion in filled buffer with offset 2");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (251, 255, 255), "Invalid insertion in filled buffer with offset 2");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (3), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (247, 255, 255), "Invalid insertion in filled buffer with offset 3");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (247, 255, 255), "Invalid insertion in filled buffer with offset 3");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (4), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (239, 255, 255), "Invalid insertion in filled buffer with offset 4");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (239, 255, 255), "Invalid insertion in filled buffer with offset 4");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (5), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (223, 255, 255), "Invalid insertion in filled buffer with offset 5");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (223, 255, 255), "Invalid insertion in filled buffer with offset 5");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (6), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (191, 255, 255), "Invalid insertion in filled buffer with offset 6");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (191, 255, 255), "Invalid insertion in filled buffer with offset 6");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(0), Buffer, Buffer'First, Buffer'First,
                                     Dynamic_Offset (7), 1, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (127, 255, 255), "Invalid insertion in filled buffer with offset 7");
+      Assert (Buffer, (127, 255, 255), "Invalid insertion in filled buffer with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Insert_Modular_Integer_1_LE;
 
    procedure Test_Insert_Modular_Integer_2_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 2 => 0);
+      Buffer : Bytes := (Index'First .. Index'First + 2 => 0);
    begin
-      Buffer.all := (0, 0, 0);
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First, 0, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (1, 0, 0), "Invalid insertion in zero-initialized buffer with offset 0");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (1, 0, 0), "Invalid insertion in zero-initialized buffer with offset 0");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First, 1, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (2, 0, 0), "Invalid insertion in zero-initialized buffer with offset 1");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (2, 0, 0), "Invalid insertion in zero-initialized buffer with offset 1");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First, 2, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (4, 0, 0), "Invalid insertion in zero-initialized buffer with offset 2");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (4, 0, 0), "Invalid insertion in zero-initialized buffer with offset 2");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First, 3, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (8, 0, 0), "Invalid insertion in zero-initialized buffer with offset 3");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (8, 0, 0), "Invalid insertion in zero-initialized buffer with offset 3");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First, 4, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (16, 0, 0), "Invalid insertion in zero-initialized buffer with offset 4");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (16, 0, 0), "Invalid insertion in zero-initialized buffer with offset 4");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First, 5, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (32, 0, 0), "Invalid insertion in zero-initialized buffer with offset 5");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (32, 0, 0), "Invalid insertion in zero-initialized buffer with offset 5");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(1), Buffer, Buffer'First, Buffer'First, 6, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (64, 0, 0), "Invalid insertion in zero-initialized buffer with offset 6");
+      Assert (Buffer, (64, 0, 0), "Invalid insertion in zero-initialized buffer with offset 6");
 
-      Buffer.all := (255, 255, 255);
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First, Buffer'First, 0, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (254, 255, 255), "Invalid insertion in filled buffer with offset 0");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (254, 255, 255), "Invalid insertion in filled buffer with offset 0");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First, Buffer'First, 1, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (253, 255, 255), "Invalid insertion in filled buffer with offset 1");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (253, 255, 255), "Invalid insertion in filled buffer with offset 1");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First, Buffer'First, 2, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (251, 255, 255), "Invalid insertion in filled buffer with offset 2");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (251, 255, 255), "Invalid insertion in filled buffer with offset 2");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First, Buffer'First, 3, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (247, 255, 255), "Invalid insertion in filled buffer with offset 3");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (247, 255, 255), "Invalid insertion in filled buffer with offset 3");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First, Buffer'First, 4, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (239, 255, 255), "Invalid insertion in filled buffer with offset 4");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (239, 255, 255), "Invalid insertion in filled buffer with offset 4");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First, Buffer'First, 5, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (223, 255, 255), "Invalid insertion in filled buffer with offset 5");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (223, 255, 255), "Invalid insertion in filled buffer with offset 5");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(2), Buffer, Buffer'First, Buffer'First, 6, 2,
                                     RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (191, 255, 255), "Invalid insertion in filled buffer with offset 6");
+      Assert (Buffer, (191, 255, 255), "Invalid insertion in filled buffer with offset 6");
 
-      RFLX_Types.Free (Buffer);
    end Test_Insert_Modular_Integer_2_LE;
 
    procedure Test_Insert_Modular_Integer_13_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 2 => 0);
+      Buffer : Bytes := (Index'First .. Index'First + 2 => 0);
    begin
-      Buffer.all := (0, 0, 0);
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1, Buffer'Last,
                                     0, 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 21, 170), "Invalid insertion in zero-initialized buffer with offset 0");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 21, 170), "Invalid insertion in zero-initialized buffer with offset 0");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1, Buffer'Last,
                                     1, 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 21, 170), "Invalid insertion in zero-initialized buffer with offset 1");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 21, 170), "Invalid insertion in zero-initialized buffer with offset 1");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1, Buffer'Last,
                                     2, 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 85, 168), "Invalid insertion in zero-initialized buffer with offset 2");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 85, 168), "Invalid insertion in zero-initialized buffer with offset 2");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1, Buffer'Last,
                                     3, 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 85, 168), "Invalid insertion in zero-initialized buffer with offset 3");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 85, 168), "Invalid insertion in zero-initialized buffer with offset 3");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (4), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (1, 170, 160), "Invalid insertion in zero-initialized buffer with offset 4");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (1, 170, 160), "Invalid insertion in zero-initialized buffer with offset 4");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (5), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (1, 85, 160), "Invalid insertion in zero-initialized buffer with offset 5");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (1, 85, 160), "Invalid insertion in zero-initialized buffer with offset 5");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (6), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (5, 170, 128), "Invalid insertion in zero-initialized buffer with offset 6");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (5, 170, 128), "Invalid insertion in zero-initialized buffer with offset 6");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (7), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (5, 85, 128), "Invalid insertion in zero-initialized buffer with offset 7");
+      Assert (Buffer, (5, 85, 128), "Invalid insertion in zero-initialized buffer with offset 7");
 
-      Buffer.all := (255, 255, 255);
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1, Buffer'Last,
                                     0, 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (255, 245, 170), "Invalid insertion in filled buffer with offset 0");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 245, 170), "Invalid insertion in filled buffer with offset 0");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1, Buffer'Last,
                                     1, 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (255, 213, 171), "Invalid insertion in filled buffer with offset 1");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 213, 171), "Invalid insertion in filled buffer with offset 1");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1, Buffer'Last,
                                     2, 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (255, 213, 171), "Invalid insertion in filled buffer with offset 2");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 213, 171), "Invalid insertion in filled buffer with offset 2");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First + 1, Buffer'Last,
                                     3, 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (255, 85, 175), "Invalid insertion in filled buffer with offset 3");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 85, 175), "Invalid insertion in filled buffer with offset 3");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (4), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (255, 170, 175), "Invalid insertion in filled buffer with offset 4");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (255, 170, 175), "Invalid insertion in filled buffer with offset 4");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (5), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (253, 85, 191), "Invalid insertion in filled buffer with offset 5");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (253, 85, 191), "Invalid insertion in filled buffer with offset 5");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (6), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (253, 170, 191), "Invalid insertion in filled buffer with offset 6");
-      Buffer.all := (255, 255, 255);
+      Assert (Buffer, (253, 170, 191), "Invalid insertion in filled buffer with offset 6");
+      Buffer := (255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(5461), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (7), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (245, 85, 255), "Invalid insertion in filled buffer with offset 7");
+      Assert (Buffer, (245, 85, 255), "Invalid insertion in filled buffer with offset 7");
 
-      Buffer.all := (0, 0, 0);
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (0), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 31, 7), "Invalid insertion of 0000011111111 with offset 0");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 31, 7), "Invalid insertion of 0000011111111 with offset 0");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (1), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 63, 6), "Invalid insertion of 0000011111111 with offset 1");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 63, 6), "Invalid insertion of 0000011111111 with offset 1");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (2), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 127, 4), "Invalid insertion of 0000011111111 with offset 2");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 127, 4), "Invalid insertion of 0000011111111 with offset 2");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (3), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 255, 0), "Invalid insertion of 0000011111111 with offset 3");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (0, 255, 0), "Invalid insertion of 0000011111111 with offset 3");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (4), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (1, 127, 0), "Invalid insertion of 0000011111111 with offset 4");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (1, 127, 0), "Invalid insertion of 0000011111111 with offset 4");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (5), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (3, 63, 0), "Invalid insertion of 0000011111111 with offset 5");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (3, 63, 0), "Invalid insertion of 0000011111111 with offset 5");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (6), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (7, 31, 0), "Invalid insertion of 0000011111111 with offset 6");
-      Buffer.all := (0, 0, 0);
+      Assert (Buffer, (7, 31, 0), "Invalid insertion of 0000011111111 with offset 6");
+      Buffer := (0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(255), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (7), 13, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (15, 15, 0), "Invalid insertion of 0000011111111 with offset 7");
+      Assert (Buffer, (15, 15, 0), "Invalid insertion of 0000011111111 with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Insert_Modular_Integer_13_LE;
 
    procedure Test_Insert_Modular_Integer_64_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
      SPARK_Mode, Pre => True
    is
       pragma Unreferenced (T);
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 8 => 0);
+      Buffer : Bytes := (Index'First .. Index'First + 8 => 0);
    begin
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First + 1, Buffer'Last, 0, 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 170, 170, 170, 170, 170, 170, 170, 170),
+      Assert (Buffer, (0, 170, 170, 170, 170, 170, 170, 170, 170),
               "Invalid insertion in zero-initialized buffer with offset 0");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (1), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 85, 85, 85, 85, 85, 85, 85, 170),
+      Assert (Buffer, (0, 85, 85, 85, 85, 85, 85, 85, 170),
               "Invalid insertion in zero-initialized buffer with offset 1");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (2), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (2, 170, 170, 170, 170, 170, 170, 170, 168),
+      Assert (Buffer, (2, 170, 170, 170, 170, 170, 170, 170, 168),
               "Invalid insertion in zero-initialized buffer with offset 2");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (3), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (2, 85, 85, 85, 85, 85, 85, 85, 168),
+      Assert (Buffer, (2, 85, 85, 85, 85, 85, 85, 85, 168),
               "Invalid insertion in zero-initialized buffer with offset 3");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (4), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (10, 170, 170, 170, 170, 170, 170, 170, 160),
+      Assert (Buffer, (10, 170, 170, 170, 170, 170, 170, 170, 160),
               "Invalid insertion in zero-initialized buffer with offset 4");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (5), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (10, 85, 85, 85, 85, 85, 85, 85, 160),
+      Assert (Buffer, (10, 85, 85, 85, 85, 85, 85, 85, 160),
               "Invalid insertion in zero-initialized buffer with offset 5");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (6), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (42, 170, 170, 170, 170, 170, 170, 170, 128),
+      Assert (Buffer, (42, 170, 170, 170, 170, 170, 170, 170, 128),
               "Invalid insertion in zero-initialized buffer with offset 6");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (7), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (42, 85, 85, 85, 85, 85, 85, 85, 128),
+      Assert (Buffer, (42, 85, 85, 85, 85, 85, 85, 85, 128),
               "Invalid insertion in zero-initialized buffer with offset 7");
 
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First + 1, Buffer'Last, 0, 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (255, 170, 170, 170, 170, 170, 170, 170, 170),
+      Assert (Buffer, (255, 170, 170, 170, 170, 170, 170, 170, 170),
               "Invalid insertion in filled buffer with offset 0");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (1), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (254, 85, 85, 85, 85, 85, 85, 85, 171),
+      Assert (Buffer, (254, 85, 85, 85, 85, 85, 85, 85, 171),
               "Invalid insertion in filled buffer with offset 1");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (2), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (254, 170, 170, 170, 170, 170, 170, 170, 171),
+      Assert (Buffer, (254, 170, 170, 170, 170, 170, 170, 170, 171),
               "Invalid insertion in filled buffer with offset 2");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (3), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (250, 85, 85, 85, 85, 85, 85, 85, 175),
+      Assert (Buffer, (250, 85, 85, 85, 85, 85, 85, 85, 175),
               "Invalid insertion in filled buffer with offset 3");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (4), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (250, 170, 170, 170, 170, 170, 170, 170, 175),
+      Assert (Buffer, (250, 170, 170, 170, 170, 170, 170, 170, 175),
               "Invalid insertion in filled buffer with offset 4");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (5), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (234, 85, 85, 85, 85, 85, 85, 85, 191),
+      Assert (Buffer, (234, 85, 85, 85, 85, 85, 85, 85, 191),
               "Invalid insertion in filled buffer with offset 5");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (6), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (234, 170, 170, 170, 170, 170, 170, 170, 191),
+      Assert (Buffer, (234, 170, 170, 170, 170, 170, 170, 170, 191),
               "Invalid insertion in filled buffer with offset 6");
-      Buffer.all := (255, 255, 255, 255, 255, 255, 255, 255, 255);
+      Buffer := (255, 255, 255, 255, 255, 255, 255, 255, 255);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(12297829382473034410), Buffer,
                                     Buffer'First, Buffer'Last, Dynamic_Offset (7), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (170, 85, 85, 85, 85, 85, 85, 85, 255),
+      Assert (Buffer, (170, 85, 85, 85, 85, 85, 85, 85, 255),
               "Invalid insertion in filled buffer with offset 7");
 
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (0), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (0, 255, 255, 255, 255, 0, 0, 0, 0),
+      Assert (Buffer, (0, 255, 255, 255, 255, 0, 0, 0, 0),
               "Invalid insertion off one-sided pattern with offset 0");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (1), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (1, 255, 255, 255, 127, 0, 0, 0, 0),
+      Assert (Buffer, (1, 255, 255, 255, 127, 0, 0, 0, 0),
               "Invalid insertion off one-sided pattern with offset 1");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (2), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (3, 255, 255, 255, 63, 0, 0, 0, 0),
+      Assert (Buffer, (3, 255, 255, 255, 63, 0, 0, 0, 0),
               "Invalid insertion off one-sided pattern with offset 2");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (3), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (7, 255, 255, 255, 31, 0, 0, 0, 0),
+      Assert (Buffer, (7, 255, 255, 255, 31, 0, 0, 0, 0),
               "Invalid insertion off one-sided pattern with offset 3");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (4), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (15, 255, 255, 255, 15, 0, 0, 0, 0),
+      Assert (Buffer, (15, 255, 255, 255, 15, 0, 0, 0, 0),
               "Invalid insertion off one-sided pattern with offset 4");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (5), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (31, 255, 255, 255, 7, 0, 0, 0, 0),
+      Assert (Buffer, (31, 255, 255, 255, 7, 0, 0, 0, 0),
               "Invalid insertion off one-sided pattern with offset 5");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (6), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (63, 255, 255, 255, 3, 0, 0, 0, 0),
+      Assert (Buffer, (63, 255, 255, 255, 3, 0, 0, 0, 0),
               "Invalid insertion off one-sided pattern with offset 6");
-      Buffer.all := (0, 0, 0, 0, 0, 0, 0, 0, 0);
+      Buffer := (0, 0, 0, 0, 0, 0, 0, 0, 0);
       RFLX_Types.Operations.Insert (RFLX.RFLX_Types.U64'(4294967295), Buffer, Buffer'First, Buffer'Last,
                                     Dynamic_Offset (7), 64, RFLX_Types.Low_Order_First);
-      Assert (Buffer.all, (127, 255, 255, 255, 1, 0, 0, 0, 0),
+      Assert (Buffer, (127, 255, 255, 255, 1, 0, 0, 0, 0),
               "Invalid insertion off one-sided pattern with offset 7");
 
-      RFLX_Types.Free (Buffer);
    end Test_Insert_Modular_Integer_64_LE;
 
    procedure Test_Random_Insert_Extract (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -1214,10 +1196,10 @@ package body RFLX.Builtin_Types_Tests is
 
       function Swap is new GNAT.Byte_Swapping.Swapped8 (RFLX_Types.U64);
 
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 7 => 0);
+      Buffer : Bytes (Index'First .. Index'First + 7) := (others => 0);
       G : Rand.Generator;
       Num, Num2 : RFLX_Types.U64;
-      Result : RFLX_Types.U64 with Address => Buffer.all'Address;
+      Result : RFLX_Types.U64 with Address => Buffer'Address;
 
    begin
       for I in 1 .. 10000 loop
@@ -1228,7 +1210,6 @@ package body RFLX.Builtin_Types_Tests is
          Assert (Num = Num2, "invalid extraction of 64bit number");
       end loop;
 
-      RFLX_Types.Free (Buffer);
    end Test_Random_Insert_Extract;
 
    procedure Test_Random_Insert_Extract_LE (T : in out AUnit.Test_Cases.Test_Case'Class) with
@@ -1240,10 +1221,10 @@ package body RFLX.Builtin_Types_Tests is
 
       package Rand is new Ada.Numerics.Discrete_Random (RFLX_Types.U64);
 
-      Buffer : Bytes_Ptr := new Bytes'(Index'First .. Index'First + 7 => 0);
+      Buffer : Bytes (Index'First .. Index'First + 7) := (others => 0);
       G : Rand.Generator;
       Num, Num2 : RFLX_Types.U64;
-      Result : RFLX_Types.U64 with Address => Buffer.all'Address;
+      Result : RFLX_Types.U64 with Address => Buffer'Address;
 
    begin
       for I in 1 .. 10000 loop
@@ -1256,7 +1237,6 @@ package body RFLX.Builtin_Types_Tests is
          Assert (Num = Num2, "invalid extraction of 64bit number");
       end loop;
 
-      RFLX_Types.Free (Buffer);
    end Test_Random_Insert_Extract_LE;
 
    overriding

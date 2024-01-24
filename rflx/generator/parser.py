@@ -183,7 +183,7 @@ class ParserGenerator:
                             Call(
                                 const.TYPES_OPERATIONS * "Extract",
                                 [
-                                    Variable("Ctx.Buffer"),
+                                    Variable("Ctx.Buffer.all"),
                                     Variable("Buffer_First"),
                                     Variable("Buffer_Last"),
                                     Variable("Offset"),

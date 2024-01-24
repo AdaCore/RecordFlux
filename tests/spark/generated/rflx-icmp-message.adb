@@ -198,7 +198,7 @@ is
              Positive'Last);
       Byte_Order : constant RFLX_Types.Byte_Order := RFLX_Types.High_Order_First;
    begin
-      return RFLX_Types.Operations.Extract (Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Size, Byte_Order);
+      return RFLX_Types.Operations.Extract (Ctx.Buffer.all, Buffer_First, Buffer_Last, Offset, Size, Byte_Order);
    end Get;
 
    procedure Verify (Ctx : in out Context; Fld : Field) is
@@ -363,7 +363,7 @@ is
    begin
       Set (Ctx, Fld, Val, Size, True, Buffer_First, Buffer_Last, Offset);
       RFLX_Types.Lemma_Size (Val, Positive (Size));
-      RFLX_Types.Operations.Insert (Val, Ctx.Buffer, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
+      RFLX_Types.Operations.Insert (Val, Ctx.Buffer.all, Buffer_First, Buffer_Last, Offset, Positive (Size), RFLX_Types.High_Order_First);
    end Set_Scalar;
 
    procedure Set_Tag (Ctx : in out Context; Val : RFLX.ICMP.Tag) is
