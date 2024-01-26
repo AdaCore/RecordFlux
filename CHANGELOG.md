@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fatal error when unsupported base is used in numeric literal (eng/recordflux/RecordFlux#1470)
 - Missing diagnostics provided by language server
 - `--split-disjunctions` options of `rflx validate`
+- Misleading CLI output about verification (AdaCore/RecordFlux#1295, eng/recordflux/RecordFlux#1522)
 
 ## [0.17.0] - 2024-01-03
 

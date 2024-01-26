@@ -33,18 +33,17 @@ class UncheckedModel(Base):
         declarations: list[top_level_declaration.TopLevelDeclaration] = []
 
         for d in self.declarations:
-            log.info("Verifying %s", d.identifier)
             try:
                 unverified = d.checked(declarations, skip_verification=True)
                 digest = Digest(unverified)
-                checked = (
-                    unverified
-                    if cache.is_verified(digest)
-                    else d.checked(declarations, workers=workers)
-                )
+                if cache.is_verified(digest):
+                    checked = unverified
+                else:
+                    log.info("Verifying %s", d.identifier)
+                    checked = d.checked(declarations, workers=workers)
                 declarations.append(checked)
                 cache.add_verified(digest)
-            except RecordFluxError as e:
+            except RecordFluxError as e:  # noqa: PERF203
                 error.extend(e)
 
         return Model(declarations, error)
