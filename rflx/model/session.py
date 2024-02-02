@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import itertools
-from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Generator, Iterable, Mapping, Sequence
 from copy import deepcopy
@@ -344,8 +343,7 @@ class State(Base):
                     substituted(transition.condition, message_decl.type_)
 
 
-class AbstractSession(TopLevelDeclaration):
-    @abstractmethod
+class Session(TopLevelDeclaration):
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
@@ -354,6 +352,7 @@ class AbstractSession(TopLevelDeclaration):
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[mty.Type],
         location: Optional[Location] = None,
+        workers: int = 1,
     ):
         super().__init__(identifier, location)
 
@@ -365,6 +364,7 @@ class AbstractSession(TopLevelDeclaration):
         self.direct_dependencies = {t.identifier: t for t in types}
         self.types = self.direct_dependencies.copy()
         self.location = location
+        self._workers = workers
 
         refinements = [t for t in types if isinstance(t, Refinement)]
 
@@ -381,9 +381,14 @@ class AbstractSession(TopLevelDeclaration):
         self._enum_literals = mty.enum_literals(self.types.values(), self.package)
         self._type_names = mty.qualified_type_names(self.types.values())
 
+        self._check_identifiers()
         self._normalize()
+        self._validate()
 
         self.error.propagate()
+
+        self._optimize()
+        self.to_ir()
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -414,6 +419,20 @@ class AbstractSession(TopLevelDeclaration):
     @property
     def initial_state(self) -> State:
         return self.states[0]
+
+    @lru_cache  # noqa: B019
+    def to_ir(self) -> ir.Session:
+        variable_id = id_generator()
+        return ir.Session(
+            self.identifier,
+            [state.to_ir(variable_id) for state in self.states],
+            [d.to_ir(variable_id) for d in self.declarations.values()],
+            [p.to_ir() for p in self.parameters.values()],
+            self.types,
+            self.location,
+            variable_id,
+            self._workers,
+        )
 
     def _normalize(self) -> None:  # noqa: PLR0912
         """
@@ -503,105 +522,77 @@ class AbstractSession(TopLevelDeclaration):
             if state.exception_transition and t.target in states_map:
                 state.exception_transition.target = states_map[state.exception_transition.target]
 
-
-def normalize_identifiers(
-    expression: expr.Expr,
-    variables: Iterable[ID],
-    enum_literals: Iterable[ID],
-    type_names: Iterable[ID],
-    functions: Iterable[ID],
-) -> expr.Expr:
-    variables_map = {v: v for v in variables}
-    type_names_map = {t: t for t in type_names}
-    enum_literals_map = {l: l for l in enum_literals}
-    functions_map = {f: f for f in functions}
-
-    if isinstance(expression, expr.Variable):
-        if expression.identifier in type_names_map:
-            return expr.TypeName(
-                ID(type_names_map[expression.identifier], location=expression.identifier.location),
-                expression.type_,
-                location=expression.location,
-            )
-        if expression.identifier in enum_literals_map:
-            return expr.Literal(
-                ID(
-                    enum_literals_map[expression.identifier],
-                    location=expression.identifier.location,
-                ),
-                expression.type_,
-                location=expression.location,
-            )
-        if expression.identifier in functions_map:
-            return expr.Call(
-                ID(functions_map[expression.identifier], location=expression.identifier.location),
-                [],
-                expression.negative,
-                expression.immutable,
-                expression.type_,
-                location=expression.location,
-            )
-        if expression.identifier in variables_map:
-            return expr.Variable(
-                ID(variables_map[expression.identifier], location=expression.identifier.location),
-                expression.negative,
-                expression.immutable,
-                expression.type_,
-                location=expression.location,
-            )
-
-    if isinstance(expression, expr.Call) and expression.identifier in functions_map:
-        return expr.Call(
-            ID(functions_map[expression.identifier], location=expression.identifier.location),
-            expression.args,
-            expression.negative,
-            expression.immutable,
-            expression.type_,
-            expression.argument_types,
-            location=expression.location,
-        )
-
-    return expression
-
-
-class Session(AbstractSession):
-    def __init__(  # noqa: PLR0913
-        self,
-        identifier: StrID,
-        states: Sequence[State],
-        declarations: Sequence[decl.BasicDeclaration],
-        parameters: Sequence[decl.FormalDeclaration],
-        types: Sequence[mty.Type],
-        location: Optional[Location] = None,
-        workers: int = 1,
-    ):
-        super().__init__(identifier, states, declarations, parameters, types, location)
-        self._workers = workers
-
-        self._validate()
-
-        self.error.propagate()
-
-        self._optimize()
-        self.to_ir()
-
-    @lru_cache  # noqa: B019
-    def to_ir(self) -> ir.Session:
-        variable_id = id_generator()
-        return ir.Session(
-            self.identifier,
-            [state.to_ir(variable_id) for state in self.states],
-            [d.to_ir(variable_id) for d in self.declarations.values()],
-            [p.to_ir() for p in self.parameters.values()],
-            self.types,
-            self.location,
-            variable_id,
-            self._workers,
-        )
-
     def _optimize(self) -> None:
         for state in self.states:
             state.optimize()
+
+    def _check_identifiers(self) -> None:
+        self.error.extend(
+            mty.check_identifier_notation(
+                itertools.chain(
+                    (
+                        expr.Variable(d.type_identifier)
+                        for d in self.declarations.values()
+                        if isinstance(d, decl.TypeCheckableDeclaration)
+                    ),
+                    (
+                        d.expression
+                        for d in self.declarations.values()
+                        if isinstance(d, decl.VariableDeclaration) and d.expression
+                    ),
+                ),
+                itertools.chain(
+                    self.parameters,
+                    self.declarations,
+                    self._enum_literals,
+                    self._type_names,
+                ),
+            ),
+        )
+
+        for state in self.states:
+            self.error.extend(
+                mty.check_identifier_notation(
+                    itertools.chain(
+                        (
+                            d.expression
+                            for d in state.declarations.values()
+                            if isinstance(d, decl.VariableDeclaration) and d.expression
+                        ),
+                        (a.expression for a in state.actions if isinstance(a, stmt.Assignment)),
+                        (
+                            e
+                            for a in state.actions
+                            if isinstance(a, stmt.AttributeStatement)
+                            for e in [expr.Variable(a.identifier), *a.parameters]
+                        ),
+                        (
+                            e
+                            for a in state.actions
+                            if isinstance(a, stmt.Reset)
+                            for e in a.associations.values()
+                        ),
+                        (
+                            e
+                            for t in state.transitions
+                            for e in [expr.Variable(t.target), t.condition]
+                        ),
+                        (
+                            expr.Variable(t.target)
+                            for t in [state.exception_transition]
+                            if t is not None
+                        ),
+                    ),
+                    itertools.chain(
+                        self.parameters,
+                        self.declarations,
+                        self._enum_literals,
+                        self._type_names,
+                        state.declarations,
+                        (s.identifier for s in self.states),
+                    ),
+                ),
+            )
 
     def _validate_states(self) -> None:
         if all(s == FINAL_STATE for s in self.states):
@@ -1010,6 +1001,66 @@ class Session(AbstractSession):
             self._validate_transitions(s, declarations)
 
         self._validate_usage()
+
+
+def normalize_identifiers(
+    expression: expr.Expr,
+    variables: Iterable[ID],
+    enum_literals: Iterable[ID],
+    type_names: Iterable[ID],
+    functions: Iterable[ID],
+) -> expr.Expr:
+    variables_map = {v: v for v in variables}
+    type_names_map = {t: t for t in type_names}
+    enum_literals_map = {l: l for l in enum_literals}
+    functions_map = {f: f for f in functions}
+
+    if isinstance(expression, expr.Variable):
+        if expression.identifier in type_names_map:
+            return expr.TypeName(
+                ID(type_names_map[expression.identifier], location=expression.identifier.location),
+                expression.type_,
+                location=expression.location,
+            )
+        if expression.identifier in enum_literals_map:
+            return expr.Literal(
+                ID(
+                    enum_literals_map[expression.identifier],
+                    location=expression.identifier.location,
+                ),
+                expression.type_,
+                location=expression.location,
+            )
+        if expression.identifier in functions_map:
+            return expr.Call(
+                ID(functions_map[expression.identifier], location=expression.identifier.location),
+                [],
+                expression.negative,
+                expression.immutable,
+                expression.type_,
+                location=expression.location,
+            )
+        if expression.identifier in variables_map:
+            return expr.Variable(
+                ID(variables_map[expression.identifier], location=expression.identifier.location),
+                expression.negative,
+                expression.immutable,
+                expression.type_,
+                location=expression.location,
+            )
+
+    if isinstance(expression, expr.Call) and expression.identifier in functions_map:
+        return expr.Call(
+            ID(functions_map[expression.identifier], location=expression.identifier.location),
+            expression.args,
+            expression.negative,
+            expression.immutable,
+            expression.type_,
+            expression.argument_types,
+            location=expression.location,
+        )
+
+    return expression
 
 
 @dataclass

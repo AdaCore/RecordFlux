@@ -1,4 +1,4 @@
-with Tls_Common;
+with TLS_Common;
 with Tls_Parameters;
 with Tls_Extensiontype_Values;
 
@@ -73,7 +73,7 @@ package TLS_Handshake is
    --    restrictions.
    --
    -- The concrete restrictions for the extension types defined below have been
-   -- derived semi-automatically from the IANA TLS_ExtensionType_Values
+   -- derived semi-automatically from the IANA Tls_Extensiontype_Values
    -- registry.
 
    type Data_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
@@ -91,7 +91,7 @@ package TLS_Handshake is
    -- Extensions for the CH (ClientHello) message
    type CH_Extension_TLS is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -139,7 +139,7 @@ package TLS_Handshake is
 
    type CH_Extension_DTLS is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -185,7 +185,7 @@ package TLS_Handshake is
    -- Extensions for the SH (ServerHello) message
    type SH_Extension_TLS is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -214,7 +214,7 @@ package TLS_Handshake is
 
    type SH_Extension_DTLS is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -245,7 +245,7 @@ package TLS_Handshake is
    -- Extensions for the HRR (HelloRetryRequest) message
    type HRR_Extension_TLS is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -273,7 +273,7 @@ package TLS_Handshake is
 
    type HRR_Extension_DTLS is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -302,7 +302,7 @@ package TLS_Handshake is
    -- Extensions for the EE (EncryptedExtensions) message
    type EE_Extension is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -342,7 +342,7 @@ package TLS_Handshake is
    -- Extensions for the CR (CertificateRequest) message
    type CR_Extension is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -376,7 +376,7 @@ package TLS_Handshake is
    -- Extensions for the CT (CertificateEntry) message
    type CT_Extension is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -405,7 +405,7 @@ package TLS_Handshake is
    -- Extensions for the NST (NewSessionTicket) message
    type NST_Extension is
       message
-         Tag : TLS_ExtensionType_Values::TLS_ExtensionType_Values
+         Tag : Tls_Extensiontype_Values::Tls_Extensiontype_Values
             then Data_Length
                if
                -- Message type specific constraints
@@ -501,8 +501,8 @@ package TLS_Handshake is
             -- For compatibility reasons both TLS 1.3 and DTLS 1.3 require
             -- indicating the version 1.2 here.
             then Random
-               if (Legacy_Version = Tls_Common::TLS_1_2
-                  or Legacy_Version = Tls_Common::DTLS_1_2);
+               if (Legacy_Version = TLS_Common::TLS_1_2
+                  or Legacy_Version = TLS_Common::DTLS_1_2);
          Random : Opaque
             with Size => 32 * 8;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length;
@@ -510,32 +510,32 @@ package TLS_Handshake is
             with Size => Legacy_Session_ID_Length * 8
             -- TLS
             then Cipher_Suites_Length
-               if Legacy_Version = Tls_Common::TLS_1_0
-                  or Legacy_Version = Tls_Common::TLS_1_1
-                  or Legacy_Version = Tls_Common::TLS_1_2
-                  or Legacy_Version = Tls_Common::TLS_1_3
+               if Legacy_Version = TLS_Common::TLS_1_0
+                  or Legacy_Version = TLS_Common::TLS_1_1
+                  or Legacy_Version = TLS_Common::TLS_1_2
+                  or Legacy_Version = TLS_Common::TLS_1_3
             -- DTLS
             then Legacy_Cookie_Length
-               if Legacy_Version /= Tls_Common::TLS_1_0
-                  and Legacy_Version /= Tls_Common::TLS_1_1
-                  and Legacy_Version /= Tls_Common::TLS_1_2
-                  and Legacy_Version /= Tls_Common::TLS_1_3;
+               if Legacy_Version /= TLS_Common::TLS_1_0
+                  and Legacy_Version /= TLS_Common::TLS_1_1
+                  and Legacy_Version /= TLS_Common::TLS_1_2
+                  and Legacy_Version /= TLS_Common::TLS_1_3;
          Legacy_Cookie_Length : Legacy_Cookie_Length;
          Legacy_Cookie : Opaque
             with Size => Legacy_Cookie_Length * 8;
          Cipher_Suites_Length : Cipher_Suites_Length
             -- TLS
             then Cipher_Suites_TLS
-               if Legacy_Version = Tls_Common::TLS_1_0
-                  or Legacy_Version = Tls_Common::TLS_1_1
-                  or Legacy_Version = Tls_Common::TLS_1_2
-                  or Legacy_Version = Tls_Common::TLS_1_3
+               if Legacy_Version = TLS_Common::TLS_1_0
+                  or Legacy_Version = TLS_Common::TLS_1_1
+                  or Legacy_Version = TLS_Common::TLS_1_2
+                  or Legacy_Version = TLS_Common::TLS_1_3
             -- DTLS
             then Cipher_Suites_DTLS
-               if Legacy_Version /= Tls_Common::TLS_1_0
-                  and Legacy_Version /= Tls_Common::TLS_1_1
-                  and Legacy_Version /= Tls_Common::TLS_1_2
-                  and Legacy_Version /= Tls_Common::TLS_1_3;
+               if Legacy_Version /= TLS_Common::TLS_1_0
+                  and Legacy_Version /= TLS_Common::TLS_1_1
+                  and Legacy_Version /= TLS_Common::TLS_1_2
+                  and Legacy_Version /= TLS_Common::TLS_1_3;
          -- TLS
          Cipher_Suites_TLS : Cipher_Suites_TLS
             with Size => Cipher_Suites_Length * 8
@@ -561,16 +561,16 @@ package TLS_Handshake is
          Extensions_Length : Client_Hello_Extensions_Length
             -- TLS
             then Extensions_TLS
-               if Legacy_Version = Tls_Common::TLS_1_0
-                  or Legacy_Version = Tls_Common::TLS_1_1
-                  or Legacy_Version = Tls_Common::TLS_1_2
-                  or Legacy_Version = Tls_Common::TLS_1_3
+               if Legacy_Version = TLS_Common::TLS_1_0
+                  or Legacy_Version = TLS_Common::TLS_1_1
+                  or Legacy_Version = TLS_Common::TLS_1_2
+                  or Legacy_Version = TLS_Common::TLS_1_3
             -- DTLS
             then Extensions_DTLS
-               if Legacy_Version /= Tls_Common::TLS_1_0
-                  and Legacy_Version /= Tls_Common::TLS_1_1
-                  and Legacy_Version /= Tls_Common::TLS_1_2
-                  and Legacy_Version /= Tls_Common::TLS_1_3;
+               if Legacy_Version /= TLS_Common::TLS_1_0
+                  and Legacy_Version /= TLS_Common::TLS_1_1
+                  and Legacy_Version /= TLS_Common::TLS_1_2
+                  and Legacy_Version /= TLS_Common::TLS_1_3;
          Extensions_TLS : CH_Extensions_TLS
             with Size => Extensions_Length * 8
             then null;
@@ -593,8 +593,8 @@ package TLS_Handshake is
             -- For compatibility reasons both TLS 1.3 and DTLS 1.3 require
             -- indicating the version 1.2 here.
             then Random
-               if (Legacy_Version = Tls_Common::TLS_1_2
-                  or Legacy_Version = Tls_Common::DTLS_1_2);
+               if (Legacy_Version = TLS_Common::TLS_1_2
+                  or Legacy_Version = TLS_Common::DTLS_1_2);
          Random : Opaque
             with Size => 32 * 8;
          Legacy_Session_ID_Length : Legacy_Session_ID_Length;
@@ -602,16 +602,16 @@ package TLS_Handshake is
             with Size => Legacy_Session_ID_Length * 8
             -- TLS
             then Cipher_Suite_TLS
-               if Legacy_Version = Tls_Common::TLS_1_0
-                  or Legacy_Version = Tls_Common::TLS_1_1
-                  or Legacy_Version = Tls_Common::TLS_1_2
-                  or Legacy_Version = Tls_Common::TLS_1_3
+               if Legacy_Version = TLS_Common::TLS_1_0
+                  or Legacy_Version = TLS_Common::TLS_1_1
+                  or Legacy_Version = TLS_Common::TLS_1_2
+                  or Legacy_Version = TLS_Common::TLS_1_3
             -- DTLS
             then Cipher_Suite_DTLS
-               if Legacy_Version /= Tls_Common::TLS_1_0
-                  and Legacy_Version /= Tls_Common::TLS_1_1
-                  and Legacy_Version /= Tls_Common::TLS_1_2
-                  and Legacy_Version /= Tls_Common::TLS_1_3;
+               if Legacy_Version /= TLS_Common::TLS_1_0
+                  and Legacy_Version /= TLS_Common::TLS_1_1
+                  and Legacy_Version /= TLS_Common::TLS_1_2
+                  and Legacy_Version /= TLS_Common::TLS_1_3;
          -- TLS
          Cipher_Suite_TLS : Cipher_Suite_TLS
             then Legacy_Compression_Method;
@@ -631,10 +631,10 @@ package TLS_Handshake is
                              16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#])
                   and
                   -- TLS
-                  (Legacy_Version = Tls_Common::TLS_1_0
-                  or Legacy_Version = Tls_Common::TLS_1_1
-                  or Legacy_Version = Tls_Common::TLS_1_2
-                  or Legacy_Version = Tls_Common::TLS_1_3)
+                  (Legacy_Version = TLS_Common::TLS_1_0
+                  or Legacy_Version = TLS_Common::TLS_1_1
+                  or Legacy_Version = TLS_Common::TLS_1_2
+                  or Legacy_Version = TLS_Common::TLS_1_3)
             then Extensions_DTLS
                with Size => Extensions_Length * 8
                if (Random /= [16#CF#, 16#21#, 16#AD#, 16#74#, 16#E5#, 16#9A#, 16#61#, 16#11#, 16#BE#,
@@ -643,10 +643,10 @@ package TLS_Handshake is
                              16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#])
                   and
                   -- DTLS
-                  (Legacy_Version /= Tls_Common::TLS_1_0
-                  and Legacy_Version /= Tls_Common::TLS_1_1
-                  and Legacy_Version /= Tls_Common::TLS_1_2
-                  and Legacy_Version /= Tls_Common::TLS_1_3)
+                  (Legacy_Version /= TLS_Common::TLS_1_0
+                  and Legacy_Version /= TLS_Common::TLS_1_1
+                  and Legacy_Version /= TLS_Common::TLS_1_2
+                  and Legacy_Version /= TLS_Common::TLS_1_3)
 
             then HRR_Extensions_TLS
                with Size => Extensions_Length * 8
@@ -656,10 +656,10 @@ package TLS_Handshake is
                              16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#])
                   and
                   -- TLS
-                  (Legacy_Version = Tls_Common::TLS_1_0
-                  or Legacy_Version = Tls_Common::TLS_1_1
-                  or Legacy_Version = Tls_Common::TLS_1_2
-                  or Legacy_Version = Tls_Common::TLS_1_3)
+                  (Legacy_Version = TLS_Common::TLS_1_0
+                  or Legacy_Version = TLS_Common::TLS_1_1
+                  or Legacy_Version = TLS_Common::TLS_1_2
+                  or Legacy_Version = TLS_Common::TLS_1_3)
 
             then HRR_Extensions_DTLS
                with Size => Extensions_Length * 8
@@ -669,10 +669,10 @@ package TLS_Handshake is
                             16#E2#, 16#C8#, 16#A8#, 16#33#, 16#9C#])
                   and
                   -- DTLS
-                  (Legacy_Version /= Tls_Common::TLS_1_0
-                  and Legacy_Version /= Tls_Common::TLS_1_1
-                  and Legacy_Version /= Tls_Common::TLS_1_2
-                  and Legacy_Version /= Tls_Common::TLS_1_3);
+                  (Legacy_Version /= TLS_Common::TLS_1_0
+                  and Legacy_Version /= TLS_Common::TLS_1_1
+                  and Legacy_Version /= TLS_Common::TLS_1_2
+                  and Legacy_Version /= TLS_Common::TLS_1_3);
          Extensions_TLS : SH_Extensions_TLS
             then null;
          Extensions_DTLS : SH_Extensions_DTLS
@@ -683,10 +683,10 @@ package TLS_Handshake is
       end message;
 
    for TLS_Handshake use (Payload => Server_Hello)
-      if Tag = TLS_Parameters::Server_Hello;
+      if Tag = Tls_Parameters::Server_Hello;
 
    for DTLS_Handshake use (Payload => Server_Hello)
-      if Tag = TLS_Parameters::Server_Hello;
+      if Tag = Tls_Parameters::Server_Hello;
 
    -- Server Parameters
 
@@ -700,10 +700,10 @@ package TLS_Handshake is
       end message;
 
    for TLS_Handshake use (Payload => Encrypted_Extensions)
-      if Tag = TLS_Parameters::Encrypted_Extensions;
+      if Tag = Tls_Parameters::Encrypted_Extensions;
 
    for DTLS_Handshake use (Payload => Encrypted_Extensions)
-      if Tag = TLS_Parameters::Encrypted_Extensions;
+      if Tag = Tls_Parameters::Encrypted_Extensions;
 
    type Certificate_Request_Context_Length is range 0 .. 2 ** 8 - 1 with Size => 8;
    type Certificate_Request_Extensions_Length is range 2 .. 2 ** 16 - 1 with Size => 16;
@@ -719,10 +719,10 @@ package TLS_Handshake is
       end message;
 
    for TLS_Handshake use (Payload => Certificate_Request)
-      if Tag = TLS_Parameters::Certificate_Request;
+      if Tag = Tls_Parameters::Certificate_Request;
 
    for DTLS_Handshake use (Payload => Certificate_Request)
-      if Tag = TLS_Parameters::Certificate_Request;
+      if Tag = Tls_Parameters::Certificate_Request;
 
    -- Authentication Messages
 
@@ -754,10 +754,10 @@ package TLS_Handshake is
       end message;
 
    for TLS_Handshake use (Payload => Certificate)
-      if Tag = TLS_Parameters::Certificate;
+      if Tag = Tls_Parameters::Certificate;
 
    for DTLS_Handshake use (Payload => Certificate)
-      if Tag = TLS_Parameters::Certificate;
+      if Tag = Tls_Parameters::Certificate;
 
    type Signature_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
 
@@ -770,10 +770,10 @@ package TLS_Handshake is
       end message;
 
    for TLS_Handshake use (Payload => Certificate_Verify)
-      if Tag = TLS_Parameters::Certificate_Verify;
+      if Tag = Tls_Parameters::Certificate_Verify;
 
    for DTLS_Handshake use (Payload => Certificate_Verify)
-      if Tag = TLS_Parameters::Certificate_Verify;
+      if Tag = Tls_Parameters::Certificate_Verify;
 
    type Finished is
       message
@@ -782,20 +782,20 @@ package TLS_Handshake is
       end message;
 
    for TLS_Handshake use (Payload => Finished)
-      if Tag = TLS_Parameters::Finished;
+      if Tag = Tls_Parameters::Finished;
 
    for DTLS_Handshake use (Payload => Finished)
-      if Tag = TLS_Parameters::Finished;
+      if Tag = Tls_Parameters::Finished;
 
    -- End of Early Data
 
    type End_Of_Early_Data is null message;
 
    for TLS_Handshake use (Payload => End_Of_Early_Data)
-      if Tag = TLS_Parameters::End_Of_Early_Data;
+      if Tag = Tls_Parameters::End_Of_Early_Data;
 
    for DTLS_Handshake use (Payload => End_Of_Early_Data)
-      if Tag = TLS_Parameters::End_Of_Early_Data;
+      if Tag = Tls_Parameters::End_Of_Early_Data;
 
    -- Post-TLS_Handshake Messages
 
@@ -821,10 +821,10 @@ package TLS_Handshake is
       end message;
 
    for TLS_Handshake use (Payload => New_Session_Ticket)
-      if Tag = TLS_Parameters::New_Session_Ticket;
+      if Tag = Tls_Parameters::New_Session_Ticket;
 
    for DTLS_Handshake use (Payload => New_Session_Ticket)
-      if Tag = TLS_Parameters::New_Session_Ticket;
+      if Tag = Tls_Parameters::New_Session_Ticket;
 
    type Key_Update_Request is (
       Update_Not_Requested => 0,
@@ -837,10 +837,10 @@ package TLS_Handshake is
       end message;
 
    for TLS_Handshake use (Payload => Key_Update)
-      if Tag = TLS_Parameters::Key_Update;
+      if Tag = Tls_Parameters::Key_Update;
 
    for DTLS_Handshake use (Payload => Key_Update)
-      if Tag = TLS_Parameters::Key_Update;
+      if Tag = Tls_Parameters::Key_Update;
 
    -- Server Name Indication Extension
 
@@ -866,11 +866,11 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Server_Name_List)
-      if Tag = TLS_ExtensionType_Values::Server_Name;
+      if Tag = Tls_Extensiontype_Values::Server_Name;
    for CH_Extension_DTLS use (Data => Server_Name_List)
-      if Tag = TLS_ExtensionType_Values::Server_Name;
+      if Tag = Tls_Extensiontype_Values::Server_Name;
    for EE_Extension use (Data => Server_Name_List)
-      if Tag = TLS_ExtensionType_Values::Server_Name;
+      if Tag = Tls_Extensiontype_Values::Server_Name;
 
    -- Max Fragment Length
 
@@ -887,11 +887,11 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Max_Fragment_Length)
-      if Tag = TLS_ExtensionType_Values::Max_Fragment_Length;
+      if Tag = Tls_Extensiontype_Values::Max_Fragment_Length;
    for CH_Extension_DTLS use (Data => Max_Fragment_Length)
-      if Tag = TLS_ExtensionType_Values::Max_Fragment_Length;
+      if Tag = Tls_Extensiontype_Values::Max_Fragment_Length;
    for EE_Extension use (Data => Max_Fragment_Length)
-      if Tag = TLS_ExtensionType_Values::Max_Fragment_Length;
+      if Tag = Tls_Extensiontype_Values::Max_Fragment_Length;
 
    -- Supported Versions Extension
 
@@ -911,17 +911,17 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Supported_Versions)
-      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+      if Tag = Tls_Extensiontype_Values::Supported_Versions;
    for CH_Extension_DTLS use (Data => Supported_Versions)
-      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+      if Tag = Tls_Extensiontype_Values::Supported_Versions;
    for SH_Extension_TLS use (Data => Supported_Version)
-      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+      if Tag = Tls_Extensiontype_Values::Supported_Versions;
    for SH_Extension_DTLS use (Data => Supported_Version)
-      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+      if Tag = Tls_Extensiontype_Values::Supported_Versions;
    for HRR_Extension_TLS use (Data => Supported_Version)
-      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+      if Tag = Tls_Extensiontype_Values::Supported_Versions;
    for HRR_Extension_DTLS use (Data => Supported_Version)
-      if Tag = TLS_ExtensionType_Values::Supported_Versions;
+      if Tag = Tls_Extensiontype_Values::Supported_Versions;
 
    -- Cookie Extension
 
@@ -935,13 +935,13 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Cookie)
-      if Tag = TLS_ExtensionType_Values::Cookie;
+      if Tag = Tls_Extensiontype_Values::Cookie;
    for CH_Extension_DTLS use (Data => Cookie)
-      if Tag = TLS_ExtensionType_Values::Cookie;
+      if Tag = Tls_Extensiontype_Values::Cookie;
    for HRR_Extension_TLS use (Data => Cookie)
-      if Tag = TLS_ExtensionType_Values::Cookie;
+      if Tag = Tls_Extensiontype_Values::Cookie;
    for HRR_Extension_DTLS use (Data => Cookie)
-      if Tag = TLS_ExtensionType_Values::Cookie;
+      if Tag = Tls_Extensiontype_Values::Cookie;
 
    -- Signature Algorithms Extension
 
@@ -956,11 +956,11 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Signature_Algorithms)
-      if Tag = TLS_ExtensionType_Values::Signature_Algorithms;
+      if Tag = Tls_Extensiontype_Values::Signature_Algorithms;
    for CH_Extension_DTLS use (Data => Signature_Algorithms)
-      if Tag = TLS_ExtensionType_Values::Signature_Algorithms;
+      if Tag = Tls_Extensiontype_Values::Signature_Algorithms;
    for CR_Extension use (Data => Signature_Algorithms)
-      if Tag = TLS_ExtensionType_Values::Signature_Algorithms;
+      if Tag = Tls_Extensiontype_Values::Signature_Algorithms;
 
    type Signature_Algorithms_Cert is
       message
@@ -970,11 +970,11 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Signature_Algorithms_Cert)
-      if Tag = TLS_ExtensionType_Values::Signature_Algorithms_Cert;
+      if Tag = Tls_Extensiontype_Values::Signature_Algorithms_Cert;
    for CH_Extension_DTLS use (Data => Signature_Algorithms_Cert)
-      if Tag = TLS_ExtensionType_Values::Signature_Algorithms_Cert;
+      if Tag = Tls_Extensiontype_Values::Signature_Algorithms_Cert;
    for CR_Extension use (Data => Signature_Algorithms_Cert)
-      if Tag = TLS_ExtensionType_Values::Signature_Algorithms_Cert;
+      if Tag = Tls_Extensiontype_Values::Signature_Algorithms_Cert;
 
    -- Heartbeat Extension
 
@@ -1005,11 +1005,11 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Certificate_Authorities)
-      if Tag = TLS_ExtensionType_Values::Certificate_Authorities;
+      if Tag = Tls_Extensiontype_Values::Certificate_Authorities;
    for CH_Extension_DTLS use (Data => Certificate_Authorities)
-      if Tag = TLS_ExtensionType_Values::Certificate_Authorities;
+      if Tag = Tls_Extensiontype_Values::Certificate_Authorities;
    for CR_Extension use (Data => Certificate_Authorities)
-      if Tag = TLS_ExtensionType_Values::Certificate_Authorities;
+      if Tag = Tls_Extensiontype_Values::Certificate_Authorities;
 
    -- OID Filters Extension
 
@@ -1037,16 +1037,16 @@ package TLS_Handshake is
       end message;
 
    for CR_Extension use (Data => OID_Filters)
-      if Tag = TLS_ExtensionType_Values::Oid_Filters;
+      if Tag = Tls_Extensiontype_Values::Oid_Filters;
 
    -- Post-TLS_Handshake Client Authentication Extension
 
    type Post_Handshake_Auth is null message;
 
    for CH_Extension_TLS use (Data => Post_Handshake_Auth)
-      if Tag = TLS_ExtensionType_Values::Post_Handshake_Auth;
+      if Tag = Tls_Extensiontype_Values::Post_Handshake_Auth;
    for CH_Extension_DTLS use (Data => Post_Handshake_Auth)
-      if Tag = TLS_ExtensionType_Values::Post_Handshake_Auth;
+      if Tag = Tls_Extensiontype_Values::Post_Handshake_Auth;
 
    -- Supported Groups Extension
 
@@ -1062,11 +1062,11 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Supported_Groups)
-      if Tag = TLS_ExtensionType_Values::Supported_Groups;
+      if Tag = Tls_Extensiontype_Values::Supported_Groups;
    for CH_Extension_DTLS use (Data => Supported_Groups)
-      if Tag = TLS_ExtensionType_Values::Supported_Groups;
+      if Tag = Tls_Extensiontype_Values::Supported_Groups;
    for EE_Extension use (Data => Supported_Groups)
-      if Tag = TLS_ExtensionType_Values::Supported_Groups;
+      if Tag = Tls_Extensiontype_Values::Supported_Groups;
 
    -- Key Share Extension
 
@@ -1099,23 +1099,23 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Key_Share_CH)
-      if Tag = TLS_ExtensionType_Values::Key_Share;
+      if Tag = Tls_Extensiontype_Values::Key_Share;
    for CH_Extension_DTLS use (Data => Key_Share_CH)
-      if Tag = TLS_ExtensionType_Values::Key_Share;
+      if Tag = Tls_Extensiontype_Values::Key_Share;
    for SH_Extension_TLS use (Data => Key_Share_SH)
-      if Tag = TLS_ExtensionType_Values::Key_Share;
+      if Tag = Tls_Extensiontype_Values::Key_Share;
    for SH_Extension_DTLS use (Data => Key_Share_SH)
-      if Tag = TLS_ExtensionType_Values::Key_Share;
+      if Tag = Tls_Extensiontype_Values::Key_Share;
    for HRR_Extension_TLS use (Data => Key_Share_HRR)
-      if Tag = TLS_ExtensionType_Values::Key_Share;
+      if Tag = Tls_Extensiontype_Values::Key_Share;
    for HRR_Extension_DTLS use (Data => Key_Share_HRR)
-      if Tag = TLS_ExtensionType_Values::Key_Share;
+      if Tag = Tls_Extensiontype_Values::Key_Share;
 
    -- Pre-Shared Key Exchange Modes Extension
 
    type PSK_Key_Exchange_Modes_Length is range 1 .. 255 with Size => 8;
 
-   type Key_Exchange_Modes is sequence of TLS_Parameters::TLS_PskKeyExchangeMode;
+   type Key_Exchange_Modes is sequence of Tls_Parameters::TLS_PskKeyExchangeMode;
 
    type Psk_Key_Exchange_Modes is
       message
@@ -1125,9 +1125,9 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Psk_Key_Exchange_Modes)
-      if Tag = TLS_ExtensionType_Values::Psk_Key_Exchange_Modes;
+      if Tag = Tls_Extensiontype_Values::Psk_Key_Exchange_Modes;
    for CH_Extension_DTLS use (Data => Psk_Key_Exchange_Modes)
-      if Tag = TLS_ExtensionType_Values::Psk_Key_Exchange_Modes;
+      if Tag = Tls_Extensiontype_Values::Psk_Key_Exchange_Modes;
 
    -- Early Data Indication Extension
 
@@ -1141,13 +1141,12 @@ package TLS_Handshake is
    type Early_Data is null message;
 
    for CH_Extension_TLS use (Data => Early_Data)
-      if Tag = TLS_ExtensionType_Values::Early_Data;
+      if Tag = Tls_Extensiontype_Values::Early_Data;
    for CH_Extension_DTLS use (Data => Early_Data)
-      if Tag = TLS_ExtensionType_Values::Early_Data;
+      if Tag = Tls_Extensiontype_Values::Early_Data;
    for EE_Extension use (Data => Early_Data)
-      if Tag = TLS_ExtensionType_Values::Early_Data;
-   for NST_Extension use (Data => Early_Data_Indication)
-      if Tag = TLS_ExtensionType_Values::Early_Data;
+      if Tag = Tls_Extensiontype_Values::Early_Data;
+   for NST_Extension use (Data => Early_Data_Indication);
 
    -- Pre-Shared Key Extension
 
@@ -1196,13 +1195,13 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Pre_Shared_Key_CH)
-      if Tag = TLS_ExtensionType_Values::Pre_Shared_Key;
+      if Tag = Tls_Extensiontype_Values::Pre_Shared_Key;
    for CH_Extension_DTLS use (Data => Pre_Shared_Key_CH)
-      if Tag = TLS_ExtensionType_Values::Pre_Shared_Key;
+      if Tag = Tls_Extensiontype_Values::Pre_Shared_Key;
    for SH_Extension_TLS use (Data => Pre_Shared_Key_SH)
-      if Tag = TLS_ExtensionType_Values::Pre_Shared_Key;
+      if Tag = Tls_Extensiontype_Values::Pre_Shared_Key;
    for SH_Extension_DTLS use (Data => Pre_Shared_Key_SH)
-      if Tag = TLS_ExtensionType_Values::Pre_Shared_Key;
+      if Tag = Tls_Extensiontype_Values::Pre_Shared_Key;
 
    -- Application-Layer Protocol Negotiation Extension
 
@@ -1226,10 +1225,10 @@ package TLS_Handshake is
       end message;
 
    for CH_Extension_TLS use (Data => Protocol_Name_List)
-      if Tag = TLS_ExtensionType_Values::Application_Layer_Protocol_Negotiation;
+      if Tag = Tls_Extensiontype_Values::Application_Layer_Protocol_Negotiation;
    for CH_Extension_DTLS use (Data => Protocol_Name_List)
-      if Tag = TLS_ExtensionType_Values::Application_Layer_Protocol_Negotiation;
+      if Tag = Tls_Extensiontype_Values::Application_Layer_Protocol_Negotiation;
    for EE_Extension use (Data => Protocol_Name_List)
-      if Tag = TLS_ExtensionType_Values::Application_Layer_Protocol_Negotiation;
+      if Tag = Tls_Extensiontype_Values::Application_Layer_Protocol_Negotiation;
 
 end TLS_Handshake;

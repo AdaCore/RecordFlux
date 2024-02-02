@@ -2041,7 +2041,8 @@ def test_invalid_use_of_message_attributes() -> None:
     )
 
 
-def test_identifier_normalization() -> None:
+def test_message_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(Message, "_check_identifiers", lambda _, _s, _t: None)
     assert str(
         Message(
             "P::M",
@@ -2094,6 +2095,79 @@ def test_identifier_normalization() -> None:
                   G : Opaque;
                end message""",
     )
+
+
+def test_message_inconsistent_identifier_casing() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:1:1: model: error: casing of "b" differs from casing'
+            r' in the declaration of "B" at <stdin>:11:11\n'
+            r'<stdin>:11:11: model: info: declaration of "B"\n'
+            r'<stdin>:2:2: model: error: casing of "c" differs from casing'
+            r' in the declaration of "C" at <stdin>:12:12\n'
+            r'<stdin>:12:12: model: info: declaration of "C"\n'
+            r'<stdin>:3:3: model: error: casing of "p::e" differs from cas'
+            r'ing in the declaration of "P::E" at <stdin>:13:13\n'
+            r'<stdin>:13:13: model: info: declaration of "P::E"\n'
+            r'<stdin>:4:4: model: error: casing of "g" differs from casing'
+            r' in the declaration of "G" at <stdin>:14:14\n'
+            r'<stdin>:14:14: model: info: declaration of "G"\n'
+            r'<stdin>:5:5: model: error: casing of "f" differs from casing'
+            r' in the declaration of "F" at <stdin>:15:15\n'
+            r'<stdin>:15:15: model: info: declaration of "F"\n'
+            r'<stdin>:6:6: model: error: casing of "f" differs from casing'
+            r' in the declaration of "F" at <stdin>:15:15\n'
+            r'<stdin>:15:15: model: info: declaration of "F"\n'
+            r'<stdin>:7:7: model: error: casing of "p::e" differs from casing'
+            r' in the declaration of "P::E" at <stdin>:13:13\n'
+            r'<stdin>:13:13: model: info: declaration of "P::E"'
+            r"$"
+        ),
+    ):
+        Message(
+            "P::M",
+            [
+                Link(INITIAL, Field("F")),
+                Link(
+                    Field("F"),
+                    Field(ID("g", location=Location((4, 4)))),
+                    Equal(Variable(ID("f", location=Location((5, 5)))), Literal("A")),
+                    Add(
+                        Size(ID("f", location=Location((6, 6)))),
+                        Size(ID("p::e", location=Location((7, 7)))),
+                    ),
+                ),
+                Link(
+                    Field("F"),
+                    FINAL,
+                    Equal(Variable("F"), Literal(ID("b", location=Location((1, 1))))),
+                ),
+                Link(
+                    Field("F"),
+                    FINAL,
+                    And(
+                        Equal(Variable("F"), Literal(ID("c", location=Location((2, 2))))),
+                        Equal(Size(ID("p::e", location=Location((3, 3)))), Number(8)),
+                    ),
+                ),
+                Link(Field("G"), FINAL),
+            ],
+            {
+                Field(ID("F", location=Location((15, 15)))): Enumeration(
+                    ID("P::E", location=Location((13, 13))),
+                    [
+                        ("A", Number(0)),
+                        (ID("B", location=Location((11, 11))), Number(1)),
+                        (ID("C", location=Location((12, 12))), Number(2)),
+                    ],
+                    Number(8),
+                    always_valid=False,
+                ),
+                Field(ID("G", location=Location((14, 14)))): OPAQUE,
+            },
+        )
 
 
 def test_no_path_to_final() -> None:
@@ -4649,7 +4723,8 @@ def test_message_str() -> None:
     )
 
 
-def test_refinement_identifier_normalization() -> None:
+def test_refinement_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(Refinement, "_check_identifiers", lambda _: None)
     assert str(
         Refinement(
             "R",
@@ -4673,6 +4748,47 @@ def test_refinement_identifier_normalization() -> None:
                if Tag = TLV::Msg_Data
             and Length = TLV::Length'Size""",
     )
+
+
+def test_refinement_inconsistent_identifier_casing() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:1:1: model: error: casing of "value" differs from casing'
+            r' in the declaration of "Value"\n'
+            r'model: info: declaration of "Value"\n'
+            r'<stdin>:2:2: model: error: casing of "tag" differs from casing'
+            r' in the declaration of "Tag"\n'
+            r'model: info: declaration of "Tag"\n'
+            r'<stdin>:3:3: model: error: casing of "tlv::msg_data" differs from casing'
+            r' in the declaration of "TLV::Msg_Data"\n'
+            r'model: info: declaration of "TLV::Msg_Data"\n'
+            r'<stdin>:4:4: model: error: casing of "length" differs from casing'
+            r' in the declaration of "Length"\n'
+            r'model: info: declaration of "Length"\n'
+            r'<stdin>:5:5: model: error: casing of "tlv::length" differs from casing'
+            r' in the declaration of "TLV::Length"\n'
+            r'model: info: declaration of "TLV::Length"'
+            r"$"
+        ),
+    ):
+        Refinement(
+            "R",
+            models.tlv_message(),
+            Field(ID("value", location=Location((1, 1)))),
+            models.tlv_message(),
+            And(
+                Equal(
+                    Variable(ID("tag", location=Location((2, 2)))),
+                    Variable(ID("tlv::msg_data", location=Location((3, 3)))),
+                ),
+                Equal(
+                    Variable(ID("length", location=Location((4, 4)))),
+                    Size(ID("tlv::length", location=Location((5, 5)))),
+                ),
+            ),
+        )
 
 
 def test_refinement_dependencies() -> None:

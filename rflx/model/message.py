@@ -171,6 +171,8 @@ class Message(mty.Type):
         if not self.error.errors and not skip_verification:
             self._verify()
 
+        self._check_identifiers(structure, types)
+
         self.error.propagate()
 
     def __hash__(self) -> int:
@@ -1253,7 +1255,6 @@ class Message(mty.Type):
             proofs.check(self.error)
 
             self._prove_reachability(valid_paths)
-            self.error.propagate()
 
     def _determine_valid_paths(self) -> set[tuple[Link, ...]]:
         """Return all paths without contradictions."""
@@ -2118,6 +2119,29 @@ class Message(mty.Type):
             return (lnk.source, expr.Size(lnk.source.affixed_name))
         return (root, expr.Add(dist, source_size).simplified())
 
+    def _check_identifiers(self, structure: Sequence[Link], types: Iterable[Field]) -> None:
+        self.error.extend(
+            mty.check_identifier_notation(
+                (
+                    e
+                    for l in sorted(structure)
+                    for e in (
+                        expr.Variable(l.source.identifier),
+                        expr.Variable(l.target.identifier),
+                        l.condition,
+                        l.size,
+                        l.first,
+                    )
+                ),
+                itertools.chain(
+                    (f.identifier for f in types),
+                    self._unqualified_enum_literals,
+                    self._qualified_enum_literals,
+                    self._type_names,
+                ),
+            ),
+        )
+
 
 class DerivedMessage(Message):
     def __init__(  # noqa: PLR0913
@@ -2213,6 +2237,7 @@ class Refinement(mty.Type):
         self._qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
         self._type_names = mty.qualified_type_names(self.dependencies)
 
+        self._check_identifiers()
         self._normalize()
 
         if not skip_verification:
@@ -2343,6 +2368,19 @@ class Refinement(mty.Type):
                             ),
                         ],
                     )
+
+    def _check_identifiers(self) -> None:
+        self.error.extend(
+            mty.check_identifier_notation(
+                [expr.Variable(self.field.identifier), self.condition],
+                itertools.chain(
+                    (f.identifier for f in self.pdu.fields),
+                    self._unqualified_enum_literals,
+                    self._qualified_enum_literals,
+                    self._type_names,
+                ),
+            ),
+        )
 
     def __str__(self) -> str:
         condition = f"\n   if {self.condition}" if self.condition != expr.TRUE else ""

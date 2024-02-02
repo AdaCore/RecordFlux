@@ -1,5 +1,5 @@
 with TLS_Alert;
-with Tls_Common;
+with TLS_Common;
 with Tls_Handshake;
 with Tls_Parameters;
 
@@ -62,22 +62,22 @@ package TLS_Record is
       message
          Prefix : Plaintext_Prefix;
          Tag : Plaintext_Content_Type;
-         Legacy_Record_Version : Tls_Common::Protocol_Version
+         Legacy_Record_Version : TLS_Common::Protocol_Version
             -- TLS
             then Length
-               if (Legacy_Record_Version = Tls_Common::TLS_1_0
-                  or Legacy_Record_Version = Tls_Common::TLS_1_1
-                  or Legacy_Record_Version = Tls_Common::TLS_1_2
-                  or Legacy_Record_Version = Tls_Common::TLS_1_3)
+               if (Legacy_Record_Version = TLS_Common::TLS_1_0
+                  or Legacy_Record_Version = TLS_Common::TLS_1_1
+                  or Legacy_Record_Version = TLS_Common::TLS_1_2
+                  or Legacy_Record_Version = TLS_Common::TLS_1_3)
                   and
                      -- The following content types are not defined for TLS
                      (Tag /= Tls12_Cid and Tag /= ACK)
             -- DTLS
             then Epoch
-               if Legacy_Record_Version /= Tls_Common::TLS_1_0
-                  and Legacy_Record_Version /= Tls_Common::TLS_1_1
-                  and Legacy_Record_Version /= Tls_Common::TLS_1_2
-                  and Legacy_Record_Version /= Tls_Common::TLS_1_3;
+               if Legacy_Record_Version /= TLS_Common::TLS_1_0
+                  and Legacy_Record_Version /= TLS_Common::TLS_1_1
+                  and Legacy_Record_Version /= TLS_Common::TLS_1_2
+                  and Legacy_Record_Version /= TLS_Common::TLS_1_3;
          Epoch : Plaintext_Epoch;
          Sequence_Number : Plaintext_Sequence_Number;
          Length : Plaintext_Length
@@ -87,8 +87,8 @@ package TLS_Record is
             then Encrypted_Record
                with Size => Length * 8
                if Tag = Application_Data
-                  and (Legacy_Record_Version = Tls_Common::TLS_1_2
-                     or Legacy_Record_Version = Tls_Common::DTLS_1_2);
+                  and (Legacy_Record_Version = TLS_Common::TLS_1_2
+                     or Legacy_Record_Version = TLS_Common::DTLS_1_2);
          Fragment : Opaque
             then null;
          Encrypted_Record : Opaque;
@@ -104,18 +104,18 @@ package TLS_Record is
    -- tls_handshake.rflx for more information.
    for TLS_Plaintext use (Fragment => TLS_Handshake::TLS_Handshake)
       if Tag = Handshake
-         and (Legacy_Record_Version = Tls_Common::TLS_1_0
-               or Legacy_Record_Version = Tls_Common::TLS_1_1
-               or Legacy_Record_Version = Tls_Common::TLS_1_2
-               or Legacy_Record_Version = Tls_Common::TLS_1_3);
+         and (Legacy_Record_Version = TLS_Common::TLS_1_0
+               or Legacy_Record_Version = TLS_Common::TLS_1_1
+               or Legacy_Record_Version = TLS_Common::TLS_1_2
+               or Legacy_Record_Version = TLS_Common::TLS_1_3);
 
    -- DTLS Handshake
    for TLS_Plaintext use (Fragment => TLS_Handshake::DTLS_Handshake)
       if Tag = Handshake
-         and (Legacy_Record_Version /= Tls_Common::TLS_1_0
-                  and Legacy_Record_Version /= Tls_Common::TLS_1_1
-                  and Legacy_Record_Version /= Tls_Common::TLS_1_2
-                  and Legacy_Record_Version /= Tls_Common::TLS_1_3);
+         and (Legacy_Record_Version /= TLS_Common::TLS_1_0
+                  and Legacy_Record_Version /= TLS_Common::TLS_1_1
+                  and Legacy_Record_Version /= TLS_Common::TLS_1_2
+                  and Legacy_Record_Version /= TLS_Common::TLS_1_3);
 
    for TLS_Plaintext use (Fragment => TLS_Alert::Alert)
       if Tag = Alert;
@@ -209,17 +209,17 @@ package TLS_Record is
 
    for TLS_Record use (Plaintext_Rec_Fragment => TLS_Handshake::TLS_Handshake)
       if Plaintext_Rec_Tag = Handshake
-         and (Plaintext_Rec_Legacy_Record_Version = Tls_Common::TLS_1_0
-               or Plaintext_Rec_Legacy_Record_Version = Tls_Common::TLS_1_1
-               or Plaintext_Rec_Legacy_Record_Version = Tls_Common::TLS_1_2
-               or Plaintext_Rec_Legacy_Record_Version = Tls_Common::TLS_1_3);
+         and (Plaintext_Rec_Legacy_Record_Version = TLS_Common::TLS_1_0
+               or Plaintext_Rec_Legacy_Record_Version = TLS_Common::TLS_1_1
+               or Plaintext_Rec_Legacy_Record_Version = TLS_Common::TLS_1_2
+               or Plaintext_Rec_Legacy_Record_Version = TLS_Common::TLS_1_3);
 
    for TLS_Record use (Plaintext_Rec_Fragment => TLS_Handshake::DTLS_Handshake)
       if Plaintext_Rec_Tag = Handshake
-         and (Plaintext_Rec_Legacy_Record_Version /= Tls_Common::TLS_1_0
-                  and Plaintext_Rec_Legacy_Record_Version /= Tls_Common::TLS_1_1
-                  and Plaintext_Rec_Legacy_Record_Version /= Tls_Common::TLS_1_2
-                  and Plaintext_Rec_Legacy_Record_Version /= Tls_Common::TLS_1_3);
+         and (Plaintext_Rec_Legacy_Record_Version /= TLS_Common::TLS_1_0
+                  and Plaintext_Rec_Legacy_Record_Version /= TLS_Common::TLS_1_1
+                  and Plaintext_Rec_Legacy_Record_Version /= TLS_Common::TLS_1_2
+                  and Plaintext_Rec_Legacy_Record_Version /= TLS_Common::TLS_1_3);
 
    for TLS_Record use (Plaintext_Rec_Fragment => TLS_Alert::Alert)
       if Plaintext_Rec_Tag = Alert;

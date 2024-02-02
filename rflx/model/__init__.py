@@ -20,7 +20,6 @@ from .message import (
 from .model import Model as Model, UncheckedModel as UncheckedModel
 from .session import (
     FINAL_STATE as FINAL_STATE,
-    AbstractSession as AbstractSession,
     Session as Session,
     State as State,
     Transition as Transition,

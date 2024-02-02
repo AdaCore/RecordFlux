@@ -108,7 +108,8 @@ def test_str() -> None:
     )
 
 
-def test_identifier_normalization() -> None:
+def test_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(Session, "_check_identifiers", lambda _: None)
     assert str(
         Session(
             "P::S",
@@ -182,6 +183,120 @@ def test_identifier_normalization() -> None:
                end B;
             end S""",
     )
+
+
+def test_inconsistent_identifier_casing() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'<stdin>:1:1: model: error: casing of "tlv::message" differs from casing'
+            r' in the declaration of "TLV::Message"\n'
+            r'model: info: declaration of "TLV::Message"\n'
+            r'<stdin>:2:2: model: error: casing of "x" differs from casing'
+            r' in the declaration of "X" at <stdin>:12:12\n'
+            r'<stdin>:12:12: model: info: declaration of "X"\n'
+            r'<stdin>:3:3: model: error: casing of "m" differs from casing'
+            r' in the declaration of "M" at <stdin>:13:13\n'
+            r'<stdin>:13:13: model: info: declaration of "M"\n'
+            r'<stdin>:4:4: model: error: casing of "b" differs from casing'
+            r' in the declaration of "B" at <stdin>:14:14\n'
+            r'<stdin>:14:14: model: info: declaration of "B"\n'
+            r'<stdin>:5:5: model: error: casing of "y" differs from casing'
+            r' in the declaration of "Y" at <stdin>:15:15\n'
+            r'<stdin>:15:15: model: info: declaration of "Y"\n'
+            r'<stdin>:6:6: model: error: casing of "z" differs from casing'
+            r' in the declaration of "Z" at <stdin>:16:16\n'
+            r'<stdin>:16:16: model: info: declaration of "Z"\n'
+            r'<stdin>:7:7: model: error: casing of "g" differs from casing'
+            r' in the declaration of "G" at <stdin>:17:17\n'
+            r'<stdin>:17:17: model: info: declaration of "G"\n'
+            r'<stdin>:8:8: model: error: casing of "f" differs from casing'
+            r' in the declaration of "F" at <stdin>:18:18\n'
+            r'<stdin>:18:18: model: info: declaration of "F"\n'
+            r'<stdin>:9:9: model: error: casing of "a" differs from casing'
+            r' in the declaration of "A" at <stdin>:19:19\n'
+            r'<stdin>:19:19: model: info: declaration of "A"'
+            r"$"
+        ),
+    ):
+        Session(
+            "P::S",
+            [
+                State(
+                    ID("A", location=Location((19, 19))),
+                    declarations=[],
+                    actions=[
+                        stmt.Read(
+                            ID("x", location=Location((2, 2))),
+                            expr.Variable(ID("m", location=Location((3, 3)))),
+                        ),
+                    ],
+                    transitions=[
+                        Transition(ID("b", location=Location((4, 4)))),
+                    ],
+                ),
+                State(
+                    ID("B", location=Location((14, 14))),
+                    declarations=[
+                        decl.VariableDeclaration(
+                            ID("Z", location=Location((16, 16))),
+                            BOOLEAN.identifier,
+                            expr.Variable(ID("y", location=Location((5, 5)))),
+                        ),
+                    ],
+                    actions=[],
+                    transitions=[
+                        Transition(
+                            "null",
+                            condition=expr.And(
+                                expr.Equal(
+                                    expr.Variable(ID("z", location=Location((6, 6)))),
+                                    expr.TRUE,
+                                ),
+                                expr.Equal(
+                                    expr.Call(
+                                        ID("g", location=Location((7, 7))),
+                                        [expr.Variable(ID("f", location=Location((8, 8))))],
+                                    ),
+                                    expr.TRUE,
+                                ),
+                            ),
+                        ),
+                        Transition(ID("a", location=Location((9, 9)))),
+                    ],
+                ),
+            ],
+            [
+                decl.VariableDeclaration(
+                    ID("M", location=Location((13, 13))),
+                    ID("tlv::message", location=Location((1, 1))),
+                ),
+                decl.VariableDeclaration(
+                    ID("Y", location=Location((15, 15))),
+                    BOOLEAN.identifier,
+                    expr.FALSE,
+                ),
+            ],
+            [
+                decl.ChannelDeclaration(
+                    ID("X", location=Location((12, 12))),
+                    readable=True,
+                    writable=True,
+                ),
+                decl.FunctionDeclaration(
+                    ID("F", location=Location((18, 18))),
+                    [],
+                    BOOLEAN.identifier,
+                ),
+                decl.FunctionDeclaration(
+                    ID("G", location=Location((17, 17))),
+                    [decl.Argument("P", BOOLEAN.identifier)],
+                    BOOLEAN.identifier,
+                ),
+            ],
+            [BOOLEAN, models.tlv_message()],
+        )
 
 
 def test_invalid_name() -> None:

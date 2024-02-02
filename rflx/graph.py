@@ -11,7 +11,7 @@ from pydotplus import Dot, Edge, InvocationException, Node  # type: ignore[attr-
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
-from rflx.model import FINAL_STATE, AbstractSession, Link, Message
+from rflx.model import FINAL_STATE, Link, Message, Session
 
 log = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ def create_message_graph(message: Message) -> Dot:
     return result
 
 
-def create_session_graph(session: AbstractSession, ignore: Optional[Sequence[str]] = None) -> Dot:
+def create_session_graph(session: Session, ignore: Optional[Sequence[str]] = None) -> Dot:
     """
     Return pydot graph representation of session.
 

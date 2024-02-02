@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Prevent different casings for same entity (eng/recordflux/RecordFlux#563)
+
 ### Fixed
 
 - Unexpected errors when using different casings for same entity (AdaCore/RecordFlux#562, eng/recordflux/RecordFlux#1506)

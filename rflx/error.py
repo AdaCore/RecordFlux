@@ -51,6 +51,10 @@ class Location(Base):
     def end(self) -> Optional[tuple[int, int]]:
         return self._end
 
+    @property
+    def short(self) -> Location:
+        return Location(self.start, Path(self.source.name) if self.source else None, self.end)
+
     def __hash__(self) -> int:
         return hash(self._start)
 

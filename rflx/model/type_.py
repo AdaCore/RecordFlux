@@ -10,7 +10,7 @@ from typing import Optional
 import rflx.typing_ as rty
 from rflx import const, expression as expr
 from rflx.common import indent_next, verbose_repr
-from rflx.error import Location, Severity, Subsystem, fail
+from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
 
 from . import message
@@ -831,3 +831,44 @@ def qualified_type_names(types: abc.Iterable[Type]) -> dict[ID, Type]:
     return {
         t.identifier.name if t.package == const.BUILTINS_PACKAGE else t.identifier: t for t in types
     }
+
+
+def check_identifier_notation(
+    expressions: abc.Iterable[expr.Expr],
+    identifiers: abc.Iterable[ID],
+) -> RecordFluxError:
+    id_map = {i: i for i in identifiers}
+
+    def verify_identifier_notation(expression: expr.Expr, error: RecordFluxError) -> expr.Expr:
+        if (
+            isinstance(expression, (expr.Variable, expr.Literal, expr.TypeName, expr.Call))
+            and expression.identifier in id_map
+            and str(expression.identifier) != str(id_map[expression.identifier])
+        ):
+            declaration_location = id_map[expression.identifier].location
+            error.extend(
+                [
+                    (
+                        f'casing of "{expression.identifier}" differs from casing in the'
+                        f' declaration of "{id_map[expression.identifier]}"'
+                        + (f" at {declaration_location.short}" if declaration_location else ""),
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        expression.identifier.location,
+                    ),
+                    (
+                        f'declaration of "{id_map[expression.identifier]}"',
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        declaration_location,
+                    ),
+                ],
+            )
+        return expression
+
+    error = RecordFluxError()
+
+    for e in expressions:
+        e.substituted(lambda e: verify_identifier_notation(e, error))
+
+    return error
