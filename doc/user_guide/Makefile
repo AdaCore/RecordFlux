@@ -22,8 +22,8 @@ EXISTING_HELP_FILES = $(wildcard 90-rflx-*-help.txt)
 UNEXPECTED_HELP_FILES = $(filter-out $(EXPECTED_HELP_FILES),$(EXISTING_HELP_FILES))
 MISSING_HELP_FILES = $(filter-out $(EXISTING_HELP_FILES),$(EXPECTED_HELP_FILES))
 
-REPLACE_WORKERS = sed "s/workers (default: [0-9]*)/workers (default: NPROC)/"
-CHECK = diff 90-rflx--help.txt <(rflx --help | $(REPLACE_WORKERS)) && $(foreach CMD,$(COMMANDS),diff $(call help_file,$(CMD)) <(rflx $(CMD) --help) &&) exit
+NORMALIZE = sed -e "s/workers (default: [0-9]*)/workers (default: NPROC)/" -e "s/optional arguments:/options:/"
+CHECK = diff 90-rflx--help.txt <(rflx --help | $(NORMALIZE)) && $(foreach CMD,$(COMMANDS),diff $(call help_file,$(CMD)) <(rflx $(CMD) --help | $(NORMALIZE)) &&) exit
 
 check_help:
 	@test -z "$(MISSING_HELP_FILES)" || ( echo "Missing help files: $(MISSING_HELP_FILES)" && exit 1 )
@@ -31,10 +31,10 @@ check_help:
 	@( $(CHECK) ) || ( echo "Help texts are outdated" && exit 1 )
 
 90-rflx-%--help.txt::
-	@rflx $* --help > $@
+	@rflx $* --help | $(NORMALIZE) > $@
 
 90-rflx--help.txt:
-	@rflx --help | $(REPLACE_WORKERS) > $@
+	@rflx --help | $(NORMALIZE) > $@
 
 # Regenerate rflx help texts for the documentation
 # We do not do this automatically. The results are checked in as we don't
