@@ -2041,6 +2041,61 @@ def test_invalid_use_of_message_attributes() -> None:
     )
 
 
+def test_identifier_normalization() -> None:
+    assert str(
+        Message(
+            "P::M",
+            [
+                Link(INITIAL, Field("F")),
+                Link(
+                    Field("f"),
+                    Field("g"),
+                    Equal(Variable(ID("f")), Literal("A")),
+                    Add(Size("f"), Size("p::e")),
+                ),
+                Link(
+                    Field("F"),
+                    FINAL,
+                    Equal(Variable("F"), Literal(ID("b"))),
+                ),
+                Link(
+                    Field("F"),
+                    FINAL,
+                    And(
+                        Equal(Variable("F"), Literal(ID("c"))),
+                        Equal(Size(ID("p::e")), Number(8)),
+                    ),
+                ),
+                Link(Field("G"), FINAL),
+            ],
+            {
+                Field("F"): Enumeration(
+                    "P::E",
+                    [("A", Number(0)), ("B", Number(1)), ("C", Number(2))],
+                    Number(8),
+                    always_valid=False,
+                ),
+                Field("G"): OPAQUE,
+            },
+        ),
+    ) == textwrap.dedent(
+        """\
+            type M is
+               message
+                  F : P::E
+                     then null
+                        if F = P::B
+                     then null
+                        if F = P::C
+                           and P::E'Size = 8
+                     then G
+                        with Size => F'Size + P::E'Size
+                        if F = P::A;
+                  G : Opaque;
+               end message""",
+    )
+
+
 def test_no_path_to_final() -> None:
     structure = [
         Link(INITIAL, Field("F1")),
@@ -4591,6 +4646,32 @@ def test_message_str() -> None:
                   P : P::Integer;
                end message""",
         ),
+    )
+
+
+def test_refinement_identifier_normalization() -> None:
+    assert str(
+        Refinement(
+            "R",
+            models.tlv_message(),
+            Field(ID("value", location=Location((1, 1)))),
+            models.tlv_message(),
+            And(
+                Equal(
+                    Variable(ID("tag", location=Location((2, 2)))),
+                    Variable(ID("tlv::msg_data", location=Location((3, 3)))),
+                ),
+                Equal(
+                    Variable(ID("length", location=Location((4, 4)))),
+                    Size(ID("tlv::length", location=Location((5, 5)))),
+                ),
+            ),
+        ),
+    ) == textwrap.dedent(
+        """\
+            for Message use (Value => Message)
+               if Tag = TLV::Msg_Data
+            and Length = TLV::Length'Size""",
     )
 
 

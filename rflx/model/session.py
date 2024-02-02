@@ -415,64 +415,153 @@ class AbstractSession(TopLevelDeclaration):
     def initial_state(self) -> State:
         return self.states[0]
 
-    def _normalize(self) -> None:
+    def _normalize(self) -> None:  # noqa: PLR0912
         """
         Normalize all expressions of the session.
 
-        Replace variables by type names, literals or function calls without arguments where
-        necessary. The distinction between these different kind of expressions is not possible in
-        the parser, as all of these are syntactically identical.
+        - Unify the identifier casing.
+        - Replace variables by type names, literals or function calls without arguments where
+          necessary. The distinction between these different kind of expressions is not possible in
+          the parser, as all of these are syntactically identical.
         """
         functions = [
             p.identifier
             for p in self.parameters.values()
             if isinstance(p, decl.FunctionDeclaration)
         ]
+        channels = [
+            p.identifier for p in self.parameters.values() if isinstance(p, decl.ChannelDeclaration)
+        ]
+        global_variables = list(self.declarations)
+        type_names_map = {t: t for t in self._type_names}
 
-        def substitution(expression: expr.Expr) -> expr.Expr:
-            if isinstance(expression, expr.Variable):
-                if expression.identifier in self._type_names:
-                    return expr.TypeName(
-                        expression.identifier,
-                        expression.type_,
-                        location=expression.location,
-                    )
-                if expression.identifier in self._enum_literals:
-                    return expr.Literal(
-                        expression.identifier,
-                        expression.type_,
-                        location=expression.location,
-                    )
-                if expression.identifier in functions:
-                    return expr.Call(
-                        expression.identifier,
-                        [],
-                        expression.negative,
-                        expression.immutable,
-                        expression.type_,
-                        location=expression.location,
-                    )
-            return expression
+        def normalize_identifiers_global(expression: expr.Expr) -> expr.Expr:
+            return normalize_identifiers(
+                expression,
+                global_variables,
+                self._enum_literals,
+                self._type_names,
+                functions,
+            )
 
         for d in self.declarations.values():
+            if isinstance(d, decl.TypeCheckableDeclaration) and d.type_identifier in type_names_map:
+                d.type_identifier = ID(
+                    type_names_map[d.type_identifier],
+                    location=d.type_identifier.location,
+                )
+
             if isinstance(d, decl.VariableDeclaration) and d.expression:
-                d.expression = d.expression.substituted(substitution)
+                d.expression = d.expression.substituted(normalize_identifiers_global)
+
+        states_map = {s.identifier: s.identifier for s in self.states}
 
         for state in self.states:
+            variables = [*global_variables, *state.declarations]
+            declarations_map = {
+                **{v: v for v in variables},
+                **{c: c for c in channels},
+            }
+
+            def normalize_identifiers_local(
+                expression: expr.Expr,
+                variables: Iterable[ID] = variables,
+            ) -> expr.Expr:
+                return normalize_identifiers(
+                    expression,
+                    variables,
+                    self._enum_literals,
+                    self._type_names,
+                    functions,
+                )
+
             for d in state.declarations.values():
                 if isinstance(d, decl.VariableDeclaration) and d.expression:
-                    d.expression = d.expression.substituted(substitution)
+                    d.expression = d.expression.substituted(normalize_identifiers_local)
             for a in state.actions:
                 if isinstance(a, stmt.Assignment):
-                    a.expression = a.expression.substituted(substitution)
+                    a.expression = a.expression.substituted(normalize_identifiers_local)
                 if isinstance(a, stmt.AttributeStatement):
-                    a.parameters = [p.substituted(substitution) for p in a.parameters]
+                    if a.identifier in declarations_map:
+                        a.identifier = ID(
+                            declarations_map[a.identifier],
+                            location=a.identifier.location,
+                        )
+                    a.parameters = [
+                        p.substituted(normalize_identifiers_local) for p in a.parameters
+                    ]
                 if isinstance(a, stmt.Reset):
                     a.associations = {
-                        i: e.substituted(substitution) for i, e in a.associations.items()
+                        i: e.substituted(normalize_identifiers_local)
+                        for i, e in a.associations.items()
                     }
             for t in state.transitions:
-                t.condition = t.condition.substituted(substitution)
+                if t.target in states_map:
+                    t.target = states_map[t.target]
+                t.condition = t.condition.substituted(normalize_identifiers_local)
+
+            if state.exception_transition and t.target in states_map:
+                state.exception_transition.target = states_map[state.exception_transition.target]
+
+
+def normalize_identifiers(
+    expression: expr.Expr,
+    variables: Iterable[ID],
+    enum_literals: Iterable[ID],
+    type_names: Iterable[ID],
+    functions: Iterable[ID],
+) -> expr.Expr:
+    variables_map = {v: v for v in variables}
+    type_names_map = {t: t for t in type_names}
+    enum_literals_map = {l: l for l in enum_literals}
+    functions_map = {f: f for f in functions}
+
+    if isinstance(expression, expr.Variable):
+        if expression.identifier in type_names_map:
+            return expr.TypeName(
+                ID(type_names_map[expression.identifier], location=expression.identifier.location),
+                expression.type_,
+                location=expression.location,
+            )
+        if expression.identifier in enum_literals_map:
+            return expr.Literal(
+                ID(
+                    enum_literals_map[expression.identifier],
+                    location=expression.identifier.location,
+                ),
+                expression.type_,
+                location=expression.location,
+            )
+        if expression.identifier in functions_map:
+            return expr.Call(
+                ID(functions_map[expression.identifier], location=expression.identifier.location),
+                [],
+                expression.negative,
+                expression.immutable,
+                expression.type_,
+                location=expression.location,
+            )
+        if expression.identifier in variables_map:
+            return expr.Variable(
+                ID(variables_map[expression.identifier], location=expression.identifier.location),
+                expression.negative,
+                expression.immutable,
+                expression.type_,
+                location=expression.location,
+            )
+
+    if isinstance(expression, expr.Call) and expression.identifier in functions_map:
+        return expr.Call(
+            ID(functions_map[expression.identifier], location=expression.identifier.location),
+            expression.args,
+            expression.negative,
+            expression.immutable,
+            expression.type_,
+            expression.argument_types,
+            location=expression.location,
+        )
+
+    return expression
 
 
 class Session(AbstractSession):

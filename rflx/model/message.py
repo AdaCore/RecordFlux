@@ -1140,25 +1140,25 @@ class Message(mty.Type):
         """
         Normalize structure of message.
 
-        - Replace variables by literals where necessary.
-        - Qualify enumeration literals in conditions to prevent ambiguities.
-        - Add size expression for fields with implicit size. The distinction between variables and
-          literals is not possible in the parser, as both are syntactically identical.
+        - Normalize identifiers
+        - Add size expression for fields with implicit size
         """
 
         def substitute(expression: expr.Expr) -> expr.Expr:
-            return substitute_variables(
+            return normalize_identifiers(
                 expression,
+                types.keys(),
                 self._unqualified_enum_literals,
                 self._qualified_enum_literals,
                 self._type_names,
                 self.package,
             )
 
+        fields_map = {f.identifier: f.identifier for f in (INITIAL, *types, FINAL)}
         structure = [
             Link(
-                l.source,
-                l.target,
+                Field(ID(fields_map[l.source.identifier], location=l.source.identifier.location)),
+                Field(ID(fields_map[l.target.identifier], location=l.target.identifier.location)),
                 l.condition.substituted(substitute),
                 l.size.substituted(substitute),
                 l.first.substituted(substitute),
@@ -2206,6 +2206,13 @@ class Refinement(mty.Type):
         self.sdu = sdu
         self.condition = condition
 
+        self._unqualified_enum_literals = mty.unqualified_enum_literals(
+            self.dependencies,
+            self.package,
+        )
+        self._qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
+        self._type_names = mty.qualified_type_names(self.dependencies)
+
         self._normalize()
 
         if not skip_verification:
@@ -2215,23 +2222,25 @@ class Refinement(mty.Type):
 
     def _normalize(self) -> None:
         """
-        Normalize condition of refinement.
+        Normalize refinement.
 
-        - Replace variables by literals where necessary.
-        - Qualify enumeration literals to prevent ambiguities.
-        - Set expression types
+        - Normalize identifiers
+        - Set expression types in condition
         """
 
-        unqualified_enum_literals = mty.unqualified_enum_literals(self.dependencies, self.package)
-        qualified_enum_literals = mty.qualified_enum_literals(self.dependencies)
-        type_names = mty.qualified_type_names(self.dependencies)
+        fields_map = {f.identifier: f.identifier for f in self.pdu.fields}
 
+        if self.field.identifier in fields_map:
+            self.field = Field(
+                ID(fields_map[self.field.identifier], location=self.field.identifier.location),
+            )
         self.condition = self.condition.substituted(
-            lambda e: substitute_variables(
+            lambda e: normalize_identifiers(
                 e,
-                unqualified_enum_literals,
-                qualified_enum_literals,
-                type_names,
+                self.pdu.fields,
+                self._unqualified_enum_literals,
+                self._qualified_enum_literals,
+                self._type_names,
                 self.package,
             ),
         )
@@ -2608,8 +2617,9 @@ class UncheckedMessage(mty.UncheckedType):
         inner_message_qualified_type_names = mty.qualified_type_names(inner_message_dependencies)
 
         def substitute_message_variables(expression: expr.Expr) -> expr.Expr:
-            return substitute_variables(
+            return normalize_identifiers(
                 expression,
+                message.fields,
                 message_unqualified_enum_literals,
                 message_qualified_enum_literals,
                 message_qualified_type_names,
@@ -3152,32 +3162,59 @@ def to_mapping(facts: Sequence[expr.Expr]) -> dict[expr.Name, expr.Expr]:
     }
 
 
-def substitute_variables(
+def normalize_identifiers(
     expression: expr.Expr,
+    fields: Iterable[Field],
     unqualified_enum_literals: Iterable[ID],
     qualified_enum_literals: Iterable[ID],
     type_names: Iterable[ID],
     package: ID,
 ) -> expr.Expr:
-    if isinstance(expression, expr.Variable) and expression.identifier in {
-        *unqualified_enum_literals,
-        *qualified_enum_literals,
-    }:
+    """
+    Normalize identifiers.
+
+    - Unify identifier casing
+    - Replace variables by literals or type names where necessary
+      (the distinction is not possible in the parser, as the syntax is identical)
+    - Qualify enumeration literals to prevent ambiguities
+    """
+    fields_map = {f.identifier: f.identifier for f in fields}
+    enum_literals_map = {
+        **{l: package * l for l in unqualified_enum_literals},
+        **{l: l for l in qualified_enum_literals},
+    }
+    type_names_map = {t: t for t in type_names}
+
+    if isinstance(expression, expr.Variable) and expression.identifier in fields_map:
+        return expr.Variable(
+            ID(fields_map[expression.identifier], location=expression.identifier.location),
+            type_=expression.type_,
+            location=expression.location,
+        )
+
+    if (
+        isinstance(expression, (expr.Variable, expr.Literal))
+        and expression.identifier in enum_literals_map
+    ):
         return expr.Literal(
-            package * expression.identifier
-            if expression.identifier in unqualified_enum_literals
-            else expression.identifier,
+            ID(
+                enum_literals_map[expression.identifier],
+                location=expression.identifier.location,
+            ),
             expression.type_,
             location=expression.location,
         )
-    if isinstance(expression, expr.Variable) and expression.identifier in type_names:
+
+    if (
+        isinstance(expression, (expr.Variable, expr.TypeName))
+        and expression.identifier in type_names
+    ):
         return expr.TypeName(
-            package * expression.identifier
-            if expression.identifier in unqualified_enum_literals
-            else expression.identifier,
+            ID(type_names_map[expression.identifier], location=expression.identifier.location),
             expression.type_,
             location=expression.location,
         )
+
     return expression
 
 

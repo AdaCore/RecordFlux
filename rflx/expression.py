@@ -3455,6 +3455,8 @@ def _entity_name(expr: Expr) -> str:
     expr_type = (
         "variable"
         if isinstance(expr, Variable)
+        else "literal"
+        if isinstance(expr, Literal)
         else "function"
         if isinstance(expr, Call)
         else "type"

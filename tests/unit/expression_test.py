@@ -2717,11 +2717,11 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
         (
             {
                 "X": Variable("A", location=Location((10, 40))),
-                "Y": Variable("B", location=Location((10, 30))),
+                "Y": Literal("B", location=Location((10, 30))),
             },
             rty.Undefined(),
             r'^<stdin>:10:40: model: error: undefined variable "A"\n'
-            r'<stdin>:10:30: model: error: undefined variable "B"\n'
+            r'<stdin>:10:30: model: error: undefined literal "B"\n'
             r'<stdin>:10:20: model: error: undefined message "X"$',
         ),
     ],

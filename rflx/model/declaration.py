@@ -65,6 +65,10 @@ class TypeCheckableDeclaration(Declaration):
     def type_identifier(self) -> ID:
         return self._type_identifier
 
+    @type_identifier.setter
+    def type_identifier(self, identifier: ID) -> None:
+        self._type_identifier = identifier
+
     @property
     def type_(self) -> rty.Type:
         return self._type

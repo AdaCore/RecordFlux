@@ -108,6 +108,82 @@ def test_str() -> None:
     )
 
 
+def test_identifier_normalization() -> None:
+    assert str(
+        Session(
+            "P::S",
+            [
+                State(
+                    "A",
+                    declarations=[],
+                    actions=[stmt.Read("x", expr.Variable("m"))],
+                    transitions=[
+                        Transition("b"),
+                    ],
+                ),
+                State(
+                    "B",
+                    declarations=[
+                        decl.VariableDeclaration("Z", BOOLEAN.identifier, expr.Variable("y")),
+                    ],
+                    actions=[],
+                    transitions=[
+                        Transition(
+                            "null",
+                            condition=expr.And(
+                                expr.Equal(expr.Variable("z"), expr.TRUE),
+                                expr.Equal(expr.Call("g", [expr.Variable("f")]), expr.TRUE),
+                            ),
+                        ),
+                        Transition("a"),
+                    ],
+                ),
+            ],
+            [
+                decl.VariableDeclaration("M", "tlv::message"),
+                decl.VariableDeclaration("Y", BOOLEAN.identifier, expr.FALSE),
+            ],
+            [
+                decl.ChannelDeclaration("X", readable=True, writable=True),
+                decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
+                decl.FunctionDeclaration(
+                    "G",
+                    [decl.Argument("P", BOOLEAN.identifier)],
+                    BOOLEAN.identifier,
+                ),
+            ],
+            [BOOLEAN, models.tlv_message()],
+        ),
+    ) == textwrap.dedent(
+        """\
+            generic
+               X : Channel with Readable, Writable;
+               with function F return Boolean;
+               with function G (P : Boolean) return Boolean;
+            session S is
+               M : TLV::Message;
+               Y : Boolean := False;
+            begin
+               state A is
+               begin
+                  X'Read (M);
+               transition
+                  goto B
+               end A;
+
+               state B is
+                  Z : Boolean := Y;
+               begin
+               transition
+                  goto null
+                     if Z = True
+                        and G (F) = True
+                  goto A
+               end B;
+            end S""",
+    )
+
+
 def test_invalid_name() -> None:
     with pytest.raises(
         RecordFluxError,
