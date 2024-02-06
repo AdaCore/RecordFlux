@@ -9,8 +9,6 @@
   "python.analysis.extraPaths": [
     "./stubs"
   ],
-  "python.linting.enabled": true,
-  "python.linting.mypyEnabled": true,
   "python.testing.pytestArgs": [
     "-vv",
     "-nauto",
