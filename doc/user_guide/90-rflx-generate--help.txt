@@ -2,7 +2,7 @@ usage: rflx generate [-h] [-p PREFIX] [-n] [-d OUTPUT_DIRECTORY]
                      [--debug {built-in,external}]
                      [--ignore-unsupported-checksum]
                      [--integration-files-dir INTEGRATION_FILES_DIR]
-                     [--reproducible]
+                     [--reproducible] [--optimize]
                      [SPECIFICATION_FILE ...]
 
 positional arguments:
@@ -21,3 +21,5 @@ options:
   --integration-files-dir INTEGRATION_FILES_DIR
                         directory for the .rfi files
   --reproducible        ensure reproducible output
+  --optimize            optimize generated state machine code (requires
+                        GNATprove)

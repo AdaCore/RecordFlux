@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Prevent different casings for same entity (eng/recordflux/RecordFlux#563)
+- Code optimizer that removes unnecessary checks in generated state machine code (eng/recordflux/RecordFlux#1525)
 
 ### Fixed
 

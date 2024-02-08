@@ -31,7 +31,7 @@ from rflx.error import (
     fail,
     fatal_fail,
 )
-from rflx.generator import Debug, Generator
+from rflx.generator import Debug, Generator, optimizer
 from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
 from rflx.integration import Integration
@@ -235,6 +235,11 @@ def main(  # noqa: PLR0915
         help="ensure reproducible output",
     )
     parser_generate.add_argument(
+        "--optimize",
+        action="store_true",
+        help="optimize generated state machine code (requires GNATprove)",
+    )
+    parser_generate.add_argument(
         "files",
         metavar="SPECIFICATION_FILE",
         type=Path,
@@ -243,6 +248,17 @@ def main(  # noqa: PLR0915
     )
     parser_generate.set_defaults(func=generate)
 
+    parser_optimize = subparsers.add_parser(
+        "optimize",
+        help="optimize generated state machine code",
+    )
+    parser_optimize.add_argument(
+        "directory",
+        metavar="DIRECTORY",
+        type=Path,
+        help="directory containing the generated code",
+    )
+    parser_optimize.set_defaults(func=optimize)
     parser_graph = subparsers.add_parser("graph", help="generate graphs")
     parser_graph.add_argument(
         "-f",
@@ -535,6 +551,16 @@ def generate(args: argparse.Namespace) -> None:
         library_files=not args.no_library,
         top_level_package=args.prefix == DEFAULT_PREFIX,
     )
+
+    if args.optimize:
+        optimizer.optimize(args.output_directory, args.workers)
+
+
+def optimize(args: argparse.Namespace) -> None:
+    if not args.directory.is_dir():
+        fail(f'directory not found: "{args.directory}"', Subsystem.CLI)
+
+    optimizer.optimize(args.directory, args.workers)
 
 
 def parse(

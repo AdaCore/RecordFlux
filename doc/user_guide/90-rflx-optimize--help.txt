@@ -1,0 +1,7 @@
+usage: rflx optimize [-h] DIRECTORY
+
+positional arguments:
+  DIRECTORY   directory containing the generated code
+
+options:
+  -h, --help  show this help message and exit

@@ -291,6 +291,78 @@ def test_main_generate_reproducible(
     assert result == [expected]
 
 
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        ([], False),
+        (["--optimize"], True),
+    ],
+)
+def test_main_generate_optimize(
+    args: list[str],
+    expected: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    def generator_mock(
+        self: object,  # noqa: ARG001
+        prefix: str,  # noqa: ARG001
+        workers: int,  # noqa: ARG001
+        reproducible: bool,  # noqa: ARG001
+        debug: generator.Debug,  # noqa: ARG001
+        ignore_unsupported_checksum: bool,  # noqa: ARG001
+    ) -> None:
+        pass
+
+    monkeypatch.setattr(generator.Generator, "__init__", generator_mock)
+    monkeypatch.setattr(
+        generator.Generator,
+        "generate",
+        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005, E501
+    )
+
+    called = []
+
+    def optimize_mock(generated_dir: Path, workers: int = 0) -> None:  # noqa: ARG001
+        called.append(True)
+
+    monkeypatch.setattr(generator.optimizer, "optimize", optimize_mock)
+
+    assert (
+        cli.main(
+            ["rflx", "generate", "-d", str(tmp_path), *args, MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+        )
+        == 0
+    )
+    assert bool(called) == expected
+
+
+def test_main_optimize(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    call = []
+
+    def optimize_mock(generated_dir: Path, workers: int = 0) -> None:  # noqa: ARG001
+        call.append(generated_dir)
+
+    monkeypatch.setattr(generator.optimizer, "optimize", optimize_mock)
+
+    assert (
+        cli.main(
+            ["rflx", "optimize", str(tmp_path)],
+        )
+        == 0
+    )
+    assert call == [tmp_path]
+
+
+def test_main_optimize_non_existent_directory() -> None:
+    assert 'cli: error: directory not found: "non-existent directory"' in str(
+        cli.main(["rflx", "optimize", "non-existent directory"]),
+    )
+
+
 def test_main_graph(tmp_path: Path) -> None:
     assert (
         cli.main(["rflx", "graph", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]) == 0

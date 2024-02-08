@@ -1,11 +1,13 @@
 usage: rflx [-h] [-q] [--version] [--no-caching] [--no-verification]
             [--max-errors NUM] [--workers NUM] [--unsafe]
-            {check,generate,graph,validate,install,convert,run_ls} ...
+            {check,generate,optimize,graph,validate,install,convert,run_ls}
+            ...
 
 positional arguments:
-  {check,generate,graph,validate,install,convert,run_ls}
+  {check,generate,optimize,graph,validate,install,convert,run_ls}
     check               check specification
     generate            generate code
+    optimize            optimize generated state machine code
     graph               generate graphs
     validate            validate specification against a set of known valid or
                         invalid messages
