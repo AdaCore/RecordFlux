@@ -2387,25 +2387,25 @@ class SessionGenerator:
 
             return [
                 # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-                self._if(
-                    Call(
-                        message_type * "Valid",
-                        [
-                            Variable(message_context),
-                            Variable(message_type * f"F_{field}"),
-                        ],
-                    ),
-                    [
-                        Assignment(
-                            Variable(variable_id(target, is_global)),
-                            Call(
-                                message_type * f"Get_{field}",
-                                [Variable(message_context)],
-                            ),
+                self._raise_exception_if(
+                    Not(
+                        Call(
+                            message_type * "Valid",
+                            [
+                                Variable(message_context),
+                                Variable(message_type * f"F_{field}"),
+                            ],
                         ),
-                    ],
+                    ),
                     f'access to invalid field "{field}" of "{message_context}"',
                     exception_handler,
+                ),
+                Assignment(
+                    Variable(variable_id(target, is_global)),
+                    Call(
+                        message_type * f"Get_{field}",
+                        [Variable(message_context)],
+                    ),
                 ),
             ]
 
@@ -2614,16 +2614,14 @@ class SessionGenerator:
                 ]
 
             if isinstance(find.sequence, ir.Var):
-                return [
-                    self._declare_sequence_copy(
-                        sequence_id,
-                        sequence_type_id,
-                        comprehension_statements,
-                        exception_handler,
-                        is_global,
-                        alloc_id,
-                    ),
-                ]
+                return self._declare_sequence_copy(
+                    sequence_id,
+                    sequence_type_id,
+                    comprehension_statements,
+                    exception_handler,
+                    is_global,
+                    alloc_id,
+                )
             if isinstance(find.sequence, ir.FieldAccess):
                 assert isinstance(selected.message_type, rty.Message)
                 message_id = selected.message
@@ -2633,24 +2631,22 @@ class SessionGenerator:
                 target_buffer_size = self._allocator.get_size(target, state)
 
                 return [
-                    self._if_well_formed_message(
+                    self._raise_exception_if_not_well_formed_message(
                         message_type,
                         context_id(message_id, is_global),
-                        [
-                            self._declare_message_field_sequence_copy(
-                                message_id,
-                                message_type,
-                                message_field,
-                                sequence_id,
-                                sequence_type_id,
-                                comprehension_statements,
-                                target_buffer_size < source_buffer_size,
-                                exception_handler,
-                                is_global,
-                                alloc_id,
-                            ),
-                        ],
                         exception_handler,
+                    ),
+                    self._declare_message_field_sequence_copy(
+                        message_id,
+                        message_type,
+                        message_field,
+                        sequence_id,
+                        sequence_type_id,
+                        comprehension_statements,
+                        target_buffer_size < source_buffer_size,
+                        exception_handler,
+                        is_global,
+                        alloc_id,
                     ),
                 ]
             assert False
@@ -2682,33 +2678,33 @@ class SessionGenerator:
         if isinstance(head.type_, (rty.Integer, rty.Enumeration)):
             return [
                 # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-                self._if(
-                    AndThen(
-                        Call(sequence_type * "Valid", [Variable(sequence_context)]),
-                        Call(
-                            sequence_type * "Has_Element",
-                            [Variable(sequence_context)],
-                        ),
-                        GreaterEqual(
+                self._raise_exception_if(
+                    Not(
+                        AndThen(
+                            Call(sequence_type * "Valid", [Variable(sequence_context)]),
                             Call(
-                                sequence_type * "Size",
+                                sequence_type * "Has_Element",
                                 [Variable(sequence_context)],
                             ),
-                            Size(target_type),
+                            GreaterEqual(
+                                Call(
+                                    sequence_type * "Size",
+                                    [Variable(sequence_context)],
+                                ),
+                                Size(target_type),
+                            ),
                         ),
                     ),
-                    [
-                        Assignment(
-                            Variable(variable_id(target, is_global)),
-                            Call(
-                                sequence_type * "Head",
-                                [Variable(sequence_context)],
-                            ),
-                        ),
-                    ],
                     f"access to first element of invalid or empty sequence"
                     f' "{sequence_context}"',
                     exception_handler,
+                ),
+                Assignment(
+                    Variable(variable_id(target, is_global)),
+                    Call(
+                        sequence_type * "Head",
+                        [Variable(sequence_context)],
+                    ),
                 ),
             ]
 
@@ -2733,108 +2729,101 @@ class SessionGenerator:
             local_exception_handler = exception_handler.copy(update_context)
 
             return [
-                IfStatement(
+                self._raise_exception_if(
+                    Not(
+                        Call(
+                            sequence_type * "Has_Element",
+                            [Variable(copied_sequence_context)],
+                        ),
+                    ),
+                    "empty sequence",
+                    exception_handler,
+                ),
+                Declare(
                     [
-                        (
-                            Call(
-                                sequence_type * "Has_Element",
-                                [Variable(copied_sequence_context)],
-                            ),
+                        ObjectDeclaration(
+                            [element_context],
+                            target_type * "Context",
+                        ),
+                        ObjectDeclaration(
+                            [target_buffer],
+                            self._prefix * const.TYPES_BYTES_PTR,
+                        ),
+                    ],
+                    [
+                        CallStatement(
+                            sequence_type * "Switch",
                             [
-                                Declare(
-                                    [
-                                        ObjectDeclaration(
-                                            [element_context],
-                                            target_type * "Context",
-                                        ),
-                                        ObjectDeclaration(
-                                            [target_buffer],
-                                            self._prefix * const.TYPES_BYTES_PTR,
-                                        ),
-                                    ],
-                                    [
-                                        CallStatement(
-                                            sequence_type * "Switch",
-                                            [
-                                                Variable(copied_sequence_context),
-                                                Variable(element_context),
-                                            ],
-                                        ),
-                                        CallStatement(
-                                            target_type * "Verify_Message",
-                                            [Variable(element_context)],
-                                        ),
-                                        self._if_well_formed_message(
-                                            target_type,
-                                            element_context,
-                                            [
-                                                *self._take_buffer(
-                                                    target,
-                                                    target_type,
-                                                    is_global,
-                                                    target_buffer,
-                                                ),
-                                                self._copy_to_buffer(
-                                                    target_type,
-                                                    element_context,
-                                                    target_buffer,
-                                                    target_buffer_size < source_buffer_size,
-                                                    local_exception_handler.copy(
-                                                        [
-                                                            CallStatement(
-                                                                target_type * "Initialize",
-                                                                [
-                                                                    Variable(target_context),
-                                                                    Variable(target_buffer),
-                                                                ],
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ),
-                                                CallStatement(
-                                                    target_type * "Initialize",
-                                                    [
-                                                        Variable(target_context),
-                                                        Variable(target_buffer),
-                                                        Call(
-                                                            target_type * "Size",
-                                                            [Variable(element_context)],
-                                                        ),
-                                                    ],
-                                                ),
-                                                CallStatement(
-                                                    target_type * "Verify_Message",
-                                                    [
-                                                        Variable(target_context),
-                                                    ],
-                                                ),
-                                            ],
-                                            local_exception_handler,
-                                        ),
-                                        *self._update_context(
-                                            copied_sequence_context,
-                                            element_context,
-                                            sequence_type,
-                                        ),
-                                    ],
+                                Variable(copied_sequence_context),
+                                Variable(element_context),
+                            ],
+                        ),
+                        CallStatement(
+                            target_type * "Verify_Message",
+                            [Variable(element_context)],
+                        ),
+                        self._raise_exception_if_not_well_formed_message(
+                            target_type,
+                            element_context,
+                            local_exception_handler,
+                        ),
+                        *self._take_buffer(
+                            target,
+                            target_type,
+                            is_global,
+                            target_buffer,
+                        ),
+                        *self._copy_to_buffer(
+                            target_type,
+                            element_context,
+                            target_buffer,
+                            target_buffer_size < source_buffer_size,
+                            local_exception_handler.copy(
+                                [
+                                    CallStatement(
+                                        target_type * "Initialize",
+                                        [
+                                            Variable(target_context),
+                                            Variable(target_buffer),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ),
+                        CallStatement(
+                            target_type * "Initialize",
+                            [
+                                Variable(target_context),
+                                Variable(target_buffer),
+                                Call(
+                                    target_type * "Size",
+                                    [Variable(element_context)],
                                 ),
                             ],
                         ),
+                        CallStatement(
+                            target_type * "Verify_Message",
+                            [
+                                Variable(target_context),
+                            ],
+                        ),
+                        *self._update_context(
+                            copied_sequence_context,
+                            element_context,
+                            sequence_type,
+                        ),
                     ],
-                    exception_handler.execute(),
                 ),
             ]
 
-        return [
-            self._declare_sequence_copy(
-                sequence_identifier,
-                sequence_type,
-                statements,
-                exception_handler,
-                is_global,
-                alloc_id,
-            ),
-        ]
+        return self._declare_sequence_copy(
+            sequence_identifier,
+            sequence_type,
+            statements,
+            exception_handler,
+            is_global,
+            alloc_id,
+        )
 
     def _assign_to_comprehension(  # noqa: PLR0913
         self,
@@ -2887,16 +2876,14 @@ class SessionGenerator:
                         ),
                     ]
 
-                return [
-                    self._declare_sequence_copy(
-                        sequence_id,
-                        sequence_type_id,
-                        statements,
-                        exception_handler,
-                        is_global,
-                        alloc_id,
-                    ),
-                ]
+                return self._declare_sequence_copy(
+                    sequence_id,
+                    sequence_type_id,
+                    statements,
+                    exception_handler,
+                    is_global,
+                    alloc_id,
+                )
 
             if isinstance(comprehension.sequence, ir.FieldAccess):
                 field_access = comprehension.sequence
@@ -2915,41 +2902,39 @@ class SessionGenerator:
 
                 return [
                     reset_target,
-                    self._if_well_formed_message(
+                    self._raise_exception_if_not_well_formed_message(
                         message_type,
                         context_id(message_id, is_global),
-                        [
-                            self._declare_message_field_sequence_copy(
-                                message_id,
-                                message_type,
-                                message_field,
+                        exception_handler,
+                    ),
+                    self._declare_message_field_sequence_copy(
+                        message_id,
+                        message_type,
+                        message_field,
+                        sequence_id,
+                        sequence_type_id,
+                        lambda local_exception_handler: [
+                            self._comprehension(
                                 sequence_id,
                                 sequence_type_id,
-                                lambda local_exception_handler: [
-                                    self._comprehension(
-                                        sequence_id,
-                                        sequence_type_id,
-                                        target_id,
-                                        target_type,
-                                        iterator_id,
-                                        iterator_type_id,
-                                        comprehension.selector.stmts,
-                                        comprehension.selector.expr,
-                                        comprehension.condition.stmts,
-                                        comprehension.condition.expr,
-                                        local_exception_handler,
-                                        is_global,
-                                        state,
-                                        alloc_id,
-                                    ),
-                                ],
-                                target_buffer_size < source_buffer_size,
-                                exception_handler,
+                                target_id,
+                                target_type,
+                                iterator_id,
+                                iterator_type_id,
+                                comprehension.selector.stmts,
+                                comprehension.selector.expr,
+                                comprehension.condition.stmts,
+                                comprehension.condition.expr,
+                                local_exception_handler,
                                 is_global,
+                                state,
                                 alloc_id,
                             ),
                         ],
+                        target_buffer_size < source_buffer_size,
                         exception_handler,
+                        is_global,
+                        alloc_id,
                     ),
                 ]
 
@@ -2984,32 +2969,32 @@ class SessionGenerator:
                     type_identifier * "Structure",
                 ),
             )
-            post_call.append(
-                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-                self._if(
-                    Call(type_identifier * "Valid_Structure", [Variable(target_id)]),
-                    [
-                        self._if(
+            post_call.extend(
+                [
+                    # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                    self._raise_exception_if(
+                        Not(Call(type_identifier * "Valid_Structure", [Variable(target_id)])),
+                        f'"{call_expr.identifier}" returned an invalid message',
+                        exception_handler,
+                    ),
+                    self._raise_exception_if(
+                        Not(
                             Call(
                                 type_identifier * "Sufficient_Buffer_Length",
                                 [Variable(message_id), Variable(target_id)],
                             ),
-                            [
-                                CallStatement(
-                                    type_identifier * "To_Context",
-                                    [
-                                        Variable(target_id),
-                                        Variable(message_id),
-                                    ],
-                                ),
-                            ],
-                            f'insufficient space for converting message "{target}"',
-                            exception_handler,
                         ),
-                    ],
-                    f'"{call_expr.identifier}" returned an invalid message',
-                    exception_handler,
-                ),
+                        f'insufficient space for converting message "{target}"',
+                        exception_handler,
+                    ),
+                    CallStatement(
+                        type_identifier * "To_Context",
+                        [
+                            Variable(target_id),
+                            Variable(message_id),
+                        ],
+                    ),
+                ],
             )
 
         elif isinstance(call_expr.type_, rty.Structure):
@@ -3264,34 +3249,34 @@ class SessionGenerator:
 
         return [
             # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-            self._if(
-                Call(
-                    contains_package
-                    * common.contains_function_name(
-                        refinement.package,
-                        pdu.identifier,
-                        sdu.identifier,
-                        field,
+            self._raise_exception_if(
+                Not(
+                    Call(
+                        contains_package
+                        * common.contains_function_name(
+                            refinement.package,
+                            pdu.identifier,
+                            sdu.identifier,
+                            field,
+                        ),
+                        [Variable(context_id(conversion.argument.message, is_global))],
                     ),
-                    [Variable(context_id(conversion.argument.message, is_global))],
                 ),
-                [
-                    CallStatement(
-                        contains_package * f"Copy_{field}",
-                        [
-                            Variable(context_id(conversion.argument.message, is_global)),
-                            Variable(context_id(target, is_global)),
-                        ],
-                    ),
-                    CallStatement(
-                        sdu.identifier * "Verify_Message",
-                        [
-                            Variable(context_id(target, is_global)),
-                        ],
-                    ),
-                ],
                 f'invalid conversion "{conversion}"',
                 exception_handler,
+            ),
+            CallStatement(
+                contains_package * f"Copy_{field}",
+                [
+                    Variable(context_id(conversion.argument.message, is_global)),
+                    Variable(context_id(target, is_global)),
+                ],
+            ),
+            CallStatement(
+                sdu.identifier * "Verify_Message",
+                [
+                    Variable(context_id(target, is_global)),
+                ],
             ),
         ]
 
@@ -3366,48 +3351,33 @@ class SessionGenerator:
             return [
                 *(
                     [
-                        IfStatement(
-                            [
-                                (
-                                    Not(precondition),
-                                    [
-                                        *self._debug_output("Error: unexpected size"),
-                                        *exception_handler.execute(),
-                                    ],
-                                ),
-                            ],
+                        self._raise_exception_if(
+                            Not(precondition),
+                            "unexpected size",
+                            exception_handler,
                         ),
                     ]
                     if precondition
                     else []
                 ),
-                IfStatement(
-                    [
-                        (
-                            Or(
-                                Not(
-                                    Call(
-                                        sequence_type * "Has_Element",
-                                        [Variable(sequence_context)],
-                                    ),
-                                ),
-                                Less(
-                                    Call(
-                                        sequence_type * "Available_Space",
-                                        [Variable(sequence_context)],
-                                    ),
-                                    required_space,
-                                ),
+                self._raise_exception_if(
+                    Or(
+                        Not(
+                            Call(
+                                sequence_type * "Has_Element",
+                                [Variable(sequence_context)],
                             ),
-                            [
-                                *self._debug_output(
-                                    "Error: insufficient space for appending to sequence"
-                                    f' "{sequence_context}"',
-                                ),
-                                *exception_handler.execute(),
-                            ],
                         ),
-                    ],
+                        Less(
+                            Call(
+                                sequence_type * "Available_Space",
+                                [Variable(sequence_context)],
+                            ),
+                            required_space,
+                        ),
+                    ),
+                    f'insufficient space for appending to sequence "{sequence_context}"',
+                    exception_handler,
                 ),
             ]
 
@@ -3889,129 +3859,88 @@ class SessionGenerator:
                 self._session_context.used_types_body.append(e.type_.identifier)
                 self._session_context.referenced_types_body.append(e.type_.identifier)
 
-    def _if(
-        self,
-        condition: Expr,
-        statements: Sequence[Statement],
-        error_message: str,
-        exception_handler: ExceptionHandler,
-    ) -> IfStatement:
-        return IfStatement(
-            [
-                (condition, statements),
-            ],
-            [
-                *self._debug_output(f"Error: {error_message}"),
-                *exception_handler.execute(),
-            ],
-        )
-
-    def _if_valid_sequence(
+    def _raise_exception_if_invalid_sequence(
         self,
         sequence_type: ID,
         sequence_context: ID,
-        statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
         # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-        return self._if(
-            Call(sequence_type * "Valid", [Variable(sequence_context)]),
-            statements,
+        return self._raise_exception_if(
+            Not(
+                Call(sequence_type * "Valid", [Variable(sequence_context)]),
+            ),
             f'invalid sequence "{sequence_context}"',
             exception_handler,
         )
 
-    def _if_well_formed_message(
+    def _raise_exception_if_not_well_formed_message(
         self,
         message_type: ID,
         message_context: ID,
-        statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
         # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-        return self._if(
-            Call(
-                message_type * "Well_Formed_Message",
-                [Variable(message_context)],
+        return self._raise_exception_if(
+            Not(
+                Call(
+                    message_type * "Well_Formed_Message",
+                    [Variable(message_context)],
+                ),
             ),
-            statements,
             f'invalid message "{message_context}"',
             exception_handler,
         )
 
-    def _if_well_formed_message_field(
+    def _raise_exception_if_not_well_formed_message_field(
         self,
         message_type: ID,
         message_context: ID,
         message_field: ID,
-        statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
         # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-        return self._if(
-            Call(
-                message_type * "Well_Formed",
-                [
-                    Variable(message_context),
-                    Variable(message_type * model.Field(message_field).affixed_name),
-                ],
+        return self._raise_exception_if(
+            Not(
+                Call(
+                    message_type * "Well_Formed",
+                    [
+                        Variable(message_context),
+                        Variable(message_type * model.Field(message_field).affixed_name),
+                    ],
+                ),
             ),
-            statements,
             f'invalid message field "{message_type * message_field}"',
             exception_handler,
         )
 
-    def _if_sufficient_space_in_sequence(
+    def _raise_exception_if_insufficient_space_in_sequence(
         self,
         required_space: Expr,
         sequence_type: ID,
         sequence_context: ID,
-        statements: Sequence[Statement],
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
         # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-        return self._if(
-            AndThen(
-                Call(
-                    sequence_type * "Has_Element",
-                    [Variable(sequence_context)],
-                ),
-                GreaterEqual(
+        return self._raise_exception_if(
+            Not(
+                AndThen(
                     Call(
-                        sequence_type * "Available_Space",
+                        sequence_type * "Has_Element",
                         [Variable(sequence_context)],
                     ),
-                    required_space,
+                    GreaterEqual(
+                        Call(
+                            sequence_type * "Available_Space",
+                            [Variable(sequence_context)],
+                        ),
+                        required_space,
+                    ),
                 ),
             ),
-            statements,
             f'insufficient space in sequence "{sequence_context}"',
             exception_handler,
         )
-
-    def _ensure(
-        self,
-        statements: list[Statement],
-        property_expression: Expr,
-        error_message: str,
-        exception_handler: ExceptionHandler,
-    ) -> list[Statement]:
-        nested: list[Statement] = []
-        statements.append(
-            IfStatement(
-                [
-                    (
-                        property_expression,
-                        nested,
-                    ),
-                ],
-                [
-                    *self._debug_output(f"Error: {error_message}"),
-                    *exception_handler.execute(),
-                ],
-            ),
-        )
-        return nested
 
     def _raise_exception_if(
         self,
@@ -4131,18 +4060,21 @@ class SessionGenerator:
                 type_ = value.type_.identifier
                 context = context_id(value.identifier, is_global)
                 # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-                statements = self._ensure(
-                    statements,
-                    Call(
-                        message_type_id * "Valid_Length",
-                        [
-                            Variable(message_context),
-                            Variable(message_type_id * f"F_{field}"),
-                            Call(type_ * "Byte_Size", [Variable(context)]),
-                        ],
+                statements.append(
+                    self._raise_exception_if(
+                        Not(
+                            Call(
+                                message_type_id * "Valid_Length",
+                                [
+                                    Variable(message_context),
+                                    Variable(message_type_id * f"F_{field}"),
+                                    Call(type_ * "Byte_Size", [Variable(context)]),
+                                ],
+                            ),
+                        ),
+                        f'invalid message field size for "{value}"',
+                        exception_handler,
                     ),
-                    f'invalid message field size for "{value}"',
-                    exception_handler,
                 )
             else:
                 if isinstance(value, ir.Agg):
@@ -4151,18 +4083,21 @@ class SessionGenerator:
                     size = Size(self._to_ada_expr(value, is_global))
 
                 # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-                statements = self._ensure(
-                    statements,
-                    Call(
-                        message_type_id * "Valid_Length",
-                        [
-                            Variable(message_context),
-                            Variable(message_type_id * f"F_{field}"),
-                            Call(const.TYPES_TO_LENGTH, [size]),
-                        ],
+                statements.append(
+                    self._raise_exception_if(
+                        Not(
+                            Call(
+                                message_type_id * "Valid_Length",
+                                [
+                                    Variable(message_context),
+                                    Variable(message_type_id * f"F_{field}"),
+                                    Call(const.TYPES_TO_LENGTH, [size]),
+                                ],
+                            ),
+                        ),
+                        f'invalid message field size for "{value}"',
+                        exception_handler,
                     ),
-                    f'invalid message field size for "{value}"',
-                    exception_handler,
                 )
 
         assert_sufficient_space = PragmaStatement(
@@ -4521,48 +4456,48 @@ class SessionGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
-    ) -> IfStatement:
+    ) -> list[Statement]:
         # Eng/RecordFlux/RecordFlux#577
         sequence_context = context_id(sequence_identifier, is_global)
         take_buffer = self._take_buffer(copy_id(sequence_identifier), sequence_type, is_global)
         free_buffer = self._free_buffer(copy_id(sequence_identifier), alloc_id)
 
-        return self._if_valid_sequence(
-            sequence_type,
-            sequence_context,
-            [
-                Declare(
-                    self._declare_context_buffer(
+        return [
+            self._raise_exception_if_invalid_sequence(
+                sequence_type,
+                sequence_context,
+                exception_handler,
+            ),
+            Declare(
+                self._declare_context_buffer(
+                    copy_id(sequence_identifier),
+                    sequence_type,
+                    is_global,
+                ),
+                [
+                    *self._allocate_buffer(copy_id(sequence_identifier), alloc_id),
+                    *self._copy_to_buffer(
+                        sequence_type,
+                        sequence_context,
+                        copy_id(buffer_id(sequence_identifier)),
+                        target_buffer_is_smaller=False,
+                        exception_handler=exception_handler.copy(free_buffer),
+                    ),
+                    self._initialize_context(
                         copy_id(sequence_identifier),
                         sequence_type,
                         is_global,
+                        last=Call(
+                            sequence_type * "Sequence_Last",
+                            [Variable(sequence_context)],
+                        ),
                     ),
-                    [
-                        *self._allocate_buffer(copy_id(sequence_identifier), alloc_id),
-                        self._copy_to_buffer(
-                            sequence_type,
-                            sequence_context,
-                            copy_id(buffer_id(sequence_identifier)),
-                            target_buffer_is_smaller=False,
-                            exception_handler=exception_handler.copy(free_buffer),
-                        ),
-                        self._initialize_context(
-                            copy_id(sequence_identifier),
-                            sequence_type,
-                            is_global,
-                            last=Call(
-                                sequence_type * "Sequence_Last",
-                                [Variable(sequence_context)],
-                            ),
-                        ),
-                        *statements(exception_handler.copy([*take_buffer, *free_buffer])),
-                        *take_buffer,
-                        *free_buffer,
-                    ],
-                ),
-            ],
-            exception_handler,
-        )
+                    *statements(exception_handler.copy([*take_buffer, *free_buffer])),
+                    *take_buffer,
+                    *free_buffer,
+                ],
+            ),
+        ]
 
     def _declare_message_field_sequence_copy(  # noqa: PLR0913
         self,
@@ -4585,46 +4520,44 @@ class SessionGenerator:
             self._declare_context_buffer(sequence_identifier, sequence_type, is_global),
             [
                 *self._allocate_buffer(sequence_identifier, alloc_id),
-                self._copy_to_buffer(
+                *self._copy_to_buffer(
                     message_type,
                     context_id(message_identifier, is_global),
                     buffer_id(sequence_identifier),
                     target_buffer_is_smaller,
                     local_exception_handler,
                 ),
-                self._if_well_formed_message_field(
+                self._raise_exception_if_not_well_formed_message_field(
                     message_type,
                     context_id(message_identifier, is_global),
                     message_field,
-                    [
-                        self._initialize_context(
-                            sequence_identifier,
-                            sequence_type,
-                            is_global,
-                            first=Call(
-                                message_type * "Field_First",
-                                [
-                                    Variable(context_id(message_identifier, is_global)),
-                                    Variable(
-                                        message_type * model.Field(message_field).affixed_name,
-                                    ),
-                                ],
-                            ),
-                            last=Call(
-                                message_type * "Field_Last",
-                                [
-                                    Variable(context_id(message_identifier, is_global)),
-                                    Variable(
-                                        message_type * model.Field(message_field).affixed_name,
-                                    ),
-                                ],
-                            ),
-                        ),
-                        *statements(exception_handler.copy([*take_buffer, *free_buffer])),
-                        *take_buffer,
-                    ],
                     local_exception_handler,
                 ),
+                self._initialize_context(
+                    sequence_identifier,
+                    sequence_type,
+                    is_global,
+                    first=Call(
+                        message_type * "Field_First",
+                        [
+                            Variable(context_id(message_identifier, is_global)),
+                            Variable(
+                                message_type * model.Field(message_field).affixed_name,
+                            ),
+                        ],
+                    ),
+                    last=Call(
+                        message_type * "Field_Last",
+                        [
+                            Variable(context_id(message_identifier, is_global)),
+                            Variable(
+                                message_type * model.Field(message_field).affixed_name,
+                            ),
+                        ],
+                    ),
+                ),
+                *statements(exception_handler.copy([*take_buffer, *free_buffer])),
+                *take_buffer,
                 *free_buffer,
             ],
         )
@@ -4875,42 +4808,40 @@ class SessionGenerator:
             target_buffer = "RFLX_Target_" + target_identifier
 
             assign_element = [
-                self._if_well_formed_message(
+                self._raise_exception_if_not_well_formed_message(
                     target_type.identifier,
                     element_id,
+                    exception_handler,
+                ),
+                Declare(
+                    [self._declare_buffer(target_buffer)],
                     [
-                        Declare(
-                            [self._declare_buffer(target_buffer)],
+                        *self._take_buffer(
+                            target_identifier,
+                            target_type_id,
+                            is_global,
+                            buffer_id(target_buffer),
+                        ),
+                        *self._copy_to_buffer(
+                            target_type_id,
+                            element_id,
+                            buffer_id(target_buffer),
+                            target_buffer_is_smaller=True,
+                            exception_handler=exception_handler,
+                        ),
+                        CallStatement(
+                            target_type_id * "Initialize",
                             [
-                                *self._take_buffer(
-                                    target_identifier,
-                                    target_type_id,
-                                    is_global,
-                                    buffer_id(target_buffer),
-                                ),
-                                self._copy_to_buffer(
-                                    target_type_id,
-                                    element_id,
-                                    buffer_id(target_buffer),
-                                    target_buffer_is_smaller=True,
-                                    exception_handler=exception_handler,
-                                ),
-                                CallStatement(
-                                    target_type_id * "Initialize",
-                                    [
-                                        Variable(variable_id(target_context, is_global)),
-                                        Variable(buffer_id(target_buffer)),
-                                        Call(target_type_id * "Size", [Variable(element_id)]),
-                                    ],
-                                ),
-                                CallStatement(
-                                    target_type_id * "Verify_Message",
-                                    [Variable(variable_id(target_context, is_global))],
-                                ),
+                                Variable(variable_id(target_context, is_global)),
+                                Variable(buffer_id(target_buffer)),
+                                Call(target_type_id * "Size", [Variable(element_id)]),
                             ],
                         ),
+                        CallStatement(
+                            target_type_id * "Verify_Message",
+                            [Variable(variable_id(target_context, is_global))],
+                        ),
                     ],
-                    exception_handler,
                 ),
             ]
 
@@ -4951,7 +4882,7 @@ class SessionGenerator:
 
         target_type_id = target_type.identifier
         required_space: Expr
-        append_element: Statement
+        append_element: list[Statement]
 
         if isinstance(target_type.element, rty.Message):
             if not isinstance(selector, ir.Var):
@@ -4967,12 +4898,16 @@ class SessionGenerator:
                 target_type.element.identifier * "Size",
                 [Variable(element_id)],
             )
-            append_element = self._if_well_formed_message(
-                target_type.element.identifier,
-                element_id,
-                [
-                    # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-                    self._if(
+            append_element = [
+                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                self._raise_exception_if_not_well_formed_message(
+                    target_type.element.identifier,
+                    element_id,
+                    exception_handler,
+                ),
+                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                self._raise_exception_if(
+                    Not(
                         Greater(
                             Call(
                                 target_type.element.identifier * "Size",
@@ -4982,21 +4917,18 @@ class SessionGenerator:
                             ),
                             Number(0),
                         ),
-                        [
-                            CallStatement(
-                                target_type_id * "Append_Element",
-                                [
-                                    Variable(context_id(target_identifier, is_global)),
-                                    Variable(element_id),
-                                ],
-                            ),
-                        ],
-                        "empty messages cannot be appended to sequence",
-                        exception_handler,
                     ),
-                ],
-                exception_handler,
-            )
+                    "empty messages cannot be appended to sequence",
+                    exception_handler,
+                ),
+                CallStatement(
+                    target_type_id * "Append_Element",
+                    [
+                        Variable(context_id(target_identifier, is_global)),
+                        Variable(element_id),
+                    ],
+                ),
+            ]
 
         elif isinstance(target_type.element, (rty.Integer, rty.Enumeration)):
             required_space = Size(
@@ -5008,13 +4940,15 @@ class SessionGenerator:
                 and target_type.element.always_valid
                 else target_type.element.identifier,
             )
-            append_element = CallStatement(
-                target_type_id * "Append_Element",
-                [
-                    Variable(context_id(target_identifier, is_global)),
-                    self._to_ada_expr(selector, is_global),
-                ],
-            )
+            append_element = [
+                CallStatement(
+                    target_type_id * "Append_Element",
+                    [
+                        Variable(context_id(target_identifier, is_global)),
+                        self._to_ada_expr(selector, is_global),
+                    ],
+                ),
+            ]
 
         else:
             assert False
@@ -5025,13 +4959,13 @@ class SessionGenerator:
                 for s in selector_stmts
                 for a in self._state_action(state, s, exception_handler, is_global)
             ],
-            self._if_sufficient_space_in_sequence(
+            self._raise_exception_if_insufficient_space_in_sequence(
                 required_space,
                 target_type_id,
                 context_id(target_identifier, is_global),
-                [append_element],
                 exception_handler,
             ),
+            *append_element,
         ]
 
     def _free_context_buffer(
@@ -5182,7 +5116,7 @@ class SessionGenerator:
         target_buffer: ID,
         target_buffer_is_smaller: bool,
         exception_handler: ExceptionHandler,
-    ) -> Statement:
+    ) -> list[Statement]:
         self._session_context.used_types_body.append(const.TYPES_LENGTH)
         copy = CallStatement(
             type_ * "Copy",
@@ -5214,9 +5148,9 @@ class SessionGenerator:
         )
 
         if target_buffer_is_smaller:
-            return IfStatement(
-                [
-                    (
+            return [
+                self._raise_exception_if(
+                    Not(
                         LessEqual(
                             Call(
                                 type_ * "Byte_Size",
@@ -5224,15 +5158,14 @@ class SessionGenerator:
                             ),
                             Length(target_buffer),
                         ),
-                        [
-                            copy,
-                        ],
                     ),
-                ],
-                exception_handler.execute(),
-            )
+                    "insufficient space in target buffer",
+                    exception_handler,
+                ),
+                copy,
+            ]
 
-        return copy
+        return [copy]
 
     def _convert_type(
         self,

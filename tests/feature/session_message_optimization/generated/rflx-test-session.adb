@@ -63,26 +63,24 @@ is
       -- tests/feature/session_message_optimization/test.rflx:27:16
       T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
       -- tests/feature/session_message_optimization/test.rflx:28:20
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
-      else
+      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_message_optimization/test.rflx:28:20
       T_2 := T_1 = Universal.MT_Data;
       -- tests/feature/session_message_optimization/test.rflx:27:16
       T_3 := T_0
       and then T_2;
       -- tests/feature/session_message_optimization/test.rflx:29:20
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         T_4 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
-      else
+      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      T_4 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
       -- tests/feature/session_message_optimization/test.rflx:29:20
       T_5 := T_4 = 3;
       if
@@ -182,13 +180,12 @@ is
       T_8 := T_6
       and then T_7;
       -- tests/feature/session_message_optimization/test.rflx:58:34
-      if Universal.Option.Valid (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) then
-         T_9 := Universal.Option.Get_Option_Type (Ctx.P.Option_Ctx);
-      else
+      if not Universal.Option.Valid (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      T_9 := Universal.Option.Get_Option_Type (Ctx.P.Option_Ctx);
       -- tests/feature/session_message_optimization/test.rflx:58:20
       T_10 := Option_Type = T_9;
       -- tests/feature/session_message_optimization/test.rflx:56:16

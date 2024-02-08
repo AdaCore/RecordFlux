@@ -75,13 +75,12 @@ is
    begin
       pragma Assert (Process_Invariant);
       -- tests/feature/session_variable_initialization/test.rflx:22:27
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
-         T_0 := Universal.Message.Get_Value (Ctx.P.Message_Ctx);
-      else
+      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      T_0 := Universal.Message.Get_Value (Ctx.P.Message_Ctx);
       -- tests/feature/session_variable_initialization/test.rflx:22:19
       T_2 := 255 - T_0;
       -- tests/feature/session_variable_initialization/test.rflx:22:19

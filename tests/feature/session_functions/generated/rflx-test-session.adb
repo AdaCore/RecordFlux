@@ -51,26 +51,24 @@ is
       -- tests/feature/session_functions/test.rflx:43:16
       T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
       -- tests/feature/session_functions/test.rflx:44:20
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
-      else
+      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_functions/test.rflx:44:20
       T_2 := T_1 = Universal.MT_Data;
       -- tests/feature/session_functions/test.rflx:43:16
       T_3 := T_0
       and then T_2;
       -- tests/feature/session_functions/test.rflx:45:20
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         T_4 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
-      else
+      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      T_4 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
       -- tests/feature/session_functions/test.rflx:45:20
       T_5 := T_4 = 3;
       if
@@ -129,19 +127,17 @@ is
       begin
          Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2));
          Create_Message (Ctx, Message_Type, Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2), Definite_Message);
-         if Test.Definite_Message.Valid_Structure (Definite_Message) then
-            if Test.Definite_Message.Sufficient_Buffer_Length (Ctx.P.Definite_Message_Ctx, Definite_Message) then
-               Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
-            else
-               Ctx.P.Next_State := S_Final;
-               pragma Assert (Process_Invariant);
-               goto Finalize_Process;
-            end if;
-         else
+         if not Test.Definite_Message.Valid_Structure (Definite_Message) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
+         if not Test.Definite_Message.Sufficient_Buffer_Length (Ctx.P.Definite_Message_Ctx, Definite_Message) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+         Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
       end;
       if Valid = M_Valid then
          Ctx.P.Next_State := S_Reply;
@@ -206,19 +202,17 @@ is
          end if;
          Universal.Message.Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length + 1) - 2));
          Create_Message (Ctx, (Known => True, Enum => Universal.OT_Data), Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length + 1) - 2), Definite_Message);
-         if Test.Definite_Message.Valid_Structure (Definite_Message) then
-            if Test.Definite_Message.Sufficient_Buffer_Length (Ctx.P.Definite_Message_Ctx, Definite_Message) then
-               Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
-            else
-               Ctx.P.Next_State := S_Final;
-               pragma Assert (Process_2_Invariant);
-               goto Finalize_Process_2;
-            end if;
-         else
+         if not Test.Definite_Message.Valid_Structure (Definite_Message) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_2_Invariant);
             goto Finalize_Process_2;
          end if;
+         if not Test.Definite_Message.Sufficient_Buffer_Length (Ctx.P.Definite_Message_Ctx, Definite_Message) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Process_2_Invariant);
+            goto Finalize_Process_2;
+         end if;
+         Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
       end;
       Ctx.P.Next_State := S_Reply_2;
       pragma Assert (Process_2_Invariant);

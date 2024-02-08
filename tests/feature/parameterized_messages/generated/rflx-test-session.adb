@@ -138,14 +138,13 @@ is
          RFLX_Test_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
          Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
       end;
-      if Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
-         pragma Assert (Test.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Test.Message.F_Extension));
-         Test.Message.Set_Extension (Ctx.P.M_S_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
-      else
+      if not Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Assert (Test.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Test.Message.F_Extension));
+      Test.Message.Set_Extension (Ctx.P.M_S_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
       -- tests/feature/parameterized_messages/test.rflx:49:10
       Length := Ctx.P.M_S_Ctx.Length;
       -- tests/feature/parameterized_messages/test.rflx:50:10
@@ -176,14 +175,13 @@ is
          RFLX_Test_Message_Set_Data (M_T_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
          Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
       end;
-      if Test.Message.Valid_Length (M_T_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
-         pragma Assert (Test.Message.Sufficient_Space (M_T_Ctx, Test.Message.F_Extension));
-         Test.Message.Set_Extension (M_T_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
-      else
+      if not Test.Message.Valid_Length (M_T_Ctx, Test.Message.F_Extension, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Assert (Test.Message.Sufficient_Space (M_T_Ctx, Test.Message.F_Extension));
+      Test.Message.Set_Extension (M_T_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
       -- tests/feature/parameterized_messages/test.rflx:53:19
       T_0 := Ctx.P.M_S_Ctx.Length;
       -- tests/feature/parameterized_messages/test.rflx:53:32

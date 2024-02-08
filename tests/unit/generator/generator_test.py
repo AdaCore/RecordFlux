@@ -1145,14 +1145,13 @@ pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Me
 Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
 pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length));
 Universal.Message.Set_Length (X_Ctx, 0);
-if Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (0 * RFLX_Types.Byte'Size)) then
-   Universal.Message.Set_Data_Empty (X_Ctx);
-else
+if not Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (0 * RFLX_Types.Byte'Size)) then
    Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[]""\");
    Ctx.P.Next_State := S_E;
    pragma Finalization;
    goto Finalize_S;
-end if;\
+end if;
+Universal.Message.Set_Data_Empty (X_Ctx);\
 """,  # noqa: E501
         ),
         (
@@ -1204,21 +1203,19 @@ declare
 begin
    Universal.Message.To_Structure (A_Ctx, A);
    F (Ctx, A, X);
-   if Universal.Option.Valid_Structure (X) then
-      if Universal.Option.Sufficient_Buffer_Length (X_Ctx, X) then
-         Universal.Option.To_Context (X, X_Ctx);
-      else
-         Ada.Text_IO.Put_Line ("Error: insufficient space for converting message ""X""\");
-         Ctx.P.Next_State := S_E;
-         pragma Finalization;
-         goto Finalize_S;
-      end if;
-   else
+   if not Universal.Option.Valid_Structure (X) then
       Ada.Text_IO.Put_Line ("Error: ""F"" returned an invalid message");
       Ctx.P.Next_State := S_E;
       pragma Finalization;
       goto Finalize_S;
    end if;
+   if not Universal.Option.Sufficient_Buffer_Length (X_Ctx, X) then
+      Ada.Text_IO.Put_Line ("Error: insufficient space for converting message ""X""\");
+      Ctx.P.Next_State := S_E;
+      pragma Finalization;
+      goto Finalize_S;
+   end if;
+   Universal.Option.To_Context (X, X_Ctx);
 end;\
 """,
         ),

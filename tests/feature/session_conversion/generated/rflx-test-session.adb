@@ -47,13 +47,12 @@ is
       -- tests/feature/session_conversion/test.rflx:16:16
       T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
       -- tests/feature/session_conversion/test.rflx:17:20
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
-      else
+      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_conversion/test.rflx:17:20
       T_2 := T_1 = Universal.MT_Data;
       if
@@ -84,14 +83,13 @@ is
    begin
       pragma Assert (Process_Invariant);
       -- tests/feature/session_conversion/test.rflx:25:10
-      if Universal.Contains.Option_In_Message_Data (Ctx.P.Message_Ctx) then
-         Universal.Contains.Copy_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx);
-         Universal.Option.Verify_Message (Ctx.P.Inner_Message_Ctx);
-      else
+      if not Universal.Contains.Option_In_Message_Data (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      Universal.Contains.Copy_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx);
+      Universal.Option.Verify_Message (Ctx.P.Inner_Message_Ctx);
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Process_Invariant);
       <<Finalize_Process>>

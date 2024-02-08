@@ -62,13 +62,12 @@ is
    begin
       pragma Assert (Prepare_Invariant);
       -- tests/feature/session_case_expression_numeric/test.rflx:29:25
-      if Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Value) then
-         T_0 := Test.Message.Get_Value (Ctx.P.Message_Ctx);
-      else
+      if not Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Value) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
+      T_0 := Test.Message.Get_Value (Ctx.P.Message_Ctx);
       -- tests/feature/session_case_expression_numeric/test.rflx:29:10
       Value := (case T_0 is
           when 1 | 2 =>

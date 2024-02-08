@@ -115,14 +115,13 @@ is
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Options);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
       Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (T_0) / Universal.Length (8));
-      if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Options_Ctx)) then
-         pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options));
-         Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
-      else
+      if not Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Options_Ctx)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options));
+      Universal.Message.Set_Options (Ctx.P.Message_Ctx, Options_Ctx);
       if Universal.Options.Valid (Options_Ctx) then
          Ctx.P.Next_State := S_Reply;
       else

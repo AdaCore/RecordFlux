@@ -54,26 +54,24 @@ is
       -- tests/feature/session_setting_of_message_fields/test.rflx:15:16
       T_1 := T_0;
       -- tests/feature/session_setting_of_message_fields/test.rflx:16:20
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         T_2 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
-      else
+      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      T_2 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_setting_of_message_fields/test.rflx:16:20
       T_3 := T_2 = Universal.MT_Data;
       -- tests/feature/session_setting_of_message_fields/test.rflx:15:16
       T_4 := T_1
       and then T_3;
       -- tests/feature/session_setting_of_message_fields/test.rflx:17:20
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
-         T_5 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
-      else
+      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      T_5 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
       -- tests/feature/session_setting_of_message_fields/test.rflx:17:20
       T_6 := T_5 = 1;
       if
@@ -127,14 +125,13 @@ is
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
       Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
-      if Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
-         pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data));
-         Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (65)));
-      else
+      if not Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data));
+      Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (65)));
       -- tests/feature/session_setting_of_message_fields/test.rflx:35:34
       T_7 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data));
       -- tests/feature/session_setting_of_message_fields/test.rflx:33:10
@@ -168,21 +165,19 @@ is
          Ctx.P.Message_Ctx := RFLX_Ctx_P_Message_Ctx_Tmp;
       end;
       -- tests/feature/session_setting_of_message_fields/test.rflx:40:16
-      if Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
-         T_8 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
-      else
+      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      T_8 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_setting_of_message_fields/test.rflx:40:39
-      if Universal.Message.Valid (Local_Message_Ctx, Universal.Message.F_Message_Type) then
-         T_9 := Universal.Message.Get_Message_Type (Local_Message_Ctx);
-      else
+      if not Universal.Message.Valid (Local_Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      T_9 := Universal.Message.Get_Message_Type (Local_Message_Ctx);
       if T_8 = T_9 then
          Ctx.P.Next_State := S_Reply;
       else
