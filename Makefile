@@ -387,9 +387,9 @@ prove_property_tests: $(RFLX) $(GNATPROVE_CACHE_DIR)
 
 # --- Fuzzing ---
 
-fuzz_parser: FUZZER_RUNS=-1
+fuzz_parser: FUZZER_TIME=360
 fuzz_parser: $(RFLX)
-	$(POETRY) run tools/fuzz_driver.py --state-dir $(BUILD_DIR)/fuzzer --corpus-dir $(MAKEFILE_DIR) --runs=$(FUZZER_RUNS)
+	$(POETRY) run tools/fuzz_driver.py --crash-dir $(BUILD_DIR)/crashes --max-time $(FUZZER_TIME) $(MAKEFILE_DIR)/tests/data/specs $(MAKEFILE_DIR)/tests/features/*/
 
 # --- Development tools ---
 
@@ -484,7 +484,7 @@ $(VSIX):
 .PHONY: clean clean_all
 
 clean:
-	rm -rf $(BUILD_DIR) crashes .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache doc/language_reference/build doc/user_guide/build
+	rm -rf $(BUILD_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache doc/language_reference/build doc/user_guide/build
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C examples/apps/spdm_responder clean
