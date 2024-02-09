@@ -641,7 +641,6 @@ class Message(mty.Type):
                 return expr.Selected(
                     expr.Variable(message_instance, type_=self.type_),
                     expression.identifier,
-                    negative=expression.negative,
                     type_=expression.type_,
                     location=expression.location,
                 )

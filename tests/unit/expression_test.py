@@ -44,6 +44,7 @@ from rflx.expression import (
     MessageAggregate,
     Mod,
     Mul,
+    Neg,
     Not,
     NotEqual,
     NotIn,
@@ -716,8 +717,100 @@ def test_math_expr_z3expr_error(expression: Callable[[Expr, Expr], Expr]) -> Non
         expression(String("X"), TRUE).z3expr()
 
 
+def test_neg_str() -> None:
+    assert str(Neg(Variable("X"))) == "-X"
+    assert str(Neg(Neg(Variable("X")))) == "-(-X)"
+
+
+def test_neg_type() -> None:
+    assert_type(
+        Neg(Variable("X", type_=INT_TY)),
+        INT_TY,
+    )
+
+
+def test_neg_type_error() -> None:
+    assert_type_error(
+        Neg(Variable("X", type_=rty.BOOLEAN, location=Location((10, 20)))),
+        r"^<stdin>:10:20: model: error: expected integer type\n"
+        r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+    )
+
+
+def test_neg_neg() -> None:
+    assert -Neg(Variable("X")) == Variable("X")
+    assert -Variable("X") != Variable("X")
+    y = Variable("Y")
+    assert y == y  # noqa: PLR0124
+    assert y != -y
+
+
+def test_neg_findall() -> None:
+    assert Neg(Variable("X")).findall(lambda x: isinstance(x, Variable)) == [Variable("X")]
+
+
+def test_neg_substituted() -> None:
+    assert_equal(
+        Neg(Variable("X")).substituted(
+            lambda x: Variable(f"P_{x}") if isinstance(x, Variable) else x,
+        ),
+        Neg(Variable("P_X")),
+    )
+    assert_equal(
+        Neg(Variable("X")).substituted(lambda x: Variable("Y") if x == Neg(Variable("X")) else x),
+        Variable("Y"),
+    )
+
+
+def test_neg_simplified() -> None:
+    assert Neg(Variable("X")).simplified() == Neg(Variable("X")).simplified()
+    assert Neg(Neg(Variable("X"))).simplified() == Variable("X").simplified()
+    assert Neg(Neg(Neg(Variable("X")))).simplified() == Neg(Variable("X").simplified())
+    assert Neg(Neg(Neg(Neg(Variable("X"))))).simplified() == Variable("X").simplified()
+    assert Neg(Number(42)).simplified() == Number(-42)
+    assert Neg(Neg(Number(42))).simplified() == Number(42)
+    assert Neg(Neg(Neg(Number(42)))).simplified() == Number(-42)
+
+
+def test_neg_z3expr() -> None:
+    assert Neg(Variable("X")).z3expr() == -z3.Int("X")
+    assert Neg(Number(42)).z3expr() == -z3.IntVal(42)
+    assert Neg(Number(-42)).z3expr() == -z3.IntVal(-42)
+    with pytest.raises(Z3TypeError):
+        Neg(TRUE).z3expr()
+
+
+def test_neg_to_ir() -> None:
+    assert Neg(Number(42)).to_ir(id_generator()) == ir.ComplexIntExpr([], ir.Neg(ir.IntVal(42)))
+    assert Neg(Variable("X", type_=INT_TY)).to_ir(id_generator()) == ir.ComplexIntExpr(
+        [],
+        ir.Neg(ir.IntVar("X", INT_TY)),
+    )
+    assert Neg(Add(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY))).to_ir(
+        id_generator(),
+    ) == ir.ComplexIntExpr(
+        [
+            ir.VarDecl("T_0", INT_TY),
+            ir.Assign(
+                "T_0",
+                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
+                INT_TY,
+            ),
+        ],
+        ir.Neg(ir.IntVar("T_0", INT_TY)),
+    )
+
+
+def test_add_str() -> None:
+    assert str(Add(Variable("X"), Number(1))) == "X + 1"
+    assert str(-Add(Variable("X"), Number(1))) == "-X - 1"
+    assert str(Add(Number(1), Call("Test", []))) == "1 + Test"
+    assert str(Add(Number(1), -Call("Test", []))) == "1 - Test"
+    assert str(Add()) == "0"
+
+
 def test_add_neg() -> None:
-    assert -Add(Variable("X"), Number(1)) == Add(Variable("X", negative=True), Number(-1))
+    assert -Add(Variable("X"), Number(1)) == Add(Neg(Variable("X")), Number(-1))
 
 
 def test_add_variables() -> None:
@@ -728,7 +821,7 @@ def test_add_simplified() -> None:
     assert Add(Variable("X"), Number(1)).simplified() == Add(Variable("X"), Number(1))
     assert Add(Variable("X"), Number(0)).simplified() == Variable("X")
     assert Add(Number(2), Number(3), Number(5)).simplified() == Number(10)
-    assert Add(Variable("X"), Variable("Y"), Variable("X", negative=True)).simplified() == Variable(
+    assert Add(Variable("X"), Variable("Y"), Neg(Variable("X"))).simplified() == Variable(
         "Y",
     )
     assert Add(Variable("X"), Variable("Y"), Variable("X"), -Variable("X")).simplified() == Add(
@@ -820,12 +913,6 @@ def test_add_mul_to_ir(  # type: ignore[misc]
     )
 
 
-def test_add_str() -> None:
-    assert str(Add(Number(1), Call("Test", []))) == "1 + Test"
-    assert str(Add(Number(1), -Call("Test", []))) == "1 - Test"
-    assert str(Add()) == "0"
-
-
 def test_mul_neg() -> None:
     assert -Mul(Variable("X"), Number(2)) == Mul(Variable("X"), Number(-2))
 
@@ -905,7 +992,7 @@ def test_sub_div_pow_mod_to_ir(  # type: ignore[misc]
 
 
 def test_div_neg() -> None:
-    assert -Div(Variable("X"), Number(1)) == Div(Variable("X", negative=True), Number(1))
+    assert -Div(Variable("X"), Number(1)) == Div(Neg(Variable("X")), Number(1))
 
 
 def test_div_variables() -> None:
@@ -1004,12 +1091,12 @@ def test_variable_type_error() -> None:
 
 
 def test_variable_neg() -> None:
-    assert -Variable("X") == Variable("X", negative=True)
+    assert -Variable("X") == Neg(Variable("X"))
 
 
 def test_variable_variables() -> None:
     assert Variable("X").variables() == [Variable("X")]
-    assert (-Variable("X")).variables() == [Variable("X", negative=True)]
+    assert (-Variable("X")).variables() == [Variable("X")]
 
 
 def test_variable_substituted() -> None:
@@ -1035,7 +1122,7 @@ def test_variable_simplified() -> None:
 
 def test_variable_z3expr() -> None:
     assert Variable("X").z3expr() == z3.Int("X")
-    assert Variable("X", negative=True).z3expr() == -z3.Int("X")
+    assert Neg(Variable("X")).z3expr() == -z3.Int("X")
     assert z3.simplify(Sub(Variable("X"), Variable("X")).z3expr()) == z3.IntVal(0)
 
 
@@ -1048,9 +1135,9 @@ def test_variable_to_ir() -> None:
         [],
         ir.IntVar("X", INT_TY),
     )
-    assert Variable("X", type_=INT_TY, negative=True).to_ir(id_generator()) == ir.ComplexIntExpr(
+    assert Neg(Variable("X", type_=INT_TY)).to_ir(id_generator()) == ir.ComplexIntExpr(
         [],
-        ir.IntVar("X", INT_TY, negative=True),
+        ir.Neg(ir.IntVar("X", INT_TY)),
     )
     assert Variable("X", type_=MSG_TY).to_ir(id_generator()) == ir.ComplexExpr(
         [],
@@ -1161,7 +1248,7 @@ def test_attribute_type_error(expr: Expr, match: str) -> None:
 
 
 def test_attribute_neg() -> None:
-    assert -First("X") == First("X", negative=True)
+    assert -First("X") == Neg(First("X"))
 
 
 def test_attributes_findall() -> None:
@@ -2241,7 +2328,7 @@ def test_selected_variables() -> None:
 
 def test_selected_z3expr() -> None:
     assert Selected(Variable("X"), "Y").z3expr() == z3.Int("X.Y")
-    assert Selected(Variable("X"), "Y", negative=True).z3expr() == -z3.Int("X.Y")
+    assert Neg(Selected(Variable("X"), "Y")).z3expr() == -z3.Int("X.Y")
 
 
 def test_selected_to_ir() -> None:
@@ -2251,9 +2338,15 @@ def test_selected_to_ir() -> None:
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY).to_ir(
         id_generator(),
     ) == ir.ComplexExpr([], ir.IntFieldAccess("X", "Y", MSG_TY))
-    assert Selected(Variable("X", type_=rty.Message("M")), "Y", negative=True, type_=INT_TY).to_ir(
+    assert Neg(Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY)).to_ir(
         id_generator(),
-    ) == ir.ComplexExpr([], ir.IntFieldAccess("X", "Y", MSG_TY, negative=True))
+    ) == ir.ComplexIntExpr(
+        [
+            ir.VarDecl("T_0", INT_TY),
+            ir.Assign("T_0", ir.IntFieldAccess("X", "Y", MSG_TY), INT_TY),
+        ],
+        ir.Neg(ir.IntVar("T_0", INT_TY)),
+    )
     assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=SEQ_TY).to_ir(
         id_generator(),
     ) == ir.ComplexExpr([], ir.ObjFieldAccess("X", "Y", MSG_TY))
@@ -2318,7 +2411,10 @@ def test_call_findall() -> None:
 
 def test_call_str() -> None:
     assert str(Call("Test", [])) == "Test"
-    assert str(-Call("Test", [])) == "(-Test)"
+
+
+def test_call_neg() -> None:
+    assert -Call("Test", []) == Neg(Call("Test", []))
 
 
 def test_call_to_ir() -> None:
@@ -2987,15 +3083,11 @@ def test_delta_message_aggregate_variables() -> None:
 
 
 def test_indexed_neg() -> None:
-    assert Indexed(Variable("X"), Variable("Y")) == -Indexed(
-        Variable("X"),
-        Variable("Y"),
-        negative=True,
-    )
-    assert Indexed(Variable("X"), Variable("Y")) != Indexed(
-        Variable("X"),
-        Variable("Y"),
-        negative=True,
+    assert -Indexed(Variable("X"), Variable("Y")) == Neg(
+        Indexed(
+            Variable("X"),
+            Variable("Y"),
+        ),
     )
 
 

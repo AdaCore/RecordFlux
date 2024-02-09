@@ -1035,7 +1035,6 @@ def normalize_identifiers(
             return expr.Call(
                 ID(functions_map[expression.identifier], location=expression.identifier.location),
                 [],
-                expression.negative,
                 expression.immutable,
                 expression.type_,
                 location=expression.location,
@@ -1043,7 +1042,6 @@ def normalize_identifiers(
         if expression.identifier in variables_map:
             return expr.Variable(
                 ID(variables_map[expression.identifier], location=expression.identifier.location),
-                expression.negative,
                 expression.immutable,
                 expression.type_,
                 location=expression.location,
@@ -1053,7 +1051,6 @@ def normalize_identifiers(
         return expr.Call(
             ID(functions_map[expression.identifier], location=expression.identifier.location),
             expression.args,
-            expression.negative,
             expression.immutable,
             expression.type_,
             expression.argument_types,

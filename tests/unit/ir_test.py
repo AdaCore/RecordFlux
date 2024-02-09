@@ -366,13 +366,9 @@ def test_bool_val_to_z3_expr() -> None:
     ("attribute", "expected"),
     [
         (ir.Size("X", MSG_TY), "X'Size"),
-        (ir.Size("X", MSG_TY, negative=True), "-X'Size"),
         (ir.Length("X", MSG_TY), "X'Length"),
-        (ir.Length("X", MSG_TY, negative=True), "-X'Length"),
         (ir.First("X", MSG_TY), "X'First"),
-        (ir.First("X", MSG_TY, negative=True), "-X'First"),
         (ir.Last("X", MSG_TY), "X'Last"),
-        (ir.Last("X", MSG_TY, negative=True), "-X'Last"),
         (ir.ValidChecksum("X", MSG_TY), "X'Valid_Checksum"),
         (ir.Valid("X", MSG_TY), "X'Valid"),
         (ir.Present("X", MSG_TY), "X'Present"),
@@ -605,6 +601,18 @@ def test_binary_expr_substituted(
             ID("X"): ID("Y"),
         },
     ) == binary_expr(ir.IntVar("Y", INT_TY), ir.IntVal(1))
+
+
+def test_neg_str() -> None:
+    assert str(ir.Neg(ir.IntVar("X", INT_TY))) == "-X"
+
+
+def test_neg_type() -> None:
+    assert ir.Neg(ir.IntVar("X", INT_TY)).type_ == INT_TY
+
+
+def test_neg_to_z3_expr() -> None:
+    assert ir.Neg(ir.IntVar("X", INT_TY)).to_z3_expr() == -z3.Int("X")
 
 
 def test_add_str() -> None:

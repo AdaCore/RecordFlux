@@ -42,6 +42,15 @@ def test_not_rflx_expr() -> None:
     assert ada.Not(ada.Variable("X")).rflx_expr() == expr.Not(expr.Variable("X"))
 
 
+def test_neg_str() -> None:
+    assert str(ada.Neg(ada.Variable("X"))) == "(-X)"
+    assert str(ada.Neg(ada.Neg(ada.Variable("X")))) == "(-((-X)))"
+
+
+def test_neg_rflx_expr() -> None:
+    assert ada.Neg(ada.Variable("X")).rflx_expr() == expr.Neg(expr.Variable("X"))
+
+
 def test_bool_expr_str() -> None:
     assert_equal(
         str(

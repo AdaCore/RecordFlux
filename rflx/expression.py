@@ -894,6 +894,69 @@ class Number(Expr):
         return ir.ComplexIntExpr([], ir.IntVal(self.value, origin=self))
 
 
+class Neg(Expr):
+    def __init__(self, expr: Expr, location: Optional[Location] = None) -> None:
+        super().__init__(expr.type_, location)
+        self.expr = expr
+
+    def _update_str(self) -> None:
+        self._str = intern(f"-{self.parenthesized(self.expr)}")
+
+    def _check_type_subexpr(self) -> RecordFluxError:
+        return self.expr.check_type_instance(rty.AnyInteger)
+
+    def __neg__(self) -> Expr:
+        return self.expr
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.HIGHEST_PRECEDENCE_OPERATOR
+
+    def variables(self) -> list[Variable]:
+        return self.expr.variables()
+
+    def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
+        return [
+            *([self] if match(self) else []),
+            *self.expr.findall(match),
+        ]
+
+    def substituted(
+        self,
+        func: Optional[Callable[[Expr], Expr]] = None,
+        mapping: Optional[Mapping[Name, Expr]] = None,
+    ) -> Expr:
+        func = substitution(mapping or {}, func)
+        expr = func(self)
+        if isinstance(expr, Neg):
+            return expr.__class__(
+                expr.expr.substituted(func),
+                location=expr.location,
+            )
+        return expr
+
+    def simplified(self) -> Expr:
+        if isinstance(self.expr, Neg):
+            return self.expr.expr.simplified()
+        if isinstance(self.expr, Number):
+            return (-self.expr).simplified()
+        return self.__class__(self.expr.simplified(), self.location)
+
+    def ada_expr(self) -> ada.Expr:
+        return ada.Neg(self.expr.ada_expr())
+
+    def z3expr(self) -> z3.ArithRef:
+        z3expr = self.expr.z3expr()
+        if not isinstance(z3expr, z3.ArithRef):
+            raise Z3TypeError("negating non-arithmetic term")
+        return -z3expr
+
+    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
+        assert isinstance(self.type_, rty.AnyInteger)
+        inner_stmts, inner_expr = _to_ir_basic_int(self.expr, variable_id)
+        return ir.ComplexIntExpr(inner_stmts, ir.Neg(inner_expr, origin=self))
+
+
 class MathAssExpr(AssExpr):
     def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
         super().__init__(*terms, location=location)
@@ -954,7 +1017,7 @@ class Add(MathAssExpr):
             return
         self._str = str(self.terms[0])
         for t in self.terms[1:]:
-            if (isinstance(t, Number) and t.value < 0) or (isinstance(t, Name) and t.negative):
+            if (isinstance(t, Number) and t.value < 0) or isinstance(t, Neg):
                 self._str += f" - {self.parenthesized(-t)}"
             else:
                 self._str += f"{self.symbol}{self.parenthesized(t)}"
@@ -1189,18 +1252,16 @@ class Rem(MathBinExpr):
 class Name(Expr):
     def __init__(
         self,
-        negative: bool = False,
         immutable: bool = False,
         type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(type_, location)
-        self.negative = negative
         self.immutable = immutable
         self._update_str()
 
     def _update_str(self) -> None:
-        self._str = intern(f"(-{self.representation})" if self.negative else self.representation)
+        self._str = intern(self.representation)
 
     @property
     def precedence(self) -> Precedence:
@@ -1219,7 +1280,7 @@ class Name(Expr):
         if self.immutable:
             return self
         func = substitution(mapping or {}, func)
-        return -func(-self) if self.negative else func(self)
+        return func(self)
 
     def simplified(self) -> Expr:
         return self
@@ -1240,7 +1301,7 @@ class TypeName(Name):
         location: Optional[Location] = None,
     ) -> None:
         self.identifier = ID(identifier)
-        super().__init__(negative=False, immutable=False, type_=type_, location=location)
+        super().__init__(immutable=False, type_=type_, location=location)
 
     def __neg__(self) -> Literal:
         raise NotImplementedError
@@ -1277,7 +1338,7 @@ class Literal(Name):
         location: Optional[Location] = None,
     ) -> None:
         self.identifier = ID(identifier)
-        super().__init__(negative=False, immutable=False, type_=type_, location=location)
+        super().__init__(immutable=False, type_=type_, location=location)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -1342,33 +1403,23 @@ class Variable(Name):
     def __init__(
         self,
         identifier: StrID,
-        negative: bool = False,
         immutable: bool = False,
         type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
-        assert (
-            not isinstance(type_, rty.Enumeration) if negative else True
-        ), "enumeration variable must not be negative"
         self.identifier = ID(identifier)
-        super().__init__(negative, immutable, type_, location)
+        super().__init__(immutable, type_, location)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return self.negative == other.negative and self.identifier == other.identifier
+            return self.identifier == other.identifier
         return NotImplemented
 
     def __hash__(self) -> int:
         return hash(self.identifier)
 
-    def __neg__(self) -> Variable:
-        return self.__class__(
-            self.identifier,
-            not self.negative,
-            self.immutable,
-            self.type_,
-            self.location,
-        )
+    def __neg__(self) -> Neg:
+        return Neg(self, self.location)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return RecordFluxError()
@@ -1385,13 +1436,11 @@ class Variable(Name):
         return [self]
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Variable(self.identifier, self.negative)
+        return ada.Variable(self.identifier)
 
     def z3expr(self) -> z3.ExprRef:
         if self.type_ == rty.BOOLEAN:
             return z3.Bool(self.name)
-        if self.negative:
-            return -z3.Int(self.name)
         return z3.Int(self.name)
 
     def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
@@ -1400,7 +1449,7 @@ class Variable(Name):
         if isinstance(self.type_, rty.Integer):
             return ir.ComplexIntExpr(
                 [],
-                ir.IntVar(self.name, self.type_, self.negative, origin=self),
+                ir.IntVar(self.name, self.type_, origin=self),
             )
 
         assert isinstance(self.type_, rty.Any)
@@ -1410,14 +1459,12 @@ class Variable(Name):
     def copy(
         self,
         identifier: Optional[StrID] = None,
-        negative: Optional[bool] = None,
         immutable: Optional[bool] = None,
         type_: Optional[rty.Type] = None,
         location: Optional[Location] = None,
     ) -> Variable:
         return self.__class__(
             ID(identifier) if identifier is not None else self.identifier,
-            negative if negative is not None else self.negative,
             immutable if immutable is not None else self.immutable,
             type_ if type_ is not None else self.type_,
             location if location is not None else self.location,
@@ -1429,14 +1476,14 @@ FALSE = Literal("False", type_=rty.BOOLEAN)
 
 
 class Attribute(Name):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
         if isinstance(prefix, ID):
             prefix = Variable(prefix, location=prefix.location)
         if isinstance(prefix, str):
             prefix = Variable(prefix)
 
         self._prefix: Expr = prefix
-        super().__init__(negative, location=prefix.location)
+        super().__init__(location=prefix.location)
 
     @property
     def representation(self) -> str:
@@ -1450,8 +1497,8 @@ class Attribute(Name):
     def prefix(self) -> Expr:
         return self._prefix
 
-    def __neg__(self) -> Attribute:
-        return self.__class__(self.prefix, not self.negative)
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [self] if match(self) else self.prefix.findall(match)
@@ -1462,30 +1509,27 @@ class Attribute(Name):
         mapping: Optional[Mapping[Name, Expr]] = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
-        expr = func(-self if self.negative else self)
+        expr = func(self)
         if isinstance(expr, Attribute):
             prefix = expr.prefix.substituted(func)
             if not isinstance(prefix, Attribute):
                 expr = expr.__class__(prefix)
-        return -expr if self.negative else expr
+        return expr
 
     def simplified(self) -> Expr:
-        expr = self.__class__(self.prefix.simplified())
-        return -expr if self.negative else expr
+        return self.__class__(self.prefix.simplified())
 
     def variables(self) -> list[Variable]:
         return self.prefix.variables()
 
     def ada_expr(self) -> ada.Expr:
-        result = getattr(ada, self.__class__.__name__)(self.prefix.ada_expr(), self.negative)
+        result = getattr(ada, self.__class__.__name__)(self.prefix.ada_expr())
         assert isinstance(result, ada.Expr)
         return result
 
     def z3expr(self) -> z3.ExprRef:
         if not isinstance(self.prefix, (Variable, Literal, TypeName, Selected)):
             raise Z3TypeError("illegal prefix of attribute")
-        if self.negative:
-            return -z3.Int(self.representation)
         return z3.Int(self.representation)
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
@@ -1506,8 +1550,8 @@ class Attribute(Name):
 
 
 class Size(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(prefix, negative)
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+        super().__init__(prefix)
         self.type_ = rty.UniversalInteger()
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
@@ -1532,12 +1576,12 @@ class Size(Attribute):
 
     def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return ir.Size(prefix, self.prefix.type_, self.negative, origin=self)
+        return ir.Size(prefix, self.prefix.type_, origin=self)
 
 
 class Length(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(prefix, negative)
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+        super().__init__(prefix)
         self.type_ = rty.UniversalInteger()
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -1545,12 +1589,12 @@ class Length(Attribute):
 
     def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return ir.Length(prefix, self.prefix.type_, self.negative, origin=self)
+        return ir.Length(prefix, self.prefix.type_, origin=self)
 
 
 class First(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(prefix, negative)
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+        super().__init__(prefix)
         self.type_ = rty.UniversalInteger()
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -1558,12 +1602,12 @@ class First(Attribute):
 
     def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return ir.First(prefix, self.prefix.type_, self.negative, origin=self)
+        return ir.First(prefix, self.prefix.type_, origin=self)
 
 
 class Last(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(prefix, negative)
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+        super().__init__(prefix)
         self.type_ = rty.UniversalInteger()
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -1571,12 +1615,12 @@ class Last(Attribute):
 
     def _to_ir(self, prefix: ID) -> ir.Expr:
         assert isinstance(self.prefix.type_, rty.Any)
-        return ir.Last(prefix, self.prefix.type_, self.negative, origin=self)
+        return ir.Last(prefix, self.prefix.type_, origin=self)
 
 
 class ValidChecksum(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(prefix, negative)
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+        super().__init__(prefix)
         self.type_ = rty.BOOLEAN
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -1595,8 +1639,8 @@ class ValidChecksum(Attribute):
 
 
 class Valid(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(prefix, negative)
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+        super().__init__(prefix)
         self.type_ = rty.BOOLEAN
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
@@ -1627,8 +1671,8 @@ class Valid(Attribute):
 
 
 class Present(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(prefix, negative)
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+        super().__init__(prefix)
         self.type_ = rty.BOOLEAN
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
@@ -1671,8 +1715,8 @@ class Present(Attribute):
 
 
 class HasData(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(prefix, negative)
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+        super().__init__(prefix)
         self.type_ = rty.BOOLEAN
 
     @property
@@ -1691,10 +1735,9 @@ class Head(Attribute):
     def __init__(
         self,
         prefix: Union[StrID, Expr],
-        negative: bool = False,
         type_: rty.Type = rty.UNDEFINED,
     ):
-        super().__init__(prefix, negative)
+        super().__init__(prefix)
         self.type_ = type_
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
@@ -1741,8 +1784,8 @@ class Head(Attribute):
 
 
 class Opaque(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
-        super().__init__(prefix, negative)
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+        super().__init__(prefix)
         self.type_ = rty.OPAQUE
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -1770,13 +1813,12 @@ class Val(Attribute):
         self,
         prefix: Union[StrID, Expr],
         expression: Expr,
-        _negative: bool = False,
     ) -> None:
         self.expression = expression
         super().__init__(prefix)
 
-    def __neg__(self) -> Val:
-        return self.__class__(self.prefix, self.expression, not self.negative)
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         raise NotImplementedError
@@ -1805,7 +1847,6 @@ class Val(Attribute):
         result = getattr(ada, self.__class__.__name__)(
             self.prefix.ada_expr(),
             self.expression.ada_expr(),
-            self.negative,
         )
         assert isinstance(result, ada.Expr)
         return result
@@ -1821,13 +1862,13 @@ class Val(Attribute):
 class Indexed(Name):
     """Only used by code generator and therefore provides minimum functionality."""
 
-    def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
+    def __init__(self, prefix: Expr, *elements: Expr) -> None:
         self.prefix = prefix
         self.elements = list(elements)
-        super().__init__(negative)
+        super().__init__()
 
-    def __neg__(self) -> Indexed:
-        return self.__class__(self.prefix, *self.elements, negative=not self.negative)
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         raise NotImplementedError
@@ -1840,7 +1881,6 @@ class Indexed(Name):
         return ada.Indexed(
             self.prefix.ada_expr(),
             *[e.ada_expr() for e in self.elements],
-            negative=self.negative,
         )
 
     def z3expr(self) -> z3.ExprRef:
@@ -1851,29 +1891,20 @@ class Indexed(Name):
 
 
 class Selected(Name):
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         prefix: Expr,
         selector: StrID,
-        negative: bool = False,
         immutable: bool = False,
         type_: rty.Type = rty.UNDEFINED,
         location: Optional[Location] = None,
     ) -> None:
-        assert not prefix.negative if isinstance(prefix, Name) else True
         self.prefix = prefix
         self.selector = ID(selector)
-        super().__init__(negative, immutable, type_, location)
+        super().__init__(immutable, type_, location)
 
-    def __neg__(self) -> Selected:
-        return self.__class__(
-            self.prefix,
-            self.selector,
-            not self.negative,
-            self.immutable,
-            self.type_,
-            self.location,
-        )
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [
@@ -1925,7 +1956,6 @@ class Selected(Name):
             return expr.__class__(
                 expr.prefix.substituted(func),
                 expr.selector,
-                expr.negative,
                 expr.immutable,
                 expr.type_,
                 expr.location,
@@ -1933,11 +1963,9 @@ class Selected(Name):
         return expr
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Selected(self.prefix.ada_expr(), ID(self.selector), self.negative)
+        return ada.Selected(self.prefix.ada_expr(), ID(self.selector))
 
     def z3expr(self) -> z3.ExprRef:
-        if self.negative:
-            return -z3.Int(self.representation)
         return z3.Int(self.representation)
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
@@ -1957,7 +1985,6 @@ class Selected(Name):
                     msg.identifier,
                     self.selector,
                     self.prefix.type_,
-                    self.negative,
                     origin=self,
                 ),
             )
@@ -1968,11 +1995,10 @@ class Selected(Name):
             )
         assert False, self.type_
 
-    def copy(  # noqa: PLR0913
+    def copy(
         self,
         prefix: Optional[Expr] = None,
         selector: Optional[StrID] = None,
-        negative: Optional[bool] = None,
         immutable: Optional[bool] = None,
         type_: Optional[rty.Type] = None,
         location: Optional[Location] = None,
@@ -1980,7 +2006,6 @@ class Selected(Name):
         return self.__class__(
             prefix if prefix is not None else self.prefix,
             ID(selector) if selector is not None else self.selector,
-            negative if negative is not None else self.negative,
             immutable if immutable is not None else self.immutable,
             type_ if type_ is not None else self.type_,
             location if location is not None else self.location,
@@ -1992,7 +2017,6 @@ class Call(Name):
         self,
         identifier: StrID,
         args: Optional[Sequence[Expr]] = None,
-        negative: bool = False,
         immutable: bool = False,
         type_: rty.Type = rty.UNDEFINED,
         argument_types: Optional[Sequence[rty.Type]] = None,
@@ -2001,18 +2025,10 @@ class Call(Name):
         self.identifier = ID(identifier)
         self.args = args or []
         self.argument_types = argument_types or []
-        super().__init__(negative, immutable, type_, location)
+        super().__init__(immutable, type_, location)
 
-    def __neg__(self) -> Call:
-        return self.__class__(
-            self.identifier,
-            self.args,
-            not self.negative,
-            self.immutable,
-            self.type_,
-            self.argument_types,
-            self.location,
-        )
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
@@ -2055,7 +2071,7 @@ class Call(Name):
         return f"{self.identifier}{args}"
 
     def ada_expr(self) -> ada.Expr:
-        return ada.Call(self.identifier, [a.ada_expr() for a in self.args], {}, self.negative)
+        return ada.Call(self.identifier, [a.ada_expr() for a in self.args], {})
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -2124,7 +2140,6 @@ class Call(Name):
         return expr.__class__(
             expr.identifier,
             [a.substituted(func) for a in expr.args],
-            expr.negative,
             expr.immutable,
             expr.type_,
             expr.argument_types,

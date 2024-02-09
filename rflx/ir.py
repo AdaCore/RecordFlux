@@ -493,7 +493,6 @@ class Var(BasicExpr):
 class IntVar(Var, BasicIntExpr):
     identifier: ID = field(converter=ID)
     var_type: rty.AnyInteger
-    negative: bool = False
     origin: Optional[Origin] = None
 
     @property
@@ -502,12 +501,11 @@ class IntVar(Var, BasicIntExpr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntVar:
         if self.identifier in mapping:
-            return IntVar(mapping[self.identifier], self.var_type, self.negative, self.origin)
+            return IntVar(mapping[self.identifier], self.var_type, self.origin)
         return self
 
     def to_z3_expr(self) -> z3.ArithRef:
-        expression = z3.Int(str(self.identifier))
-        return -expression if self.negative else expression
+        return z3.Int(str(self.identifier))
 
 
 @define(eq=False)
@@ -623,24 +621,20 @@ class Attr(Expr):
 class IntAttr(Attr, IntExpr):
     prefix: ID = field(converter=ID)
     prefix_type: rty.Any
-    negative: bool = False
     origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntAttr:
         return self.__class__(
             mapping[self.prefix] if self.prefix in mapping else self.prefix,
             self.prefix_type,
-            self.negative,
             self.origin,
         )
 
     def to_z3_expr(self) -> z3.ArithRef:
-        return -z3.Int(str(self)) if self.negative else z3.Int(str(self))
+        return z3.Int(str(self))
 
     def _update_str(self) -> None:
         super(IntAttr, self)._update_str()  # noqa: UP008
-        if self.negative:
-            self._str = f"-{self._str}"
 
 
 @define(eq=False)
@@ -810,6 +804,16 @@ class UnaryExpr(Expr):
 
 
 @define(eq=False)
+class UnaryIntExpr(UnaryExpr, IntExpr):
+    expression: BasicIntExpr
+    origin: Optional[Origin] = None
+
+    @property
+    def type_(self) -> rty.AnyInteger:
+        return self.expression.type_
+
+
+@define(eq=False)
 class UnaryBoolExpr(UnaryExpr, BoolExpr):
     expression: BasicBoolExpr
     origin: Optional[Origin] = None
@@ -868,6 +872,15 @@ class BinaryBoolExpr(BinaryExpr, BoolExpr):
     left: BasicBoolExpr
     right: BasicBoolExpr
     origin: Optional[Origin] = None
+
+
+@define(eq=False)
+class Neg(UnaryIntExpr):
+    def to_z3_expr(self) -> z3.ArithRef:
+        return -self.expression.to_z3_expr()
+
+    def _update_str(self) -> None:
+        self._str = intern(f"-{self.expression}")
 
 
 @define(eq=False)
@@ -1183,7 +1196,6 @@ class IntCall(Call, IntExpr):
     arguments: Sequence[Expr]
     argument_types: Sequence[rty.Any]
     type_: rty.AnyInteger
-    negative: bool = False
     origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntCall:
@@ -1192,20 +1204,17 @@ class IntCall(Call, IntExpr):
             [a.substituted(mapping) for a in self.arguments],
             self.argument_types,
             self.type_,
-            self.negative,
             self.origin,
         )
 
     def to_z3_expr(self) -> z3.ArithRef:
         # TODO(eng/recordflux/RecordFlux#1338): Return value need not to be identical
         # The return value may be different even if the arguments are the same.
-        expression = z3.Int(str(self.identifier))
-        return -expression if self.negative else expression
+        return z3.Int(str(self.identifier))
 
     def _update_str(self) -> None:
         self._str = intern(
-            ("-" if self.negative else "")
-            + str(self.identifier)
+            str(self.identifier)
             + (f" ({', '.join(str(a) for a in self.arguments)})" if self.arguments else ""),
         )
 
@@ -1271,7 +1280,6 @@ class IntFieldAccess(FieldAccess, IntExpr):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
     message_type: rty.Compound
-    negative: bool = False
     origin: Optional[Origin] = None
 
     @property
@@ -1285,17 +1293,14 @@ class IntFieldAccess(FieldAccess, IntExpr):
             mapping[self.message] if self.message in mapping else self.message,
             self.field,
             self.message_type,
-            self.negative,
             self.origin,
         )
 
     def to_z3_expr(self) -> z3.ArithRef:
-        expression = z3.Int(str(self))
-        return -expression if self.negative else expression
+        return z3.Int(str(self))
 
     def _update_str(self) -> None:
-        sign = "-" if self.negative else ""
-        self._str = intern(f"{sign}{self.message}.{self.field}")
+        self._str = intern(f"{self.message}.{self.field}")
 
 
 @define(eq=False)

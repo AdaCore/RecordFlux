@@ -3543,7 +3543,7 @@ class SessionGenerator:
 
     @_to_ada_expr.register
     def _(self, expression: ir.IntVar, is_global: ty.Callable[[ID], bool]) -> Expr:
-        return Variable(variable_id(expression.identifier, is_global), expression.negative)
+        return Variable(variable_id(expression.identifier, is_global))
 
     @_to_ada_expr.register
     def _(self, expression: ir.EnumLit, _is_global: ty.Callable[[ID], bool]) -> Expr:
@@ -3817,14 +3817,12 @@ class SessionGenerator:
             return Selected(
                 Variable(context_id(expression.message, is_global)),
                 expression.field,
-                expression.negative,
             )
         if isinstance(expression.message_type, rty.Structure):
-            return Selected(Variable(expression.message), expression.field, expression.negative)
+            return Selected(Variable(expression.message), expression.field)
         return Call(
             expression.message_type.identifier * f"Get_{expression.field}",
             [Variable(context_id(expression.message, is_global))],
-            negative=expression.negative,
         )
 
     @_to_ada_expr.register

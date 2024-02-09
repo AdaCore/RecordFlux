@@ -77,6 +77,25 @@ class Not(Expr):
         return expr.Not(self.expression.rflx_expr())
 
 
+class Neg(Expr):
+    def __init__(self, expression: Expr) -> None:
+        super().__init__()
+        self.expression = expression
+
+    def __neg__(self) -> Expr:
+        return self.expression
+
+    def _update_str(self) -> None:
+        self._str = intern(f"(-{self.parenthesized(self.expression)})")
+
+    @property
+    def precedence(self) -> Precedence:
+        return Precedence.HIGHEST_PRECEDENCE_OPERATOR
+
+    def rflx_expr(self) -> expr.Neg:
+        return expr.Neg(self.expression.rflx_expr())
+
+
 class BinExpr(Expr):
     def __init__(self, left: Expr, right: Expr) -> None:
         super().__init__()
@@ -224,7 +243,7 @@ class Add(AssExpr):
     def _update_str(self) -> None:
         self._str = str(self.terms[0])
         for t in self.terms[1:]:
-            if (isinstance(t, Number) and t.value < 0) or (isinstance(t, Name) and t.negative):
+            if (isinstance(t, Number) and t.value < 0) or isinstance(t, Neg):
                 self._str += f" - {self.parenthesized(-t)}"
             else:
                 self._str += f"{self.symbol}{self.parenthesized(t)}"
@@ -310,13 +329,12 @@ class Rem(BinExpr):
 
 
 class Name(Expr):
-    def __init__(self, negative: bool = False) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.negative = negative
         self._update_str()
 
     def _update_str(self) -> None:
-        self._str = intern(f"(-{self._representation})" if self.negative else self._representation)
+        self._str = intern(self._representation)
 
     @property
     @abstractmethod
@@ -331,7 +349,7 @@ class Name(Expr):
 class Literal(Name):
     def __init__(self, identifier: StrID) -> None:
         self.identifier = ID(identifier)
-        super().__init__(negative=False)
+        super().__init__()
 
     @property
     def _representation(self) -> str:
@@ -346,12 +364,12 @@ class Literal(Name):
 
 
 class Variable(Name):
-    def __init__(self, identifier: StrID, negative: bool = False) -> None:
+    def __init__(self, identifier: StrID) -> None:
         self.identifier = ID(identifier)
-        super().__init__(negative)
+        super().__init__()
 
-    def __neg__(self) -> Variable:
-        return self.__class__(self.identifier, not self.negative)
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     @property
     def _representation(self) -> str:
@@ -371,24 +389,24 @@ NULL = Literal("null")
 
 
 class Attribute(Name):
-    def __init__(self, prefix: Union[StrID, Expr], negative: bool = False) -> None:
+    def __init__(self, prefix: Union[StrID, Expr]) -> None:
         if isinstance(prefix, ID):
             prefix = Variable(prefix)
         if isinstance(prefix, str):
             prefix = Variable(prefix)
 
         self.prefix: Expr = prefix
-        super().__init__(negative)
+        super().__init__()
 
-    def __neg__(self) -> Attribute:
-        return self.__class__(self.prefix, not self.negative)
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     @property
     def _representation(self) -> str:
         return f"{self.prefix}'{self.__class__.__name__}"
 
     def rflx_expr(self) -> expr.Attribute:
-        result = getattr(expr, self.__class__.__name__)(self.prefix.rflx_expr(), self.negative)
+        result = getattr(expr, self.__class__.__name__)(self.prefix.rflx_expr())
         assert isinstance(result, expr.Attribute)
         return result
 
@@ -462,7 +480,6 @@ class AttributeExpr(Attribute):
         self,
         prefix: Union[StrID, Expr],
         expression: Expr,
-        negative: bool = False,  # noqa: ARG002
     ) -> None:
         self.expression = expression
         super().__init__(prefix)
@@ -523,13 +540,13 @@ class Update(NamedAttributeExpr):
 
 @invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
-    def __init__(self, prefix: Expr, *elements: Expr, negative: bool = False) -> None:
+    def __init__(self, prefix: Expr, *elements: Expr) -> None:
         self.prefix = prefix
         self.elements = list(elements)
-        super().__init__(negative)
+        super().__init__()
 
-    def __neg__(self) -> Indexed:
-        return self.__class__(self.prefix, *self.elements, negative=not self.negative)
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     @property
     def _representation(self) -> str:
@@ -539,7 +556,6 @@ class Indexed(Name):
         return expr.Indexed(
             self.prefix.rflx_expr(),
             *[e.rflx_expr() for e in self.elements],
-            negative=self.negative,
         )
 
 
@@ -548,21 +564,20 @@ class Selected(Name):
         self,
         prefix: Expr,
         selector: StrID,
-        negative: bool = False,
     ) -> None:
         self.prefix = prefix
         self.selector = ID(selector)
-        super().__init__(negative)
+        super().__init__()
 
-    def __neg__(self) -> Selected:
-        return self.__class__(self.prefix, self.selector, not self.negative)
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     @property
     def _representation(self) -> str:
         return f"{self.prefix}.{self.selector}"
 
     def rflx_expr(self) -> expr.Selected:
-        return expr.Selected(self.prefix.rflx_expr(), self.selector, self.negative)
+        return expr.Selected(self.prefix.rflx_expr(), self.selector)
 
 
 class Call(Name):
@@ -571,20 +586,14 @@ class Call(Name):
         identifier: StrID,
         arguments: Optional[Sequence[Expr]] = None,
         named_arguments: Optional[Mapping[ID, Expr]] = None,
-        negative: bool = False,
     ) -> None:
         self.identifier = ID(identifier)
         self.arguments = arguments or []
         self.named_arguments = named_arguments or {}
-        super().__init__(negative)
+        super().__init__()
 
-    def __neg__(self) -> Call:
-        return self.__class__(
-            self.identifier,
-            self.arguments,
-            self.named_arguments,
-            not self.negative,
-        )
+    def __neg__(self) -> Neg:
+        return Neg(self)
 
     @property
     def _representation(self) -> str:
@@ -600,7 +609,7 @@ class Call(Name):
 
     def rflx_expr(self) -> expr.Call:
         assert not self.named_arguments
-        return expr.Call(self.identifier, [a.rflx_expr() for a in self.arguments], self.negative)
+        return expr.Call(self.identifier, [a.rflx_expr() for a in self.arguments])
 
 
 class Slice(Name):
