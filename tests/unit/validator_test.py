@@ -10,9 +10,8 @@ from rflx.identifier import ID
 from rflx.model import NeverVerify
 from rflx.pyrflx import PyRFLX
 from rflx.validator import ValidationError, Validator
-from tests.const import SPEC_DIR
+from tests.const import SPEC_DIR, VALIDATOR_DIR
 
-TEST_DIR = Path("tests/data/validator")
 CHECKSUM_MODULE = "tests.data.validator.checksum"
 
 
@@ -167,7 +166,12 @@ def test_validate_error_msg_not_in_package() -> None:
         ValidationError,
         match=r'^message "Message" could not be found in package "Ethernet"$',
     ):
-        validator.validate(ID("Ethernet::Message"), [TEST_DIR / "ethernet/frame/valid"], None, None)
+        validator.validate(
+            ID("Ethernet::Message"),
+            [VALIDATOR_DIR / "ethernet/frame/valid"],
+            None,
+            None,
+        )
 
 
 def test_validate_no_raw_files_in_valid_dir(tmp_path: Path) -> None:
@@ -188,10 +192,10 @@ def test_validate_no_raw_files_in_valid_dir(tmp_path: Path) -> None:
         validator.validate(
             ID("Ethernet::Frame"),
             [
-                TEST_DIR / "ethernet/frame/valid",
+                VALIDATOR_DIR / "ethernet/frame/valid",
                 tmp_path,
             ],
-            [TEST_DIR / "ethernet/frame/invalid"],
+            [VALIDATOR_DIR / "ethernet/frame/invalid"],
         )
 
 
@@ -212,9 +216,9 @@ def test_validate_no_raw_files_in_invalid_dir(tmp_path: Path) -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            [TEST_DIR / "ethernet/frame/valid"],
+            [VALIDATOR_DIR / "ethernet/frame/valid"],
             [
-                TEST_DIR / "ethernet/frame/invalid",
+                VALIDATOR_DIR / "ethernet/frame/invalid",
                 tmp_path,
             ],
         )
@@ -271,7 +275,7 @@ def test_validate_output_is_a_dir(tmp_path: Path) -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            [TEST_DIR / "ethernet/frame/valid"],
+            [VALIDATOR_DIR / "ethernet/frame/valid"],
             None,
             tmp_path,
         )
@@ -312,7 +316,7 @@ def test_validate_output_not_writable(tmp_path: Path) -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            [TEST_DIR / "ethernet/frame/valid"],
+            [VALIDATOR_DIR / "ethernet/frame/valid"],
             None,
             output_file,
         )
@@ -328,15 +332,15 @@ def test_validate_abort_on_error() -> None:
         ValidationError,
         match=(
             r"^"
-            rf"aborted: message {TEST_DIR}/ethernet/frame/invalid.+\.raw "
+            rf"aborted: message {VALIDATOR_DIR}/ethernet/frame/invalid.+\.raw "
             r"was classified incorrectly"
             r"$"
         ),
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            [TEST_DIR / "ethernet/frame/valid"],
-            [TEST_DIR / "ethernet/frame/invalid"],
+            [VALIDATOR_DIR / "ethernet/frame/valid"],
+            [VALIDATOR_DIR / "ethernet/frame/invalid"],
             abort_on_error=True,
         )
 
@@ -365,7 +369,7 @@ def test_validate_positive_only() -> None:
     validator.validate(
         ID("Ethernet::Frame"),
         None,
-        [TEST_DIR / "ethernet/frame/valid"],
+        [VALIDATOR_DIR / "ethernet/frame/valid"],
     )
 
 
@@ -384,26 +388,28 @@ def test_validate_positive_output(tmp_path: Path) -> None:
     validator.validate(
         ID("Ethernet::Frame"),
         [
-            TEST_DIR / "ethernet/frame/invalid",
-            TEST_DIR / "ethernet/frame/invalid2",
-            TEST_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_long.bin",
-            TEST_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_short.dat",
+            VALIDATOR_DIR / "ethernet/frame/invalid",
+            VALIDATOR_DIR / "ethernet/frame/invalid2",
+            VALIDATOR_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_long.bin",
+            VALIDATOR_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_short.dat",
         ],
         [
-            TEST_DIR / "ethernet/frame/valid",
-            TEST_DIR / "ethernet/frame/valid2",
-            TEST_DIR / "ethernet/frame/valid3/ethernet_802.3.bin",
-            TEST_DIR / "ethernet/frame/valid3/ethernet_ipv4_udp.dat",
+            VALIDATOR_DIR / "ethernet/frame/valid",
+            VALIDATOR_DIR / "ethernet/frame/valid2",
+            VALIDATOR_DIR / "ethernet/frame/valid3/ethernet_802.3.bin",
+            VALIDATOR_DIR / "ethernet/frame/valid3/ethernet_ipv4_udp.dat",
         ],
         tmp_path / "output.json",
     )
-    assert (tmp_path / "output.json").read_text() == (TEST_DIR / "output_positive.json").read_text(
+    assert (tmp_path / "output.json").read_text() == (
+        VALIDATOR_DIR / "output_positive.json"
+    ).read_text(
         encoding="utf-8",
     )
 
 
 def test_validate_negative_only() -> None:
-    number = len(list((TEST_DIR / "ethernet/frame/invalid").glob("*.raw")))
+    number = len(list((VALIDATOR_DIR / "ethernet/frame/invalid").glob("*.raw")))
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
@@ -416,7 +422,7 @@ def test_validate_negative_only() -> None:
         validator.validate(
             ID("Ethernet::Frame"),
             None,
-            [TEST_DIR / "ethernet/frame/invalid"],
+            [VALIDATOR_DIR / "ethernet/frame/invalid"],
         )
 
 
@@ -428,12 +434,12 @@ def test_validate_negative_output(tmp_path: Path) -> None:
     collected from multiple directories. The report should contain expected output for each file.
     """
     number = len(
-        list((TEST_DIR / "ethernet/frame/invalid").glob("*.raw"))
-        + list((TEST_DIR / "ethernet/frame/invalid2").glob("*.raw"))
-        + list((TEST_DIR / "ethernet/frame/invalid3").iterdir())
-        + list((TEST_DIR / "ethernet/frame/valid").glob("*.raw"))
-        + list((TEST_DIR / "ethernet/frame/valid2").glob("*.raw"))
-        + list((TEST_DIR / "ethernet/frame/valid3").iterdir()),
+        list((VALIDATOR_DIR / "ethernet/frame/invalid").glob("*.raw"))
+        + list((VALIDATOR_DIR / "ethernet/frame/invalid2").glob("*.raw"))
+        + list((VALIDATOR_DIR / "ethernet/frame/invalid3").iterdir())
+        + list((VALIDATOR_DIR / "ethernet/frame/valid").glob("*.raw"))
+        + list((VALIDATOR_DIR / "ethernet/frame/valid2").glob("*.raw"))
+        + list((VALIDATOR_DIR / "ethernet/frame/valid3").iterdir()),
     )
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
@@ -447,20 +453,22 @@ def test_validate_negative_output(tmp_path: Path) -> None:
         validator.validate(
             ID("Ethernet::Frame"),
             [
-                TEST_DIR / "ethernet/frame/valid",
-                TEST_DIR / "ethernet/frame/valid2",
-                TEST_DIR / "ethernet/frame/valid3/ethernet_802.3.bin",
-                TEST_DIR / "ethernet/frame/valid3/ethernet_ipv4_udp.dat",
+                VALIDATOR_DIR / "ethernet/frame/valid",
+                VALIDATOR_DIR / "ethernet/frame/valid2",
+                VALIDATOR_DIR / "ethernet/frame/valid3/ethernet_802.3.bin",
+                VALIDATOR_DIR / "ethernet/frame/valid3/ethernet_ipv4_udp.dat",
             ],
             [
-                TEST_DIR / "ethernet/frame/invalid",
-                TEST_DIR / "ethernet/frame/invalid2",
-                TEST_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_long.bin",
-                TEST_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_short.dat",
+                VALIDATOR_DIR / "ethernet/frame/invalid",
+                VALIDATOR_DIR / "ethernet/frame/invalid2",
+                VALIDATOR_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_long.bin",
+                VALIDATOR_DIR / "ethernet/frame/invalid3/ethernet_invalid_too_short.dat",
             ],
             tmp_path / "output.json",
         )
-    assert (tmp_path / "output.json").read_text() == (TEST_DIR / "output_negative.json").read_text(
+    assert (tmp_path / "output.json").read_text() == (
+        VALIDATOR_DIR / "output_negative.json"
+    ).read_text(
         encoding="utf-8",
     )
 
@@ -473,25 +481,25 @@ def test_validate_coverage(capsys: pytest.CaptureFixture[str]) -> None:
     )
     validator.validate(
         ID("Ethernet::Frame"),
-        [TEST_DIR / "ethernet/frame/invalid"],
-        [TEST_DIR / "ethernet/frame/valid"],
+        [VALIDATOR_DIR / "ethernet/frame/invalid"],
+        [VALIDATOR_DIR / "ethernet/frame/valid"],
         coverage=True,
         target_coverage=100,
     )
     expected_output = f"""model: warning: model verification skipped
-{TEST_DIR}/ethernet/frame/valid/802.3-LLC-CDP.raw                      PASSED
-{TEST_DIR}/ethernet/frame/valid/EII-802.1AD-802.1Q-IPv4.raw            PASSED
-{TEST_DIR}/ethernet/frame/valid/EII-802.1Q-802.1Q-IPv4-ICMP.raw        PASSED
-{TEST_DIR}/ethernet/frame/valid/EII-802.1Q-LLC-CDP.raw                 PASSED
-{TEST_DIR}/ethernet/frame/valid/EII-802.1Q-LLC-STP.raw                 PASSED
-{TEST_DIR}/ethernet/frame/valid/ethernet_802.3.raw                     PASSED
-{TEST_DIR}/ethernet/frame/valid/ethernet_double_vlan_tag.raw           PASSED
-{TEST_DIR}/ethernet/frame/valid/ethernet_ipv4_udp.raw                  PASSED
-{TEST_DIR}/ethernet/frame/valid/ethernet_vlan_tag.raw                  PASSED
-{TEST_DIR}/ethernet/frame/invalid/ethernet_802.3_invalid_length.raw    PASSED
-{TEST_DIR}/ethernet/frame/invalid/ethernet_invalid_too_long.raw        PASSED
-{TEST_DIR}/ethernet/frame/invalid/ethernet_invalid_too_short.raw       PASSED
-{TEST_DIR}/ethernet/frame/invalid/ethernet_undefined.raw               PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/802.3-LLC-CDP.raw                      PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1AD-802.1Q-IPv4.raw            PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1Q-802.1Q-IPv4-ICMP.raw        PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1Q-LLC-CDP.raw                 PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1Q-LLC-STP.raw                 PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/ethernet_802.3.raw                     PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/ethernet_double_vlan_tag.raw           PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/ethernet_ipv4_udp.raw                  PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/ethernet_vlan_tag.raw                  PASSED
+{VALIDATOR_DIR}/ethernet/frame/invalid/ethernet_802.3_invalid_length.raw    PASSED
+{VALIDATOR_DIR}/ethernet/frame/invalid/ethernet_invalid_too_long.raw        PASSED
+{VALIDATOR_DIR}/ethernet/frame/invalid/ethernet_invalid_too_short.raw       PASSED
+{VALIDATOR_DIR}/ethernet/frame/invalid/ethernet_undefined.raw               PASSED
 
 
 --------------------------------------------------------------------------------
@@ -520,25 +528,25 @@ def test_coverage_threshold_missed(capsys: pytest.CaptureFixture[str]) -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            [TEST_DIR / "ethernet/frame/invalid"],
-            [TEST_DIR / "ethernet/frame/valid"],
+            [VALIDATOR_DIR / "ethernet/frame/invalid"],
+            [VALIDATOR_DIR / "ethernet/frame/valid"],
             coverage=True,
             target_coverage=90,
         )
     expected_output = f"""model: warning: model verification skipped
-{TEST_DIR}/ethernet/frame/valid/802.3-LLC-CDP.raw                      PASSED
-{TEST_DIR}/ethernet/frame/valid/EII-802.1AD-802.1Q-IPv4.raw            PASSED
-{TEST_DIR}/ethernet/frame/valid/EII-802.1Q-802.1Q-IPv4-ICMP.raw        PASSED
-{TEST_DIR}/ethernet/frame/valid/EII-802.1Q-LLC-CDP.raw                 PASSED
-{TEST_DIR}/ethernet/frame/valid/EII-802.1Q-LLC-STP.raw                 PASSED
-{TEST_DIR}/ethernet/frame/valid/ethernet_802.3.raw                     PASSED
-{TEST_DIR}/ethernet/frame/valid/ethernet_double_vlan_tag.raw           PASSED
-{TEST_DIR}/ethernet/frame/valid/ethernet_ipv4_udp.raw                  PASSED
-{TEST_DIR}/ethernet/frame/valid/ethernet_vlan_tag.raw                  PASSED
-{TEST_DIR}/ethernet/frame/invalid/ethernet_802.3_invalid_length.raw    PASSED
-{TEST_DIR}/ethernet/frame/invalid/ethernet_invalid_too_long.raw        PASSED
-{TEST_DIR}/ethernet/frame/invalid/ethernet_invalid_too_short.raw       PASSED
-{TEST_DIR}/ethernet/frame/invalid/ethernet_undefined.raw               PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/802.3-LLC-CDP.raw                      PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1AD-802.1Q-IPv4.raw            PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1Q-802.1Q-IPv4-ICMP.raw        PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1Q-LLC-CDP.raw                 PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1Q-LLC-STP.raw                 PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/ethernet_802.3.raw                     PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/ethernet_double_vlan_tag.raw           PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/ethernet_ipv4_udp.raw                  PASSED
+{VALIDATOR_DIR}/ethernet/frame/valid/ethernet_vlan_tag.raw                  PASSED
+{VALIDATOR_DIR}/ethernet/frame/invalid/ethernet_802.3_invalid_length.raw    PASSED
+{VALIDATOR_DIR}/ethernet/frame/invalid/ethernet_invalid_too_long.raw        PASSED
+{VALIDATOR_DIR}/ethernet/frame/invalid/ethernet_invalid_too_short.raw       PASSED
+{VALIDATOR_DIR}/ethernet/frame/invalid/ethernet_undefined.raw               PASSED
 
 
 --------------------------------------------------------------------------------
@@ -586,8 +594,8 @@ def test_validate_coverage_threshold_invalid() -> None:
     ):
         validator.validate(
             ID("Ethernet::Frame"),
-            [TEST_DIR / "ethernet/frame/invalid"],
-            [TEST_DIR / "ethernet/frame/valid"],
+            [VALIDATOR_DIR / "ethernet/frame/invalid"],
+            [VALIDATOR_DIR / "ethernet/frame/valid"],
             coverage=True,
             target_coverage=110,
         )
@@ -601,8 +609,8 @@ def test_validate_checksum_positive() -> None:
     )
     validator.validate(
         ID("Checksum_Message::Message"),
-        [TEST_DIR / "checksum_message/invalid"],
-        [TEST_DIR / "checksum_message/valid"],
+        [VALIDATOR_DIR / "checksum_message/invalid"],
+        [VALIDATOR_DIR / "checksum_message/valid"],
     )
 
 
@@ -615,8 +623,8 @@ def test_validate_pyrflx_checksum_negative() -> None:
     with pytest.raises(ValidationError, match=r"^3 messages were classified incorrectly$"):
         validator.validate(
             ID("Checksum_Message::Message"),
-            [TEST_DIR / "checksum_message/valid"],
-            [TEST_DIR / "checksum_message/invalid"],
+            [VALIDATOR_DIR / "checksum_message/valid"],
+            [VALIDATOR_DIR / "checksum_message/invalid"],
         )
 
 
@@ -628,7 +636,7 @@ def test_validate_message_original_and_parsed_not_equal() -> None:
         .new_message("Frame")
     )
     validation_result = validator._validate_message(  # noqa: SLF001
-        Path(TEST_DIR / "ethernet/frame/invalid/ethernet_invalid_too_long.raw"),
+        Path(VALIDATOR_DIR / "ethernet/frame/invalid/ethernet_invalid_too_long.raw"),
         valid_original_message=True,
         message_value=ethernet_too_short_value,
     )
@@ -646,7 +654,7 @@ def test_validate_message_parameterized_message() -> None:
         .new_message("Message")
     )
     validation_result = validator._validate_message(  # noqa: SLF001
-        Path(TEST_DIR / "parameterized/message/valid/parameterized_message.raw"),
+        Path(VALIDATOR_DIR / "parameterized/message/valid/parameterized_message.raw"),
         valid_original_message=True,
         message_value=message,
     )
@@ -806,14 +814,14 @@ def test_parameterized_message_missing_parameter() -> None:
         ValidationError,
         match=(
             r"^"
-            f"{TEST_DIR}/parameterized/message/invalid/parameterized_message_missing_parameter.raw:"
+            f"{VALIDATOR_DIR}/parameterized/message/invalid/parameterized_message_missing_parameter.raw:"
             r" pyrflx: error: missing parameter values: Tag_Mode"
             r"$"
         ),
     ):
         validator._validate_message(  # noqa: SLF001
             Path(
-                TEST_DIR
+                VALIDATOR_DIR
                 / "parameterized/message/invalid/parameterized_message_missing_parameter.raw",
             ),
             valid_original_message=True,
@@ -832,14 +840,14 @@ def test_parameterized_message_excess_parameter() -> None:
         ValidationError,
         match=(
             r"^"
-            f"{TEST_DIR}/parameterized/message/invalid/parameterized_message_excess_parameter.raw:"
+            f"{VALIDATOR_DIR}/parameterized/message/invalid/parameterized_message_excess_parameter.raw:"
             r" pyrflx: error: unexpected parameter values: Excess"
             r"$"
         ),
     ):
         validator._validate_message(  # noqa: SLF001
             Path(
-                TEST_DIR
+                VALIDATOR_DIR
                 / "parameterized/message/invalid/parameterized_message_excess_parameter.raw",
             ),
             valid_original_message=True,

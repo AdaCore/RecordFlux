@@ -131,11 +131,11 @@ check_doc:
 	poetry run tools/check_grammar.py --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json examples/specs/*.rflx examples/apps/*/specs/*.rflx tests/data/specs/*.rflx tests/data/specs/parse_only/*.rflx
 	poetry run tools/check_grammar.py --invalid --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json tests/data/specs/invalid/{incorrect_comment_only,incorrect_empty_file,incorrect_specification}.rflx
 
-.PHONY: test test_rflx test_examples test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
+.PHONY: test test_rflx test_examples test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
 
 test: test_rflx test_examples
 
-test_rflx: test_coverage test_unit_coverage test_language_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
+test_rflx: test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
 
 test_examples: test_specs test_apps
 
@@ -153,6 +153,9 @@ test_unit_coverage:
 
 test_language_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx/lang --cov-branch --cov-fail-under=73.8 --cov-report=term-missing:skip-covered tests/language
+
+test_end_to_end:
+	$(PYTEST) tests/end-to-end
 
 test_property:
 	$(PYTEST) tests/property
