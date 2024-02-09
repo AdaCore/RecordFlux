@@ -126,8 +126,8 @@ changelog:
 anod:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - changes:
-      - poetry.lock
+      changes:
+        - poetry.lock
   script:
     - |
       if [[ "$CI_MERGE_REQUEST_LABELS" != *"Anod"* ]]; then
