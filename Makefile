@@ -187,6 +187,7 @@ test_compilation:
 	$(MAKE) -C tests/spark test NOPREFIX=1
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C tests/spark test_optimized
+	$(MAKE) -C doc/examples build
 
 test_binary_size:
 	$(MAKE) -C examples/apps/dhcp_client test_binary_size
@@ -212,7 +213,7 @@ fuzz_parser:
 
 .PHONY: prove prove_tests prove_python_tests prove_apps prove_property_tests
 
-prove: prove_tests prove_python_tests prove_apps
+prove: prove_tests prove_python_tests prove_apps prove_doc
 
 prove_tests: $(GNATPROVE_CACHE_DIR)
 	$(MAKE) -C tests/spark prove
@@ -223,6 +224,9 @@ prove_python_tests: $(GNATPROVE_CACHE_DIR)
 
 prove_apps: $(GNATPROVE_CACHE_DIR)
 	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) prove || exit;)
+
+prove_doc:
+	$(MAKE) -C doc/examples prove
 
 prove_property_tests: $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/property_verification
@@ -366,6 +370,7 @@ clean:
 	$(MAKE) -C examples/apps/spdm_responder clean
 	$(MAKE) -C examples/apps/dccp clean
 	$(MAKE) -C rflx/ide/vscode clean
+	$(MAKE) -C doc/examples clean
 
 clean_all:
 	$(MAKE) clean

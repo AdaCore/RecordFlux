@@ -407,6 +407,25 @@ verification_apps:
     unprotect: true
     when: always
 
+verification_documentation:
+  extends: .testing
+  services:
+     - image:recordflux
+     - cpu:8
+     - mem:16
+  script:
+    - *setup_spark
+    - *setup_python
+    - make prove_doc
+  cache:
+    key: verification_documentation-$CI_COMMIT_REF_SLUG
+    paths:
+      - build/gnatprove_cache
+    fallback_keys:
+      - verification_documentation-main
+    unprotect: true
+    when: always
+
 html_documentation:
   extends: .testing
   services:
