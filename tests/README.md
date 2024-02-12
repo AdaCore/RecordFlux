@@ -12,6 +12,8 @@ A unit test verifies the functionality of a single Python module. The result of 
 
 Integration tests verify the correct interaction between multiple modules. Complex tests comprising just a single module may also be included in this directory.
 
+### Feature Tests (`tests/feature`)
+
 Each subdirectory is considered as a feature test and must contain a `test.rflx` file. The following actions are performed for each feature test:
 
 - Check parsability of specification and creation of model
@@ -19,6 +21,8 @@ Each subdirectory is considered as a feature test and must contain a `test.rflx`
 - Check compilability of generated SPARK code
 - Check executability of generated SPARK code (if `sequence` key in config is defined)
 - Check provabilility of generated SPARK code (if `prove` key in config is defined)
+
+The checks are implemented in the `feature_test.py` in `tests/integration`, `tests/compilation` and `tests/verification`.
 
 The executability and provability tests require the definition of a session called `Session`. The actions can be configured in an optional `config.yml` file:
 
@@ -37,9 +41,21 @@ End-to-end tests verify the functionality of the entire application. These tests
 
 Property-based testing based on [Hypothesis](https://hypothesis.readthedocs.io/).
 
+### Verification Tests (`tests/verification`, `tests/property_verification`)
+
+All Python-based tests that require GNATprove.
+
+### Compilation Tests (`tests/compilation`)
+
+All Python-based tests that require GNAT.
+
 ### SPARK Tests (`tests/spark`)
 
 The SPARK tests verify the correctness of the generated SPARK code. A [test suite](https://docs.adacore.com/live/wave/aunit/html/aunit_cb/aunit_cb.html) and [formal verification](https://docs.adacore.com/live/wave/spark2014/html/spark2014_ug/en/gnatprove.html) is used to ensure functional correctness and prove absence of runtime errors. The to be proven code is contained in `tests/spark/generated`. This code is also used by integration tests for regression testing.
+
+### Language Tests (`tests/language`)
+
+Tests for the generated Langkit-based parser.
 
 ### Tool Tests (`tests/tools`)
 
