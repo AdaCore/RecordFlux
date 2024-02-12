@@ -129,8 +129,8 @@ class UniqueStore(argparse.Action):
             setattr(namespace, self.dest, values)
 
 
-def run() -> None:
-    main(sys.argv)
+def run() -> Union[int, str]:
+    return main(sys.argv)
 
 
 def main(  # noqa: PLR0915
