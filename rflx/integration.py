@@ -162,9 +162,14 @@ class Integration:
     def add_integration_file(self, package_name: str, integration_file: IntegrationFile) -> None:
         self._packages[package_name] = integration_file
 
-    def _add_integration_object(self, filename: Path, file: object, error: RecordFluxError) -> None:
+    def _add_integration_object(
+        self,
+        filename: Path,
+        content: object,
+        error: RecordFluxError,
+    ) -> None:
         try:
-            self.add_integration_file(filename.stem, IntegrationFile.model_validate(file))
+            self.add_integration_file(filename.stem, IntegrationFile.model_validate(content))
         except ValidationError as e:
             error.push(ErrorEntry(f"{e}", Severity.ERROR, self._to_location(filename.stem)))
 
