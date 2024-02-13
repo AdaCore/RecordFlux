@@ -9,13 +9,16 @@ def test_optimize(tmp_path: Path) -> None:
     f.write_text(
         textwrap.dedent(
             """\
-            procedure Test is
+            procedure Test with
+               SPARK_Mode
+            is
             begin
-               if not False then
+               if False then
                   goto Error;
                end if;
                <<Error>>
-            end Test;""",
+            end Test;
+            """,
         ),
     )
 
@@ -23,8 +26,11 @@ def test_optimize(tmp_path: Path) -> None:
 
     assert f.read_text() == textwrap.dedent(
         """\
-        procedure Test is
+        procedure Test with
+           SPARK_Mode
+        is
         begin
            <<Error>>
-        end Test;""",
+        end Test;
+        """,
     )

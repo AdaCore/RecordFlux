@@ -323,7 +323,11 @@ def test_main_generate_optimize(
 
     called = []
 
-    def optimize_mock(generated_dir: Path, workers: int = 0) -> None:  # noqa: ARG001
+    def optimize_mock(
+        generated_dir: Path,  # noqa: ARG001
+        workers: int = 0,  # noqa: ARG001
+        timeout: int = 1,  # noqa: ARG001
+    ) -> None:
         called.append(True)
 
     monkeypatch.setattr(generator.optimizer, "optimize", optimize_mock)
@@ -343,7 +347,11 @@ def test_main_optimize(
 ) -> None:
     call = []
 
-    def optimize_mock(generated_dir: Path, workers: int = 0) -> None:  # noqa: ARG001
+    def optimize_mock(
+        generated_dir: Path,
+        workers: int = 0,  # noqa: ARG001
+        timeout: int = 1,  # noqa: ARG001
+    ) -> None:
         call.append(generated_dir)
 
     monkeypatch.setattr(generator.optimizer, "optimize", optimize_mock)

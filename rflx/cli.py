@@ -240,6 +240,12 @@ def main(  # noqa: PLR0915
         help="optimize generated state machine code (requires GNATprove)",
     )
     parser_generate.add_argument(
+        "--timeout",
+        type=int,
+        default=1,
+        help="prover timeout in seconds for code optimization (default: %(default)s)",
+    )
+    parser_generate.add_argument(
         "files",
         metavar="SPECIFICATION_FILE",
         type=Path,
@@ -251,6 +257,12 @@ def main(  # noqa: PLR0915
     parser_optimize = subparsers.add_parser(
         "optimize",
         help="optimize generated state machine code",
+    )
+    parser_optimize.add_argument(
+        "--timeout",
+        type=int,
+        default=1,
+        help="prover timeout in seconds (default: %(default)s)",
     )
     parser_optimize.add_argument(
         "directory",
@@ -553,14 +565,14 @@ def generate(args: argparse.Namespace) -> None:
     )
 
     if args.optimize:
-        optimizer.optimize(args.output_directory, args.workers)
+        optimizer.optimize(args.output_directory, args.workers, args.timeout)
 
 
 def optimize(args: argparse.Namespace) -> None:
     if not args.directory.is_dir():
         fail(f'directory not found: "{args.directory}"', Subsystem.CLI)
 
-    optimizer.optimize(args.directory, args.workers)
+    optimizer.optimize(args.directory, args.workers, args.timeout)
 
 
 def parse(

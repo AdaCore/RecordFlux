@@ -1,7 +1,8 @@
-usage: rflx optimize [-h] DIRECTORY
+usage: rflx optimize [-h] [--timeout TIMEOUT] DIRECTORY
 
 positional arguments:
-  DIRECTORY   directory containing the generated code
+  DIRECTORY          directory containing the generated code
 
 options:
-  -h, --help  show this help message and exit
+  -h, --help         show this help message and exit
+  --timeout TIMEOUT  prover timeout in seconds (default: 1)

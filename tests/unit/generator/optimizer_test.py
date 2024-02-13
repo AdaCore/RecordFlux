@@ -11,12 +11,14 @@ from rflx.error import RecordFluxError
 from rflx.generator.optimizer import (
     Check,
     analyze,
+    get_proof_results_for_asserts,
     gnatprove_found,
     instrument,
     optimize,
     prove,
     remove,
 )
+from tests.const import DATA_DIR
 
 
 @pytest.mark.parametrize(
@@ -27,19 +29,16 @@ from rflx.generator.optimizer import (
                 """\
                 procedure Test is
                 begin
-                   if not False then
-                      goto Error;
-                   end if;
-                   <<Error>>
-                end Test;""",
+                end Test;
+                """,
             ),
-            [True],
+            {},
             textwrap.dedent(
                 """\
                 procedure Test is
                 begin
-                   <<Error>>
-                end Test;""",
+                end Test;
+                """,
             ),
         ),
         (
@@ -51,9 +50,20 @@ from rflx.generator.optimizer import (
                       goto Error;
                    end if;
                    <<Error>>
-                end Test;""",
+                end Test;
+                """,
             ),
-            [False],
+            {4: True},
+            textwrap.dedent(
+                """\
+                procedure Test is
+                begin
+                   <<Error>>
+                end Test;
+                """,
+            ),
+        ),
+        (
             textwrap.dedent(
                 """\
                 procedure Test is
@@ -62,22 +72,35 @@ from rflx.generator.optimizer import (
                       goto Error;
                    end if;
                    <<Error>>
-                end Test;""",
+                end Test;
+                """,
+            ),
+            {4: False},
+            textwrap.dedent(
+                """\
+                procedure Test is
+                begin
+                   if not False then
+                      goto Error;
+                   end if;
+                   <<Error>>
+                end Test;
+                """,
             ),
         ),
     ],
 )
 def test_optimize(
     content: str,
-    prove_results: list[bool],
+    prove_results: dict[int, bool],
     expected_content: str,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(rflx.generator.optimizer, "gnatprove_found", lambda: True)
 
-    def prove_mock(f: Path, line: int, workers: int = 0) -> bool:  # noqa: ARG001
-        return prove_results.pop()
+    def prove_mock(f: Path, line: int, workers: int = 0) -> dict[int, bool]:  # noqa: ARG001
+        return prove_results
 
     monkeypatch.setattr(rflx.generator.optimizer, "prove", prove_mock)
 
@@ -224,35 +247,35 @@ def test_instrument(
         ),
         (
             {2: Check(1, 2, 4)},
-            [False],
+            {2: False},
             {},
         ),
         (
             {2: Check(1, 2, 4)},
-            [True],
+            {2: True},
             {2: Check(1, 2, 4)},
         ),
         (
             {2: Check(1, 2, 4), 7: Check(1, 7, 9), 11: Check(10, 11, 13)},
-            [False, True, False],
+            {2: False, 7: True, 11: False},
             {7: Check(1, 7, 9)},
         ),
         (
             {2: Check(1, 2, 4), 7: Check(1, 7, 9), 11: Check(10, 11, 13)},
-            [True, False, True],
+            {2: True, 7: False, 11: True},
             {2: Check(1, 2, 4), 11: Check(10, 11, 13)},
         ),
     ],
 )
 def test_analyze(
     checks: dict[int, Check],
-    prove_results: list[bool],
+    prove_results: dict[int, bool],
     expected: dict[int, Check],
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    def prove_mock(f: Path, line: int, workers: int = 0) -> bool:  # noqa: ARG001
-        return prove_results.pop()
+    def prove_mock(f: Path, line: int, workers: int = 0) -> dict[int, bool]:  # noqa: ARG001
+        return prove_results
 
     monkeypatch.setattr(rflx.generator.optimizer, "prove", prove_mock)
 
@@ -266,49 +289,93 @@ def test_prove(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     f = tmp_path / "test.adb"
     f.write_text("")
 
+    expected_result = {1: True, 2: False}
+
     monkeypatch.setattr(
         rflx.generator.optimizer,
         "run",
         lambda cmd, cwd, stdout, stderr: CompletedProcess("", 0),  # noqa: ARG005
     )
+    monkeypatch.setattr(
+        rflx.generator.optimizer,
+        "get_proof_results_for_asserts",
+        lambda _: expected_result,
+    )
 
-    assert prove(f, 0)
+    assert prove(f) == expected_result
 
+
+def test_prove_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         rflx.generator.optimizer,
         "run",
         lambda cmd, cwd, stdout, stderr: CompletedProcess("", 1),  # noqa: ARG005
     )
 
-    assert not prove(f, 0)
+    with pytest.raises(
+        RecordFluxError,
+        match=r"^generator: error: gnatprove terminated with exit code 1$",
+    ):
+        prove(tmp_path)
+
+
+def test_get_proof_results_for_asserts() -> None:
+    assert get_proof_results_for_asserts(DATA_DIR / "rflx-test-session.spark") == {
+        51: True,
+        57: False,
+        59: False,
+        66: True,
+        67: False,
+        70: False,
+        81: False,
+        83: False,
+        90: True,
+        91: True,
+        94: False,
+        105: False,
+        113: False,
+        117: True,
+        118: False,
+        121: False,
+        124: True,
+        129: True,
+        130: True,
+        132: True,
+        133: True,
+        150: True,
+        153: True,
+        174: True,
+        175: True,
+        177: True,
+    }
 
 
 @pytest.mark.parametrize(
     ("content", "checks", "assertions", "expected"),
     [
         (
-            "",
+            "\n",
             {},
             [],
-            "",
+            "\n",
         ),
         (
-            "1\n2\n3\n4\n5\n6\n7\n8\n9",
+            "1\n2\n3\n4\n5\n6\n7\n8\n9\n",
             {4: Check(2, 4, 6)},
             [],
-            "1\n7\n8\n9",
+            "1\n7\n8\n9\n",
         ),
         (
-            "1\n2\n3\n4\n5\n6\n7\n8\n9",
+            "1\n2\n3\n4\n5\n6\n7\n8\n9\n",
             {},
             [1, 3, 5, 7, 9],
-            "2\n4\n6\n8",
+            "2\n4\n6\n8\n",
         ),
         (
-            "1\n2\n3\n4\n5\n6\n7\n8\n9",
+            "1\n2\n3\n4\n5\n6\n7\n8\n9\n",
             {3: Check(1, 2, 3), 8: Check(7, 8, 9)},
             [5],
-            "4\n6",
+            "4\n6\n",
         ),
     ],
 )

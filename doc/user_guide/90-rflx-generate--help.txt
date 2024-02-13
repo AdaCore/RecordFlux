@@ -2,7 +2,7 @@ usage: rflx generate [-h] [-p PREFIX] [-n] [-d OUTPUT_DIRECTORY]
                      [--debug {built-in,external}]
                      [--ignore-unsupported-checksum]
                      [--integration-files-dir INTEGRATION_FILES_DIR]
-                     [--reproducible] [--optimize]
+                     [--reproducible] [--optimize] [--timeout TIMEOUT]
                      [SPECIFICATION_FILE ...]
 
 positional arguments:
@@ -23,3 +23,5 @@ options:
   --reproducible        ensure reproducible output
   --optimize            optimize generated state machine code (requires
                         GNATprove)
+  --timeout TIMEOUT     prover timeout in seconds for code optimization
+                        (default: 1)
