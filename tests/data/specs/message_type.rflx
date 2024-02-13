@@ -10,13 +10,15 @@ package Message_Type is
             then Baz
                if Foo > 16#1E#;
          Bar : T;
-         Baz : T;
+         Baz : Opaque
+            with Size => 8 * Foo;
       end message;
 
    type Simple_PDU is
       message
          Bar : T;
-         Baz : T;
+         Baz : Opaque
+            with Size => 8 * Bar;
       end message;
 
    type Empty_PDU is null message;

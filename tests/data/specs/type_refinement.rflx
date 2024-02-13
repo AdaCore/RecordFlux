@@ -2,9 +2,9 @@ with Message_Type;
 
 package Type_Refinement is
 
-   for Message_Type::Simple_PDU use (Bar => Message_Type::PDU)
-      if Baz = 42;
+   for Message_Type::Simple_PDU use (Baz => Message_Type::PDU)
+      if Bar = 42;
 
-   for Message_Type::PDU use (Bar => Message_Type::Simple_PDU);
+   for Message_Type::PDU use (Baz => Message_Type::Simple_PDU);
 
 end Type_Refinement;

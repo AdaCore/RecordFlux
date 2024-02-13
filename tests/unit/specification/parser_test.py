@@ -124,12 +124,14 @@ def assert_ast_files(  # type: ignore[misc]
     p = parser.Parser()
     p.parse(*[Path(f) for f in filenames])
     result = {f: to_dict(s) for f, s in p.specifications.items()}
+    p.create_model()
     assert result == expected, filenames
 
 
 def assert_ast_string(string: str, expected: Mapping[str, Any]) -> None:  # type: ignore[misc]
     p = parser.Parser()
     p.parse_string(string)
+    p.create_model()
     assert to_dict(next(iter(p.specifications.items()))[1]) == expected
 
 
@@ -764,10 +766,7 @@ def test_parse_message_type_spec() -> None:
                                         "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Foo",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
                                         "thens": [
                                             {
                                                 "_kind": "ThenNode",
@@ -835,10 +834,7 @@ def test_parse_message_type_spec() -> None:
                                         "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Bar",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -849,16 +845,40 @@ def test_parse_message_type_spec() -> None:
                                     },
                                     {
                                         "_kind": "MessageField",
-                                        "aspects": [],
+                                        "aspects": [
+                                            {
+                                                "identifier": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Size",
+                                                },
+                                                "value": {
+                                                    "left": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "8",
+                                                    },
+                                                    "op": {"_kind": "OpMul", "_value": "*"},
+                                                    "right": {
+                                                        "identifier": {
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Foo",
+                                                            },
+                                                            "package": None,
+                                                            "_kind": "ID",
+                                                        },
+                                                        "_kind": "Variable",
+                                                    },
+                                                    "_kind": "BinOp",
+                                                },
+                                                "_kind": "Aspect",
+                                            },
+                                        ],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Baz",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "name": {"_kind": "UnqualifiedID", "_value": "Opaque"},
                                             "package": None,
                                         },
                                         "type_arguments": [],
@@ -882,10 +902,7 @@ def test_parse_message_type_spec() -> None:
                                         "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Bar",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -896,16 +913,40 @@ def test_parse_message_type_spec() -> None:
                                     },
                                     {
                                         "_kind": "MessageField",
-                                        "aspects": [],
+                                        "aspects": [
+                                            {
+                                                "identifier": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Size",
+                                                },
+                                                "value": {
+                                                    "left": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "8",
+                                                    },
+                                                    "op": {"_kind": "OpMul", "_value": "*"},
+                                                    "right": {
+                                                        "identifier": {
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Bar",
+                                                            },
+                                                            "package": None,
+                                                            "_kind": "ID",
+                                                        },
+                                                        "_kind": "Variable",
+                                                    },
+                                                    "_kind": "BinOp",
+                                                },
+                                                "_kind": "Aspect",
+                                            },
+                                        ],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Baz",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "name": {"_kind": "UnqualifiedID", "_value": "Opaque"},
                                             "package": None,
                                         },
                                         "type_arguments": [],
@@ -919,10 +960,7 @@ def test_parse_message_type_spec() -> None:
                     },
                     {
                         "_kind": "TypeDecl",
-                        "definition": {
-                            "_kind": "NullMessageTypeDef",
-                            "_value": "null message",
-                        },
+                        "definition": {"_kind": "NullMessageTypeDef", "_value": "null message"},
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Empty_PDU"},
                         "parameters": None,
                     },
@@ -970,10 +1008,7 @@ def test_parse_type_refinement_spec() -> None:
                                         "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Foo",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Foo"},
                                         "thens": [
                                             {
                                                 "_kind": "ThenNode",
@@ -1041,10 +1076,7 @@ def test_parse_type_refinement_spec() -> None:
                                         "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Bar",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -1055,16 +1087,40 @@ def test_parse_type_refinement_spec() -> None:
                                     },
                                     {
                                         "_kind": "MessageField",
-                                        "aspects": [],
+                                        "aspects": [
+                                            {
+                                                "identifier": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Size",
+                                                },
+                                                "value": {
+                                                    "left": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "8",
+                                                    },
+                                                    "op": {"_kind": "OpMul", "_value": "*"},
+                                                    "right": {
+                                                        "identifier": {
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Foo",
+                                                            },
+                                                            "package": None,
+                                                            "_kind": "ID",
+                                                        },
+                                                        "_kind": "Variable",
+                                                    },
+                                                    "_kind": "BinOp",
+                                                },
+                                                "_kind": "Aspect",
+                                            },
+                                        ],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Baz",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "name": {"_kind": "UnqualifiedID", "_value": "Opaque"},
                                             "package": None,
                                         },
                                         "type_arguments": [],
@@ -1088,10 +1144,7 @@ def test_parse_type_refinement_spec() -> None:
                                         "_kind": "MessageField",
                                         "aspects": [],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Bar",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Bar"},
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
@@ -1102,16 +1155,40 @@ def test_parse_type_refinement_spec() -> None:
                                     },
                                     {
                                         "_kind": "MessageField",
-                                        "aspects": [],
+                                        "aspects": [
+                                            {
+                                                "identifier": {
+                                                    "_kind": "UnqualifiedID",
+                                                    "_value": "Size",
+                                                },
+                                                "value": {
+                                                    "left": {
+                                                        "_kind": "NumericLiteral",
+                                                        "_value": "8",
+                                                    },
+                                                    "op": {"_kind": "OpMul", "_value": "*"},
+                                                    "right": {
+                                                        "identifier": {
+                                                            "name": {
+                                                                "_kind": "UnqualifiedID",
+                                                                "_value": "Bar",
+                                                            },
+                                                            "package": None,
+                                                            "_kind": "ID",
+                                                        },
+                                                        "_kind": "Variable",
+                                                    },
+                                                    "_kind": "BinOp",
+                                                },
+                                                "_kind": "Aspect",
+                                            },
+                                        ],
                                         "condition": None,
-                                        "identifier": {
-                                            "_kind": "UnqualifiedID",
-                                            "_value": "Baz",
-                                        },
+                                        "identifier": {"_kind": "UnqualifiedID", "_value": "Baz"},
                                         "thens": [],
                                         "type_identifier": {
                                             "_kind": "ID",
-                                            "name": {"_kind": "UnqualifiedID", "_value": "T"},
+                                            "name": {"_kind": "UnqualifiedID", "_value": "Opaque"},
                                             "package": None,
                                         },
                                         "type_arguments": [],
@@ -1153,14 +1230,14 @@ def test_parse_type_refinement_spec() -> None:
                                 "_kind": "Variable",
                                 "identifier": {
                                     "_kind": "ID",
-                                    "name": {"_kind": "UnqualifiedID", "_value": "Baz"},
+                                    "name": {"_kind": "UnqualifiedID", "_value": "Bar"},
                                     "package": None,
                                 },
                             },
                             "op": {"_kind": "OpEq", "_value": "="},
                             "right": {"_kind": "NumericLiteral", "_value": "42"},
                         },
-                        "field": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                        "field": {"_kind": "UnqualifiedID", "_value": "Baz"},
                         "pdu": {
                             "_kind": "ID",
                             "name": {"_kind": "UnqualifiedID", "_value": "Simple_PDU"},
@@ -1175,7 +1252,7 @@ def test_parse_type_refinement_spec() -> None:
                     {
                         "_kind": "RefinementDecl",
                         "condition": None,
-                        "field": {"_kind": "UnqualifiedID", "_value": "Bar"},
+                        "field": {"_kind": "UnqualifiedID", "_value": "Baz"},
                         "pdu": {
                             "_kind": "ID",
                             "name": {"_kind": "UnqualifiedID", "_value": "PDU"},
@@ -2229,8 +2306,15 @@ def test_create_model_no_messages(spec: str) -> None:
 def test_create_model_message_type_message() -> None:
     simple_structure = [
         model.Link(model.INITIAL, model.Field("Bar")),
-        model.Link(model.Field("Bar"), model.Field("Baz")),
-        model.Link(model.Field("Baz"), model.FINAL),
+        model.Link(
+            model.Field("Bar"),
+            model.Field("Baz"),
+            size=expr.Mul(expr.Number(8), expr.Variable("Bar")),
+        ),
+        model.Link(
+            model.Field("Baz"),
+            model.FINAL,
+        ),
     ]
 
     simple_types = {
@@ -2240,12 +2324,7 @@ def test_create_model_message_type_message() -> None:
             expr.Number(255),
             expr.Number(8),
         ),
-        model.Field("Baz"): model.Integer(
-            "Message_Type::T",
-            expr.Number(0),
-            expr.Number(255),
-            expr.Number(8),
-        ),
+        model.Field("Baz"): model.Opaque(),
     }
 
     simple_message = model.Message("Message_Type::Simple_PDU", simple_structure, simple_types)
@@ -2261,9 +2340,17 @@ def test_create_model_message_type_message() -> None:
             model.Field("Foo"),
             model.Field("Baz"),
             expr.Greater(expr.Variable("Foo"), expr.Number(30, 16)),
+            size=expr.Mul(expr.Number(8), expr.Variable("Foo")),
         ),
-        model.Link(model.Field("Bar"), model.Field("Baz")),
-        model.Link(model.Field("Baz"), model.FINAL),
+        model.Link(
+            model.Field("Bar"),
+            model.Field("Baz"),
+            size=expr.Mul(expr.Number(8), expr.Variable("Foo")),
+        ),
+        model.Link(
+            model.Field("Baz"),
+            model.FINAL,
+        ),
     ]
 
     types = {
