@@ -336,27 +336,45 @@ def test_extended_boolean_expression(string: str, expected: expr.Expr) -> None:
 
 
 @pytest.mark.parametrize(
-    ("string", "error"),
+    ("string", "error", "extended"),
     [
-        ("42 > X", "<stdin>:1:1: parser: error: boolean expression in math context"),
-        ("X and Y", "<stdin>:1:1: parser: error: boolean expression in math context"),
+        ("42 > X", "<stdin>:1:1: parser: error: boolean expression in math context", False),
+        ("42 > X", "<stdin>:1:1: parser: error: boolean expression in math context", True),
+        ("X and Y", "<stdin>:1:1: parser: error: boolean expression in math context", False),
+        ("X and Y", "<stdin>:1:1: parser: error: boolean expression in math context", True),
+        ("(5 + ()", "<stdin>:1:2: parser: error: empty subexpression", False),
+        (
+            "(5 + ()",
+            "<stdin>:1:2: parser: error: Cannot parse <extended_simple_expr>\n"
+            r"<stdin>:1:7: parser: error: Expected 'case', got '\)'",
+            True,
+        ),
     ],
 )
-def test_mathematical_expression_error(string: str, error: expr.Expr) -> None:
+def test_mathematical_expression_error(string: str, error: expr.Expr, extended: bool) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_math_expression(string, extended=False)
+        parse_math_expression(string, extended=extended)
 
 
 @pytest.mark.parametrize(
-    ("string", "error"),
+    ("string", "error", "extended"),
     [
-        ("42", "<stdin>:1:1: parser: error: math expression in boolean context"),
-        ("X * 3", "<stdin>:1:1: parser: error: math expression in boolean context"),
+        ("42", "<stdin>:1:1: parser: error: math expression in boolean context", True),
+        ("42", "<stdin>:1:1: parser: error: math expression in boolean context", False),
+        ("X * 3", "<stdin>:1:1: parser: error: math expression in boolean context", True),
+        ("X * 3", "<stdin>:1:1: parser: error: math expression in boolean context", False),
+        (
+            "(True and ()",
+            "<stdin>:1:2: parser: error: Cannot parse <extended_expression>\n"
+            r"<stdin>:1:12: parser: error: Expected 'case', got '\)'",
+            True,
+        ),
+        ("(True and ()", "<stdin>:1:2: parser: error: empty subexpression", False),
     ],
 )
-def test_boolean_expression_error(string: str, error: expr.Expr) -> None:
+def test_boolean_expression_error(string: str, error: expr.Expr, extended: bool) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_bool_expression(string, extended=False)
+        parse_bool_expression(string, extended=extended)
 
 
 @pytest.mark.parametrize(

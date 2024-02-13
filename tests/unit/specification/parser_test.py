@@ -3516,6 +3516,53 @@ def test_parse_error_short_form_condition() -> None:
     )
 
 
+def test_parse_error_missing_aspect_expression() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           type T is range 0 .. 1 with A;
+        end Test;
+        """,
+        r'^<stdin>:2:14: parser: error: invalid aspect "A" for range type "Test::T"$',
+    )
+
+
+def test_parse_error_unclosed_parenthesis() -> None:
+    assert_error_string(
+        """\
+        package Test is
+
+           type M is
+              message
+                 Payload : Opaque
+                    with Size => (Length - () * 8;
+              end message;
+        end Test;
+        """,
+        r"^<stdin>:6:27: parser: error: empty subexpression$",
+    )
+
+
+def test_negated_case_expression() -> None:
+    assert_error_string(
+        """\
+        package Test is
+           generic
+           session S is
+           begin
+              state A is
+              begin
+                 M := T'(E1 => - (case X is when Y => 42));
+              transition
+                 goto null
+              end A;
+           end S;
+        end Test;
+        """,
+        r"^<stdin>:7:26: parser: error: case expression unsupported in math expression context$",
+    )
+
+
 def test_parse_only() -> None:
     p = parser.Parser()
     p.parse(*(SPEC_DIR / "parse_only").glob("*"))

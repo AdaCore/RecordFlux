@@ -80,6 +80,40 @@ def diagnostics_to_error(
     return True
 
 
+def readable_name(name: str) -> str:
+    """Convert entity name to a readable format, e.g. CaseExpression to 'case expression'."""
+
+    words = []
+    start_index = 0
+    for i in range(1, len(name)):
+        if name[i].isupper():
+            words.append(name[start_index:i].lower())
+            start_index = i
+    words.append(name[start_index:].lower())
+    return " ".join(words)
+
+
+def validate_handler(
+    error: RecordFluxError,
+    context: str,
+    entity: lang.RFLXNode,
+    handlers: list[str],
+    filename: Path,
+) -> None:
+    if entity.kind_name not in handlers:
+        error.extend(
+            [
+                (
+                    f"{readable_name(entity.kind_name)} unsupported in {context} context",
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    node_location(entity, filename),
+                ),
+            ],
+        )
+        error.propagate()
+
+
 def create_description(description: Optional[lang.Description] = None) -> Optional[str]:
     if description:
         assert isinstance(description.text, str)
@@ -157,6 +191,7 @@ def create_attribute_statement(
         "Read": stmt.Read,
         "Write": stmt.Write,
     }
+
     constructor = attrs[expression.f_attr.text]
 
     return constructor(
@@ -177,6 +212,7 @@ def create_statement(
         "MessageFieldAssignment": create_message_field_assignment,
         "AttributeStatement": create_attribute_statement,
     }
+    validate_handler(error, "statement", statement, list(handlers.keys()), filename)
     return handlers[statement.kind_name](error, statement, filename)
 
 
@@ -394,6 +430,14 @@ MATH_OPERATIONS: Mapping[str, Union[type[expr.BinExpr], type[expr.AssExpr]]] = {
 
 def create_math_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.BinOp)
+
+    if expression.f_left is None or expression.f_right is None:
+        # TODO(eng/recordflux/RecordFlux#1526): This should be rejected by the parser already.
+        fail(
+            "empty subexpression",
+            Subsystem.PARSER,
+            location=node_location(expression, filename),
+        )
     if expression.f_op.kind_name in MATH_OPERATIONS:
         return MATH_OPERATIONS[expression.f_op.kind_name](
             create_math_expression(error, expression.f_left, filename),
@@ -428,6 +472,15 @@ BOOLEAN_OPERATIONS = {
 
 def create_bool_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.BinOp)
+
+    if expression.f_left is None or expression.f_right is None:
+        # TODO(eng/recordflux/RecordFlux#1526): This should be rejected by the parser already.
+        fail(
+            "empty subexpression",
+            Subsystem.PARSER,
+            location=node_location(expression, filename),
+        )
+
     if expression.f_op.kind_name in MATH_COMPARISONS:
         return MATH_COMPARISONS[expression.f_op.kind_name](
             create_math_expression(error, expression.f_left, filename),
@@ -854,6 +907,7 @@ EXPRESSION_MAP = {
 
 
 def create_expression(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
+    validate_handler(error, "expression", expression, list(EXPRESSION_MAP.keys()), filename)
     return EXPRESSION_MAP[expression.kind_name](error, expression, filename)
 
 
@@ -867,6 +921,7 @@ def create_declaration(
         "VariableDecl": create_variable_decl,
         "RenamingDecl": create_renaming_decl,
     }
+    validate_handler(error, "declaration", declaration, list(handlers.keys()), filename)
     return handlers[declaration.kind_name](error, declaration, package, filename)
 
 
@@ -880,6 +935,7 @@ def create_formal_declaration(
         "FormalChannelDecl": create_channel_decl,
         "FormalFunctionDecl": create_function_decl,
     }
+    validate_handler(error, "formal declaration", declaration, list(handlers.keys()), filename)
     return handlers[declaration.kind_name](error, declaration, package, filename)
 
 
@@ -900,6 +956,7 @@ def create_math_expression(
         "SelectNode": create_selected,
         "SequenceAggregate": create_sequence_aggregate,
     }
+    validate_handler(error, "math expression", expression, list(handlers.keys()), filename)
     result = handlers[expression.kind_name](error, expression, filename)
     if result.type_ == rty.BOOLEAN:
         fail(
@@ -932,6 +989,7 @@ def create_bool_expression(
             Subsystem.PARSER,
             location=node_location(expression, filename),
         )
+    validate_handler(error, "boolean expression", expression, list(handlers.keys()), filename)
     return handlers[expression.kind_name](error, expression, filename)
 
 
@@ -985,6 +1043,7 @@ def create_range(
                 ),
             ],
         )
+        return None
     size = create_math_expression(error, rangetype.f_size.f_value, filename)
     return model.UncheckedInteger(
         identifier,
@@ -1711,10 +1770,10 @@ class Parser:
         log.info("Parsing %s", filename)
         unit = lang.AnalysisContext().get_from_file(str(filename))
 
+        error.extend(style.check(filename))
+
         if diagnostics_to_error(unit.diagnostics, error, filename):
             return None
-
-        error.extend(style.check(filename))
 
         assert isinstance(unit.root, lang.Specification)
 
@@ -1814,6 +1873,13 @@ class Parser:
                             ),
                         ],
                     )
+                validate_handler(
+                    error,
+                    "definition",
+                    t.f_definition,
+                    list(handlers.keys()),
+                    filename,
+                )
                 new_type = handlers[t.f_definition.kind_name](
                     error,
                     identifier,
