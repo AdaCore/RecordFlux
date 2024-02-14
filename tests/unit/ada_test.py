@@ -43,8 +43,8 @@ def test_not_rflx_expr() -> None:
 
 
 def test_neg_str() -> None:
-    assert str(ada.Neg(ada.Variable("X"))) == "(-X)"
-    assert str(ada.Neg(ada.Neg(ada.Variable("X")))) == "(-((-X)))"
+    assert str(ada.Neg(ada.Variable("X"))) == "-X"
+    assert str(ada.Neg(ada.Neg(ada.Variable("X")))) == "-(-X)"
 
 
 def test_neg_rflx_expr() -> None:
@@ -150,7 +150,7 @@ def test_composite_relation_rflx_expr(relation: Callable[[ada.Expr, ada.Expr], a
 
 def test_attribute_str() -> None:
     assert str(ada.First("X")) == "X'First"
-    assert str(-ada.First("X")) == "(-X'First)"
+    assert str(-ada.First("X")) == "-X'First"
 
 
 def test_literal_rflx_expr() -> None:
@@ -174,7 +174,7 @@ def test_attribute_expression_str() -> None:
 
 def test_selected_str() -> None:
     assert str(ada.Selected(ada.Variable("X"), "Y")) == "X.Y"
-    assert str(-ada.Selected(ada.Variable("X"), "Y")) == "(-X.Y)"
+    assert str(-ada.Selected(ada.Variable("X"), "Y")) == "-X.Y"
 
 
 def test_selected_rflx_expr() -> None:
@@ -186,7 +186,7 @@ def test_selected_rflx_expr() -> None:
 
 def test_indexed_str() -> None:
     assert str(ada.Indexed(ada.Variable("X"), ada.Variable("Y"))) == "X (Y)"
-    assert str(-ada.Indexed(ada.Variable("X"), ada.Variable("Y"))) == "(-X (Y))"
+    assert str(-ada.Indexed(ada.Variable("X"), ada.Variable("Y"))) == "-X (Y)"
 
 
 def test_indexed_rflx_expr() -> None:
@@ -585,7 +585,7 @@ def test_call_str() -> None:
         )
         == "A (B, C, D => 1, E => 2)"
     )
-    assert str(-ada.Call("A", [])) == "(-A)"
+    assert str(-ada.Call("A", [])) == "-A"
 
 
 def test_conversion_str() -> None:

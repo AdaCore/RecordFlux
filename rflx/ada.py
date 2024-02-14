@@ -86,7 +86,7 @@ class Neg(Expr):
         return self.expression
 
     def _update_str(self) -> None:
-        self._str = intern(f"(-{self.parenthesized(self.expression)})")
+        self._str = intern(f"-{self.parenthesized(self.expression)}")
 
     @property
     def precedence(self) -> Precedence:
