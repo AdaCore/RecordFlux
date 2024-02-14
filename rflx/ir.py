@@ -633,9 +633,6 @@ class IntAttr(Attr, IntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return z3.Int(str(self))
 
-    def _update_str(self) -> None:
-        super(IntAttr, self)._update_str()  # noqa: UP008
-
 
 @define(eq=False)
 class Size(IntAttr):
@@ -1374,7 +1371,7 @@ class IntIfExpr(IfExpr, IntExpr):
         return self.return_type
 
     def to_z3_expr(self) -> z3.ArithRef:
-        result = super(IntIfExpr, self).to_z3_expr()  # noqa: UP008
+        result = super().to_z3_expr()
         assert isinstance(result, z3.ArithRef)
         return result
 
@@ -1391,7 +1388,7 @@ class BoolIfExpr(IfExpr, BoolExpr):
         return rty.BOOLEAN
 
     def to_z3_expr(self) -> z3.BoolRef:
-        result = super(BoolIfExpr, self).to_z3_expr()  # noqa: UP008
+        result = super().to_z3_expr()
         assert isinstance(result, z3.BoolRef)
         return result
 
