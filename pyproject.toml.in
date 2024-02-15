@@ -69,9 +69,11 @@ pygls = ">=1.1, <2"
 setuptools = ">=41"  # required by z3-solver
 z3-solver = ">=4, <4.12.3"
 
+[tool.poetry.group.build.dependencies]
+langkit = {path = "contrib/langkit"}
+
 [tool.poetry.group.dev.dependencies]
 recordflux-devutils = {path = "devutils", extras = ["devel"]}
-langkit = {path = "contrib/langkit"}
 cobrafuzz = "==1.0.12"
 furo = "==2022.4.7"
 hypothesis = ">=6.14, <6.24"

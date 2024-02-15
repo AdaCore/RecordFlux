@@ -243,7 +243,7 @@ install_devel: install_build_deps parser
 
 install_build_deps:: export PYTHONPATH=
 install_build_deps: pyproject.toml
-	poetry install -v --no-root --only=dev
+	poetry install -v --no-root --only=build
 
 install_git_hooks:
 	install -m 755 tools/pre-{commit,push} .git/hooks/
@@ -320,12 +320,17 @@ $(SDIST): rflx/lang $(VSIX) pyproject.toml $(wildcard bin/*) $(wildcard rflx/*)
 anod_dist: rflx/lang pyproject.toml $(wildcard bin/*) $(wildcard rflx/*)
 	poetry build -vv --no-cache
 
-anod_dependencies:
+anod_build_dependencies:
+	@echo "requirements:"
+	@poetry export --with=build --without=dev --without-hashes | grep -v "@ file" | sed "s/\(.*\)/    - '\1'/"
+	@echo "platforms:"
+	@echo "    - x86_64-linux"
+
+anod_poetry_dependencies:
 	@echo "requirements:"
 	@echo "    - 'poetry==1.7.1'"
 	@echo "    - 'poetry-dynamic-versioning==1.2.0'"
 	@echo "    - 'wheel'"
-	@poetry export --without=dev --without-hashes | sed "s/\(.*\)/    - '\1'/"
 	@echo "platforms:"
 	@echo "    - x86_64-linux"
 
