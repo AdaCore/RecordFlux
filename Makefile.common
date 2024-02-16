@@ -1,5 +1,21 @@
+# --- Repository structure ---
+
 BUILD_DIR = build
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+# --- Virtual environments ---
+
+DEVEL_VENV = $(MAKEFILE_DIR)/.venv
+POETRY_VENV = $(MAKEFILE_DIR)/.venv.poetry
+
+# --- Executables ---
+
+SHELL = /bin/bash
+RFLX = $(DEVEL_VENV)/bin/rflx
+POETRY = $(POETRY_VENV)/bin/poetry
+
+# --- GNATprove ---
+
 GNATPROVE = $(MAKEFILE_DIR)tools/gnatprove
 
 # Use GNATprove's file-based caching by default and ensure the directory exists.

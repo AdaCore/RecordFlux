@@ -19,23 +19,7 @@ The FSF GNAT and all Ada dependencies can be installed using Alire.
    $ make install_gnat
    $ eval `make printenv_gnat`
 
-The configuration of the development tools is managed in a separate repository and must be downloaded and set up once.
-
-.. code:: console
-
-   $ make init
-
-Poetry installs the Python project in a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_.
-
-.. code:: console
-
-   $ make install_devel
-
-The virtual environment is activated by spawing a shell using Poetry.
-
-.. code:: console
-
-   $ poetry shell
+During the initial execution of `make`, all other required dependencies are automatically downloaded and installed.
 
 **Note:**
 An editable installation is used, so all changes to the Python source code take effect immediately and no reinstallation is required.
@@ -58,8 +42,6 @@ Tools
 
 Make targets for common development tasks are:
 
-- ``init`` Download and set up development configuration
-- ``deinit`` Remove development configuration
 - ``all`` Execute ``check``, ``test`` and ``prove``
 - ``check`` Run general checks and static code analysis tools for Python code
 - ``test`` Execute tests for Python code and SPARK code
@@ -68,13 +50,18 @@ Make targets for common development tasks are:
 - ``install_devel`` Install project in editable mode
 - ``doc`` Generate HTML documentation
 - ``dist`` Create Python package
-- ``clean`` Remove all generated files
-- ``clean_all`` Remove all generated files and editable installations
+- ``clean`` Remove build directories and generated files
+- ``clean_all`` Bring the repository to a completely clean state
 
 Additional tools can be found in ``tools/``.
 
-Deterministic development and test environment
-==============================================
+The Python project is managed by Poetry.
+Poetry installs the Python project in a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_.
+The virtual environment can be activated by spawing a shell using Poetry.
+
+.. code:: console
+
+   $ poetry shell
 
 Poetry locks the dependencies to ensure deterministic test results.
 `poetry lock` creates the lock file `poetry.lock` based on the dependencies listed in `pyproject.toml`.
