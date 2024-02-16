@@ -1,4 +1,3 @@
--include devutils/Makefile.common
 include Makefile.common
 
 .DEFAULT_GOAL := all
@@ -9,7 +8,7 @@ RECORDFLUX_ORIGIN ?= https://github.com/AdaCore
 GNATCOLL_ORIGIN ?= https://github.com/AdaCore
 LANGKIT_ORIGIN ?= https://github.com/AdaCore
 ADASAT_ORIGIN?= https://github.com/AdaCore
-VERSION ?= $(shell test -f pyproject.toml && poetry version -s)
+VERSION ?= $(shell test -f pyproject.toml && test -f $(POETRY) && $(POETRY) version -s)
 SDIST ?= dist/recordflux-$(VERSION).tar.gz
 VSIX ?= rflx/ide/vscode/recordflux.vsix
 
@@ -22,11 +21,16 @@ LANGKIT_HEAD = 65e2dab678b2606e3b0eada64b7ef4fd8cae91bb
 ADASAT_HEAD = f948e2271aec51f9313fa41ff3c00230a483f9e8
 
 SHELL = /bin/bash
-PYTEST = poetry run pytest -n$(TEST_PROCS) -vv --timeout=7200
-RUFF = poetry run ruff
-BLACK = poetry run black
-MYPY = poetry run mypy --exclude rflx/lang
-KACL_CLI = poetry run kacl-cli
+POETRY_VENV = .venv.poetry
+POETRY = $(POETRY_VENV)/bin/poetry
+PYTEST = $(POETRY) run pytest -n$(TEST_PROCS) -vv --timeout=7200
+RUFF = $(POETRY) run ruff
+BLACK = $(POETRY) run black
+MYPY = $(POETRY) run mypy --exclude rflx/lang
+KACL_CLI = $(POETRY) run kacl-cli
+
+COMMON_DEPENDENCIES = $(POETRY)
+-include devutils/Makefile.common
 
 APPS := $(filter-out __init__.py,$(notdir $(wildcard examples/apps/*)))
 
@@ -80,7 +84,7 @@ all: check test prove
 
 .PHONY: init deinit
 
-init: devutils contrib/gnatcoll-bindings contrib/langkit contrib/adasat
+init: $(POETRY) devutils contrib/gnatcoll-bindings contrib/langkit contrib/adasat
 	$(VERBOSE)$(call checkout_repo,devutils,$(DEVUTILS_HEAD))
 	$(VERBOSE)$(call checkout_repo,contrib/gnatcoll-bindings,$(GNATCOLL_HEAD))
 	$(VERBOSE)$(call checkout_repo,contrib/langkit,$(LANGKIT_HEAD))
@@ -93,6 +97,10 @@ deinit:
 	$(VERBOSE)$(call remove_repo,contrib/gnatcoll-bindings)
 	$(VERBOSE)$(call remove_repo,contrib/langkit)
 	$(VERBOSE)$(call remove_repo,contrib/adasat)
+
+$(POETRY):
+	python -m venv --clear $(POETRY_VENV)
+	$(POETRY_VENV)/bin/pip install poetry==1.7.1 poetry-dynamic-versioning==1.2.0 poetry-plugin-export==1.6.0
 
 devutils:
 	$(VERBOSE)git clone $(RECORDFLUX_ORIGIN)/RecordFlux-devutils.git devutils
@@ -116,20 +124,20 @@ pyproject.toml: pyproject.toml.in devutils
 
 check: check_poetry check_dependencies common_check check_contracts check_doc
 
-check_poetry:
-	poetry check
+check_poetry: $(POETRY)
+	$(POETRY) check
 
-check_dependencies:
-	poetry run tools/check_dependencies.py
+check_dependencies: $(POETRY)
+	$(POETRY) run tools/check_dependencies.py
 
-check_contracts:
-	poetry run pyicontract-lint $(PYTHON_PACKAGES)
+check_contracts: $(POETRY)
+	$(POETRY) run pyicontract-lint $(PYTHON_PACKAGES)
 
-check_doc:
-	poetry run tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
-	poetry run $(MAKE) -C doc/user_guide check_help
-	poetry run tools/check_grammar.py --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json examples/specs/*.rflx examples/apps/*/specs/*.rflx tests/data/specs/*.rflx tests/data/specs/parse_only/*.rflx
-	poetry run tools/check_grammar.py --invalid --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json tests/data/specs/invalid/{incorrect_comment_only,incorrect_empty_file,incorrect_specification}.rflx
+check_doc: $(POETRY)
+	$(POETRY) run tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
+	$(POETRY) run $(MAKE) -C doc/user_guide check_help
+	$(POETRY) run tools/check_grammar.py --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json examples/specs/*.rflx examples/apps/*/specs/*.rflx tests/data/specs/*.rflx tests/data/specs/parse_only/*.rflx
+	$(POETRY) run tools/check_grammar.py --invalid --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json tests/data/specs/invalid/{incorrect_comment_only,incorrect_empty_file,incorrect_specification}.rflx
 
 .PHONY: test test_rflx test_examples test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
 
@@ -143,38 +151,38 @@ test_examples: test_specs test_apps
 # Currently, pytest's CLI does not allow the specification of omitted directories
 # (cf. https://github.com/pytest-dev/pytest-cov/issues/373).
 
-test_coverage:
+test_coverage: $(POETRY)
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/integration
-	poetry run coverage report --fail-under=100 --show-missing --skip-covered --omit="rflx/lang/*"
+	$(POETRY) run coverage report --fail-under=100 --show-missing --skip-covered --omit="rflx/lang/*"
 
-test_unit_coverage:
+test_unit_coverage: $(POETRY)
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tools --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/tools
-	poetry run coverage report --fail-under=95.0 --show-missing --skip-covered --omit="rflx/lang/*"
+	$(POETRY) run coverage report --fail-under=95.0 --show-missing --skip-covered --omit="rflx/lang/*"
 
-test_language_coverage:
+test_language_coverage: $(POETRY)
 	timeout -k 60 7200 $(PYTEST) --cov=rflx/lang --cov-branch --cov-fail-under=73.8 --cov-report=term-missing:skip-covered tests/language
 
-test_end_to_end:
+test_end_to_end: $(POETRY)
 	$(PYTEST) tests/end_to_end
 
-test_property:
+test_property: $(POETRY)
 	$(PYTEST) tests/property
 
-test_tools:
+test_tools: $(POETRY)
 	$(PYTEST) --cov=tools --cov-branch --cov-fail-under=43.6 --cov-report=term-missing:skip-covered tests/tools
 
-test_ide:
+test_ide: $(POETRY)
 	$(PYTEST) tests/ide
 	# TODO(eng/recordflux/RecordFlux#1361): Execute `test` instead of `build`
 	$(MAKE) -C rflx/ide/vscode check build
 
-test_optimized:
+test_optimized: $(POETRY)
 	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation
 
 test_apps:
 	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) test || exit;)
 
-test_compilation:
+test_compilation: $(POETRY)
 	# Skip test for FSF GNAT to prevent violations of restriction "No_Secondary_Stack" in AUnit units
 	[[ "${GNAT}" == fsf* ]] || $(MAKE) -C tests/spark build_strict
 	$(MAKE) -C tests/spark clean
@@ -194,7 +202,7 @@ test_binary_size:
 	$(MAKE) -C examples/apps/spdm_responder test_binary_size
 
 test_specs: TEST_PROCS=1
-test_specs:
+test_specs: $(POETRY)
 	$(PYTEST) tests/examples/specs_test.py
 
 test_installation: export PYTHONPATH=
@@ -208,8 +216,8 @@ test_installation: $(SDIST)
 	test -f $(BUILD_DIR)/test_installation/.gnatstudio/plug-ins/recordflux.py
 
 fuzz_parser: FUZZER_RUNS=-1
-fuzz_parser:
-	poetry run tools/fuzz_driver.py --state-dir $(BUILD_DIR)/fuzzer --corpus-dir $(MAKEFILE_DIR) --runs=$(FUZZER_RUNS)
+fuzz_parser: $(POETRY)
+	$(POETRY) run tools/fuzz_driver.py --state-dir $(BUILD_DIR)/fuzzer --corpus-dir $(MAKEFILE_DIR) --runs=$(FUZZER_RUNS)
 
 .PHONY: prove prove_tests prove_python_tests prove_apps prove_property_tests
 
@@ -234,16 +242,16 @@ prove_property_tests: $(GNATPROVE_CACHE_DIR)
 .PHONY: install install_devel install_build_deps install_git_hooks install_gnat printenv_gnat
 
 install:: export PYTHONPATH=
-install: install_build_deps $(SDIST)
-	poetry run pip install --force-reinstall $(SDIST)
+install: $(POETRY) install_build_deps $(SDIST)
+	$(POETRY) run pip install --force-reinstall $(SDIST)
 
 install_devel:: export PYTHONPATH=
-install_devel: install_build_deps parser
-	poetry install -v --sync
+install_devel: $(POETRY) install_build_deps parser
+	$(POETRY) install -v --sync
 
 install_build_deps:: export PYTHONPATH=
-install_build_deps: pyproject.toml
-	poetry install -v --no-root --only=build
+install_build_deps: $(POETRY) pyproject.toml
+	$(POETRY) install -v --no-root --only=build
 
 install_git_hooks:
 	install -m 755 tools/pre-{commit,push} .git/hooks/
@@ -314,19 +322,19 @@ build_pdf_doc_user_guide:
 
 dist: $(SDIST)
 
-$(SDIST): rflx/lang $(VSIX) pyproject.toml $(wildcard bin/*) $(wildcard rflx/*)
-	poetry build -vv --no-cache -f sdist
+$(SDIST): $(POETRY) rflx/lang $(VSIX) pyproject.toml $(wildcard bin/*) $(wildcard rflx/*)
+	$(POETRY) build -vv --no-cache -f sdist
 
-anod_dist: rflx/lang pyproject.toml $(wildcard bin/*) $(wildcard rflx/*)
-	poetry build -vv --no-cache
+anod_dist: $(POETRY) rflx/lang pyproject.toml $(wildcard bin/*) $(wildcard rflx/*)
+	$(POETRY) build -vv --no-cache
 
-anod_build_dependencies:
+anod_build_dependencies: $(POETRY)
 	@echo "requirements:"
 	@poetry export --with=build --without=dev --without-hashes | grep -v "@ file" | sed "s/\(.*\)/    - '\1'/"
 	@echo "platforms:"
 	@echo "    - x86_64-linux"
 
-anod_poetry_dependencies:
+anod_poetry_dependencies: $(POETRY)
 	@echo "requirements:"
 	@echo "    - 'poetry==1.7.1'"
 	@echo "    - 'poetry-dynamic-versioning==1.2.0'"
@@ -357,9 +365,9 @@ $(GENERATED_DIR)/lib/relocatable/dev/librflxlang.so: $(wildcard language/*.py) $
 		-XLIBRFLXLANG_STANDALONE=encapsulated
 
 $(GENERATED_DIR)/python/librflxlang: export PYTHONPATH=$(MAKEFILE_DIR)
-$(GENERATED_DIR)/python/librflxlang: $(wildcard language/*.py) pyproject.toml
+$(GENERATED_DIR)/python/librflxlang: $(POETRY) $(wildcard language/*.py) pyproject.toml
 	mkdir -p $(BUILD_GENERATED_DIR)
-	poetry run -- language/generate.py $(BUILD_GENERATED_DIR) $(VERSION)
+	$(POETRY) run -- language/generate.py $(BUILD_GENERATED_DIR) $(VERSION)
 	cp -a $(MAKEFILE_DIR)/contrib/langkit $(BUILD_GENERATED_DIR)/
 	cp -a $(MAKEFILE_DIR)/contrib/gnatcoll-bindings $(BUILD_GENERATED_DIR)/
 	cp -a $(MAKEFILE_DIR)/contrib/adasat $(BUILD_GENERATED_DIR)/

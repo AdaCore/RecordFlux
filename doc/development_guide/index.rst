@@ -11,13 +11,6 @@ Additionally to the dependencies listed in the `User's Guide <https://docs.adaco
 - `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_
 - `Node.js <https://nodejs.org/>`_ 20.5.0 or higher (see `nvm <https://github.com/nvm-sh/nvm>`_ for an alternative installation method)
 - `TeX Live <https://tug.org/texlive/>`_ (to create the PDF documentation)
-- `Poetry <https://python-poetry.org/>`_ with `dynamic versioning plugin <https://github.com/mtkennerly/poetry-dynamic-versioning>`_ can be installed using `pipx <https://pipx.pypa.io/>`_:
-
-.. code:: console
-
-   $ pipx install poetry==1.7.1
-   $ pipx inject poetry poetry-dynamic-versioning==1.2.0
-   $ pipx inject poetry poetry-plugin-export==1.6.0
 
 The FSF GNAT and all Ada dependencies can be installed using Alire.
 
