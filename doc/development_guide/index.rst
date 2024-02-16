@@ -8,7 +8,7 @@ Setup
 Additionally to the dependencies listed in the `User's Guide <https://docs.adacore.com/live/wave/recordflux/html/recordflux_ug/index.html>`_ the following software is required:
 
 - `AUnit <https://github.com/AdaCore/aunit>`_ (if FSF GNAT is used)
-- `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_
+- `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_ (to test an example app)
 - `Node.js <https://nodejs.org/>`_ 20.5.0 or higher (see `nvm <https://github.com/nvm-sh/nvm>`_ for an alternative installation method)
 - `TeX Live <https://tug.org/texlive/>`_ (to create the PDF documentation)
 
@@ -152,16 +152,3 @@ All review comments must be set to resolved by a reviewer before a pull request 
 Force pushing is required and accepted for rebasing to the base branch.
 Commits may be squashed before the pull request is merged to prevent a high number of "Fix review comments" commits.
 Squashing should be avoided before the changes have been accepted by all reviewers.
-
-Project management
-==================
-
-The work is organized and prioritized using GitHub's project boards.
-At any time there is at least one project board for the planned next release and a project board for all potential future tasks.
-A project board for an upcoming release has four columns:
-
-- To Do: Non-processed issues planned for the release.
-- Design: Issues for which the design is currently created or discussed. Assigned to a specific person. Skipped for small issues or bugs.
-- Implementation: Issues which are currently implemented. Assigned to a specific person.
-- Review: Completed issues for which a PR is open or will be opened soon. Each issue is linked to the corresponding PR.
-- Done: Closed issues.
