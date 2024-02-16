@@ -1,4 +1,7 @@
+include ../../../Makefile.common
+
 VSIX ?= recordflux.vsix
+VERSION ?= $(shell $(POETRY) version -s | sed 's/\.dev/-dev/')
 
 .PHONY: all
 
@@ -10,7 +13,7 @@ dist: $(VSIX)
 
 $(VSIX): export PATH := $(dir $(abspath Makefile))/node_modules/.bin:$(PATH)
 $(VSIX): node_modules out/extension.js
-	sed -i "s/\"version\": \".*\"/\"version\": \"$(shell poetry version -s | sed 's/\.dev/-dev/')\"/" package.json && vsce package -o recordflux.vsix && sed -i "s/\"version\": \".*\"/\"version\": \"0.0.0\"/" package.json
+	sed -i "s/\"version\": \".*\"/\"version\": \"$(VERSION)\"/" package.json && vsce package -o recordflux.vsix && sed -i "s/\"version\": \".*\"/\"version\": \"0.0.0\"/" package.json
 
 .PHONY: install
 

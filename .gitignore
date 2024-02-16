@@ -3,6 +3,7 @@
 *.egg-info
 *.o
 *.pyc
+.bin
 .coverage
 .coverage.*
 .env
