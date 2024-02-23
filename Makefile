@@ -10,6 +10,7 @@ GNATCOLL_ORIGIN ?= https://github.com/AdaCore
 LANGKIT_ORIGIN ?= https://github.com/AdaCore
 ADASAT_ORIGIN ?= https://github.com/AdaCore
 VERSION ?= $(shell test -f pyproject.toml && test -f $(POETRY) && $(POETRY) version -s)
+PYTHON_VERSIONS ?= 3.8 3.9 3.10 3.11
 NO_GIT_CHECKOUT ?=
 
 # --- Dependencies ---
@@ -458,7 +459,11 @@ build_pdf_doc_user_guide: $(RFLX)
 dist: $(SDIST)
 
 $(SDIST): $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(wildcard rflx/*)
-	$(POETRY) build -vv --no-cache -f sdist
+	$(POETRY) build -vv --no-cache
+
+pypi_dist: $(PROJECT_MANAGEMENT)
+	# Build distributions without local version identifier
+	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(MAKE) dist POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
 
 anod_dist: $(BUILD_DEPS) $(PARSER) pyproject.toml $(wildcard rflx/*)
 	$(POETRY) build -vv --no-cache
