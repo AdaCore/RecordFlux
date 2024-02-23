@@ -5,11 +5,18 @@ include Makefile.common
 # --- Parameters ---
 
 TEST_PROCS ?= $(shell nproc)
-RECORDFLUX_ORIGIN ?= https://github.com/AdaCore
+DEVUTILS_ORIGIN ?= https://github.com/AdaCore
 GNATCOLL_ORIGIN ?= https://github.com/AdaCore
 LANGKIT_ORIGIN ?= https://github.com/AdaCore
 ADASAT_ORIGIN ?= https://github.com/AdaCore
 VERSION ?= $(shell test -f pyproject.toml && test -f $(POETRY) && $(POETRY) version -s)
+NO_GIT_CHECKOUT ?=
+
+# --- Dependencies ---
+
+POETRY_VERSION = 1.7.1
+POETRY_DYNAMIC_VERSIONING_VERSION = 1.2.0
+POETRY_PLUGIN_EXPORT_VERSION = 1.6.0
 
 # --- Repository structure ---
 
@@ -17,6 +24,7 @@ PYTHON_PACKAGES := doc/language_reference/conf.py doc/user_guide/conf.py example
 APPS := $(filter-out __init__.py,$(notdir $(wildcard examples/apps/*)))
 SDIST = dist/recordflux-$(VERSION).tar.gz
 VSIX = rflx/ide/vscode/recordflux.vsix
+BIN_DIR := $(MAKEFILE_DIR)/.bin
 GENERATED_DIR := generated
 BUILD_GENERATED_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/$(GENERATED_DIR)
 
@@ -55,7 +63,14 @@ export PYTHONPATH := $(MAKEFILE_DIR)
 # @param $(1) directory of the git repository
 # @param $(2) commit id
 define checkout_repo
-test -d $(1) && git -C $(1) fetch && git -C $(1) -c advice.detachedHead=false checkout $(2)
+$(if
+	$(shell test -d $(1) && echo 1),
+	$(if
+		$(shell git -C $(1) fetch && git -C $(1) -c advice.detachedHead=false checkout $(2) && echo 1),
+		,
+		$(error Checkout of "$(2)" in "$(1)" failed)
+	)
+)
 endef
 
 # Get the HEAD revision of the git repository.
@@ -68,7 +83,7 @@ repo_head = $(shell test -d $(1) && git -C $(1) rev-parse HEAD || echo $(2))
 #
 # @param $(1) directory of the git repository
 # @param $(2) expected revision
-reinit_repo = $(if $(filter-out $(2),$(call repo_head,$(1),$(2))),$(call checkout_repo,$(1),$(2)),)
+update_repo = $(if $(filter-out $(2),$(call repo_head,$(1),$(2))),$(call checkout_repo,$(1),$(2)),)
 
 # Remove the git repository, if no changes are present.
 #
@@ -77,22 +92,20 @@ reinit_repo = $(if $(filter-out $(2),$(call repo_head,$(1),$(2))),$(call checkou
 #
 # @param $(1) directory of the git repository
 define remove_repo
-$(if
-	$(or
-		$(shell test -d $(1) && git -C $(1) status --porcelain),
-		$(shell test -d $(1) && git -C $(1) log --branches --not --remotes --format=oneline)
-	),
-	$(info Keeping $(1) due to local changes),
-	$(shell rm -rf $(1))
-)
+((test -d $(1) && test -n "$$(git -C $(1) status --porcelain)") \
+|| (test -d $(1) && test -n "$$(git -C $(1) log --branches --not --remotes --format=oneline)")) \
+&& echo "Keeping $(1) due to local changes" \
+|| echo "Removing $(1)" && rm -rf $(1)
 endef
 
 # --- Updating external repositories ---
 
-$(shell $(call reinit_repo,$(DEVUTILS_DIR),$(DEVUTILS_HEAD)))
-$(shell $(call reinit_repo,$(GNATCOLL_DIR),$(GNATCOLL_HEAD)))
-$(shell $(call reinit_repo,$(LANGKIT_DIR),$(LANGKIT_HEAD)))
-$(shell $(call reinit_repo,$(ADASAT_DIR),$(ADASAT_HEAD)))
+ifeq ($(NO_GIT_CHECKOUT), )
+$(shell $(call update_repo,$(DEVUTILS_DIR),$(DEVUTILS_HEAD)))
+$(shell $(call update_repo,$(GNATCOLL_DIR),$(GNATCOLL_HEAD)))
+$(shell $(call update_repo,$(LANGKIT_DIR),$(LANGKIT_HEAD)))
+$(shell $(call update_repo,$(ADASAT_DIR),$(ADASAT_HEAD)))
+endif
 
 # --- Default ---
 
@@ -102,17 +115,19 @@ all: check test prove
 
 # --- Setup ---
 
-PROJECT_MANAGEMENT = $(POETRY) | pyproject.toml
+# `poetry install` always changes the modification time of `pyproject.toml`. To prevent a
+# reinstallation on each invocation, `pyproject.toml` is added as an order-only dependency.
+PROJECT_MANAGEMENT = $(POETRY) pyproject.toml.in $(DEVUTILS_DIR) | pyproject.toml
 CONTRIB = $(GNATCOLL_DIR) $(LANGKIT_DIR) $(ADASAT_DIR)
 
 .PHONY: init
 
-init: $(PROJECT_MANAGEMENT) $(CONTRIB)
+init: $(CONTRIB) $(PROJECT_MANAGEMENT)
 
 # --- Setup: Poetry ---
 
 $(POETRY): $(POETRY_VENV)
-	$(POETRY_VENV)/bin/pip install poetry==1.7.1 poetry-dynamic-versioning==1.2.0 poetry-plugin-export==1.6.0
+	$(POETRY_VENV)/bin/pip install poetry==$(POETRY_VERSION) poetry-dynamic-versioning==$(POETRY_DYNAMIC_VERSIONING_VERSION) poetry-plugin-export==$(POETRY_PLUGIN_EXPORT_VERSION)
 
 $(POETRY_VENV):
 	python -m venv --clear $(POETRY_VENV)
@@ -123,24 +138,24 @@ pyproject.toml: pyproject.toml.in $(DEVUTILS_DIR)
 # --- Setup: External repositories ---
 
 $(DEVUTILS_DIR):
-	git clone $(RECORDFLUX_ORIGIN)/RecordFlux-devutils.git $(DEVUTILS_DIR)
-	$(call checkout_repo,$(DEVUTILS_DIR),$(DEVUTILS_HEAD))
+	git clone $(DEVUTILS_ORIGIN)/RecordFlux-devutils.git $(DEVUTILS_DIR)
+	git -C $(DEVUTILS_DIR) -c advice.detachedHead=false checkout $(DEVUTILS_HEAD)
 
 contrib:
 	mkdir -p contrib
 
 $(GNATCOLL_DIR): | contrib
 	git clone $(GNATCOLL_ORIGIN)/gnatcoll-bindings.git $(GNATCOLL_DIR)
-	$(call checkout_repo,$(GNATCOLL_DIR),$(GNATCOLL_HEAD))
+	git -C $(GNATCOLL_DIR) -c advice.detachedHead=false checkout $(GNATCOLL_HEAD)
 
 $(LANGKIT_DIR): | contrib
 	git clone $(LANGKIT_ORIGIN)/langkit.git $(LANGKIT_DIR)
-	$(call checkout_repo,$(LANGKIT_DIR),$(LANGKIT_HEAD))
+	git -C $(LANGKIT_DIR) -c advice.detachedHead=false checkout $(LANGKIT_HEAD)
 	rm -f $(LANGKIT_DIR)/langkit/py.typed
 
 $(ADASAT_DIR): | contrib
 	git clone $(ADASAT_ORIGIN)/adasat.git $(ADASAT_DIR)
-	$(call checkout_repo,$(ADASAT_DIR),$(ADASAT_HEAD))
+	git -C $(ADASAT_DIR) -c advice.detachedHead=false checkout $(ADASAT_HEAD)
 
 # --- Setup: Build dependencies ---
 
@@ -148,7 +163,7 @@ PYTHON_VERSION = $(shell test -f $(DEVEL_VENV)/bin/python && $(DEVEL_VENV)/bin/p
 BUILD_DEPS = $(DEVEL_VENV)/lib/python$(PYTHON_VERSION)/site-packages/langkit
 
 $(BUILD_DEPS):: export PYTHONPATH=
-$(BUILD_DEPS): $(PROJECT_MANAGEMENT) $(CONTRIB) $(DEVEL_VENV)
+$(BUILD_DEPS): $(CONTRIB) $(DEVEL_VENV) $(PROJECT_MANAGEMENT)
 	$(POETRY) install -v --no-root --only=build
 
 # --- Setup: Langkit-based parser ---
@@ -190,7 +205,7 @@ $(GENERATED_DIR)/python/librflxlang: $(BUILD_DEPS) $(wildcard language/*.py) | $
 install_devel: $(RFLX)
 
 $(RFLX):: export PYTHONPATH=
-$(RFLX): $(DEVEL_VENV) $(PROJECT_MANAGEMENT) $(CONTRIB) $(PARSER)
+$(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(PROJECT_MANAGEMENT)
 	$(POETRY) install -v --sync
 
 $(DEVEL_VENV):
@@ -199,7 +214,7 @@ $(DEVEL_VENV):
 # --- Optional setup: Installation from source distribution ---
 
 install:: export PYTHONPATH=
-install: $(PROJECT_MANAGEMENT) $(SDIST)
+install: $(SDIST) $(PROJECT_MANAGEMENT)
 	$(POETRY) run pip install --force-reinstall $(SDIST)
 
 # --- Optional setup: Installation of FSF GNAT ---
@@ -224,11 +239,27 @@ printenv_gnat:
 	    alr printenv \
 	) || true
 
+# --- Development environment ---
+
+.PHONY: activate deactivate
+
+activate: $(BIN_DIR)/poetry
+	@echo PATH=$$PWD/.bin:$$PATH
+	@echo . .venv/bin/activate
+
+deactivate:
+	@echo PATH=$$(echo $$PATH | sed -e "s#$(BIN_DIR):##")
+	@echo deactivate
+
+$(BIN_DIR)/poetry:
+	@mkdir -p $(BIN_DIR)
+	@ln -sf $(POETRY) $(BIN_DIR)
+
 # --- Checks ---
 
 .PHONY: check check_poetry check_dependencies check_contracts check_doc
 
-check: check_poetry check_dependencies common_check check_contracts check_doc
+check: check_poetry check_dependencies check_contracts check_doc
 
 check_poetry: $(RFLX)
 	$(POETRY) check
@@ -305,7 +336,7 @@ test_compilation: $(RFLX)
 	$(MAKE) -C tests/spark test_optimized
 	$(MAKE) -C doc/examples build
 
-test_binary_size:
+test_binary_size: $(RFLX)
 	$(MAKE) -C examples/apps/dhcp_client test_binary_size
 	$(MAKE) -C examples/apps/spdm_responder test_binary_size
 
@@ -333,16 +364,16 @@ prove_tests: $(GNATPROVE_CACHE_DIR)
 	$(MAKE) -C tests/spark prove
 
 prove_python_tests: export GNATPROVE_PROCS=1
-prove_python_tests: $(GNATPROVE_CACHE_DIR) $(RFLX)
+prove_python_tests: $(RFLX) $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/verification
 
-prove_apps: $(GNATPROVE_CACHE_DIR)
+prove_apps: $(RFLX) $(GNATPROVE_CACHE_DIR)
 	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) prove || exit;)
 
-prove_doc:
+prove_doc: $(RFLX)
 	$(MAKE) -C doc/examples prove
 
-prove_property_tests: $(GNATPROVE_CACHE_DIR) $(RFLX)
+prove_property_tests: $(RFLX) $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/property_verification
 
 # --- Fuzzing ---
@@ -370,14 +401,14 @@ generate_apps: $(RFLX)
 
 anod_build_dependencies: $(POETRY)
 	@echo "requirements:"
-	@poetry export --with=build --without=dev --without-hashes | grep -v "@ file" | sed "s/\(.*\)/    - '\1'/"
+	@$(POETRY) export --with=build --without=dev --without-hashes | grep -v "@ file" | sed "s/\(.*\)/    - '\1'/"
 	@echo "platforms:"
 	@echo "    - x86_64-linux"
 
 anod_poetry_dependencies: $(POETRY)
 	@echo "requirements:"
-	@echo "    - 'poetry==1.7.1'"
-	@echo "    - 'poetry-dynamic-versioning==1.2.0'"
+	@echo "    - 'poetry==$(POETRY_VERSION)'"
+	@echo "    - 'poetry-dynamic-versioning==$(POETRY_DYNAMIC_VERSIONING_VERSION)'"
 	@echo "    - 'wheel'"
 	@echo "platforms:"
 	@echo "    - x86_64-linux"
@@ -426,10 +457,10 @@ build_pdf_doc_user_guide: $(RFLX)
 
 dist: $(SDIST)
 
-$(SDIST): $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(wildcard bin/*) $(wildcard rflx/*)
+$(SDIST): $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(wildcard rflx/*)
 	$(POETRY) build -vv --no-cache -f sdist
 
-anod_dist: $(BUILD_DEPS) $(PARSER) pyproject.toml $(wildcard bin/*) $(wildcard rflx/*)
+anod_dist: $(BUILD_DEPS) $(PARSER) pyproject.toml $(wildcard rflx/*)
 	$(POETRY) build -vv --no-cache
 
 # --- Build: VS Code extension ---
@@ -452,9 +483,9 @@ clean:
 	$(MAKE) -C doc/examples clean
 
 clean_all: clean
-	rm -rf $(DEVEL_VENV) $(POETRY_VENV) $(GENERATED_DIR) rflx/lang pyproject.toml
+	rm -rf $(DEVEL_VENV) $(POETRY_VENV) $(BIN_DIR) $(GENERATED_DIR) rflx/lang pyproject.toml
 	test -d $(LANGKIT_DIR) && touch $(LANGKIT_DIR)/langkit/py.typed || true
-	$(call remove_repo,$(DEVUTILS_DIR))
-	$(call remove_repo,$(GNATCOLL_DIR))
-	$(call remove_repo,$(LANGKIT_DIR))
-	$(call remove_repo,$(ADASAT_DIR))
+	@$(call remove_repo,$(DEVUTILS_DIR))
+	@$(call remove_repo,$(GNATCOLL_DIR))
+	@$(call remove_repo,$(LANGKIT_DIR))
+	@$(call remove_repo,$(ADASAT_DIR))

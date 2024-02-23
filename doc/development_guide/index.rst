@@ -19,7 +19,16 @@ The FSF GNAT and all Ada dependencies can be installed using Alire.
    $ make install_gnat
    $ eval `make printenv_gnat`
 
-During the initial execution of `make`, all other required dependencies are automatically downloaded and installed.
+Set up the development environment.
+
+.. code:: console
+
+   $ make install_devel
+
+All other make targets that require an existing development environment (e.g. `make check`) will automatically download and install all required dependencies as well.
+Some dependencies are managed in other git repositories and will be cloned during the initial setup.
+The origin of these repositories can be changed by setting the respective variable (e.g., `DEVUTILS_ORIGIN`) appropriately either in the environment or directly in the initial call to `make`.
+The initial setup can be repeated after resetting the repository with `make clean_all`.
 
 **Note:**
 An editable installation is used, so all changes to the Python source code take effect immediately and no reinstallation is required.
@@ -40,9 +49,12 @@ Note, that this file has to be recreated whenever different tool versions are to
 Tools
 =====
 
+Make
+----
+
 Make targets for common development tasks are:
 
-- ``all`` Execute ``check``, ``test`` and ``prove``
+- ``all`` Execute ``check``, ``test`` and ``prove`` (default target)
 - ``check`` Run general checks and static code analysis tools for Python code
 - ``test`` Execute tests for Python code and SPARK code
 - ``prove`` Run GNATprove on SPARK tests and example apps
@@ -55,13 +67,24 @@ Make targets for common development tasks are:
 
 Additional tools can be found in ``tools/``.
 
+Poetry
+------
+
 The Python project is managed by Poetry.
-Poetry installs the Python project in a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_.
-The virtual environment can be activated by spawing a shell using Poetry.
+Poetry is automatically installed in a `virtual environment <https://docs.python.org/3/tutorial/venv.html>`_ (`.venv.poetry`) during the setup of the development environment.
+The Python project is installed in a separate virtual environment (`.venv`).
+
+If the project's virtual environment is not activated, the `rflx` command will not be directly accessible.
+The virtual environment can be activated and deactivated using `make`.
+This will also add Poetry to `PATH`.
 
 .. code:: console
 
-   $ poetry shell
+   $ eval `make activate`
+   $ eval `make deactivate`
+
+Alternatively, RecordFlux can be executed via Poetry by executing `.venv.poetry/bin/poetry run rflx`.
+It is not necessary to explicitly activate the virtual environment before executing any of the make targets mentioned above.
 
 Poetry locks the dependencies to ensure deterministic test results.
 `poetry lock` creates the lock file `poetry.lock` based on the dependencies listed in `pyproject.toml`.

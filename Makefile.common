@@ -5,14 +5,15 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # --- Virtual environments ---
 
-DEVEL_VENV = $(MAKEFILE_DIR)/.venv
 POETRY_VENV = $(MAKEFILE_DIR)/.venv.poetry
+POETRY = $(POETRY_VENV)/bin/poetry
+
+DEVEL_VENV := $(shell test -f $(POETRY) && $(POETRY) env info --path || echo $(MAKEFILE_DIR)/.venv)
+RFLX = $(DEVEL_VENV)/bin/rflx
 
 # --- Executables ---
 
 SHELL = /bin/bash
-RFLX = $(DEVEL_VENV)/bin/rflx
-POETRY = $(POETRY_VENV)/bin/poetry
 
 # --- GNATprove ---
 
