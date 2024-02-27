@@ -78,13 +78,13 @@ Poetry will always be installed into its own environment (`.venv.poetry`).
 It is not necessary to explicitly activate the virtual environments before executing any of the `make` targets.
 They are used automatically during the execution of `make`.
 However, in order to have the `rflx` command directly available in the shell, it is necessary to activate the project's virtual environment.
-The following `make` targets can be used to respectively activate and deactivate it, as well as add or remove Poetry to/from the `PATH`.
-Note the need to use `source <(...)` in the commands below.
+The following commands can be used to respectively activate and deactivate it, as well as add or remove Poetry to/from the `PATH`.
+Note the need to use `source <(...)` in the command below.
 
 .. code:: console
 
    $ source <(make activate)
-   $ source <(make deactivate)
+   $ deactivate
 
 Alternatively, RecordFlux can be executed also via Poetry by executing `.venv.poetry/bin/poetry run rflx`.
 

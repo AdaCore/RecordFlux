@@ -254,14 +254,11 @@ printenv_gnat:
 
 # --- Development environment ---
 
-.PHONY: activate deactivate
+.PHONY: activate
 
 activate: $(BIN_DIR)/poetry
 	@echo . $(DEVEL_VENV)/bin/activate
 	@echo PATH=$$PWD/.bin:\$$PATH
-
-deactivate:
-	@echo deactivate
 
 $(BIN_DIR)/poetry:
 	@mkdir -p $(BIN_DIR)
