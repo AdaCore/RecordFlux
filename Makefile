@@ -4,6 +4,7 @@ include Makefile.common
 
 # --- Parameters ---
 
+PYTHON ?= python3
 TEST_PROCS ?= $(shell nproc)
 DEVUTILS_ORIGIN ?= https://github.com/AdaCore
 GNATCOLL_ORIGIN ?= https://github.com/AdaCore
@@ -130,7 +131,7 @@ $(POETRY): $(POETRY_VENV)
 	$(POETRY_VENV)/bin/pip install poetry==$(POETRY_VERSION) poetry-dynamic-versioning==$(POETRY_DYNAMIC_VERSIONING_VERSION) poetry-plugin-export==$(POETRY_PLUGIN_EXPORT_VERSION)
 
 $(POETRY_VENV):
-	python -m venv --clear $(POETRY_VENV)
+	$(PYTHON) -m venv --clear $(POETRY_VENV)
 
 pyproject.toml: pyproject.toml.in $(DEVUTILS_DIR)
 	cat pyproject.toml.in <(grep -v "^\[build-system\]\|^requires = \|^build-backend = \|^\[tool.setuptools_scm\]" $(DEVUTILS_DIR)/pyproject.toml) > pyproject.toml
@@ -221,7 +222,7 @@ $(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(PROJECT_MANAGEMENT)
 	$(POETRY) install -v --sync
 
 $(DEVEL_VENV):
-	python -m venv --clear $(DEVEL_VENV)
+	$(PYTHON) -m venv --clear $(DEVEL_VENV)
 
 # --- Optional setup: Installation from source distribution ---
 
