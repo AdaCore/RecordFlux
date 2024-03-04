@@ -36,9 +36,7 @@ workflow:
     - popd
 
 .setup_gnat: &setup_gnat
-    - e3-cathod components --setup $GNAT_VERSION --build-date $GNAT_BUILD_DATE --platform $GNAT_PLATFORM --component gnat --download
-    - tar -xzf gnatpro-$GNAT_VERSION-$GNAT_PLATFORM-bin.tar.gz
-    - cd gnatpro-$GNAT_VERSION-$GNAT_PLATFORM-bin && echo -e "\n$CI_PROJECT_DIR/gnatpro-$GNAT_VERSION-$GNAT_PLATFORM\nY\nY" | ./doinstall && cd ..
+    - e3-cathod components --setup $GNAT_VERSION --build-date $GNAT_BUILD_DATE --platform $GNAT_PLATFORM --component gnat --install $CI_PROJECT_DIR/gnatpro-$GNAT_VERSION-$GNAT_PLATFORM
     - export PATH=$CI_PROJECT_DIR/gnatpro-$GNAT_VERSION-$GNAT_PLATFORM/bin:$PATH
     - gnat --version
 
@@ -49,10 +47,8 @@ workflow:
     - *setup_gnat
 
 .setup_spark: &setup_spark
-    - e3-cathod components --setup $SPARK_VERSION --build-date $SPARK_BUILD_DATE --platform $GNAT_PLATFORM --component spark2014 --download
-    - tar -xzf spark-pro-$SPARK_VERSION-$GNAT_PLATFORM-bin.tar.gz
-    - cd spark-pro-$SPARK_VERSION-$GNAT_PLATFORM-bin && ./doinstall $CI_PROJECT_DIR/spark-pro-$SPARK_VERSION-$GNAT_PLATFORM && cd ..
-    - export PATH=$CI_PROJECT_DIR/spark-pro-$SPARK_VERSION-$GNAT_PLATFORM/bin:$PATH
+    - e3-cathod components --setup $SPARK_VERSION --build-date $SPARK_BUILD_DATE --platform $GNAT_PLATFORM --component spark2014 --install $CI_PROJECT_DIR/sparkpro-$SPARK_VERSION-$GNAT_PLATFORM
+    - export PATH=$CI_PROJECT_DIR/sparkpro-$SPARK_VERSION-$GNAT_PLATFORM/bin:$PATH
     - gnatprove --version
 
 .setup_python_venv: &setup_python_venv
@@ -340,16 +336,23 @@ verification_tests:
      - image:recordflux
      - cpu:8
      - mem:16
+  parallel:
+    matrix:
+      - SPARK_VERSION: "24.0"
+        SPARK_BUILD_DATE: "all"
+      - SPARK_VERSION: "wave"
+        SPARK_BUILD_DATE: "20240303"
   script:
     - *setup_spark
     - *setup_python
     - make prove_tests
   cache:
-    key: verification_tests-$CI_COMMIT_REF_SLUG
+    key: verification_tests-$CI_COMMIT_REF_SLUG-$SPARK_VERSION
     paths:
       - build/gnatprove_cache
     fallback_keys:
       - verification_tests-main
+      - verification_tests-main-$SPARK_VERSION
     unprotect: true
     when: always
 
@@ -359,17 +362,24 @@ verification_python_tests:
      - image:recordflux
      - cpu:8
      - mem:16
+  parallel:
+    matrix:
+      - SPARK_VERSION: "24.0"
+        SPARK_BUILD_DATE: "all"
+      - SPARK_VERSION: "wave"
+        SPARK_BUILD_DATE: "20240303"
   script:
     - *setup_gnat
     - *setup_spark
     - *setup_python
     - make prove_python_tests
   cache:
-    key: verification_python_tests-$CI_COMMIT_REF_SLUG
+    key: verification_python_tests-$CI_COMMIT_REF_SLUG-$SPARK_VERSION
     paths:
       - build/gnatprove_cache
     fallback_keys:
       - verification_python_tests-main
+      - verification_python_tests-main-$SPARK_VERSION
     unprotect: true
     when: always
 
