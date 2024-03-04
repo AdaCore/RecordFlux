@@ -1635,6 +1635,9 @@ def test_less_simplified() -> None:
     assert Less(Number(0), Number(1)).simplified() == TRUE
     assert Less(Number(1), Number(1)).simplified() == FALSE
     assert Less(Number(2), Number(1)).simplified() == FALSE
+    assert Less(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == FALSE
+    assert Less(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == TRUE
+    assert Less(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == FALSE
 
 
 def test_less_z3expr() -> None:
@@ -1649,6 +1652,9 @@ def test_less_equal_simplified() -> None:
     assert LessEqual(Number(0), Number(1)).simplified() == TRUE
     assert LessEqual(Number(1), Number(1)).simplified() == TRUE
     assert LessEqual(Number(2), Number(1)).simplified() == FALSE
+    assert LessEqual(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == TRUE
+    assert LessEqual(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == TRUE
+    assert LessEqual(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == FALSE
 
 
 def test_less_equal_z3expr() -> None:
@@ -1663,6 +1669,9 @@ def test_equal_simplified() -> None:
     assert Equal(Number(0), Number(1)).simplified() == FALSE
     assert Equal(Number(1), Number(1)).simplified() == TRUE
     assert Equal(Number(2), Number(1)).simplified() == FALSE
+    assert Equal(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == TRUE
+    assert Equal(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == FALSE
+    assert Equal(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == FALSE
 
 
 def test_equal_z3expr() -> None:
@@ -1677,6 +1686,9 @@ def test_greater_equal_simplified() -> None:
     assert GreaterEqual(Number(0), Number(1)).simplified() == FALSE
     assert GreaterEqual(Number(1), Number(1)).simplified() == TRUE
     assert GreaterEqual(Number(2), Number(1)).simplified() == TRUE
+    assert GreaterEqual(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == TRUE
+    assert GreaterEqual(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == FALSE
+    assert GreaterEqual(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == TRUE
 
 
 def test_greater_equal_z3expr() -> None:
@@ -1691,6 +1703,9 @@ def test_greater_simplified() -> None:
     assert Greater(Number(0), Number(1)).simplified() == FALSE
     assert Greater(Number(1), Number(1)).simplified() == FALSE
     assert Greater(Number(2), Number(1)).simplified() == TRUE
+    assert Greater(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == FALSE
+    assert Greater(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == FALSE
+    assert Greater(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == TRUE
 
 
 def test_greater_z3expr() -> None:
@@ -1705,6 +1720,9 @@ def test_not_equal_simplified() -> None:
     assert NotEqual(Number(0), Number(1)).simplified() == TRUE
     assert NotEqual(Number(1), Number(1)).simplified() == FALSE
     assert NotEqual(Number(2), Number(1)).simplified() == TRUE
+    assert NotEqual(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == FALSE
+    assert NotEqual(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == TRUE
+    assert NotEqual(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == TRUE
 
 
 def test_not_equal_z3expr() -> None:

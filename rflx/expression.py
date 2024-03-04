@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import difflib
+import fractions
 import itertools
 import operator
 from abc import abstractmethod
@@ -11,7 +12,7 @@ from enum import Enum
 from itertools import groupby
 from operator import itemgetter
 from sys import intern
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import z3
 
@@ -21,6 +22,9 @@ from rflx.const import MP_CONTEXT
 from rflx.contract import DBC, invariant, require
 from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.identifier import ID, StrID
+
+if TYPE_CHECKING:
+    from _typeshed import SupportsAllComparisons
 
 MAX_LINE_LENGTH = 100
 
@@ -2344,7 +2348,10 @@ class Relation(BinExpr):
     def __neg__(self) -> Expr:
         raise NotImplementedError
 
-    def _simplified(self, relation_operator: Callable[[Expr, Expr], bool]) -> Expr:
+    def _simplified(
+        self,
+        relation_operator: Callable[[SupportsAllComparisons, SupportsAllComparisons], bool],
+    ) -> Expr:
         left = self.left.simplified()
         right = self.right.simplified()
 
@@ -2360,6 +2367,23 @@ class Relation(BinExpr):
         for t in (Aggregate, Number, Literal):
             if isinstance(left, t) and isinstance(right, t):
                 return TRUE if relation_operator(left, right) else FALSE
+
+        if (
+            isinstance(left, Div)
+            and isinstance(right, Div)
+            and isinstance(left.left, Number)
+            and isinstance(left.right, Number)
+            and isinstance(right.left, Number)
+            and isinstance(right.right, Number)
+        ):
+            return (
+                TRUE
+                if relation_operator(
+                    fractions.Fraction(left.left.value, left.right.value),
+                    fractions.Fraction(right.left.value, right.right.value),
+                )
+                else FALSE
+            )
 
         return self.__class__(left, right, self.location)
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import textwrap
 from functools import reduce
 from pathlib import Path
 
@@ -31,6 +32,7 @@ from rflx.model.message import INITIAL, Field
 from rflx.model.model import Model
 from rflx.model.type_ import OPAQUE
 from rflx.pyrflx import MessageValue, Package, PyRFLX, PyRFLXError, TypeValue, utils
+from rflx.specification.parser import Parser
 from tests.const import CAPTURED_DIR, SPEC_DIR
 from tests.data import models
 
@@ -513,3 +515,33 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
         ),
     ):
         PyRFLX(model=Model([models.tlv_tag(), models.tlv_length(), message]))
+
+
+def test_simplification_of_div_expressions() -> None:
+    spec = textwrap.dedent(
+        """\
+            package Test is
+
+               type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+               type Test is
+                  message
+                     A : T;
+                     B : T
+                        then C
+                           if Message'Last / 8 /= B'Last / 8
+                        then null
+                           if Message'Last / 8 = B'Last / 8;
+                     C : T;
+                  end message;
+
+            end Test;
+            """,
+    )
+    parser = Parser()
+    parser.parse_string(spec)
+    model = PyRFLX(parser.create_model())
+    pkg = model.package("Test")
+    msg = pkg.new_message("Test")
+    test_bytes = b"\x00\x00\x00"
+    msg.parse(test_bytes)
