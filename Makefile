@@ -391,6 +391,9 @@ fuzz_parser: FUZZER_TIME=360
 fuzz_parser: $(RFLX)
 	$(POETRY) run tools/fuzz_driver.py --crash-dir $(BUILD_DIR)/crashes --max-time $(FUZZER_TIME) $(MAKEFILE_DIR)/tests/data/specs $(MAKEFILE_DIR)/tests/features/*/
 
+show_fuzz_parser_results: $(RFLX)
+	$(POETRY) run tools/fuzz_driver.py --crash-dir $(BUILD_DIR)/crashes --regression
+
 # --- Development tools ---
 
 .PHONY: git_hooks
