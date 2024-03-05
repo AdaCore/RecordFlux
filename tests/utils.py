@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import textwrap
@@ -879,3 +880,12 @@ def get_test_model(name: str) -> Model:
     parser = Parser()
     parser.parse(SPEC_DIR / f"{name}.rflx")
     return parser.create_model()
+
+
+def spark_version() -> str:
+    p = subprocess.run(["gnatprove", "--version"], stdout=subprocess.PIPE)
+    m = re.fullmatch(
+        r"SPARK Pro ([0-9]+)\.[0-9]w? \([0-9]+\)",
+        p.stdout.decode("utf-8").split("\n")[0],
+    )
+    return m.group(1) if m else "unknown"

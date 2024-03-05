@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Improve performance of code optimizer (requires SPARK 25; eng/recordflux/RecordFlux#1533)
+
 ### Fixed
 
 - Parsing of messages that depend on fraction comparisons in PyRFLX (AdaCore/RecordFlux#981, eng/recordflux/RecordFlux#981)

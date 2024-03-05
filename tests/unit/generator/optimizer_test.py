@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import textwrap
+from functools import partial
 from pathlib import Path
 from subprocess import CompletedProcess
 
@@ -19,6 +20,26 @@ from rflx.generator.optimizer import (
     remove,
 )
 from tests.const import DATA_DIR
+
+
+def prove_mock(
+    prove_results: dict[int, bool],
+    f: Path,  # noqa: ARG001
+    lines: list[int],  # noqa: ARG001
+    workers: int = 0,  # noqa: ARG001
+    timeout: int = 0,  # noqa: ARG001
+) -> dict[int, bool]:
+    return prove_results
+
+
+def run_mock(
+    return_code: int,
+    cmd: object,  # noqa: ARG001
+    cwd: object = None,  # noqa: ARG001
+    stdout: object = None,  # noqa: ARG001
+    stderr: object = None,  # noqa: ARG001
+) -> CompletedProcess[object]:
+    return CompletedProcess("", return_code)
 
 
 @pytest.mark.parametrize(
@@ -98,11 +119,7 @@ def test_optimize(
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr(rflx.generator.optimizer, "gnatprove_found", lambda: True)
-
-    def prove_mock(f: Path, line: int, workers: int = 0) -> dict[int, bool]:  # noqa: ARG001
-        return prove_results
-
-    monkeypatch.setattr(rflx.generator.optimizer, "prove", prove_mock)
+    monkeypatch.setattr(rflx.generator.optimizer, "prove", partial(prove_mock, prove_results))
 
     f = tmp_path / "test.adb"
     f.write_text(content)
@@ -274,10 +291,7 @@ def test_analyze(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    def prove_mock(f: Path, line: int, workers: int = 0) -> dict[int, bool]:  # noqa: ARG001
-        return prove_results
-
-    monkeypatch.setattr(rflx.generator.optimizer, "prove", prove_mock)
+    monkeypatch.setattr(rflx.generator.optimizer, "prove", partial(prove_mock, prove_results))
 
     f = tmp_path / "test.adb"
     f.write_text("")
@@ -291,32 +305,41 @@ def test_prove(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
 
     expected_result = {1: True, 2: False}
 
-    monkeypatch.setattr(
-        rflx.generator.optimizer,
-        "run",
-        lambda cmd, cwd, stdout, stderr: CompletedProcess("", 0),  # noqa: ARG005
-    )
+    monkeypatch.setattr(rflx.generator.optimizer, "run", partial(run_mock, 0))
     monkeypatch.setattr(
         rflx.generator.optimizer,
         "get_proof_results_for_asserts",
         lambda _: expected_result,
     )
 
-    assert prove(f) == expected_result
+    assert prove(f, []) == expected_result
+
+
+def test_prove_with_limit_lines(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    f = tmp_path / "test.adb"
+    f.write_text("")
+
+    expected_result = {1: True, 2: False}
+
+    monkeypatch.setattr(rflx.generator.optimizer, "run", partial(run_mock, 0))
+    monkeypatch.setattr(rflx.generator.optimizer, "gnatprove_supports_limit_lines", lambda: True)
+    monkeypatch.setattr(
+        rflx.generator.optimizer,
+        "get_proof_results_for_asserts",
+        lambda _: expected_result,
+    )
+
+    assert prove(f, [1, 2]) == expected_result
 
 
 def test_prove_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(
-        rflx.generator.optimizer,
-        "run",
-        lambda cmd, cwd, stdout, stderr: CompletedProcess("", 1),  # noqa: ARG005
-    )
+    monkeypatch.setattr(rflx.generator.optimizer, "run", partial(run_mock, 1))
 
     with pytest.raises(
         RecordFluxError,
         match=r"^generator: error: gnatprove terminated with exit code 1$",
     ):
-        prove(tmp_path)
+        prove(tmp_path, [])
 
 
 def test_get_proof_results_for_asserts() -> None:

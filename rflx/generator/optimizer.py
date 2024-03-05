@@ -67,6 +67,11 @@ def gnatprove_found() -> bool:
     return bool(shutil.which("gnatprove"))
 
 
+def gnatprove_supports_limit_lines() -> bool:
+    p = run(["gnatprove", "--help"], stdout=PIPE)
+    return p.stdout is not None and "--limit-lines=" in p.stdout.decode("utf-8")
+
+
 def instrument(file: Path) -> dict[int, Check]:
     """Add an always false assertion before each goto statement."""
     checks: dict[int, Check] = {}
@@ -112,7 +117,7 @@ def analyze(
     if not checks:
         return result
 
-    proof_results = prove(file, workers, timeout)
+    proof_results = prove(file, checks, workers, timeout)
 
     for line in checks:
         if proof_results[line]:
@@ -121,7 +126,7 @@ def analyze(
     return result
 
 
-def prove(file: Path, workers: int = 0, timeout: int = 1) -> dict[int, bool]:
+def prove(file: Path, lines: Iterable[int], workers: int = 0, timeout: int = 1) -> dict[int, bool]:
     """Prove file and return results for all assertions."""
 
     with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -130,6 +135,13 @@ def prove(file: Path, workers: int = 0, timeout: int = 1) -> dict[int, bool]:
         project_file.write_text(
             f'project Optimize is\n   for Source_Dirs use ("{file.parent}");\nend Optimize;\n',
         )
+
+        optional_args = []
+
+        if gnatprove_supports_limit_lines():
+            limit_file = tmp_dir / "limit"
+            limit_file.write_text("\n".join([f"{file.name}:{l}" for l in lines]))
+            optional_args.append(f"--limit-lines={limit_file}")
 
         p = run(
             [
@@ -143,6 +155,7 @@ def prove(file: Path, workers: int = 0, timeout: int = 1) -> dict[int, bool]:
                 "--prover=z3,cvc5",
                 "--timeout",
                 str(timeout),
+                *optional_args,
             ],
             cwd=file.parent,
             stdout=PIPE,
