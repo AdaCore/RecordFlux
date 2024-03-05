@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Parsing of messages that depend on fraction comparisons in PyRFLX (AdaCore/RecordFlux#981, eng/recordflux/RecordFlux#981)
+- Installation of VS Code extension (eng/recordflux/RecordFlux#1544)
 
 ## [0.19.0] - 2024-02-29
 

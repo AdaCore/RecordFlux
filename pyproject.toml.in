@@ -49,7 +49,7 @@ include = [
     { path = "rflx/lang/py.typed" },
 ]
 exclude = [
-    "rflx/ide/vscode",
+    "rflx/ide/vscode/*",
     "rflx/lang/librflxlang.so",
 ]
 
