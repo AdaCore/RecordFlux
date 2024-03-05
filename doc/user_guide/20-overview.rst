@@ -197,7 +197,7 @@ Files, Packages and Names
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Let’s formalize our Pub-Sub message format in the RecordFlux language.
-RecordFlux types (scalar types as well as messages) are defined in modules known as packages, whose syntax is inspireed by SPARK.
+RecordFlux types (scalar types as well as messages) are defined in modules known as packages, whose syntax is inspired by SPARK.
 There is exactly one package per file; the file name has to be the same as the package name, folded to lowercase, and the file extension is “rflx”.
 We will use the name “Pub Sub” for our example protocol and create a file named `pub_sub.rflx` for the specification:
 
@@ -231,7 +231,7 @@ Numbers, like in SPARK, are base 10 by default, but can be represented in arbitr
 In the above example we represent the upper limit of 4000 by its hexadecimal representation `16#F_A0#`.
 Note, that single underscores (`_`) can be introduced into numeric literals in arbitrary positions to improve readability.
 
-As for the package name, “`Identifier`” adheres to the the naming rules stated above.
+As for the package name, “`Identifier`” adheres to the naming rules stated above.
 The range declares the lower, and upper bounds of a field of this type and the Size attribute defines the precise storage space of the type in bits.
 For consistency, sizes in RecordFlux specifications are always defined in bits – without exception.
 In the message definition below we will see how to deal with protocols that define lengths in terms of bytes.
