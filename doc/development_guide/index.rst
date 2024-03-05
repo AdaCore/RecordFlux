@@ -9,7 +9,7 @@ Additionally to the dependencies listed in the `User's Guide <https://docs.adaco
 
 - `AUnit <https://github.com/AdaCore/aunit>`_ (if FSF GNAT is used)
 - `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_ (to test an example app)
-- `Node.js <https://nodejs.org/>`_ 20.5.0 or higher (see `nvm <https://github.com/nvm-sh/nvm>`_ for an alternative installation method)
+- `Node.js <https://nodejs.org/>`_ 20.5.0 or higher (to create the VS Code extension; Node.js should preferably be installed using `nvm <https://github.com/nvm-sh/nvm>`_, the Snap Node.js led to unexpected errors in the past)
 - `TeX Live <https://tug.org/texlive/>`_ (to create the PDF documentation)
 
 The FSF GNAT and all Ada dependencies can be installed using Alire.
