@@ -22,6 +22,8 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Communications",
     "Topic :: Security",
     "Topic :: Software Development :: Build Tools",
@@ -44,9 +46,13 @@ include = [
     { path = "generated/langkit/langkit/support/*.gpr", format = "sdist" },
     { path = "generated/librflxlang.gpr", format = "sdist" },
     { path = "generated/src/*", format = "sdist" },
+    { path = "rapidflux/Cargo.lock", format = "sdist" },
+    { path = "rapidflux/Cargo.toml", format = "sdist" },
+    { path = "rapidflux/src/*.rs", format = "sdist" },
     { path = "rflx/ide/vscode/recordflux.vsix" },
     { path = "rflx/lang/__init__.py" },
     { path = "rflx/lang/py.typed" },
+    { path = "rflx/rapidflux*.so", format = "wheel" },
 ]
 exclude = [
     "rflx/ide/vscode/*",

@@ -3,62 +3,16 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Sequence
 from enum import Enum, auto
-from pathlib import Path
 from threading import local
 from typing import NoReturn, Optional, Union
 
 from typing_extensions import Self
 
 from rflx.common import Base, verbose_repr
+from rflx.rapidflux import Location as Location
 
 ERROR_CONFIG = local()
 ERROR_CONFIG.fail_after_value = 0
-
-
-class Location(Base):
-    def __init__(
-        self,
-        start: tuple[int, int],
-        source: Optional[Path] = None,
-        end: Optional[tuple[int, int]] = None,
-        verbose: bool = False,
-    ):
-        self._source = source
-        self._start = start
-        self._end = end
-        self._verbose = verbose
-
-    def __str__(self) -> str:
-        def linecol_str(linecol: tuple[int, int]) -> str:
-            return f"{linecol[0]}:{linecol[1]}"
-
-        start = f":{linecol_str(self._start)}"
-        end = f"-{linecol_str(self._end)}" if self._end and self._verbose else ""
-        return f"{self._source if self._source else '<stdin>'}{start}{end}"
-
-    def __lt__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return self.start < other.start
-        return NotImplemented
-
-    @property
-    def source(self) -> Optional[Path]:
-        return self._source
-
-    @property
-    def start(self) -> tuple[int, int]:
-        return self._start
-
-    @property
-    def end(self) -> Optional[tuple[int, int]]:
-        return self._end
-
-    @property
-    def short(self) -> Location:
-        return Location(self.start, Path(self.source.name) if self.source else None, self.end)
-
-    def __hash__(self) -> int:
-        return hash(self._start)
 
 
 class Subsystem(Enum):
