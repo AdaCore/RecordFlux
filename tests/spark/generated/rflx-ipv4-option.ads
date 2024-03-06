@@ -931,6 +931,9 @@ private
       and then (for all F in Field =>
                    Invalid (Ctx, F)));
 
+   function Read (Ctx : Context) return RFLX_Types.Bytes is
+     (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
+
    function Has_Buffer (Ctx : Context) return Boolean is
      (Ctx.Buffer /= null);
 

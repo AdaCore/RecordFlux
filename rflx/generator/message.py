@@ -1543,6 +1543,7 @@ def create_read_function(prefix: str, message: Message) -> UnitPart:
                 ],
             ),
         ],
+        [],
         [
             ExpressionFunctionDeclaration(
                 specification,
