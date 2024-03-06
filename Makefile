@@ -224,14 +224,33 @@ $(GENERATED_DIR)/python/librflxlang: $(BUILD_DEPS) $(wildcard language/*.py) | $
 	rm -rf $(GENERATED_DIR)
 	mv $(BUILD_GENERATED_DIR) $(GENERATED_DIR)
 
+# --- Setup: RapidFlux ---
+
+RAPIDFLUX := rflx/rapidflux.so
+
+.PHONY: rapidflux
+
+rapidflux: $(RAPIDFLUX)
+
+$(RAPIDFLUX): rapidflux/target/release/librapidflux.so
+	cp rapidflux/target/release/librapidflux.so $@
+
+rapidflux/target/release/librapidflux.so: rapidflux/Cargo.toml $(wildcard rapidflux/src/*)
+	cargo build --manifest-path=rapidflux/Cargo.toml --release
+
 # --- Setup: Development dependencies ---
+
+CARGO_TARPAULIN = $(HOME)/.cargo/bin/cargo-tarpaulin
 
 .PHONY: install_devel
 
-install_devel: $(RFLX)
+install_devel: $(RFLX) $(CARGO_TARPAULIN)
+
+$(CARGO_TARPAULIN):
+	cargo install cargo-tarpaulin
 
 $(RFLX):: export PYTHONPATH=
-$(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(PROJECT_MANAGEMENT)
+$(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(RAPIDFLUX) $(PROJECT_MANAGEMENT)
 	$(POETRY) install -v --sync
 
 $(DEVEL_VENV):
@@ -279,11 +298,15 @@ $(BIN_DIR)/poetry:
 
 # --- Checks ---
 
-.PHONY: check check_code check_poetry check_contracts check_doc
+.PHONY: check check_code check_poetry check_contracts check_rapidflux check_doc
 
 check: check_code check_doc
 
-check_code: check_poetry common_check check_contracts
+check_code: check_poetry common_check check_contracts check_rapidflux
+
+check_rapidflux:
+	cargo fmt --manifest-path=rapidflux/Cargo.toml -- --check
+	cargo clippy --manifest-path=rapidflux/Cargo.toml
 
 check_poetry: export PYTHONPATH=
 check_poetry: $(RFLX)
@@ -300,13 +323,26 @@ check_doc: $(RFLX)
 	$(POETRY) run tools/check_grammar.py --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json examples/specs/*.rflx examples/apps/*/specs/*.rflx tests/data/specs/*.rflx tests/data/specs/parse_only/*.rflx
 	$(POETRY) run tools/check_grammar.py --invalid --document doc/language_reference/language_reference.rst --verbal-map doc/language_reference/verbal_mapping.json tests/data/specs/invalid/{incorrect_comment_only,incorrect_empty_file,incorrect_specification,incorrect_null_field}.rflx
 
+# --- Formatting ---
+
+.PHONY: fmt
+
+fmt: format
+	cargo fmt --manifest-path=rapidflux/Cargo.toml
+
 # --- Tests ---
 
-.PHONY: test test_rflx test_examples test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
+.PHONY: test test_rflx test_rapidflux test_examples test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
 
-test: test_rflx test_examples
+test: test_rflx test_rapidflux test_examples
 
 test_rflx: test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
+
+# TODO(xd009642/tarpaulin#1092): --no-dead-code fixes linker error caused by PyO3
+# --skip-clean and --target-dir avoids unnecessary recompilation.
+
+test_rapidflux: $(CARGO_TARPAULIN)
+	cargo tarpaulin --manifest-path=rapidflux/Cargo.toml --fail-under=100 --engine llvm --no-dead-code --skip-clean --target-dir target/coverage
 
 test_examples: test_specs test_apps
 
@@ -488,17 +524,24 @@ sdist: $(SDIST)
 $(SDIST): $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 	$(POETRY) build -vv --no-cache -f sdist
 
-# The build directory is removed to ensure a deterministic result. Otherwise, Poetry will reuse
-# files in build/lib, even with the `--no-cache` option.
-wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
+# The build directory and RapidFlux libraries are removed to ensure a deterministic result.
+# Otherwise, Poetry will reuse files in build/lib, even with the `--no-cache` option, and the
+# resulting wheel will contain more than one RapidFlux library.
+wheel: RAPIDFLUX_PLATFORM := rflx/$(shell $(PYTHON) -c 'import sysconfig; print("rapidflux" + sysconfig.get_config_var("EXT_SUFFIX"))')
+
+wheel: clean_build $(BUILD_DEPS) $(PARSER) clean_rapidflux $(RAPIDFLUX) $(VSIX) pyproject.toml $(PACKAGE_SRC)
+	rm -f rflx/rapidflux.*.so
+	@# Add platform tag to library
+	mv $(RAPIDFLUX) $(RAPIDFLUX_PLATFORM)
 	$(POETRY) build -vv --no-cache -f wheel
+	mv $(RAPIDFLUX_PLATFORM) $(RAPIDFLUX)
 
 # Build distributions for all defined Python versions without local version identifier.
 pypi_dist: $(PROJECT_MANAGEMENT)
 	$(MAKE) sdist POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//')
 	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(POETRY) env info && $(MAKE) wheel POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
 
-anod_dist: $(BUILD_DEPS) $(PARSER) pyproject.toml $(PACKAGE_SRC)
+anod_dist: $(BUILD_DEPS) $(PARSER) $(RAPIDFLUX) pyproject.toml $(PACKAGE_SRC)
 	$(POETRY) build -vv --no-cache
 
 # --- Build: VS Code extension ---
@@ -509,7 +552,7 @@ $(VSIX):
 
 # --- Clean ---
 
-.PHONY: clean clean_build clean_all
+.PHONY: clean clean_build clean_rapidflux clean_all
 
 clean:
 	rm -rf $(BUILD_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache doc/language_reference/build doc/user_guide/build
@@ -520,12 +563,13 @@ clean:
 	$(MAKE) -C rflx/ide/vscode clean
 	$(MAKE) -C doc/examples clean
 
-clean_all: clean
-
 clean_build:
 	rm -rf $(BUILD_DIR)
 
-clean_all: clean clean_build
+clean_rapidflux:
+	rm -rf rflx/rapidflux*.so
+
+clean_all: clean clean_build clean_rapidflux
 	rm -rf $(DEVEL_VENV) $(POETRY_VENV) $(BIN_DIR) $(GENERATED_DIR) rflx/lang pyproject.toml
 	test -d $(LANGKIT_DIR) && touch $(LANGKIT_DIR)/langkit/py.typed || true
 	@$(call remove_repo,$(DEVUTILS_DIR))

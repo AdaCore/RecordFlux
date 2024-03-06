@@ -91,6 +91,21 @@ Alternatively, RecordFlux can be executed also via Poetry by executing `.venv.po
 Poetry locks the dependencies to ensure deterministic test results.
 `poetry lock` creates the lock file `poetry.lock` based on the dependencies listed in `pyproject.toml`.
 
+Rust
+====
+
+Some parts of RecordFlux are implemented in Rust for performance reasons.
+The Python binding is realized by [PyO3](https://pyo3.rs/).
+
+The type hints for the Python binding must be specified in the `rflx/rapidflux.pyi` stub file ([PyO3/pyo3#510](https://github.com/PyO3/pyo3/issues/510)).
+
+The test coverage of the main Rust code is checked using [Tarpaulin](https://github.com/xd009642/tarpaulin) and LLVM coverage instrumentation.
+The Python binding is tested in the Python test suite (`tests/unit`).
+All exported Python methods can be excluded from Tarpaulin's test coverage calculation by adding the `#[cfg(not(tarpaulin_include))]` attribute.
+
+Classes created by PyO3 cannot be pickled by default ([PyO3/pyo3#100](https://github.com/PyO3/pyo3/issues/100)).
+Pickling of objects can be enabled by defining `__setstate__`, `__getstate__`, `__getnewargs__` and the module name (`#[pyclass(module = "rflx.rapidflux")]`).
+
 VS Code extension
 =================
 

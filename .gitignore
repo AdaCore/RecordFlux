@@ -18,6 +18,7 @@
 /htmlcov
 /pyproject.toml
 /rflx/lang
+/rflx/rapidflux.so
 \.*.swp
 __pycache__
 build

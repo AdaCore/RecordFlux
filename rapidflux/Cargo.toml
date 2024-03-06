@@ -1,0 +1,18 @@
+[package]
+name = "rapidflux"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+# The name of the native library. This is the name which will be used in Python to import the
+# library (i.e. `import string_sum`). If you change this, you must also change the name of the
+# `#[pymodule]` in `src/lib.rs`.
+name = "rapidflux"
+
+# "cdylib" is necessary to produce a shared library for Python to import from.
+crate-type = ["cdylib"]
+
+[dependencies]
+bincode = "1.3.3"
+pyo3 = { version = "0.21.1", features = ["extension-module"] }
+serde = { version = "1.0", features = ["derive"] }
