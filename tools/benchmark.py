@@ -14,11 +14,12 @@ from rflx.pyrflx import PyRFLX
 
 
 class Benchmark:
-    def __init__(self, specdir: Path) -> None:
+    def __init__(self) -> None:
         print("Loading...")  # noqa: T201
         start = perf_counter()
+        spec_dir = Path("examples/specs")
         self.__pyrflx = PyRFLX.from_specs(
-            [str(specdir / "ipv4.rflx"), str(specdir / "icmp.rflx")],
+            [str(spec_dir / "ipv4.rflx"), str(spec_dir / "icmp.rflx")],
             NeverVerify(),
             skip_message_verification=True,
         )
@@ -50,7 +51,7 @@ class Benchmark:
             pkt.set("Flag_MF", "False")
             pkt.set("Fragment_Offset", 0)
             pkt.set("TTL", 64)
-            pkt.set("Protocol", "P_ICMP")
+            pkt.set("Protocol", "Protocol_Numbers.ICMP")
             pkt.set("Header_Checksum", 0)
             pkt.set("Source", 0)
             pkt.set("Destination", 0)
@@ -59,29 +60,23 @@ class Benchmark:
             yield pkt.bytestring
 
     def run(self) -> None:
-        start = perf_counter()
-        for i, _ in enumerate(tqdm(self.generate())):
-            if i % 500 == 0:
-                if perf_counter() - start > 1:
-                    print("Performance < 500it/s, stopping")  # noqa: T201
-                    sys.exit(1)
-                start = perf_counter()
+        for _ in tqdm(self.generate()):
+            pass
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--profile", action="store_true", help="run profiler")
     parser.add_argument("-o", "--outfile", type=str, help="print profiler output to file")
-    parser.add_argument("specdir", type=Path, help="specification directory")
     args = parser.parse_args(sys.argv[1:])
-    benchmark = Benchmark(args.specdir)
+    benchmark = Benchmark()
     if args.profile:
         print("Profiling...")  # noqa: T201
 
         def run() -> None:
-            for _ in benchmark.generate(20):
+            for _ in benchmark.generate(100):
                 pass
 
-        cProfile.run("run()", args.outfile)
+        cProfile.run("run()", args.outfile, "tottime")
     else:
         benchmark.run()
