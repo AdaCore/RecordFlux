@@ -11,6 +11,7 @@ GNATCOLL_ORIGIN ?= https://github.com/AdaCore
 LANGKIT_ORIGIN ?= https://github.com/AdaCore
 ADASAT_ORIGIN ?= https://github.com/AdaCore
 VERSION ?= $(shell test -f pyproject.toml && test -f $(POETRY) && $(POETRY) version -s)
+PYTHON_VERSIONS ?= 3.8 3.9 3.10 3.11
 NO_GIT_CHECKOUT ?=
 
 # --- Dependencies ---
@@ -466,14 +467,28 @@ build_pdf_doc_user_guide: $(RFLX)
 
 # --- Packaging ---
 
-.PHONY: dist anod_dist
+PACKAGE_SRC := $(shell find rflx -type f)
 
-dist: $(SDIST)
+.PHONY: dist sdist wheel pypi_dist anod_dist
 
-$(SDIST): $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(wildcard rflx/*)
+dist: sdist wheel
+
+sdist: $(SDIST)
+
+$(SDIST): $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 	$(POETRY) build -vv --no-cache -f sdist
 
-anod_dist: $(BUILD_DEPS) $(PARSER) pyproject.toml $(wildcard rflx/*)
+# The build directory is removed to ensure a deterministic result. Otherwise, Poetry will reuse
+# files in build/lib, even with the `--no-cache` option.
+wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
+	$(POETRY) build -vv --no-cache -f wheel
+
+# Build distributions for all defined Python versions without local version identifier.
+pypi_dist: $(PROJECT_MANAGEMENT)
+	$(MAKE) sdist POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//')
+	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(MAKE) wheel POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
+
+anod_dist: $(BUILD_DEPS) $(PARSER) pyproject.toml $(PACKAGE_SRC)
 	$(POETRY) build -vv --no-cache
 
 # --- Build: VS Code extension ---
@@ -484,7 +499,7 @@ $(VSIX):
 
 # --- Clean ---
 
-.PHONY: clean clean_all
+.PHONY: clean clean_build clean_all
 
 clean:
 	rm -rf $(BUILD_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache doc/language_reference/build doc/user_guide/build
@@ -496,6 +511,11 @@ clean:
 	$(MAKE) -C doc/examples clean
 
 clean_all: clean
+
+clean_build:
+	rm -rf $(BUILD_DIR)
+
+clean_all: clean clean_build
 	rm -rf $(DEVEL_VENV) $(POETRY_VENV) $(BIN_DIR) $(GENERATED_DIR) rflx/lang pyproject.toml
 	test -d $(LANGKIT_DIR) && touch $(LANGKIT_DIR)/langkit/py.typed || true
 	@$(call remove_repo,$(DEVUTILS_DIR))
