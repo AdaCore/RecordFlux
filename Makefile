@@ -270,17 +270,17 @@ $(BIN_DIR)/poetry:
 
 # --- Checks ---
 
-.PHONY: check check_code check_poetry check_dependencies check_contracts check_doc
+.PHONY: check check_code check_poetry check_contracts check_doc
 
 check: check_code check_doc
 
-check_code: check_poetry check_dependencies common_check check_contracts
+check_code: check_poetry common_check check_contracts
 
+check_poetry: export PYTHONPATH=
 check_poetry: $(RFLX)
 	$(POETRY) check
+	@$(POETRY) install --sync --dry-run | grep "•" | grep -v "Already installed" | ( test -z "$$(cat -)" ) || ( echo 'The virtual environment is out of sync with the lock file, run "$(shell realpath --relative-to $(PWD) $(POETRY)) install --sync".' && false )
 
-check_dependencies: $(RFLX)
-	$(POETRY) run tools/check_dependencies.py
 
 check_contracts: $(RFLX)
 	$(POETRY) run pyicontract-lint $(PYTHON_PACKAGES)
