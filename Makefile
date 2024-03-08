@@ -270,9 +270,11 @@ $(BIN_DIR)/poetry:
 
 # --- Checks ---
 
-.PHONY: check check_poetry check_dependencies check_contracts check_doc
+.PHONY: check check_code check_poetry check_dependencies check_contracts check_doc
 
-check: check_poetry check_dependencies check_contracts check_doc
+check: check_code check_doc
+
+check_code: check_poetry check_dependencies common_check check_contracts
 
 check_poetry: $(RFLX)
 	$(POETRY) check
