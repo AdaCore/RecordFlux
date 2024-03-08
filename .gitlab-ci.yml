@@ -1,18 +1,18 @@
 variables:
-   ANOD_DEFAULT_SANDBOX_DIR: /it/wave
+  ANOD_DEFAULT_SANDBOX_DIR: /it/wave
 
-   RECORDFLUX_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
+  DEVUTILS_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
 
-   GNAT_VERSION: "24.0"
-   GNAT_BUILD_DATE: "all"
-   GNAT_PLATFORM: "x86_64-linux"
-   SPARK_VERSION: "24.0"
-   SPARK_BUILD_DATE: "all"
-   PYTHON_VERSION: "3.11"
-   NODE_VERSION: "20.5.1"
+  GNAT_VERSION: "24.0"
+  GNAT_BUILD_DATE: "all"
+  GNAT_PLATFORM: "x86_64-linux"
+  SPARK_VERSION: "24.0"
+  SPARK_BUILD_DATE: "all"
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20.5.1"
 
-   # If set to 1, the packaging of RecordFlux including the compilation of the langkit-based parser will be tested.
-   CLEAN_RECORDFLUX_SETUP: 0
+  # If set to 1, the packaging of RecordFlux including the compilation of the langkit-based parser will be tested.
+  CLEAN_RECORDFLUX_SETUP: 0
 
 workflow:
   rules:
