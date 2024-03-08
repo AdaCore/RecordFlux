@@ -62,11 +62,10 @@ python = ">=3.8, <3.12"
 attrs = ">=22.1, <24"
 icontract = ">=2.3.4, <3"
 importlib_resources = ">=6, <7"  # TODO(eng/recordflux/RecordFlux#1359): Remove
-pydantic = ">=1, <2"
+pydantic = ">=2, <3"
 pydotplus = ">=2, <3"
 pygls = ">=1.1, <2"
-"ruamel.yaml" = ">=0.17, <0.18"
-setuptools = ">=41"  # required by z3-solver
+"ruamel.yaml" = ">=0.18, <0.19"
 z3-solver = ">=4, <4.12.3"
 
 [tool.poetry.group.build.dependencies]
@@ -79,9 +78,9 @@ furo = "==2022.4.7"
 hypothesis = ">=6.14, <6.24"
 lark = "==1.1.8"
 pyicontract-lint = ">=2.1.2, <2.2"
-pytest-asyncio = "==0.21"
+pytest-asyncio = "==0.23.5"
 pytest-timeout = ">=2, <3"
-scapy = "==2.4.5"
+scapy = ">=2, <3"
 sphinx = ">=4.5, <5"
 sphinx-rtd-theme = ">=1.1.1, <1.2"
 sphinxcontrib-applehelp = "==1.0.4"  # required by sphinx 4
@@ -89,8 +88,8 @@ sphinxcontrib-devhelp = "==1.0.2"  # required by sphinx 4
 sphinxcontrib-htmlhelp = "==2.0.1"  # required by sphinx 4
 sphinxcontrib-qthelp = "==1.0.3"  # required by sphinx 4
 sphinxcontrib-serializinghtml = "==1.1.5"  # required by sphinx 4
-tqdm = ">=4.61.1, <4.63"
-types-Pygments = ">=2.15, <2.16"
+tqdm = ">=4.61.1, <5"
+types-Pygments = ">=2.15, <3"
 
 [tool.poetry.scripts]
 rflx = "rflx.cli:run"

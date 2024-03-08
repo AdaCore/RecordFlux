@@ -4,33 +4,47 @@ import typing as ty
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, Extra, Field, ValidationError
-from pydantic.types import ConstrainedInt
+from annotated_types import Gt
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from ruamel.yaml.error import MarkedYAMLError
 from ruamel.yaml.main import YAML
+from typing_extensions import Annotated
 
 from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
 from rflx.model import Model
 from rflx.model.session import Session
 
-
-class IntSize(ConstrainedInt):
-    gt = 0
-
-
-class SessionSize(BaseModel, extra=Extra.forbid):
-    default: Optional[IntSize] = Field(alias="Default")
-    global_: Optional[ty.Mapping[str, IntSize]] = Field(alias="Global")
-    local_: Optional[ty.Mapping[str, ty.Mapping[str, IntSize]]] = Field(alias="Local")
+# TODO(eng/recordflux/RecordFlux#1359): Replace ty.* by collections.abc.*
+# Sequence and Mapping are imported from collections.abc as importing them
+# from typing is deprecated. However pydantic does not support the imported
+# version from collections.abc. To fix that typing is imported as ty and the
+# typing versions of Sequence and Mapping are used in classes that derive
+# from pydantic.BaseModel.
+# This is only relevant for Python 3.8.
 
 
-class SessionIntegration(BaseModel, extra=Extra.forbid):
+IntSize = Annotated[int, Gt(0)]
+
+
+class SessionSize(BaseModel):  # type: ignore[misc]
+    default: Optional[IntSize] = Field(None, alias="Default")
+    global_: Optional[ty.Mapping[str, IntSize]] = Field(None, alias="Global")
+    local_: Optional[ty.Mapping[str, ty.Mapping[str, IntSize]]] = Field(None, alias="Local")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class SessionIntegration(BaseModel):  # type: ignore[misc]
     buffer_size: SessionSize = Field(alias="Buffer_Size")
 
+    model_config = ConfigDict(extra="forbid")
 
-class IntegrationFile(BaseModel, extra=Extra.forbid):
+
+class IntegrationFile(BaseModel):  # type: ignore[misc]
     session: ty.Mapping[str, SessionIntegration] = Field(alias="Session")
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class Integration:
@@ -135,7 +149,7 @@ class Integration:
 
     def _add_integration_object(self, filename: Path, file: object, error: RecordFluxError) -> None:
         try:
-            self._packages[filename.stem] = IntegrationFile.parse_obj(file)
+            self._packages[filename.stem] = IntegrationFile.model_validate(file)
         except ValidationError as e:
             error.extend(
                 [(f"{e}", Subsystem.PARSER, Severity.ERROR, self._to_location(filename.stem))],

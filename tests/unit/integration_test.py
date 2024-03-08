@@ -15,20 +15,20 @@ from rflx.integration import Integration
 @pytest.mark.parametrize(
     ("rfi_content", "match_error"),
     [
-        ("garbage", "expected dict not str"),
-        ("Session: garbage", "Session.*value is not a valid dict"),
-        ("{}", "Session.*field required"),
+        ("garbage", "Input should be a valid dictionary"),
+        ("Session: garbage", "Session.*Input should be a valid dictionary"),
+        ("{}", "Session.*Field required"),
         (
             """Session:
                 Session: 1
           """,
-            "value is not a valid dict",
+            "Session.Session.*Input should be a valid dictionary",
         ),
         (
             """Session:
                 Session: {}
           """,
-            "Buffer_Size.*field required",
+            "Session.Session.Buffer_Size.*Field required",
         ),
         (
             """Session:
@@ -36,7 +36,7 @@ from rflx.integration import Integration
                     Buffer_Size:
                         Default: -1024
           """,
-            "ensure this value is greater than 0",
+            "Input should be greater than 0",
         ),
         (
             """Session:
@@ -46,7 +46,7 @@ from rflx.integration import Integration
                         Global:
                             Msg: 2048
           """,
-            "Default.*value is not a valid integer",
+            "Session.Session.Buffer_Size.Default.*Input should be a valid integer",
         ),
         (
             """Session:
@@ -56,7 +56,7 @@ from rflx.integration import Integration
                         Global:
                             Msg: Hello
           """,
-            "Msg.*value is not a valid integer",
+            "Session.Session.Buffer_Size.Global.Msg.*Input should be a valid integer",
         ),
         (
             """Session:
@@ -66,14 +66,14 @@ from rflx.integration import Integration
                         Global:
                             Msg: -10
           """,
-            "ensure this value is greater than 0",
+            "Session.Session.Buffer_Size.Global.Msg.*Input should be greater than 0",
         ),
         (
             """Session:
                 Session:
                     Buffer_Size: 2
           """,
-            "Buffer_Size.*value is not a valid dict",
+            "Session.Session.Buffer_Size.*Input should be a valid dictionary",
         ),
         (
             """Session:
@@ -86,7 +86,7 @@ from rflx.integration import Integration
                             Next:
                                 Msg2: -10
           """,
-            "ensure this value is greater than 0",
+            "Session.Session.Buffer_Size.Local.Next.Msg2.*Input should be greater than 0",
         ),
         (
             """Session:
@@ -95,7 +95,7 @@ from rflx.integration import Integration
                         Default: 1024
                     Other: 1
           """,
-            "Other.*extra fields not permitted",
+            "Session.Session.Other.*Extra inputs are not permitted",
         ),
     ],
 )
@@ -104,7 +104,7 @@ def test_rfi_add_integration(rfi_content: str, match_error: str) -> None:
     regex = re.compile(
         (
             "^test.rfi:0:0: parser: error: 1 validation error for "
-            rf"IntegrationFile.*{match_error} \([^()]*\)$"
+            rf"IntegrationFile.*{match_error}.*$"
         ),
         re.DOTALL,
     )
@@ -198,7 +198,7 @@ def test_load_integration_path(tmp_path: Path) -> None:
         (
             r"^"
             r"test.rfi:0:0: parser: error: 1 validation error for IntegrationFile.*"
-            r"value is not a valid dict \(type=type_error.dict\)"
+            r"Input should be a valid dictionary.*"
             r"$"
         ),
         re.DOTALL,

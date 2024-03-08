@@ -7,7 +7,7 @@ from pathlib import Path
 from shutil import copytree
 from typing import Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from ruamel.yaml.main import YAML
 
 from rflx.integration import Integration
@@ -18,6 +18,7 @@ from tests.utils import session_main
 
 FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pycache__"]
 
+# TODO(eng/recordflux/RecordFlux#1359): Replace ty.* by collections.abc.*
 # Sequence and Mapping are imported from collections.abc as importing them
 # from typing is deprecated. However pydantic does not support the imported
 # version from collections.abc. To fix that typing is imported as ty and the
@@ -26,27 +27,27 @@ FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pyca
 # This is only relevant for Python 3.8.
 
 
-class ConfigFile(BaseModel):
-    input: Optional[ty.Mapping[str, Optional[ty.Sequence[str]]]]
-    output: Optional[ty.Sequence[str]]
-    sequence: Optional[str]
-    prove: Optional[ty.Sequence[str]]
+class ConfigFile(BaseModel):  # type: ignore[misc]
+    input: Optional[ty.Mapping[str, Optional[ty.Sequence[ty.Union[int, str]]]]] = None
+    output: Optional[ty.Sequence[str]] = None
+    sequence: Optional[str] = None
+    prove: Optional[ty.Sequence[str]] = None
 
-    @validator("input")
+    @field_validator("input")
     def initialize_input_if_present(
         cls,  # noqa: N805
         value: Optional[ty.Mapping[str, ty.Sequence[str]]],
     ) -> ty.Mapping[str, ty.Sequence[str]]:
         return value if value is not None else {}
 
-    @validator("output")
+    @field_validator("output")
     def initialize_output_if_present(
         cls,  # noqa: N805
         value: Optional[ty.Sequence[str]],
     ) -> ty.Sequence[str]:
         return value if value is not None else []
 
-    @validator("prove")
+    @field_validator("prove")
     def initialize_prove_if_present(
         cls,  # noqa: N805
         value: Optional[ty.Sequence[str]],
@@ -67,7 +68,7 @@ def get_config(feature: str) -> Config:
 
     if config_file.is_file():
         yaml = YAML(typ="safe")
-        cfg = ConfigFile.parse_obj(yaml.load(config_file))
+        cfg = ConfigFile.model_validate(yaml.load(config_file))
         return Config(
             (
                 {
