@@ -60,6 +60,7 @@ generate-setup-file = true
 [tool.poetry.dependencies]
 python = ">=3.8, <3.12"
 attrs = ">=22.1, <24"
+defusedxml = ">=0.7, <0.8"
 icontract = ">=2.3.4, <3"
 importlib_resources = ">=6, <7"  # TODO(eng/recordflux/RecordFlux#1359): Remove
 pydantic = ">=2, <3"
@@ -90,6 +91,7 @@ sphinxcontrib-qthelp = "==1.0.3"  # required by sphinx 4
 sphinxcontrib-serializinghtml = "==1.1.5"  # required by sphinx 4
 tqdm = ">=4.61.1, <5"
 types-Pygments = ">=2.15, <3"
+types-defusedxml = ">=0.7, <0.8"
 
 [tool.poetry.scripts]
 rflx = "rflx.cli:run"

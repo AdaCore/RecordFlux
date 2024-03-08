@@ -8,8 +8,9 @@ from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
-from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, ParseError
+
+from defusedxml import ElementTree
 
 import rflx.specification.const
 from rflx.common import file_name
@@ -30,8 +31,7 @@ def convert(
     reproducible: bool = False,
 ) -> None:
     try:
-        # TODO(eng/recordflux/RecordFlux#1375): Prevent XML attacks by replacing xml by defusedxml
-        root = ElementTree.fromstring(data)  # noqa: S314
+        root = ElementTree.fromstring(data)
     except ParseError as e:
         fail(
             f"invalid XML document: {e}",
