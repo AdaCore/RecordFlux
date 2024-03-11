@@ -1,0 +1,44 @@
+package ATM is
+
+   -- ATM: specification
+   -- https://en.wikipedia.org/wiki/Asynchronous_Transfer_Mode#Structure_of_an_ATM_cell
+
+   type Cell_Type is
+      (UNI,
+       NNI)
+   with Size => 1;
+
+   type Generic_Flow_Control is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type Virtual_Path_Identifier_UNI is range 0 .. 8 - 1 with Size => 8;
+   type Virtual_Channel_Identifier is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Header_Error_Control is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   -- The virtual path identifier is different between user-network interface
+   -- and network-network interface
+   type Virtual_Path_Identifier_NNI is range 0 .. 2 ** 12 - 1 with Size => 12;
+
+   type Cell (Cell_Format : Cell_Type) is
+      message
+         null
+            then Generic_Flow_Control
+               if Cell_Format = UNI
+            then Virtual_Path_Identifier_NNI
+               if Cell_Format = NNI;
+         Generic_Flow_Control : Generic_Flow_Control;
+         Virtual_Path_Identifier_UNI : Virtual_Path_Identifier_UNI
+            then Virtual_Channel_Identifier;
+         Virtual_Path_Identifier_NNI : Virtual_Path_Identifier_NNI;
+         Virtual_Channel_Identifier : Virtual_Channel_Identifier;
+
+         -- Payload type
+         Lsbit : Boolean;
+         Rfci : Boolean;
+         Msbit : Boolean;
+
+         Cell_Loss_Priority : Boolean;
+         Header_Error_Control : Header_Error_Control;
+         Payload : Opaque
+            with Size => 48;
+      end message;
+
+end ATM;
