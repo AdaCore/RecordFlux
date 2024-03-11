@@ -1,0 +1,64 @@
+package Wireguard is
+   -- Specification: https://www.wireguard.com/papers/wireguard.pdf
+
+   type Message_Type is
+      (Handshake_Init        => 16#01#,
+      Handshake_Response     => 16#02#,
+      Cookie                 => 16#03#,
+      Transport_Data_Message => 16#04#)
+   with Size => 1 * 8;
+
+   type Reserved is range 0 .. 0 with Size => 3 * 8;
+
+   type Handshake is
+      message
+         Message_Type : Message_Type;
+         Reserved : Reserved
+            then Sender
+               if Message_Type = Handshake_Init or Message_Type = Handshake_Response
+            then Receiver
+               if Message_Type = Transport_Data_Message or Message_Type = Cookie;
+         Sender : Opaque
+            with Size => 4 * 8
+            then Ephemeral
+               if Message_Type = Handshake_Init
+            then Receiver
+               if Message_Type = Handshake_Response;
+         Receiver : Opaque
+            with Size => 4 * 8
+            then Ephemeral
+               if Message_Type = Handshake_Response
+            then Counter
+               if Message_Type = Transport_Data_Message
+            then Nonce
+               if Message_Type = Cookie;
+         Ephemeral : Opaque
+            with Size => 32 * 8
+            then Static
+               if Message_Type = Handshake_Init
+            then Empty
+               if Message_Type = Handshake_Response;
+         Empty : Opaque
+            with Size => 16 * 8
+            then Mac_First;
+         Static : Opaque
+            with Size => 48 * 8;
+         Timestamp : Opaque
+            with Size => 28 * 8
+            then Mac_First;
+         Nonce : Opaque
+            with Size => 24 * 8;
+         Cookie_Data : Opaque
+            with Size => 32 * 8
+            then null;
+         Mac_First : Opaque
+            with Size => 16 * 8;
+         Mac_Second : Opaque
+            with Size => 16 * 8
+            then null;
+         Counter : Opaque
+            with Size => 8 * 8;
+         Packet : Opaque;
+      end message;
+
+end Wireguard;
