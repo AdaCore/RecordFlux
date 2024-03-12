@@ -1903,12 +1903,16 @@ class Message(mty.Type):
                     t = self.types[f]
                     if isinstance(t, mty.Opaque):
                         element_size = t.element_size
-                        start_aligned = expr.Not(
-                            expr.Equal(
-                                expr.Mod(self._target_first(last), element_size),
-                                expr.Number(1),
-                                last.location,
+                        start_aligned = expr.NotEqual(
+                            expr.Mod(
+                                expr.Add(
+                                    self._target_first(last),
+                                    expr.Number(-1),
+                                ).simplified(),
+                                element_size,
                             ),
+                            expr.Number(0),
+                            last.location,
                         )
 
                         path_message = " -> ".join([p.target.name for p in path])
