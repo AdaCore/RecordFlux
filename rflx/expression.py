@@ -12,7 +12,7 @@ from enum import Enum
 from itertools import groupby
 from operator import itemgetter
 from sys import intern
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Final, Optional, Union
 
 import z3
 
@@ -26,7 +26,8 @@ from rflx.identifier import ID, StrID
 if TYPE_CHECKING:
     from _typeshed import SupportsAllComparisons
 
-MAX_LINE_LENGTH = 100
+MAX_LINE_LENGTH: Final = 100
+PROVER_TIMEOUT: Final = 600000
 
 
 class Z3TypeError(TypeError):
@@ -59,6 +60,7 @@ class Proof:
         self._unknown_reason: Optional[str] = None
 
         solver = z3.SolverFor(self._logic)
+        solver.set("timeout", PROVER_TIMEOUT)
         solver.add(self._expr.z3expr())
         for f in self._facts:
             solver.add(f.z3expr())
@@ -162,10 +164,19 @@ class ParallelProofs:
         result = RecordFluxError()
         proof = job.goal.check(job.facts)
         result.extend(job.results[proof.result])
-        if job.add_unsat and proof.result != ProofResult.SAT:
+        if (
+            job.add_unsat and proof.result == ProofResult.UNSAT
+        ) or proof.result == ProofResult.UNKNOWN:
             result.extend(
                 [
-                    (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, locn)
+                    (
+                        f'unsatisfied "{m}"'
+                        if proof.result == ProofResult.UNSAT
+                        else f"reason: {m}",
+                        Subsystem.MODEL,
+                        Severity.INFO,
+                        locn,
+                    )
                     for m, locn in proof.error
                 ],
             )
