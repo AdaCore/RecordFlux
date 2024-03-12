@@ -662,6 +662,18 @@ def test_install_vscode_extension(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
 
     assert run_called == [["code", "--install-extension", vscode_extension, "--force"]]
 
+    def run_mock(cmd: object, check: object) -> subprocess.CompletedProcess[object]:  # noqa: ARG001
+        raise FileNotFoundError("file not found")
+
+    monkeypatch.setattr(subprocess, "run", run_mock)
+
+    assert (
+        str(
+            cli.main(["rflx", "install", "vscode"]),
+        )
+        == "cli: error: installation of VS Code extension failed: file not found"
+    )
+
 
 def test_install_invalid() -> None:
     args = ["rflx", "install", "invalid"]

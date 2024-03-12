@@ -683,7 +683,10 @@ def install(args: argparse.Namespace) -> None:
 
     elif args.ide is IDE.VSCODE:
         with importlib_resources.as_file(vscode_extension()) as extension:
-            subprocess.run(["code", "--install-extension", extension, "--force"], check=False)
+            try:
+                subprocess.run(["code", "--install-extension", extension, "--force"], check=True)
+            except (FileNotFoundError, subprocess.CalledProcessError) as e:
+                fail(f"installation of VS Code extension failed: {e}", Subsystem.CLI)
 
     else:
         assert_never(args.ide)  # pragma: no cover
