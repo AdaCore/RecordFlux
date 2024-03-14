@@ -302,7 +302,7 @@ def test_model_name_conflict_sessions() -> None:
     )
 
 
-def test_model_illegal_first_aspect_at_initial_link() -> None:
+def test_model_illegal_first_aspect_on_initial_link() -> None:
     assert_error_string(
         """\
         package Test is
@@ -316,7 +316,7 @@ def test_model_illegal_first_aspect_at_initial_link() -> None:
               end message;
         end Test;
         """,
-        r"^<stdin>:7:30: model: error: illegal first aspect at initial link$",
+        r"^<stdin>:7:30: model: error: illegal first aspect on initial link$",
     )
 
 

@@ -449,7 +449,7 @@ Additional `then clauses <#grammar-token-then_clause>`_ enable the definition of
         :  [ "(" `named_argument_list` ")" ]
         :  [ "with" `aspects` ]
         :  { `then_clause` } ";"
-   null_field: "null" `then_clause` ";"
+   null_field: "null" `then_clause` { `then_clause` } ";"
    target_field: field_`name` | "null"
    then_clause: "then" `target_field`
               :  [ "with" `aspects` ]

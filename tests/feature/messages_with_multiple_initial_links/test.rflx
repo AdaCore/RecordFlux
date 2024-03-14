@@ -1,0 +1,14 @@
+with Universal;
+
+package Test is
+
+   type M (P : Boolean) is
+      message
+         null
+            then F1 if P = True
+            then F2 if P = False;
+         F1 : Universal::Value;
+         F2 : Universal::Value;
+      end message;
+
+end Test;

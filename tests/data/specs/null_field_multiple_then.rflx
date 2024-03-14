@@ -1,0 +1,17 @@
+package Null_Field_Multiple_Then is
+
+   type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+
+   type Message (P : Boolean) is
+      message
+         null
+            then F1
+               if P = True
+            then F2
+               if P = False;
+         F1 : T
+            then null;
+         F2 : T;
+      end message;
+
+end Null_Field_Multiple_Then;

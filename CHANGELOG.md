@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Allow multiple initial links in messages
+
 ### Changed
 
 - Improve performance of code optimizer (requires SPARK 25; eng/recordflux/RecordFlux#1533)

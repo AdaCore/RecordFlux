@@ -1212,8 +1212,6 @@ def create_message_structure(
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)
 
-    structure: list[model.Link] = []
-
     field_identifiers = {
         # Do not store errors in `error` object as this would result in duplicate error messages
         # from the invocation of create_message_types
@@ -1222,20 +1220,18 @@ def create_message_structure(
     }
 
     if fields.f_initial_field:
-        structure.append(
-            model.Link(
-                model.INITIAL,
-                *extract_then(fields.f_initial_field.f_then),
-            ),
-        )
+        structure = [
+            model.Link(model.INITIAL, *extract_then(then))
+            for then in fields.f_initial_field.f_thens
+        ]
     else:
-        structure.append(
+        structure = [
             model.Link(
                 model.INITIAL,
                 model.Field(field_identifiers[0]),
                 location=field_identifiers[0].location,
             ),
-        )
+        ]
 
     for i, field in enumerate(fields.f_fields):
         source_node = model.Field(field_identifiers[i]) if field.f_identifier else model.INITIAL

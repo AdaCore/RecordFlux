@@ -1,0 +1,8 @@
+package P is
+   type M is
+      message
+         null;
+         F1 : Opaque
+            with Size => 8;
+      end message;
+end P;

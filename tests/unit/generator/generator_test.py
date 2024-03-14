@@ -2231,3 +2231,30 @@ def test_generate_string_substitution() -> None:
 )
 def test_comment_box(lines: list[str], width: int, result: str) -> None:
     assert common.comment_box(lines, width) == result
+
+
+def test_generate_multiple_initial_conditions(tmp_path: Path) -> None:
+    message = Message(
+        "P::Message",
+        [
+            Link(INITIAL, Field("Tag"), condition=expr.Equal(expr.Variable("P"), expr.TRUE)),
+            Link(Field("Tag"), FINAL),
+            Link(INITIAL, Field("Length"), condition=expr.Equal(expr.Variable("P"), expr.FALSE)),
+            Link(
+                Field("Length"),
+                Field("Data"),
+                size=expr.Add(expr.Size(expr.Variable("Length")), expr.Number(8)),
+            ),
+            Link(
+                Field("Data"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("Tag"): models.enumeration(),
+            Field("Length"): models.universal_length(),
+            Field("Data"): mty.OPAQUE,
+            Field("P"): mty.BOOLEAN,
+        },
+    )
+    Generator().generate(Model([message]), Integration(), tmp_path)

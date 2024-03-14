@@ -925,32 +925,17 @@ class Message(mty.Type):
     def _validate_initial_link(self) -> None:
         initial_links = self.outgoing(INITIAL)
 
-        if len(initial_links) != 1:
+        if any(l.first != expr.UNDEFINED for l in initial_links):
             self.error.extend(
                 [
                     (
-                        f'ambiguous first field in "{self.identifier}"',
+                        "illegal first aspect on initial link",
                         Subsystem.MODEL,
                         Severity.ERROR,
-                        self.location,
-                    ),
-                    *[
-                        ("duplicate", Subsystem.MODEL, Severity.INFO, l.target.identifier.location)
-                        for l in self.outgoing(INITIAL)
-                        if l.target.identifier.location
-                    ],
-                ],
-            )
-
-        if initial_links[0].first != expr.UNDEFINED:
-            self.error.extend(
-                [
-                    (
-                        "illegal first aspect at initial link",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        initial_links[0].first.location,
-                    ),
+                        l.first.location,
+                    )
+                    for l in initial_links
+                    if l.first != expr.UNDEFINED
                 ],
             )
 
@@ -1464,9 +1449,23 @@ class Message(mty.Type):
 
     def _verify_links(self) -> None:
         for link in self.structure:
+            self._verify_empty(link)
             self._verify_attributes(link.condition)
             self._verify_link_first(link)
             self._verify_link_size(link)
+
+    def _verify_empty(self, link: Link) -> None:
+        if link.source == INITIAL and link.target == FINAL:
+            self.error.extend(
+                [
+                    (
+                        "invalid empty message",
+                        Subsystem.MODEL,
+                        Severity.ERROR,
+                        link.location,
+                    ),
+                ],
+            )
 
     def _verify_attributes(self, expression: expr.Expr) -> None:
         for a in expression.findall(lambda x: isinstance(x, expr.Attribute)):

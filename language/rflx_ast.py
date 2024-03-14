@@ -363,7 +363,7 @@ class TypeArgument(RFLXNode):
 
 
 class NullMessageField(RFLXNode):
-    then = Field(type=Then)
+    thens = Field(type=Then.list)
 
 
 class MessageField(RFLXNode):

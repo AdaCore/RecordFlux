@@ -360,7 +360,7 @@ grammar.add_rules(
         Opt(grammar.if_condition),
     ),
     type_argument=ast.TypeArgument(grammar.unqualified_identifier, "=>", grammar.expression),
-    null_message_field=ast.NullMessageField("null", grammar.then, ";"),
+    null_message_field=ast.NullMessageField("null", List(grammar.then), ";"),
     message_field=ast.MessageField(
         grammar.unqualified_identifier,
         ":",

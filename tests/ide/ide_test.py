@@ -119,7 +119,7 @@ def test_multiple_errors() -> None:
             f"{path}:194:19: model: info: condition 1 (F1 -> Final): F1 > 50",
             f'{path}:204:10: model: error: unreachable field "F2" in "RFLX_Invalid::M9"',
             f'{path}:219:18: model: error: fixed size field "F1" with size aspect',
-            f"{path}:229:30: model: error: illegal first aspect at initial link",
+            f"{path}:229:30: model: error: illegal first aspect on initial link",
             f'{path}:238:19: model: error: undefined variable "F1"',
             f"{path}:238:19: model: info: on path F1",
             f'{path}:247:29: model: error: negative size for field "F2" (F1 -> F2)',

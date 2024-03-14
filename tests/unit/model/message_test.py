@@ -231,30 +231,6 @@ def test_missing_type() -> None:
     )
 
 
-def test_ambiguous_first_field() -> None:
-    t = Integer("P::T", Number(0), Number(1), Number(1))
-
-    structure = [
-        Link(INITIAL, Field(ID("X", Location((2, 6))))),
-        Link(INITIAL, Field(ID("Y", Location((3, 6))))),
-        Link(Field("X"), Field("Z")),
-        Link(Field("Y"), Field("Z")),
-        Link(Field("Z"), FINAL),
-    ]
-
-    types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
-
-    assert_message_model_error(
-        structure,
-        types,
-        '^<stdin>:10:8: model: error: ambiguous first field in "P::M"\n'
-        "<stdin>:2:6: model: info: duplicate\n"
-        "<stdin>:3:6: model: info: duplicate"
-        r"$",
-        location=Location((10, 8)),
-    )
-
-
 def test_illegal_first_aspect_at_initial_link() -> None:
     t = Integer("P::T", Number(0), Number(1), Number(1))
 
@@ -268,7 +244,7 @@ def test_illegal_first_aspect_at_initial_link() -> None:
     assert_message_model_error(
         structure,
         types,
-        "^<stdin>:10:20: model: error: illegal first aspect at initial link$",
+        "^<stdin>:10:20: model: error: illegal first aspect on initial link$",
     )
 
 
@@ -5322,3 +5298,27 @@ def test_message_link_first_complex() -> None:
     )
     assert msg.link_first(lnk1) == (Field("Payload"), Size(Variable("F_Payload")))
     assert msg.link_first(lnk2) == (Field("Payload"), Add(Size(Variable("F_Payload")), Number(8)))
+
+
+def test_message_reject_empty() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match="^<stdin>:1:10: model: error: invalid empty message$",
+    ):
+        Message(
+            "P::Message",
+            [
+                Link(
+                    INITIAL,
+                    FINAL,
+                    condition=Equal(Variable("P"), TRUE),
+                    location=Location((1, 10)),
+                ),
+                Link(INITIAL, Field("F"), condition=Equal(Variable("P"), FALSE)),
+                Link(Field("F"), FINAL),
+            ],
+            {
+                Field("P"): BOOLEAN,
+                Field("F"): models.integer(),
+            },
+        )
