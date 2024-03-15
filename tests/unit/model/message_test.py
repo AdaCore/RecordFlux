@@ -5461,3 +5461,34 @@ def test_message_refinement_with_scalar() -> None:
                 Integer(ID("P::Bar"), Number(0), Number(255), size=Number(8)),
             ],
         )
+
+
+def test_invalid_missing_field() -> None:
+    m1 = Message(
+        "P::M1",
+        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+        {Field("F"): models.integer()},
+    )
+
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r'model: error: unreachable field "F2_F" in "P::M2"\n'
+            r'model: error: no path to FINAL for field "Initial" in "P::M2"'
+            "$"
+        ),
+    ):
+        UncheckedMessage(
+            ID("P::M2"),
+            [
+                Link(INITIAL, Field("F1")),
+                Link(Field("F1"), Field("Missing")),
+                Link(Field("F2"), FINAL),
+            ],
+            [],
+            [
+                (Field("F1"), models.integer().identifier, []),
+                (Field("F2"), m1.identifier, []),
+            ],
+        ).checked([OPAQUE, models.integer(), m1])

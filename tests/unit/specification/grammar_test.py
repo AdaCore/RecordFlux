@@ -139,10 +139,10 @@ def test_qualified_identifier(string: str, expected: ID) -> None:
         ("1_000", expr.Number(1000)),
         ("16#6664#", expr.Number(26212)),
         ("16#66_64#", expr.Number(26212)),
-        ("-1000", expr.Number(-1000)),
-        ("-1_000", expr.Number(-1000)),
-        ("-16#6664#", expr.Number(-26212)),
-        ("-16#66_64#", expr.Number(-26212)),
+        ("-1000", expr.Neg(expr.Number(1000))),
+        ("-1_000", expr.Neg(expr.Number(1000))),
+        ("-16#6664#", expr.Neg(expr.Number(26212, base=16))),
+        ("-16#66_64#", expr.Neg(expr.Number(26212, base=16))),
     ],
 )
 def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
@@ -271,7 +271,19 @@ def test_expression_suffix(string: str, expected: expr.Expr) -> None:
         ),
         (
             "A + B * (-8)",
-            expr.Add(expr.Variable("A"), expr.Mul(expr.Variable("B"), expr.Number(-8))),
+            expr.Add(expr.Variable("A"), expr.Mul(expr.Variable("B"), expr.Neg(expr.Number(8)))),
+        ),
+        (
+            "1 - - (2 + 3)",
+            expr.Sub(
+                expr.Number(1),
+                expr.Neg(
+                    expr.Add(
+                        expr.Number(2),
+                        expr.Number(3),
+                    ),
+                ),
+            ),
         ),
         (
             "A + B mod 8 * 2",

@@ -1,0 +1,10 @@
+package Negation is
+   type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type M is
+      message
+         L1 : T;
+         L2 : T;
+         F : Opaque
+            with Size => 8 * (L1 - - L2);
+      end message;
+end Negation;

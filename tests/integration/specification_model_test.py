@@ -808,3 +808,14 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
         with pytest.raises(RecordFluxError, match=regex):  # noqa: PT012
             p.parse(test_spec)
             p.create_model()
+
+
+def test_parse_error_negated_variable() -> None:
+    assert_error_string(
+        """\
+            package P1 is
+               type Kind is range 0 .. 2 ** 16 - 1 with Size => - Cobra16;
+            end P1;
+            """,
+        '^<stdin>:2:9: model: error: size of "Kind" contains variable$',
+    )

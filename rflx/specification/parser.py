@@ -397,6 +397,19 @@ OPERATIONS: Mapping[str, type[expr.BinExpr]] = {
 def create_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.BinOp)
     loc = node_location(expression, filename)
+    if expression.f_right is None:
+        error.extend(  # type: ignore[unreachable]
+            [
+                (
+                    "missing right operand",
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    loc,
+                ),
+            ],
+        )
+        error.propagate()
+
     if expression.f_op.kind_name in OPERATIONS:
         return OPERATIONS[expression.f_op.kind_name](
             create_expression(error, expression.f_left, filename),
@@ -768,9 +781,23 @@ def create_function_decl(
 
 def create_negation(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Negation)
-    math_expr = create_math_expression(error, expression.f_data, filename)
-    assert isinstance(math_expr, expr.Number)
-    return expr.Number(-math_expr.value, math_expr.base, node_location(expression, filename))
+    if expression.f_data is None:
+        error.extend(  # type: ignore[unreachable]
+            [
+                (
+                    "negation of non-expression",
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    node_location(expression, filename),
+                ),
+            ],
+        )
+        error.propagate()
+
+    return expr.Neg(
+        create_math_expression(error, expression.f_data, filename),
+        node_location(expression, filename),
+    )
 
 
 def create_concatenation(
@@ -1047,6 +1074,19 @@ def create_range(
             ],
         )
         return None
+    if rangetype.f_size.f_value is None:
+        error.extend(  # type: ignore[unreachable]
+            [
+                (
+                    '"Size" aspect has no value',
+                    Subsystem.PARSER,
+                    Severity.ERROR,
+                    node_location(rangetype.f_size, filename),
+                ),
+            ],
+        )
+        return None
+
     size = create_math_expression(error, rangetype.f_size.f_value, filename)
     return model.UncheckedInteger(
         identifier,
@@ -1183,6 +1223,19 @@ def create_message_structure(
         for name, locations in grouped.items():
             check_duplicate_aspect(error, name, [l for _, l in locations])
             aspect, location = locations[0]
+
+            if aspect.f_value is None:
+                error.extend(  # type: ignore[unreachable]
+                    [
+                        (
+                            f'"{name}" aspect has no value',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            location,
+                        ),
+                    ],
+                )
+                continue
 
             if name == "Size":
                 size = create_math_expression(error, aspect.f_value, filename)

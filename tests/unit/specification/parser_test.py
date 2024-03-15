@@ -3668,3 +3668,106 @@ def test_negated_case_expression() -> None:
 def test_parse_only() -> None:
     p = parser.Parser()
     p.parse(*(SPEC_DIR / "parse_only").glob("*"))
+
+
+@pytest.mark.parametrize(
+    ("string", "regex"),
+    [
+        (
+            """\
+            package Test is
+               type M is
+                  message
+                     F : T
+                        then null if X = (X = );
+                  end message;
+            end Test;
+            """,
+            "^<stdin>:5:31: parser: error: missing right operand$",
+        ),
+        (
+            """\
+            package Message_Size is
+               type T is range 0 .. 2 ** 8 with Size => 8;
+               type M is
+                  message
+                     A : T;
+                     B : Opaque
+                        with Size => A * 8
+                        then null
+                           if Message'Size = (A + )'Size * 8
+                        then C
+                           if Message'Last = B'Last + 8;
+                     C : T;
+                  end message;
+            end Message_Size;
+            """,
+            "^<stdin>:9:35: parser: error: missing right operand$",
+        ),
+        (
+            """\
+            package Test is
+               type T is range 0 .. 2 ** 8 - 1 with Size => (8 / )'Size;
+            end Test;
+            """,
+            "^<stdin>:2:50: parser: error: missing right operand$",
+        ),
+        (
+            """\
+            package Test is
+               type T is range 0 .. (- + 1) with Size => 8;
+            end Test;
+            """,
+            "^<stdin>:2:26: parser: error: negation of non-expression$",
+        ),
+        (
+            """\
+            package Test is
+               type M is
+                  message
+                     F : T then null if (A /= = B);
+                  end message;
+            end Test;
+            """,
+            "^<stdin>:4:30: parser: error: missing right operand$",
+        ),
+    ],
+    ids=range(1, 6),
+)
+def test_parse_error_duplicate_operator(string: str, regex: str) -> None:
+    assert_error_string(string, regex)
+
+
+@pytest.mark.parametrize(
+    ("string", "regex"),
+    [
+        (
+            """\
+            package Test is
+               type T is range 0 .. 2 ** 8 - 1 with Size;
+            end Test;
+            """,
+            '^<stdin>:2:41: parser: error: "Size" aspect has no value$',
+        ),
+        (
+            """\
+            package Test is
+               type T is range 0 .. 255 with Size => 8;
+               type M is
+                  message
+                     F1 : T
+                        with First
+                        then F2;
+                     F2 : T
+                        then null
+                           if True;
+                  end message;
+            end Test;
+            """,
+            '^<stdin>:6:18: parser: error: "First" aspect has no value$',
+        ),
+    ],
+    ids=range(1, 3),
+)
+def test_parse_error_aspect_without_expression(string: str, regex: str) -> None:
+    assert_error_string(string, regex)
