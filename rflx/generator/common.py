@@ -71,12 +71,12 @@ def substitution(
     prefix: str,
     embedded: bool = False,
     public: bool = False,
-    target_type: Optional[ID] = const.TYPES_BASE_INT,
+    target_type: ID = const.TYPES_BASE_INT,
 ) -> Callable[[expr.Expr], expr.Expr]:
     facts = substitution_facts(message, prefix, embedded, public, target_type)
 
     def type_conversion(expression: expr.Expr) -> expr.Expr:
-        return expr.Call(target_type, [expression]) if target_type else expression
+        return expr.Call(target_type, [expression])
 
     def func(  # noqa: PLR0912
         expression: expr.Expr,
@@ -212,7 +212,7 @@ def substitution_facts(
     prefix: str,
     embedded: bool = False,
     public: bool = False,
-    target_type: Optional[ID] = const.TYPES_BASE_INT,
+    target_type: ID = const.TYPES_BASE_INT,
 ) -> dict[expr.Name, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
         return expr.Variable(ID("Ctx") * name) if not embedded else expr.Variable(name)
@@ -287,7 +287,7 @@ def substitution_facts(
         assert False, f'unexpected type "{type(field_type).__name__}"'
 
     def type_conversion(expression: expr.Expr) -> expr.Expr:
-        return expr.Call(target_type, [expression]) if target_type else expression
+        return expr.Call(target_type, [expression])
 
     return {
         expr.First("Message"): type_conversion(first),
