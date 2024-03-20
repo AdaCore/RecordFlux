@@ -1146,11 +1146,26 @@ class Message(mty.Type):
                 self.package,
             )
 
-        fields_map = {f.identifier: f.identifier for f in (INITIAL, *types, FINAL)}
+        # While field_identifiers is an identity map, it still permits looking up a the
+        # canonical name of an identifier. This is because the keys are instances
+        # of ID, whose equality is case insensitive.
+
+        field_identifiers = {f.identifier: f.identifier for f in (INITIAL, *types, FINAL)}
+
         structure = [
             Link(
-                Field(ID(fields_map[l.source.identifier], location=l.source.identifier.location)),
-                Field(ID(fields_map[l.target.identifier], location=l.target.identifier.location)),
+                Field(
+                    ID(
+                        field_identifiers[l.source.identifier],
+                        location=l.source.identifier.location,
+                    ),
+                ),
+                Field(
+                    ID(
+                        field_identifiers[l.target.identifier],
+                        location=l.target.identifier.location,
+                    ),
+                ),
                 l.condition.substituted(substitute),
                 l.size.substituted(substitute),
                 l.first.substituted(substitute),
