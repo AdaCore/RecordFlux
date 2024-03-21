@@ -1176,6 +1176,17 @@ class Div(MathBinExpr):
         left = self.left.simplified()
         right = self.right.simplified()
         if isinstance(left, Number) and isinstance(right, Number):
+            if right.value == 0:
+                raise RecordFluxError(
+                    [
+                        (
+                            "division by zero",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        ),
+                    ],
+                )
             return left // right
         return Div(left, right)
 
@@ -1230,6 +1241,17 @@ class Mod(MathBinExpr):
         left = self.left.simplified()
         right = self.right.simplified()
         if isinstance(left, Number) and isinstance(right, Number):
+            if right.value == 0:
+                raise RecordFluxError(
+                    [
+                        (
+                            "modulo by zero",
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        ),
+                    ],
+                )
             return left % right
         return Mod(left, right)
 

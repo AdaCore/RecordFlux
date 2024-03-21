@@ -3348,3 +3348,19 @@ def test_case_to_ir() -> None:
             INT_TY,
         ),
     )
+
+
+def test_invalid_division_by_zero() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(r"^model: error: division by zero$"),
+    ):
+        Div(Number(255), Number(0)).simplified()
+
+
+def test_invalid_modulo_by_zero() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(r"^model: error: modulo by zero$"),
+    ):
+        Mod(Number(255), Number(0)).simplified()
