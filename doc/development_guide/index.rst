@@ -90,7 +90,6 @@ Alternatively, RecordFlux can be executed also via Poetry by executing `.venv.po
 
 Poetry locks the dependencies to ensure deterministic test results.
 `poetry lock` creates the lock file `poetry.lock` based on the dependencies listed in `pyproject.toml`.
-If `devutils` has been changed, execute `poetry add --group=dev "./devutils[devel]"` to correctly reflect its state in the lock file.
 
 VS Code extension
 =================
