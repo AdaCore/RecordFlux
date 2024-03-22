@@ -980,3 +980,22 @@ end Test;
         match=r"^<stdin>:22:17: model: error: comparisons of opaque fields not yet supported$",
     ):
         utils.assert_compilable_code_string(spec, tmp_path)
+
+
+def test_boolean_condition(tmp_path: Path) -> None:
+    spec = """\
+package Test is
+
+   type T is range 0 .. 127 with Size => 7;
+
+   type M is
+      message
+         A : Boolean;
+         B : T
+            then null
+               if A;
+      end message;
+
+end Test;
+    """
+    utils.assert_compilable_code_string(spec, tmp_path)
