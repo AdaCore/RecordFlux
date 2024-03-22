@@ -65,13 +65,15 @@ def fixture_icmp_checksum_message_value(icmp_message: model.Message) -> pyrflx.M
     return pyrflx.MessageValue(
         icmp_message.copy(
             structure=[
-                model.Link(
-                    l.source,
-                    l.target,
-                    condition=expr.And(l.condition, expr.ValidChecksum("Checksum")),
+                (
+                    model.Link(
+                        l.source,
+                        l.target,
+                        condition=expr.And(l.condition, expr.ValidChecksum("Checksum")),
+                    )
+                    if l.target == model.FINAL
+                    else l
                 )
-                if l.target == model.FINAL
-                else l
                 for l in icmp_message.structure
             ],
             checksums={
@@ -96,13 +98,15 @@ def fixture_icmp_checksum_message_first(icmp_message: model.Message) -> pyrflx.M
     return pyrflx.MessageValue(
         icmp_message.copy(
             structure=[
-                model.Link(
-                    l.source,
-                    l.target,
-                    condition=expr.And(l.condition, expr.ValidChecksum("Checksum")),
+                (
+                    model.Link(
+                        l.source,
+                        l.target,
+                        condition=expr.And(l.condition, expr.ValidChecksum("Checksum")),
+                    )
+                    if l.target == model.FINAL
+                    else l
                 )
-                if l.target == model.FINAL
-                else l
                 for l in icmp_message.structure
             ],
             checksums={

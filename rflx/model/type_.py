@@ -448,7 +448,7 @@ class Enumeration(Scalar):
         if proof and self.always_valid:
             # Add a dummy literal to indicate that there are other valid values,
             # thus preventing a condition from being falsely detected as always true.
-            for v in range(0, 2**self.size.value):  # pragma: no branch
+            for v in range(2**self.size.value):  # pragma: no branch
                 if expr.Number(v) not in literals.values():
                     literals["L_" + self.identifier.name + f"_{v}"] = expr.Number(v)
                     break

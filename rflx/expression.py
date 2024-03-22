@@ -170,9 +170,11 @@ class ParallelProofs:
             result.extend(
                 [
                     (
-                        f'unsatisfied "{m}"'
-                        if proof.result == ProofResult.UNSAT
-                        else f"reason: {m}",
+                        (
+                            f'unsatisfied "{m}"'
+                            if proof.result == ProofResult.UNSAT
+                            else f"reason: {m}"
+                        ),
                         Subsystem.MODEL,
                         Severity.INFO,
                         locn,
@@ -484,9 +486,11 @@ class AssExpr(Expr):
 
     def _update_str(self) -> None:
         self._str = intern(
-            self.symbol.join(map(self.parenthesized, self.terms))
-            if self.terms
-            else str(self.neutral_element()),
+            (
+                self.symbol.join(map(self.parenthesized, self.terms))
+                if self.terms
+                else str(self.neutral_element())
+            ),
         )
 
     @abstractmethod
@@ -2690,9 +2694,11 @@ class IfExpr(Expr):
         if len(expression) > MAX_LINE_LENGTH:
             expression = ""
             expression = "".join(
-                f"if\n{indent(c, 4)}\n then\n{indent(e, 4)}"
-                if i == 0
-                else f"\n elsif\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                (
+                    f"if\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                    if i == 0
+                    else f"\n elsif\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                )
                 for i, (c, e) in enumerate(condition_expressions)
             )
             if self.else_expression:
@@ -3505,15 +3511,23 @@ def _entity_name(expr: Expr) -> str:
     expr_type = (
         "variable"
         if isinstance(expr, Variable)
-        else "literal"
-        if isinstance(expr, Literal)
-        else "function"
-        if isinstance(expr, Call)
-        else "type"
-        if isinstance(expr, Conversion)
-        else "message"
-        if isinstance(expr, (MessageAggregate, DeltaMessageAggregate))
-        else "expression"
+        else (
+            "literal"
+            if isinstance(expr, Literal)
+            else (
+                "function"
+                if isinstance(expr, Call)
+                else (
+                    "type"
+                    if isinstance(expr, Conversion)
+                    else (
+                        "message"
+                        if isinstance(expr, (MessageAggregate, DeltaMessageAggregate))
+                        else "expression"
+                    )
+                )
+            )
+        )
     )
     expr_name = (
         str(expr.identifier)
@@ -3621,9 +3635,11 @@ class CaseExpr(Expr):
                     ),
                     *[
                         (
-                            f"missing range {r[0]} .. {r[1]}"
-                            if r[0] != r[1]
-                            else f"missing value {r[0]}",
+                            (
+                                f"missing range {r[0]} .. {r[1]}"
+                                if r[0] != r[1]
+                                else f"missing value {r[0]}"
+                            ),
                             Subsystem.MODEL,
                             Severity.INFO,
                             self.expr.type_.location,

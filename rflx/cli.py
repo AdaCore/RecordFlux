@@ -550,11 +550,11 @@ def generate(args: argparse.Namespace) -> None:
         args.prefix,
         workers=args.workers,
         reproducible=args.reproducible,
-        debug=Debug.BUILTIN
-        if args.debug == "built-in"
-        else Debug.EXTERNAL
-        if args.debug == "external"
-        else Debug.NONE,
+        debug=(
+            Debug.BUILTIN
+            if args.debug == "built-in"
+            else Debug.EXTERNAL if args.debug == "external" else Debug.NONE
+        ),
         ignore_unsupported_checksum=args.ignore_unsupported_checksum,
     ).generate(
         model,
@@ -683,7 +683,7 @@ def install(args: argparse.Namespace) -> None:
 
     elif args.ide is IDE.VSCODE:
         with importlib_resources.as_file(vscode_extension()) as extension:
-            subprocess.run(["code", "--install-extension", extension, "--force"])
+            subprocess.run(["code", "--install-extension", extension, "--force"], check=False)
 
     else:
         assert_never(args.ide)  # pragma: no cover

@@ -27,7 +27,7 @@ FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pyca
 
 
 class ConfigFile(BaseModel):
-    input: Optional[ty.Mapping[str, Optional[ty.Sequence[str]]]]  # noqa: A003
+    input: Optional[ty.Mapping[str, Optional[ty.Sequence[str]]]]
     output: Optional[ty.Sequence[str]]
     sequence: Optional[str]
     prove: Optional[ty.Sequence[str]]
@@ -69,13 +69,15 @@ def get_config(feature: str) -> Config:
         yaml = YAML(typ="safe")
         cfg = ConfigFile.parse_obj(yaml.load(config_file))
         return Config(
-            {
-                str(c): [tuple(int(e) for e in str(m).split()) for m in i]
-                for c, i in cfg.input.items()
-                if i is not None
-            }
-            if cfg.input is not None
-            else {},
+            (
+                {
+                    str(c): [tuple(int(e) for e in str(m).split()) for m in i]
+                    for c, i in cfg.input.items()
+                    if i is not None
+                }
+                if cfg.input is not None
+                else {}
+            ),
             cfg.output if cfg.output is not None else [],
             cfg.sequence if cfg.sequence else "",
             cfg.prove,

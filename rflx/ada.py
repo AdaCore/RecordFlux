@@ -10,6 +10,8 @@ from enum import Enum
 from sys import intern
 from typing import Optional, Union
 
+from typing_extensions import Self
+
 from rflx import expression as expr
 from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.contract import invariant
@@ -790,9 +792,11 @@ class IfExpr(Expr):
         if len(expression) > MAX_LINE_LENGTH:
             expression = ""
             expression = "".join(
-                f"if\n{indent(c, 4)}\n then\n{indent(e, 4)}"
-                if i == 0
-                else f"\n elsif\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                (
+                    f"if\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                    if i == 0
+                    else f"\n elsif\n{indent(c, 4)}\n then\n{indent(e, 4)}"
+                )
                 for i, (c, e) in enumerate(condition_expressions)
             )
             if self.else_expression:
@@ -2336,7 +2340,7 @@ class PackageUnit(Unit):
         self.body_context = body_context
         self.body = body
 
-    def __iadd__(self, other: object) -> PackageUnit:
+    def __iadd__(self, other: object) -> Self:
         if isinstance(other, (UnitPart, SubprogramUnitPart)):
             self.declaration.declarations = [*self.declaration.declarations, *other.specification]
             self.declaration.private_declarations = [
@@ -2370,7 +2374,7 @@ class InstantiationUnit(Unit):
         self.context = context
         self.declaration = declaration
 
-    def __iadd__(self, other: object) -> Unit:
+    def __iadd__(self, other: object) -> Self:
         return NotImplemented
 
     @property
@@ -2403,7 +2407,7 @@ class UnitPart:
             )
         return NotImplemented
 
-    def __iadd__(self, other: object) -> UnitPart:
+    def __iadd__(self, other: object) -> Self:
         if isinstance(other, UnitPart):
             self.specification += other.specification
             self.body += other.body

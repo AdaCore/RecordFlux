@@ -162,20 +162,26 @@ def _check_duplicates(
             error.extend(
                 [
                     (
-                        f'conflicting refinement of "{d.pdu.identifier}" with'
-                        f' "{d.sdu.identifier}"'
-                        if isinstance(d, message.Refinement)
-                        else f'name conflict for type "{d.identifier}"'
-                        if isinstance(d, type_.Type)
-                        else f'name conflict for session "{d.identifier}"',
+                        (
+                            f'conflicting refinement of "{d.pdu.identifier}" with'
+                            f' "{d.sdu.identifier}"'
+                            if isinstance(d, message.Refinement)
+                            else (
+                                f'name conflict for type "{d.identifier}"'
+                                if isinstance(d, type_.Type)
+                                else f'name conflict for session "{d.identifier}"'
+                            )
+                        ),
                         Subsystem.MODEL,
                         Severity.ERROR,
                         d.location,
                     ),
                     (
-                        "previous occurrence of refinement"
-                        if isinstance(d, message.Refinement)
-                        else f'previous occurrence of "{d.identifier}"',
+                        (
+                            "previous occurrence of refinement"
+                            if isinstance(d, message.Refinement)
+                            else f'previous occurrence of "{d.identifier}"'
+                        ),
                         Subsystem.MODEL,
                         Severity.INFO,
                         seen[d.identifier].location,

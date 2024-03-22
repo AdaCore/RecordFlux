@@ -644,15 +644,17 @@ def session_main(
                                     ada.Number(i),
                                 ),
                             ),
-                            ada.Aggregate(*[ada.Number(b) for b in message])
-                            if len(message) > 1
-                            else ada.NamedAggregate(
-                                *[
-                                    (
-                                        ada.First("RFLX" * const.TYPES_INDEX),
-                                        ada.Number(message[0]),
-                                    ),
-                                ],
+                            (
+                                ada.Aggregate(*[ada.Number(b) for b in message])
+                                if len(message) > 1
+                                else ada.NamedAggregate(
+                                    *[
+                                        (
+                                            ada.First("RFLX" * const.TYPES_INDEX),
+                                            ada.Number(message[0]),
+                                        ),
+                                    ],
+                                )
                             ),
                         )
                         for channel, messages in input_channels.items()
@@ -883,7 +885,7 @@ def get_test_model(name: str) -> Model:
 
 
 def spark_version() -> str:
-    p = subprocess.run(["gnatprove", "--version"], stdout=subprocess.PIPE)
+    p = subprocess.run(["gnatprove", "--version"], stdout=subprocess.PIPE, check=False)
     m = re.fullmatch(
         r"SPARK Pro ([0-9]+)\.[0-9]w? \([0-9]+\)",
         p.stdout.decode("utf-8").split("\n")[0],

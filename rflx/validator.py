@@ -11,6 +11,7 @@ from types import TracebackType
 from typing import Optional, TextIO, Union
 
 from ruamel.yaml.main import YAML
+from typing_extensions import Self
 
 from rflx import expression as expr
 from rflx.identifier import ID, StrID
@@ -510,7 +511,7 @@ class OutputWriter:
             self.file = file
         self.classified_incorrectly = 0
 
-    def __enter__(self) -> OutputWriter:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(

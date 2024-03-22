@@ -263,9 +263,11 @@ def test_bin_expr_substituted() -> None:
     )
     assert_equal(
         NotEqual(Variable("X"), Number(1)).substituted(
-            lambda x: Variable(f"P_{x}")
-            if isinstance(x, Variable)
-            else (Equal(x.left, x.right) if isinstance(x, NotEqual) else x),
+            lambda x: (
+                Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (Equal(x.left, x.right) if isinstance(x, NotEqual) else x)
+            ),
         ),
         Equal(Variable("P_X"), Number(1)),
     )
@@ -372,9 +374,11 @@ def test_ass_expr_substituted() -> None:
     )
     assert_equal(
         And(Equal(Variable("X"), Number(1)), Variable("Y")).substituted(
-            lambda x: Variable(f"P_{x}")
-            if isinstance(x, Variable)
-            else (Or(*x.terms) if isinstance(x, And) else x),
+            lambda x: (
+                Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (Or(*x.terms) if isinstance(x, And) else x)
+            ),
         ),
         Or(Equal(Variable("P_X"), Number(1)), Variable("P_Y")),
     )
@@ -1272,9 +1276,11 @@ def test_attribute_substituted() -> None:
     )
     assert_equal(
         -First("X").substituted(
-            lambda x: Variable(f"P_{x}")
-            if isinstance(x, Variable)
-            else (Last(x.prefix) if isinstance(x, First) else x),
+            lambda x: (
+                Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (Last(x.prefix) if isinstance(x, First) else x)
+            ),
         ),
         -Last(Variable("P_X")),
     )
@@ -1396,9 +1402,11 @@ def test_aggregate_substituted() -> None:
     )
     assert_equal(
         Aggregate(Variable("X")).substituted(
-            lambda x: Variable(f"P_{x}")
-            if isinstance(x, Variable)
-            else (Aggregate(*([*x.elements, Variable("Y")])) if isinstance(x, Aggregate) else x),
+            lambda x: (
+                Variable(f"P_{x}")
+                if isinstance(x, Variable)
+                else (Aggregate(*([*x.elements, Variable("Y")])) if isinstance(x, Aggregate) else x)
+            ),
         ),
         Aggregate(Variable("P_X"), Variable("P_Y")),
     )

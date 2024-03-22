@@ -346,9 +346,11 @@ def test_no_verification_icmp_checksum(
     icmp_checksum_unv = MessageValue(
         icmp_message.copy(
             structure=[
-                Link(l.source, l.target, condition=And(l.condition, ValidChecksum("Checksum")))
-                if l.target == FINAL
-                else l
+                (
+                    Link(l.source, l.target, condition=And(l.condition, ValidChecksum("Checksum")))
+                    if l.target == FINAL
+                    else l
+                )
                 for l in icmp_message.structure
             ],
             checksums={

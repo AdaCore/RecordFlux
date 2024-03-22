@@ -9,6 +9,7 @@ def test_check() -> None:
     p = subprocess.run(
         ["rflx", "--no-caching", "check", SPEC_DIR / "ethernet.rflx"],
         capture_output=True,
+        check=False,
     )
     assert p.returncode == 0
     assert p.stdout.decode("utf-8") == ""
@@ -31,6 +32,7 @@ def test_check_error() -> None:
     p = subprocess.run(
         ["rflx", "--no-caching", "check", SPEC_DIR / "invalid" / "incorrect_name.rflx"],
         capture_output=True,
+        check=False,
     )
     assert p.returncode == 1
     assert p.stdout.decode("utf-8") == ""
@@ -57,6 +59,7 @@ def test_check_no_verification() -> None:
             SPEC_DIR / "ethernet.rflx",
         ],
         capture_output=True,
+        check=False,
     )
     assert p.returncode == 0
     assert p.stdout.decode("utf-8") == "model: warning: model verification skipped\n"
@@ -79,6 +82,7 @@ def test_generate(tmp_path: Path) -> None:
             SPEC_DIR / "ethernet.rflx",
         ],
         capture_output=True,
+        check=False,
     )
     assert p.returncode == 0
     assert p.stdout.decode("utf-8") == ""
@@ -133,6 +137,7 @@ def test_graph(tmp_path: Path) -> None:
             SPEC_DIR / "ethernet.rflx",
         ],
         capture_output=True,
+        check=False,
     )
     assert p.returncode == 0
     assert p.stdout.decode("utf-8") == ""
@@ -165,6 +170,7 @@ def test_validate() -> None:
             "Ethernet::Frame",
         ],
         capture_output=True,
+        check=False,
     )
     assert p.returncode == 0
     assert p.stdout.decode("utf-8") == textwrap.dedent(
@@ -199,6 +205,7 @@ def test_install(tmp_path: Path) -> None:
     p = subprocess.run(
         ["rflx", "install", "gnatstudio", "--gnat-studio-dir", tmp_path],
         capture_output=True,
+        check=False,
     )
     assert p.returncode == 0
     assert p.stdout.decode("utf-8") == textwrap.dedent(
@@ -214,6 +221,7 @@ def test_convert(tmp_path: Path) -> None:
     p = subprocess.run(
         ["rflx", "convert", "iana", "-d", tmp_path, DATA_DIR / "bootp-dhcp-parameters.xml"],
         capture_output=True,
+        check=False,
     )
     assert p.returncode == 0
     assert p.stdout.decode("utf-8") == ""
@@ -222,7 +230,7 @@ def test_convert(tmp_path: Path) -> None:
 
 
 def test_run_ls() -> None:
-    p = subprocess.run(["rflx", "run_ls"], capture_output=True, input="")
+    p = subprocess.run(["rflx", "run_ls"], capture_output=True, input="", check=False)
     assert p.returncode == 0
     assert p.stdout.decode("utf-8") == ""
     assert p.stderr.decode("utf-8") == textwrap.dedent(

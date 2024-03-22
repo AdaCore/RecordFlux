@@ -27,12 +27,10 @@ INT_MAX: int = 2**MAX_SCALAR_SIZE - 1
 
 
 class Origin(Protocol):
-    def __str__(self) -> str:
-        ...  # pragma: no cover
+    def __str__(self) -> str: ...  # pragma: no cover
 
     @property
-    def location(self) -> Optional[Location]:
-        ...  # pragma: no cover
+    def location(self) -> Optional[Location]: ...  # pragma: no cover
 
 
 class ConstructedOrigin(Origin):
@@ -94,7 +92,7 @@ class ProofManager(Base):
 
     def check(self) -> list[ProofJob]:
         with ProcessPoolExecutor(max_workers=self._workers, mp_context=MP_CONTEXT) as executor:
-            result = list(executor.map(ProofManager._check, self._jobs))  # noqa: SLF001
+            result = list(executor.map(ProofManager._check, self._jobs))
 
         self._jobs.clear()
 
@@ -189,7 +187,7 @@ class Assign(Stmt):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Assign:
         return Assign(
-            mapping[self.target] if self.target in mapping else self.target,
+            mapping.get(self.target, self.target),
             self.expression.substituted(mapping),
             self.type_,
             self.origin,
@@ -231,7 +229,7 @@ class FieldAssign(Stmt):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> FieldAssign:
         return FieldAssign(
-            mapping[self.message] if self.message in mapping else self.message,
+            mapping.get(self.message, self.message),
             self.field,
             self.expression.substituted(mapping),
             self.type_,
@@ -264,7 +262,7 @@ class Append(Stmt):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Append:
         return Append(
-            mapping[self.sequence] if self.sequence in mapping else self.sequence,
+            mapping.get(self.sequence, self.sequence),
             self.expression.substituted(mapping),
             self.type_,
             self.origin,
@@ -289,7 +287,7 @@ class Extend(Stmt):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Extend:
         return Extend(
-            mapping[self.sequence] if self.sequence in mapping else self.sequence,
+            mapping.get(self.sequence, self.sequence),
             self.expression.substituted(mapping),
             self.type_,
             self.origin,
@@ -314,7 +312,7 @@ class Reset(Stmt):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Reset:
         return Reset(
-            mapping[self.identifier] if self.identifier in mapping else self.identifier,
+            mapping.get(self.identifier, self.identifier),
             {p: v.substituted(mapping) for p, v in self.parameter_values.items()},
             self.type_,
             self.origin,
@@ -607,7 +605,7 @@ class Attr(Expr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Attr:
         return self.__class__(
-            mapping[self.prefix] if self.prefix in mapping else self.prefix,
+            mapping.get(self.prefix, self.prefix),
             self.prefix_type,
             self.origin,
         )
@@ -625,7 +623,7 @@ class IntAttr(Attr, IntExpr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntAttr:
         return self.__class__(
-            mapping[self.prefix] if self.prefix in mapping else self.prefix,
+            mapping.get(self.prefix, self.prefix),
             self.prefix_type,
             self.origin,
         )
@@ -750,7 +748,7 @@ class FieldAccessAttr(Expr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> FieldAccessAttr:
         return self.__class__(
-            mapping[self.message] if self.message in mapping else self.message,
+            mapping.get(self.message, self.message),
             self.field,
             self.message_type,
             self.origin,
@@ -1262,7 +1260,7 @@ class FieldAccess(Expr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> FieldAccess:
         return self.__class__(
-            mapping[self.message] if self.message in mapping else self.message,
+            mapping.get(self.message, self.message),
             self.field,
             self.message_type,
             self.origin,
@@ -1287,7 +1285,7 @@ class IntFieldAccess(FieldAccess, IntExpr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntFieldAccess:
         return self.__class__(
-            mapping[self.message] if self.message in mapping else self.message,
+            mapping.get(self.message, self.message),
             self.field,
             self.message_type,
             self.origin,
@@ -1321,7 +1319,7 @@ class ObjFieldAccess(FieldAccess):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjFieldAccess:
         return self.__class__(
-            mapping[self.message] if self.message in mapping else self.message,
+            mapping.get(self.message, self.message),
             self.field,
             self.message_type,
             self.origin,
@@ -1448,7 +1446,7 @@ class Comprehension(Expr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Comprehension:
         return self.__class__(
-            mapping[self.iterator] if self.iterator in mapping else self.iterator,
+            mapping.get(self.iterator, self.iterator),
             self.sequence.substituted(mapping),
             self.selector.__class__(
                 [s.substituted(mapping) for s in self.selector.stmts],
@@ -1487,7 +1485,7 @@ class Find(Expr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Find:
         return self.__class__(
-            mapping[self.iterator] if self.iterator in mapping else self.iterator,
+            mapping.get(self.iterator, self.iterator),
             self.sequence.substituted(mapping),
             self.selector.__class__(
                 [s.substituted(mapping) for s in self.selector.stmts],

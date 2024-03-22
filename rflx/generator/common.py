@@ -583,12 +583,14 @@ def valid_path_to_next_field_condition(
                     l.condition.substituted(substitution(message, public=True, prefix=prefix))
                     .simplified()
                     .ada_expr(),
-                    Call(
-                        "Valid_Next",
-                        [Variable("Ctx"), Variable(l.target.affixed_name)],
-                    )
-                    if l.target != model.FINAL
-                    else TRUE,
+                    (
+                        Call(
+                            "Valid_Next",
+                            [Variable("Ctx"), Variable(l.target.affixed_name)],
+                        )
+                        if l.target != model.FINAL
+                        else TRUE
+                    ),
                 ),
             ],
         )
@@ -684,12 +686,14 @@ def initialize_field_statements(
                 ("Verified_Last", Variable("Last")),
                 (
                     "Written_Last",
-                    Variable("Last")
-                    if reset_written_last
-                    else Max(
-                        const.TYPES_BIT_LENGTH,
-                        Variable("Ctx.Written_Last"),
-                        Variable("Last"),
+                    (
+                        Variable("Last")
+                        if reset_written_last
+                        else Max(
+                            const.TYPES_BIT_LENGTH,
+                            Variable("Ctx.Written_Last"),
+                            Variable("Last"),
+                        )
                     ),
                 ),
             ),
@@ -921,18 +925,22 @@ def unchanged_cursor_before_or_invalid(
         IfExpr(
             [
                 (
-                    LessEqual(Variable("F"), limit)
-                    if including_limit
-                    else Less(Variable("F"), limit),
+                    (
+                        LessEqual(Variable("F"), limit)
+                        if including_limit
+                        else Less(Variable("F"), limit)
+                    ),
                     Equal(
                         Indexed(
                             Variable("Ctx.Cursors"),
                             Variable("F"),
                         ),
                         Indexed(
-                            LoopEntry(Variable("Ctx.Cursors"))
-                            if loop_entry
-                            else Old(Variable("Ctx.Cursors")),
+                            (
+                                LoopEntry(Variable("Ctx.Cursors"))
+                                if loop_entry
+                                else Old(Variable("Ctx.Cursors"))
+                            ),
                             Variable("F"),
                         ),
                     ),

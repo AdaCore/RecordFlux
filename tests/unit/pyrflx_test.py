@@ -1046,13 +1046,15 @@ def test_checksum_no_verification() -> None:
     icmp_msg = MessageValue(
         icmp_message.copy(
             structure=[
-                Link(
-                    l.source,
-                    l.target,
-                    condition=expr.And(l.condition, expr.ValidChecksum("Checksum")),
+                (
+                    Link(
+                        l.source,
+                        l.target,
+                        condition=expr.And(l.condition, expr.ValidChecksum("Checksum")),
+                    )
+                    if l.target == FINAL
+                    else l
                 )
-                if l.target == FINAL
-                else l
                 for l in icmp_message.structure
             ],
             checksums={
@@ -1125,9 +1127,11 @@ def fixture_no_conditionals_message(no_conditionals_package: Package) -> Message
 def test_checksum_value_range(no_conditionals_message: Message) -> None:
     message = no_conditionals_message.copy(
         structure=[
-            Link(l.source, l.target, condition=expr.ValidChecksum("Checksum"))
-            if l.target == FINAL
-            else l
+            (
+                Link(l.source, l.target, condition=expr.ValidChecksum("Checksum"))
+                if l.target == FINAL
+                else l
+            )
             for l in no_conditionals_message.structure
         ],
         checksums={ID("Checksum"): [expr.ValueRange(expr.First("Tag"), expr.Last("Data"))]},

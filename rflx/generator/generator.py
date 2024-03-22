@@ -1111,19 +1111,23 @@ class Generator:
         condition = (
             condition.substituted(
                 mapping={
-                    expr.Variable(f.name): expr.Selected(
-                        expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]),
-                        "Enum",
+                    expr.Variable(f.name): (
+                        expr.Selected(
+                            expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]),
+                            "Enum",
+                        )
+                        if isinstance(t, Enumeration) and t.always_valid
+                        else expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")])
                     )
-                    if isinstance(t, Enumeration) and t.always_valid
-                    else expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")])
                     for f, t in condition_fields.items()
                 },
             )
             .substituted(
-                lambda e: e.copy(identifier=self._prefix * e.identifier)
-                if isinstance(e, expr.Literal) and e.identifier not in BOOLEAN.literals
-                else e,
+                lambda e: (
+                    e.copy(identifier=self._prefix * e.identifier)
+                    if isinstance(e, expr.Literal) and e.identifier not in BOOLEAN.literals
+                    else e
+                ),
             )
             .simplified()
         )

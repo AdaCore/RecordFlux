@@ -39,7 +39,7 @@ ICMP = PYRFLX.package("ICMP")
 ICMP.set_checksum_functions({"Message": {"Checksum": icmp_checksum}})
 IP = PYRFLX.package("IPv4")
 
-ICMP_DATA = bytes(list(range(0, 56)))
+ICMP_DATA = bytes(list(range(56)))
 
 
 def ping(target: str) -> None:
@@ -90,7 +90,7 @@ def ping(target: str) -> None:
 
                 time.sleep(1)
                 receiving = False
-            except OSError as e:  # noqa: PERF203
+            except OSError as e:
                 if e.args[0] in [errno.EAGAIN, errno.EWOULDBLOCK]:
                     time.sleep(1)
                     receiving = False

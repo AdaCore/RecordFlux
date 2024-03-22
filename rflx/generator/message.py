@@ -412,21 +412,25 @@ def create_valid_predecessors_invariant_function(
                                         Or(
                                             *[
                                                 expr.AndThen(
-                                                    expr.Call(
-                                                        "Well_Formed"
-                                                        if l.source in composite_fields
-                                                        else "Valid",
-                                                        [
-                                                            expr.Indexed(
-                                                                expr.Variable("Cursors"),
-                                                                expr.Variable(
-                                                                    l.source.affixed_name,
-                                                                ),
+                                                    (
+                                                        expr.Call(
+                                                            (
+                                                                "Well_Formed"
+                                                                if l.source in composite_fields
+                                                                else "Valid"
                                                             ),
-                                                        ],
-                                                    )
-                                                    if l.source != INITIAL
-                                                    else expr.TRUE,
+                                                            [
+                                                                expr.Indexed(
+                                                                    expr.Variable("Cursors"),
+                                                                    expr.Variable(
+                                                                        l.source.affixed_name,
+                                                                    ),
+                                                                ),
+                                                            ],
+                                                        )
+                                                        if l.source != INITIAL
+                                                        else expr.TRUE
+                                                    ),
                                                     l.condition.substituted(
                                                         common.substitution(
                                                             message,
@@ -1877,25 +1881,31 @@ def create_valid_value_function(
         private=[
             ExpressionFunctionDeclaration(
                 specification,
-                Case(
-                    Variable("Fld"),
-                    [
-                        (
-                            Variable(f.affixed_name),
-                            Call(
-                                f"Valid_{t.name}"
-                                if is_builtin_type(t.identifier)
-                                else prefix * t.package * f"Valid_{t.name}",
-                                [Variable("Val")],
+                (
+                    Case(
+                        Variable("Fld"),
+                        [
+                            (
+                                Variable(f.affixed_name),
+                                (
+                                    Call(
+                                        (
+                                            f"Valid_{t.name}"
+                                            if is_builtin_type(t.identifier)
+                                            else prefix * t.package * f"Valid_{t.name}"
+                                        ),
+                                        [Variable("Val")],
+                                    )
+                                    if isinstance(t, Scalar)
+                                    else TRUE
+                                ),
                             )
-                            if isinstance(t, Scalar)
-                            else TRUE,
-                        )
-                        for f, t in message.field_types.items()
-                    ],
-                )
-                if scalar_fields
-                else TRUE,
+                            for f, t in message.field_types.items()
+                        ],
+                    )
+                    if scalar_fields
+                    else TRUE
+                ),
             ),
         ],
     )
@@ -2775,17 +2785,19 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
                                     ),
                                 ]
                             ],
-                            Call(
-                                "Invalid",
-                                [
-                                    Variable("Ctx"),
-                                    Variable(message.fields[0].affixed_name),
-                                ],
-                            )
-                            if len(message.fields) == 1
-                            else common.unchanged_cursor_before_or_invalid(
-                                Variable("Fld"),
-                                loop_entry=False,
+                            (
+                                Call(
+                                    "Invalid",
+                                    [
+                                        Variable("Ctx"),
+                                        Variable(message.fields[0].affixed_name),
+                                    ],
+                                )
+                                if len(message.fields) == 1
+                                else common.unchanged_cursor_before_or_invalid(
+                                    Variable("Fld"),
+                                    loop_entry=False,
+                                )
                             ),
                         ),
                     ),
@@ -2808,11 +2820,13 @@ def create_composite_field_function(
                     "Boolean",
                     [Parameter(["Unused_Fld" if always_true else "Fld"], "Field")],
                 ),
-                TRUE
-                if always_true
-                else In(
-                    Variable("Fld"),
-                    ChoiceList(*[Variable(f.affixed_name) for f in composite_fields]),
+                (
+                    TRUE
+                    if always_true
+                    else In(
+                        Variable("Fld"),
+                        ChoiceList(*[Variable(f.affixed_name) for f in composite_fields]),
+                    )
                 ),
             ),
         ],
@@ -3646,20 +3660,24 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
                 if isinstance(type_, Opaque) and link.size.variables():
                     size = (
                         link.size.substituted(
-                            lambda x: expr.Size(expr.Variable("Struct" * x.prefix.identifier))
-                            if isinstance(x, expr.Size)
-                            and isinstance(x.prefix, expr.Variable)
-                            and Field(x.prefix.identifier) in message.fields
-                            else x,
+                            lambda x: (
+                                expr.Size(expr.Variable("Struct" * x.prefix.identifier))
+                                if isinstance(x, expr.Size)
+                                and isinstance(x.prefix, expr.Variable)
+                                and Field(x.prefix.identifier) in message.fields
+                                else x
+                            ),
                         )
                         .substituted(
-                            lambda x: expr.Call(
-                                const.TYPES_BIT_LENGTH,
-                                [expr.Variable("Struct" * x.identifier)],
-                            )
-                            if isinstance(x, expr.Variable)
-                            and Field(x.identifier) in message.fields
-                            else x,
+                            lambda x: (
+                                expr.Call(
+                                    const.TYPES_BIT_LENGTH,
+                                    [expr.Variable("Struct" * x.identifier)],
+                                )
+                                if isinstance(x, expr.Variable)
+                                and Field(x.identifier) in message.fields
+                                else x
+                            ),
                         )
                         .ada_expr()
                     )

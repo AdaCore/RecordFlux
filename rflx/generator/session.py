@@ -6,6 +6,8 @@ from dataclasses import dataclass, field as dataclass_field
 from functools import partial, singledispatchmethod
 from typing import NoReturn, Optional, Union
 
+from typing_extensions import Self
+
 from rflx import ada, ir, model, typing_ as rty
 from rflx.ada import (
     FALSE,
@@ -113,15 +115,13 @@ class EvaluatedDeclaration:
     initialization: list[Statement] = dataclass_field(default_factory=list)
     finalization: list[Statement] = dataclass_field(default_factory=list)
 
-    def __iadd__(self, other: object) -> EvaluatedDeclaration:
+    def __iadd__(self, other: object) -> Self:
         if isinstance(other, EvaluatedDeclaration):
-            return EvaluatedDeclaration(
-                [*self.global_declarations, *other.global_declarations],
-                [*self.initialization_declarations, *other.initialization_declarations],
-                [*self.initialization, *other.initialization],
-                [*self.finalization, *other.finalization],
-            )
-
+            self.global_declarations += other.global_declarations
+            self.initialization_declarations += other.initialization_declarations
+            self.initialization += other.initialization
+            self.finalization += other.finalization
+            return self
         return NotImplemented
 
 
@@ -227,9 +227,11 @@ class SessionGenerator:
         body_context: list[ContextItem] = [
             *(
                 [
-                    WithClause(self._prefix * ID("RFLX_Debug"))
-                    if self._debug == common.Debug.EXTERNAL
-                    else WithClause("Ada.Text_IO"),
+                    (
+                        WithClause(self._prefix * ID("RFLX_Debug"))
+                        if self._debug == common.Debug.EXTERNAL
+                        else WithClause("Ada.Text_IO")
+                    ),
                 ]
                 if self._debug != common.Debug.NONE
                 else []
@@ -507,9 +509,12 @@ class SessionGenerator:
                             Component(
                                 identifier,
                                 type_identifier,
-                                expression
-                                if expression is not None or type_identifier.name == ID("Context")
-                                else First(type_identifier),
+                                (
+                                    expression
+                                    if expression is not None
+                                    or type_identifier.name == ID("Context")
+                                    else First(type_identifier)
+                                ),
                             )
                             for identifier, (
                                 type_identifier,
@@ -601,13 +606,19 @@ class SessionGenerator:
             procedure_parameters.append(
                 Parameter(
                     [a.identifier],
-                    const.TYPES_BYTES
-                    if a.type_ == rty.OPAQUE
-                    else ID("Boolean")
-                    if a.type_ == rty.BOOLEAN
-                    else self._prefix * a.type_identifier * "Structure"
-                    if isinstance(a.type_, rty.Message)
-                    else self._prefix * a.type_identifier,
+                    (
+                        const.TYPES_BYTES
+                        if a.type_ == rty.OPAQUE
+                        else (
+                            ID("Boolean")
+                            if a.type_ == rty.BOOLEAN
+                            else (
+                                self._prefix * a.type_identifier * "Structure"
+                                if isinstance(a.type_, rty.Message)
+                                else self._prefix * a.type_identifier
+                            )
+                        )
+                    ),
                 ),
             )
 
@@ -618,11 +629,15 @@ class SessionGenerator:
         procedure_parameters.append(
             OutParameter(
                 [ID("RFLX_Result")],
-                self._prefix * function.return_type * "Structure"
-                if isinstance(function.type_, rty.Message)
-                else ID("Boolean")
-                if function.type_ == rty.BOOLEAN
-                else self._prefix * function.return_type,
+                (
+                    self._prefix * function.return_type * "Structure"
+                    if isinstance(function.type_, rty.Message)
+                    else (
+                        ID("Boolean")
+                        if function.type_ == rty.BOOLEAN
+                        else self._prefix * function.return_type
+                    )
+                ),
             ),
         )
 
@@ -632,9 +647,11 @@ class SessionGenerator:
                     function.identifier,
                     procedure_parameters,
                 ),
-                [ClassPrecondition(Not(Constrained("RFLX_Result")))]
-                if isinstance(function.type_, rty.Enumeration) and function.type_.always_valid
-                else [],
+                (
+                    [ClassPrecondition(Not(Constrained("RFLX_Result")))]
+                    if isinstance(function.type_, rty.Enumeration) and function.type_.always_valid
+                    else []
+                ),
                 abstract=True,
             ),
         ]
@@ -1000,12 +1017,14 @@ class SessionGenerator:
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    NotEqual(
-                        Variable("Ctx.P.Next_State"),
-                        Variable(state_id(ir.FINAL_STATE.identifier)),
-                    )
-                    if len(session.states) > 1
-                    else Variable("False"),
+                    (
+                        NotEqual(
+                            Variable("Ctx.P.Next_State"),
+                            Variable(state_id(ir.FINAL_STATE.identifier)),
+                        )
+                        if len(session.states) > 1
+                        else Variable("False")
+                    ),
                 ),
             ],
         )
@@ -1130,28 +1149,33 @@ class SessionGenerator:
                             [
                                 (
                                     Variable(state_id(state.identifier)),
-                                    [
-                                        CallStatement(
-                                            message_type.identifier * "Reset",
-                                            [
-                                                Variable(context_id(message, is_global)),
-                                                Variable(context_id(message, is_global) * "First"),
-                                                Sub(
+                                    (
+                                        [
+                                            CallStatement(
+                                                message_type.identifier * "Reset",
+                                                [
+                                                    Variable(context_id(message, is_global)),
                                                     Variable(
                                                         context_id(message, is_global) * "First",
                                                     ),
-                                                    Number(1),
-                                                ),
-                                                *[
-                                                    Variable(context_id(message, is_global) * p)
-                                                    for p in message_type.parameter_types
+                                                    Sub(
+                                                        Variable(
+                                                            context_id(message, is_global)
+                                                            * "First",
+                                                        ),
+                                                        Number(1),
+                                                    ),
+                                                    *[
+                                                        Variable(context_id(message, is_global) * p)
+                                                        for p in message_type.parameter_types
+                                                    ],
                                                 ],
-                                            ],
-                                        )
-                                        for message, message_type in reads
-                                    ]
-                                    if reads
-                                    else [NullStatement()],
+                                            )
+                                            for message, message_type in reads
+                                        ]
+                                        if reads
+                                        else [NullStatement()]
+                                    ),
                                 )
                                 for state, reads in states
                             ],
@@ -1189,12 +1213,14 @@ class SessionGenerator:
                             [
                                 (
                                     Variable(state_id(s.identifier)),
-                                    [
-                                        *self._debug_output(f"State: {s.identifier}"),
-                                        CallStatement(s.identifier, [Variable("Ctx")]),
-                                    ]
-                                    if s != ir.FINAL_STATE
-                                    else [NullStatement()],
+                                    (
+                                        [
+                                            *self._debug_output(f"State: {s.identifier}"),
+                                            CallStatement(s.identifier, [Variable("Ctx")]),
+                                        ]
+                                        if s != ir.FINAL_STATE
+                                        else [NullStatement()]
+                                    ),
                                 )
                                 for s in session.states
                             ],
@@ -1236,12 +1262,16 @@ class SessionGenerator:
             [
                 ExpressionFunctionDeclaration(
                     in_io_state_specification,
-                    In(
-                        Variable("Ctx.P.Next_State"),
-                        ChoiceList(*[Variable(state_id(state.identifier)) for state in io_states]),
-                    )
-                    if io_states
-                    else FALSE,
+                    (
+                        In(
+                            Variable("Ctx.P.Next_State"),
+                            ChoiceList(
+                                *[Variable(state_id(state.identifier)) for state in io_states],
+                            ),
+                        )
+                        if io_states
+                        else FALSE
+                    ),
                 ),
             ],
         )
@@ -1512,24 +1542,30 @@ class SessionGenerator:
                         [
                             (
                                 Variable(f"C_{channel}"),
-                                Case(
-                                    Variable("Ctx.P.Next_State"),
-                                    [
-                                        *[
-                                            (
-                                                Variable(state_id(read.state)),
-                                                Call(
-                                                    read.message_type * "Buffer_Length",
-                                                    [Variable(context_id(read.message, is_global))],
-                                                ),
-                                            )
-                                            for read in reads
+                                (
+                                    Case(
+                                        Variable("Ctx.P.Next_State"),
+                                        [
+                                            *[
+                                                (
+                                                    Variable(state_id(read.state)),
+                                                    Call(
+                                                        read.message_type * "Buffer_Length",
+                                                        [
+                                                            Variable(
+                                                                context_id(read.message, is_global),
+                                                            ),
+                                                        ],
+                                                    ),
+                                                )
+                                                for read in reads
+                                            ],
+                                            (Variable("others"), const.UNREACHABLE),
                                         ],
-                                        (Variable("others"), const.UNREACHABLE),
-                                    ],
-                                )
-                                if reads
-                                else Number(0),
+                                    )
+                                    if reads
+                                    else Number(0)
+                                ),
                             )
                             for channel, reads in channel_reads.items()
                         ],
@@ -2136,12 +2172,16 @@ class SessionGenerator:
             result.global_declarations.append(
                 ObjectDeclaration(
                     [identifier],
-                    self._ada_type(type_.identifier)
-                    if isinstance(type_, rty.NamedType)
-                    else const.TYPES_BASE_INT,
-                    self._to_ada_expr(expression.expr, is_global)
-                    if expression and expression.is_basic_expr()
-                    else None,
+                    (
+                        self._ada_type(type_.identifier)
+                        if isinstance(type_, rty.NamedType)
+                        else const.TYPES_BASE_INT
+                    ),
+                    (
+                        self._to_ada_expr(expression.expr, is_global)
+                        if expression and expression.is_basic_expr()
+                        else None
+                    ),
                 ),
             )
             if expression:
@@ -3569,20 +3609,24 @@ class SessionGenerator:
             self._session_context.referenced_types_body.append(rty.BASE_INTEGER.identifier)
 
             result = expression.__class__(
-                ir.IntConversion(
-                    self._ada_type(rty.BASE_INTEGER.identifier),
-                    expression.left,
-                    rty.BASE_INTEGER,
-                )
-                if expression.left.type_ != rty.BASE_INTEGER
-                else expression.left,
-                ir.IntConversion(
-                    self._ada_type(rty.BASE_INTEGER.identifier),
-                    expression.right,
-                    rty.BASE_INTEGER,
-                )
-                if expression.right.type_ != rty.BASE_INTEGER
-                else expression.right,
+                (
+                    ir.IntConversion(
+                        self._ada_type(rty.BASE_INTEGER.identifier),
+                        expression.left,
+                        rty.BASE_INTEGER,
+                    )
+                    if expression.left.type_ != rty.BASE_INTEGER
+                    else expression.left
+                ),
+                (
+                    ir.IntConversion(
+                        self._ada_type(rty.BASE_INTEGER.identifier),
+                        expression.right,
+                        rty.BASE_INTEGER,
+                    )
+                    if expression.right.type_ != rty.BASE_INTEGER
+                    else expression.right
+                ),
             )
             assert isinstance(result, ir.Relation)
             return result
@@ -4751,26 +4795,28 @@ class SessionGenerator:
                             [
                                 (
                                     self._to_ada_expr(condition, is_global),
-                                    self._comprehension_append_element(
-                                        target_identifier,
-                                        target_type,
-                                        selector_stmts,
-                                        selector,
-                                        update_context,
-                                        local_exception_handler,
-                                        is_global,
-                                        state,
-                                    )
-                                    if isinstance(target_type, rty.Sequence)
-                                    else self._comprehension_assign_element(
-                                        target_identifier,
-                                        target_type,
-                                        selector_stmts,
-                                        selector,
-                                        update_context,
-                                        local_exception_handler,
-                                        is_global,
-                                        state,
+                                    (
+                                        self._comprehension_append_element(
+                                            target_identifier,
+                                            target_type,
+                                            selector_stmts,
+                                            selector,
+                                            update_context,
+                                            local_exception_handler,
+                                            is_global,
+                                            state,
+                                        )
+                                        if isinstance(target_type, rty.Sequence)
+                                        else self._comprehension_assign_element(
+                                            target_identifier,
+                                            target_type,
+                                            selector_stmts,
+                                            selector,
+                                            update_context,
+                                            local_exception_handler,
+                                            is_global,
+                                            state,
+                                        )
                                     ),
                                 ),
                             ],
@@ -4932,13 +4978,15 @@ class SessionGenerator:
 
         elif isinstance(target_type.element, (rty.Integer, rty.Enumeration)):
             required_space = Size(
-                target_type.element.identifier + "_Enum"
-                if isinstance(
-                    target_type.element,
-                    rty.Enumeration,
-                )
-                and target_type.element.always_valid
-                else target_type.element.identifier,
+                (
+                    target_type.element.identifier + "_Enum"
+                    if isinstance(
+                        target_type.element,
+                        rty.Enumeration,
+                    )
+                    and target_type.element.always_valid
+                    else target_type.element.identifier
+                ),
             )
             append_element = [
                 CallStatement(
@@ -5200,9 +5248,11 @@ class SessionGenerator:
         return (
             [
                 CallStatement(
-                    self._prefix * ID("RFLX_Debug.Print")
-                    if self._debug == common.Debug.EXTERNAL
-                    else "Ada.Text_IO.Put_Line",
+                    (
+                        self._prefix * ID("RFLX_Debug.Print")
+                        if self._debug == common.Debug.EXTERNAL
+                        else "Ada.Text_IO.Put_Line"
+                    ),
                     [String(string)],
                 ),
             ]

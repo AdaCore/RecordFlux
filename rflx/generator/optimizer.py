@@ -68,7 +68,7 @@ def gnatprove_found() -> bool:
 
 
 def gnatprove_supports_limit_lines() -> bool:
-    p = run(["gnatprove", "--help"], stdout=PIPE)
+    p = run(["gnatprove", "--help"], stdout=PIPE, check=False)
     return p.stdout is not None and "--limit-lines=" in p.stdout.decode("utf-8")
 
 
@@ -160,6 +160,7 @@ def prove(file: Path, lines: Iterable[int], workers: int = 0, timeout: int = 1) 
             cwd=file.parent,
             stdout=PIPE,
             stderr=STDOUT,
+            check=False,
         )
 
         if p.returncode != 0:

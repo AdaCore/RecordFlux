@@ -22,7 +22,6 @@ POETRY_PLUGIN_EXPORT_VERSION = 1.6.0
 
 # --- Repository structure ---
 
-PYTHON_PACKAGES := doc/language_reference/conf.py doc/user_guide/conf.py examples/apps language rflx tests tools stubs build.py
 APPS := $(filter-out __init__.py,$(notdir $(wildcard examples/apps/*)))
 SDIST = dist/recordflux-$(VERSION).tar.gz
 VSIX = rflx/ide/vscode/recordflux.vsix
@@ -37,7 +36,7 @@ GNATCOLL_DIR = contrib/gnatcoll-bindings
 LANGKIT_DIR = contrib/langkit
 ADASAT_DIR = contrib/adasat
 
-DEVUTILS_HEAD = 0ce63302c719b173806d6943847344d28072986e
+DEVUTILS_HEAD = 1ac3d92d114355ec6e3ca47b2a81a45e03b96644
 GNATCOLL_HEAD = 25459f07a2e96eb0f28dcfd5b03febcb72930987
 LANGKIT_HEAD = 65e2dab678b2606e3b0eada64b7ef4fd8cae91bb
 ADASAT_HEAD = f948e2271aec51f9313fa41ff3c00230a483f9e8
@@ -46,10 +45,14 @@ ADASAT_HEAD = f948e2271aec51f9313fa41ff3c00230a483f9e8
 
 PYTEST = $(POETRY) run pytest -n$(TEST_PROCS) -vv --timeout=7200
 RUFF = $(POETRY) run ruff
+RUFF_ARGS = --exclude=rflx/lang
 BLACK = $(POETRY) run black
-MYPY = $(POETRY) run mypy --exclude rflx/lang
+BLACK_ARGS = --exclude=rflx/lang
+MYPY = $(POETRY) run mypy
+MYPY_ARGS = --exclude=rflx/lang
 KACL_CLI = $(POETRY) run kacl-cli
 
+PYTHON_PACKAGES := doc/language_reference/conf.py doc/user_guide/conf.py examples/apps language rflx tests tools stubs build.py
 DEVUTILS_DEPENDENCIES = $(RFLX)
 
 -include $(DEVUTILS_DIR)/Makefile.common

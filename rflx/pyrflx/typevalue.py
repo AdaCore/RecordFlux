@@ -52,8 +52,7 @@ from rflx.pyrflx.error import PyRFLXError
 
 
 class ChecksumFunction(Protocol):
-    def __call__(self, message: bytes, **kwargs: object) -> int:
-        ...  # pragma: no cover
+    def __call__(self, message: bytes, **kwargs: object) -> int: ...  # pragma: no cover
 
 
 ValueType = Union[
@@ -597,8 +596,8 @@ class MessageValue(TypeValue):
         self._refinements = [*(self._refinements or []), refinement]
 
     def add_parameters(self, parameters: abc.Mapping[str, Union[bool, int, str]]) -> None:
-        expected = set(p.name for p in self._type.parameter_types)
-        added = set(p for p in parameters)
+        expected = {p.name for p in self._type.parameter_types}
+        added = set(parameters)
 
         if expected - added:
             message = ", ".join(expected - added)
@@ -987,7 +986,7 @@ class MessageValue(TypeValue):
         self._update_simplified_mapping(message_size)
         check_outgoing_condition_satisfied()
 
-    def set(  # noqa: A003
+    def set(
         self,
         field_name: str,
         value: Union[bytes, int, str, abc.Sequence[TypeValue]],
@@ -1072,9 +1071,11 @@ class MessageValue(TypeValue):
     def _is_checksum_settable(self, checksum: MessageValue.Checksum) -> bool:
         def valid_path(value_range: ValueRange) -> bool:
             lower = value_range.lower.substituted(
-                func=lambda e: self._fields[self._next_field(INITIAL.name)].name_first
-                if e == self._message_first_name
-                else e,
+                func=lambda e: (
+                    self._fields[self._next_field(INITIAL.name)].name_first
+                    if e == self._message_first_name
+                    else e
+                ),
             )
             expr: dict[Expr, str] = {}
 
@@ -1451,7 +1452,7 @@ class MessageValue(TypeValue):
             return NotImplemented
 
         @property
-        def set(self) -> bool:  # noqa: A003
+        def set(self) -> bool:
             return (
                 self.typeval.initialized
                 and isinstance(self.typeval.size, Number)

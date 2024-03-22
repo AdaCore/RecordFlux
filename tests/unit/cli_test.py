@@ -240,7 +240,7 @@ def test_main_generate_debug(
     monkeypatch.setattr(
         generator.Generator,
         "generate",
-        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005, E501
+        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005
     )
     assert (
         cli.main(
@@ -280,7 +280,7 @@ def test_main_generate_reproducible(
     monkeypatch.setattr(
         generator.Generator,
         "generate",
-        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005, E501
+        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005
     )
     assert (
         cli.main(
@@ -318,7 +318,7 @@ def test_main_generate_optimize(
     monkeypatch.setattr(
         generator.Generator,
         "generate",
-        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005, E501
+        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005
     )
 
     called = []
@@ -646,7 +646,11 @@ def test_install_vscode_extension(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
     run_called = []
     vscode_extension = tmp_path / "recordflux.vsix"
 
-    monkeypatch.setattr(subprocess, "run", lambda x: run_called.append(x))
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda cmd, check: run_called.append(cmd),  # noqa: ARG005
+    )
     monkeypatch.setattr(cli, "vscode_extension", lambda: vscode_extension)
 
     with pytest.raises(SystemExit, match=r"^2$"):

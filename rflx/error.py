@@ -5,7 +5,9 @@ from collections.abc import Sequence
 from enum import Enum, auto
 from pathlib import Path
 from threading import local
-from typing import NoReturn, Optional, TypeVar, Union
+from typing import NoReturn, Optional, Union
+
+from typing_extensions import Self
 
 from rflx.common import Base, verbose_repr
 
@@ -85,9 +87,6 @@ class Severity(Enum):
         return str.lower(self.name)
 
 
-Self = TypeVar("Self", bound="BaseError")
-
-
 class BaseError(Exception, Base):
     class Entry(Base):
         def __init__(
@@ -142,7 +141,7 @@ class BaseError(Exception, Base):
             f"{locn(e)}{e.subsystem}: {e.severity}: {e.message}" for e in self._messages
         )
 
-    def __add__(self: Self, other: object) -> Self:
+    def __add__(self, other: object) -> Self:
         if isinstance(other, BaseError):
             error = self.__class__()
             error.extend(self)
@@ -150,7 +149,7 @@ class BaseError(Exception, Base):
             return error
         return NotImplemented
 
-    def __iadd__(self: Self, other: object) -> Self:
+    def __iadd__(self, other: object) -> Self:
         if isinstance(other, BaseError):
             self.extend(other)
             return self

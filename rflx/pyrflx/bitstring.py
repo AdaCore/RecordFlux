@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Union
 
+from typing_extensions import Self
+
 from rflx.pyrflx.error import PyRFLXError
 
 
@@ -15,7 +17,7 @@ class Bitstring:
     def __add__(self, other: Bitstring) -> Bitstring:
         return Bitstring(self._bits + other._bits)
 
-    def __iadd__(self, other: Bitstring) -> Bitstring:
+    def __iadd__(self, other: Bitstring) -> Self:
         self._bits += other._bits
         return self
 

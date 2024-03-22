@@ -23,6 +23,7 @@ class Token:
                      starting from 1.
         character_offset: An integer indicating the character offset from the begining of the line
                           at which the first character of the lexeme is located starting from 1.
+
     """
 
     symbol: Optional[Symbol]

@@ -79,6 +79,7 @@ class Symbol:
                   of the symbol.
         definition_location: A Location indicating where the symbol is defined.
         parent: A optional ID indicating if the cur
+
     """
 
     identifier: ID

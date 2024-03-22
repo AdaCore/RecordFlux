@@ -99,85 +99,91 @@ class ParserGenerator:
                         const.TYPES_BASE_INT,
                         [Parameter(["Ctx"], "Context"), Parameter(["Fld"], "Field")],
                     ),
-                    [
-                        *common.field_bit_location_declarations(Variable("Fld")),
-                        ObjectDeclaration(
-                            ["Buffer_First"],
-                            const.TYPES_INDEX,
-                            Call(const.TYPES_TO_INDEX, [Variable("First")]),
-                            constant=True,
-                        ),
-                        ObjectDeclaration(
-                            ["Buffer_Last"],
-                            const.TYPES_INDEX,
-                            Call(const.TYPES_TO_INDEX, [Variable("Last")]),
-                            constant=True,
-                        ),
-                        ObjectDeclaration(
-                            ["Offset"],
-                            const.TYPES_OFFSET,
-                            Call(
+                    (
+                        [
+                            *common.field_bit_location_declarations(Variable("Fld")),
+                            ObjectDeclaration(
+                                ["Buffer_First"],
+                                const.TYPES_INDEX,
+                                Call(const.TYPES_TO_INDEX, [Variable("First")]),
+                                constant=True,
+                            ),
+                            ObjectDeclaration(
+                                ["Buffer_Last"],
+                                const.TYPES_INDEX,
+                                Call(const.TYPES_TO_INDEX, [Variable("Last")]),
+                                constant=True,
+                            ),
+                            ObjectDeclaration(
+                                ["Offset"],
                                 const.TYPES_OFFSET,
-                                [
-                                    Mod(
-                                        Sub(
-                                            Size(const.TYPES_BYTE),
-                                            Mod(Variable("Last"), Size(const.TYPES_BYTE)),
-                                        ),
-                                        Size(const.TYPES_BYTE),
-                                    ),
-                                ],
-                            ),
-                            constant=True,
-                        ),
-                        ObjectDeclaration(
-                            ["Size"],
-                            "Positive",
-                            Case(
-                                Variable("Fld"),
-                                [
-                                    *[
-                                        (Variable(f.affixed_name), t.size.ada_expr())
-                                        for f, t in scalar_fields.items()
-                                    ],
-                                    *(
-                                        [(Variable("others"), Last("Positive"))]
-                                        if composite_fields
-                                        else []
-                                    ),
-                                ],
-                            ),
-                            constant=True,
-                        ),
-                        ObjectDeclaration(
-                            ["Byte_Order"],
-                            const.TYPES_BYTE_ORDER,
-                            If(
-                                [
-                                    (
-                                        In(
-                                            Variable("Fld"),
-                                            ChoiceList(
-                                                *[
-                                                    Variable(f.affixed_name)
-                                                    for f in big_endian_fields
-                                                ],
+                                Call(
+                                    const.TYPES_OFFSET,
+                                    [
+                                        Mod(
+                                            Sub(
+                                                Size(const.TYPES_BYTE),
+                                                Mod(Variable("Last"), Size(const.TYPES_BYTE)),
                                             ),
+                                            Size(const.TYPES_BYTE),
                                         ),
-                                        Variable(const.TYPES_HIGH_ORDER_FIRST),
-                                    ),
-                                ],
-                                Variable(const.TYPES_LOW_ORDER_FIRST),
-                            )
-                            if big_endian_fields and little_endian_fields
-                            else Variable(const.TYPES_HIGH_ORDER_FIRST)
-                            if big_endian_fields
-                            else Variable(const.TYPES_LOW_ORDER_FIRST),
-                            constant=True,
-                        ),
-                    ]
-                    if scalar_fields or comparison_to_aggregate
-                    else [],
+                                    ],
+                                ),
+                                constant=True,
+                            ),
+                            ObjectDeclaration(
+                                ["Size"],
+                                "Positive",
+                                Case(
+                                    Variable("Fld"),
+                                    [
+                                        *[
+                                            (Variable(f.affixed_name), t.size.ada_expr())
+                                            for f, t in scalar_fields.items()
+                                        ],
+                                        *(
+                                            [(Variable("others"), Last("Positive"))]
+                                            if composite_fields
+                                            else []
+                                        ),
+                                    ],
+                                ),
+                                constant=True,
+                            ),
+                            ObjectDeclaration(
+                                ["Byte_Order"],
+                                const.TYPES_BYTE_ORDER,
+                                (
+                                    If(
+                                        [
+                                            (
+                                                In(
+                                                    Variable("Fld"),
+                                                    ChoiceList(
+                                                        *[
+                                                            Variable(f.affixed_name)
+                                                            for f in big_endian_fields
+                                                        ],
+                                                    ),
+                                                ),
+                                                Variable(const.TYPES_HIGH_ORDER_FIRST),
+                                            ),
+                                        ],
+                                        Variable(const.TYPES_LOW_ORDER_FIRST),
+                                    )
+                                    if big_endian_fields and little_endian_fields
+                                    else (
+                                        Variable(const.TYPES_HIGH_ORDER_FIRST)
+                                        if big_endian_fields
+                                        else Variable(const.TYPES_LOW_ORDER_FIRST)
+                                    )
+                                ),
+                                constant=True,
+                            ),
+                        ]
+                        if scalar_fields or comparison_to_aggregate
+                        else []
+                    ),
                     [
                         ReturnStatement(
                             Call(
@@ -334,19 +340,23 @@ class ParserGenerator:
                     ),
                 ],
             ),
-            IfStatement(
-                [
-                    (
-                        Call("Composite_Field", [Variable("Fld")]),
-                        [set_context_cursor_composite_field("Fld")],
-                    ),
-                ],
-                [set_context_cursor_scalar()],
-            )
-            if scalar_fields and composite_fields
-            else set_context_cursor_scalar()
-            if scalar_fields and not composite_fields
-            else set_context_cursor_composite_field("Fld"),
+            (
+                IfStatement(
+                    [
+                        (
+                            Call("Composite_Field", [Variable("Fld")]),
+                            [set_context_cursor_composite_field("Fld")],
+                        ),
+                    ],
+                    [set_context_cursor_scalar()],
+                )
+                if scalar_fields and composite_fields
+                else (
+                    set_context_cursor_scalar()
+                    if scalar_fields and not composite_fields
+                    else set_context_cursor_composite_field("Fld")
+                )
+            ),
         ]
 
         return UnitPart(
@@ -398,36 +408,41 @@ class ParserGenerator:
                                                     [
                                                         Assignment(
                                                             "Value",
-                                                            If(
-                                                                [
-                                                                    (
-                                                                        Call(
-                                                                            "Composite_Field",
-                                                                            [
-                                                                                Variable("Fld"),
-                                                                            ],
-                                                                        ),
-                                                                        Number(0),
-                                                                    ),
-                                                                ],
-                                                                Call(
-                                                                    "Get",
+                                                            (
+                                                                If(
                                                                     [
-                                                                        Variable("Ctx"),
-                                                                        Variable("Fld"),
+                                                                        (
+                                                                            Call(
+                                                                                "Composite_Field",
+                                                                                [
+                                                                                    Variable("Fld"),
+                                                                                ],
+                                                                            ),
+                                                                            Number(0),
+                                                                        ),
                                                                     ],
-                                                                ),
-                                                            )
-                                                            if scalar_fields and composite_fields
-                                                            else Call(
-                                                                "Get",
-                                                                [
-                                                                    Variable("Ctx"),
-                                                                    Variable("Fld"),
-                                                                ],
-                                                            )
-                                                            if scalar_fields
-                                                            else Number(0),
+                                                                    Call(
+                                                                        "Get",
+                                                                        [
+                                                                            Variable("Ctx"),
+                                                                            Variable("Fld"),
+                                                                        ],
+                                                                    ),
+                                                                )
+                                                                if scalar_fields
+                                                                and composite_fields
+                                                                else (
+                                                                    Call(
+                                                                        "Get",
+                                                                        [
+                                                                            Variable("Ctx"),
+                                                                            Variable("Fld"),
+                                                                        ],
+                                                                    )
+                                                                    if scalar_fields
+                                                                    else Number(0)
+                                                                )
+                                                            ),
                                                         ),
                                                         IfStatement(
                                                             [
@@ -1175,9 +1190,12 @@ class ParserGenerator:
                 *[
                     expr.AndThen(
                         expr.Call(
-                            "Well_Formed"
-                            if well_formed and isinstance(message.field_types[l.source], Composite)
-                            else "Valid",
+                            (
+                                "Well_Formed"
+                                if well_formed
+                                and isinstance(message.field_types[l.source], Composite)
+                                else "Valid"
+                            ),
                             [
                                 expr.Variable("Ctx"),
                                 expr.Variable(l.source.affixed_name, immutable=True),

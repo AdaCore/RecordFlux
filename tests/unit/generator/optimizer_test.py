@@ -38,6 +38,7 @@ def run_mock(
     cwd: object = None,  # noqa: ARG001
     stdout: object = None,  # noqa: ARG001
     stderr: object = None,  # noqa: ARG001
+    check: object = None,  # noqa: ARG001
 ) -> CompletedProcess[object]:
     return CompletedProcess("", return_code)
 

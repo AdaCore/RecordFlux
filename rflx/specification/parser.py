@@ -28,9 +28,11 @@ def node_location(node: lang.RFLXNode, filename: Path, end_location: bool = Fals
     start = node.token_start.sloc_range
     end = node.token_end.sloc_range
     return Location(
-        start=(start.start.line, start.start.column)
-        if not end_location
-        else (end.end.line, end.end.column),
+        start=(
+            (start.start.line, start.start.column)
+            if not end_location
+            else (end.end.line, end.end.column)
+        ),
         source=filename,
         end=(end.end.line, end.end.column),
     )
@@ -418,7 +420,7 @@ def create_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) 
     raise NotImplementedError(f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}")
 
 
-MATH_OPERATIONS: Mapping[str, Union[type[expr.BinExpr], type[expr.AssExpr]]] = {
+MATH_OPERATIONS: Mapping[str, type[Union[expr.BinExpr, expr.AssExpr]]] = {
     "OpPow": expr.Pow,
     "OpAdd": expr.Add,
     "OpSub": expr.Sub,
@@ -1138,9 +1140,11 @@ def create_message_field_types(
             (
                 field,
                 qualified_type_identifier,
-                create_message_arguments(error, type_arguments, filename)
-                if isinstance(type_arguments, lang.TypeArgumentList)
-                else [],
+                (
+                    create_message_arguments(error, type_arguments, filename)
+                    if isinstance(type_arguments, lang.TypeArgumentList)
+                    else []
+                ),
             ),
         )
     return result

@@ -47,7 +47,7 @@ class Token(LexerToken):  # type: ignore[misc]
     State = WithText()
     Transition = WithText()
     Goto = WithText()
-    Exception = WithText()  # noqa: A003
+    Exception = WithText()
     Renames = WithText()
     Channel = WithText()
     Readable = WithText()

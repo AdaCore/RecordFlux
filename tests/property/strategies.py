@@ -33,8 +33,7 @@ T = TypeVar("T")
 
 
 class Draw(Protocol):
-    def __call__(self, val: st.SearchStrategy[T], /) -> T:
-        ...
+    def __call__(self, val: st.SearchStrategy[T], /) -> T: ...
 
 
 def unique_qualified_identifiers() -> abc.Generator[ID, None, None]:
@@ -233,9 +232,11 @@ def messages(  # noqa: PLR0915
     for _ in range(draw(st.integers(min_value=1 if not_null else 0, max_value=4))):
         f = draw(fields())
         t = draw(
-            st.one_of(scalars(unique_identifiers), composites(unique_identifiers))
-            if alignment == 0
-            else scalars(unique_identifiers, align_to_8=alignment),
+            (
+                st.one_of(scalars(unique_identifiers), composites(unique_identifiers))
+                if alignment == 0
+                else scalars(unique_identifiers, align_to_8=alignment)
+            ),
         )
         types_[f] = t
         alignments[f] = alignment
@@ -368,9 +369,9 @@ def variables(draw: Draw, elements: st.SearchStrategy[str]) -> expr.Variable:
 
 @st.composite
 def attributes(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
-    sample: st.SearchStrategy[
-        Union[type[expr.Size], type[expr.First], type[expr.Last]]
-    ] = st.sampled_from([expr.Size, expr.First, expr.Last])
+    sample: st.SearchStrategy[type[Union[expr.Size, expr.First, expr.Last]]] = st.sampled_from(
+        [expr.Size, expr.First, expr.Last],
+    )
     attribute = draw(sample)
     return attribute(draw(elements))
 
@@ -407,15 +408,17 @@ def mathematical_expressions(draw: Draw, elements: st.SearchStrategy[expr.Expr])
 @st.composite
 def relations(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Relation:
     sample: st.SearchStrategy[
-        Union[
-            type[expr.Less],
-            type[expr.LessEqual],
-            type[expr.Equal],
-            type[expr.GreaterEqual],
-            type[expr.Greater],
-            type[expr.NotEqual],
-            type[expr.In],
-            type[expr.NotIn],
+        type[
+            Union[
+                expr.Less,
+                expr.LessEqual,
+                expr.Equal,
+                expr.GreaterEqual,
+                expr.Greater,
+                expr.NotEqual,
+                expr.In,
+                expr.NotIn,
+            ]
         ]
     ] = st.sampled_from(
         [

@@ -520,15 +520,17 @@ class Message(mty.Type):
     def type_(self) -> rty.Message:
         return rty.Message(
             self.full_name,
-            {
-                (
-                    *(p.name for p in self.parameters),
-                    *(l.target.name for l in p if l.target != FINAL),
-                )
-                for p in self.paths(FINAL)
-            }
-            if not self.is_null
-            else set(),
+            (
+                {
+                    (
+                        *(p.name for p in self.parameters),
+                        *(l.target.name for l in p if l.target != FINAL),
+                    )
+                    for p in self.paths(FINAL)
+                }
+                if not self.is_null
+                else set()
+            ),
             {f.identifier: t.type_ for f, t in self._parameter_types.items()},
             {f.identifier: t.type_ for f, t in self._field_types.items()},
             [rty.Refinement(r.field.identifier, r.sdu.type_, r.package) for r in self._refinements],
@@ -744,13 +746,15 @@ class Message(mty.Type):
 
                 conditional_field_size.append(
                     (
-                        expr.TRUE
-                        if len(paths_to_field) == 1
-                        and (
-                            path_condition == expr.TRUE
-                            or (field not in optional_fields and overlay_condition == expr.TRUE)
-                        )
-                        else path_condition,
+                        (
+                            expr.TRUE
+                            if len(paths_to_field) == 1
+                            and (
+                                path_condition == expr.TRUE
+                                or (field not in optional_fields and overlay_condition == expr.TRUE)
+                            )
+                            else path_condition
+                        ),
                         field_size,
                     ),
                 )
@@ -758,9 +762,11 @@ class Message(mty.Type):
         return (
             expr.Add(
                 *[
-                    expr.IfExpr([(path_condition, field_size)], expr.Number(0))
-                    if path_condition != expr.TRUE
-                    else field_size
+                    (
+                        expr.IfExpr([(path_condition, field_size)], expr.Number(0))
+                        if path_condition != expr.TRUE
+                        else field_size
+                    )
                     for path_condition, groups in itertools.groupby(
                         sorted(conditional_field_size),
                         lambda x: x[0],
@@ -2420,7 +2426,7 @@ class UncheckedMessage(mty.UncheckedType):
     byte_order: Union[
         Mapping[Field, ByteOrder],
         ByteOrder,
-    ] = dataclass_field(  # type: ignore[assignment]
+    ] = dataclass_field(
         # TODO(eng/recordflux/RecordFlux#1359): Fix type annotation
         # The type should be `dict[Field, ByteOrder]`, but the subscription of `dict` is not
         # supported by Python 3.8.
@@ -2595,9 +2601,11 @@ class UncheckedMessage(mty.UncheckedType):
                                 arg_id.location,
                             ),
                             (
-                                "expected no argument"
-                                if not param
-                                else f'expected argument for parameter "{param.identifier}"',
+                                (
+                                    "expected no argument"
+                                    if not param
+                                    else f'expected argument for parameter "{param.identifier}"'
+                                ),
                                 Subsystem.MODEL,
                                 Severity.INFO,
                                 arg_id.location,

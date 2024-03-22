@@ -108,37 +108,39 @@ class SerializerGenerator:
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
-                    If(
-                        [
-                            (
-                                AndThen(
-                                    Equal(Variable("Fld"), Variable(l.target.affixed_name)),
-                                    *(
-                                        [
-                                            l.condition.substituted(
-                                                common.substitution(
-                                                    message,
-                                                    self.prefix,
-                                                    target_type=const.TYPES_BIT_LENGTH,
-                                                ),
-                                            )
-                                            .simplified()
-                                            .ada_expr(),
-                                        ]
-                                        if l.condition != expr.TRUE
-                                        else []
+                    (
+                        If(
+                            [
+                                (
+                                    AndThen(
+                                        Equal(Variable("Fld"), Variable(l.target.affixed_name)),
+                                        *(
+                                            [
+                                                l.condition.substituted(
+                                                    common.substitution(
+                                                        message,
+                                                        self.prefix,
+                                                        target_type=const.TYPES_BIT_LENGTH,
+                                                    ),
+                                                )
+                                                .simplified()
+                                                .ada_expr(),
+                                            ]
+                                            if l.condition != expr.TRUE
+                                            else []
+                                        ),
                                     ),
-                                ),
-                                implicit_size_condition,
-                            )
-                            for l in message.structure
-                            if l.has_implicit_size
-                        ],
-                        explicit_size_condition,
-                    )
-                    if len(message.fields) > 1
-                    or all(not l.has_implicit_size for l in message.structure)
-                    else implicit_size_condition,
+                                    implicit_size_condition,
+                                )
+                                for l in message.structure
+                                if l.has_implicit_size
+                            ],
+                            explicit_size_condition,
+                        )
+                        if len(message.fields) > 1
+                        or all(not l.has_implicit_size for l in message.structure)
+                        else implicit_size_condition
+                    ),
                     [
                         Precondition(
                             And(
@@ -248,9 +250,11 @@ class SerializerGenerator:
                 NamedAggregate(
                     (
                         "State",
-                        Variable("S_Valid")
-                        if field_type == CursorState.VALID
-                        else Variable("S_Well_Formed"),
+                        (
+                            Variable("S_Valid")
+                            if field_type == CursorState.VALID
+                            else Variable("S_Well_Formed")
+                        ),
                     ),
                     ("First", Variable("First")),
                     ("Last", Variable("Last")),
@@ -555,15 +559,19 @@ class SerializerGenerator:
                         self.prefix * message.identifier * field.affixed_name,
                     ),
                     Call(
-                        f"Valid_{field_type.name}"
-                        if is_builtin_type(field_type.identifier)
-                        else self.prefix * field_type.package * f"Valid_{field_type.name}",
+                        (
+                            f"Valid_{field_type.name}"
+                            if is_builtin_type(field_type.identifier)
+                            else self.prefix * field_type.package * f"Valid_{field_type.name}"
+                        ),
                         [
-                            Variable("Val")
-                            if use_enum_records_directly
-                            else Call(
-                                common.to_base_integer(self.prefix, field_type.package),
-                                [Variable("Val")],
+                            (
+                                Variable("Val")
+                                if use_enum_records_directly
+                                else Call(
+                                    common.to_base_integer(self.prefix, field_type.package),
+                                    [Variable("Val")],
+                                )
                             ),
                         ],
                     ),
@@ -599,11 +607,13 @@ class SerializerGenerator:
                         [
                             Equal(
                                 Call(f"Get_{field.name}", [Variable("Ctx")]),
-                                Aggregate(TRUE, Variable("Val"))
-                                if isinstance(field_type, Enumeration)
-                                and field_type.always_valid
-                                and not use_enum_records_directly
-                                else Variable("Val"),
+                                (
+                                    Aggregate(TRUE, Variable("Val"))
+                                    if isinstance(field_type, Enumeration)
+                                    and field_type.always_valid
+                                    and not use_enum_records_directly
+                                    else Variable("Val")
+                                ),
                             ),
                         ]
                         if int(field_type.value_count) > 1
@@ -635,12 +645,14 @@ class SerializerGenerator:
                         ],
                     ),
                 ],
-                [
-                    precondition(field, field_type, use_enum_records_directly),
-                    postcondition(field, field_type, use_enum_records_directly),
-                ]
-                if use_enum_records_directly
-                else [],
+                (
+                    [
+                        precondition(field, field_type, use_enum_records_directly),
+                        postcondition(field, field_type, use_enum_records_directly),
+                    ]
+                    if use_enum_records_directly
+                    else []
+                ),
             )
 
         byte_orders = set(message.byte_order.values())
@@ -718,29 +730,33 @@ class SerializerGenerator:
                                 Variable("Buffer_Last"),
                                 Variable("Offset"),
                                 Call("Positive", [Variable("Size")]),
-                                Variable(
-                                    const.TYPES_HIGH_ORDER_FIRST
-                                    if uniform_byte_order == ByteOrder.HIGH_ORDER_FIRST
-                                    else const.TYPES_LOW_ORDER_FIRST,
-                                )
-                                if uniform_byte_order
-                                else If(
-                                    [
+                                (
+                                    Variable(
                                         (
-                                            In(
-                                                Variable("Fld"),
-                                                ChoiceList(
-                                                    *[
-                                                        Variable(f.affixed_name)
-                                                        for f, b in message.byte_order.items()
-                                                        if b == ByteOrder.LOW_ORDER_FIRST
-                                                    ],
-                                                ),
-                                            ),
-                                            Variable(const.TYPES_LOW_ORDER_FIRST),
+                                            const.TYPES_HIGH_ORDER_FIRST
+                                            if uniform_byte_order == ByteOrder.HIGH_ORDER_FIRST
+                                            else const.TYPES_LOW_ORDER_FIRST
                                         ),
-                                    ],
-                                    Variable(const.TYPES_HIGH_ORDER_FIRST),
+                                    )
+                                    if uniform_byte_order
+                                    else If(
+                                        [
+                                            (
+                                                In(
+                                                    Variable("Fld"),
+                                                    ChoiceList(
+                                                        *[
+                                                            Variable(f.affixed_name)
+                                                            for f, b in message.byte_order.items()
+                                                            if b == ByteOrder.LOW_ORDER_FIRST
+                                                        ],
+                                                    ),
+                                                ),
+                                                Variable(const.TYPES_LOW_ORDER_FIRST),
+                                            ),
+                                        ],
+                                        Variable(const.TYPES_HIGH_ORDER_FIRST),
+                                    )
                                 ),
                             ],
                         ),

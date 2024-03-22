@@ -295,9 +295,11 @@ class EnumLiteral(SpecificationElement):
     def comment(self, indent_level: int) -> list[str]:
         base_indent = OUTPUT_INDENT * indent_level
         comments = [
-            f"{c.tag[c.tag.index('}') + 1:]} = {c.text}"
-            if c.tag is not None and c.text is not None
-            else f"Ref: {c.attrib['data']}"
+            (
+                f"{c.tag[c.tag.index('}') + 1:]} = {c.text}"
+                if c.tag is not None and c.text is not None
+                else f"Ref: {c.attrib['data']}"
+            )
             for c in self.comment_list
         ]
         if len(self.alternative_names) > 1:

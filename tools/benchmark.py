@@ -7,7 +7,7 @@ from collections.abc import Generator
 from pathlib import Path
 from time import perf_counter
 
-from tqdm import tqdm  # type: ignore[import]
+from tqdm import tqdm  # type: ignore[import-untyped]
 
 from rflx.model import NeverVerify
 from rflx.pyrflx import PyRFLX
@@ -29,7 +29,7 @@ class Benchmark:
     def generate(self, count: int = 2**16) -> Generator[bytes, None, None]:
         if count > 2**16:
             raise ValueError
-        for ident in range(0, count):
+        for ident in range(count):
             msg = self.__icmp.new_message("Message")
             pkt = self.__ipv4.new_message("Packet")
             msg.set("Tag", "Echo_Request")
@@ -59,15 +59,13 @@ class Benchmark:
             yield pkt.bytestring
 
     def run(self) -> None:
-        i = 0
         start = perf_counter()
-        for _ in tqdm(self.generate()):
+        for i, _ in enumerate(tqdm(self.generate())):
             if i % 500 == 0:
                 if perf_counter() - start > 1:
                     print("Performance < 500it/s, stopping")  # noqa: T201
                     sys.exit(1)
                 start = perf_counter()
-            i += 1
 
 
 if __name__ == "__main__":

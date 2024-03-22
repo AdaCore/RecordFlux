@@ -185,7 +185,7 @@ class RFLXLexer(pygments.lexer.Lexer):
     def get_tokens_unprocessed(
         self,
         text: str,
-    ) -> Iterator[tuple[int, pygments.token._TokenType, str]]:  # noqa: SLF001
+    ) -> Iterator[tuple[int, pygments.token._TokenType, str]]:
         unit = lang.AnalysisContext().get_from_buffer(
             "<stdin>",
             text,
