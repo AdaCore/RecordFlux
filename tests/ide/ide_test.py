@@ -41,14 +41,18 @@ def test_multiple_errors() -> None:
             ' "RFLX_Invalid"',
             f'{path}:295:5: parser: error: inconsistent package identifier "Inconsistent"',
             f'{path}:6:9: parser: info: previous identifier was "RFLX_Invalid"',
-            f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid",'
-            ' should be "rflx_invalid.rflx"',
+            f"{path}:6:9: parser: error: source file name does not match the package name"
+            ' "RFLX_Invalid"',
+            f'{path}:6:9: parser: info: either rename the file to "rflx_invalid.rflx"',
+            f'{path}:6:9: parser: info: or change the package name to "Multiple_Errors"',
             f'{path}:6:9: parser: error: illegal prefix "RFLX" in package identifier'
             ' "RFLX_Invalid"',
             f'{path}:295:5: parser: error: inconsistent package identifier "Inconsistent"',
             f'{path}:6:9: parser: info: previous identifier was "RFLX_Invalid"',
-            f'{path}:6:9: parser: error: file name does not match unit name "RFLX_Invalid", should'
-            ' be "rflx_invalid.rflx"',
+            f"{path}:6:9: parser: error: source file name does not match the package name"
+            ' "RFLX_Invalid"',
+            f'{path}:6:9: parser: info: either rename the file to "rflx_invalid.rflx"',
+            f'{path}:6:9: parser: info: or change the package name to "Multiple_Errors"',
             f'{path}:6:9: parser: error: illegal identifier "RFLX_Invalid"',
             f'{path}:6:9: parser: info: identifiers starting with "RFLX_" are reserved for'
             " internal use",

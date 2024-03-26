@@ -42,9 +42,13 @@ def test_check_error() -> None:
         Processing Test
         Verifying __BUILTINS__::Boolean
         Verifying __INTERNAL__::Opaque
-        tests/data/specs/invalid/incorrect_name.rflx:1:9: parser: error: file name does not match\
- unit name "Test", should be "test.rflx"
-        """,
+        tests/data/specs/invalid/incorrect_name.rflx:1:9: parser: \
+error: source file name does not match the package name "Test"
+        tests/data/specs/invalid/incorrect_name.rflx:1:9: parser: info: either rename the file to \
+"test.rflx"
+        tests/data/specs/invalid/incorrect_name.rflx:1:9: parser: info: or change the package name\
+ to "Incorrect_Name"
+""",
     )
 
 

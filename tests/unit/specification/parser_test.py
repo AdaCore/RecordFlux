@@ -206,8 +206,9 @@ def test_parse_string_error() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'a/b.rflx:1:9: parser: error: file name does not match unit name "A",'
-            r' should be "a.rflx"\n'
+            'a/b.rflx:1:9: parser: error: source file name does not match the package name "A"\n'
+            'a/b.rflx:1:9: parser: info: either rename the file to "a.rflx"\n'
+            'a/b.rflx:1:9: parser: info: or change the package name to "B"\n'
             r"a/b.rflx:2:0: style: error: unexpected keyword indentation \(expected 3 or 6\)"
             r" \[indentation\]"
             r"$"
@@ -1912,19 +1913,21 @@ def test_parse_error_incorrect_name() -> None:
         [f"{SPEC_DIR}/invalid/incorrect_name.rflx"],
         f"^{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: parser: error: "
         "source file name does not match the package name"
-        r' "Test", rename the source file to "test.rflx"$',
+        f' "Test"\n{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: parser: info: either rename'
+        f' the file to "test.rflx"\n'
+        f"{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: parser: info: or "
+        r'change the package name to "Incorrect_Name"$',
     )
 
 
-def test_parse_error_incorrect_name_with_match() -> None:
+@pytest.mark.parametrize("filename", ["Tls", "TLS", "BadCasing"])
+def test_parse_error_incorrect_name_should_rename_only(filename: str) -> None:
     assert_error_files(
-        [f"{SPEC_DIR}/invalid/BadCasing.rflx"],
-        f"^{SPEC_DIR}/invalid/BadCasing.rflx:1:9: parser: error: "
-        "source file name does not match the package name"
-        ' "BadCasing", rename the source file to "badcasing.rflx"\n'
-        f"{SPEC_DIR}/invalid/BadCasing.rflx:1:9: parser: info: package"
-        " name matches file name but you should name your source file using lower "
-        r'case letters only, rename the source file to "badcasing.rflx"$',
+        [f"{SPEC_DIR}/invalid/{filename}.rflx"],
+        f"^{SPEC_DIR}/invalid/{filename}.rflx:1:9: parser: error: "
+        f'source file name "{filename}.rflx" must be in lower case characters only\n'
+        f"{SPEC_DIR}/invalid/{filename}.rflx:1:9: parser: info: rename the file "
+        f'to "{filename.lower()}.rflx"$',
     )
 
 
