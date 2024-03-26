@@ -1609,17 +1609,56 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
         )
     if name != STDIN:
         expected_filename = f"{identifier.lower()}.rflx"
+        expected_package_name = "_".join(
+            x.capitalize() for x in Path(name.name).stem.lower().split("_")
+        )
         if name.name != expected_filename:
             error.extend(
                 [
                     (
-                        f'file name does not match unit name "{identifier}",'
-                        f' should be "{expected_filename}"',
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        node_location(package.f_identifier, name),
+                        (
+                            f'source file name "{name.name}" must be in lower case characters only',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(package.f_identifier, name),
+                        )
+                        if any(c.isupper() for c in Path(name.name).stem)
+                        else (
+                            f'source file name does not match the package name "{identifier}"',
+                            Subsystem.PARSER,
+                            Severity.ERROR,
+                            node_location(package.f_identifier, name),
+                        )
                     ),
                 ],
+            )
+
+            error.extend(
+                (
+                    [
+                        (
+                            f'rename the file to "{expected_filename}"',
+                            Subsystem.PARSER,
+                            Severity.INFO,
+                            node_location(package.f_identifier, name),
+                        ),
+                    ]
+                    if any(c.isupper() for c in Path(name.name).stem)
+                    else [
+                        (
+                            f'either rename the file to "{expected_filename}"',
+                            Subsystem.PARSER,
+                            Severity.INFO,
+                            node_location(package.f_identifier, name),
+                        ),
+                        (
+                            f'or change the package name to "{expected_package_name}"',
+                            Subsystem.PARSER,
+                            Severity.INFO,
+                            node_location(package.f_identifier, name),
+                        ),
+                    ]
+                ),
             )
 
 

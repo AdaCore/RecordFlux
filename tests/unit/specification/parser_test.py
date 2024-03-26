@@ -1911,8 +1911,20 @@ def test_parse_error_incorrect_name() -> None:
     assert_error_files(
         [f"{SPEC_DIR}/invalid/incorrect_name.rflx"],
         f"^{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: parser: error: "
-        "file name does not match unit name"
-        r' "Test", should be "test.rflx"$',
+        "source file name does not match the package name"
+        r' "Test", rename the source file to "test.rflx"$',
+    )
+
+
+def test_parse_error_incorrect_name_with_match() -> None:
+    assert_error_files(
+        [f"{SPEC_DIR}/invalid/BadCasing.rflx"],
+        f"^{SPEC_DIR}/invalid/BadCasing.rflx:1:9: parser: error: "
+        "source file name does not match the package name"
+        ' "BadCasing", rename the source file to "badcasing.rflx"\n'
+        f"{SPEC_DIR}/invalid/BadCasing.rflx:1:9: parser: info: package"
+        " name matches file name but you should name your source file using lower "
+        r'case letters only, rename the source file to "badcasing.rflx"$',
     )
 
 
