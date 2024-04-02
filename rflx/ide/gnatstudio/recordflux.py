@@ -259,7 +259,7 @@ def parse_output(output):
                     importance=to_importance(data["severity"]),
                 )
             elif message:
-                data["relative"] = Path.name(data["filename"])
+                data["relative"] = Path(data["filename"]).name
                 message.create_nested_message(
                     file=GPS.File(data["filename"]),
                     line=int(data["line"]),
