@@ -424,20 +424,15 @@ generate_apps: $(RFLX)
 
 .PHONY: anod_build_dependencies anod_poetry_dependencies
 
-anod_build_dependencies: $(POETRY)
-	@echo "requirements:"
-	@$(POETRY) export --with=build --without=dev --without-hashes | grep -v "@ file" | sed "s/\(.*\)/    - '\1'/"
-	@echo "platforms:"
-	@echo "    - x86_64-linux"
+anod_rflx_dependencies: $(POETRY)
+	@$(POETRY) export --with=build --without=dev --without-hashes | grep -v "@ file"
 
-anod_poetry_dependencies: $(POETRY)
-	@echo "requirements:"
-	@echo "    - 'poetry==$(POETRY_VERSION)'"
-	@echo "    - 'poetry-dynamic-versioning==$(POETRY_DYNAMIC_VERSIONING_VERSION)'"
-	@echo "    - 'poetry-plugin-export==$(POETRY_PLUGIN_EXPORT_VERSION)'"
-	@echo "    - 'wheel'"
-	@echo "platforms:"
-	@echo "    - x86_64-linux"
+anod_extra_dependencies: $(POETRY)
+	@echo "poetry==$(POETRY_VERSION)"
+	@echo "poetry-dynamic-versioning==$(POETRY_DYNAMIC_VERSIONING_VERSION)"
+	@echo "poetry-plugin-export==$(POETRY_PLUGIN_EXPORT_VERSION)"
+	@echo "wheel"
+	@echo "pypiserver==2.0.1"
 
 # --- Documentation ---
 
