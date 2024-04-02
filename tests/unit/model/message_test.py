@@ -61,6 +61,7 @@ from rflx.model import (
     Type,
     UncheckedDerivedMessage,
     UncheckedMessage,
+    UncheckedRefinement,
 )
 from rflx.model.message import ByteOrder
 from tests.data import models
@@ -5321,4 +5322,25 @@ def test_message_reject_empty() -> None:
                 Field("P"): BOOLEAN,
                 Field("F"): models.integer(),
             },
+        )
+
+
+def test_message_refinement_with_scalar() -> None:
+    refinement = UncheckedRefinement(
+        ID("P"),
+        pdu=ID("P::Foo"),
+        sdu=ID("P::Bar"),
+        field=Field("Foo"),
+    )
+
+    with pytest.raises(
+        RecordFluxError,
+        match=r'^model: error: type "P::Bar" cannot be used in refinement because '
+        r"it's not a message type$",
+    ):
+        refinement.checked(
+            [
+                Message("P::Foo", [], {}),
+                Integer(ID("P::Bar"), Number(0), Number(255), size=Number(8)),
+            ],
         )
