@@ -1,7 +1,7 @@
 project RecordFlux is
 
    for Create_Missing_Dirs use "True";
-   for Source_Dirs use (".", "../../specs");
+   for Source_Dirs use (".", "../../examples/specs");
    for Languages use ("Ada", "RecordFlux");
 
    package Recordflux is
