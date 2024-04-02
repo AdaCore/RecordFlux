@@ -494,7 +494,7 @@ wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 # Build distributions for all defined Python versions without local version identifier.
 pypi_dist: $(PROJECT_MANAGEMENT)
 	$(MAKE) sdist POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//')
-	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(MAKE) wheel POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
+	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(POETRY) env info && $(MAKE) wheel POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
 
 anod_dist: $(BUILD_DEPS) $(PARSER) pyproject.toml $(PACKAGE_SRC)
 	$(POETRY) build -vv --no-cache

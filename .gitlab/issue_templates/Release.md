@@ -6,23 +6,13 @@
 - [ ] Add tag to git repository
    - Make sure that `main` is checked out and updated to the latest state
    - `git tag -a vX.Y.Z -m ""`
-- [ ] Generate distribution archive
-   - `make dist`
-- [ ] Check distribution archive
-   - Check content of archive
-   - Install in new virtual environment
-   - Ensure that no additional packages to `rflx` are installed
-   - Test `rflx` executable
 - [ ] Push tag
    - `git push --follow-tags`
-- [ ] Upload to TestPyPI
-   - `twine upload --repository-url https://test.pypi.org/legacy/ dist/RecordFlux-X.Y.Z.tar.gz`
-- [ ] Check project on TestPyPI
-- [ ] Test installation from TestPyPI
-   - `pip3 install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ RecordFlux`
-- [ ] Upload to PyPI
-   - `twine upload dist/RecordFlux-X.Y.Z.tar.gz`
+- [ ] Approve publishing to PyPI in CI pipeline
 - [ ] Test installation from PyPI
    - `pip3 install RecordFlux`
 - [ ] Publish release on GitHub
-- [ ] Update `release` branch
+   - [Draft new release](https://github.com/AdaCore/RecordFlux/releases/new)
+   - Select tag
+   - Add corresponding part of `CHANGELOG` as description
+   - Publish release

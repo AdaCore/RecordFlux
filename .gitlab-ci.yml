@@ -464,6 +464,53 @@ pdf_documentation:
       - doc/language_reference/build/latex/language_reference.pdf
       - doc/user_guide/build/latex/user_guide.pdf
 
+packaging:
+  services:
+    - image:recordflux
+    - cpu:8
+    - mem:16
+  needs:
+    - setup
+  script:
+    - git fetch --unshallow
+    - *setup_gnat
+    - make pypi_dist
+  artifacts:
+    paths:
+      - dist
+
+publishing_to_pypi:
+  services:
+    - image:recordflux
+  needs:
+    - packaging
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+$/
+  script:
+    - python$PYTHON_VERSION -m pip install twine
+    - twine upload --non-interactive dist/*
+  variables:
+    TWINE_PASSWORD: $PYPI_TOKEN
+  environment:
+    name: "pypi"
+    action: start
+
+publishing_to_test_pypi:
+  services:
+    - image:recordflux
+  needs:
+    - packaging
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - python$PYTHON_VERSION -m pip install twine
+    - twine upload --verbose --non-interactive --repository-url https://test.pypi.org/legacy/ dist/*
+  variables:
+    TWINE_PASSWORD: $TESTPYPI_TOKEN
+  environment:
+    name: "testpypi"
+    action: start
+
 ##################
 # Scheduled jobs #
 ##################
