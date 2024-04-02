@@ -3054,16 +3054,29 @@ class UncheckedRefinement(mty.UncheckedType):
             )
 
         if self.sdu not in messages:
-            error.extend(
-                [
+            undefined_type_errors = [
+                (
+                    f'type "{potential_declaration.identifier}" cannot be used in'
+                    " refinement because it's not a message type",
+                    Subsystem.MODEL,
+                    Severity.ERROR,
+                    self.sdu.location,
+                )
+                for potential_declaration in declarations
+                if potential_declaration.identifier == self.sdu
+            ]
+
+            if len(undefined_type_errors) == 0:
+                undefined_type_errors.append(
                     (
                         f'undefined type "{self.sdu}" in refinement of "{self.pdu}"',
                         Subsystem.MODEL,
                         Severity.ERROR,
                         self.sdu.location,
                     ),
-                ],
-            )
+                )
+
+            error.extend(list(undefined_type_errors))
 
         error.propagate()
 
