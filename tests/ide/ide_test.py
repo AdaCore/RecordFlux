@@ -83,14 +83,14 @@ def test_multiple_errors() -> None:
             f'{path}:100:26: model: error: undefined type "RFLX_Invalid::SDU2" in refinement '
             'of "RFLX_Invalid::PDU1"',
             f'{path}:103:8: model: error: undefined type "RFLX_Invalid::Undef_PDU" in refinement',
-            f'{path}:103:31: model: error: undefined type "RFLX_Invalid::R" in refinement '
-            'of "RFLX_Invalid::Undef_PDU"',
+            f'{path}:103:31: model: error: type "RFLX_Invalid::R" cannot be used in refinement '
+            "because it's not a message type",
             f'{path}:106:8: model: error: undefined type "RFLX_Invalid::PDU1" in refinement',
             f'{path}:106:26: model: error: undefined type "RFLX_Invalid::Undef_Type" in '
             'refinement of "RFLX_Invalid::PDU1"',
             f'{path}:109:8: model: error: undefined type "RFLX_Invalid::PDU1" in refinement',
-            f'{path}:109:33: model: error: undefined type "RFLX_Invalid::R" in refinement '
-            'of "RFLX_Invalid::PDU1"',
+            f'{path}:109:33: model: error: type "RFLX_Invalid::R" cannot be used in refinement '
+            "because it's not a message type",
             f'{path}:115:21: model: error: undefined base message "RFLX_Invalid::PDU1"'
             " in derived message",
             f'{path}:116:21: model: error: undefined base message "RFLX_Invalid::PDU1"'
