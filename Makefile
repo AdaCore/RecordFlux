@@ -20,6 +20,7 @@ NO_ADD_DEVUTILS ?=
 POETRY_VERSION = 1.7.1
 POETRY_DYNAMIC_VERSIONING_VERSION = 1.2.0
 POETRY_PLUGIN_EXPORT_VERSION = 1.6.0
+PYPISERVER_VERSION = 2.0.1
 
 # --- Repository structure ---
 
@@ -432,7 +433,7 @@ anod_extra_dependencies: $(POETRY)
 	@echo "poetry-dynamic-versioning==$(POETRY_DYNAMIC_VERSIONING_VERSION)"
 	@echo "poetry-plugin-export==$(POETRY_PLUGIN_EXPORT_VERSION)"
 	@echo "wheel"
-	@echo "pypiserver==2.0.1"
+	@echo "pypiserver==$(PYPISERVER_VERSION)"
 
 # --- Documentation ---
 
