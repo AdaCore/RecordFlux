@@ -340,12 +340,12 @@ def test_ass_expr_simplified() -> None:
                             And(
                                 Variable("A"),
                                 Or(Variable("B"), Variable("C")),
-                                Equal(Variable("D"), TRUE),
+                                Variable("D"),
                             ),
                             And(
                                 Variable("A"),
                                 Or(Variable("B"), Variable("C")),
-                                Equal(Variable("D"), FALSE),
+                                Not(Variable("D")),
                             ),
                         ),
                         Variable("X"),
@@ -1684,6 +1684,11 @@ def test_equal_simplified() -> None:
     assert Equal(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == TRUE
     assert Equal(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == FALSE
     assert Equal(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == FALSE
+    assert Equal(Variable("X"), TRUE).simplified() == Variable("X")
+    assert Equal(Variable("X"), FALSE).simplified() == Not(Variable("X"))
+    assert NotEqual(Variable("X"), FALSE).simplified() == Variable("X")
+    assert NotEqual(Variable("X"), TRUE).simplified() == Not(Variable("X"))
+    assert NotEqual(TRUE, Variable("X")).simplified() == Not(Variable("X"))
 
 
 def test_equal_z3expr() -> None:

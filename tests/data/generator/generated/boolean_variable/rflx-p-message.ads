@@ -12,7 +12,6 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
-with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Builtin_Types.Conversions;
 use RFLX.RFLX_Builtin_Types.Conversions;
 
@@ -265,10 +264,9 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
        RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Valid_Value (Fld, Val)
        and then RFLX.P.Message.Valid_Next (Ctx, Fld)
        and then RFLX.P.Message.Sufficient_Space (Ctx, Fld),
      Post =>
@@ -385,7 +383,7 @@ is
        and then RFLX.P.Message.Valid_Next (Ctx, RFLX.P.Message.F_A)
        and then Valid_Boolean (To_Base_Integer (Val))
        and then RFLX.P.Message.Available_Space (Ctx, RFLX.P.Message.F_A) >= RFLX.P.Message.Field_Size (Ctx, RFLX.P.Message.F_A)
-       and then RFLX.P.Message.Field_Condition (Ctx, RFLX.P.Message.F_A, To_Base_Integer (Val)),
+       and then RFLX.P.Message.Field_Condition (Ctx, RFLX.P.Message.F_A),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_A)
@@ -407,7 +405,7 @@ is
        and then RFLX.P.Message.Valid_Next (Ctx, RFLX.P.Message.F_B)
        and then RFLX.P.Valid_T (RFLX.P.To_Base_Integer (Val))
        and then RFLX.P.Message.Available_Space (Ctx, RFLX.P.Message.F_B) >= RFLX.P.Message.Field_Size (Ctx, RFLX.P.Message.F_B)
-       and then RFLX.P.Message.Field_Condition (Ctx, RFLX.P.Message.F_B, RFLX.P.To_Base_Integer (Val)),
+       and then RFLX.P.Message.Field_Condition (Ctx, RFLX.P.Message.F_B),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_B)
@@ -699,12 +697,12 @@ private
           when F_B =>
              RFLX.P.Valid_T (Val)));
 
-   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
+   function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_A =>
              True,
           when F_B =>
-             RFLX_Types.Base_Integer (Ctx.Cursors (F_A).Value) = RFLX_Types.Base_Integer (To_Base_Integer (True))));
+             To_Actual (Ctx.Cursors (F_A).Value)));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
@@ -745,11 +743,11 @@ private
 
    function Well_Formed_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_B)
-      and then RFLX_Types.Base_Integer (Ctx.Cursors (F_A).Value) = RFLX_Types.Base_Integer (To_Base_Integer (True)));
+      and then To_Actual (Ctx.Cursors (F_A).Value));
 
    function Valid_Message (Ctx : Context) return Boolean is
      (Valid (Ctx, F_B)
-      and then RFLX_Types.Base_Integer (Ctx.Cursors (F_A).Value) = RFLX_Types.Base_Integer (To_Base_Integer (True)));
+      and then To_Actual (Ctx.Cursors (F_A).Value));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      ((for some F in Field =>
@@ -780,7 +778,7 @@ private
      (Cursors (Fld));
 
    function Valid_Structure (Struct : Structure) return Boolean is
-     (To_Base_Integer (Struct.A) = RFLX_Types.Base_Integer (To_Base_Integer (True)));
+     (Struct.A);
 
    function Sufficient_Buffer_Length (Ctx : Context; Unused_Struct : Structure) return Boolean is
      (RFLX_Types.Base_Integer (RFLX_Types.To_Last_Bit_Index (Ctx.Buffer_Last) - RFLX_Types.To_First_Bit_Index (Ctx.Buffer_First) + 1) >= 8);

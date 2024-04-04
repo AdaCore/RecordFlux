@@ -219,10 +219,7 @@ is
        and then Field_Size (Ctx, F_Data) = RFLX_Types.To_Bit_Length (Length)
        and then Ctx.Verified_Last = Field_Last (Ctx, F_Data)
        and then Invalid (Ctx, F_Extension)
-       and then (if
-                    RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
-                 then
-                    Valid_Next (Ctx, F_Extension))
+       and then (if Ctx.Extended then Valid_Next (Ctx, F_Extension))
        and then Ctx.Buffer_First = Ctx.Buffer_First'Old
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old

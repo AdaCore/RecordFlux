@@ -12,7 +12,6 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
-with RFLX.RFLX_Builtin_Types;
 with RFLX.RFLX_Builtin_Types.Conversions;
 use RFLX.RFLX_Builtin_Types.Conversions;
 with RFLX.IPv4.Options;
@@ -728,10 +727,7 @@ is
        and Invalid (Ctx, F_Destination)
        and Invalid (Ctx, F_Options)
        and Invalid (Ctx, F_Payload)
-       and (if
-               RFLX_Types.Base_Integer (To_Base_Integer (Get_Flag_R (Ctx))) = RFLX_Types.Base_Integer (To_Base_Integer (False))
-            then
-               Valid_Next (Ctx, F_Flag_DF))
+       and (if not Get_Flag_R (Ctx) then Valid_Next (Ctx, F_Flag_DF))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -1457,7 +1453,7 @@ private
                    Well_Formed (Cursors (F_Flag_DF))
                 then
                    (Valid (Cursors (F_Flag_R))
-                    and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))))
+                    and then not To_Actual (Cursors (F_Flag_R).Value)))
       and then (if Well_Formed (Cursors (F_Flag_MF)) then Valid (Cursors (F_Flag_DF)))
       and then (if Well_Formed (Cursors (F_Fragment_Offset)) then Valid (Cursors (F_Flag_MF)))
       and then (if Well_Formed (Cursors (F_TTL)) then Valid (Cursors (F_Fragment_Offset)))
@@ -1505,7 +1501,7 @@ private
               and then True),
           when F_Flag_DF =>
              (Valid (Cursors (F_Flag_R))
-              and then RFLX_Types.Base_Integer (Cursors (F_Flag_R).Value) = RFLX_Types.Base_Integer (To_Base_Integer (False))),
+              and then not To_Actual (Cursors (F_Flag_R).Value)),
           when F_Flag_MF =>
              (Valid (Cursors (F_Flag_DF))
               and then True),
@@ -1852,7 +1848,7 @@ private
           when F_Identification =>
              True,
           when F_Flag_R =>
-             Val = RFLX_Types.Base_Integer (To_Base_Integer (False)),
+             not To_Actual (Val),
           when F_Flag_DF | F_Flag_MF | F_Fragment_Offset | F_TTL | F_Protocol | F_Header_Checksum | F_Source | F_Destination | F_Options | F_Payload =>
              True));
 

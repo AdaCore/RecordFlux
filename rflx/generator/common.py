@@ -82,10 +82,7 @@ def substitution(
 ) -> Callable[[expr.Expr], expr.Expr]:
     facts = substitution_facts(message, prefix, embedded, public, target_type)
 
-    def type_conversion(expression: expr.Expr) -> expr.Expr:
-        return expr.Call(type_to_id(target_type), target_type, [expression])
-
-    def func(  # noqa: PLR0912
+    def func(
         expression: expr.Expr,
     ) -> expr.Expr:
         def byte_aggregate(aggregate: expr.Aggregate) -> expr.Aggregate:
@@ -160,28 +157,6 @@ def substitution(
                     [expr.Variable("Ctx"), expr.Variable(field.affixed_name), aggregate],
                 )
                 return equal_call if isinstance(expression, expr.Equal) else expr.Not(equal_call)
-
-            boolean_literal = None
-            other = None
-            if (
-                isinstance(expression.left, expr.Literal)
-                and expression.left.identifier in model.BOOLEAN.literals
-            ):
-                boolean_literal = expression.left
-                other = expression.right
-            if (
-                isinstance(expression.right, expr.Literal)
-                and expression.right.identifier in model.BOOLEAN.literals
-            ):
-                boolean_literal = expression.right
-                other = expression.left
-            if boolean_literal and other:
-                return expression.__class__(
-                    other,
-                    type_conversion(
-                        expr.Call("To_Base_Integer", rty.BASE_INTEGER, [boolean_literal]),
-                    ),
-                )
 
         def field_value(field: model.Field) -> expr.Expr:
             if public:
@@ -275,40 +250,48 @@ def substitution_facts(
         )
 
     def parameter_value(parameter: model.Field, parameter_type: model.Type) -> expr.Expr:
+        var = (
+            expr.Variable(parameter.name, type_=parameter_type.type_)
+            if embedded
+            else expr.Variable("Ctx" * parameter.identifier, type_=parameter_type.type_)
+        )
+        if parameter_type == model.BOOLEAN:
+            return var
         if isinstance(parameter_type, model.Enumeration):
-            if embedded:
-                return expr.Call(
-                    "To_Base_Integer",
-                    rty.BASE_INTEGER,
-                    [expr.Variable(parameter.name)],
-                )
-            return expr.Call(
-                "To_Base_Integer",
-                rty.BASE_INTEGER,
-                [expr.Variable("Ctx" * parameter.identifier)],
-            )
+            return expr.Call("To_Base_Integer", rty.BASE_INTEGER, [var])
         if isinstance(parameter_type, model.Scalar):
-            if embedded:
-                return expr.Variable(parameter.name)
-            return expr.Variable("Ctx" * parameter.identifier)
+            return var
 
         assert False, f'unexpected type "{type(parameter_type).__name__}"'
 
     def field_value(field: model.Field, field_type: model.Type) -> expr.Expr:
+        call = expr.Call(
+            f"Get_{field.name}",
+            field_type.type_,
+            [expr.Variable("Ctx")],
+        )
+
         if isinstance(field_type, model.Enumeration):
             if public:
+                if field_type == model.BOOLEAN:
+                    return call
+
                 return expr.Call(
                     "To_Base_Integer",
                     rty.BASE_INTEGER,
-                    [expr.Call(f"Get_{field.name}", field_type.type_, [expr.Variable("Ctx")])],
+                    [call],
                 )
-            return expr.Selected(
+            value = expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
                 "Value",
             )
+            if field_type == model.BOOLEAN:
+                return expr.Call("To_Actual", rty.BOOLEAN, [value])
+            return value
+
         if isinstance(field_type, model.Scalar):
             if public:
-                return expr.Call(f"Get_{field.name}", field_type.type_, [expr.Variable("Ctx")])
+                return call
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
                 "Value",
@@ -319,6 +302,8 @@ def substitution_facts(
         assert False, f'unexpected type "{type(field_type).__name__}"'
 
     def type_conversion(expression: expr.Expr) -> expr.Expr:
+        if expression.type_ == rty.BOOLEAN:
+            return expression
         return expr.Call(type_to_id(target_type), target_type, [expression])
 
     return {

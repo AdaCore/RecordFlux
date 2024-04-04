@@ -407,10 +407,9 @@ class Generator:
         context: list[ContextItem] = [WithClause(prefix * const.TYPES_PACKAGE)]
         body_context: list[ContextItem] = []
 
-        if any(t.package == BUILTINS_PACKAGE for t in message.types.values()):
+        if any(t.package == BUILTINS_PACKAGE for t in message.field_types.values()):
             context.extend(
                 [
-                    WithClause(prefix * const.BUILTIN_TYPES_PACKAGE),
                     WithClause(prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                     UsePackageClause(prefix * const.BUILTIN_TYPES_CONVERSIONS_PACKAGE),
                 ],

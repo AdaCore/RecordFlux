@@ -2400,6 +2400,21 @@ class Relation(BinExpr):
                 else FALSE
             )
 
+        # We simplify expressions of the form X = True to X
+        # We need to negate X if the Boolean literal is False or the relation is "ne",
+        # but not when both are true
+        if relation_operator in [operator.eq, operator.ne]:
+
+            def apply_op(e: Expr, invert: bool) -> Expr:
+                if invert:
+                    return Not(e)
+                return e
+
+            if left in [TRUE, FALSE]:
+                return apply_op(right, (left == FALSE) != (relation_operator == operator.ne))
+            if right in [TRUE, FALSE]:
+                return apply_op(left, (right == FALSE) != (relation_operator == operator.ne))
+
         return self.__class__(left, right, self.location)
 
     @property

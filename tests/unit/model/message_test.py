@@ -3071,13 +3071,13 @@ def test_size() -> None:
             Link(
                 Field("Length"),
                 Field("Data"),
-                condition=Equal(Variable("Has_Data"), TRUE),
+                condition=Variable("Has_Data"),
                 size=Mul(Variable("Length"), Number(8)),
             ),
             Link(
                 Field("Length"),
                 Field("Data"),
-                condition=Equal(Variable("Has_Data"), FALSE),
+                condition=Not(Variable("Has_Data")),
                 size=Number(0),
             ),
             Link(
@@ -3101,7 +3101,7 @@ def test_size() -> None:
         IfExpr(
             [
                 (
-                    Or(Equal(Variable("X"), FALSE), Equal(Variable("X"), TRUE)),
+                    Or(Variable("X"), Not(Variable("X"))),
                     Size(Selected(Variable("M"), "F")),
                 ),
             ],
@@ -3117,7 +3117,7 @@ def test_size() -> None:
         },
     ) == Add(
         IfExpr(
-            [(Or(Equal(Variable("X"), FALSE), Equal(Variable("X"), TRUE)), Size(Variable("Z")))],
+            [(Or(Variable("X"), Not(Variable("X"))), Size(Variable("Z")))],
             Number(0),
         ),
         Number(16),
@@ -3382,8 +3382,8 @@ def test_size_subpath() -> None:
             [
                 (
                     Or(
-                        Equal(Selected(Variable("X"), "Has_Data"), FALSE),
-                        Equal(Selected(Variable("X"), "Has_Data"), TRUE),
+                        Selected(Variable("X"), "Has_Data"),
+                        Not(Selected(Variable("X"), "Has_Data")),
                     ),
                     Size(Selected(Variable("M"), "F")),
                 ),
@@ -3404,8 +3404,8 @@ def test_size_subpath() -> None:
             [
                 (
                     Or(
-                        Equal(Selected(Variable("X"), "Has_Data"), FALSE),
-                        Equal(Selected(Variable("X"), "Has_Data"), TRUE),
+                        Selected(Variable("X"), "Has_Data"),
+                        Not(Selected(Variable("X"), "Has_Data")),
                     ),
                     Size(Variable("Z")),
                 ),
@@ -4485,7 +4485,7 @@ def test_merge_message_with_condition_on_message_type_field() -> None:
                 Field("Payload"),
                 FINAL,
                 condition=And(
-                    Equal(Variable("Flag"), TRUE),
+                    Variable("Flag"),
                     Equal(Variable("Parameter"), Variable("E1")),
                 ),
             ),
@@ -4510,7 +4510,7 @@ def test_merge_message_with_condition_on_message_type_field() -> None:
                 Field("Payload_I"),
                 FINAL,
                 condition=And(
-                    Equal(Variable("Flag"), TRUE),
+                    Variable("Flag"),
                     Equal(Variable("Parameter"), Literal("P::E1")),
                 ),
             ),

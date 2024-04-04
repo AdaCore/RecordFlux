@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improve error messages for type refinements of non-message types (eng/recordflux/RecordFlux#383)
 
+### Fixed
+
+- Generation of uncompilable code in the presence of some Boolean conditions (eng/recordflux/RecordFlux#1365)
+
+
 ## [0.20.0] - 2024-03-26
 
 ### Added

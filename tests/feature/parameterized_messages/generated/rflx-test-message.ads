@@ -12,9 +12,6 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
-with RFLX.RFLX_Builtin_Types;
-with RFLX.RFLX_Builtin_Types.Conversions;
-use RFLX.RFLX_Builtin_Types.Conversions;
 
 package RFLX.Test.Message with
   SPARK_Mode,
@@ -456,10 +453,7 @@ is
        and then Well_Formed (Ctx, F_Data)
        and then (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and then Invalid (Ctx, F_Extension)
-       and then (if
-                    RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
-                 then
-                    Valid_Next (Ctx, F_Extension))
+       and then (if Ctx.Extended then Valid_Next (Ctx, F_Extension))
        and then Ctx.Buffer_First = Ctx.Buffer_First'Old
        and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and then Ctx.First = Ctx.First'Old
@@ -502,10 +496,7 @@ is
        and Well_Formed (Ctx, F_Data)
        and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Extension)
-       and (if
-               RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
-            then
-               Valid_Next (Ctx, F_Extension))
+       and (if Ctx.Extended then Valid_Next (Ctx, F_Extension))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -556,10 +547,7 @@ is
        and Well_Formed (Ctx, F_Data)
        and (if Well_Formed_Message (Ctx) then Message_Last (Ctx) = Field_Last (Ctx, F_Data))
        and Invalid (Ctx, F_Extension)
-       and (if
-               RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
-            then
-               Valid_Next (Ctx, F_Extension))
+       and (if Ctx.Extended then Valid_Next (Ctx, F_Extension))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -659,11 +647,7 @@ private
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean) return Boolean is
      ((if Well_Formed (Cursors (F_Data)) then True)
-      and then (if
-                   Well_Formed (Cursors (F_Extension))
-                then
-                   (Well_Formed (Cursors (F_Data))
-                    and then RFLX_Types.Base_Integer (To_Base_Integer (Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True)))))
+      and then (if Well_Formed (Cursors (F_Extension)) then (Well_Formed (Cursors (F_Data)) and then Extended)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
@@ -684,7 +668,7 @@ private
              True,
           when F_Extension =>
              (Well_Formed (Cursors (F_Data))
-              and then RFLX_Types.Base_Integer (To_Base_Integer (Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True)))))
+              and then Extended)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -832,8 +816,8 @@ private
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
      ((case Fld is
           when F_Data =>
-             RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (True))
-             or else RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)),
+             Ctx.Extended
+             or else not Ctx.Extended,
           when F_Extension =>
              True));
 
@@ -876,12 +860,12 @@ private
 
    function Well_Formed_Message (Ctx : Context) return Boolean is
      ((Well_Formed (Ctx, F_Data)
-       and then RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)))
+       and then not Ctx.Extended)
       or else Well_Formed (Ctx, F_Extension));
 
    function Valid_Message (Ctx : Context) return Boolean is
      ((Valid (Ctx, F_Data)
-       and then RFLX_Types.Base_Integer (To_Base_Integer (Ctx.Extended)) = RFLX_Types.Base_Integer (To_Base_Integer (False)))
+       and then not Ctx.Extended)
       or else Valid (Ctx, F_Extension));
 
    function Incomplete_Message (Ctx : Context) return Boolean is

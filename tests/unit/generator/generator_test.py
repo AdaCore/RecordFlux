@@ -58,9 +58,7 @@ GENERATOR_TEST_CASES = [
                         Link(
                             Field("B"),
                             FINAL,
-                            # TODO(eng/recordflux/RecordFlux#1365): Fix code generation
-                            # condition=expr.Variable("A"),
-                            condition=expr.Equal(expr.Variable("A"), expr.TRUE),
+                            condition=expr.Variable("A"),
                         ),
                     ],
                     {
@@ -289,44 +287,6 @@ def test_substitution_relation_aggregate(
         relation(left, right).substituted(common.substitution(models.tlv_message(), "", embedded))
         == expected
     )
-
-
-@pytest.mark.parametrize(
-    ("left", "right", "expected_left", "expected_right"),
-    [
-        (
-            expr.Variable("Value"),
-            expr.TRUE,
-            expr.Call("RFLX_Types::Base_Integer", rty.BASE_INTEGER, [expr.Variable("Value")]),
-            expr.Call(
-                "RFLX_Types::Base_Integer",
-                rty.BASE_INTEGER,
-                [expr.Call("To_Base_Integer", rty.BASE_INTEGER, [expr.TRUE])],
-            ),
-        ),
-        (
-            expr.FALSE,
-            expr.Variable("Value"),
-            expr.Call("RFLX_Types::Base_Integer", rty.BASE_INTEGER, [expr.Variable("Value")]),
-            expr.Call(
-                "RFLX_Types::Base_Integer",
-                rty.BASE_INTEGER,
-                [expr.Call("To_Base_Integer", rty.BASE_INTEGER, [expr.FALSE])],
-            ),
-        ),
-    ],
-)
-@pytest.mark.parametrize("relation", [expr.Equal, expr.NotEqual])
-def test_substitution_relation_boolean_literal(
-    relation: Callable[[expr.Expr, expr.Expr], expr.Relation],
-    left: expr.Expr,
-    right: expr.Expr,
-    expected_left: expr.Expr,
-    expected_right: expr.Expr,
-) -> None:
-    assert relation(left, right).substituted(
-        common.substitution(models.tlv_message(), ""),
-    ) == relation(expected_left, expected_right)
 
 
 @pytest.mark.parametrize(
@@ -2246,6 +2206,53 @@ def test_generate_field_size_optimization() -> None:
             expression=ada.Number(value=16),
         )
         in structure.private
+    )
+
+
+def test_param_enumeration_condition() -> None:
+    """Test proper substitution of parameter of enumeration type in link condition."""
+    type_ = mty.Enumeration(
+        "P::T",
+        literals=[("E1", expr.Number(1)), ("E2", expr.Number(2))],
+        size=expr.Number(8),
+        always_valid=False,
+    )
+    link = Link(
+        Field("A"),
+        Field("B"),
+        condition=expr.Equal(expr.Variable("Param", type_=type_.type_), expr.Literal("E1")),
+    )
+
+    message = Message(
+        "P::Message",
+        [
+            Link(INITIAL, Field("A")),
+            link,
+            Link(
+                Field("B"),
+                FINAL,
+            ),
+        ],
+        {
+            Field("A"): type_,
+            Field("B"): models.universal_length(),
+            Field("Param"): type_,
+        },
+    )
+    assert_equal(
+        link.condition.substituted(common.substitution(message, "", embedded=True)),
+        expr.Equal(
+            expr.Call(
+                "RFLX_Types::Base_Integer",
+                rty.BASE_INTEGER,
+                [expr.Call("To_Base_Integer", rty.BASE_INTEGER, [expr.Variable("Param")])],
+            ),
+            expr.Call(
+                "RFLX_Types::Base_Integer",
+                rty.BASE_INTEGER,
+                [expr.Call("To_Base_Integer", rty.BASE_INTEGER, [expr.Literal("E1")])],
+            ),
+        ),
     )
 
 

@@ -86,6 +86,7 @@ from rflx.ada import (
 )
 from rflx.identifier import ID
 from rflx.model import (
+    BOOLEAN,
     FINAL,
     INITIAL,
     Composite,
@@ -2141,6 +2142,14 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
                 **{expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
             },
         )
+        if message.field_types[field] == BOOLEAN:
+            c = c.substituted(
+                lambda x: (
+                    expr.Call("To_Actual", rty.BOOLEAN, [expr.Variable("Val")])
+                    if x == expr.Variable(field.name)
+                    else x
+                ),
+            )
         if isinstance(message.field_types[field], Scalar):
             c = c.substituted(
                 lambda x: expr.Variable("Val") if x == expr.Variable(field.name) else x,
@@ -3618,21 +3627,24 @@ def _struct_substitution(
         if isinstance(expression, expr.Variable) and Field(expression.identifier) in message.fields:
             field_type = message.types[Field(expression.identifier)]
 
+            var = expr.Variable("Struct" * expression.identifier)
+            if field_type == BOOLEAN:
+                return var
             if isinstance(field_type, Enumeration):
                 return expr.Call(
                     "To_Base_Integer",
                     rty.BASE_INTEGER,
-                    [expr.Variable("Struct" * expression.identifier)],
+                    [var],
                 )
 
             if isinstance(field_type, Scalar):
                 return expr.Call(
                     const.TYPES_BASE_INT,
                     rty.BASE_INTEGER,
-                    [expr.Variable("Struct" * expression.identifier)],
+                    [var],
                 )
 
-            return expr.Variable("Struct" * expression.identifier)
+            return var
 
         return expression
 

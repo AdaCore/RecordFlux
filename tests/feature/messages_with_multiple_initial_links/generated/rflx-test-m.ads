@@ -12,9 +12,6 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types;
-with RFLX.RFLX_Builtin_Types;
-with RFLX.RFLX_Builtin_Types.Conversions;
-use RFLX.RFLX_Builtin_Types.Conversions;
 with RFLX.Universal;
 use RFLX.Universal;
 
@@ -498,15 +495,8 @@ private
    pragma Warnings (Off, "unused variable ""*""");
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; P : Boolean) return Boolean is
-     ((if
-          Well_Formed (Cursors (F_F1))
-       then
-          RFLX_Types.Base_Integer (To_Base_Integer (P)) = RFLX_Types.Base_Integer (To_Base_Integer (True)))
-      and then (if
-                   Well_Formed (Cursors (F_F2))
-                then
-                   Valid (Cursors (F_F1))
-                   or RFLX_Types.Base_Integer (To_Base_Integer (P)) = RFLX_Types.Base_Integer (To_Base_Integer (False))))
+     ((if Well_Formed (Cursors (F_F1)) then P)
+      and then (if Well_Formed (Cursors (F_F2)) then Valid (Cursors (F_F1)) or not P))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
