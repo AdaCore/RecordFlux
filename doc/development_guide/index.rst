@@ -192,3 +192,314 @@ All review comments must be set to resolved by a reviewer before a pull request 
 Force pushing is required and accepted for rebasing to the base branch.
 Commits may be squashed before the pull request is merged to prevent a high number of "Fix review comments" commits.
 Squashing should be avoided before the changes have been accepted by all reviewers.
+
+Error messages
+==============
+
+Philosophy
+----------
+
+Error messages should be beginner-friendly while maintaining an efficient workflow for experienced users.
+
+Phrasing
+--------
+
+This section applies to all types of descriptions within error messages (verifier and validator).
+When composing error messages, adhere to the following guidelines:
+
+1.
+   Error messages should be brief and to the point, rather than full English sentences, providing concise explanations of the diagnostic.
+2.
+   Ensure that the message cannot be misinterpreted by users.
+   If there is potential ambiguity, make efforts to clarify it.
+3.
+   Consider that error messages may be viewed within an IDE or any program supporting Language Server Protocol (LSP).
+   Some code editors may display error messages alongside the user's code or in a designated area (e.g., VSCode's "problem" menu).
+   Keep this in mind to enhance the user experience when these messages are presented.
+
+Diagnostic fields
+-----------------
+
+Error messages represent the interface between RecordFlux and the user.
+They are composed of 4 sections that serve different purposes:
+
+1.
+   The actual error message.
+2.
+   The user's code with some relevant annotations.
+3.
+   An optional "note" part that adds relevant information to the error message shown above.
+4.
+   An optional "help" section that contains possible fixes, further explanations about the error, and how it could be resolved.
+
+Error Message
+-------------
+
+This section contains the actual error message.
+The error message should be short, descriptive and start with a capital letter.
+The message should be as beginner-friendly as possible.
+However, sometimes it's not always possible to write a beginner-friendly error message because the error is too complicated to be explained in a single sentence.
+In those cases, try to phrase the error in a way that an intermediate or expert user could understand and iterate quickly in the edit/check cycle.
+This message isn't meant to be a **complete English sentence** but rather a **short and descriptive message**.
+The message should appear in **bold** and be preceded by the following message in red: ``error: ``.
+The prefix represents the diagnostic's severity; it can be one of the following:
+
+- error (in red)
+- warning (in yellow)
+- info (in blue)
+- help (in light blue)
+- note (in yellow)
+
+Example
+^^^^^^^
+
+This following sentence:
+
+.. code:: console
+
+    Type "Foo" is not declared
+
+Should rather be:
+
+.. code:: console
+
+    Undeclared type "Foo"
+
+A complete example should be:
+
+.. code:: console
+
+   error: Undeclared type "Foo"
+
+User code
+---------
+
+This section is used to show the user's code with relevant annotations to provide the user with visual explanations about the actual problem in their code.
+It **must show the actual user code** and not a pretty-printed version of it based on a syntax tree or any other data structure.
+Spans are used to highlight problematic parts of the user's code.
+The caret ``^`` character is used for that purpose.
+If the user's terminal supports it, these must be displayed in red.
+It's also possible to add an optional description next to a span to give more details to the user.
+These description are displayed in blue.
+Note that source file lines are also displayed in this section to make the error easier to locate.
+If there is more than one line gap between two annotations, the representation must not show these lines as they represent useless information.
+In this case, three dots (``...``) should be displayed.
+This section is always preceded by an arrow followed by the file path relative to current working directory, a line number, and a column offset.
+The same rules apply when the content is in the form of a diff.
+
+Examples
+^^^^^^^^
+
+.. code:: console
+
+   --> atm.rflx:20:3:
+    20 | type Cell (Cell_Format : Cell_Type) is
+              ^^^^ In this message declaration
+        ...
+    23 |          then Generic_Flow_Control
+    24 |             if Cell_Format = UNI
+                        ^^^^^^^^^^^^^^^^^ If this condition is met
+        ...
+    31 |       Virtual_Channel_Identifier : Virtual_Channel_Identifier
+    32 |          then Generic_Flow_Control;
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^ Transition goes back to "Generic_Flow_Control"
+
+Notes
+-----
+
+This section is optional and should be used to add relevant details to a diagnostic.
+Fixes and tips do not belong in this section; such things should be in the hint sections.
+Every note is represented as a span labeled with the corresponding explanation next to it.
+This section may include a user's code snippet when it's relevant.
+The "note" keyword is displayed in yellow.
+
+Examples
+^^^^^^^^
+
+.. code:: console
+
+   note: Error can cause other fields to not be aligned to 8 bits
+
+.. code:: console
+
+   note: Type `Foo` is considered as scalar
+         --> ethernet.rflx:6:9:
+         6 |    type TCI is range 0 .. 2 ** 16 - 1 with Size => 16;
+                     ^^^ Type declared here
+
+Hints
+-----
+
+This section is dedicated to helping the user by providing possible fixes, explaining potential error causes, etc.
+The "hint" keyword is displayed in blue.
+Targeting primarily new RecordFlux users, this section is displayed at the end of the error, as experienced users may skip it.
+Links to relevant documentation can also be included.
+Possible fixes are presented as a diff: additions appear in green and removals in red.
+
+
+Examples
+^^^^^^^^
+
+.. code:: console
+
+   help: 42 mod 8 = 2, thus this size is not a multiple of 8
+   help: Sizes are represented as a number of bits, not bytes; Did you mean:
+         --> wireguard.rflx
+         28 | + with Size => 42 * 8
+         28 | - with Size => 42
+
+.. code:: console
+
+    help: Remove transition to "Number" in "Value" (this may not be the desired behavior)
+          --> wireguard.rflx
+          11 | -         then Number
+          12 | -            if Number = 2
+
+Full examples
+-------------
+
+.. code:: console
+
+    error: Maximum bound exceeds limit (2**63 - 1)
+           --> bad.rflx3:10
+           3 | type Integer is range 0 .. 2 ** 64 - 1 with Size => 8 * 8;
+                                          ^^^^^^^ Value is too big
+
+    help: Maximum value of the upper bound is `2**63 - 1`
+    help: Consider using `Opaque` instead (see the `Opaque` type at https://docs.adacore.com/live/wave/recordflux/html/recordflux_lr/language_reference.html#message-types)
+
+
+.. code:: console
+
+   error: Structure contains cycle
+          --> wireguard.rflx:7:10
+          7  |        type Bad_Message is
+              ...
+          9  |            Number : Code;
+                          ^^^^^^^^^^^^^ Next field is implicitly `Value`
+
+          10 |            Value : Integer
+          11 |               then Number
+                             ^^^^^^^^^^^ Transition may produce a cycle `Number`
+
+          12 |                    if Number = 2
+                                  ^^^^^^^^^^^^^ Condition leads to a circular reference to `Number` if it holds true
+
+    note: Sound message must not contain a cycle
+
+    help: Remove transition to "Number" in "Value" (this may not be the desired behavior)
+          --> wireguard.rflx
+          11 | -             then Number
+          12 | -                 if Number = 2
+
+
+.. code:: console
+
+    error: Condition is always true
+           --> wireguard.rflx:18:56
+           16 |    Reserved : Reserved
+           17 |        then Sender
+           18 |            if Message_Type = Handshake_Init or Message_Type = Handshake_Init
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    help: Remove the affected condition:
+          18 | + if Message_Type = Handshake_Init
+          18 | - if Message_Type = Handshake_Init or Message_Type = Handshake_Init
+    help: Check that your condition is not erroneous
+
+.. code:: console
+
+   warning: condition might always be true
+            --> foo.rflx:37:12:
+            36 |       then Other
+            37 |          if Foo = Field and Bad = Baz
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Validator
+---------
+
+Validator's error messages resemble the checker's error messages and largely follow the guidelines mentioned earlier, with a few exceptions.
+
+The validator's diagnostic includes the following sections:
+
+1.
+    Tests actually run by RecordFlux
+2.
+    A failure list with detailed explanations
+3.
+    If enabled, the coverage report
+4.
+    A final line reporting the number of tests run, failed, and succeeded
+
+
+Tests run
+^^^^^^^^^
+
+This part displays tests as they are run by RecordFlux.
+A test can either pass or fail.
+The word ``PASSED`` is shown in green, and ``FAILED`` is displayed in red.
+
+.. code:: console
+
+    PASSED  tests/examples/data/wireguard/handshake/valid/wg_cookie_response.raw
+    FAILED  tests/examples/data/wireguard/handshake/valid/wg_handshake_init.raw
+    FAILED  tests/examples/data/wireguard/handshake/valid/wg_handshake_response.raw
+    PASSED  tests/examples/data/wireguard/handshake/valid/wg_transport.raw
+    PASSED  tests/examples/data/wireguard/handshake/invalid/wg_handshake_init_no_sender.raw
+    PASSED  tests/examples/data/wireguard/handshake/invalid/wg_handshake_response_no_receiver.raw
+    PASSED  tests/examples/data/wireguard/handshake/invalid/wg_handshake_response_no_sender.raw
+    PASSED  tests/examples/data/wireguard/handshake/invalid/wg_invalid_type.raw
+    PASSED  tests/examples/data/wireguard/handshake/invalid/wg_reserved_field_not_zero.raw
+
+Failures
+^^^^^^^^
+
+This part serves as a list of errors accompanied by detailed explanations.
+Each error message is preceded by the sample that triggered the error.
+The format for each error message remains consistent with the guidelines outlined in the previous section.
+However, a hex dump may be included if relevant.
+This section is demarcated by two lines of equal signs (``=``).
+Each test name is enclosed by dash characters (``-``).
+
+Example
+"""""""
+
+.. code:: console
+
+    =========================== Failures ======================================
+     ----- tests/examples/data/wireguard/handshake/valid/wg_handshake_init.raw -----
+      error: Cannot set value for field "Reserved"
+             --> wireguard.rflx:15:12
+             15 | Reserved : Reserved
+                  ^^^^^^^^ Value cannot be set to `16777215`
+
+      help: Value `16777215` is not in the range `0 .. 0`
+            --> wireguard.rflx:11:4
+            11 |    type Reserved is range 0 .. 0 with Size => 3 * 8;
+                         ^^^^^^^^ Declared here
+
+     ----- tests/examples/data/wireguard/handshake/valid/wg_handshake_response.raw -
+      error: Parsed message is shorter than the sample
+             --> wireguard.rflx:13:4
+             13 |    type Handshake is
+                          ^^^^^^^^^ This message
+      note: Parsed message has a length of 32 bits but the sample message is 24 bits long
+      note: Exceeding bytes:
+            --> Hex dump
+            xxxx | cafe cafe cafe cafe
+            xxxx | cafe cafe cafe cafe
+                   ^^^^^^^^^^^^^^^^^^^ Unused bytes
+
+     ----- tests/examples/data/wireguard/handshake/valid/wg_handshake_response.raw -
+      error: Sample message is too small
+             --> wireguard.rflx:13:4
+             13 |    type Handshake is
+                          ^^^^^^^^^ This message
+                 ...
+             56 |         Mac_Second : Opaque
+                          ^^^^^^^^^^ Missing data to parse this field
+
+      note: Parser failed because the sample message is smaller than the specification
+      note: 6 bits are missing for the parser to parse the message
+
+    ================================================================================
