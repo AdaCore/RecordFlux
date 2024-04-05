@@ -55,6 +55,8 @@ workflow:
     - export PATH=$HOME/.local/bin:$PATH
     - python$PYTHON_VERSION -m venv --clear .venv$PYTHON_VERSION
     - . .venv$PYTHON_VERSION/bin/activate
+
+.install_recordflux: &install_recordflux
     - if [ "$SCHEDULE" = "nightly" ]; then
         make init install;
       else
@@ -78,6 +80,7 @@ setup:
     - *setup_alire
     - *setup_gnat
     - *setup_python_venv
+    - *install_recordflux
 
 ###########
 # Testing #
@@ -239,6 +242,7 @@ python_compatibility:
     - git fetch --unshallow
     - *setup_gnat
     - *setup_python_venv
+    - *install_recordflux
     - *setup_python
     - make test_coverage
 
@@ -533,6 +537,7 @@ gnat_wave_compatibility:
     - eval `anod printenv gnat`
     - gnat --version
     - *setup_python_venv
+    - *install_recordflux
     - *setup_python
     - make test_compilation
 
@@ -552,3 +557,49 @@ spark_wave_compatibility:
     - *setup_python
     - make prove_tests
     - make prove_python_tests
+
+installation_from_pypi:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE == "pypi"
+  services:
+    - image:recordflux
+    - cpu:2
+    - mem:4
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+        - "3.8"
+        - "3.9"
+        - "3.10"
+        - "3.11"
+  script:
+    - *setup_gnat
+    - *setup_python_venv
+    - rm -rf rflx
+    - pip install RecordFlux
+    - rflx --version
+    - pip install pytest hypothesis
+    - pytest -vv tests/end_to_end
+
+installation_from_testpypi:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE == "testpypi"
+  services:
+    - image:recordflux
+    - cpu:2
+    - mem:4
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+        - "3.8"
+        - "3.9"
+        - "3.10"
+        - "3.11"
+  script:
+    - *setup_gnat
+    - *setup_python_venv
+    - rm -rf rflx
+    - pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ RecordFlux
+    - rflx --version
+    - pip install pytest hypothesis
+    - pytest -vv tests/end_to_end
