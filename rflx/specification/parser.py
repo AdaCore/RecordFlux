@@ -624,6 +624,7 @@ def create_call(error: RecordFluxError, expression: lang.Expr, filename: Path) -
     assert isinstance(expression, lang.Call)
     return expr.Call(
         create_id(error, expression.f_identifier, filename),
+        rty.UNDEFINED,
         [create_expression(error, a, filename) for a in expression.f_arguments],
         location=node_location(expression, filename),
     )

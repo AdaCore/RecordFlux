@@ -809,8 +809,8 @@ def test_neg_to_ir() -> None:
 def test_add_str() -> None:
     assert str(Add(Variable("X"), Number(1))) == "X + 1"
     assert str(-Add(Variable("X"), Number(1))) == "-X - 1"
-    assert str(Add(Number(1), Call("Test", []))) == "1 + Test"
-    assert str(Add(Number(1), -Call("Test", []))) == "1 - Test"
+    assert str(Add(Number(1), Call("Test", rty.BASE_INTEGER, []))) == "1 + Test"
+    assert str(Add(Number(1), -Call("Test", rty.BASE_INTEGER, []))) == "1 - Test"
     assert str(Add()) == "0"
 
 
@@ -1236,6 +1236,7 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
             Opaque(
                 Call(
                     "X",
+                    rty.UNDEFINED,
                     [Variable("Y", location=Location((10, 30)))],
                     location=Location((10, 20)),
                 ),
@@ -1267,12 +1268,12 @@ def test_attribute_substituted() -> None:
         Number(-42),
     )
     assert_equal(
-        First("X").substituted(lambda x: Call("Y") if x == Variable("X") else x),
-        First(Call("Y")),
+        First("X").substituted(lambda x: Call("Y", rty.BASE_INTEGER) if x == Variable("X") else x),
+        First(Call("Y", rty.BASE_INTEGER)),
     )
     assert_equal(
-        -First("X").substituted(lambda x: Call("Y") if x == Variable("X") else x),
-        -First(Call("Y")),
+        -First("X").substituted(lambda x: Call("Y", rty.BASE_INTEGER) if x == Variable("X") else x),
+        -First(Call("Y", rty.BASE_INTEGER)),
     )
     assert_equal(
         -First("X").substituted(
@@ -1306,7 +1307,10 @@ def test_attribute_str() -> None:
 
 def test_attribute_variables() -> None:
     assert First("X").variables() == [Variable("X")]
-    assert First(Call("X", [Variable("Y")])).variables() == [Variable("X"), Variable("Y")]
+    assert First(Call("X", rty.BASE_INTEGER, [Variable("Y")])).variables() == [
+        Variable("X"),
+        Variable("Y"),
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1325,7 +1329,7 @@ def test_attribute_z3expr(attribute: Expr, z3name: str) -> None:
 
 def test_attribute_z3expr_error() -> None:
     with pytest.raises(Z3TypeError):
-        First(Call("X")).z3expr()
+        First(Call("X", rty.BASE_INTEGER)).z3expr()
 
 
 @pytest.mark.parametrize(
@@ -2150,7 +2154,7 @@ def test_expr_substituted_pre() -> None:
     with pytest.raises(AssertionError):
         Selected(Variable("X"), "F").substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
-        Call("Sub").substituted(lambda x: x, {})  # pragma: no branch
+        Call("Sub", rty.BASE_INTEGER).substituted(lambda x: x, {})  # pragma: no branch
     with pytest.raises(AssertionError):
         ForAllOf("X", Variable("Y"), Variable("Z")).substituted(  # pragma: no branch
             lambda x: x,
@@ -2389,8 +2393,8 @@ def test_call_type() -> None:
     assert_type(
         Call(
             "X",
+            rty.BOOLEAN,
             [Variable("Y", type_=rty.Integer("A"))],
-            type_=rty.BOOLEAN,
             argument_types=[rty.Integer("A")],
         ),
         rty.BOOLEAN,
@@ -2399,18 +2403,23 @@ def test_call_type() -> None:
 
 def test_call_type_error() -> None:
     assert_type_error(
-        Call("X", [Variable("Y", location=Location((10, 30)))], location=Location((10, 20))),
+        Call(
+            "X",
+            rty.UNDEFINED,
+            [Variable("Y", location=Location((10, 30)))],
+            location=Location((10, 20)),
+        ),
         r'^<stdin>:10:30: model: error: undefined variable "Y"\n'
         r'<stdin>:10:20: model: error: undefined function "X"$',
     )
     assert_type_error(
         Call(
             "X",
+            rty.BOOLEAN,
             [
                 Variable("Y", type_=rty.AnyInteger(), location=Location((10, 30))),
                 Variable("Z", type_=rty.BOOLEAN, location=Location((10, 40))),
             ],
-            type_=rty.BOOLEAN,
             argument_types=[
                 rty.BOOLEAN,
                 rty.AnyInteger(),
@@ -2424,50 +2433,52 @@ def test_call_type_error() -> None:
 
 
 def test_call_variables() -> None:
-    result = Call("Sub", [Variable("A"), Variable("B")]).variables()
+    result = Call("Sub", rty.BASE_INTEGER, [Variable("A"), Variable("B")]).variables()
     expected = [Variable("Sub"), Variable("A"), Variable("B")]
     assert result == expected
 
 
 def test_call_findall() -> None:
-    assert Call("X", [Variable("Y"), Variable("Z")]).findall(lambda x: isinstance(x, Variable)) == [
+    assert Call("X", rty.BASE_INTEGER, [Variable("Y"), Variable("Z")]).findall(
+        lambda x: isinstance(x, Variable),
+    ) == [
         Variable("Y"),
         Variable("Z"),
     ]
 
 
 def test_call_str() -> None:
-    assert str(Call("Test", [])) == "Test"
+    assert str(Call("Test", rty.BASE_INTEGER, [])) == "Test"
 
 
 def test_call_neg() -> None:
-    assert -Call("Test", []) == Neg(Call("Test", []))
+    assert -Call("Test", rty.BASE_INTEGER, []) == Neg(Call("Test", rty.BASE_INTEGER, []))
 
 
 def test_call_to_ir() -> None:
     assert Call(
         "X",
+        INT_TY,
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=INT_TY)],
-        type_=INT_TY,
     ).to_ir(id_generator()) == ir.ComplexExpr(
         [],
         ir.IntCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], INT_TY),
     )
     assert Call(
         "X",
+        rty.BOOLEAN,
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=rty.BOOLEAN)],
-        type_=rty.BOOLEAN,
     ).to_ir(id_generator()) == ir.ComplexExpr(
         [],
         ir.BoolCall("X", [ir.BoolVar("Y"), ir.BoolVar("Z")], [rty.BOOLEAN, rty.BOOLEAN]),
     )
     assert Call(
         "X",
+        rty.BOOLEAN,
         [
             And(Variable("X", type_=rty.BOOLEAN), TRUE),
             Add(Variable("Y", type_=INT_TY), Number(1)),
         ],
-        type_=rty.BOOLEAN,
     ).to_ir(id_generator()) == ir.ComplexExpr(
         [],
         ir.BoolCall(
@@ -2481,8 +2492,8 @@ def test_call_to_ir() -> None:
     )
     assert Call(
         "X",
+        MSG_TY,
         [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=INT_TY)],
-        type_=MSG_TY,
     ).to_ir(id_generator()) == ir.ComplexExpr(
         [],
         ir.ObjCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], MSG_TY),

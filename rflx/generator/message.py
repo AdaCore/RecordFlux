@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import abc
 from typing import Union
 
-from rflx import expression as expr
+from rflx import expression as expr, typing_ as rty
 from rflx.ada import (
     FALSE,
     NULL,
@@ -413,6 +413,7 @@ def create_valid_predecessors_invariant_function(
                                                         if l.source in composite_fields
                                                         else "Valid"
                                                     ),
+                                                    rty.BOOLEAN,
                                                     [
                                                         expr.Indexed(
                                                             expr.Variable("Cursors"),
@@ -634,6 +635,7 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
     def recursive_call(fld: Field) -> expr.Expr:
         return expr.Call(
             "Field_First_Internal",
+            rty.BIT_INDEX,
             [
                 expr.Variable("Cursors"),
                 expr.Variable("First"),
@@ -648,6 +650,7 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
     def field_size_internal_call(fld: expr.Variable) -> expr.Expr:
         return expr.Call(
             "Field_Size_Internal",
+            rty.BIT_LENGTH,
             [
                 expr.Variable("Cursors"),
                 expr.Variable("First"),
@@ -672,6 +675,7 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
             expr.AndThen(
                 expr.Call(
                     "Well_Formed",
+                    rty.BOOLEAN,
                     [
                         expr.Indexed(
                             expr.Variable("Cursors"),
@@ -699,7 +703,7 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
             first_expr = [link_first_expr(fld) for fld in incoming]
             return expr.IfExpr(
                 first_expr,
-                expr.Call("RFLX_Types.Unreachable"),
+                expr.Call("RFLX_Types.Unreachable", rty.BOOLEAN),
             )
         assert first_node != fld
         return expr.Add(
@@ -2114,12 +2118,18 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
         c: expr.Expr = expr.Or(*[l.condition for l in message.outgoing(field)])
         c = c.substituted(
             mapping={
-                expr.Size(field.name): expr.Call(const.TYPES_BASE_INT, [expr.Variable("Size")]),
+                expr.Size(field.name): expr.Call(
+                    const.TYPES_BASE_INT,
+                    rty.BASE_INTEGER,
+                    [expr.Variable("Size")],
+                ),
                 expr.Last(field.name): expr.Call(
                     const.TYPES_BASE_INT,
+                    rty.BASE_INTEGER,
                     [
                         expr.Call(
                             "Field_Last",
+                            rty.BIT_LENGTH,
                             [
                                 expr.Variable("Ctx"),
                                 expr.Variable(field.affixed_name, immutable=True),
@@ -3611,12 +3621,14 @@ def _struct_substitution(
             if isinstance(field_type, Enumeration):
                 return expr.Call(
                     "To_Base_Integer",
+                    rty.BASE_INTEGER,
                     [expr.Variable("Struct" * expression.identifier)],
                 )
 
             if isinstance(field_type, Scalar):
                 return expr.Call(
                     const.TYPES_BASE_INT,
+                    rty.BASE_INTEGER,
                     [expr.Variable("Struct" * expression.identifier)],
                 )
 
@@ -3656,6 +3668,7 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
                             lambda x: (
                                 expr.Call(
                                     const.TYPES_BIT_LENGTH,
+                                    rty.BIT_LENGTH,
                                     [expr.Variable("Struct" * x.identifier)],
                                 )
                                 if isinstance(x, expr.Variable)
@@ -3765,6 +3778,7 @@ def _create_structure_field_size_function(message: Message, field: Field) -> Uni
             ):
                 return expr.Call(
                     f"Field_Size_{expression.prefix.identifier}",
+                    rty.BIT_LENGTH,
                     [expr.Variable("Struct")],
                 )
             if (
@@ -3773,6 +3787,7 @@ def _create_structure_field_size_function(message: Message, field: Field) -> Uni
             ):
                 return expr.Call(
                     const.TYPES_BIT_LENGTH,
+                    rty.BIT_LENGTH,
                     [
                         expr.Selected(
                             expr.Variable("Struct"),

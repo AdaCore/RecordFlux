@@ -7,7 +7,7 @@ from typing import Optional, Protocol, TypeVar, Union
 
 from hypothesis import assume, strategies as st
 
-from rflx import error, expression as expr
+from rflx import error, expression as expr, typing_ as rty
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,
@@ -378,7 +378,9 @@ def attributes(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
 
 @st.composite
 def calls(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Call:
-    return draw(st.builds(expr.Call, identifiers(), st.lists(elements, min_size=1)))
+    return draw(
+        st.builds(expr.Call, identifiers(), st.just(rty.Undefined), st.lists(elements, min_size=1)),
+    )
 
 
 @st.composite

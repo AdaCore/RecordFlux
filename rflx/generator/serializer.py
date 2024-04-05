@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Optional
 
-from rflx import expression as expr
+from rflx import expression as expr, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,
@@ -121,7 +121,7 @@ class SerializerGenerator:
                                                     common.substitution(
                                                         message,
                                                         self.prefix,
-                                                        target_type=const.TYPES_BIT_LENGTH,
+                                                        target_type=rty.BIT_LENGTH,
                                                     ),
                                                 )
                                                 .simplified()

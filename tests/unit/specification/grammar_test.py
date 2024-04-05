@@ -17,7 +17,7 @@ from rflx.specification.parser import (
     create_statement,
     diagnostics_to_error,
 )
-from rflx.typing_ import BOOLEAN
+from rflx.typing_ import BOOLEAN, UNDEFINED
 from tests.utils import parse, parse_bool_expression, parse_expression, parse_math_expression
 
 
@@ -292,7 +292,10 @@ def test_mathematical_expression(string: str, expected: expr.Expr) -> None:
     ("string", "expected"),
     [
         ("X + Y", expr.Add(expr.Variable("X"), expr.Variable("Y"))),
-        ("X + Y (Z)", expr.Add(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
+        (
+            "X + Y (Z)",
+            expr.Add(expr.Variable("X"), expr.Call("Y", UNDEFINED, [expr.Variable("Z")])),
+        ),
     ],
 )
 def test_extended_mathematical_expression(string: str, expected: expr.Expr) -> None:
@@ -326,7 +329,10 @@ def test_boolean_expression(string: str, expected: expr.Expr) -> None:
     ("string", "expected"),
     [
         ("X and Y", expr.And(expr.Variable("X"), expr.Variable("Y"))),
-        ("X and Y (Z)", expr.And(expr.Variable("X"), expr.Call("Y", [expr.Variable("Z")]))),
+        (
+            "X and Y (Z)",
+            expr.And(expr.Variable("X"), expr.Call("Y", UNDEFINED, [expr.Variable("Z")])),
+        ),
     ],
 )
 def test_extended_boolean_expression(string: str, expected: expr.Expr) -> None:
@@ -433,7 +439,7 @@ def test_boolean_expression_error(string: str, error: expr.Expr, extended: bool)
         ),
         (
             'X (A, "S", 42)',
-            expr.Call("X", [expr.Variable("A"), expr.String("S"), expr.Number(42)]),
+            expr.Call("X", UNDEFINED, [expr.Variable("A"), expr.String("S"), expr.Number(42)]),
         ),
         ("X::Y (A)", expr.Conversion("X::Y", expr.Variable("A"))),
         ("X'(Y => Z)", expr.MessageAggregate("X", {ID("Y"): expr.Variable("Z")})),
@@ -521,8 +527,11 @@ def test_expression_base(string: str, expected: expr.Expr) -> None:
             ),
         ),
         ("X::Y (Z) = 42", expr.Equal(expr.Conversion("X::Y", expr.Variable("Z")), expr.Number(42))),
-        ("X (Y).Z", expr.Selected(expr.Call("X", [expr.Variable("Y")]), "Z")),
-        ("X (Y).Z'Size", expr.Size(expr.Selected(expr.Call("X", [expr.Variable("Y")]), "Z"))),
+        ("X (Y).Z", expr.Selected(expr.Call("X", UNDEFINED, [expr.Variable("Y")]), "Z")),
+        (
+            "X (Y).Z'Size",
+            expr.Size(expr.Selected(expr.Call("X", UNDEFINED, [expr.Variable("Y")]), "Z")),
+        ),
         (
             "G::E not in P::S (E.D).V",
             expr.NotIn(

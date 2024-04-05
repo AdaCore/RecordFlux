@@ -478,3 +478,15 @@ BASE_INTEGER = Integer(
     Bounds(0, 2**const.MAX_SCALAR_SIZE - 1),
     location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
 )
+
+INDEX = Integer(
+    const.BUILTINS_PACKAGE * "Index",
+    Bounds(1, 2**31 - 1),
+    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+)
+
+BIT_INDEX = Integer(
+    const.BUILTINS_PACKAGE * "Bit_Index",
+    Bounds(1, BIT_LENGTH.bounds.upper),
+    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+)

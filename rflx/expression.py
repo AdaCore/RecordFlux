@@ -2035,9 +2035,9 @@ class Call(Name):
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
+        type_: rty.Type,
         args: Optional[Sequence[Expr]] = None,
         immutable: bool = False,
-        type_: rty.Type = rty.UNDEFINED,
         argument_types: Optional[Sequence[rty.Type]] = None,
         location: Optional[Location] = None,
     ) -> None:
@@ -2158,9 +2158,9 @@ class Call(Name):
         assert isinstance(expr, Call)
         return expr.__class__(
             expr.identifier,
+            expr.type_,
             [a.substituted(func) for a in expr.args],
             expr.immutable,
-            expr.type_,
             expr.argument_types,
             expr.location,
         )

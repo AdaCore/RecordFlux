@@ -154,6 +154,11 @@ def test_generate_partial_update(tmp_path: Path) -> None:
         Generator().generate(models.ethernet_model(), Integration(), tmp_path)
 
 
+def test_type_translation() -> None:
+    assert (common.type_to_id(rty.BASE_INTEGER)) == const.TYPES_BASE_INT
+    assert (common.type_to_id(rty.NamedType("P::mytype"))) == ID("P::mytype")
+
+
 @pytest.mark.parametrize("model", models.spark_test_models())
 def test_equality(model: Callable[[], Model], tmp_path: Path) -> None:
     assert_equal_code(model(), Integration(), GENERATED_DIR, tmp_path, accept_extra_files=True)
@@ -186,6 +191,7 @@ def test_substitution_relation_aggregate(
                 expr.ValueRange(
                     expr.Call(
                         const.TYPES_TO_INDEX,
+                        rty.INDEX,
                         [
                             expr.Selected(
                                 expr.Indexed(
@@ -198,6 +204,7 @@ def test_substitution_relation_aggregate(
                     ),
                     expr.Call(
                         const.TYPES_TO_INDEX,
+                        rty.INDEX,
                         [
                             expr.Selected(
                                 expr.Indexed(
@@ -215,6 +222,7 @@ def test_substitution_relation_aggregate(
     else:
         equal_call = expr.Call(
             "Equal",
+            rty.BOOLEAN,
             [
                 expr.Variable("Ctx"),
                 expr.Variable("F_Value"),
@@ -235,14 +243,22 @@ def test_substitution_relation_aggregate(
         (
             expr.Variable("Value"),
             expr.TRUE,
-            expr.Call("RFLX_Types::Base_Integer", [expr.Variable("Value")]),
-            expr.Call("RFLX_Types::Base_Integer", [expr.Call("To_Base_Integer", [expr.TRUE])]),
+            expr.Call("RFLX_Types::Base_Integer", rty.BASE_INTEGER, [expr.Variable("Value")]),
+            expr.Call(
+                "RFLX_Types::Base_Integer",
+                rty.BASE_INTEGER,
+                [expr.Call("To_Base_Integer", rty.BASE_INTEGER, [expr.TRUE])],
+            ),
         ),
         (
             expr.FALSE,
             expr.Variable("Value"),
-            expr.Call("RFLX_Types::Base_Integer", [expr.Variable("Value")]),
-            expr.Call("RFLX_Types::Base_Integer", [expr.Call("To_Base_Integer", [expr.FALSE])]),
+            expr.Call("RFLX_Types::Base_Integer", rty.BASE_INTEGER, [expr.Variable("Value")]),
+            expr.Call(
+                "RFLX_Types::Base_Integer",
+                rty.BASE_INTEGER,
+                [expr.Call("To_Base_Integer", rty.BASE_INTEGER, [expr.FALSE])],
+            ),
         ),
     ],
 )
@@ -264,11 +280,11 @@ def test_substitution_relation_boolean_literal(
     [
         (
             (expr.Variable("Length"), expr.Number(1)),
-            (expr.Call("Get_Length", [expr.Variable("Ctx")]), expr.Number(1)),
+            (expr.Call("Get_Length", rty.BASE_INTEGER, [expr.Variable("Ctx")]), expr.Number(1)),
         ),
         (
             (expr.Number(1), expr.Variable("Length")),
-            (expr.Number(1), expr.Call("Get_Length", [expr.Variable("Ctx")])),
+            (expr.Number(1), expr.Call("Get_Length", rty.BASE_INTEGER, [expr.Variable("Ctx")])),
         ),
         ((expr.Number(1), expr.Variable("Unknown")), (expr.Number(1), expr.Variable("Unknown"))),
     ],

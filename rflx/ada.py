@@ -12,7 +12,7 @@ from typing import Optional, Union
 
 from typing_extensions import Self
 
-from rflx import expression as expr
+from rflx import expression as expr, typing_ as rty
 from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.contract import invariant
 from rflx.identifier import ID, StrID
@@ -611,7 +611,7 @@ class Call(Name):
 
     def rflx_expr(self) -> expr.Call:
         assert not self.named_arguments
-        return expr.Call(self.identifier, [a.rflx_expr() for a in self.arguments])
+        return expr.Call(self.identifier, rty.UNDEFINED, [a.rflx_expr() for a in self.arguments])
 
 
 class Slice(Name):

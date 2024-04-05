@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx import expression as expr
+from rflx import expression as expr, typing_ as rty
 from rflx.error import ERROR_CONFIG, RecordFluxError
 from rflx.model import (
     BOOLEAN,
@@ -600,7 +600,10 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                         "null",
                         condition=expr.And(
                             expr.Equal(expr.Variable("Z"), expr.TRUE),
-                            expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                            expr.Equal(
+                                expr.Call("G", rty.BOOLEAN, [expr.Variable("F")]),
+                                expr.TRUE,
+                            ),
                         ),
                         description="rfc1149.txt+45:4-47:8",
                     ),

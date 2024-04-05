@@ -9,7 +9,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Optional
 
-from rflx import __version__, expression as expr
+from rflx import __version__, expression as expr, typing_ as rty
 from rflx.ada import (
     FALSE,
     TRUE,
@@ -1103,7 +1103,11 @@ class Generator:
             if isinstance(t, Enumeration) and t.always_valid:
                 condition = expr.AndThen(
                     expr.Selected(
-                        expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]),
+                        expr.Call(
+                            pdu_identifier * f"Get_{f.name}",
+                            t.type_,
+                            [expr.Variable("Ctx")],
+                        ),
                         "Known",
                     ),
                     condition,
@@ -1113,11 +1117,19 @@ class Generator:
                 mapping={
                     expr.Variable(f.name): (
                         expr.Selected(
-                            expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")]),
+                            expr.Call(
+                                pdu_identifier * f"Get_{f.name}",
+                                t.type_,
+                                [expr.Variable("Ctx")],
+                            ),
                             "Enum",
                         )
                         if isinstance(t, Enumeration) and t.always_valid
-                        else expr.Call(pdu_identifier * f"Get_{f.name}", [expr.Variable("Ctx")])
+                        else expr.Call(
+                            pdu_identifier * f"Get_{f.name}",
+                            t.type_,
+                            [expr.Variable("Ctx")],
+                        )
                     )
                     for f, t in condition_fields.items()
                 },
@@ -1591,7 +1603,7 @@ class Generator:
         pdu_identifier = self._prefix * refinement.pdu.identifier
 
         conditions: list[expr.Expr] = [
-            expr.Call(pdu_identifier * "Has_Buffer", [expr.Variable(pdu_context)]),
+            expr.Call(pdu_identifier * "Has_Buffer", rty.BOOLEAN, [expr.Variable(pdu_context)]),
         ]
 
         if null_sdu:
@@ -1599,6 +1611,7 @@ class Generator:
                 [
                     expr.Call(
                         pdu_identifier * "Well_Formed",
+                        rty.BOOLEAN,
                         [
                             expr.Variable(pdu_context),
                             expr.Variable(pdu_identifier * refinement.field.affixed_name),
@@ -1607,6 +1620,7 @@ class Generator:
                     expr.Not(
                         expr.Call(
                             pdu_identifier * "Present",
+                            rty.BOOLEAN,
                             [
                                 expr.Variable(pdu_context),
                                 expr.Variable(pdu_identifier * refinement.field.affixed_name),
@@ -1619,6 +1633,7 @@ class Generator:
             conditions.append(
                 expr.Call(
                     pdu_identifier * "Present",
+                    rty.BOOLEAN,
                     [
                         expr.Variable(pdu_context),
                         expr.Variable(pdu_identifier * refinement.field.affixed_name),
@@ -1630,6 +1645,7 @@ class Generator:
             [
                 expr.Call(
                     pdu_identifier * "Valid",
+                    rty.BOOLEAN,
                     [
                         expr.Variable(pdu_context),
                         expr.Variable(pdu_identifier * f.affixed_name),

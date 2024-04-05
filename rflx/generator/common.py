@@ -6,7 +6,7 @@ import textwrap
 from collections.abc import Callable
 from typing import Optional
 
-from rflx import expression as expr, model
+from rflx import expression as expr, model, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,
@@ -66,17 +66,24 @@ class Debug(enum.Enum):
     EXTERNAL = enum.auto()
 
 
+def type_to_id(type_: rty.NamedType) -> ID:
+    if type_.identifier.parent == BUILTINS_PACKAGE:
+        return const.TYPES * type_.identifier.name
+
+    return type_.identifier
+
+
 def substitution(
     message: model.Message,
     prefix: str,
     embedded: bool = False,
     public: bool = False,
-    target_type: ID = const.TYPES_BASE_INT,
+    target_type: rty.NamedType = rty.BASE_INTEGER,
 ) -> Callable[[expr.Expr], expr.Expr]:
     facts = substitution_facts(message, prefix, embedded, public, target_type)
 
     def type_conversion(expression: expr.Expr) -> expr.Expr:
-        return expr.Call(target_type, [expression])
+        return expr.Call(type_to_id(target_type), target_type, [expression])
 
     def func(  # noqa: PLR0912
         expression: expr.Expr,
@@ -119,6 +126,7 @@ def substitution(
                             expr.ValueRange(
                                 expr.Call(
                                     const.TYPES_TO_INDEX,
+                                    rty.INDEX,
                                     [
                                         expr.Selected(
                                             expr.Indexed(
@@ -131,6 +139,7 @@ def substitution(
                                 ),
                                 expr.Call(
                                     const.TYPES_TO_INDEX,
+                                    rty.INDEX,
                                     [
                                         expr.Selected(
                                             expr.Indexed(
@@ -147,6 +156,7 @@ def substitution(
                     )
                 equal_call = expr.Call(
                     "Equal",
+                    rty.BOOLEAN,
                     [expr.Variable("Ctx"), expr.Variable(field.affixed_name), aggregate],
                 )
                 return equal_call if isinstance(expression, expr.Equal) else expr.Not(equal_call)
@@ -168,12 +178,18 @@ def substitution(
             if boolean_literal and other:
                 return expression.__class__(
                     other,
-                    type_conversion(expr.Call("To_Base_Integer", [boolean_literal])),
+                    type_conversion(
+                        expr.Call("To_Base_Integer", rty.BASE_INTEGER, [boolean_literal]),
+                    ),
                 )
 
         def field_value(field: model.Field) -> expr.Expr:
             if public:
-                return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
+                return expr.Call(
+                    f"Get_{field.name}",
+                    message.field_types[field].type_,
+                    [expr.Variable("Ctx")],
+                )
             return expr.Selected(
                 expr.Indexed(
                     expr.Variable(ID("Ctx") * "Cursors" if not embedded else "Cursors"),
@@ -212,19 +228,24 @@ def substitution_facts(
     prefix: str,
     embedded: bool = False,
     public: bool = False,
-    target_type: ID = const.TYPES_BASE_INT,
+    target_type: rty.NamedType = rty.BASE_INTEGER,
 ) -> dict[expr.Name, expr.Expr]:
     def prefixed(name: str) -> expr.Expr:
         return expr.Variable(ID("Ctx") * name) if not embedded else expr.Variable(name)
 
     first = prefixed("First")
-    last = expr.Call("Written_Last", [expr.Variable("Ctx")]) if public else prefixed("Written_Last")
+    last = (
+        expr.Call("Written_Last", rty.BIT_LENGTH, [expr.Variable("Ctx")])
+        if public
+        else prefixed("Written_Last")
+    )
     cursors = prefixed("Cursors")
 
     def field_first(field: model.Field) -> expr.Expr:
         if public:
             return expr.Call(
                 "Field_First",
+                rty.BIT_INDEX,
                 [expr.Variable("Ctx"), expr.Variable(field.affixed_name)],
             )
         return expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "First")
@@ -233,6 +254,7 @@ def substitution_facts(
         if public:
             return expr.Call(
                 "Field_Last",
+                rty.BIT_LENGTH,
                 [expr.Variable("Ctx"), expr.Variable(field.affixed_name)],
             )
         return expr.Selected(expr.Indexed(cursors, expr.Variable(field.affixed_name)), "Last")
@@ -241,6 +263,7 @@ def substitution_facts(
         if public:
             return expr.Call(
                 "Field_Size",
+                rty.BIT_LENGTH,
                 [expr.Variable("Ctx"), expr.Variable(field.affixed_name)],
             )
         return expr.Add(
@@ -254,8 +277,16 @@ def substitution_facts(
     def parameter_value(parameter: model.Field, parameter_type: model.Type) -> expr.Expr:
         if isinstance(parameter_type, model.Enumeration):
             if embedded:
-                return expr.Call("To_Base_Integer", [expr.Variable(parameter.name)])
-            return expr.Call("To_Base_Integer", [expr.Variable("Ctx" * parameter.identifier)])
+                return expr.Call(
+                    "To_Base_Integer",
+                    rty.BASE_INTEGER,
+                    [expr.Variable(parameter.name)],
+                )
+            return expr.Call(
+                "To_Base_Integer",
+                rty.BASE_INTEGER,
+                [expr.Variable("Ctx" * parameter.identifier)],
+            )
         if isinstance(parameter_type, model.Scalar):
             if embedded:
                 return expr.Variable(parameter.name)
@@ -268,7 +299,8 @@ def substitution_facts(
             if public:
                 return expr.Call(
                     "To_Base_Integer",
-                    [expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])],
+                    rty.BASE_INTEGER,
+                    [expr.Call(f"Get_{field.name}", field_type.type_, [expr.Variable("Ctx")])],
                 )
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
@@ -276,7 +308,7 @@ def substitution_facts(
             )
         if isinstance(field_type, model.Scalar):
             if public:
-                return expr.Call(f"Get_{field.name}", [expr.Variable("Ctx")])
+                return expr.Call(f"Get_{field.name}", field_type.type_, [expr.Variable("Ctx")])
             return expr.Selected(
                 expr.Indexed(cursors, expr.Variable(field.affixed_name)),
                 "Value",
@@ -287,7 +319,7 @@ def substitution_facts(
         assert False, f'unexpected type "{type(field_type).__name__}"'
 
     def type_conversion(expression: expr.Expr) -> expr.Expr:
-        return expr.Call(target_type, [expression])
+        return expr.Call(type_to_id(target_type), target_type, [expression])
 
     return {
         expr.First("Message"): type_conversion(first),
@@ -305,14 +337,20 @@ def substitution_facts(
             for f, t in message.field_types.items()
         },
         **{
-            expr.Literal(l): type_conversion(expr.Call("To_Base_Integer", [expr.Variable(l)]))
+            expr.Literal(l): type_conversion(
+                expr.Call("To_Base_Integer", rty.BASE_INTEGER, [expr.Variable(l)]),
+            )
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
             for l in t.literals
         },
         **{
             expr.Literal(t.package * l): type_conversion(
-                expr.Call("To_Base_Integer", [expr.Variable(prefix * t.package * l)]),
+                expr.Call(
+                    "To_Base_Integer",
+                    rty.BASE_INTEGER,
+                    [expr.Variable(prefix * t.package * l)],
+                ),
             )
             for t in message.types.values()
             if isinstance(t, model.Enumeration) and t != model.BOOLEAN
@@ -348,14 +386,14 @@ def message_structure_invariant(
             field_type.size
             if isinstance(field_type, model.Scalar)
             else link.size.substituted(
-                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_LENGTH),
+                substitution(message, prefix, embedded, target_type=rty.BIT_LENGTH),
             ).simplified()
         )
         first = (
             prefixed("First")
             if link.source == model.INITIAL
             else link.first.substituted(
-                substitution(message, prefix, embedded, target_type=const.TYPES_BIT_INDEX),
+                substitution(message, prefix, embedded, target_type=rty.BIT_INDEX),
             )
             .substituted(
                 mapping={
@@ -947,7 +985,7 @@ def conditional_field_size(
                 substitution(
                     message,
                     prefix,
-                    target_type=const.TYPES_BIT_LENGTH,
+                    target_type=rty.BIT_LENGTH,
                     embedded=True,
                 ),
             )

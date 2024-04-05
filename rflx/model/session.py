@@ -1034,9 +1034,9 @@ def normalize_identifiers(
         if expression.identifier in functions_map:
             return expr.Call(
                 ID(functions_map[expression.identifier], location=expression.identifier.location),
+                expression.type_,
                 [],
                 expression.immutable,
-                expression.type_,
                 location=expression.location,
             )
         if expression.identifier in variables_map:
@@ -1050,9 +1050,9 @@ def normalize_identifiers(
     if isinstance(expression, expr.Call) and expression.identifier in functions_map:
         return expr.Call(
             ID(functions_map[expression.identifier], location=expression.identifier.location),
+            expression.type_,
             expression.args,
             expression.immutable,
-            expression.type_,
             expression.argument_types,
             location=expression.location,
         )

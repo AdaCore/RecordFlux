@@ -49,7 +49,10 @@ def test_str() -> None:
                                 "null",
                                 condition=expr.And(
                                     expr.Equal(expr.Variable("Z"), expr.TRUE),
-                                    expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                                    expr.Equal(
+                                        expr.Call("G", rty.BOOLEAN, [expr.Variable("F")]),
+                                        expr.TRUE,
+                                    ),
                                 ),
                                 description="rfc1149.txt+45:4-47:8",
                             ),
@@ -133,7 +136,10 @@ def test_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> None:
                             "null",
                             condition=expr.And(
                                 expr.Equal(expr.Variable("z"), expr.TRUE),
-                                expr.Equal(expr.Call("g", [expr.Variable("f")]), expr.TRUE),
+                                expr.Equal(
+                                    expr.Call("g", rty.BOOLEAN, [expr.Variable("f")]),
+                                    expr.TRUE,
+                                ),
                             ),
                         ),
                         Transition("a"),
@@ -257,6 +263,7 @@ def test_inconsistent_identifier_casing() -> None:
                                 expr.Equal(
                                     expr.Call(
                                         ID("g", location=Location((7, 7))),
+                                        rty.BOOLEAN,
                                         [expr.Variable(ID("f", location=Location((8, 8))))],
                                     ),
                                     expr.TRUE,
@@ -821,6 +828,7 @@ def test_call_to_undeclared_function() -> None:
                         "Global",
                         expr.Call(
                             "UndefSub",
+                            rty.UNDEFINED,
                             [expr.Variable("Global")],
                             location=Location((10, 20)),
                         ),
@@ -855,6 +863,7 @@ def test_call_undeclared_variable() -> None:
                         "Result",
                         expr.Call(
                             "SubProg",
+                            rty.BOOLEAN,
                             [expr.Variable("Undefined", location=Location((10, 20)))],
                         ),
                     ),
@@ -884,6 +893,7 @@ def test_call_invalid_argument_type() -> None:
                         "Result",
                         expr.Call(
                             "Function",
+                            rty.BOOLEAN,
                             [expr.Variable("Channel", location=Location((10, 20)))],
                         ),
                     ),
@@ -919,6 +929,7 @@ def test_call_missing_arguments() -> None:
                         "Result",
                         expr.Call(
                             "Function",
+                            rty.BOOLEAN,
                             location=Location((10, 20)),
                         ),
                     ),
@@ -948,6 +959,7 @@ def test_call_too_many_arguments() -> None:
                         "Result",
                         expr.Call(
                             "Function",
+                            rty.BOOLEAN,
                             [expr.TRUE, expr.Number(1)],
                             location=Location((10, 20)),
                         ),
@@ -1154,6 +1166,7 @@ def test_undeclared_variable_in_function_call() -> None:
                         "Result",
                         expr.Call(
                             "SubProg",
+                            rty.BOOLEAN,
                             [expr.Variable("Undefined", location=Location((10, 20)))],
                         ),
                     ),
@@ -1629,6 +1642,7 @@ def test_assignment_opaque_function_undef_parameter() -> None:
                         expr.Opaque(
                             expr.Call(
                                 "Sub",
+                                rty.OPAQUE,
                                 [expr.Variable("UndefData", location=Location((10, 20)))],
                             ),
                         ),
@@ -1659,7 +1673,7 @@ def test_assignment_opaque_function_result() -> None:
                     stmt.VariableAssignment(
                         "Data",
                         expr.Opaque(
-                            expr.Call("Sub", [expr.Variable("Data")]),
+                            expr.Call("Sub", rty.OPAQUE, [expr.Variable("Data")]),
                         ),
                     ),
                 ],
@@ -1951,7 +1965,7 @@ def test_undefined_type_in_parameters(parameters: abc.Sequence[decl.FormalDeclar
                 transitions=[
                     Transition(
                         target=ID("null"),
-                        condition=expr.Equal(expr.Call("X", [expr.TRUE]), expr.TRUE),
+                        condition=expr.Equal(expr.Call("X", rty.BOOLEAN, [expr.TRUE]), expr.TRUE),
                     ),
                     Transition(
                         target=ID("Start"),
@@ -2326,7 +2340,7 @@ def test_missing_exception_transition() -> None:
                 actions=[
                     stmt.VariableAssignment(
                         "Tag",
-                        expr.Call("SubProg"),
+                        expr.Call("SubProg", models.tlv_tag().type_),
                     ),
                 ],
             ),
@@ -2383,15 +2397,15 @@ def test_resolving_of_function_calls() -> None:
 
     global_decl = session.declarations[ID("Global")]
     assert isinstance(global_decl, decl.VariableDeclaration)
-    assert global_decl.expression == expr.Call("Func")
+    assert global_decl.expression == expr.Call("Func", rty.BOOLEAN)
 
     local_decl = session.states[0].declarations[ID("Local")]
     assert isinstance(local_decl, decl.VariableDeclaration)
-    assert local_decl.expression == expr.Call("Func")
+    assert local_decl.expression == expr.Call("Func", rty.BOOLEAN)
 
     local_stmt = session.states[0].actions[0]
     assert isinstance(local_stmt, stmt.VariableAssignment)
-    assert local_stmt.expression == expr.Call("Func")
+    assert local_stmt.expression == expr.Call("Func", rty.BOOLEAN)
 
 
 @pytest.mark.parametrize(
@@ -2905,11 +2919,11 @@ def test_state_normalization(
                         "Msg",
                         expr.Call(
                             "Func",
-                            args=[expr.Opaque("Msg2")],
-                            type_=rty.Message(
+                            rty.Message(
                                 "M",
                                 is_definite=True,
                             ),
+                            args=[expr.Opaque("Msg2")],
                         ),
                     ),
                 ],
@@ -2937,10 +2951,10 @@ def test_state_normalization(
                         "Msg",
                         expr.Call(
                             "Func",
-                            args=[expr.Opaque("Msg2")],
                             type_=rty.Structure(
                                 "M",
                             ),
+                            args=[expr.Opaque("Msg2")],
                         ),
                     ),
                 ],
@@ -3060,7 +3074,7 @@ def test_message_assignment_from_function() -> None:
                 transitions=[Transition(target=ID("null"))],
                 exception_transition=Transition(target=ID("null")),
                 declarations=[decl.VariableDeclaration("Msg", "Null_Msg::Message")],
-                actions=[stmt.VariableAssignment("Msg", expr.Call("SubProg"))],
+                actions=[stmt.VariableAssignment("Msg", expr.Call("SubProg", rty.BASE_INTEGER))],
             ),
         ],
         declarations=[],
@@ -3093,7 +3107,10 @@ def test_unchecked_session_checked() -> None:
                         "null",
                         condition=expr.And(
                             expr.Equal(expr.Variable("Z"), expr.TRUE),
-                            expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                            expr.Equal(
+                                expr.Call("G", rty.BOOLEAN, [expr.Variable("F")]),
+                                expr.TRUE,
+                            ),
                         ),
                         description="rfc1149.txt+45:4-47:8",
                     ),
@@ -3139,7 +3156,10 @@ def test_unchecked_session_checked() -> None:
                         "null",
                         condition=expr.And(
                             expr.Equal(expr.Variable("Z"), expr.TRUE),
-                            expr.Equal(expr.Call("G", [expr.Variable("F")]), expr.TRUE),
+                            expr.Equal(
+                                expr.Call("G", rty.BOOLEAN, [expr.Variable("F")]),
+                                expr.TRUE,
+                            ),
                         ),
                         description="rfc1149.txt+45:4-47:8",
                     ),
