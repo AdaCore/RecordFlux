@@ -469,12 +469,11 @@ pdf_documentation:
       - doc/user_guide/build/latex/user_guide.pdf
 
 packaging:
+  extends: .testing
   services:
     - image:recordflux
     - cpu:8
     - mem:16
-  needs:
-    - setup
   script:
     - git fetch --unshallow
     - *setup_gnat
