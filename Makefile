@@ -190,6 +190,7 @@ ifeq ($(NO_ADD_DEVUTILS), )
 	$(POETRY) add --group=dev "./$(DEVUTILS_DIR)[devel]"
 	$(POETRY) add --group=dev "./$(DEVUTILS_DIR)[devel]"
 endif
+	touch $(BUILD_DEPS)
 
 # --- Setup: Langkit-based parser ---
 
