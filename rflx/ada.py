@@ -767,6 +767,14 @@ def If(  # noqa: N802
     return IfExpr(condition_expressions, else_expression)
 
 
+def IfThenElse(  # noqa: N802
+    condition: Expr,
+    then_expr: Expr,
+    else_expr: Optional[Expr] = None,
+) -> Expr:
+    return If([(condition, then_expr)], else_expr)
+
+
 class IfExpr(Expr):
     def __init__(
         self,

@@ -23,8 +23,8 @@ from rflx.ada import (
     ForSomeIn,
     FunctionSpecification,
     Ghost,
-    If,
     IfStatement,
+    IfThenElse,
     In,
     Indexed,
     InOutParameter,
@@ -154,21 +154,17 @@ class ParserGenerator:
                                 ["Byte_Order"],
                                 const.TYPES_BYTE_ORDER,
                                 (
-                                    If(
-                                        [
-                                            (
-                                                In(
-                                                    Variable("Fld"),
-                                                    ChoiceList(
-                                                        *[
-                                                            Variable(f.affixed_name)
-                                                            for f in big_endian_fields
-                                                        ],
-                                                    ),
-                                                ),
-                                                Variable(const.TYPES_HIGH_ORDER_FIRST),
+                                    IfThenElse(
+                                        In(
+                                            Variable("Fld"),
+                                            ChoiceList(
+                                                *[
+                                                    Variable(f.affixed_name)
+                                                    for f in big_endian_fields
+                                                ],
                                             ),
-                                        ],
+                                        ),
+                                        Variable(const.TYPES_HIGH_ORDER_FIRST),
                                         Variable(const.TYPES_LOW_ORDER_FIRST),
                                     )
                                     if big_endian_fields and little_endian_fields
@@ -300,27 +296,23 @@ class ParserGenerator:
                     PragmaStatement(
                         "Assert",
                         [
-                            If(
-                                [
-                                    (
-                                        Or(
-                                            *[
-                                                Equal(Variable("Fld"), Variable(f.affixed_name))
-                                                for f in message.direct_predecessors(FINAL)
-                                            ],
+                            IfThenElse(
+                                Or(
+                                    *[
+                                        Equal(Variable("Fld"), Variable(f.affixed_name))
+                                        for f in message.direct_predecessors(FINAL)
+                                    ],
+                                ),
+                                Equal(
+                                    Mod(
+                                        Call(
+                                            "Field_Last",
+                                            [Variable("Ctx"), Variable("Fld")],
                                         ),
-                                        Equal(
-                                            Mod(
-                                                Call(
-                                                    "Field_Last",
-                                                    [Variable("Ctx"), Variable("Fld")],
-                                                ),
-                                                Size(const.TYPES_BYTE),
-                                            ),
-                                            Number(0),
-                                        ),
+                                        Size(const.TYPES_BYTE),
                                     ),
-                                ],
+                                    Number(0),
+                                ),
                             ),
                         ],
                     ),
@@ -409,18 +401,14 @@ class ParserGenerator:
                                                         Assignment(
                                                             "Value",
                                                             (
-                                                                If(
-                                                                    [
-                                                                        (
-                                                                            Call(
-                                                                                "Composite_Field",
-                                                                                [
-                                                                                    Variable("Fld"),
-                                                                                ],
-                                                                            ),
-                                                                            Number(0),
-                                                                        ),
-                                                                    ],
+                                                                IfThenElse(
+                                                                    Call(
+                                                                        "Composite_Field",
+                                                                        [
+                                                                            Variable("Fld"),
+                                                                        ],
+                                                                    ),
+                                                                    Number(0),
                                                                     Call(
                                                                         "Get",
                                                                         [
@@ -607,19 +595,15 @@ class ParserGenerator:
                     specification,
                     [
                         Postcondition(
-                            If(
-                                [
-                                    (
-                                        Result("Valid"),
-                                        And(
-                                            Call(
-                                                "Well_Formed",
-                                                [Variable("Ctx"), Variable("Fld")],
-                                            ),
-                                            Call("Present", [Variable("Ctx"), Variable("Fld")]),
-                                        ),
+                            IfThenElse(
+                                Result("Valid"),
+                                And(
+                                    Call(
+                                        "Well_Formed",
+                                        [Variable("Ctx"), Variable("Fld")],
                                     ),
-                                ],
+                                    Call("Present", [Variable("Ctx"), Variable("Fld")]),
+                                ),
                             ),
                         ),
                     ],

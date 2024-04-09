@@ -26,6 +26,7 @@ from rflx.ada import (
     GreaterEqual,
     If,
     IfStatement,
+    IfThenElse,
     In,
     Indexed,
     InlineAlways,
@@ -367,24 +368,20 @@ class SerializerGenerator:
                                 ),
                                 *(
                                     [
-                                        If(
-                                            [
-                                                (
-                                                    Call(
-                                                        self.prefix
-                                                        * message.identifier
-                                                        * "Composite_Field",
-                                                        [Variable("Fld")],
-                                                    ),
-                                                    Equal(
-                                                        Mod(
-                                                            Variable("Size"),
-                                                            Size(const.TYPES_BYTE),
-                                                        ),
-                                                        Number(0),
-                                                    ),
+                                        IfThenElse(
+                                            Call(
+                                                self.prefix
+                                                * message.identifier
+                                                * "Composite_Field",
+                                                [Variable("Fld")],
+                                            ),
+                                            Equal(
+                                                Mod(
+                                                    Variable("Size"),
+                                                    Size(const.TYPES_BYTE),
                                                 ),
-                                            ],
+                                                Number(0),
+                                            ),
                                             Variable("State_Valid"),
                                         ),
                                     ]
@@ -477,19 +474,15 @@ class SerializerGenerator:
                                     ]
                                 ],
                                 Call("Sufficient_Space", [Variable("Ctx"), Variable("Fld")]),
-                                If(
-                                    [
-                                        (
-                                            And(
-                                                Variable("State_Valid"),
-                                                Greater(Variable("Size"), Number(0)),
-                                            ),
-                                            Call(
-                                                "Valid",
-                                                [Variable("Ctx"), Variable("Fld")],
-                                            ),
-                                        ),
-                                    ],
+                                IfThenElse(
+                                    And(
+                                        Variable("State_Valid"),
+                                        Greater(Variable("Size"), Number(0)),
+                                    ),
+                                    Call(
+                                        "Valid",
+                                        [Variable("Ctx"), Variable("Fld")],
+                                    ),
                                     Call("Well_Formed", [Variable("Ctx"), Variable("Fld")]),
                                 ),
                                 self.scalar_setter_and_getter_relation(message),
@@ -739,22 +732,18 @@ class SerializerGenerator:
                                         ),
                                     )
                                     if uniform_byte_order
-                                    else If(
-                                        [
-                                            (
-                                                In(
-                                                    Variable("Fld"),
-                                                    ChoiceList(
-                                                        *[
-                                                            Variable(f.affixed_name)
-                                                            for f, b in message.byte_order.items()
-                                                            if b == ByteOrder.LOW_ORDER_FIRST
-                                                        ],
-                                                    ),
-                                                ),
-                                                Variable(const.TYPES_LOW_ORDER_FIRST),
+                                    else IfThenElse(
+                                        In(
+                                            Variable("Fld"),
+                                            ChoiceList(
+                                                *[
+                                                    Variable(f.affixed_name)
+                                                    for f, b in message.byte_order.items()
+                                                    if b == ByteOrder.LOW_ORDER_FIRST
+                                                ],
                                             ),
-                                        ],
+                                        ),
+                                        Variable(const.TYPES_LOW_ORDER_FIRST),
                                         Variable(const.TYPES_HIGH_ORDER_FIRST),
                                     )
                                 ),
@@ -1007,22 +996,18 @@ class SerializerGenerator:
                             And(
                                 *self.composite_setter_postconditions(f),
                                 *self.public_setter_postconditions(message, f),
-                                If(
-                                    [
-                                        (
-                                            Greater(
-                                                Call(
-                                                    "Field_Size",
-                                                    [Variable("Ctx"), Variable(f.affixed_name)],
-                                                ),
-                                                Number(0),
-                                            ),
-                                            Call(
-                                                "Present",
-                                                [Variable("Ctx"), Variable(f.affixed_name)],
-                                            ),
+                                IfThenElse(
+                                    Greater(
+                                        Call(
+                                            "Field_Size",
+                                            [Variable("Ctx"), Variable(f.affixed_name)],
                                         ),
-                                    ],
+                                        Number(0),
+                                    ),
+                                    Call(
+                                        "Present",
+                                        [Variable("Ctx"), Variable(f.affixed_name)],
+                                    ),
                                 ),
                             ),
                         ),
@@ -1666,19 +1651,15 @@ class SerializerGenerator:
         return [
             *(
                 [
-                    If(
-                        [
-                            (
-                                Call("Well_Formed_Message", [Variable("Ctx")]),
-                                Equal(
-                                    Call("Message_Last", [Variable("Ctx")]),
-                                    Call(
-                                        "Field_Last",
-                                        [Variable("Ctx"), Variable(field.affixed_name)],
-                                    ),
-                                ),
+                    IfThenElse(
+                        Call("Well_Formed_Message", [Variable("Ctx")]),
+                        Equal(
+                            Call("Message_Last", [Variable("Ctx")]),
+                            Call(
+                                "Field_Last",
+                                [Variable("Ctx"), Variable(field.affixed_name)],
                             ),
-                        ],
+                        ),
                     ),
                 ]
                 if field in message.direct_predecessors(FINAL)
@@ -1766,39 +1747,23 @@ class SerializerGenerator:
                 ),
                 Variable("Val"),
             ),
-            If(
-                [
-                    (
-                        AndThen(
-                            In(
-                                Variable("Fld"),
-                                ChoiceList(
-                                    *[
-                                        Variable(f.affixed_name)
-                                        for f in message.direct_predecessors(FINAL)
-                                    ],
-                                ),
-                            ),
-                            Call(
-                                "Well_Formed_Message",
-                                [Variable("Ctx")],
-                            ),
-                        ),
-                        Equal(
-                            Call(
-                                "Message_Last",
-                                [Variable("Ctx")],
-                            ),
-                            Call(
-                                "Field_Last",
-                                [
-                                    Variable("Ctx"),
-                                    Variable("Fld"),
-                                ],
-                            ),
+            IfThenElse(
+                AndThen(
+                    In(
+                        Variable("Fld"),
+                        ChoiceList(
+                            *[Variable(f.affixed_name) for f in message.direct_predecessors(FINAL)],
                         ),
                     ),
-                ],
+                    Call("Well_Formed_Message", [Variable("Ctx")]),
+                ),
+                Equal(
+                    Call("Message_Last", [Variable("Ctx")]),
+                    Call(
+                        "Field_Last",
+                        [Variable("Ctx"), Variable("Fld")],
+                    ),
+                ),
             ),
         )
 

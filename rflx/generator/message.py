@@ -39,8 +39,8 @@ from rflx.ada import (
     Ghost,
     Greater,
     GreaterEqual,
-    If,
     IfStatement,
+    IfThenElse,
     In,
     Indexed,
     InOutParameter,
@@ -301,54 +301,50 @@ def create_cursors_invariant_function() -> UnitPart:
                     ForAllIn(
                         "F",
                         Variable("Field"),
-                        If(
-                            [
-                                (
-                                    Call(
-                                        "Well_Formed",
-                                        [Indexed(Variable("Cursors"), Variable("F"))],
+                        IfThenElse(
+                            Call(
+                                "Well_Formed",
+                                [Indexed(Variable("Cursors"), Variable("F"))],
+                            ),
+                            And(
+                                GreaterEqual(
+                                    Selected(
+                                        Indexed(Variable("Cursors"), Variable("F")),
+                                        "First",
                                     ),
-                                    And(
-                                        GreaterEqual(
-                                            Selected(
-                                                Indexed(Variable("Cursors"), Variable("F")),
-                                                "First",
-                                            ),
-                                            Variable("First"),
+                                    Variable("First"),
+                                ),
+                                LessEqual(
+                                    Selected(
+                                        Indexed(Variable("Cursors"), Variable("F")),
+                                        "Last",
+                                    ),
+                                    Variable("Verified_Last"),
+                                ),
+                                LessEqual(
+                                    Selected(
+                                        Indexed(Variable("Cursors"), Variable("F")),
+                                        "First",
+                                    ),
+                                    Add(
+                                        Selected(
+                                            Indexed(Variable("Cursors"), Variable("F")),
+                                            "Last",
                                         ),
-                                        LessEqual(
-                                            Selected(
-                                                Indexed(Variable("Cursors"), Variable("F")),
-                                                "Last",
-                                            ),
-                                            Variable("Verified_Last"),
-                                        ),
-                                        LessEqual(
-                                            Selected(
-                                                Indexed(Variable("Cursors"), Variable("F")),
-                                                "First",
-                                            ),
-                                            Add(
-                                                Selected(
-                                                    Indexed(Variable("Cursors"), Variable("F")),
-                                                    "Last",
-                                                ),
-                                                Number(1),
-                                            ),
-                                        ),
-                                        Call(
-                                            "Valid_Value",
-                                            [
-                                                Variable("F"),
-                                                Selected(
-                                                    Indexed(Variable("Cursors"), Variable("F")),
-                                                    "Value",
-                                                ),
-                                            ],
-                                        ),
+                                        Number(1),
                                     ),
                                 ),
-                            ],
+                                Call(
+                                    "Valid_Value",
+                                    [
+                                        Variable("F"),
+                                        Selected(
+                                            Indexed(Variable("Cursors"), Variable("F")),
+                                            "Value",
+                                        ),
+                                    ],
+                                ),
+                            ),
                         ),
                     ),
                     [Postcondition(TRUE)],
@@ -397,55 +393,51 @@ def create_valid_predecessors_invariant_function(
                     specification,
                     AndThen(
                         *[
-                            If(
-                                [
-                                    (
-                                        Call(
-                                            "Well_Formed",
-                                            [
-                                                Indexed(
-                                                    Variable("Cursors"),
-                                                    Variable(f.affixed_name),
-                                                ),
-                                            ],
+                            IfThenElse(
+                                Call(
+                                    "Well_Formed",
+                                    [
+                                        Indexed(
+                                            Variable("Cursors"),
+                                            Variable(f.affixed_name),
                                         ),
-                                        Or(
-                                            *[
-                                                expr.AndThen(
+                                    ],
+                                ),
+                                Or(
+                                    *[
+                                        expr.AndThen(
+                                            (
+                                                expr.Call(
                                                     (
-                                                        expr.Call(
-                                                            (
-                                                                "Well_Formed"
-                                                                if l.source in composite_fields
-                                                                else "Valid"
+                                                        "Well_Formed"
+                                                        if l.source in composite_fields
+                                                        else "Valid"
+                                                    ),
+                                                    [
+                                                        expr.Indexed(
+                                                            expr.Variable("Cursors"),
+                                                            expr.Variable(
+                                                                l.source.affixed_name,
                                                             ),
-                                                            [
-                                                                expr.Indexed(
-                                                                    expr.Variable("Cursors"),
-                                                                    expr.Variable(
-                                                                        l.source.affixed_name,
-                                                                    ),
-                                                                ),
-                                                            ],
-                                                        )
-                                                        if l.source != INITIAL
-                                                        else expr.TRUE
-                                                    ),
-                                                    l.condition.substituted(
-                                                        common.substitution(
-                                                            message,
-                                                            embedded=True,
-                                                            prefix=prefix,
                                                         ),
-                                                    ),
+                                                    ],
                                                 )
-                                                .simplified()
-                                                .ada_expr()
-                                                for l in message.incoming(f)
-                                            ],
-                                        ),
-                                    ),
-                                ],
+                                                if l.source != INITIAL
+                                                else expr.TRUE
+                                            ),
+                                            l.condition.substituted(
+                                                common.substitution(
+                                                    message,
+                                                    embedded=True,
+                                                    prefix=prefix,
+                                                ),
+                                            ),
+                                        )
+                                        .simplified()
+                                        .ada_expr()
+                                        for l in message.incoming(f)
+                                    ],
+                                ),
                             )
                             for f in message.fields
                         ],
@@ -1166,13 +1158,9 @@ def create_restricted_initialize_procedure(message: Message) -> UnitPart:
                             Variable("Last"),
                             *[Variable(p.identifier) for p in message.parameter_types],
                             Sub(Variable("First"), Number(1)),
-                            If(
-                                [
-                                    (
-                                        Equal(Variable("Written_Last"), Number(0)),
-                                        Sub(Variable("First"), Number(1)),
-                                    ),
-                                ],
+                            IfThenElse(
+                                Equal(Variable("Written_Last"), Number(0)),
+                                Sub(Variable("First"), Number(1)),
                                 Variable("Written_Last"),
                             ),
                             Variable("Buffer"),
@@ -3097,34 +3085,30 @@ def create_update_procedures(
                     ),
                     Postcondition(
                         And(
-                            If(
-                                [
-                                    (
-                                        Call(
-                                            prefix * message.identifier * f"Complete_{f.name}",
-                                            [Variable("Ctx"), Variable("Seq_Ctx")],
-                                        ),
-                                        And(
-                                            Call(
-                                                "Present",
-                                                [Variable("Ctx"), Variable(f.affixed_name)],
-                                            ),
-                                            *[
-                                                Equal(e, Old(e))
-                                                for e in [
-                                                    Call(
-                                                        "Context_Cursor",
-                                                        [
-                                                            Variable("Ctx"),
-                                                            Variable(o.affixed_name),
-                                                        ],
-                                                    )
-                                                    for o in message.successors(f)
-                                                ]
-                                            ],
-                                        ),
+                            IfThenElse(
+                                Call(
+                                    prefix * message.identifier * f"Complete_{f.name}",
+                                    [Variable("Ctx"), Variable("Seq_Ctx")],
+                                ),
+                                And(
+                                    Call(
+                                        "Present",
+                                        [Variable("Ctx"), Variable(f.affixed_name)],
                                     ),
-                                ],
+                                    *[
+                                        Equal(e, Old(e))
+                                        for e in [
+                                            Call(
+                                                "Context_Cursor",
+                                                [
+                                                    Variable("Ctx"),
+                                                    Variable(o.affixed_name),
+                                                ],
+                                            )
+                                            for o in message.successors(f)
+                                        ]
+                                    ],
+                                ),
                                 And(
                                     *[
                                         Call(

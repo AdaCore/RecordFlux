@@ -25,6 +25,7 @@ from rflx.ada import (
     GreaterEqual,
     If,
     IfExpr,
+    IfThenElse,
     Indexed,
     Last,
     Less,
@@ -384,34 +385,19 @@ def message_structure_invariant(
             else TRUE
         )
 
-        return If(
-            [
-                (
-                    precond,
-                    AndThen(
-                        Equal(
-                            Add(
-                                Sub(
-                                    Selected(
-                                        Indexed(
-                                            prefixed("Cursors").ada_expr(),
-                                            Variable(link.target.affixed_name),
-                                        ),
-                                        "Last",
-                                    ),
-                                    Selected(
-                                        Indexed(
-                                            prefixed("Cursors").ada_expr(),
-                                            Variable(link.target.affixed_name),
-                                        ),
-                                        "First",
-                                    ),
+        return IfThenElse(
+            precond,
+            AndThen(
+                Equal(
+                    Add(
+                        Sub(
+                            Selected(
+                                Indexed(
+                                    prefixed("Cursors").ada_expr(),
+                                    Variable(link.target.affixed_name),
                                 ),
-                                Number(1),
+                                "Last",
                             ),
-                            size.ada_expr(),
-                        ),
-                        Equal(
                             Selected(
                                 Indexed(
                                     prefixed("Cursors").ada_expr(),
@@ -419,11 +405,22 @@ def message_structure_invariant(
                                 ),
                                 "First",
                             ),
-                            first.ada_expr(),
                         ),
+                        Number(1),
                     ),
+                    size.ada_expr(),
                 ),
-            ],
+                Equal(
+                    Selected(
+                        Indexed(
+                            prefixed("Cursors").ada_expr(),
+                            Variable(link.target.affixed_name),
+                        ),
+                        "First",
+                    ),
+                    first.ada_expr(),
+                ),
+            ),
         )
 
     def field_property(fld: model.Field) -> Expr:
@@ -432,16 +429,12 @@ def message_structure_invariant(
         return AndThen(*[link_property(link, unique) for link in incoming])
 
     def map_invariant(fld: model.Field) -> Expr:
-        return If(
-            [
-                (
-                    Call(
-                        "Well_Formed",
-                        [Indexed(prefixed("Cursors").ada_expr(), Variable(fld.affixed_name))],
-                    ),
-                    field_property(fld),
-                ),
-            ],
+        return IfThenElse(
+            Call(
+                "Well_Formed",
+                [Indexed(prefixed("Cursors").ada_expr(), Variable(fld.affixed_name))],
+            ),
+            field_property(fld),
         )
 
     return AndThen(*[map_invariant(f) for f in message.fields])
@@ -460,34 +453,25 @@ def context_predicate(
         """
         return AndThen(
             *[
-                If(
-                    [
-                        (
-                            AndThen(
-                                *[
-                                    Call(
-                                        "Invalid",
-                                        [
-                                            Indexed(
-                                                Variable("Cursors"),
-                                                Variable(p.affixed_name),
-                                            ),
-                                        ],
-                                    )
-                                    for p in message.direct_predecessors(f)
-                                ],
-                            ),
+                IfThenElse(
+                    AndThen(
+                        *[
                             Call(
                                 "Invalid",
-                                [
-                                    Indexed(
-                                        Variable("Cursors"),
-                                        Variable(f.affixed_name),
-                                    ),
-                                ],
+                                [Indexed(Variable("Cursors"), Variable(p.affixed_name))],
+                            )
+                            for p in message.direct_predecessors(f)
+                        ],
+                    ),
+                    Call(
+                        "Invalid",
+                        [
+                            Indexed(
+                                Variable("Cursors"),
+                                Variable(f.affixed_name),
                             ),
-                        ),
-                    ],
+                        ],
+                    ),
                 )
                 for f in message.fields
                 if f not in message.direct_successors(model.INITIAL)
@@ -495,16 +479,12 @@ def context_predicate(
         )
 
     return AndThen(
-        If(
-            [
-                (
-                    NotEqual(Variable("Buffer"), Variable("null")),
-                    And(
-                        Equal(First("Buffer"), Variable("Buffer_First")),
-                        Equal(Last("Buffer"), Variable("Buffer_Last")),
-                    ),
-                ),
-            ],
+        IfThenElse(
+            NotEqual(Variable("Buffer"), Variable("null")),
+            And(
+                Equal(First("Buffer"), Variable("Buffer_First")),
+                Equal(Last("Buffer"), Variable("Buffer_Last")),
+            ),
         ),
         public_context_predicate(),
         LessEqual(Sub(Variable("First"), Number(1)), Variable("Verified_Last")),
@@ -577,22 +557,15 @@ def valid_path_to_next_field_condition(
     prefix: str,
 ) -> list[Expr]:
     return [
-        If(
-            [
-                (
-                    l.condition.substituted(substitution(message, public=True, prefix=prefix))
-                    .simplified()
-                    .ada_expr(),
-                    (
-                        Call(
-                            "Valid_Next",
-                            [Variable("Ctx"), Variable(l.target.affixed_name)],
-                        )
-                        if l.target != model.FINAL
-                        else TRUE
-                    ),
-                ),
-            ],
+        IfThenElse(
+            l.condition.substituted(substitution(message, public=True, prefix=prefix))
+            .simplified()
+            .ada_expr(),
+            (
+                Call("Valid_Next", [Variable("Ctx"), Variable(l.target.affixed_name)])
+                if l.target != model.FINAL
+                else TRUE
+            ),
         )
         for l in message.outgoing(field)
         if l.target != model.FINAL
