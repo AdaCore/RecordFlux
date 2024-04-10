@@ -342,7 +342,7 @@ test_optimized: $(RFLX)
 	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation
 
 test_apps: $(RFLX)
-	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) test || exit;)
+	$(foreach app,$(APPS),$(POETRY) run $(MAKE) -C examples/apps/$(app) test || exit;)
 
 test_compilation: $(RFLX)
 	# Skip test for FSF GNAT to prevent violations of restriction "No_Secondary_Stack" in AUnit units
@@ -384,17 +384,17 @@ test_installation: $(SDIST)
 prove: prove_tests prove_python_tests prove_apps prove_doc
 
 prove_tests: $(GNATPROVE_CACHE_DIR)
-	$(MAKE) -C tests/spark prove
+	$(POETRY) run $(MAKE) -C tests/spark prove
 
 prove_python_tests: export GNATPROVE_PROCS=1
 prove_python_tests: $(RFLX) $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/verification
 
 prove_apps: $(RFLX) $(GNATPROVE_CACHE_DIR)
-	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) prove || exit;)
+	$(foreach app,$(APPS),$(POETRY) run $(MAKE) -C examples/apps/$(app) prove || exit;)
 
 prove_doc: $(RFLX)
-	$(MAKE) -C doc/examples prove
+	$(POETRY) run $(MAKE) -C doc/examples prove
 
 prove_property_tests: $(RFLX) $(GNATPROVE_CACHE_DIR)
 	$(PYTEST) tests/property_verification
@@ -418,10 +418,10 @@ git_hooks:
 .PHONY: generate generate_apps
 
 generate: $(RFLX)
-	tools/generate_spark_test_code.py
+	$(POETRY) run tools/generate_spark_test_code.py
 
 generate_apps: $(RFLX)
-	$(foreach app,$(APPS),$(MAKE) -C examples/apps/$(app) generate || exit;)
+	$(foreach app,$(APPS),$(POETRY) run $(MAKE) -C examples/apps/$(app) generate || exit;)
 
 .PHONY: anod_build_dependencies anod_poetry_dependencies
 
