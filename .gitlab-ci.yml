@@ -108,8 +108,12 @@ setup:
         . .venv$PYTHON_VERSION/bin/activate;
         make init;
       fi
-    # Prevent regeneration of Langkit-based parser
-    - touch generated/python/librflxlang generated/lib/relocatable/dev/librflxlang.so
+    # Prevent regeneration of Langkit-based parser.
+    # The full set of dependencies must be touched in the relative build order.
+    - touch .venv$PYTHON_VERSION/lib/python$PYTHON_VERSION/site-packages/langkit
+    - touch generated/python/librflxlang
+    - touch generated/lib/relocatable/dev/librflxlang.so
+    - touch rflx/lang/librflxlang.so
 
 changelog:
   rules:
