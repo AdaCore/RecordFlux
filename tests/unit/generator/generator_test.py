@@ -28,12 +28,66 @@ from rflx.model import (
     type_ as mty,
 )
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
-from tests.const import GENERATED_DIR
+from tests.const import DATA_DIR, GENERATED_DIR
 from tests.data import models
 from tests.utils import assert_equal, assert_equal_code
 
+GENERATOR_TEST_DATA_DIR = DATA_DIR / "generator/generated"
+
 MSG_TY = rty.Message("M")
 SEQ_TY = rty.Sequence("S", rty.Message("M"))
+
+
+@dataclass
+class TC:
+    name: str
+    model: Callable[[], Model]
+    integration: Callable[[], Integration]
+
+
+GENERATOR_TEST_CASES = [
+    TC(
+        "boolean_variable",
+        lambda: Model(
+            [
+                Message(
+                    "P::Message",
+                    [
+                        Link(INITIAL, Field("A")),
+                        Link(Field("A"), Field("B")),
+                        Link(
+                            Field("B"),
+                            FINAL,
+                            # TODO(eng/recordflux/RecordFlux#1365): Fix code generation
+                            # condition=expr.Variable("A"),
+                            condition=expr.Equal(expr.Variable("A"), expr.TRUE),
+                        ),
+                    ],
+                    {
+                        Field("A"): mty.BOOLEAN,
+                        Field("B"): mty.Integer(
+                            "P::T",
+                            first=expr.Number(0),
+                            last=expr.Number(127),
+                            size=expr.Number(7),
+                        ),
+                    },
+                ),
+            ],
+        ),
+        lambda: Integration(),
+    ),
+]
+
+
+@pytest.mark.parametrize(("tc"), GENERATOR_TEST_CASES)
+def test_equality(tc: TC, tmp_path: Path) -> None:
+    assert_equal_code(
+        tc.model(),
+        tc.integration(),
+        GENERATOR_TEST_DATA_DIR / tc.name,
+        tmp_path,
+    )
 
 
 def test_invalid_prefix() -> None:
@@ -160,7 +214,7 @@ def test_type_translation() -> None:
 
 
 @pytest.mark.parametrize("model", models.spark_test_models())
-def test_equality(model: Callable[[], Model], tmp_path: Path) -> None:
+def test_equality_spark_tests(model: Callable[[], Model], tmp_path: Path) -> None:
     assert_equal_code(model(), Integration(), GENERATED_DIR, tmp_path, accept_extra_files=True)
 
 

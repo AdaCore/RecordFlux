@@ -332,7 +332,7 @@ test_property: $(RFLX)
 	$(PYTEST) tests/property
 
 test_tools: $(RFLX)
-	$(PYTEST) --cov=tools --cov-branch --cov-fail-under=43.6 --cov-report=term-missing:skip-covered tests/tools
+	$(PYTEST) --cov=tools --cov-branch --cov-fail-under=60.0 --cov-report=term-missing:skip-covered tests/tools
 
 test_ide: $(RFLX)
 	$(PYTEST) tests/ide
