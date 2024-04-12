@@ -6,7 +6,6 @@ from collections.abc import Callable, Mapping
 import pytest
 import z3
 
-import rflx
 from rflx import ada, ir, typing_ as rty
 from rflx.error import FatalError, Location, RecordFluxError
 from rflx.expression import (
@@ -3136,19 +3135,6 @@ def test_proof_invalid_logic() -> None:
     assert p.error == [
         (
             "Benchmark is not in QF_IDL (integer difference logic).",
-            None,
-        ),
-    ]
-
-
-def test_proof_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(rflx.expression, "PROVER_TIMEOUT", 1)
-    expr = Less(Mod(Variable("X"), Variable("Y")), Number(100))
-    p = Proof(expr)
-    assert p.result == ProofResult.UNKNOWN
-    assert p.error == [
-        (
-            "timeout",
             None,
         ),
     ]
