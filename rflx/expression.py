@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from _typeshed import SupportsAllComparisons
 
 MAX_LINE_LENGTH: Final = 100
-PROVER_TIMEOUT: Final = 600000
+PROVER_TIMEOUT: Final = 1800000
 
 
 class Z3TypeError(TypeError):
