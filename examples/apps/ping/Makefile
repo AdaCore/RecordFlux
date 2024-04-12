@@ -1,8 +1,8 @@
 include ../../../Makefile.common
 
 SPECS = $(wildcard specs/*.rflx)
-GENERATED = build/generated/rflx.ads
-BIN = build/obj/ping
+GENERATED = generated/rflx.ads
+BIN = obj/ping
 CWD := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 
 .PHONY: test test_python test_spark build prove generate clean
@@ -23,13 +23,13 @@ prove: $(GNATPROVE_CACHE_DIR) $(GENERATED)
 generate: $(GENERATED)
 
 clean:
-	rm -rf build python
+	$(RM) generated/* obj/* python
 
-$(GENERATED): $(SPECS) | build/generated
-	rflx generate -d build/generated --ignore-unsupported-checksum $^
+$(GENERATED): $(SPECS) | generated
+	rflx generate -d generated --ignore-unsupported-checksum $^
 
-build/generated:
-	mkdir -p build/generated
+generated:
+	mkdir -p generated
 
-$(BIN): $(GENERATED) $(wildcard build/generated/*)
+$(BIN): $(GENERATED) $(wildcard generated/*)
 	gprbuild -Pping -Xgnat=$(GNAT)

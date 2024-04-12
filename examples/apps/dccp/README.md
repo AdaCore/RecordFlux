@@ -53,9 +53,9 @@ For the above, `graphs` is the output directory for the graph and `dccp.rflx` is
 
 To generate code files for the RecordFlux specification, locate the message spec and enter the following into the terminal window:
 
-`rflx generate -d build/generated specs/dccp.rflx`
+`rflx generate -d generated specs/dccp.rflx`
 
-For the above, `build/generated` is the output directory for the generated code files and `dccp.rflx` is the spec file.
+For the above, `generated` is the output directory for the generated code files and `dccp.rflx` is the spec file.
 
 ## HOWTO: Validate the Specification
 

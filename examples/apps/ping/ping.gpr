@@ -2,25 +2,25 @@ with "../../../defaults";
 
 project Ping is
 
-   for Languages use ("RecordFlux", "Python", "Ada", "C");
-   for Source_Dirs use (".", "specs", "build/generated", "src", "contrib");
-   for Object_Dir use "build/obj";
+   for Languages use ("RecordFlux", "Python3", "Ada", "C");
+   for Source_Dirs use (".", "specs", "generated", "src", "contrib");
+   for Object_Dir use "obj";
    for Create_Missing_Dirs use "True";
    for Main use ("ping.adb");
 
    package Compiler is
-      for Driver ("recordflux") use "";
-      for Driver ("python") use "";
+      for Driver ("RecordFlux") use "";
+      for Driver ("Python3") use "";
    end Compiler;
 
    package Naming is
-      for Spec_Suffix ("recordflux") use ".rflx";
-      for Spec_Suffix ("python") use ".py";
+      for Spec_Suffix ("RecordFlux") use ".rflx";
+      for Spec_Suffix ("Python3") use ".py";
    end Naming;
 
-   package Recordflux is
-      for Output_Dir use "build/generated";
-   end Recordflux;
+   package RecordFlux is
+      for Output_Dir use "generated";
+   end RecordFlux;
 
    package Builder is
       for Default_Switches ("Ada") use Defaults.Builder_Switches & Defaults.Compiler_Switches;

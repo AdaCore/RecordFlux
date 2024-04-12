@@ -169,10 +169,10 @@ code_generation:
     - make generate_apps
   artifacts:
     paths:
-      - examples/apps/*/build/generated
+      - examples/apps/*/generated
 
 .update_timestamps_of_generated_code: &update_timestamps_of_generated_code
-    - touch examples/apps/*/build/generated/*
+    - touch examples/apps/*/generated/*
 
 tests_rflx:
   extends: .testing

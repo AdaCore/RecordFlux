@@ -26,7 +26,7 @@ project Build_Lib is
    for Library_Interface use ("responder");
 
    for Languages use ("Ada", "C");
-   for Source_Dirs use ("src/lib", "build/generated");
+   for Source_Dirs use ("src/lib", "generated");
 
    for Create_Missing_Dirs use "True";
    for Target use Target_Arch & "-elf";

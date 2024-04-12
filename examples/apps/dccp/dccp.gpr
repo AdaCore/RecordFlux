@@ -1,10 +1,10 @@
 with "../../../defaults";
 
-project Build is
+project DCCP is
 
    for Languages use ("RecordFlux", "Ada");
-   for Source_Dirs use ("src", "build/generated", "specs");
-   for Object_Dir use "build/obj";
+   for Source_Dirs use ("src", "generated", "specs");
+   for Object_Dir use "obj";
    for Create_Missing_Dirs use "True";
    for Main use ("dccp_client.adb", "dccp_server.adb");
 
@@ -27,7 +27,7 @@ project Build is
    end Naming;
 
    package RecordFlux is
-      for Output_Dir use "build/generated";
+      for Output_Dir use "generated";
    end RecordFlux;
 
    package Prove is
@@ -40,4 +40,4 @@ project Build is
       for Proof_Switches ("rflx-rflx_arithmetic.adb") use ("--timeout=120");
    end Prove;
 
-end Build;
+end DCCP;

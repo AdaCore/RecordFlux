@@ -1,8 +1,8 @@
 include ../../../Makefile.common
 
 SPECS = $(wildcard specs/*.rflx)
-GENERATED = build/generated/rflx-dccp-packet.ads
-BIN = build/obj/dccp_client build/obj/dccp_server
+GENERATED = generated/rflx-dccp-packet.ads
+BIN = obj/dccp_client obj/dccp_server
 GRAPHS = graphs/DCCP_Option.svg graphs/DCCP_Packet.svg
 
 .PHONY: test build prove generate clean
@@ -19,15 +19,15 @@ prove: $(GNATPROVE_CACHE_DIR) $(GENERATED)
 generate: $(GENERATED) $(GRAPHS)
 
 clean:
-	rm -rf build
+	$(RM) generated/* obj/*
 
-$(GENERATED): $(SPECS) | build/generated
-	rflx generate -d build/generated $^
+$(GENERATED): $(SPECS) | generated
+	rflx generate -d generated $^
 
-build/generated:
-	mkdir -p build/generated
+generated:
+	mkdir -p generated
 
-$(BIN): $(GENERATED) $(wildcard build/generated/*)
+$(BIN): $(GENERATED) $(wildcard generated/*)
 	gprbuild -Pdccp -Xgnat=$(GNAT)
 
 $(GRAPHS): $(SPECS)
