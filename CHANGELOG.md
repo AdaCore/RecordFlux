@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Improve performance of code optimizer (requires SPARK 25; eng/recordflux/RecordFlux#1533)
+- Improve error message when package name matches source file name but the casing isn't correct (eng/recordflux/RecordFlux#1554)
 
 ### Fixed
 
