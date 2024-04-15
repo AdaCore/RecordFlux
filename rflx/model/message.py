@@ -1209,19 +1209,122 @@ class Message(mty.Type):
                 if set(self.incoming(e.target)) <= visited:
                     fields.append(e.target)
         if not has_unreachable and set(self.structure) - visited:
-            self.error.extend(
-                [
-                    (
-                        f'structure of "{self.identifier}" contains cycle',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
-            )
-            # Eng/RecordFlux/RecordFlux#256
+            for cycle in self._find_cycles():
+                self.error.extend(
+                    [
+                        (
+                            f'structure of "{self.identifier}" contains cycle',
+                            Subsystem.MODEL,
+                            Severity.ERROR,
+                            self.location,
+                        ),
+                    ],
+                )
+
+                self.error.extend(
+                    [
+                        (
+                            f'field "{link.source.name}" links to "{link.target.name}"',
+                            Subsystem.MODEL,
+                            Severity.INFO,
+                            link.location,
+                        )
+                        for link in cycle
+                    ],
+                )
+
             return None
         return tuple(f for f in result if f not in [INITIAL, FINAL])
+
+    def _find_cycles(self) -> list[list[Link]]:
+        """
+        Retrieve all cycles in the current model.
+
+        Returns
+        -------
+        A list of cycles. Each cycle is represented by a list of fields.
+
+        """
+
+        def search_cycles(
+            current_link: Link,
+            visited: dict[Field, bool],
+            cycle: list[Link],
+        ) -> bool:
+            """
+            Perform a depth-first search to find cycles in a graph starting from `current_link`.
+
+            If a `cycle` is found (True is returned), the cycle parameter represents the found
+            cycle. The content of `cycle` remains unchanged if no cycles have been detected.
+
+            Returns
+            -------
+                bool: True if a cycle is found, False otherwise.
+
+            """
+            visited[current_link.source] = True
+            cycle.append(current_link)
+
+            for outgoing_link in self.outgoing(current_link.target):
+                adj = outgoing_link.target
+                if not visited[adj]:
+                    if search_cycles(outgoing_link, visited, cycle):
+                        return True
+                else:
+                    cycle.append(outgoing_link)
+                    start_index = cycle.index(outgoing_link)
+                    cycle = cycle[start_index:]
+                    visited[current_link.target] = True
+                    return True
+
+            cycle.pop()
+            return False
+
+        visited = {
+            **{l.source: False for l in self.structure},
+            FINAL: False,
+        }
+
+        cycles = []
+
+        for node in [l for l in self.structure if l.source != INITIAL and l.target != FINAL]:
+            if not visited[node.source]:
+                cycle: list[Link] = []
+                if search_cycles(node, visited, cycle):
+                    cycles.append(cycle)
+
+        def _filter_relevant_links(cycle: list[Link]) -> list[Link]:
+            """
+            Remove the first links that are not part of the cycle.
+
+            Sometimes the algorithm might report cycles like this:
+                `A -> B -> C -> B`
+            Even if this cycle is correct, it's preferable to report only the following to the
+            user as it is more readable:
+                `B -> C -> B`
+
+            Parameters
+            ----------
+            cycle : list[Link]
+                A list of Link objects representing a cycle.
+
+            Returns
+            -------
+            list[Link]
+                A list containing only relevant links for the cycle.
+
+            """
+            loop_field = cycle[-1].target
+            filter_offset = 0
+
+            # Iterate through the cycle to find the first link that belongs to the cycle
+            while filter_offset < len(cycle) and cycle[filter_offset].source != loop_field:
+                filter_offset += 1
+
+            # Return a sublist starting from the first link that belongs to the cycle
+            return cycle[filter_offset:]
+
+        return [_filter_relevant_links(cycle) for cycle in cycles]
 
     def _set_types(self) -> None:
         def set_types(expression: expr.Expr) -> expr.Expr:

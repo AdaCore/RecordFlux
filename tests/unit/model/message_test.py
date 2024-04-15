@@ -371,13 +371,12 @@ def test_unreachable_field() -> None:
 
 def test_cycle() -> None:
     t = Integer("P::T", Number(0), Number(1), Number(1))
-
     structure = [
-        Link(INITIAL, Field("X")),
-        Link(Field(ID("X", Location((3, 5)))), Field("Y")),
-        Link(Field(ID("Y", Location((3, 5)))), Field("Z")),
-        Link(Field(ID("Z", Location((3, 5)))), Field("X")),
-        Link(Field("X"), FINAL),
+        Link(INITIAL, Field(ID("X")), location=Location((3, 5))),
+        Link(Field(ID("X")), Field(ID("Y")), location=Location((4, 5))),
+        Link(Field(ID("Y")), Field(ID("Z")), location=Location((5, 5))),
+        Link(Field(ID("Z")), Field(ID("X")), location=Location((6, 5))),
+        Link(Field(ID("X")), FINAL),
     ]
 
     types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
@@ -385,23 +384,23 @@ def test_cycle() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle$',
-        # Eng/RecordFlux/RecordFlux#256
-        # '\n'
-        # '<stdin>:3:5: model: info: field "X" links to "Y"\n'
-        # '<stdin>:4:5: model: info: field "Y" links to "Z"\n'
-        # '<stdin>:5:5: model: info: field "Z" links to "X"\n',
+        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle\n'
+        '<stdin>:4:5: model: info: field "X" links to "Y"\n'
+        '<stdin>:5:5: model: info: field "Y" links to "Z"\n'
+        r'<stdin>:6:5: model: info: field "Z" links to "X"$',
         location=Location((10, 8)),
     )
 
 
 def test_direct_cycle() -> None:
     t = Integer("P::T", Number(0), Number(1), Number(1))
+    x = Field(ID("X"))
+    y = Field(ID("Y"))
 
     structure = [
-        Link(INITIAL, Field("X")),
-        Link(Field("X"), Field("Y")),
-        Link(Field(ID("Y", Location((3, 5)))), Field("X")),
+        Link(INITIAL, x, location=Location((10, 5))),
+        Link(x, y, location=Location((11, 5))),
+        Link(y, x, location=Location((12, 5))),
     ]
 
     types = {Field("X"): t, Field("Y"): t}
@@ -409,9 +408,127 @@ def test_direct_cycle() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle$',
+        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle\n'
+        '<stdin>:11:5: model: info: field "X" links to "Y"\n'
+        '<stdin>:12:5: model: info: field "Y" links to "X"$',
         location=Location((10, 8)),
     )
+
+
+def test_nested_cycle() -> None:
+    t = Integer("P::T", Number(0), Number(1), Number(1))
+    a = Field(ID("A"))
+    b = Field(ID("B"))
+    c = Field(ID("C"))
+    d = Field(ID("D"))
+    e = Field(ID("E"))
+
+    structure = [
+        Link(INITIAL, a, location=Location((10, 5))),
+        Link(a, b, location=Location((11, 5))),
+        Link(b, c, location=Location((12, 5))),
+        Link(
+            c,
+            Field(ID("B")),
+            condition=Equal(Literal("B"), Number(4)),
+            location=Location((13, 5)),
+        ),
+        Link(c, d, condition=NotEqual(Literal("D"), Number(4)), location=Location((14, 5))),
+        Link(d, e, location=Location((15, 5))),
+        Link(e, FINAL, location=Location((16, 5))),
+    ]
+
+    types = {
+        Field("A"): t,
+        Field("B"): t,
+        Field("C"): t,
+        Field("D"): t,
+        Field("E"): t,
+    }
+
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle\n'
+        '<stdin>:12:5: model: info: field "B" links to "C"\n'
+        '<stdin>:13:5: model: info: field "C" links to "B"$',
+        location=Location((10, 8)),
+    )
+
+
+def test_two_cycles() -> None:
+    t = Integer("P::T", Number(0), Number(1), Number(1))
+    a = Field(ID("A"))
+    b = Field(ID("B"))
+    c = Field(ID("C"))
+    d = Field(ID("D"))
+    e = Field(ID("E"))
+    f = Field(ID("F"))
+
+    structure = [
+        Link(INITIAL, a, location=Location((10, 5))),
+        Link(a, b, location=Location((11, 5))),
+        Link(b, c, location=Location((12, 5))),
+        Link(
+            c,
+            Field(ID("B")),
+            condition=Equal(Literal("B"), Number(4)),
+            location=Location((13, 5)),
+        ),
+        Link(c, d, condition=NotEqual(Literal("D"), Number(4)), location=Location((14, 5))),
+        Link(d, e, location=Location((15, 5))),
+        Link(e, f, location=Location((16, 5))),
+        Link(
+            f,
+            Field(ID("E")),
+            condition=Equal(Literal("B"), Number(5)),
+            location=Location((17, 5)),
+        ),
+        Link(f, FINAL, condition=NotEqual(Literal("B"), Number(5)), location=Location((18, 5))),
+    ]
+
+    types = {
+        Field("A"): t,
+        Field("B"): t,
+        Field("C"): t,
+        Field("D"): t,
+        Field("E"): t,
+        Field("F"): t,
+    }
+
+    assert_message_model_error(
+        structure,
+        types,
+        '^<stdin>:10:8: model: error: structure of "P::M" contains cycle\n'
+        '<stdin>:12:5: model: info: field "B" links to "C"\n'
+        '<stdin>:13:5: model: info: field "C" links to "B"\n'
+        '<stdin>:10:8: model: error: structure of "P::M" contains cycle\n'
+        '<stdin>:16:5: model: info: field "E" links to "F"\n'
+        '<stdin>:17:5: model: info: field "F" links to "E"$',
+        location=Location((10, 8)),
+    )
+
+
+def test_cycle_detection_no_false_positive() -> None:
+    t = Integer("P::T", Number(0), Number(10), Number(8))
+    x = Field(ID("X"))
+    y = Field(ID("Y"))
+    z = Field(ID("Z"))
+
+    structure = [
+        Link(INITIAL, x),
+        Link(x, y),
+        Link(y, z),
+        Link(z, FINAL),
+    ]
+
+    types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
+
+    assert not Message(  # noqa: SLF001
+        "P::M",
+        structure,
+        types,
+    )._find_cycles(), "expected no cycles"
 
 
 def test_parameters() -> None:
