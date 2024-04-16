@@ -576,6 +576,8 @@ installation_from_pypi:
         - "3.10"
         - "3.11"
   script:
+    - git fetch --unshallow
+    - git checkout $(git describe --tags --abbrev=0 --match "v*.*.*")
     - *setup_gnat
     - *setup_python_venv
     - rm -rf rflx
@@ -602,7 +604,7 @@ installation_from_testpypi:
     - *setup_gnat
     - *setup_python_venv
     - rm -rf rflx
-    - pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ RecordFlux
+    - pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --pre RecordFlux
     - rflx --version
     - pip install pytest hypothesis
     - pytest -vv tests/end_to_end
