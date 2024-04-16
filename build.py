@@ -57,13 +57,9 @@ def build_parser() -> None:
 
 
 def build_rapidflux() -> None:
-    subprocess.run(
-        ["cargo", "build", "--release"],
-        cwd="rapidflux",
-        check=True,
-    )
+    subprocess.run(["cargo", "build", "--release"], check=True)
     suffix = sysconfig.get_config_var("EXT_SUFFIX")
     shutil.copy(
-        "rapidflux/target/release/librapidflux.so",
+        "target/release/librapidflux.so",
         f"rflx/rapidflux{suffix}",
     )

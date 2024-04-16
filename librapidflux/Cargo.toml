@@ -1,0 +1,10 @@
+[package]
+name = "librapidflux"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { workspace = true }
+
+[dev-dependencies]
+rstest = "0.19.0"
