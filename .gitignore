@@ -12,6 +12,7 @@
 .venv*
 .vscode/configurationCache.log
 /contrib
+/crashes
 /devutils
 /dist
 /generated
@@ -19,10 +20,10 @@
 /pyproject.toml
 /rflx/lang
 /rflx/rapidflux.so
+/target
 \.*.swp
 __pycache__
 build
 gnatinspect.db
 why3session.xml.bak
 why3shapes.gz.bak
-/crashes

@@ -227,16 +227,17 @@ $(GENERATED_DIR)/python/librflxlang: $(BUILD_DEPS) $(wildcard language/*.py) | $
 # --- Setup: RapidFlux ---
 
 RAPIDFLUX := rflx/rapidflux.so
+RAPIDFLUX_SRC := $(shell find librapidflux rapidflux -type f)
 
 .PHONY: rapidflux
 
 rapidflux: $(RAPIDFLUX)
 
-$(RAPIDFLUX): rapidflux/target/release/librapidflux.so
-	cp rapidflux/target/release/librapidflux.so $@
+$(RAPIDFLUX): target/release/librapidflux.so
+	cp target/release/librapidflux.so $@
 
-rapidflux/target/release/librapidflux.so: rapidflux/Cargo.toml $(wildcard rapidflux/src/*)
-	cargo build --manifest-path=rapidflux/Cargo.toml --release
+target/release/librapidflux.so: $(RAPIDFLUX_SRC)
+	cargo build --release
 
 # --- Setup: Development dependencies ---
 
@@ -305,8 +306,8 @@ check: check_code check_doc
 check_code: check_poetry common_check check_contracts check_rapidflux
 
 check_rapidflux:
-	cargo fmt --manifest-path=rapidflux/Cargo.toml -- --check
-	cargo clippy --manifest-path=rapidflux/Cargo.toml
+	cargo fmt --check
+	cargo clippy --tests
 
 check_poetry: export PYTHONPATH=
 check_poetry: $(RFLX)
@@ -328,7 +329,7 @@ check_doc: $(RFLX)
 .PHONY: fmt
 
 fmt: format
-	cargo fmt --manifest-path=rapidflux/Cargo.toml
+	cargo fmt
 
 # --- Tests ---
 
@@ -338,11 +339,8 @@ test: test_rflx test_rapidflux test_examples
 
 test_rflx: test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
 
-# TODO(xd009642/tarpaulin#1092): --no-dead-code fixes linker error caused by PyO3
-# --skip-clean and --target-dir avoids unnecessary recompilation.
-
 test_rapidflux: $(CARGO_TARPAULIN)
-	cargo tarpaulin --manifest-path=rapidflux/Cargo.toml --fail-under=100 --engine llvm --no-dead-code --skip-clean --target-dir target/coverage
+	cargo tarpaulin --workspace --exclude rapidflux --exclude-files "rapidflux/src/*" --fail-under=100 --engine llvm --skip-clean --target-dir target/coverage
 
 test_examples: test_specs test_apps
 
