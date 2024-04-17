@@ -2,7 +2,7 @@ with "../../../defaults";
 
 project Ping is
 
-   for Languages use ("RecordFlux", "Python3", "Ada", "C");
+   for Languages use ("RecordFlux", "Python", "Ada", "C");
    for Source_Dirs use (".", "specs", "generated", "src", "contrib");
    for Object_Dir use "obj";
    for Create_Missing_Dirs use "True";
@@ -10,12 +10,12 @@ project Ping is
 
    package Compiler is
       for Driver ("RecordFlux") use "";
-      for Driver ("Python3") use "";
+      for Driver ("Python") use "";
    end Compiler;
 
    package Naming is
       for Spec_Suffix ("RecordFlux") use ".rflx";
-      for Spec_Suffix ("Python3") use ".py";
+      for Body_Suffix ("Python") use ".py";
    end Naming;
 
    package RecordFlux is
