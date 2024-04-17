@@ -23,7 +23,7 @@ prove: $(GNATPROVE_CACHE_DIR) $(GENERATED)
 generate: $(GENERATED)
 
 clean:
-	$(RM) generated/* obj/* python
+	$(RM) -r generated/* obj/* python
 
 $(GENERATED): $(SPECS) | generated
 	rflx generate -d generated --ignore-unsupported-checksum $^

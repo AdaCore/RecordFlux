@@ -19,7 +19,7 @@ prove: $(GNATPROVE_CACHE_DIR) $(GENERATED)
 generate: $(GENERATED) $(GRAPHS)
 
 clean:
-	$(RM) generated/* obj/*
+	$(RM) -r generated/* obj/*
 
 $(GENERATED): $(SPECS) | generated
 	rflx generate -d generated $^
