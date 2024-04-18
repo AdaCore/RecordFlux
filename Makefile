@@ -332,7 +332,8 @@ test_property: $(RFLX)
 	$(PYTEST) tests/property
 
 test_tools: $(RFLX)
-	$(PYTEST) --cov=tools --cov-branch --cov-fail-under=57.0 --cov-report=term-missing:skip-covered tests/tools
+	$(PYTEST) --cov=tools --cov-branch --cov-fail-under=0 --cov-report= tests/tools
+	$(POETRY) run coverage report --fail-under=52.0 --show-missing --skip-covered --omit="rflx/*"
 
 test_ide: $(RFLX)
 	$(PYTEST) tests/ide
