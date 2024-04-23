@@ -555,6 +555,7 @@ $(VSIX):
 
 clean:
 	rm -rf $(BUILD_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache doc/language_reference/build doc/user_guide/build
+	$(MAKE) -C examples/apps/wireguard clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
 	$(MAKE) -C examples/apps/spdm_responder clean
