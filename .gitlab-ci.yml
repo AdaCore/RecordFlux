@@ -125,17 +125,33 @@ changelog:
         git diff --name-only origin/main..HEAD | sed -n '/CHANGELOG.md/{:a $q0; n; ba}; ${s/.*/No entry added to CHANGELOG.md/p;q1}';
       fi
 
-anod:
+anod_main:
+  services:
+     - image:recordflux
+     - cpu:16
+     - mem:16
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-      changes:
-        - poetry.lock
   script:
-    - |
-      if [[ "$CI_MERGE_REQUEST_LABELS" != *"Anod"* ]]; then
-        echo "Python dependencies for Anod must be updated"
-        exit 1
-      fi
+    - generic_anod_ci
+    - cat /tmp/ci_env.sh
+    - . /tmp/ci_env.sh
+    - anod build recordflux $ACI_TRACK_QUALIFIER
+    - eval `anod printenv recordflux`
+    - rflx --version
+
+anod_doc:
+  services:
+     - image:recordflux
+     - cpu:16
+     - mem:16
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  script:
+    - generic_anod_ci
+    - cat /tmp/ci_env.sh
+    - . /tmp/ci_env.sh
+    - anod build recordflux-doc $ACI_TRACK_QUALIFIER
 
 commit_messages:
   extends: .testing
