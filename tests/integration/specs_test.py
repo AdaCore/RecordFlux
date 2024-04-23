@@ -5,7 +5,9 @@ import pytest
 
 from rflx import expression as expr, pyrflx
 from rflx.identifier import ID
+from rflx.model.cache import AlwaysVerify
 from rflx.pyrflx import PyRFLXError
+from rflx.specification.parser import Parser
 from tests.const import CAPTURED_DIR, GENERATED_DIR, SPEC_DIR
 from tests.utils import assert_equal_code_specs
 
@@ -447,3 +449,10 @@ def test_tlv_generating_tlv_error(tlv_message_value: pyrflx.MessageValue) -> Non
     tlv_message_value.set("Tag", "Msg_Error")
     assert tlv_message_value.valid_message
     assert tlv_message_value.bytestring == b"\x03"
+
+
+@pytest.mark.parametrize("file", SPEC_DIR.glob("*.rflx"))
+def test_specs(file: Path) -> None:
+    parser = Parser(AlwaysVerify())
+    parser.parse(file)
+    parser.create_model()
