@@ -5,11 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
 
 ### Changed
 
 - Display message fields involved in a cycle (eng/recordflux/RecordFlux#256)
+
+### Fixed
+
+- Bug box for aspect without expression  (eng/recordflux/RecordFlux#1555, eng/recordflux/RecordFlux#1559)
+- Bug box for division and modulo by 0 in numeric expression (eng/recordflux/RecordFlux#1556)
+- Bug box for unary - preceding unary + in expression (eng/recordflux/RecordFlux#1558)
+- Bug box for missing operand (eng/recordflux/RecordFlux#1560)
+- Bug box for negated expressions (eng/recordflux/RecordFlux#1561, eng/recordflux/RecordFlux#1569)
+- Bug box for duplicated operator (eng/recordflux/RecordFlux#1562)
+- Bug box for link to missing field (eng/recordflux/RecordFlux#1566)
 
 ## [0.21.0] - 2024-04-23
 
@@ -512,6 +522,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2019-05-14
 
+[Unreleased]: https://github.com/AdaCore/RecordFlux/compare/v0.21.0...HEAD
 [0.21.0]: https://github.com/AdaCore/RecordFlux/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/AdaCore/RecordFlux/compare/v0.19.0...0.20.0
 [0.19.0]: https://github.com/AdaCore/RecordFlux/compare/v0.18.0...v0.19.0
