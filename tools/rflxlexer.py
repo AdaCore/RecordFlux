@@ -124,30 +124,6 @@ def _calculate_offset(text: str, line: int, column: int) -> int:
 
     error = RecordFluxError()
 
-    if column < 1:
-        error.extend(
-            [
-                (
-                    "column must be positive",
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    Location((line, column)),
-                ),
-            ],
-        )
-
-    if line < 1:
-        error.extend(
-            [
-                (
-                    "line must be positive",
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    Location((line, column)),
-                ),
-            ],
-        )
-
     if line > len(split):
         error.extend(
             [

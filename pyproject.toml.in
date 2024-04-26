@@ -50,6 +50,7 @@ include = [
     { path = "Cargo.toml", format = "sdist" },
     { path = "librapidflux/Cargo.toml", format = "sdist" },
     { path = "librapidflux/src/*.rs", format = "sdist" },
+    { path = "librapidflux/src/diagnostics/*.rs", format = "sdist" },
     { path = "rapidflux/Cargo.toml", format = "sdist" },
     { path = "rapidflux/src/*.rs", format = "sdist" },
     { path = "rflx/ide/vscode/recordflux.vsix" },

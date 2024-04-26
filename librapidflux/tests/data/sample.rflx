@@ -1,0 +1,3 @@
+package Sample is
+   type Integer is range 0 .. 10 with Size => 8;
+end Sample;

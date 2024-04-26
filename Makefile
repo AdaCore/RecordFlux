@@ -241,14 +241,14 @@ target/debug/librapidflux.so: $(RAPIDFLUX_SRC)
 
 # --- Setup: Development dependencies ---
 
-CARGO_TARPAULIN = $(HOME)/.cargo/bin/cargo-tarpaulin
+CARGO_LLVM_COV = $(HOME)/.cargo/bin/cargo-llvm-cov
 
 .PHONY: install_devel
 
-install_devel: $(RFLX) $(CARGO_TARPAULIN)
+install_devel: $(RFLX) $(CARGO_LLVM_COV)
 
-$(CARGO_TARPAULIN):
-	cargo install cargo-tarpaulin
+$(CARGO_LLVM_COV):
+	cargo install cargo-llvm-cov@0.6.9
 
 $(RFLX):: export PYTHONPATH=
 $(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(RAPIDFLUX) $(PROJECT_MANAGEMENT)
@@ -344,7 +344,11 @@ test: test_rflx test_rapidflux test_examples
 test_rflx: test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
 
 test_rapidflux: $(CARGO_TARPAULIN)
-	cargo tarpaulin --workspace --exclude rapidflux --exclude-files "rapidflux/src/*" --fail-under=100 --engine llvm --skip-clean --target-dir target/coverage
+	cargo llvm-cov \
+		--package librapidflux \
+		--fail-under-lines 100 \
+		--show-missing-lines \
+		--skip-functions
 
 test_examples: test_specs test_apps
 

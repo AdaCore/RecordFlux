@@ -14,7 +14,7 @@ pub struct Location(librapidflux::diagnostics::Location);
 #[pymethods]
 impl Location {
     #[new]
-    fn py_new(start: (i32, i32), source: Option<PathBuf>, end: Option<(i32, i32)>) -> Self {
+    fn py_new(start: (u32, u32), source: Option<PathBuf>, end: Option<(u32, u32)>) -> Self {
         Location(librapidflux::diagnostics::Location {
             source,
             start: start.into(),
@@ -29,7 +29,7 @@ impl Location {
     fn __repr__(&self) -> String {
         format!(
             "Location({:?}, {}, {})",
-            std::convert::Into::<(i32, i32)>::into(self.0.start),
+            std::convert::Into::<(u32, u32)>::into(self.0.start),
             self.0
                 .source
                 .as_ref()
@@ -38,7 +38,7 @@ impl Location {
                     s.to_string_lossy()
                 )),
             self.0.end.as_ref().map_or("None".to_string(), |e| {
-                format!("{:?}", std::convert::Into::<(i32, i32)>::into(*e))
+                format!("{:?}", std::convert::Into::<(u32, u32)>::into(*e))
             })
         )
     }
@@ -77,7 +77,7 @@ impl Location {
         PyBytes::new_bound(py, &serialize(&self).unwrap())
     }
 
-    fn __getnewargs__(&self) -> ((i32, i32), Option<PathBuf>, Option<(i32, i32)>) {
+    fn __getnewargs__(&self) -> ((u32, u32), Option<PathBuf>, Option<(u32, u32)>) {
         (
             self.0.start.into(),
             self.0.source.clone(),
@@ -86,7 +86,7 @@ impl Location {
     }
 
     #[getter]
-    fn get_start(&self) -> (i32, i32) {
+    fn get_start(&self) -> (u32, u32) {
         self.0.start.into()
     }
 
@@ -105,11 +105,11 @@ impl Location {
     }
 
     #[getter]
-    fn get_end(&self) -> Option<(i32, i32)> {
+    fn get_end(&self) -> Option<(u32, u32)> {
         self.0
             .end
             .as_ref()
-            .map(|e| std::convert::Into::<(i32, i32)>::into(*e))
+            .map(|e| std::convert::Into::<(u32, u32)>::into(*e))
     }
 
     #[getter]
