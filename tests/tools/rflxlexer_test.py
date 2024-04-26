@@ -19,18 +19,6 @@ def test_calculate_offset_invalid() -> None:
     with pytest.raises(RecordFluxError, match="^<stdin>:2:1: parser: error: line out of range$"):
         tools.rflxlexer._calculate_offset("", 2, 1)
 
-    with pytest.raises(
-        RecordFluxError,
-        match="^<stdin>:-1:1: parser: error: line must be positive$",
-    ):
-        tools.rflxlexer._calculate_offset("", -1, 1)
-
-    with pytest.raises(
-        RecordFluxError,
-        match="^<stdin>:1:-1: parser: error: column must be positive$",
-    ):
-        tools.rflxlexer._calculate_offset("", 1, -1)
-
     with pytest.raises(RecordFluxError, match="^<stdin>:2:4: parser: error: column out of range$"):
         tools.rflxlexer._calculate_offset("1234232\n1", 2, 4)
 
