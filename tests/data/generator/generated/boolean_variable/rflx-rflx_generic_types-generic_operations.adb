@@ -73,7 +73,7 @@ is
           and then LME_Size = (Natural (Off) + Value_Size + Byte'Size - 1) mod Byte'Size + 1)
    is
    begin
-      RME_Index := Index (Last - Long_Integer (Off) / Byte'Size);
+      RME_Index := Index (Last);
       LME_Index := Index (Last - (Long_Integer (Off) + Long_Integer (Value_Size) - 1) / Byte'Size);
       RME_Size := Byte'Size - Natural (Off);
       LME_Size := (Natural (Off) + Value_Size + Byte'Size - 1) mod Byte'Size + 1;
