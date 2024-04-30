@@ -299,11 +299,11 @@ $(BIN_DIR)/poetry:
 
 # --- Checks ---
 
-.PHONY: check check_code check_poetry check_contracts check_rapidflux check_doc
+.PHONY: check check_code check_poetry check_contracts check_rapidflux check_doc check_unit_test_file_coverage
 
 check: check_code check_doc
 
-check_code: check_poetry common_check check_contracts check_rapidflux
+check_code: check_poetry common_check check_contracts check_rapidflux check_unit_test_file_coverage
 
 check_rapidflux:
 	cargo fmt --check
@@ -317,6 +317,10 @@ check_poetry: $(RFLX)
 
 check_contracts: $(RFLX)
 	$(POETRY) run pyicontract-lint $(PYTHON_PACKAGES)
+
+check_unit_test_file_coverage:
+	# TODO(eng/recordflux/RecordFlux#1600): Enforce test file coverage
+	-$(POETRY) run tools/check_unit_test_file_coverage.py --source-dir $(MAKEFILE_DIR)/rflx/ --test-dir $(MAKEFILE_DIR)/tests/unit/
 
 check_doc: $(RFLX)
 	$(POETRY) run tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
