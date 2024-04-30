@@ -233,11 +233,11 @@ RAPIDFLUX_SRC := $(shell find librapidflux rapidflux -type f)
 
 rapidflux: $(RAPIDFLUX)
 
-$(RAPIDFLUX): target/release/librapidflux.so
-	cp target/release/librapidflux.so $@
+$(RAPIDFLUX): target/debug/librapidflux.so
+	cp target/debug/librapidflux.so $@
 
-target/release/librapidflux.so: $(RAPIDFLUX_SRC)
-	cargo build --release
+target/debug/librapidflux.so: $(RAPIDFLUX_SRC)
+	cargo build
 
 # --- Setup: Development dependencies ---
 
@@ -527,12 +527,13 @@ $(SDIST): $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 # resulting wheel will contain more than one RapidFlux library.
 wheel: RAPIDFLUX_PLATFORM := rflx/$(shell $(PYTHON) -c 'import sysconfig; print("rapidflux" + sysconfig.get_config_var("EXT_SUFFIX"))')
 
-wheel: clean_build $(BUILD_DEPS) $(PARSER) clean_rapidflux $(RAPIDFLUX) $(VSIX) pyproject.toml $(PACKAGE_SRC)
-	rm -f rflx/rapidflux.*.so
+wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
+	$(RM) rflx/rapidflux*.so
+	cargo build --release
 	@# Add platform tag to library
-	mv $(RAPIDFLUX) $(RAPIDFLUX_PLATFORM)
+	cp target/release/librapidflux.so $(RAPIDFLUX_PLATFORM)
 	$(POETRY) build -vv --no-cache -f wheel
-	mv $(RAPIDFLUX_PLATFORM) $(RAPIDFLUX)
+	$(RM) $(RAPIDFLUX_PLATFORM)
 
 # Build distributions for all defined Python versions without local version identifier.
 pypi_dist: $(PROJECT_MANAGEMENT)
@@ -550,7 +551,7 @@ $(VSIX):
 
 # --- Clean ---
 
-.PHONY: clean clean_build clean_rapidflux clean_all
+.PHONY: clean clean_build clean_all
 
 clean:
 	rm -rf $(BUILD_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache doc/language_reference/build doc/user_guide/build
@@ -564,11 +565,8 @@ clean:
 clean_build:
 	rm -rf $(BUILD_DIR)
 
-clean_rapidflux:
-	rm -rf rflx/rapidflux*.so
-
-clean_all: clean clean_build clean_rapidflux
-	rm -rf $(DEVEL_VENV) $(POETRY_VENV) $(BIN_DIR) $(GENERATED_DIR) rflx/lang pyproject.toml
+clean_all: clean clean_build
+	$(RM) -r $(DEVEL_VENV) $(POETRY_VENV) $(BIN_DIR) $(GENERATED_DIR) rflx/lang rflx/rapidflux*.so pyproject.toml
 	test -d $(LANGKIT_DIR) && touch $(LANGKIT_DIR)/langkit/py.typed || true
 	@$(call remove_repo,$(DEVUTILS_DIR))
 	@$(call remove_repo,$(GNATCOLL_DIR))
