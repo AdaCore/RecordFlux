@@ -200,6 +200,37 @@ Force pushing is required and accepted for rebasing to the base branch.
 Commits may be squashed before the pull request is merged to prevent a high number of "Fix review comments" commits.
 Squashing should be avoided before the changes have been accepted by all reviewers.
 
+Development loop
+================
+
+The following is a suggested workflow that should fit many scenarios.
+When working on a change, it is a good idea to use the following commands often:
+
+.. code:: console
+
+   $ make format && make check
+
+The first command formats the code, while the second runs various checks, including type checks.
+This should catch a variety of syntax and typing errors.
+
+While developing, it can be useful to test the code on a single example (e.g. a RecordFlux spec that contains the new feature to develop, or triggers the bug to fix, etc).
+Once the desired behavior is achieved, one can test the change on the larger testsuite, e.g., using ``make test``.
+
+If individual tests fail, the code needs to be fixed or the test changed.
+Knowing which action should be done requires checking out the unit test code.
+Individual failing tests can be run with a command like this:
+
+.. code:: console
+
+   $ pytest -k testname tests/unit
+
+Other useful options of ``pytest`` include:
+
+- ``--last-failed`` or ``--lf`` runs only the tests that failed during the last run of ``pytest``.
+- ``--exitfirst`` or ``-x`` stops at the first error.
+- ``-n <number>`` speficies the number of tests to run in parallel.
+- The full path to a test can be given using the syntax ``pytest path/to/test.py::test_foo``.
+
 Error messages
 ==============
 

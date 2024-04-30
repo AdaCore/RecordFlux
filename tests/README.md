@@ -41,6 +41,28 @@ End-to-end tests verify the functionality of the entire application. These tests
 
 Property-based testing based on [Hypothesis](https://hypothesis.readthedocs.io/).
 
+#### Reproducing Failures of Property Testing
+
+Property tests don't have fixed inputs and instead generate inputs based on rules provided to the Hypothesis framework.
+This poses a problem when reproducing test failures, as the failing input isn't readily available.
+The framework provides the failing input in the form of an annotation.
+The error message on test failure can look like this:
+
+```
+You can reproduce this example by temporarily adding @reproduce_failure('6.23.4', b'AAMBAAABAAAAAAA=') as a decorator on your test case,
+```
+
+In this case, you should add the decorator to your testcase and add `from hypothesis import reproduce_failure` to the imports of the test file.
+
+#### Property-Based Compilation Tests
+
+The tests in `tests/property/generator_test.py::test_code_compilation`, when they fail, generate very large output and it's not easy to extract the relevant information.
+Here are some directions to deal with this situation:
+- Pipe the output to `less` to be able to see the whole output.
+- The end of the output should contain the model (also represented as RecordFlux specification) which triggered the test failure.
+- The beginning of the output should contain e.g. the compilation error triggered by the model.
+- You can also save the model into a `.rflx` file and run `rflx` by hand to reproduce the error.
+
 ### Verification Tests (`tests/verification`, `tests/property_verification`)
 
 All Python-based tests that require GNATprove.
@@ -52,6 +74,9 @@ All Python-based tests that require GNAT.
 ### SPARK Tests (`tests/spark`)
 
 The SPARK tests verify the correctness of the generated SPARK code. A [test suite](https://docs.adacore.com/live/wave/aunit/html/aunit_cb/aunit_cb.html) and [formal verification](https://docs.adacore.com/live/wave/spark2014/html/spark2014_ug/en/gnatprove.html) is used to ensure functional correctness and prove absence of runtime errors. The to be proven code is contained in `tests/spark/generated`. This code is also used by integration tests for regression testing.
+
+These tests are not based on pytest and come with their own Makefile.
+Run `make test` to compile and run the tests, and `make prove` to run the proofs of the test code and generated SPARK code.
 
 ### Language Tests (`tests/language`)
 
@@ -87,3 +112,60 @@ The readability of pytest's diffs of complex objects can be improved by setting 
 
 - [pytest-clarity](https://github.com/darrenburns/pytest-clarity)
 - [pytest-icdiff](https://github.com/hjwp/pytest-icdiff)
+
+## Tutorial
+
+The majority of testing is based on [pytest](https://pytest.org).
+The Makefile provides standard targets that execute well-defined subsets of the testsuite.
+
+### Predefined subsets (Makefile targets)
+
+The main Makefile defines some targets which exercise well-defined subsets of the testsuite.
+Most of these subsets are still quite time-consuming.
+In many cases, the name of the target indicates the subset (e.g. `make test_property` runs the tests in `tests/property`).
+We list some notable targets below:
+
+- `make test_coverage`: Run unit and integration tests, require 100% code coverage.
+- `make test_unit_coverage`: Run unit tests, require 95% code coverage.
+- `make test_rflx`: Run a comprehensive list of tests (but not all tests), including unit tests and integration tests, as well as compilation tests, but no proofs.
+- `make test_examples`: Run the example tests in `tests/examples` as well as the example apps in `examples/apps` (without proofs).
+- `make test`: Combination of `test_rflx` and `test_examples`.
+- `make test_compilation`: Execute all tests where GNAT is required (all other targets don't need a compiler).
+- `make prove`: Run all tests that run GNATprove, including tests in `tests/spark` and `tests/verification` (see also the explanation for feature tests).
+
+### How to run subsets of tests
+
+During development, to run a specific set of tests, run e.g. `pytest tests/unit` to run all unit tests, or `pytest tests/integration` to run all integration tests.
+You can add parallelism by using the `-n` switch, and you can specify (partial) test names using the `-k` switch.
+A complete command to run all unit tests with "bounds" in their name:
+
+```
+pytest -n 8 -k bounds tests/unit
+```
+
+You can add the option `-vv` to get more information in case of a test failure.
+
+## When to modify tests or add new tests
+
+### Unit tests
+
+Unit testing is essential for early bug detection, facilitates code refactoring, and serves as executable documentation of intended behavior. Speed is an important aspect of unit testing. Fast-running tests allow you to quickly iterate on the code, providing rapid feedback on the correctness of your changes. All new or modified code should be covered by unit tests.
+
+### Code Coverage
+
+Any code changes may cause the testsuite to fail to reach the coverage targets.
+Change the unit tests or add new ones to increase the coverage.
+
+### Fixing a bug
+
+When a bug is fixed in the tool, a test should be added that would fail if the bug had not been fixed.
+This is called a regression test and is intended to protect against the bug resurfacing later.
+Depending on the nature of the bug, this can be a unit test or integration test.
+
+### Adding a feature
+
+Adding a feature should be complemented by these tests (at least):
+- Add a corresponding unit test (e.g. if the new feature is in the session generator, add a unit test in `tests/unit/generator/generator_test.py`)
+- If related to code generation, add a test which exercises the feature in `tests/feature`)
+
+Integration testing ensures that different components of RecordFlux work together seamlessly. An integration test is required if a functionality is added or changed that depends on the interaction of multiple components (e.g., parsing of a specification and subsequent validation of the model).
