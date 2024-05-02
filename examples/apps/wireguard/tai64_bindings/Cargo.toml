@@ -10,3 +10,5 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = "0.20.0"
 tai64 = "4.0.0"
+
+[workspace]
