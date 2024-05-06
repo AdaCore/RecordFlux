@@ -3,7 +3,7 @@ use std::{fmt::Display, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Default, Debug)]
 pub struct FilePosition(u32, u32);
 
 impl From<(u32, u32)> for FilePosition {
@@ -239,5 +239,12 @@ Third",
         let de_position = deserialize(&ser_bytes).expect("failed to deserialize file position");
 
         assert_eq!(position, de_position);
+    }
+
+    #[rstest]
+    #[case::file_position_lt(FilePosition::new(1, 2) < FilePosition::new(2, 3))]
+    #[case::file_position_gt(FilePosition::new(3, 2) > FilePosition::new(1, 3))]
+    fn test_file_position_comparison(#[case] comparison: bool) {
+        assert!(comparison);
     }
 }
