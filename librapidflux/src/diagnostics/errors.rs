@@ -2,12 +2,11 @@ use std::{
     fmt::{Debug, Display},
     fs,
     io::{self, Write},
-    path::PathBuf,
-    str::FromStr,
 };
 
 #[cfg(not(test))]
 use annotate_snippets::renderer::{Color, RgbColor, Style};
+use annotate_snippets::AnnotationType;
 use serde::{Deserialize, Serialize};
 
 use super::Location;
@@ -31,6 +30,18 @@ pub enum Severity {
     Note,
 }
 
+impl From<Severity> for AnnotationType {
+    fn from(value: Severity) -> Self {
+        match value {
+            Severity::Info => AnnotationType::Info,
+            Severity::Warning => AnnotationType::Warning,
+            Severity::Error => AnnotationType::Error,
+            Severity::Help => AnnotationType::Help,
+            Severity::Note => AnnotationType::Note,
+        }
+    }
+}
+
 impl Display for Severity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -43,7 +54,7 @@ impl Display for Severity {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Annotation {
     severity: Severity,
     location: Location,
@@ -83,20 +94,16 @@ impl Annotation {
         self.label.as_deref()
     }
 
-    fn to_annotation<'a>(&'a self, source: &'a str) -> annotate_snippets::Annotation<'a> {
-        let file_offset = self.location.to_file_offset(source);
-        let annotation = match self.severity {
-            Severity::Info => annotate_snippets::Level::Info.span(file_offset),
-            Severity::Warning => annotate_snippets::Level::Warning.span(file_offset),
-            Severity::Error => annotate_snippets::Level::Error.span(file_offset),
-            Severity::Help => annotate_snippets::Level::Help.span(file_offset),
-            Severity::Note => annotate_snippets::Level::Note.span(file_offset),
-        };
+    fn to_annotation<'src>(
+        &'src self,
+        source: &'src str,
+    ) -> annotate_snippets::SourceAnnotation<'src> {
+        let range = self.location().to_file_offset(source);
 
-        if let Some(label) = self.label() {
-            annotation.label(label)
-        } else {
-            annotation
+        annotate_snippets::SourceAnnotation {
+            label: self.label().unwrap_or(""),
+            annotation_type: self.severity().into(),
+            range: (range.start, range.end),
         }
     }
 }
@@ -161,51 +168,51 @@ impl ErrorEntry {
     ///
     /// # Parameters
     /// - `source`: Source code string that caused the error
-    pub(crate) fn to_message_mut<'src>(
+    pub(crate) fn to_snippet_mut<'src>(
         &'src mut self,
         source: &'src str,
-    ) -> Option<annotate_snippets::Message<'src>> {
-        let message = match self.severity {
-            Severity::Info => annotate_snippets::Level::Info.title(&self.message),
-            Severity::Warning => annotate_snippets::Level::Warning.title(&self.message),
-            Severity::Error => annotate_snippets::Level::Error.title(&self.message),
-            Severity::Help => annotate_snippets::Level::Help.title(&self.message),
-            Severity::Note => annotate_snippets::Level::Note.title(&self.message),
-        };
-
+    ) -> Option<annotate_snippets::Snippet<'src>> {
         if let Some(location) = self.location.as_ref() {
             let default_annotation = Annotation::new(self.severity, location.clone(), None);
 
             // Add squiggles below the actual error. Without this, the user won't be able to
             // see the error location (e.g. `foo.rflx:3:4`).
-            self.annotations.push(default_annotation);
+            self.annotations.insert(0, default_annotation);
         }
 
-        if self.annotations.is_empty()
-            || self.location.as_ref().is_some_and(|l| {
-                l.source
-                    .as_ref()
-                    .is_some_and(|s| s == &PathBuf::from_str("<stdin>").expect("unreachable"))
-            })
-        {
+        if self.annotations.is_empty() || source.is_empty() {
             return None;
         }
 
-        let snippet = annotate_snippets::Snippet::source(source)
-            .fold(true)
-            .annotations(self.annotations.iter().map(|a| a.to_annotation(source)));
-
-        Some(message.snippet(
-            if let Some(Some(source_file)) = self.location.as_ref().map(|l| l.source.as_ref()) {
-                snippet.origin(source_file.to_str().unwrap_or("<unknown>"))
-            } else {
-                snippet
-            },
-        ))
+        Some(annotate_snippets::Snippet {
+            title: Some(annotate_snippets::Annotation {
+                id: None,
+                label: Some(self.message()),
+                annotation_type: self.severity().into(),
+            }),
+            slices: vec![annotate_snippets::Slice {
+                source,
+                line_start: 1,
+                origin: match self.location() {
+                    Some(Location {
+                        source: Some(source),
+                        ..
+                    }) => Some(source.to_str().unwrap_or("<unknown path>")),
+                    _ => None,
+                },
+                fold: true,
+                annotations: self
+                    .annotations
+                    .iter()
+                    .map(|a| a.to_annotation(source))
+                    .collect(),
+            }],
+            footer: Vec::new(),
+        })
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Serialize, Deserialize, Default, PartialEq)]
 pub struct RapidFluxError {
     entries: Vec<ErrorEntry>,
 }
@@ -274,7 +281,7 @@ impl RapidFluxError {
                     String::new()
                 };
 
-            match entry.to_message_mut(&source_code) {
+            match entry.to_snippet_mut(&source_code) {
                 Some(msg) => writeln!(stream, "{}", RENDERER.render(msg))?,
                 None => writeln!(stream, "{entry}")?,
             }
@@ -307,6 +314,20 @@ mod tests {
     #[case::severity_help(Severity::Help, "help")]
     fn test_severity_display(#[case] severity: Severity, #[case] expected_str: &str) {
         assert_eq!(severity.to_string(), expected_str);
+    }
+
+    #[rstest]
+    #[case::severity_into_note(Severity::Note, annotate_snippets::AnnotationType::Note)]
+    #[case::severity_into_info(Severity::Info, annotate_snippets::AnnotationType::Info)]
+    #[case::severity_into_warning(Severity::Warning, annotate_snippets::AnnotationType::Warning)]
+    #[case::severity_into_error(Severity::Error, annotate_snippets::AnnotationType::Error)]
+    #[case::severity_into_help(Severity::Help, annotate_snippets::AnnotationType::Help)]
+    fn test_severity_into_annotation_type(
+        #[case] severity: Severity,
+        #[case] expected_annotation_type: annotate_snippets::AnnotationType,
+    ) {
+        let at: annotate_snippets::AnnotationType = severity.into();
+        assert_eq!(at, expected_annotation_type);
     }
 
     #[rstest]
@@ -350,44 +371,6 @@ mod tests {
     )]
     fn test_annotation_display(#[case] annotation: Annotation, #[case] expected_str: &str) {
         assert_eq!(annotation.to_string().as_str(), expected_str,);
-    }
-
-    #[rstest]
-    #[case::annotation_severity_note(Severity::Note, "Note", None)]
-    #[case::annotation_severity_info(Severity::Info, "Info", None)]
-    #[case::annotation_severity_warn(Severity::Warning, "Warning", None)]
-    #[case::annotation_severity_error(Severity::Error, "Error", None)]
-    #[case::annotation_severity_help(Severity::Help, "Help", None)]
-    #[case::annotation_severity_error_with_label(
-        Severity::Error,
-        "Error",
-        Some("label".to_string())
-    )]
-    fn test_annotation_to_annotate_snippets(
-        #[case] severity: Severity,
-        #[case] severity_str: &str,
-        #[case] label: Option<String>,
-    ) {
-        let annotation = Annotation::new(
-            severity,
-            Location {
-                source: Some(PathBuf::from_str("foo.rflx").expect("failed to create source path")),
-                start: FilePosition::new(1, 1),
-                end: Some(FilePosition::new(1, 5)),
-            },
-            label.clone(),
-        );
-        let as_annotation = annotation.to_annotation("some amazing source code");
-        assert_eq!(
-            format!("{as_annotation:?}"),
-            format!(
-                "Annotation {{ range: 0..4, label: {}, level: {severity_str} }}",
-                match label {
-                    Some(str) => format!("Some(\"{str}\")"),
-                    None => "None".to_string(),
-                }
-            )
-        );
     }
 
     #[test]
@@ -548,7 +531,7 @@ mod tests {
         },
         indoc! {
             r"error: Some terrible error
-               --> test.rflx:2:1
+               --> test.rflx:1:1
                 |
               1 | package Test is
                 | ^^^^^^^
@@ -557,17 +540,21 @@ mod tests {
                 |"
         },
     )]
-    fn test_error_entry_to_message(
+    fn test_error_entry_to_snippet(
         #[case] mut entry: ErrorEntry,
         #[case] source_code: &str,
         #[case] expected_str: &str,
     ) {
         use crate::diagnostics::errors::RENDERER;
 
-        match entry.to_message_mut(source_code) {
+        match entry.to_snippet_mut(source_code) {
             Some(msg) => {
                 let str = RENDERER.render(msg).to_string();
-                assert_eq!(str.as_str(), expected_str);
+                assert_eq!(
+                    str.as_str(),
+                    expected_str,
+                    "got:\n{str}\n but expected_str: {expected_str}",
+                );
             }
             None => assert_eq!(entry.to_string().as_str(), expected_str),
         };
@@ -657,14 +644,22 @@ mod tests {
     fn test_rapid_flux_debug() {
         let error = RapidFluxError {
             entries: vec![
-                ErrorEntry::new("first".to_string(), Severity::Error, None, Vec::new()),
+                ErrorEntry::new(
+                    "first".to_string(),
+                    Severity::Error,
+                    None,
+                    vec![Annotation::new(Severity::Error, Location::default(), None)],
+                ),
                 ErrorEntry::new("second".to_string(), Severity::Warning, None, Vec::new()),
             ],
         };
 
         assert_eq!(
             format!("{error:?}").as_str(),
-            "[ErrorEntry { message: \"first\", severity: Error, location: None, annotations: [] }, ErrorEntry { message: \"second\", severity: Warning, location: None, annotations: [] }]"
+            "[ErrorEntry { message: \"first\", severity: Error, location: None, annotations: \
+            [Annotation { severity: Error, location: Location { source: None, start: \
+            FilePosition(0, 0), end: None }, label: None }] }, ErrorEntry { message: \"second\", \
+            severity: Warning, location: None, annotations: [] }]"
         );
     }
 
@@ -685,7 +680,8 @@ mod tests {
         let entry = ErrorEntry {
             message: "dummy".to_string(),
             severity: Severity::Error,
-            ..Default::default()
+            annotations: vec![Annotation::new(Severity::Error, Location::default(), None)],
+            location: Some(Location::default()),
         };
 
         let mut error: RapidFluxError = RapidFluxError::default();
