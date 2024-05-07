@@ -241,11 +241,15 @@ target/debug/librapidflux.so: $(RAPIDFLUX_SRC)
 
 # --- Setup: Development dependencies ---
 
+CARGO_AUDIT = $(HOME)/.cargo/bin/cargo-audit
 CARGO_LLVM_COV = $(HOME)/.cargo/bin/cargo-llvm-cov
 
 .PHONY: install_devel
 
-install_devel: $(RFLX) $(CARGO_LLVM_COV)
+install_devel: $(RFLX) $(CARGO_AUDIT) $(CARGO_LLVM_COV)
+
+$(CARGO_AUDIT):
+	cargo install cargo-audit@0.20.0
 
 $(CARGO_LLVM_COV):
 	cargo install cargo-llvm-cov@0.6.9
@@ -564,6 +568,18 @@ anod_dist: $(BUILD_DEPS) $(PARSER) $(RAPIDFLUX) pyproject.toml $(PACKAGE_SRC)
 $(VSIX):
 	@echo $(VSIX)
 	$(MAKE) -C rflx/ide/vscode dist
+
+# --- Audit ---
+
+.PHONY: audit
+
+audit: $(PROJECT_MANAGEMENT) $(CARGO_AUDIT)
+	@mkdir -p $(BUILD_DIR)
+	@$(POETRY) export --with=build --with=dev | grep -v "@ file" > $(BUILD_DIR)/requirements.txt
+	@echo Auditing Python dependencies
+	@$(POETRY) run pip-audit --disable-pip -r $(BUILD_DIR)/requirements.txt
+	@echo Auditing Rust dependencies
+	@cargo audit
 
 # --- Clean ---
 
