@@ -66,9 +66,9 @@ workflow:
 
 setup:
   services:
-     - image:recordflux
-     - cpu:2
-     - mem:4
+    - image:recordflux
+    - cpu:16
+    - mem:16
   artifacts:
     paths:
       - .venv$PYTHON_VERSION
@@ -147,6 +147,16 @@ commit_messages:
     - *setup_python
     - git fetch origin main
     - check_commit_messages origin/main..HEAD
+
+audit:
+  extends: .testing
+  services:
+    - image:recordflux
+    - cpu:2
+    - mem:8
+  script:
+    - *setup_python
+    - make audit
 
 checks:
   extends: .testing
