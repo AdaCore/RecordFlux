@@ -533,15 +533,23 @@ $(SDIST): $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 # The build directory and RapidFlux libraries are removed to ensure a deterministic result.
 # Otherwise, Poetry will reuse files in build/lib, even with the `--no-cache` option, and the
 # resulting wheel will contain more than one RapidFlux library.
-wheel: RAPIDFLUX_PLATFORM := rflx/$(shell $(PYTHON) -c 'import sysconfig; print("rapidflux" + sysconfig.get_config_var("EXT_SUFFIX"))')
-
+wheel: RAPIDFLUX_PLATFORM := rflx/$(shell $(POETRY) run $(PYTHON) -c 'import sysconfig; print("rapidflux" + sysconfig.get_config_var("EXT_SUFFIX"))')
+wheel: PYTHON_TAG := $(shell $(POETRY) run python -c 'import sys; print(f"cp{sys.version_info.major}{sys.version_info.minor}")')
+wheel: export PYTHONPATH=
 wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 	$(RM) rflx/rapidflux*.so
-	cargo build --release
-	@# Add platform tag to library
+	@# Build library
+	PYO3_PYTHON=$(DEVEL_VENV)/bin/python cargo build --release
 	cp target/release/librapidflux.so $(RAPIDFLUX_PLATFORM)
+	@# Build wheel
 	$(POETRY) build -vv --no-cache -f wheel
 	$(RM) $(RAPIDFLUX_PLATFORM)
+	@# Test wheel
+	$(POETRY) run python -m venv --clear $(BUILD_DIR)/venv
+	$(BUILD_DIR)/venv/bin/pip install dist/recordflux-$$($(POETRY) version -s)-$(PYTHON_TAG)-$(PYTHON_TAG)-manylinux_*_x86_64.whl pytest pytest-xdist hypothesis
+	cp -r tests $(BUILD_DIR)/tests
+	cd $(BUILD_DIR) && source venv/bin/activate && rflx --version && venv/bin/pytest -vv -n auto tests/end_to_end
+	$(RM) -r $(BUILD_DIR)/venv $(BUILD_DIR)/tests
 
 # Build distributions for all defined Python versions without local version identifier.
 pypi_dist: $(PROJECT_MANAGEMENT)
