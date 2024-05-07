@@ -11,3 +11,4 @@ serde = { workspace = true }
 rstest = "0.19.0"
 bincode = { workspace = true }
 indoc = "2.0.5"
+pretty_assertions = "1.4.0"

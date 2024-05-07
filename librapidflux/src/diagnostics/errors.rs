@@ -300,6 +300,7 @@ mod tests {
     use std::{io, path::PathBuf, str::FromStr};
 
     use indoc::indoc;
+    use pretty_assertions::assert_eq;
     use rstest::rstest;
 
     use crate::diagnostics::{ErrorEntry, FilePosition, Location};
@@ -550,11 +551,7 @@ mod tests {
         match entry.to_snippet_mut(source_code) {
             Some(msg) => {
                 let str = RENDERER.render(msg).to_string();
-                assert_eq!(
-                    str.as_str(),
-                    expected_str,
-                    "got:\n{str}\n but expected_str: {expected_str}",
-                );
+                assert_eq!(str.as_str(), expected_str);
             }
             None => assert_eq!(entry.to_string().as_str(), expected_str),
         };
@@ -790,10 +787,7 @@ mod tests {
             .read_to_string(&mut result)
             .expect("failed to read message from memory stream");
 
-        assert_eq!(
-            &result, expected_str,
-            "expected:\n\t{expected_str}\nbut got:\n\t{result}"
-        );
+        assert_eq!(&result, expected_str);
     }
 
     #[test]
