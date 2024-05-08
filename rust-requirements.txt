@@ -1,0 +1,5 @@
+cargo-audit@0.20.0
+cargo-llvm-cov@0.6.9
+cargo-mutants@24.4.0
+cargo-nextest@0.9.70
+maturin@1.5.1
