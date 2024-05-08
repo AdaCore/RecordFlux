@@ -4,6 +4,7 @@
 *.o
 *.pyc
 .bin
+.cargo-home
 .coverage
 .coverage.*
 .env

@@ -226,12 +226,29 @@ $(GENERATED_DIR)/python/librflxlang: $(BUILD_DEPS) $(wildcard language/*.py) | $
 
 # --- Setup: RapidFlux ---
 
+export CARGO_HOME := $(MAKEFILE_DIR)/.cargo-home
+export PATH := $(CARGO_HOME)/bin:$(PATH)
+
 RAPIDFLUX := rflx/rapidflux.so
 RAPIDFLUX_SRC := $(shell find librapidflux rapidflux -type f)
+RAPIDFLUX_DEV_BINS := $(addprefix $(CARGO_HOME)/bin/,$(shell tr '\n' ' ' < rust-requirements.txt))
 
-.PHONY: rapidflux
+.PHONY: rapidflux rapidflux_devel
 
-rapidflux: $(RAPIDFLUX)
+# This rule generates symbolic links for each dependency binary,
+# linking to the installed version, serving as rule targets.
+# These links facilitate enforcing 'make' to rerun 'cargo install'
+# for upgrades, downgrades, or in case of package deletion.
+$(CARGO_HOME)/bin/%:
+	mkdir -p $(CARGO_HOME)
+	cargo install $(notdir $@)
+	$(RM) $(word 1,$(subst @, ,$@))@* $@
+	ln -s $(word 1,$(subst @, ,$@)) $@
+
+
+rapidflux_devel: $(RAPIDFLUX_DEV_BINS)
+
+rapidflux: rapidflux_devel $(RAPIDFLUX)
 
 $(RAPIDFLUX): target/debug/librapidflux.so
 	cp target/debug/librapidflux.so $@
@@ -241,22 +258,9 @@ target/debug/librapidflux.so: $(RAPIDFLUX_SRC)
 
 # --- Setup: Development dependencies ---
 
-CARGO_AUDIT = $(HOME)/.cargo/bin/cargo-audit
-CARGO_LLVM_COV = $(HOME)/.cargo/bin/cargo-llvm-cov
-CARGO_MUTANTS = $(HOME)/.cargo/bin/cargo-mutants
-
 .PHONY: install_devel
 
-install_devel: $(RFLX) $(CARGO_AUDIT) $(CARGO_LLVM_COV) $(CARGO_MUTANTS)
-
-$(CARGO_AUDIT):
-	cargo install cargo-audit@0.20.0
-
-$(CARGO_LLVM_COV):
-	cargo install cargo-llvm-cov@0.6.9
-
-$(CARGO_MUTANTS):
-	cargo install cargo-mutants@24.4.0
+install_devel: $(RFLX) rapidflux_devel
 
 $(RFLX):: export PYTHONPATH=
 $(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(RAPIDFLUX) $(PROJECT_MANAGEMENT)
@@ -299,7 +303,7 @@ printenv_gnat:
 
 activate: $(BIN_DIR)/poetry
 	@echo . $(DEVEL_VENV)/bin/activate
-	@echo PATH=$$PWD/.bin:\$$PATH
+	@echo PATH=$$PWD/.bin:$$PWD/.cargo-home/bin:\$$PATH
 
 $(BIN_DIR)/poetry:
 	@mkdir -p $(BIN_DIR)
@@ -351,16 +355,17 @@ test: test_rflx test_rapidflux test_examples
 
 test_rflx: test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
 
-test_rapidflux: test_rapidflux_coverage test_rapidflux_mutation
 
-test_rapidflux_coverage: $(CARGO_LLVM_COV)
+test_rapidflux_coverage: rapidflux_devel
+
+test_rapidflux: rapidflux_devel test_rapidflux_coverage test_rapidflux_mutation
 	cargo llvm-cov \
 		--package librapidflux \
 		--fail-under-lines 100 \
 		--show-missing-lines \
 		--skip-functions
 
-test_rapidflux_mutation: $(CARGO_MUTANTS)
+test_rapidflux_mutation: rapidflux_devel
 	cargo mutants -j 0 --package librapidflux --timeout 300 --output $(BUILD_DIR)
 
 test_examples: test_specs test_apps
@@ -398,7 +403,7 @@ test_ide: $(RFLX)
 test_optimized: $(RFLX)
 	PYTHONOPTIMIZE=1 $(PYTEST) tests/unit tests/integration tests/compilation
 
-test_apps: $(RFLX)
+test_apps: $(RFLX) rapidflux_devel
 	$(foreach app,$(APPS),$(POETRY) run $(MAKE) -C examples/apps/$(app) test || exit;)
 
 test_compilation: $(RFLX)
@@ -582,7 +587,7 @@ $(VSIX):
 
 .PHONY: audit
 
-audit: $(PROJECT_MANAGEMENT) $(CARGO_AUDIT)
+audit: $(PROJECT_MANAGEMENT) rapidflux_devel
 	@mkdir -p $(BUILD_DIR)
 	@$(POETRY) export --with=build --with=dev | grep -v "@ file" > $(BUILD_DIR)/requirements.txt
 	@echo Auditing Python dependencies
