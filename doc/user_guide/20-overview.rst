@@ -86,15 +86,15 @@ The result can be included in the list of source directories and analyzed by `gn
 
 The Validator is available through the `rflx validate` subcommand on the command line.
 It can be used to check whether a message specification correctly formalizes real-world data, or vice versa, whether a given data sample corresponds to the specification.
-Two types of samples can be used: valid samples (which must be accepted by a specification) and invalid samples (which must be rejected).
-Valid samples are passed as a list of values for the `-v` argument and invalid samples as a list of values for the `-i` argument.
+Two types of samples can be used: valid samples which must be accepted by a specification (passed with the `-v` option) and invalid samples which must be rejected (passed with the `-i` option).
 All samples must be raw binary files without any metadata.
-There are two ways how samples can be provided to the tool and the same rules apply for both the `-v` and `-i` argument.
-If all of the samples are in the same directory and have a `.raw` file extension, then it is sufficient to just provide this directory (or several such directories).
-Otherwise, the paths of the individual sample files must be provided.
+There are two ways how samples can be provided to the tool and the same rules apply for both `-v` and `-i`.
+If there are several samples of the same kind in one directory and the samples have a `.raw` file extension, then it is sufficient to just provide this directory.
+Otherwise, the paths of the individual sample files must be provided one by one.
 In the latter case the sample file can have any extension or even have no extension.
 However, if it has an extension, then it must be included in the path as well.
-The list of paths can contain any combination of files and directories.
+There can be as many `-v` and `-i` options given to the tool as needed.
+However, each of those options must have exactly one argument.
 Raw packets can, e.g., be exported from packet analyzers like Wireshark or extracted from a PCAP file using `this script <https://github.com/AdaCore/RecordFlux/blob/main/tools/extract_packets.py>`__.
 To facilitate execution within a CI/CD pipeline, the `--abort-on-error` switch causes the tool to exit with an error code if any samples are rejected.
 Upon completion, the Validator will produce a report, with an option to display how much of a message has been covered:

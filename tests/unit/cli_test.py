@@ -300,6 +300,65 @@ def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
         )
 
 
+def test_main_validate(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(validator.Validator, "__init__", lambda _a, _b, _c, _d, _e: None)
+    monkeypatch.setattr(
+        validator.Validator,
+        "validate",
+        lambda _a, _b, _c, _d, _e, _f, _g, _h: None,
+    )
+    assert (
+        cli.main(
+            # The positional and optional arguments are intentionally mixed
+            # below so that a positional argument appears after the "-i" and its
+            # value. '-i' and '-v' occur intentionally multiple times.
+            [
+                "rflx",
+                "validate",
+                "-v",
+                str(tmp_path),
+                "-i",
+                str(tmp_path),
+                "-v",
+                str(tmp_path),
+                "-i",
+                str(tmp_path),
+                str(tmp_path / "test.rflx"),
+                "Test::Message",
+                "--split-disjunctions",
+                "--abort-on-error",
+                "--coverage",
+                "-c",
+                "CHECKSUM_MODULE",
+                "-o",
+                str(tmp_path),
+                "--target-coverage",
+                "99",
+            ],
+        )
+        == 0
+    )
+    assert (
+        cli.main(
+            # The positional and optional arguments are intentionally mixed
+            # below so that a positional argument appears after the "-v" and its
+            # value.
+            [
+                "rflx",
+                "validate",
+                "-v",
+                str(tmp_path),
+                str(tmp_path / "test.rflx"),
+                "Test::Message",
+                "--split-disjunctions",
+                "-i",
+                str(tmp_path),
+            ],
+        )
+        == 0
+    )
+
+
 def test_main_validate_invalid_identifier(tmp_path: Path) -> None:
     assert (
         cli.main(
@@ -652,8 +711,6 @@ class TestDuplicateArgs:
             (call_generate, "--integration-files-dir", "OTHER_STR", []),
             (call_graph, "-f", "png", []),
             (call_graph, "-d", "OTHER_STR", []),
-            (call_validate, "-v", "OTHER_STR", []),
-            (call_validate, "-i", "OTHER_STR", []),
             (call_validate, "-c", "OTHER_STR", []),
             (call_validate, "-o", "OTHER_STR", []),
             (call_validate, "--target-coverage", "75", []),

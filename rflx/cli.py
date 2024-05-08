@@ -287,20 +287,18 @@ def main(  # noqa: PLR0915
     )
     parser_validate.add_argument(
         "-v",
-        action=UniqueStore,
-        dest="valid_samples_paths",
-        nargs="+",
+        action="append",
+        dest="valid_sample_path",
         type=Path,
-        help="known valid sample files or directories",
+        help="known valid sample file or directory",
         default=None,
     )
     parser_validate.add_argument(
         "-i",
-        action=UniqueStore,
-        nargs="+",
-        dest="invalid_samples_paths",
+        action="append",
+        dest="invalid_sample_path",
         type=Path,
-        help="known invalid sample files or directories",
+        help="known invalid sample file or directory",
         default=None,
     )
     parser_validate.add_argument(
@@ -596,8 +594,8 @@ def validate(args: argparse.Namespace) -> None:
             args.split_disjunctions,
         ).validate(
             identifier,
-            args.invalid_samples_paths,
-            args.valid_samples_paths,
+            args.invalid_sample_path,
+            args.valid_sample_path,
             args.output_file,
             args.abort_on_error,
             args.coverage,
