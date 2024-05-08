@@ -27,6 +27,25 @@ def test_check() -> None:
     )
 
 
+def test_check_error() -> None:
+    p = subprocess.run(
+        ["rflx", "--no-caching", "check", SPEC_DIR / "invalid" / "incorrect_name.rflx"],
+        capture_output=True,
+    )
+    assert p.returncode == 1
+    assert p.stdout.decode("utf-8") == ""
+    assert p.stderr.decode("utf-8") == textwrap.dedent(
+        """\
+        Parsing tests/data/specs/invalid/incorrect_name.rflx
+        Processing Test
+        Verifying __BUILTINS__::Boolean
+        Verifying __INTERNAL__::Opaque
+        tests/data/specs/invalid/incorrect_name.rflx:1:9: parser: error: file name does not match\
+ unit name "Test", should be "test.rflx"
+        """,
+    )
+
+
 def test_check_no_verification() -> None:
     p = subprocess.run(
         [

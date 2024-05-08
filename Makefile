@@ -141,7 +141,7 @@ test_language_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx_lang --cov-branch --cov-fail-under=73.8 --cov-report=term-missing:skip-covered tests/language
 
 test_end_to_end:
-	$(PYTEST) tests/end-to-end
+	$(PYTEST) tests/end_to_end
 
 test_property:
 	$(PYTEST) tests/property
