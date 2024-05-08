@@ -29,6 +29,10 @@ The executability and provability tests require the definition of a session call
 
 Session functions can be defined by putting a custom implementation of the `Session` package inside the `src` directory.
 
+### End-to-End Tests (`tests/end-to-end`)
+
+End-to-end tests verify the functionality of the entire application. These tests ensure that the application behaves as intended, particularly focusing on its primary use cases.
+
 ### Property Tests (`tests/property`)
 
 Property-based testing based on [Hypothesis](https://hypothesis.readthedocs.io/).

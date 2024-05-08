@@ -119,7 +119,9 @@ check_contracts:
 check_doc:
 	tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
 
-.PHONY: test test_coverage test_unit_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
+.PHONY: test test_rflx test_coverage test_unit_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
+
+test_rflx: test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
 
 test: test_coverage test_unit_coverage test_language_coverage test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_installation test_apps
 
@@ -137,6 +139,9 @@ test_unit_coverage:
 
 test_language_coverage:
 	timeout -k 60 7200 $(PYTEST) --cov=rflx_lang --cov-branch --cov-fail-under=73.8 --cov-report=term-missing:skip-covered tests/language
+
+test_end_to_end:
+	$(PYTEST) tests/end-to-end
 
 test_property:
 	$(PYTEST) tests/property
