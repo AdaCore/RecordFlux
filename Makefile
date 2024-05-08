@@ -243,16 +243,20 @@ target/debug/librapidflux.so: $(RAPIDFLUX_SRC)
 
 CARGO_AUDIT = $(HOME)/.cargo/bin/cargo-audit
 CARGO_LLVM_COV = $(HOME)/.cargo/bin/cargo-llvm-cov
+CARGO_MUTANTS = $(HOME)/.cargo/bin/cargo-mutants
 
 .PHONY: install_devel
 
-install_devel: $(RFLX) $(CARGO_AUDIT) $(CARGO_LLVM_COV)
+install_devel: $(RFLX) $(CARGO_AUDIT) $(CARGO_LLVM_COV) $(CARGO_MUTANTS)
 
 $(CARGO_AUDIT):
 	cargo install cargo-audit@0.20.0
 
 $(CARGO_LLVM_COV):
 	cargo install cargo-llvm-cov@0.6.9
+
+$(CARGO_MUTANTS):
+	cargo install cargo-mutants@24.4.0
 
 $(RFLX):: export PYTHONPATH=
 $(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(RAPIDFLUX) $(PROJECT_MANAGEMENT)
@@ -341,18 +345,23 @@ fmt: format
 
 # --- Tests ---
 
-.PHONY: test test_rflx test_rapidflux test_examples test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
+.PHONY: test test_rflx test_rapidflux test_rapidflux_coverage test_rapidflux_mutation test_examples test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
 
 test: test_rflx test_rapidflux test_examples
 
 test_rflx: test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
 
-test_rapidflux: $(CARGO_TARPAULIN)
+test_rapidflux: test_rapidflux_coverage test_rapidflux_mutation
+
+test_rapidflux_coverage: $(CARGO_LLVM_COV)
 	cargo llvm-cov \
 		--package librapidflux \
 		--fail-under-lines 100 \
 		--show-missing-lines \
 		--skip-functions
+
+test_rapidflux_mutation: $(CARGO_MUTANTS)
+	cargo mutants -j 0 --package librapidflux --timeout 300 --output $(BUILD_DIR)
 
 test_examples: test_specs test_apps
 

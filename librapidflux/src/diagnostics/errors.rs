@@ -405,13 +405,32 @@ mod tests {
             "Some terrible error".to_string(),
             Severity::Error,
             None,
-            Vec::new(),
+            vec![Annotation::new(
+                Severity::Info,
+                Location {
+                    source: None,
+                    start: FilePosition::new(1, 2),
+                    end: Some(FilePosition::new(3, 4)),
+                },
+                Some("Look here".to_string()),
+            )],
         );
 
         assert_eq!(error_entry.severity(), Severity::Error);
         assert_eq!(error_entry.message(), "Some terrible error");
         assert!(error_entry.location().is_none());
-        assert!(error_entry.annotations().is_empty());
+        assert_eq!(
+            error_entry.annotations(),
+            vec![Annotation::new(
+                Severity::Info,
+                Location {
+                    source: None,
+                    start: FilePosition::new(1, 2),
+                    end: Some(FilePosition::new(3, 4)),
+                },
+                Some("Look here".to_string())
+            )]
+        );
     }
 
     #[rstest]
@@ -615,18 +634,49 @@ mod tests {
     }
 
     #[test]
-    fn test_rapid_flux_error_has_error() {
-        let mut error = RapidFluxError::default();
-        assert!(!error.has_errors());
-        error.extend([
+    fn test_rapid_flux_error_entries() {
+        let error = RapidFluxError {
+            entries: vec![ErrorEntry::new(
+                "first".to_string(),
+                Severity::Error,
+                None,
+                Vec::new(),
+            )],
+        };
+        assert_eq!(
+            error.entries(),
+            vec![ErrorEntry::new(
+                "first".to_string(),
+                Severity::Error,
+                None,
+                Vec::new()
+            )]
+        );
+    }
+
+    #[rstest]
+    #[case::errors(
+        vec![
             ErrorEntry::new("okay".to_string(), Severity::Info, None, Vec::new()),
             ErrorEntry::new("ooof".to_string(), Severity::Error, None, Vec::new()),
-        ]);
-        assert!(error.has_errors());
+        ],
+        true,
+    )]
+    #[case::no_errors(
+        vec![
+            ErrorEntry::new("okay".to_string(), Severity::Info, None, Vec::new()),
+        ],
+        false,
+    )]
+    fn test_rapid_flux_error_has_error(#[case] entries: Vec<ErrorEntry>, #[case] expected: bool) {
+        let mut error = RapidFluxError::default();
+        assert!(!error.has_errors());
+        error.extend(entries);
+        assert_eq!(error.has_errors(), expected);
     }
 
     #[test]
-    fn test_rapid_flux_display() {
+    fn test_rapid_flux_error_display() {
         let error = RapidFluxError {
             entries: vec![
                 ErrorEntry::new("first".to_string(), Severity::Error, None, Vec::new()),
@@ -638,7 +688,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rapid_flux_debug() {
+    fn test_rapid_flux_error_debug() {
         let error = RapidFluxError {
             entries: vec![
                 ErrorEntry::new(
@@ -661,7 +711,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rapid_flux_from_vec() {
+    fn test_rapid_flux_error_from_vec() {
         let vector = vec![ErrorEntry {
             message: "dummy".to_string(),
             severity: Severity::Error,
@@ -673,7 +723,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rapid_flux_push() {
+    fn test_rapid_flux_error_push() {
         let entry = ErrorEntry {
             message: "dummy".to_string(),
             severity: Severity::Error,
@@ -689,7 +739,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rapid_flux_clear() {
+    fn test_rapid_flux_error_clear() {
         let vector = vec![
             ErrorEntry {
                 message: "dummy".to_string(),
@@ -768,7 +818,7 @@ mod tests {
         ].into(),
         "<stdin>:1:1: error: Annotated error\n",
     )]
-    fn test_rapid_flux_print_messages(
+    fn test_rapid_flux_error_print_messages(
         #[case] mut errors: RapidFluxError,
         #[case] expected_str: &str,
     ) {
@@ -791,7 +841,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rapid_flux_serde() {
+    fn test_rapid_flux_error_serde() {
         let errors = RapidFluxError::from(vec![
             ErrorEntry {
                 message: "some error".to_string(),
