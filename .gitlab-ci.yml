@@ -207,6 +207,17 @@ tests_rflx:
       - dist
       - ide/vscode/recordflux.vsix
 
+tests_rapidflux:
+  extends: .testing
+  needs:
+    - setup
+  services:
+     - image:recordflux
+     - cpu:16
+     - mem:16
+  script:
+    - make test_rapidflux
+
 tests_example_apps:
   extends: .testing
   needs:
