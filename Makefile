@@ -613,7 +613,7 @@ clean_build:
 	rm -rf $(BUILD_DIR)
 
 clean_all: clean clean_build
-	$(RM) -r $(DEVEL_VENV) $(POETRY_VENV) $(BIN_DIR) $(GENERATED_DIR) rflx/lang rflx/rapidflux*.so pyproject.toml
+	$(RM) -r $(DEVEL_VENV) $(POETRY_VENV) $(BIN_DIR) $(GENERATED_DIR) $(CARGO_HOME) rflx/lang rflx/rapidflux*.so pyproject.toml
 	test -d $(LANGKIT_DIR) && touch $(LANGKIT_DIR)/langkit/py.typed || true
 	@$(call remove_repo,$(DEVUTILS_DIR))
 	@$(call remove_repo,$(GNATCOLL_DIR))
