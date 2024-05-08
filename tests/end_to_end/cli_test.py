@@ -7,7 +7,7 @@ from tests.const import DATA_DIR, SPEC_DIR, VALIDATOR_DIR
 
 def test_check() -> None:
     p = subprocess.run(
-        ["rflx", "--no-caching", "check", SPEC_DIR / "ethernet.rflx"],
+        ["rflx", "check", SPEC_DIR / "ethernet.rflx"],
         capture_output=True,
     )
     assert p.returncode == 0
@@ -29,7 +29,7 @@ def test_check() -> None:
 
 def test_check_error() -> None:
     p = subprocess.run(
-        ["rflx", "--no-caching", "check", SPEC_DIR / "invalid" / "incorrect_name.rflx"],
+        ["rflx", "check", SPEC_DIR / "invalid" / "incorrect_name.rflx"],
         capture_output=True,
     )
     assert p.returncode == 1
@@ -46,33 +46,10 @@ def test_check_error() -> None:
     )
 
 
-def test_check_no_verification() -> None:
-    p = subprocess.run(
-        [
-            "rflx",
-            "--no-caching",
-            "--unsafe",
-            "--no-verification",
-            "check",
-            SPEC_DIR / "ethernet.rflx",
-        ],
-        capture_output=True,
-    )
-    assert p.returncode == 0
-    assert p.stdout.decode("utf-8") == "model: warning: model verification skipped\n"
-    assert p.stderr.decode("utf-8") == textwrap.dedent(
-        """\
-        Parsing tests/data/specs/ethernet.rflx
-        Processing Ethernet
-        """,
-    )
-
-
 def test_generate(tmp_path: Path) -> None:
     p = subprocess.run(
         [
             "rflx",
-            "--no-caching",
             "generate",
             "-d",
             tmp_path,
@@ -126,7 +103,6 @@ def test_graph(tmp_path: Path) -> None:
     p = subprocess.run(
         [
             "rflx",
-            "--no-caching",
             "graph",
             "-d",
             tmp_path,
@@ -157,7 +133,6 @@ def test_validate() -> None:
     p = subprocess.run(
         [
             "rflx",
-            "--no-caching",
             "validate",
             "-v",
             VALIDATOR_DIR / "ethernet" / "frame" / "valid",
