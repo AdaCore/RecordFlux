@@ -10,7 +10,7 @@ GNATCOLL_ORIGIN ?= https://github.com/AdaCore
 LANGKIT_ORIGIN ?= https://github.com/AdaCore
 ADASAT_ORIGIN?= https://github.com/AdaCore
 VERSION ?= $(shell python3 -c "import setuptools_scm; print(setuptools_scm.get_version())")
-SDIST ?= dist/RecordFlux-$(VERSION).tar.gz
+SDIST ?= dist/recordflux-$(VERSION).tar.gz
 VSIX ?= ide/vscode/recordflux.vsix
 
 GENERATED_DIR = generated
