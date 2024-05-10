@@ -100,7 +100,7 @@ The Python binding is implemented using [PyO3](https://pyo3.rs/) in the `rapidfl
 
 The type hints for the Python binding must be specified in the `rflx/rapidflux.pyi` stub file ([PyO3/pyo3#510](https://github.com/PyO3/pyo3/issues/510)).
 
-The test coverage of the main Rust code is checked using [Tarpaulin](https://github.com/xd009642/tarpaulin) and LLVM coverage instrumentation.
+The test coverage of the main Rust code is checked using [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov).
 The Python binding is tested in the Python test suite (`tests/unit`).
 
 Classes created by PyO3 cannot be pickled by default ([PyO3/pyo3#100](https://github.com/PyO3/pyo3/issues/100)).
