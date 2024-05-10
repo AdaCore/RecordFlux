@@ -1,4 +1,4 @@
-#!/usr/bin/env -S ./python -O
+#!/usr/bin/env -S python3 -O
 
 import errno
 import fcntl
