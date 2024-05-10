@@ -25,15 +25,15 @@ Set up the development environment.
 
    $ make install_devel
 
-All other make targets that require an existing development environment (e.g. `make check`) will automatically download and install all required dependencies as well.
+All other make targets that require an existing development environment (e.g. ``make check``) will automatically download and install all required dependencies as well.
 Some dependencies are managed in other git repositories and will be cloned during the initial setup.
-The origin of these repositories can be changed by setting the respective variable (e.g., `DEVUTILS_ORIGIN`) appropriately either in the environment or directly in the initial call to `make`.
-The initial setup can be repeated after resetting the repository with `make clean_all`.
+The origin of these repositories can be changed by setting the respective variable (e.g., ``DEVUTILS_ORIGIN``) appropriately either in the environment or directly in the initial call to ``make``.
+The initial setup can be repeated after resetting the repository with ``make clean_all``.
 
 **Note:**
 An editable installation is used, so all changes to the Python source code take effect immediately and no reinstallation is required.
-An exception is the `language` module, which contains the specification of the langkit-based specification parser.
-The parser must be regenerated and recompiled using `make parser` before changes take effect.
+An exception is the ``language`` module, which contains the specification of the langkit-based specification parser.
+The parser must be regenerated and recompiled using ``make parser`` before changes take effect.
 
 The repository contains configuration files for Visual Studio Code which enable most linters available from the Makefile and coverage reports integrated into the IDE.
 To make use of the coverage data, the `Coverage Gutters <https://github.com/ryanluker/vscode-coverage-gutters>` extension needs to be installed.
@@ -71,40 +71,40 @@ Poetry
 ------
 
 The Python project is managed by Poetry.
-If there is no active virtual environment before executing the `make` commands, the Python project will be installed into a dedicated virtual environment named `.venv`.
+If there is no active virtual environment before executing the ``make`` commands, the Python project will be installed into a dedicated virtual environment named ``.venv``.
 If there is already an active virtual environment, RecordFlux will be installed into that virtual environment instead.
-Poetry will always be installed into its own environment (`.venv.poetry`).
+Poetry will always be installed into its own environment (``.venv.poetry``).
 
-It is not necessary to explicitly activate the virtual environments before executing any of the `make` targets.
-They are used automatically during the execution of `make`.
-However, in order to have the `rflx` command directly available in the shell, it is necessary to activate the project's virtual environment.
-The following commands can be used to respectively activate and deactivate it, as well as add or remove Poetry to/from the `PATH`.
-Note the need to use `source <(...)` in the command below.
+It is not necessary to explicitly activate the virtual environments before executing any of the ``make`` targets.
+They are used automatically during the execution of ``make``.
+However, in order to have the ``rflx`` command directly available in the shell, it is necessary to activate the project's virtual environment.
+The following commands can be used to respectively activate and deactivate it, as well as add or remove Poetry to/from the ``PATH``.
+Note the need to use ``source <(...)`` in the command below.
 
 .. code:: console
 
    $ source <(make activate)
    $ deactivate
 
-Alternatively, RecordFlux can be executed also via Poetry by executing `.venv.poetry/bin/poetry run rflx`.
+Alternatively, RecordFlux can be executed also via Poetry by executing ``.venv.poetry/bin/poetry run rflx``.
 
 Poetry locks the dependencies to ensure deterministic test results.
-`poetry lock` creates the lock file `poetry.lock` based on the dependencies listed in `pyproject.toml`.
+``poetry lock`` creates the lock file ``poetry.lock`` based on the dependencies listed in ``pyproject.toml``.
 
 Rust
 ====
 
 Some parts of RecordFlux are implemented in Rust for performance reasons.
-The main Rust code is in the `librapidflux` directory.
-The Python binding is implemented using [PyO3](https://pyo3.rs/) in the `rapidflux` directory.
+The main Rust code is in the ``librapidflux`` directory.
+The Python binding is implemented using `PyO3 <https://pyo3.rs/>`_ in the ``rapidflux`` directory.
 
-The type hints for the Python binding must be specified in the `rflx/rapidflux.pyi` stub file ([PyO3/pyo3#510](https://github.com/PyO3/pyo3/issues/510)).
+The type hints for the Python binding must be specified in the ``rflx/rapidflux.pyi`` stub file (`PyO3/pyo3#510 <https://github.com/PyO3/pyo3/issues/510>`_).
 
-The test coverage of the main Rust code is checked using [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov).
-The Python binding is tested in the Python test suite (`tests/unit`).
+The test coverage of the main Rust code is checked using `cargo-llvm-cov <https://github.com/taiki-e/cargo-llvm-cov>`_.
+The Python binding is tested in the Python test suite (``tests/unit``).
 
-Classes created by PyO3 cannot be pickled by default ([PyO3/pyo3#100](https://github.com/PyO3/pyo3/issues/100)).
-Pickling of objects can be enabled by defining `__setstate__`, `__getstate__`, `__getnewargs__` and the module name (`#[pyclass(module = "rflx.rapidflux")]`).
+Classes created by PyO3 cannot be pickled by default (`PyO3/pyo3#100 <https://github.com/PyO3/pyo3/issues/100>`_).
+Pickling of objects can be enabled by defining ``__setstate__``, ``__getstate__``, ``__getnewargs__`` and the module name (``#[pyclass(module = "rflx.rapidflux")]``).
 
 VS Code extension
 =================
@@ -115,7 +115,7 @@ Below are two possible workflows.
 Option 1
 --------
 
-To build the `recordflux.vsix` package and install it to VS Code directly in one step execute the following command at the project root:
+To build the ``recordflux.vsix`` package and install it to VS Code directly in one step execute the following command at the project root:
 
 .. code:: console
 
@@ -127,7 +127,7 @@ In this workflow the editable installation of RecordFlux is not made aware of th
 Option 2
 --------
 
-Alternatively, execute the following command at the project root to just build the `recordflux.vsix` package:
+Alternatively, execute the following command at the project root to just build the ``recordflux.vsix`` package:
 
 .. code:: console
 
@@ -139,7 +139,7 @@ Then, make this available to the editable installation of RecordFlux by executin
 
    make install_devel
 
-Finally, use the dedicated `rflx install` sub-command to install the extension into VS Code:
+Finally, use the dedicated ``rflx install`` sub-command to install the extension into VS Code:
 
 .. code:: console
 
@@ -241,7 +241,7 @@ The message should be as beginner-friendly as possible.
 However, sometimes it's not always possible to write a beginner-friendly error message because the error is too complicated to be explained in a single sentence.
 In those cases, try to phrase the error in a way that an intermediate or expert user could understand and iterate quickly in the edit/check cycle.
 This message isn't meant to be a **complete English sentence** but rather a **short and descriptive message**.
-The message should appear in **bold** and be preceded by the following message in red: ``error: ``.
+The message should appear in **bold** and be preceded by the following message in red: ``error:``.
 The prefix represents the diagnostic's severity; it can be one of the following:
 
 - error (in red)
