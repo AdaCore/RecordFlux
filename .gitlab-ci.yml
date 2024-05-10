@@ -49,6 +49,9 @@ workflow:
     - *setup_gnat
 
 .setup_spark: &setup_spark
+    - generic_anod_ci
+    - cat /tmp/ci_env.sh
+    - . /tmp/ci_env.sh
     - anod install spark2014 --build-date $SPARK_BUILD_DATE
     - eval `anod printenv spark2014`
 
@@ -388,6 +391,9 @@ gnat_wave_compatibility:
      - mem:4
   script:
     - git fetch --unshallow
+    - generic_anod_ci
+    - cat /tmp/ci_env.sh
+    - . /tmp/ci_env.sh
     - anod install gnat
     - eval `anod printenv gnat`
     - gnat --version
