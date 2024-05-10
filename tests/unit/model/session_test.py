@@ -1098,7 +1098,7 @@ def test_renaming() -> None:
             decl.VariableDeclaration("Message", "TLV::Message"),
             decl.RenamingDeclaration(
                 "Null_Message",
-                "Null::Message",
+                "Null_Msg::Message",
                 expr.Selected(expr.Variable("Message"), "Value"),
                 location=Location((10, 20)),
             ),
@@ -1614,7 +1614,7 @@ def test_conversion() -> None:
                     stmt.VariableAssignment(
                         "Converted",
                         expr.Conversion(
-                            "Null::Message",
+                            "Null_Msg::Message",
                             expr.Selected(expr.Variable("Message"), "Value"),
                         ),
                     ),
@@ -1623,7 +1623,7 @@ def test_conversion() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
-            decl.VariableDeclaration("Converted", "Null::Message"),
+            decl.VariableDeclaration("Converted", "Null_Msg::Message"),
         ],
         parameters=[],
         types=[models.null_message(), models.tlv_message(), models.null_message_in_tlv_message()],
@@ -1707,7 +1707,7 @@ def test_conversion_invalid() -> None:
                     stmt.VariableAssignment(
                         "Converted",
                         expr.Conversion(
-                            "Null::Message",
+                            "Null_Msg::Message",
                             expr.Selected(expr.Variable("Message"), "Value"),
                             location=Location((10, 20)),
                         ),
@@ -1717,13 +1717,13 @@ def test_conversion_invalid() -> None:
         ],
         declarations=[
             decl.VariableDeclaration("Message", "TLV::Message"),
-            decl.VariableDeclaration("Converted", "Null::Message"),
+            decl.VariableDeclaration("Converted", "Null_Msg::Message"),
         ],
         parameters=[],
         types=[models.null_message(), models.tlv_message()],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: invalid conversion to "Null::Message"\n'
+            r'<stdin>:10:20: model: error: invalid conversion to "Null_Msg::Message"\n'
             r'<stdin>:10:20: model: info: refinement for message "TLV::Message"'
             r" would make operation legal"
             r"$"
@@ -2824,12 +2824,12 @@ def test_message_assignment_from_function() -> None:
                 "Start",
                 transitions=[Transition(target=ID("null"))],
                 exception_transition=Transition(target=ID("null")),
-                declarations=[decl.VariableDeclaration("Msg", "Null::Message")],
+                declarations=[decl.VariableDeclaration("Msg", "Null_Msg::Message")],
                 actions=[stmt.VariableAssignment("Msg", expr.Call("SubProg"))],
             ),
         ],
         declarations=[],
-        parameters=[decl.FunctionDeclaration("SubProg", [], "Null::Message")],
+        parameters=[decl.FunctionDeclaration("SubProg", [], "Null_Msg::Message")],
         types=[models.null_message()],
         location=Location((1, 1)),
     )

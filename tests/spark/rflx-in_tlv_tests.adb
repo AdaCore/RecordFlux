@@ -29,7 +29,7 @@ package body RFLX.In_TLV_Tests is
       Valid := TLV.Message.Well_Formed_Message (TLV_Message_Context);
       Assert (Valid, "Invalid TLV message");
       if Valid then
-         Valid := In_TLV.Contains.Null_Message_In_TLV_Message_Value (TLV_Message_Context);
+         Valid := In_TLV.Contains.Null_Msg_Message_In_TLV_Message_Value (TLV_Message_Context);
          Assert (Valid, "TLV message contains no null message");
       end if;
 
