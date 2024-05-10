@@ -172,8 +172,8 @@ tests:
     - code_generation
   services:
      - image:recordflux
-     - cpu:8
-     - mem:16
+     - cpu:16
+     - mem:32
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
