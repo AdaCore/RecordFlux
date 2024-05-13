@@ -566,10 +566,11 @@ wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 	$(RM) $(RAPIDFLUX_PLATFORM)
 	@# Test wheel
 	$(POETRY) run python -m venv --clear $(BUILD_DIR)/venv
-	$(BUILD_DIR)/venv/bin/pip install dist/recordflux-$$($(POETRY) version -s)-$(PYTHON_TAG)-$(PYTHON_TAG)-manylinux_*_x86_64.whl pytest pytest-xdist hypothesis
-	cp -r tests $(BUILD_DIR)/tests
-	cd $(BUILD_DIR) && source venv/bin/activate && rflx --version && venv/bin/pytest -vv -n auto tests/end_to_end
-	$(RM) -r $(BUILD_DIR)/venv $(BUILD_DIR)/tests
+	$(BUILD_DIR)/venv/bin/pip install dist/recordflux-$$($(POETRY) version -s)-$(PYTHON_TAG)-$(PYTHON_TAG)-manylinux_*_x86_64.whl pytest
+	mkdir -p $(BUILD_DIR)/tests
+	cp -r tests/{__init__.py,const.py,end_to_end,data} $(BUILD_DIR)/tests/
+	cd $(BUILD_DIR) && source venv/bin/activate && rflx --version && venv/bin/pytest -vv tests/end_to_end
+	$(RM) -r $(BUILD_DIR)/{venv,tests}
 
 # Build distributions for all defined Python versions without local version identifier.
 pypi_dist: $(PROJECT_MANAGEMENT)
