@@ -15,7 +15,7 @@ from rflx.model import (
     Session,
     State,
     Transition,
-    Type,
+    TypeDecl,
     UncheckedSession,
     declaration as decl,
     statement as stmt,
@@ -2352,7 +2352,7 @@ def test_missing_exception_transition() -> None:
 def test_unnecessary_exception_transition(
     state: State,
     parameters: abc.Sequence[decl.FormalDeclaration],
-    types: abc.Sequence[Type],
+    types: abc.Sequence[TypeDecl],
 ) -> None:
     assert_session_model_error(
         states=[state],

@@ -15,7 +15,7 @@ from typing_extensions import Self
 
 from rflx import expression as expr
 from rflx.identifier import ID, StrID
-from rflx.model import AlwaysVerify, Cache, Link, Message, Model, Refinement, type_ as mty
+from rflx.model import AlwaysVerify, Cache, Link, Message, Model, Refinement, type_decl as mty
 from rflx.pyrflx import ChecksumFunction, Package, PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
 from rflx.specification import Parser
@@ -221,26 +221,26 @@ class Validator:
         return message.copy(structure=structure, types=types)
 
     @staticmethod
-    def _replace_messages(type_: mty.Type, messages: Mapping[ID, Message]) -> mty.Type:
+    def _replace_messages(type_decl: mty.TypeDecl, messages: Mapping[ID, Message]) -> mty.TypeDecl:
         """Recursively replace messages."""
-        if isinstance(type_, Message):
-            return messages[type_.identifier]
-        if isinstance(type_, Refinement):
+        if isinstance(type_decl, Message):
+            return messages[type_decl.identifier]
+        if isinstance(type_decl, Refinement):
             return Refinement(
-                type_.package,
-                messages[type_.pdu.identifier],
-                type_.field,
-                messages[type_.sdu.identifier],
-                type_.condition,
-                type_.location,
+                type_decl.package,
+                messages[type_decl.pdu.identifier],
+                type_decl.field,
+                messages[type_decl.sdu.identifier],
+                type_decl.condition,
+                type_decl.location,
             )
-        if isinstance(type_, mty.Sequence) and isinstance(type_.element_type, Message):
+        if isinstance(type_decl, mty.Sequence) and isinstance(type_decl.element_type, Message):
             return mty.Sequence(
-                type_.identifier,
-                messages[type_.element_type.identifier],
-                type_.location,
+                type_decl.identifier,
+                messages[type_decl.element_type.identifier],
+                type_decl.location,
             )
-        return type_
+        return type_decl
 
     @staticmethod
     def _expand_expression(expression: expr.Expr) -> list[expr.Expr]:

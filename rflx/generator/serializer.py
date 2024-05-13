@@ -71,7 +71,7 @@ from rflx.model import (
     Opaque,
     Scalar,
     Sequence,
-    Type,
+    TypeDecl,
     is_builtin_type,
 )
 
@@ -515,7 +515,7 @@ class SerializerGenerator:
 
         def specification(
             field: Field,
-            field_type: Type,
+            field_type: TypeDecl,
             use_enum_records_directly: bool = False,
         ) -> ProcedureSpecification:
             if field_type.package == BUILTINS_PACKAGE:
@@ -938,7 +938,7 @@ class SerializerGenerator:
     def create_sequence_setter_procedures(
         self,
         message: Message,
-        sequence_fields: Mapping[Field, Type],
+        sequence_fields: Mapping[Field, TypeDecl],
     ) -> UnitPart:
         def specification(field: Field) -> ProcedureSpecification:
             return ProcedureSpecification(

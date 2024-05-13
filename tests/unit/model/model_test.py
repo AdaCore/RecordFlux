@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-import rflx.model.type_ as mty
+import rflx.model.type_decl as mty
 from rflx.error import Location, RecordFluxError
 from rflx.expression import Equal, Number
 from rflx.identifier import ID
@@ -28,7 +28,7 @@ from rflx.model import (
     Session,
     State,
     Transition,
-    Type,
+    TypeDecl,
     UncheckedMessage,
     UncheckedModel,
 )
@@ -222,7 +222,7 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
     ],
 )
 def test_init_introduce_type_dependencies(
-    types: Sequence[Callable[[], Type]],
+    types: Sequence[Callable[[], TypeDecl]],
     model: Callable[[], Model],
 ) -> None:
     assert Model([t() for t in types]).types == model().types

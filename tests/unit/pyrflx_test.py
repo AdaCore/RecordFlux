@@ -18,7 +18,7 @@ from rflx.model import (
     NeverVerify,
     Opaque,
     Sequence,
-    Type,
+    TypeDecl,
 )
 from rflx.pyrflx import (
     Bitstring,
@@ -671,13 +671,13 @@ def test_opaque_value_clear() -> None:
 
 
 def test_invalid_value() -> None:
-    class TestType(Type):
+    class TestTypeDecl(TypeDecl):
         pass
 
-    t = TestType("Test::Type")
+    t = TestTypeDecl("Test::Type")
     with pytest.raises(
         PyRFLXError,
-        match="^pyrflx: error: cannot construct unknown type: TestType$",
+        match="^pyrflx: error: cannot construct unknown type: TestTypeDecl$",
     ):
         TypeValue.construct(t)
 

@@ -20,7 +20,7 @@ from rflx.error import Location, Subsystem, info
 from rflx.identifier import ID, StrID
 
 if TYPE_CHECKING:
-    from rflx.model import type_ as mty
+    from rflx.model import type_decl as mty
 
 INT_MIN: int = 0
 INT_MAX: int = 2**MAX_SCALAR_SIZE - 1
@@ -1781,7 +1781,7 @@ class Session:
     states: Sequence[State]
     declarations: Sequence[VarDecl]
     parameters: Sequence[FormalDecl]
-    types: Mapping[ID, mty.Type]
+    types: Mapping[ID, mty.TypeDecl]
     location: Optional[Location]
 
     def __init__(  # noqa: PLR0913
@@ -1790,7 +1790,7 @@ class Session:
         states: Sequence[State],
         declarations: Sequence[VarDecl],
         parameters: Sequence[FormalDecl],
-        types: Mapping[ID, mty.Type],
+        types: Mapping[ID, mty.TypeDecl],
         location: Optional[Location],
         variable_id: Generator[ID, None, None],
         workers: int = 1,

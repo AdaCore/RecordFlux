@@ -249,7 +249,7 @@ def substitution_facts(
             expr.Number(1),
         )
 
-    def parameter_value(parameter: model.Field, parameter_type: model.Type) -> expr.Expr:
+    def parameter_value(parameter: model.Field, parameter_type: model.TypeDecl) -> expr.Expr:
         var = (
             expr.Variable(parameter.name, type_=parameter_type.type_)
             if embedded
@@ -264,7 +264,7 @@ def substitution_facts(
 
         assert False, f'unexpected type "{type(parameter_type).__name__}"'
 
-    def field_value(field: model.Field, field_type: model.Type) -> expr.Expr:
+    def field_value(field: model.Field, field_type: model.TypeDecl) -> expr.Expr:
         call = expr.Call(
             f"Get_{field.name}",
             field_type.type_,

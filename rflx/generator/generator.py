@@ -98,7 +98,7 @@ from rflx.model import (
     Scalar,
     Sequence,
     Session,
-    Type,
+    TypeDecl,
 )
 
 from . import common, const, message as message_generator
@@ -836,7 +836,7 @@ class Generator:
     def _create_type(
         cls,
         prefix: str,
-        field_type: Type,
+        field_type: TypeDecl,
         message_package: ID,
         units: abc.Mapping[ID, Unit],
     ) -> dict[ID, Unit]:
@@ -1093,7 +1093,7 @@ class Generator:
     def _create_contains_function(
         self,
         refinement: Refinement,
-        condition_fields: abc.Mapping[Field, Type],
+        condition_fields: abc.Mapping[Field, TypeDecl],
         null_sdu: bool,
     ) -> SubprogramUnitPart:
         pdu_identifier = self._prefix * refinement.pdu.identifier
@@ -1166,7 +1166,7 @@ class Generator:
     def _create_switch_procedure(
         self,
         refinement: Refinement,
-        condition_fields: abc.Mapping[Field, Type],
+        condition_fields: abc.Mapping[Field, TypeDecl],
     ) -> UnitPart:
         pdu_identifier = self._prefix * refinement.pdu.identifier
         sdu_identifier = self._prefix * refinement.sdu.identifier
@@ -1320,7 +1320,7 @@ class Generator:
     def _create_copy_refined_field_procedure(
         self,
         refinement: Refinement,
-        condition_fields: abc.Mapping[Field, Type],
+        condition_fields: abc.Mapping[Field, TypeDecl],
     ) -> UnitPart:
         pdu_identifier = self._prefix * refinement.pdu.identifier
         sdu_identifier = self._prefix * refinement.sdu.identifier
@@ -1596,7 +1596,7 @@ class Generator:
         self,
         refinement: Refinement,
         pdu_context: StrID,
-        condition_fields: abc.Mapping[Field, Type],
+        condition_fields: abc.Mapping[Field, TypeDecl],
         null_sdu: bool,
     ) -> list[expr.Expr]:
         pdu_identifier = self._prefix * refinement.pdu.identifier

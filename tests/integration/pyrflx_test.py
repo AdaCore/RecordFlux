@@ -30,7 +30,7 @@ from rflx.model import FINAL, Link, Message
 from rflx.model.cache import NeverVerify
 from rflx.model.message import INITIAL, Field
 from rflx.model.model import Model
-from rflx.model.type_ import OPAQUE
+from rflx.model.type_decl import OPAQUE
 from rflx.pyrflx import MessageValue, Package, PyRFLX, PyRFLXError, TypeValue, utils
 from rflx.specification.parser import Parser
 from tests.const import CAPTURED_DIR, SPEC_DIR

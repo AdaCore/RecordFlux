@@ -29,7 +29,7 @@ from .top_level_declaration import (
     TopLevelDeclaration as TopLevelDeclaration,
     UncheckedTopLevelDeclaration as UncheckedTopLevelDeclaration,
 )
-from .type_ import (
+from .type_decl import (
     BOOLEAN as BOOLEAN,
     BUILTIN_LITERALS as BUILTIN_LITERALS,
     BUILTIN_TYPES as BUILTIN_TYPES,
@@ -43,12 +43,12 @@ from .type_ import (
     Opaque as Opaque,
     Scalar as Scalar,
     Sequence as Sequence,
-    Type as Type,
+    TypeDecl as TypeDecl,
     UncheckedEnumeration as UncheckedEnumeration,
     UncheckedInteger as UncheckedInteger,
     UncheckedOpaque as UncheckedOpaque,
     UncheckedSequence as UncheckedSequence,
-    UncheckedType as UncheckedType,
+    UncheckedTypeDecl as UncheckedTypeDecl,
     internal_type_identifier as internal_type_identifier,
     is_builtin_type as is_builtin_type,
     is_internal_type as is_internal_type,

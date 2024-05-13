@@ -18,7 +18,7 @@ from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fat
 from rflx.identifier import ID, StrID
 from rflx.model.top_level_declaration import TopLevelDeclaration
 
-from . import type_ as mty
+from . import type_decl as mty
 
 
 class ByteOrder(Enum):
@@ -96,12 +96,12 @@ class Link(Base):
         return bool(self.size.findall(lambda x: x in [expr.Size("Message"), expr.Last("Message")]))
 
 
-class Message(mty.Type):
+class Message(mty.TypeDecl):
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
         structure: Sequence[Link],
-        types: Mapping[Field, mty.Type],
+        types: Mapping[Field, mty.TypeDecl],
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
@@ -251,11 +251,11 @@ class Message(mty.Type):
         return self._structure == [Link(INITIAL, FINAL)] and not self.types
 
     @property
-    def direct_dependencies(self) -> list[mty.Type]:
+    def direct_dependencies(self) -> list[mty.TypeDecl]:
         return [*self.types.values(), self]
 
     @property
-    def dependencies(self) -> list[mty.Type]:
+    def dependencies(self) -> list[mty.TypeDecl]:
         return [*_dependencies(self.types), self]
 
     @property
@@ -266,7 +266,7 @@ class Message(mty.Type):
         self,
         identifier: Optional[StrID] = None,
         structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, mty.Type]] = None,
+        types: Optional[Mapping[Field, mty.TypeDecl]] = None,
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
@@ -296,12 +296,12 @@ class Message(mty.Type):
         return (INITIAL, *self.fields, FINAL)
 
     @property
-    def parameter_types(self) -> Mapping[Field, mty.Type]:
+    def parameter_types(self) -> Mapping[Field, mty.TypeDecl]:
         """Return parameters and corresponding types."""
         return self._parameter_types
 
     @property
-    def field_types(self) -> Mapping[Field, mty.Type]:
+    def field_types(self) -> Mapping[Field, mty.TypeDecl]:
         """Return fields and corresponding types topologically sorted."""
         return self._field_types
 
@@ -310,7 +310,7 @@ class Message(mty.Type):
         return self._structure
 
     @property
-    def types(self) -> Mapping[Field, mty.Type]:
+    def types(self) -> Mapping[Field, mty.TypeDecl]:
         """Return parameters, fields and corresponding types topologically sorted."""
         return {**self._parameter_types, **self._field_types}
 
@@ -487,7 +487,11 @@ class Message(mty.Type):
             skip_verification=True,
         )
 
-    def typed_expression(self, expression: expr.Expr, types: Mapping[Field, mty.Type]) -> expr.Expr:
+    def typed_expression(
+        self,
+        expression: expr.Expr,
+        types: Mapping[Field, mty.TypeDecl],
+    ) -> expr.Expr:
         return typed_expression(expression, types, self._qualified_enum_literals, self._type_names)
 
     @cached_property
@@ -856,7 +860,7 @@ class Message(mty.Type):
     def _type_size_constraints(self) -> list[expr.Expr]:
         return _type_size_constraints(self._type_names)
 
-    def _validate(self, structure: Sequence[Link], types: Mapping[Field, mty.Type]) -> bool:
+    def _validate(self, structure: Sequence[Link], types: Mapping[Field, mty.TypeDecl]) -> bool:
         type_fields = {*types, INITIAL, FINAL}
         structure_fields = {l.source for l in structure} | {l.target for l in structure}
 
@@ -873,7 +877,7 @@ class Message(mty.Type):
 
     def _validate_types(
         self,
-        types: Mapping[Field, mty.Type],
+        types: Mapping[Field, mty.TypeDecl],
         type_fields: set[Field],
         structure_fields: set[Field],
     ) -> None:
@@ -1126,7 +1130,7 @@ class Message(mty.Type):
     def _normalize(
         self,
         structure: Sequence[Link],
-        types: Mapping[Field, mty.Type],
+        types: Mapping[Field, mty.TypeDecl],
         checksums: Mapping[ID, Sequence[expr.Expr]],
     ) -> tuple[list[Link], dict[ID, Sequence[expr.Expr]]]:
         """
@@ -1511,7 +1515,7 @@ class Message(mty.Type):
                         )
 
     def _verify_expression_types(self, valid_paths: set[tuple[Link, ...]]) -> None:
-        types: dict[Field, mty.Type] = {}
+        types: dict[Field, mty.TypeDecl] = {}
 
         def typed_variable(expression: expr.Expr) -> expr.Expr:
             return self.typed_expression(expression, types)
@@ -2275,7 +2279,7 @@ class DerivedMessage(Message):
         identifier: StrID,
         base: Message,
         structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, mty.Type]] = None,
+        types: Optional[Mapping[Field, mty.TypeDecl]] = None,
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
@@ -2316,7 +2320,7 @@ class DerivedMessage(Message):
         self,
         identifier: Optional[StrID] = None,
         structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, mty.Type]] = None,
+        types: Optional[Mapping[Field, mty.TypeDecl]] = None,
         checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
         byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
         location: Optional[Location] = None,
@@ -2334,7 +2338,7 @@ class DerivedMessage(Message):
         )
 
 
-class Refinement(mty.Type):
+class Refinement(mty.TypeDecl):
     def __init__(  # noqa: PLR0913
         self,
         package: StrID,
@@ -2526,16 +2530,16 @@ class Refinement(mty.Type):
         return hash(self.identifier)
 
     @property
-    def direct_dependencies(self) -> list[mty.Type]:
+    def direct_dependencies(self) -> list[mty.TypeDecl]:
         return list(unique([self.pdu, self.sdu, self]))
 
     @property
-    def dependencies(self) -> list[mty.Type]:
+    def dependencies(self) -> list[mty.TypeDecl]:
         return list(unique([*self.pdu.dependencies, *self.sdu.dependencies, self]))
 
 
 @dataclass
-class UncheckedMessage(mty.UncheckedType):
+class UncheckedMessage(mty.UncheckedTypeDecl):
     identifier: ID
     structure: Sequence[Link]
     parameter_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
@@ -2584,13 +2588,13 @@ class UncheckedMessage(mty.UncheckedType):
 
         return result
 
-    def types(self, declarations: Sequence[TopLevelDeclaration]) -> dict[Field, mty.Type]:
+    def types(self, declarations: Sequence[TopLevelDeclaration]) -> dict[Field, mty.TypeDecl]:
         return {
             field: next(
                 (
                     t
                     for t in declarations
-                    if isinstance(t, mty.Type) and t.identifier == type_identifier
+                    if isinstance(t, mty.TypeDecl) and t.identifier == type_identifier
                 ),
             )
             for field, type_identifier, type_arguments in (
@@ -2613,7 +2617,7 @@ class UncheckedMessage(mty.UncheckedType):
                 (
                     t
                     for t in declarations
-                    if isinstance(t, mty.Type) and t.identifier == type_identifier
+                    if isinstance(t, mty.TypeDecl) and t.identifier == type_identifier
                 ),
                 None,
             )
@@ -3071,7 +3075,7 @@ class UncheckedMessage(mty.UncheckedType):
 
 
 @dataclass
-class UncheckedDerivedMessage(mty.UncheckedType):
+class UncheckedDerivedMessage(mty.UncheckedTypeDecl):
     identifier: ID
     base_identifier: ID
     location: Optional[Location] = dataclass_field(default=None)
@@ -3085,7 +3089,7 @@ class UncheckedDerivedMessage(mty.UncheckedType):
         base_types = [
             t
             for t in declarations
-            if isinstance(t, mty.Type) and t.identifier == self.base_identifier
+            if isinstance(t, mty.TypeDecl) and t.identifier == self.base_identifier
         ]
 
         if not base_types:
@@ -3125,7 +3129,7 @@ class UncheckedDerivedMessage(mty.UncheckedType):
 
 
 @dataclass
-class UncheckedRefinement(mty.UncheckedType):
+class UncheckedRefinement(mty.UncheckedTypeDecl):
     pdu: ID
     field: Field
     sdu: ID
@@ -3218,9 +3222,9 @@ class UncheckedRefinement(mty.UncheckedType):
 
 def typed_expression(
     expression: expr.Expr,
-    types: Mapping[Field, mty.Type],
+    types: Mapping[Field, mty.TypeDecl],
     qualified_enum_literals: Mapping[ID, mty.Enumeration],
-    qualified_type_names: Mapping[ID, mty.Type],
+    qualified_type_names: Mapping[ID, mty.TypeDecl],
 ) -> expr.Expr:
     expression = copy(expression)
     if isinstance(expression, expr.Variable):
@@ -3240,9 +3244,9 @@ def typed_expression(
 
 
 def message_constraints(
-    types: Mapping[Field, mty.Type],
+    types: Mapping[Field, mty.TypeDecl],
     qualified_enum_literals: Mapping[ID, mty.Enumeration],
-    qualified_type_names: Mapping[ID, mty.Type],
+    qualified_type_names: Mapping[ID, mty.TypeDecl],
 ) -> list[expr.Expr]:
     return [
         *_message_size_and_position_constraints(),
@@ -3253,7 +3257,7 @@ def message_constraints(
 
 def aggregate_constraints(
     expression: expr.Expr,
-    types: Mapping[Field, mty.Type],
+    types: Mapping[Field, mty.TypeDecl],
 ) -> list[expr.Expr]:
     """Return resulting field sizes for all relations that compare a field with an aggregate."""
 
@@ -3291,7 +3295,7 @@ def aggregate_constraints(
 
 
 def _scalar_constraints(
-    types: Mapping[Field, mty.Type],
+    types: Mapping[Field, mty.TypeDecl],
     qualified_enum_literals: Mapping[ID, mty.Enumeration],
 ) -> list[expr.Expr]:
     scalar_types = [
@@ -3308,7 +3312,7 @@ def _scalar_constraints(
     ]
 
 
-def _type_size_constraints(qualified_type_names: Mapping[ID, mty.Type]) -> list[expr.Expr]:
+def _type_size_constraints(qualified_type_names: Mapping[ID, mty.TypeDecl]) -> list[expr.Expr]:
     return [
         expr.Equal(expr.Size(l), t.size)
         for l, t in qualified_type_names.items()
@@ -3323,7 +3327,7 @@ def _message_size_and_position_constraints() -> list[expr.Expr]:
     ]
 
 
-def _dependencies(types: Mapping[Field, mty.Type]) -> list[mty.Type]:
+def _dependencies(types: Mapping[Field, mty.TypeDecl]) -> list[mty.TypeDecl]:
     return [*unique(a for t in types.values() for a in t.dependencies)]
 
 

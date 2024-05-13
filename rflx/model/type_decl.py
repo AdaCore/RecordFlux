@@ -17,13 +17,13 @@ from . import message
 from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
 
 
-class Type(TopLevelDeclaration):
+class TypeDecl(TopLevelDeclaration):
     @property
     def type_(self) -> rty.Type:
         return rty.Undefined()
 
     @property
-    def direct_dependencies(self) -> list[Type]:
+    def direct_dependencies(self) -> list[TypeDecl]:
         """
         Return a list consisting of the type and all the types on which the type directly depends.
 
@@ -33,7 +33,7 @@ class Type(TopLevelDeclaration):
         return [self]
 
     @property
-    def dependencies(self) -> list[Type]:
+    def dependencies(self) -> list[TypeDecl]:
         """
         Return a list consisting of the type and all types on which the type depends.
 
@@ -44,7 +44,7 @@ class Type(TopLevelDeclaration):
     @property
     def qualified_identifier(self) -> ID:
         """
-        Return the qualified identifier of this type.
+        Return the qualified identifier of this type declaration.
 
         The qualified identifier of a type is defined as its complete package
         path followed by the type name, or just the type name if the type is
@@ -58,7 +58,7 @@ class Type(TopLevelDeclaration):
         )
 
 
-class Scalar(Type):
+class Scalar(TypeDecl):
     def __init__(
         self,
         identifier: StrID,
@@ -484,7 +484,7 @@ class Enumeration(Scalar):
         return result
 
 
-class Composite(Type):
+class Composite(TypeDecl):
     @property
     @abstractmethod
     def element_size(self) -> expr.Expr:
@@ -495,7 +495,7 @@ class Sequence(Composite):
     def __init__(
         self,
         identifier: StrID,
-        element_type: Type,
+        element_type: TypeDecl,
         location: Optional[Location] = None,
     ) -> None:
         super().__init__(identifier, location)
@@ -609,11 +609,11 @@ class Sequence(Composite):
         return expr.Size(self.element_type.name)
 
     @property
-    def direct_dependencies(self) -> list[Type]:
+    def direct_dependencies(self) -> list[TypeDecl]:
         return [self.element_type, self]
 
     @property
-    def dependencies(self) -> list[Type]:
+    def dependencies(self) -> list[TypeDecl]:
         return [*self.element_type.dependencies, self]
 
 
@@ -637,7 +637,7 @@ class Opaque(Composite):
 
 
 @dataclass
-class UncheckedType(UncheckedTopLevelDeclaration):
+class UncheckedTypeDecl(UncheckedTopLevelDeclaration):
     identifier: ID
 
     @abstractmethod
@@ -646,12 +646,12 @@ class UncheckedType(UncheckedTopLevelDeclaration):
         declarations: ty.Sequence[TopLevelDeclaration],
         skip_verification: bool = False,
         workers: int = 1,
-    ) -> Type:
+    ) -> TypeDecl:
         raise NotImplementedError
 
 
 @dataclass
-class UncheckedInteger(UncheckedType):
+class UncheckedInteger(UncheckedTypeDecl):
     identifier: ID
     first: expr.Expr
     last: expr.Expr
@@ -668,7 +668,7 @@ class UncheckedInteger(UncheckedType):
 
 
 @dataclass
-class UncheckedEnumeration(UncheckedType):
+class UncheckedEnumeration(UncheckedTypeDecl):
     identifier: ID
     literals: abc.Sequence[tuple[ID, expr.Number]]
     size: expr.Expr
@@ -691,7 +691,7 @@ class UncheckedEnumeration(UncheckedType):
 
 
 @dataclass
-class UncheckedSequence(UncheckedType):
+class UncheckedSequence(UncheckedTypeDecl):
     identifier: ID
     element_identifier: ID
     location: Optional[Location]
@@ -706,7 +706,7 @@ class UncheckedSequence(UncheckedType):
             (
                 t
                 for t in declarations
-                if isinstance(t, Type) and t.identifier == self.element_identifier
+                if isinstance(t, TypeDecl) and t.identifier == self.element_identifier
             ),
             None,
         )
@@ -721,7 +721,7 @@ class UncheckedSequence(UncheckedType):
 
 
 @dataclass
-class UncheckedOpaque(UncheckedType):
+class UncheckedOpaque(UncheckedTypeDecl):
     identifier: ID
     location: Optional[Location]
 
@@ -795,7 +795,7 @@ def internal_type_identifier(identifier: ID, package: Optional[ID] = None) -> ID
     return identifier
 
 
-def enum_literals(types: abc.Iterable[Type], package: ID) -> dict[ID, Enumeration]:
+def enum_literals(types: abc.Iterable[TypeDecl], package: ID) -> dict[ID, Enumeration]:
     literals = {}
 
     for t in types:
@@ -809,7 +809,7 @@ def enum_literals(types: abc.Iterable[Type], package: ID) -> dict[ID, Enumeratio
     return literals
 
 
-def unqualified_enum_literals(types: abc.Iterable[Type], package: ID) -> dict[ID, Enumeration]:
+def unqualified_enum_literals(types: abc.Iterable[TypeDecl], package: ID) -> dict[ID, Enumeration]:
     return {
         l: t
         for t in types
@@ -818,7 +818,7 @@ def unqualified_enum_literals(types: abc.Iterable[Type], package: ID) -> dict[ID
     }
 
 
-def qualified_enum_literals(types: abc.Iterable[Type]) -> dict[ID, Enumeration]:
+def qualified_enum_literals(types: abc.Iterable[TypeDecl]) -> dict[ID, Enumeration]:
     return {
         l if t.package == const.BUILTINS_PACKAGE else t.package * l: t
         for t in types
@@ -827,7 +827,7 @@ def qualified_enum_literals(types: abc.Iterable[Type]) -> dict[ID, Enumeration]:
     }
 
 
-def qualified_type_names(types: abc.Iterable[Type]) -> dict[ID, Type]:
+def qualified_type_names(types: abc.Iterable[TypeDecl]) -> dict[ID, TypeDecl]:
     return {
         t.identifier.name if t.package == const.BUILTINS_PACKAGE else t.identifier: t for t in types
     }

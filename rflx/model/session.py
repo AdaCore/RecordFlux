@@ -17,7 +17,7 @@ from rflx.identifier import ID, StrID, id_generator
 from . import (
     declaration as decl,
     statement as stmt,
-    type_ as mty,
+    type_decl as mty,
 )
 from .message import Message, Refinement
 from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
@@ -350,7 +350,7 @@ class Session(TopLevelDeclaration):
         states: Sequence[State],
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
-        types: Sequence[mty.Type],
+        types: Sequence[mty.TypeDecl],
         location: Optional[Location] = None,
         workers: int = 1,
     ):
@@ -1079,7 +1079,7 @@ class UncheckedSession(UncheckedTopLevelDeclaration):
             deepcopy(self.states),
             deepcopy(self.declarations),
             deepcopy(self.parameters),
-            [d for d in declarations if isinstance(d, mty.Type)],
+            [d for d in declarations if isinstance(d, mty.TypeDecl)],
             self.location,
         )
 

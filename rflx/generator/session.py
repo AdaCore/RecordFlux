@@ -205,7 +205,7 @@ class SessionGenerator:
 
         return model.internal_type_identifier(identifier, self._session.package)
 
-    def _model_type(self, identifier: ID) -> model.Type:
+    def _model_type(self, identifier: ID) -> model.TypeDecl:
         return self._session.types[
             model.internal_type_identifier(identifier, self._session.package)
         ]
