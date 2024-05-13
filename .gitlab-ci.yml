@@ -1,6 +1,4 @@
 variables:
-  ANOD_DEFAULT_SANDBOX_DIR: /it/wave
-
   DEVUTILS_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
 
   GNAT_VERSION: "24.0"
@@ -558,6 +556,9 @@ gnat_wave_compatibility:
      - mem:4
   script:
     - git fetch --unshallow
+    - generic_anod_ci
+    - cat /tmp/ci_env.sh
+    - . /tmp/ci_env.sh
     - anod install gnat
     - eval `anod printenv gnat`
     - gnat --version
@@ -576,6 +577,9 @@ spark_wave_compatibility:
      - mem:16
   script:
     - git fetch --unshallow
+    - generic_anod_ci
+    - cat /tmp/ci_env.sh
+    - . /tmp/ci_env.sh
     - anod install spark2014
     - eval `anod printenv spark2014`
     - gnatprove --version
