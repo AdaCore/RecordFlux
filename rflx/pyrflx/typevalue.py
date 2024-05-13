@@ -45,7 +45,7 @@ from rflx.model import (
     Refinement,
     Scalar,
     Sequence,
-    Type,
+    TypeDecl,
 )
 from rflx.pyrflx.bitstring import Bitstring
 from rflx.pyrflx.error import PyRFLXError
@@ -68,7 +68,7 @@ ValueType = Union[
 class TypeValue(Base):
     _value: Optional[ValueType] = None
 
-    def __init__(self, vtype: Type) -> None:
+    def __init__(self, vtype: TypeDecl) -> None:
         self._type = vtype
 
     def __eq__(self, other: object) -> bool:
@@ -76,7 +76,7 @@ class TypeValue(Base):
             return self._value == other._value and self._type == other._type
         return NotImplemented
 
-    def equal_type(self, other: Type) -> bool:
+    def equal_type(self, other: TypeDecl) -> bool:
         return isinstance(self._type, type(other))
 
     @property
@@ -140,7 +140,7 @@ class TypeValue(Base):
     @classmethod
     def construct(
         cls,
-        vtype: Type,
+        vtype: TypeDecl,
         imported: bool = False,
         refinements: Optional[abc.Sequence[RefinementValue]] = None,
     ) -> TypeValue:
@@ -527,7 +527,7 @@ class SequenceValue(CompositeValue):
         return list
 
     @property
-    def element_type(self) -> Type:
+    def element_type(self) -> TypeDecl:
         return self._element_type
 
     def as_json(self) -> object:
@@ -676,7 +676,7 @@ class MessageValue(TypeValue):
             return self._fields == other._fields and self._type == other._type
         return NotImplemented
 
-    def equal_type(self, other: Type) -> bool:
+    def equal_type(self, other: TypeDecl) -> bool:
         return self.identifier == other.identifier
 
     @property

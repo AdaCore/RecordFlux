@@ -58,7 +58,7 @@ from rflx.model import (
     Message,
     Refinement,
     Sequence,
-    Type,
+    TypeDecl,
     UncheckedDerivedMessage,
     UncheckedMessage,
     UncheckedRefinement,
@@ -193,7 +193,7 @@ def test_invalid_identifier() -> None:
         lambda: OPAQUE,
     ],
 )
-def test_invalid_parameter_type_composite(parameter_type: abc.Callable[[], Type]) -> None:
+def test_invalid_parameter_type_composite(parameter_type: abc.Callable[[], TypeDecl]) -> None:
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
     types = {Field(ID("P", Location((1, 2)))): parameter_type(), Field("X"): models.integer()}
 
@@ -803,7 +803,7 @@ def test_invalid_use_of_enum_literal(expression: Expr) -> None:
     )
 
 
-class NewType(Type):
+class NewType(TypeDecl):
     pass
 
 
@@ -2057,8 +2057,12 @@ def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
         Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
     ],
 )
-@pytest.mark.parametrize("type_", [OPAQUE, models.sequence_integer_vector()])
-def test_message_with_implicit_size_single_field(size: Expr, condition: Expr, type_: Type) -> None:
+@pytest.mark.parametrize("type_decl", [OPAQUE, models.sequence_integer_vector()])
+def test_message_with_implicit_size_single_field(
+    size: Expr,
+    condition: Expr,
+    type_decl: TypeDecl,
+) -> None:
     x = Field("X")
 
     structure = [
@@ -2066,7 +2070,7 @@ def test_message_with_implicit_size_single_field(size: Expr, condition: Expr, ty
         Link(x, FINAL, condition=condition),
     ]
 
-    types = {x: type_}
+    types = {x: type_decl}
 
     message = Message("P::M", structure, types)
 
@@ -2081,11 +2085,11 @@ def test_message_with_implicit_size_single_field(size: Expr, condition: Expr, ty
         Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
     ],
 )
-@pytest.mark.parametrize("type_", [OPAQUE, models.sequence_integer_vector()])
+@pytest.mark.parametrize("type_decl", [OPAQUE, models.sequence_integer_vector()])
 def test_message_with_implicit_size_multiple_fields(
     size: Expr,
     condition: Expr,
-    type_: Type,
+    type_decl: TypeDecl,
 ) -> None:
     x = Field("X")
     y = Field("Y")
@@ -2096,7 +2100,7 @@ def test_message_with_implicit_size_multiple_fields(
         Link(y, FINAL, condition=condition),
     ]
 
-    types = {x: type_, y: type_}
+    types = {x: type_decl, y: type_decl}
 
     message = Message("P::M", structure, types)
 
@@ -5200,7 +5204,7 @@ def test_always_false_refinement(message: abc.Callable[[], Message], condition: 
 )
 def test_always_true_message_condition(
     structure: abc.Sequence[Link],
-    types: abc.Mapping[Field, Type],
+    types: abc.Mapping[Field, TypeDecl],
 ) -> None:
     link_to_final = next(l for l in structure if l.target == FINAL)  # pragma: no branch
     assert_message_model_error(

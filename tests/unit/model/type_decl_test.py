@@ -18,11 +18,11 @@ from rflx.model import (
     Link,
     Message,
     Sequence,
-    Type,
+    TypeDecl,
     UncheckedEnumeration,
     UncheckedInteger,
     UncheckedSequence,
-    UncheckedType,
+    UncheckedTypeDecl,
 )
 from tests.data import models
 from tests.utils import assert_equal
@@ -45,14 +45,14 @@ def test_type_name() -> None:
 
 
 def test_type_type() -> None:
-    class NewType(Type):
+    class NewType(TypeDecl):
         pass
 
     assert NewType("P::T").type_ == rty.Undefined()
 
 
 def test_type_dependencies() -> None:
-    class NewType(Type):
+    class NewType(TypeDecl):
         pass
 
     assert NewType("P::T").dependencies == [NewType("P::T")]
@@ -460,7 +460,7 @@ def test_sequence_dependencies() -> None:
         ),
     ],
 )
-def test_sequence_invalid_element_type(element_type: Callable[[], Type], error: str) -> None:
+def test_sequence_invalid_element_type(element_type: Callable[[], TypeDecl], error: str) -> None:
     with pytest.raises(RecordFluxError, match=f"^{error}$"):
         Sequence("P::A", element_type(), Location((1, 2)))
 
@@ -532,7 +532,7 @@ def test_sequence_unsupported_element_type() -> None:
         (UNCHECKED_OPAQUE, OPAQUE),
     ],
 )
-def test_unchecked_type_checked(unchecked: UncheckedType, expected: Type) -> None:
+def test_unchecked_type_checked(unchecked: UncheckedTypeDecl, expected: TypeDecl) -> None:
     assert (
         unchecked.checked(
             [Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))],
@@ -574,6 +574,6 @@ def test_unchecked_type_checked(unchecked: UncheckedType, expected: Type) -> Non
         ),
     ],
 )
-def test_unchecked_type_checked_error(unchecked: UncheckedType, expected: str) -> None:
+def test_unchecked_type_checked_error(unchecked: UncheckedTypeDecl, expected: str) -> None:
     with pytest.raises(RecordFluxError, match=expected):
         unchecked.checked([])

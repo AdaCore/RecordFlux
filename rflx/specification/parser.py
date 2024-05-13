@@ -1937,7 +1937,7 @@ class Parser:
                     lang.TypeDef,
                     Path,
                 ],
-                Optional[model.UncheckedType],
+                Optional[model.UncheckedTypeDecl],
             ],
         ] = {
             "SequenceTypeDef": create_sequence,

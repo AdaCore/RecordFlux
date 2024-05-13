@@ -60,7 +60,7 @@ from rflx.ada import (
 )
 from rflx.const import BUILTINS_PACKAGE
 from rflx.identifier import ID
-from rflx.model import FINAL, ByteOrder, Composite, Field, Message, Scalar, Type
+from rflx.model import FINAL, ByteOrder, Composite, Field, Message, Scalar, TypeDecl
 
 from . import common, const
 
@@ -776,7 +776,7 @@ class ParserGenerator:
         message: Message,
         scalar_fields: Mapping[Field, Scalar],
     ) -> UnitPart:
-        def specification(field: Field, field_type: Type) -> FunctionSpecification:
+        def specification(field: Field, field_type: TypeDecl) -> FunctionSpecification:
             if field_type.package == BUILTINS_PACKAGE:
                 type_identifier = ID(field_type.name)
             else:

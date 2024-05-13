@@ -97,7 +97,7 @@ from rflx.model import (
     Opaque,
     Scalar,
     Sequence,
-    Type,
+    TypeDecl,
     is_builtin_type,
 )
 
@@ -1907,7 +1907,7 @@ def create_valid_value_function(
 def create_field_size_function(
     prefix: str,
     message: Message,
-    scalar_fields: abc.Mapping[Field, Type],
+    scalar_fields: abc.Mapping[Field, TypeDecl],
     composite_fields: abc.Sequence[Field],
 ) -> UnitPart:
     specification = FunctionSpecification(
@@ -2035,7 +2035,7 @@ def create_field_first_function(prefix: str, message: Message) -> UnitPart:
 def create_field_last_function(
     prefix: str,
     message: Message,
-    scalar_fields: abc.Mapping[Field, Type],
+    scalar_fields: abc.Mapping[Field, TypeDecl],
     composite_fields: abc.Sequence[Field],
 ) -> UnitPart:
     specification = FunctionSpecification(
@@ -2561,7 +2561,7 @@ def create_sufficient_space_function(prefix: str, message: Message) -> UnitPart:
 def create_equal_function(
     prefix: str,
     message: Message,
-    scalar_fields: abc.Mapping[Field, Type],
+    scalar_fields: abc.Mapping[Field, TypeDecl],
     composite_fields: abc.Sequence[Field],
 ) -> UnitPart:
     if not composite_fields:
@@ -2815,7 +2815,7 @@ def create_reset_dependent_fields_procedure(prefix: str, message: Message) -> Un
 
 
 def create_composite_field_function(
-    scalar_fields: abc.Mapping[Field, Type],
+    scalar_fields: abc.Mapping[Field, TypeDecl],
     composite_fields: abc.Sequence[Field],
 ) -> UnitPart:
     always_true = not scalar_fields and len(composite_fields) == 1
@@ -2843,7 +2843,7 @@ def create_composite_field_function(
 def create_switch_procedures(
     prefix: str,
     message: Message,
-    sequence_fields: abc.Mapping[Field, Type],
+    sequence_fields: abc.Mapping[Field, TypeDecl],
 ) -> UnitPart:
     def specification(field: Field) -> ProcedureSpecification:
         return ProcedureSpecification(
@@ -3002,7 +3002,7 @@ def create_switch_procedures(
 def create_complete_functions(
     prefix: str,
     message: Message,
-    sequence_fields: abc.Mapping[Field, Type],
+    sequence_fields: abc.Mapping[Field, TypeDecl],
 ) -> UnitPart:
     def specification(field: Field) -> FunctionSpecification:
         return FunctionSpecification(
@@ -3060,7 +3060,7 @@ def create_complete_functions(
 def create_update_procedures(
     prefix: str,
     message: Message,
-    sequence_fields: abc.Mapping[Field, Type],
+    sequence_fields: abc.Mapping[Field, TypeDecl],
 ) -> UnitPart:
     def specification(field: Field) -> ProcedureSpecification:
         return ProcedureSpecification(

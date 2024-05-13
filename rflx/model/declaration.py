@@ -11,7 +11,7 @@ from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
 from rflx.expression import Expr, Selected, Variable
 from rflx.identifier import ID, StrID
 
-from . import type_ as mty
+from . import type_decl as mty
 
 
 class Declaration(Base):

@@ -25,7 +25,7 @@ from rflx.model import (
     Refinement,
     Scalar,
     Sequence,
-    Type,
+    TypeDecl,
 )
 from rflx.specification import const
 
@@ -147,7 +147,7 @@ def scalars(
 @st.composite
 def sequences(
     draw: Draw,
-    element_types: st.SearchStrategy[Type],
+    element_types: st.SearchStrategy[TypeDecl],
     unique_identifiers: abc.Generator[ID, None, None],
 ) -> Sequence:
     return Sequence(next(unique_identifiers), draw(element_types))
@@ -184,8 +184,8 @@ def messages(  # noqa: PLR0915
     class FieldPair:
         source: Field
         target: Field
-        source_type: Optional[Type]
-        target_type: Optional[Type]
+        source_type: Optional[TypeDecl]
+        target_type: Optional[TypeDecl]
 
     def size(pair: FieldPair) -> expr.Expr:
         max_size = 2**29 - 1
@@ -333,7 +333,7 @@ def refinements(draw: Draw, unique_identifiers: abc.Generator[ID, None, None]) -
 
 @st.composite
 def models(draw: Draw) -> Model:
-    types_: list[Type] = []
+    types_: list[TypeDecl] = []
 
     def append_types(message: Message) -> None:
         types_.append(message)

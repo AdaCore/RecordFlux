@@ -11,10 +11,10 @@ from rflx.common import Base, unique, verbose_repr
 from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
 
-from . import message, session, top_level_declaration, type_
+from . import message, session, top_level_declaration, type_decl
 from .cache import Cache, Digest
 from .package import Package
-from .type_ import BUILTIN_TYPES
+from .type_decl import BUILTIN_TYPES
 
 log = logging.getLogger(__name__)
 
@@ -74,8 +74,8 @@ class Model(Base):
         return self._declarations
 
     @property
-    def types(self) -> list[type_.Type]:
-        return [d for d in self._declarations if isinstance(d, type_.Type)]
+    def types(self) -> list[type_decl.TypeDecl]:
+        return [d for d in self._declarations if isinstance(d, type_decl.TypeDecl)]
 
     @property
     def messages(self) -> list[message.Message]:
@@ -96,8 +96,8 @@ class Model(Base):
     def create_specifications(self) -> dict[ID, str]:
         pkgs: dict[ID, Package] = {}
         for d in self.declarations:
-            if isinstance(d, type_.Type):
-                if not type_.is_builtin_type(d.name) and not type_.is_internal_type(d.name):
+            if isinstance(d, type_decl.TypeDecl):
+                if not type_decl.is_builtin_type(d.name) and not type_decl.is_internal_type(d.name):
                     pkg_name: ID = d.package
                     pkg = pkgs.setdefault(pkg_name, Package(pkg_name))
                     pkg.imports |= {dep.package for dep in d.direct_dependencies}
@@ -125,7 +125,7 @@ class Model(Base):
         result: list[top_level_declaration.TopLevelDeclaration] = []
 
         for d in declarations:
-            if isinstance(d, type_.Type):
+            if isinstance(d, type_decl.TypeDecl):
                 result.extend(d.dependencies)
                 result.append(d)
 
@@ -146,7 +146,9 @@ def _check_duplicates(
         if d.package in (const.BUILTINS_PACKAGE, const.INTERNAL_PACKAGE):
             continue
 
-        if type_.is_builtin_type(d.identifier.name) or type_.is_internal_type(d.identifier.name):
+        if type_decl.is_builtin_type(d.identifier.name) or type_decl.is_internal_type(
+            d.identifier.name,
+        ):
             error.extend(
                 [
                     (
@@ -168,7 +170,7 @@ def _check_duplicates(
                             if isinstance(d, message.Refinement)
                             else (
                                 f'name conflict for type "{d.identifier}"'
-                                if isinstance(d, type_.Type)
+                                if isinstance(d, type_decl.TypeDecl)
                                 else f'name conflict for session "{d.identifier}"'
                             )
                         ),
@@ -203,8 +205,8 @@ def _check_conflicts(
         for i1, e1 in enumerate(declarations)
         for i2, e2 in enumerate(declarations)
         if (
-            isinstance(e1, type_.Enumeration)
-            and isinstance(e2, type_.Enumeration)
+            isinstance(e1, type_decl.Enumeration)
+            and isinstance(e2, type_decl.Enumeration)
             and i1 < i2
             and (
                 e1.package in (e2.package, const.BUILTINS_PACKAGE)
@@ -239,7 +241,7 @@ def _check_conflicts(
     literals = [
         ID(d.package * l, location=l.location)
         for d in declarations
-        if isinstance(d, type_.Enumeration)
+        if isinstance(d, type_decl.Enumeration)
         for l in d.literals
     ]
     name_conflicts = {

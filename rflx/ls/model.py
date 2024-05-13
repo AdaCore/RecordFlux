@@ -13,7 +13,7 @@ from rflx.model.declaration import ChannelDeclaration, FunctionDeclaration
 from rflx.model.message import UncheckedMessage
 from rflx.model.session import UncheckedSession
 from rflx.model.top_level_declaration import UncheckedTopLevelDeclaration
-from rflx.model.type_ import (
+from rflx.model.type_decl import (
     UncheckedEnumeration,
     UncheckedInteger,
     UncheckedSequence,

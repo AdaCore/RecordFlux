@@ -18,7 +18,7 @@ from rflx.expression import Expr
 from rflx.generator import Debug, Generator, const
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
-from rflx.model import Field, Link, Message, Model, Session, State, Type, declaration as decl
+from rflx.model import Field, Link, Message, Model, Session, State, TypeDecl, declaration as decl
 from rflx.specification import Parser
 from rflx.specification.parser import (
     create_bool_expression,
@@ -42,7 +42,7 @@ def assert_equal(left: object, right: object) -> None:
 
 def assert_message_model_error(
     structure: Sequence[Link],
-    types: Mapping[Field, Type],
+    types: Mapping[Field, TypeDecl],
     regex: str,
     checksums: Optional[Mapping[ID, Sequence[Expr]]] = None,
     location: Optional[Location] = None,
@@ -56,7 +56,7 @@ def assert_session_model_error(
     states: Sequence[State],
     declarations: Sequence[decl.BasicDeclaration],
     parameters: Sequence[decl.FormalDeclaration],
-    types: Sequence[Type],
+    types: Sequence[TypeDecl],
     regex: str,
 ) -> None:
     check_regex(regex)
