@@ -108,7 +108,7 @@ The following versions of GNAT are supported:
 -  GNAT Community 2021
 -  FSF GNAT 11.2, 12.2 or 13.2
 
-A working installation of Rust ``1.70`` or newer must be installed.
+A working installation of Rust ``1.77`` or newer must be installed.
 The latest release of GNAT Pro for Rust is also supported.
 
 For compiling the generated code, one of the following versions of GNAT is required:
