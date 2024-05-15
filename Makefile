@@ -12,6 +12,7 @@ LANGKIT_ORIGIN ?= https://github.com/AdaCore
 ADASAT_ORIGIN ?= https://github.com/AdaCore
 VERSION ?= $(shell test -f pyproject.toml && test -f $(POETRY) && $(POETRY) version -s)
 PYTHON_VERSIONS ?= 3.8 3.9 3.10 3.11
+CARGO_HOME ?= $(MAKEFILE_DIR)/.cargo-home
 NO_GIT_CHECKOUT ?=
 NO_ADD_DEVUTILS ?=
 
@@ -62,6 +63,8 @@ DEVUTILS_DEPENDENCIES = $(RFLX)
 # --- Environment variables ---
 
 export PYTHONPATH := $(MAKEFILE_DIR)
+export CARGO_HOME := $(CARGO_HOME)
+export PATH := $(CARGO_HOME)/bin:$(PATH)
 
 # --- Helper functions: Management of external repositories ---
 
@@ -225,9 +228,6 @@ $(GENERATED_DIR)/python/librflxlang: $(BUILD_DEPS) $(wildcard language/*.py) | $
 	mv $(BUILD_GENERATED_DIR) $(GENERATED_DIR)
 
 # --- Setup: RapidFlux ---
-
-export CARGO_HOME := $(MAKEFILE_DIR)/.cargo-home
-export PATH := $(CARGO_HOME)/bin:$(PATH)
 
 RAPIDFLUX := rflx/rapidflux.so
 RAPIDFLUX_SRC := $(shell find librapidflux rapidflux -type f)
