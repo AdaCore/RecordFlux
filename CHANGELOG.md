@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Syntax for passing repeated `-i` and `-v` options to `rflx validate` (eng/recordflux/RecordFlux#1441)
 
+### Fixed
+
+- Fatal error when GraphViz is missing (eng/recordflux/RecordFlux#1499)
+
 ### Removed
 
 - Support for SPARK Pro Wavefront 20230905 (eng/recordflux/RecordFlux#1409)

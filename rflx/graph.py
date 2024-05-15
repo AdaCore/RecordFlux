@@ -6,8 +6,9 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional
 
-from pydotplus import Dot, Edge, Node
+from pydotplus import Dot, Edge, InvocationException, Node  # type: ignore[attr-defined]
 
+from rflx.error import RecordFluxError, Severity, Subsystem
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
 from rflx.model import FINAL_STATE, AbstractSession, Link, Message
@@ -48,7 +49,20 @@ def write_graph(graph: Dot, filename: Path, fmt: str = "svg") -> None:
     log.info("Creating %s", filename)
 
     with filename.open("wb") as f:
-        graph.write(f, format=fmt)
+        try:
+            graph.write(f, format=fmt)
+        except InvocationException as e:
+            RecordFluxError(
+                [
+                    (e, Subsystem.GRAPH, Severity.ERROR, None),
+                    (
+                        "GraphViz is required for creating graphs",
+                        Subsystem.GRAPH,
+                        Severity.INFO,
+                        None,
+                    ),
+                ],
+            ).propagate()
 
 
 def create_message_graph(message: Message) -> Dot:
