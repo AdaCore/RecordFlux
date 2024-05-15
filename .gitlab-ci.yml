@@ -51,7 +51,11 @@ workflow:
     - *setup_gnat
 
 .setup_spark: &setup_spark
-    - generic_anod_ci
+    - if [ "$CI_PIPELINE_SOURCE" == "merge_request_event" ]; then
+        generic_anod_ci;
+      else
+        generic_anod_ci --continuous-builder-mode;
+      fi
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
     - anod install spark2014 --build-date $SPARK_BUILD_DATE
@@ -407,7 +411,7 @@ gnat_wave_compatibility:
      - mem:4
   script:
     - git fetch --unshallow
-    - generic_anod_ci
+    - generic_anod_ci --continuous-builder-mode
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
     - anod install gnat
