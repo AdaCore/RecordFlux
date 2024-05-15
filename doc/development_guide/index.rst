@@ -11,7 +11,7 @@ Additionally to the dependencies listed in the `User's Guide <https://docs.adaco
 - `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_ (to test an example app)
 - `Node.js <https://nodejs.org/>`_ 20.5.0 or higher (to create the VS Code extension; Node.js should preferably be installed using `nvm <https://github.com/nvm-sh/nvm>`_, the Snap Node.js led to unexpected errors in the past)
 - `TeX Live <https://tug.org/texlive/>`_ (to create the PDF documentation)
-- `Rust <https://www.rust-lang.org/>`_ 1.70 or newer (to build the rust source code and run tests)
+- `Rust <https://www.rust-lang.org/>`_ 1.77 or newer (to build the Rust source code and run tests)
 
 The FSF GNAT and all Ada dependencies can be installed using Alire.
 
@@ -21,7 +21,7 @@ The FSF GNAT and all Ada dependencies can be installed using Alire.
    $ eval `make printenv_gnat`
 
 Rust should be installed using `rustup <https://rustup.rs/>`_.
-It's also possible to use GNAT Pro for Rust to build RecordFlux, but it is advised to use the rustup alternative, as code coverage instrumentation isn't yet present in GNAT Pro for Rust.
+It's also possible to use GNAT Pro for Rust to build RecordFlux.
 See the official `rustup <https://rustup.rs/>`_ website to get installation instructions.
 
 Set up the development environment.
