@@ -357,8 +357,6 @@ test_rflx: test_coverage test_unit_coverage test_language_coverage test_end_to_e
 
 
 test_rapidflux_coverage: rapidflux_devel
-
-test_rapidflux: rapidflux_devel test_rapidflux_coverage test_rapidflux_mutation
 	cargo llvm-cov \
 		nextest \
 		--package librapidflux \
@@ -366,6 +364,8 @@ test_rapidflux: rapidflux_devel test_rapidflux_coverage test_rapidflux_mutation
 		--show-missing-lines \
 		--skip-functions \
 		--no-fail-fast # Do not stop on the first failure for CI runs
+
+test_rapidflux: test_rapidflux_coverage test_rapidflux_mutation
 
 test_rapidflux_mutation: rapidflux_devel
 	cargo mutants -j 0 --package librapidflux --timeout 300 --output $(BUILD_DIR)
