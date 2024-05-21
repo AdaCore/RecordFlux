@@ -54,7 +54,7 @@ workflow:
     - if [ "$CI_PIPELINE_SOURCE" == "merge_request_event" ]; then
         generic_anod_ci;
       else
-        generic_anod_ci --continuous-builder-mode;
+        generic_anod_ci --continuous-builder-mode --setup=24.2;
       fi
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
@@ -411,7 +411,7 @@ gnat_wave_compatibility:
      - mem:4
   script:
     - git fetch --unshallow
-    - generic_anod_ci --continuous-builder-mode
+    - generic_anod_ci --continuous-builder-mode --setup=24.2
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
     - anod install gnat
