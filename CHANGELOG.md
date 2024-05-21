@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support for SPARK Pro 24.0 (eng/recordflux/RecordFlux#1409)
-- Support for GNAT Pro 24.0 (eng/recordflux/RecordFlux#1443)
+- Support for SPARK Pro 24.2 (eng/recordflux/RecordFlux#1614)
+- Support for GNAT Pro 24.2 (eng/recordflux/RecordFlux#1614)
 
 ### Changed
 
