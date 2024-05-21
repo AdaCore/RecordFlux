@@ -556,7 +556,7 @@ gnat_wave_compatibility:
      - mem:4
   script:
     - git fetch --unshallow
-    - generic_anod_ci
+    - generic_anod_ci --continuous-builder-mode
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
     - anod install gnat
@@ -577,7 +577,7 @@ spark_wave_compatibility:
      - mem:16
   script:
     - git fetch --unshallow
-    - generic_anod_ci
+    - generic_anod_ci --continuous-builder-mode
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
     - anod install spark2014
