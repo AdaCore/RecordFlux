@@ -14,7 +14,6 @@ VERSION ?= $(shell test -f pyproject.toml && test -f $(POETRY) && $(POETRY) vers
 PYTHON_VERSIONS ?= 3.8 3.9 3.10 3.11
 CARGO_HOME ?= $(MAKEFILE_DIR)/.cargo-home
 NO_GIT_CHECKOUT ?=
-NO_ADD_DEVUTILS ?=
 
 # --- Dependencies ---
 
@@ -187,12 +186,6 @@ BUILD_DEPS = $(DEVEL_VENV)/lib/python$(PYTHON_VERSION)/site-packages/langkit
 $(BUILD_DEPS):: export PYTHONPATH=
 $(BUILD_DEPS): $(CONTRIB) $(DEVEL_VENV) $(PROJECT_MANAGEMENT)
 	$(POETRY) install -v --no-root --only=build
-ifeq ($(NO_ADD_DEVUTILS), )
-	@# Ensure that the state of devutils is correctly reflected in the lock file when changes are made.
-	@# For some reason, the command needs to be run twice to get a deterministic result.
-	$(POETRY) add --group=dev "./$(DEVUTILS_DIR)[devel]"
-	$(POETRY) add --group=dev "./$(DEVUTILS_DIR)[devel]"
-endif
 	touch $(BUILD_DEPS)
 
 # --- Setup: Langkit-based parser ---

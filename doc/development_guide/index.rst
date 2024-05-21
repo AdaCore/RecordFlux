@@ -95,6 +95,7 @@ Alternatively, RecordFlux can be executed also via Poetry by executing ``.venv.p
 
 Poetry locks the dependencies to ensure deterministic test results.
 ``poetry lock`` creates the lock file ``poetry.lock`` based on the dependencies listed in ``pyproject.toml``.
+The lock file must be updated manually if the dependencies in ``devutils`` have changed: ``poetry add --group=dev "./devutils[devel]"``.
 
 Rust
 ====
