@@ -5,7 +5,9 @@ variables:
    RECORDFLUX_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
 
    GNAT_VERSION: "24.2"
+   GNAT_VERSION_LATEST: "24.2"
    GNAT_BUILD_DATE: "all"
+   GNAT_PLATFORM: "x86_64-linux"
    GNAT_TARGET: ""
    SPARK_VERSION: "24.2"
    SPARK_BUILD_DATE: "all"
@@ -36,6 +38,10 @@ workflow:
     - cp squashfs-root/usr/bin/alr $CI_PROJECT_DIR
     - popd
 
+# This setup method relies on generic_anod_ci to fetch GNAT via Anod according
+# to the build date. It works also with wavefront and rc versions. However, it
+# does currently not work with versions that are older than the current branch.
+# E.g. on the 24.x branch it cannot fetch a 23.x GNAT.
 .setup_gnat: &setup_gnat
     - if [ "$CI_PIPELINE_SOURCE" == "merge_request_event" ]; then
         generic_anod_ci --setup=$GNAT_VERSION;
@@ -51,6 +57,14 @@ workflow:
       fi
     - anod install gnat --build-date $GNAT_BUILD_DATE $TARGET_ARG
     - eval `anod printenv gnat $TARGET_ARG`
+
+# This setup method fetches GNAT directly from Cathod. However, it does not work
+# for the wavefront and rc versions as is. It can be used to fetch released
+# versions like 23.2 etc.
+.setup_gnat_via_cathod: &setup_gnat_via_cathod
+    - e3-cathod components --setup $GNAT_VERSION --build-date $GNAT_BUILD_DATE --platform $GNAT_PLATFORM --component gnat --install $CI_PROJECT_DIR/gnatpro-$GNAT_VERSION-$GNAT_PLATFORM
+    - export PATH=$CI_PROJECT_DIR/gnatpro-$GNAT_VERSION-$GNAT_PLATFORM/bin:$PATH
+    - gnat --version
 
 .setup_gnat_cross: &setup_gnat_cross
     - export GNAT_TARGET="arm-elf"
@@ -251,7 +265,7 @@ gnat_pro_compatibility:
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
-    - *setup_gnat
+    - *setup_gnat_via_cathod
     - *setup_python
     - export GNAT=pro$GNAT_VERSION
     - make test_compilation
