@@ -4,11 +4,10 @@ variables:
    CI_FRAGMENTS_GIT: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/it/ci-fragments
    RECORDFLUX_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
 
-   GNAT_VERSION: "23.2"
+   GNAT_VERSION: "24.2"
    GNAT_BUILD_DATE: "all"
-   GNAT_PLATFORM: "x86_64-linux"
-   SPARK_BUILD_DATE: "all"
-   SPARK_VERSION: "24.0"
+   GNAT_TARGET: ""
+   SPARK_VERSION: "24.2"
    SPARK_BUILD_DATE: "all"
    PYTHON_VERSION: "3.10"
    NODE_VERSION: "20.5.1"
@@ -38,23 +37,32 @@ workflow:
     - popd
 
 .setup_gnat: &setup_gnat
-    - e3-cathod components --setup $GNAT_VERSION --build-date $GNAT_BUILD_DATE --platform $GNAT_PLATFORM --component gnat --download
-    - tar -xzf gnatpro-$GNAT_VERSION-$GNAT_PLATFORM-bin.tar.gz
-    - cd gnatpro-$GNAT_VERSION-$GNAT_PLATFORM-bin && echo -e "\n$CI_PROJECT_DIR/gnatpro-$GNAT_VERSION-$GNAT_PLATFORM\nY\nY" | ./doinstall && cd ..
-    - export PATH=$CI_PROJECT_DIR/gnatpro-$GNAT_VERSION-$GNAT_PLATFORM/bin:$PATH
-    - gnat --version
+    - if [ "$CI_PIPELINE_SOURCE" == "merge_request_event" ]; then
+        generic_anod_ci --setup=$GNAT_VERSION;
+      else
+        generic_anod_ci --continuous-builder-mode --setup=$GNAT_VERSION;
+      fi
+    - cat /tmp/ci_env.sh
+    - . /tmp/ci_env.sh
+    - if [ -n "$GNAT_TARGET" ]; then
+        TARGET_ARG="--target=$GNAT_TARGET";
+      else
+        TARGET_ARG="";
+      fi
+    - anod install gnat --build-date $GNAT_BUILD_DATE $TARGET_ARG
+    - eval `anod printenv gnat $TARGET_ARG`
 
 .setup_gnat_cross: &setup_gnat_cross
-    - export GNAT_PLATFORM="arm-elf-linux64"
+    - export GNAT_TARGET="arm-elf"
     - *setup_gnat
-    - export GNAT_PLATFORM="riscv64-elf-linux64"
+    - export GNAT_TARGET="riscv64-elf"
     - *setup_gnat
 
 .setup_spark: &setup_spark
     - if [ "$CI_PIPELINE_SOURCE" == "merge_request_event" ]; then
         generic_anod_ci;
       else
-        generic_anod_ci --continuous-builder-mode --setup=24.2;
+        generic_anod_ci --continuous-builder-mode --setup=$SPARK_VERSION;
       fi
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
@@ -240,8 +248,6 @@ gnat_pro_compatibility:
         CLEAN_RECORDFLUX_SETUP: 1
       - GNAT_VERSION: "23.2"
         CLEAN_RECORDFLUX_SETUP: 1
-      - GNAT_VERSION: "24.0"
-        CLEAN_RECORDFLUX_SETUP: 1
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
@@ -413,7 +419,7 @@ gnat_wave_compatibility:
      - mem:4
   script:
     - git fetch --unshallow
-    - generic_anod_ci --continuous-builder-mode --setup=24.2
+    - generic_anod_ci --continuous-builder-mode --setup=$GNAT_VERSION
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
     - anod install gnat
