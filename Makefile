@@ -271,6 +271,8 @@ install: $(SDIST) $(PROJECT_MANAGEMENT)
 
 # --- Optional setup: Installation of FSF GNAT ---
 
+ALR ?= alr
+
 .PHONY: install_gnat printenv_gnat
 
 install_gnat: FSF_GNAT_VERSION ?= 11.2.4
@@ -279,16 +281,16 @@ install_gnat:
 	test -d build/alire || ( \
 	    mkdir -p build && \
 	    cd build && \
-	    alr -n init --lib alire && \
+	    $(ALR) -n init --lib alire && \
 	    cd alire && \
-	    alr toolchain --select --local gnat_native=$(FSF_GNAT_VERSION) gprbuild=$(GPRBUILD_VERSION) && \
-	    alr -n with aunit gnatcoll_iconv gnatcoll_gmp \
+	    $(ALR) toolchain --select --local gnat_native=$(FSF_GNAT_VERSION) gprbuild=$(GPRBUILD_VERSION) && \
+	    $(ALR) -n with aunit gnatcoll_iconv gnatcoll_gmp \
 	)
 
 printenv_gnat:
 	@test -d build/alire && (\
 	    cd build/alire && \
-	    alr printenv \
+	    $(ALR) printenv \
 	) || true
 
 # --- Development environment ---
