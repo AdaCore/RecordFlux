@@ -27,7 +27,7 @@ workflow:
 ##################
 
 .setup_alire: &setup_alire
-    - curl -Ls https://github.com/alire-project/alire/releases/download/v1.2.2/alr-1.2.2-x86_64.AppImage -o /tmp/alr.AppImage
+    - curl -Ls https://github.com/alire-project/alire/releases/download/v2.0.1/alr-2.0.1-x86_64.AppImage -o /tmp/alr.AppImage
     - chmod +x /tmp/alr.AppImage
     - pushd /tmp
     - ./alr.AppImage --appimage-extract

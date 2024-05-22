@@ -8,12 +8,13 @@ Setup
 Additionally to the dependencies listed in the `User's Guide <https://docs.adacore.com/live/wave/recordflux/html/recordflux_ug/index.html>`_ the following software is required:
 
 - `AUnit <https://github.com/AdaCore/aunit>`_ (if FSF GNAT is used)
+- `Alire <https://alire.ada.dev/>`_ 2.0.1 (to install FSF GNAT and Ada dependencies including AUnit)
 - `Dnsmasq <https://thekelleys.org.uk/dnsmasq/doc.html>`_ (to test an example app)
 - `Node.js <https://nodejs.org/>`_ 20.5.0 or higher (to create the VS Code extension; Node.js should preferably be installed using `nvm <https://github.com/nvm-sh/nvm>`_, the Snap Node.js led to unexpected errors in the past)
 - `TeX Live <https://tug.org/texlive/>`_ (to create the PDF documentation)
 - `Rust <https://www.rust-lang.org/>`_ 1.77 or newer (to build the Rust source code and run tests)
 
-The FSF GNAT and all Ada dependencies can be installed using Alire.
+If Alire has been set up, the FSF GNAT and all Ada dependencies can be installed as follows:
 
 .. code:: console
 
