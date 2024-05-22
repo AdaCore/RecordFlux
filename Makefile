@@ -278,14 +278,14 @@ ALR ?= alr
 install_gnat: FSF_GNAT_VERSION ?= 11.2.4
 install_gnat: GPRBUILD_VERSION ?= 22.0.1
 install_gnat:
-	test -d build/alire || ( \
-	    mkdir -p build && \
-	    cd build && \
-	    $(ALR) -n init --lib alire && \
-	    cd alire && \
-	    $(ALR) toolchain --select --local gnat_native=$(FSF_GNAT_VERSION) gprbuild=$(GPRBUILD_VERSION) && \
-	    $(ALR) -n with aunit gnatcoll_iconv gnatcoll_gmp \
-	)
+	$(RM) -r build/alire
+	mkdir -p build && \
+	cd build && \
+	$(ALR) -n init --lib alire && \
+	cd alire && \
+	$(ALR) toolchain --select --local gnat_native=$(FSF_GNAT_VERSION) gprbuild=$(GPRBUILD_VERSION) && \
+	$(ALR) -n with aunit gnatcoll_iconv gnatcoll_gmp && \
+	$(ALR) build --stop-after=post-fetch
 
 printenv_gnat:
 	@test -d build/alire && (\
