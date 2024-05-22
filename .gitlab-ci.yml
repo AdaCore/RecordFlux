@@ -333,12 +333,8 @@ gnat_fsf_compatibility:
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
-    - $CI_PROJECT_DIR/alr -n init --lib alire
-    - pushd alire
-    - $CI_PROJECT_DIR/alr toolchain --select --local gnat_native=$GNAT_VERSION gprbuild=22.0.1
-    - $CI_PROJECT_DIR/alr -n with aunit gnatcoll_iconv gnatcoll_gmp
-    - eval `$CI_PROJECT_DIR/alr printenv`
-    - popd
+    - make install_gnat ALR=$CI_PROJECT_DIR/alr
+    - eval `make printenv_gnat ALR=$CI_PROJECT_DIR/alr`
     - gnat --version
     - *setup_python
     - export GNAT=fsf$GNAT_VERSION
