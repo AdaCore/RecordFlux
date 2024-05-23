@@ -103,7 +103,6 @@ sphinxcontrib-devhelp = "==1.0.2"  # required by sphinx 4
 sphinxcontrib-htmlhelp = "==2.0.1"  # required by sphinx 4
 sphinxcontrib-qthelp = "==1.0.3"  # required by sphinx 4
 sphinxcontrib-serializinghtml = "==1.1.5"  # required by sphinx 4
-tqdm = ">=4.61.1, <5"
 types-Pygments = ">=2.15, <3"
 types-defusedxml = ">=0.7, <0.8"
 
