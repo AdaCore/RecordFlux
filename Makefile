@@ -142,7 +142,8 @@ $(POETRY_VENV):
 	$(PYTHON) -m venv --clear $(POETRY_VENV)
 
 pyproject.toml: pyproject.toml.in $(DEVUTILS_DIR)
-	cat pyproject.toml.in <(grep -v "^\[build-system\]\|^requires = \|^build-backend = \|^\[tool.setuptools_scm\]" $(DEVUTILS_DIR)/pyproject.toml) > pyproject.toml
+	echo "# NOTE: This is an automatically generated file, any modifications will be discarded" > $@
+	cat pyproject.toml.in <(grep -v "^\[build-system\]\|^requires = \|^build-backend = \|^\[tool.setuptools_scm\]" $(DEVUTILS_DIR)/pyproject.toml) >> $@
 
 # --- Setup: External repositories ---
 
