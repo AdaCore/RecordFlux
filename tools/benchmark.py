@@ -7,8 +7,6 @@ from collections.abc import Generator
 from pathlib import Path
 from time import perf_counter
 
-from tqdm import tqdm  # type: ignore[import-untyped]
-
 from rflx.model import NeverVerify
 from rflx.pyrflx import PyRFLX
 
@@ -59,15 +57,20 @@ class Benchmark:
             pkt.set("Payload", msg.bytestring)
             yield pkt.bytestring
 
-    def run(self) -> None:
-        for _ in tqdm(self.generate()):
-            pass
+    def run(self, duration: int = 1) -> None:
+        start = perf_counter()
+        for i, _ in enumerate(self.generate()):
+            runtime = perf_counter() - start
+            if runtime >= duration:
+                print(f"\nGenerated {i/runtime:.1f} messages per second")  # noqa: T201
+                return
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--profile", action="store_true", help="run profiler")
     parser.add_argument("-o", "--outfile", type=str, help="print profiler output to file")
+    parser.add_argument("-d", "--duration", type=int, default=1, help="duration of benchmark")
     args = parser.parse_args(sys.argv[1:])
     benchmark = Benchmark()
     if args.profile:
@@ -79,4 +82,4 @@ if __name__ == "__main__":
 
         cProfile.run("run()", args.outfile, "tottime")
     else:
-        benchmark.run()
+        benchmark.run(args.duration)
