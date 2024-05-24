@@ -4,7 +4,7 @@ import dataclasses
 import math
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Optional
 
 from rflx.model import NeverVerify
 from rflx.pyrflx import MessageValue, PyRFLX
@@ -39,7 +39,7 @@ class Connection:
     packet_counter: int = 0
 
 
-HandlerType = Callable[[Connection, MessageValue], bytes | None]
+HandlerType = Callable[[Connection, MessageValue], Optional[bytes]]
 
 
 def _create_transport_data_message(conn: Connection, clear_data: bytes) -> bytes:

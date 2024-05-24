@@ -139,7 +139,6 @@ def create_cli() -> argparse.ArgumentParser:
         prog="RecordFlux Wireguard",
         description="Simplified implementation of the Wireguard protocol using RecordFlux",
         epilog="Keys can be generated using wg(8)",
-        exit_on_error=True,
     )
 
     parser.add_argument(
