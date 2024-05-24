@@ -313,7 +313,7 @@ check_code: check_poetry common_check check_contracts check_rapidflux check_unit
 
 check_rapidflux:
 	cargo fmt --check
-	cargo clippy --tests
+	cargo clippy --tests -- -D warnings
 
 check_poetry: export PYTHONPATH=
 check_poetry: $(RFLX)
