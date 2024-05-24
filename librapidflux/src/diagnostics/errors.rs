@@ -60,9 +60,9 @@ impl Display for Severity {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Annotation {
+    label: Option<String>,
     severity: Severity,
     location: Location,
-    label: Option<String>,
 }
 
 impl Display for Annotation {
@@ -70,7 +70,7 @@ impl Display for Annotation {
         write!(
             f,
             "{}: {}: {}",
-            self.location,
+            self.location(),
             self.severity,
             self.label.as_ref().map_or("", std::string::String::as_str)
         )
@@ -78,11 +78,11 @@ impl Display for Annotation {
 }
 
 impl Annotation {
-    pub fn new(severity: Severity, location: Location, label: Option<String>) -> Self {
+    pub fn new(label: Option<String>, severity: Severity, location: Location) -> Self {
         Self {
+            label,
             severity,
             location,
-            label,
         }
     }
 
@@ -122,18 +122,23 @@ pub struct ErrorEntry {
 
 impl Display for ErrorEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(location) = self.location.as_ref() {
-            write!(f, "{location}: ")?;
-        }
-
-        write!(f, "{}: {}", self.severity, self.message)?;
-
-        for annotation in self.annotations.iter().filter(|a| a.label.is_some()) {
-            writeln!(f)?;
-            write!(f, "{annotation}")?;
-        }
-
-        Ok(())
+        write!(
+            f,
+            "{}{}: {}{}{}",
+            self.location().map_or(String::new(), |l| format!("{l}: ")),
+            self.severity,
+            self.message,
+            if self.annotations().iter().any(|a| a.label().is_some()) {
+                "\n"
+            } else {
+                ""
+            },
+            self.annotations()
+                .iter()
+                .filter_map(|a| a.label().map(|_| a.to_string()))
+                .collect::<Vec<String>>()
+                .join("\n")
+        )
     }
 }
 
@@ -177,7 +182,7 @@ impl ErrorEntry {
         source: &'src str,
     ) -> Option<annotate_snippets::Snippet<'src>> {
         if let Some(location) = self.location.as_ref() {
-            let default_annotation = Annotation::new(self.severity, location.clone(), None);
+            let default_annotation = Annotation::new(None, self.severity, location.clone());
 
             // Add squiggles below the actual error. Without this, the user won't be able to
             // see the error location (e.g. `foo.rflx:3:4`).
@@ -216,7 +221,7 @@ impl ErrorEntry {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct RapidFluxError {
     entries: Vec<ErrorEntry>,
 }
@@ -369,6 +374,7 @@ mod tests {
     #[rstest]
     #[case::annotation_without_label(
         Annotation::new(
+            None,
             Severity::Error,
             Location {
                 source: Some(PathBuf::from_str("foo.rflx")
@@ -376,12 +382,12 @@ mod tests {
                 start: FilePosition::new(1, 1),
                 end: None,
             },
-            None,
         ),
         "foo.rflx:1:1: error: "
     )]
     #[case::annotation_with_source_path(
         Annotation::new(
+            Some("some. terrible. error".to_string()),
             Severity::Error,
             Location {
                 source: Some(PathBuf::from_str("foo.rflx")
@@ -389,19 +395,18 @@ mod tests {
                 start: FilePosition::new(1, 1),
                 end: None,
             },
-            Some("some. terrible. error".to_string()),
         ),
         "foo.rflx:1:1: error: some. terrible. error"
     )]
     #[case::annotation_without_source_path(
         Annotation::new(
+            Some("some. terrible. error".to_string()),
             Severity::Error,
             Location {
                 source: None,
                 start: FilePosition::new(1, 1),
                 end: None,
             },
-            Some("some. terrible. error".to_string()),
         ),
         "<stdin>:1:1: error: some. terrible. error"
     )]
@@ -412,13 +417,13 @@ mod tests {
     #[test]
     fn test_annotation_creation() {
         let annotation = Annotation::new(
+            Some("label".to_string()),
             Severity::Error,
             Location {
                 source: None,
                 start: FilePosition::new(1, 1),
                 end: None,
             },
-            Some("label".to_string()),
         );
 
         assert_eq!(
@@ -441,13 +446,13 @@ mod tests {
             Severity::Error,
             None,
             vec![Annotation::new(
+                Some("Look here".to_string()),
                 Severity::Info,
                 Location {
                     source: None,
                     start: FilePosition::new(1, 2),
                     end: Some(FilePosition::new(3, 4)),
                 },
-                Some("Look here".to_string()),
             )],
         );
 
@@ -457,13 +462,13 @@ mod tests {
         assert_eq!(
             error_entry.annotations(),
             vec![Annotation::new(
+                Some("Look here".to_string()),
                 Severity::Info,
                 Location {
                     source: None,
                     start: FilePosition::new(1, 2),
                     end: Some(FilePosition::new(3, 4)),
                 },
-                Some("Look here".to_string())
             )]
         );
     }
@@ -571,13 +576,13 @@ mod tests {
             }),
             vec![
                 Annotation::new(
+                    Some("some help".to_string()),
                     Severity::Help,
                     Location {
                         source: None,
                         start: FilePosition::new(2, 1),
                         end: Some(FilePosition::new(2, 4)),
                     },
-                Some("some help".to_string())
             )
         ]),
         indoc! {
@@ -731,7 +736,7 @@ mod tests {
                     "first".to_string(),
                     Severity::Error,
                     None,
-                    vec![Annotation::new(Severity::Error, Location::default(), None)],
+                    vec![Annotation::new(None, Severity::Error, Location::default())],
                 ),
                 ErrorEntry::new("second".to_string(), Severity::Warning, None, Vec::new()),
             ],
@@ -740,8 +745,8 @@ mod tests {
         assert_eq!(
             format!("{error:?}").as_str(),
             "[ErrorEntry { message: \"first\", severity: Error, location: None, annotations: \
-            [Annotation { severity: Error, location: Location { source: None, start: \
-            FilePosition(0, 0), end: None }, label: None }] }, ErrorEntry { message: \"second\", \
+            [Annotation { label: None, severity: Error, location: Location { start: \
+            FilePosition(0, 0), end: None, source: None } }] }, ErrorEntry { message: \"second\", \
             severity: Warning, location: None, annotations: [] }]"
         );
     }
