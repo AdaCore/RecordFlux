@@ -53,6 +53,7 @@ include = [
     { path = "librapidflux/src/diagnostics/*.rs", format = "sdist" },
     { path = "rapidflux/Cargo.toml", format = "sdist" },
     { path = "rapidflux/src/*.rs", format = "sdist" },
+    { path = "rapidflux/src/diagnostics/*.rs", format = "sdist" },
     { path = "rflx/ide/vscode/recordflux.vsix" },
     { path = "rflx/lang/__init__.py" },
     { path = "rflx/lang/py.typed" },
