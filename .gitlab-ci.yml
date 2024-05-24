@@ -411,7 +411,7 @@ verification_python_tests:
       - SPARK_VERSION: "24.0"
         SPARK_BUILD_DATE: "all"
       - SPARK_VERSION: "wave"
-        SPARK_BUILD_DATE: "20240303"
+        SPARK_BUILD_DATE: "20240522"
   script:
     - *setup_gnat
     - *setup_spark
