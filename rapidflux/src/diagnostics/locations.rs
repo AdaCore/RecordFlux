@@ -1,21 +1,24 @@
 use std::path::PathBuf;
 
 use bincode::{deserialize, serialize};
+use librapidflux::diagnostics as lib;
 use pyo3::{
     prelude::*,
     types::{PyBool, PyBytes, PyNone, PyNotImplemented},
 };
 use serde::{Deserialize, Serialize};
 
+use crate::impl_states;
+
 #[pyclass(module = "rflx.rapidflux")]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-pub struct Location(librapidflux::diagnostics::Location);
+pub struct Location(pub(crate) lib::Location);
 
 #[pymethods]
 impl Location {
     #[new]
     fn py_new(start: (u32, u32), source: Option<PathBuf>, end: Option<(u32, u32)>) -> Self {
-        Location(librapidflux::diagnostics::Location {
+        Location(lib::Location {
             source,
             start: start.into(),
             end: end.map(std::convert::Into::into),
@@ -69,14 +72,6 @@ impl Location {
         }
     }
 
-    fn __setstate__(&mut self, state: &Bound<'_, PyBytes>) {
-        *self = deserialize(state.as_bytes()).unwrap();
-    }
-
-    fn __getstate__<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
-        PyBytes::new_bound(py, &serialize(&self).unwrap())
-    }
-
     fn __getnewargs__(&self) -> ((u32, u32), Option<PathBuf>, Option<(u32, u32)>) {
         (
             self.0.start.into(),
@@ -123,4 +118,18 @@ impl Location {
             self.0.end.map(std::convert::Into::into),
         )
     }
+
+    #[staticmethod]
+    fn merge(positions: Vec<Self>) -> Option<Self> {
+        lib::Location::merge(
+            positions
+                .into_iter()
+                .map(|l| l.0)
+                .collect::<Vec<lib::Location>>()
+                .as_slice(),
+        )
+        .map(Location)
+    }
 }
+
+impl_states!(Location);

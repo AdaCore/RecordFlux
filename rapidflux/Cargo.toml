@@ -13,7 +13,9 @@ name = "rapidflux"
 crate-type = ["cdylib"]
 
 [dependencies]
+anstream = "0.6.13"
 librapidflux = { path = "../librapidflux" }
 bincode = { workspace = true }
 pyo3 = { version = "0.21.1", features = ["extension-module"] }
 serde = { workspace = true }
+lazy_static = "1.4.0"

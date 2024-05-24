@@ -7,10 +7,18 @@
 
 use pyo3::prelude::*;
 
-mod error;
+mod diagnostics;
+mod utils;
 
 #[pymodule]
 fn rapidflux(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<error::Location>()?;
+    // Locations
+    m.add_class::<diagnostics::Location>()?;
+
+    // Errors
+    m.add_class::<diagnostics::Severity>()?;
+    m.add_class::<diagnostics::Annotation>()?;
+    m.add_class::<diagnostics::ErrorEntry>()?;
+    m.add_class::<diagnostics::RapidFluxError>()?;
     Ok(())
 }
