@@ -3,7 +3,7 @@ use std::{fmt::Display, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Default, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default, Debug)]
 pub struct FilePosition(u32, u32);
 
 impl From<(u32, u32)> for FilePosition {
@@ -57,15 +57,51 @@ impl Display for FilePosition {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
 pub struct Location {
-    pub source: Option<PathBuf>,
     pub start: FilePosition,
     pub end: Option<FilePosition>,
+    pub source: Option<PathBuf>,
 }
 
 impl Location {
-    /// Retrive a `Range<usize>` representing the location to annotate in an error.
+    /// Merges a list of locations into a single location.
+    ///
+    /// This function takes a slice of locations and calculates the smallest starting location
+    /// and the largest ending location among them. It then returns a new location that spans
+    /// from the smallest starting location to the largest ending location, including
+    /// the source file information from the smallest starting location.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if not all locations refer to the same source file.
+    pub fn merge(locations: &[Self]) -> Option<Self> {
+        assert!(
+            locations.windows(2).all(|w| w[0].source == w[1].source),
+            "attempted to merge locations from different source files"
+        );
+
+        let min_loc = locations
+            .iter()
+            .map(|l| l.start)
+            .chain(locations.iter().filter_map(|l| l.end))
+            .min()?;
+
+        let max_loc = locations
+            .iter()
+            .map(|l| l.start)
+            .chain(locations.iter().filter_map(|l| l.end))
+            .max()
+            .expect("unreachable");
+
+        Some(Self {
+            start: min_loc,
+            end: Some(max_loc),
+            source: locations.first()?.source.clone(),
+        })
+    }
+
+    /// Retrieve a `Range<usize>` representing the location to annotate in an error.
     ///
     /// # Panics
     /// This function is called for a location that references no source file.
@@ -213,6 +249,156 @@ Third",
     )]
     fn test_location_has_source(#[case] location: Location, #[case] has_source: bool) {
         assert_eq!(location.has_source(), has_source);
+    }
+
+    #[rstest]
+    #[case::location_different_line_no_end(
+        &[
+            Location {
+                start: FilePosition::new(1, 1),
+                ..Location::default()
+            },
+            Location {
+                start: FilePosition::new(3, 1),
+                ..Default::default()
+            }
+        ],
+        Some(Location {
+            start: FilePosition::new(1, 1),
+            end: Some(FilePosition::new(3, 1)),
+            ..Default::default()
+        }),
+    )]
+    #[case::location_different_line_with_end(
+        &[
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 10)),
+                ..Location::default()
+            },
+            Location {
+                start: FilePosition::new(3, 1),
+                end: Some(FilePosition::new(3, 10)),
+                ..Default::default()
+            }
+        ],
+        Some(Location {
+            start: FilePosition::new(1, 1),
+            end: Some(FilePosition::new(3, 10)),
+            ..Default::default()
+        }),
+    )]
+    #[case::location_same_line_no_end(
+        &[
+            Location {
+                start: FilePosition::new(1, 1),
+                ..Location::default()
+            },
+            Location {
+                start: FilePosition::new(1, 10),
+                ..Default::default()
+            }
+        ],
+        Some(Location {
+            start: FilePosition::new(1, 1),
+            end: Some(FilePosition::new(1, 10)),
+            ..Default::default()
+        }),
+    )]
+    #[case::location_same_line_with_end(
+        &[
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 10)),
+                ..Location::default()
+            },
+            Location {
+                start: FilePosition::new(1, 4),
+                end: Some(FilePosition::new(1, 27)),
+                ..Default::default()
+            }
+        ],
+        Some(Location {
+            start: FilePosition::new(1, 1),
+            end: Some(FilePosition::new(1, 27)),
+            ..Default::default()
+        }),
+    )]
+    #[case::location_overlap(
+        &[
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 10)),
+                ..Location::default()
+            },
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(28, 4)),
+                ..Location::default()
+            },
+            Location {
+                start: FilePosition::new(1, 4),
+                end: Some(FilePosition::new(1, 27)),
+                ..Default::default()
+            }
+        ],
+        Some(Location {
+            start: FilePosition::new(1, 1),
+            end: Some(FilePosition::new(28, 4)),
+            ..Default::default()
+        }),
+    )]
+    #[case::location_one_element(
+        &[
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 10)),
+                ..Location::default()
+            },
+        ],
+        Some(Location {
+            start: FilePosition::new(1, 1),
+            end: Some(FilePosition::new(1, 10)),
+            ..Default::default()
+        }),
+    )]
+    #[case::location_with_source(
+        &[
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 10)),
+                source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
+            },
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 10)),
+                source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
+            },
+        ],
+        Some(Location {
+            start: FilePosition::new(1, 1),
+            end: Some(FilePosition::new(1, 10)),
+            source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
+        }),
+    )]
+    #[case::location_no_elements(&[], None)]
+    fn test_location_merge(#[case] locations: &[Location], #[case] expected: Option<Location>) {
+        assert_eq!(Location::merge(locations), expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "attempted to merge locations from different source files")]
+    fn test_location_merge_with_different_source_files() {
+        Location::merge(&[
+            Location {
+                source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path")),
+                ..Default::default()
+            },
+            Location {
+                source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path")),
+                ..Default::default()
+            },
+        ]);
     }
 
     #[test]
