@@ -65,35 +65,69 @@ def null_model() -> Model:
 @lru_cache
 def tlv_tag() -> Enumeration:
     return Enumeration(
-        "TLV::Tag",
-        [("Msg_Data", Number(1)), ("Msg_Error", Number(3))],
+        ID("TLV::Tag", location=Location((1, 1))),
+        [
+            (ID("Msg_Data", location=Location((1, 1))), Number(1)),
+            (ID("Msg_Error", location=Location((1, 1))), Number(3)),
+        ],
         Number(8),
         always_valid=False,
+        location=Location((1, 1)),
     )
 
 
 @lru_cache
 def tlv_length() -> Integer:
     return Integer(
-        "TLV::Length",
+        ID("TLV::Length", location=Location((1, 1))),
         Number(0),
         Sub(Pow(Number(2), Number(16)), Number(1)),
         Number(16),
+        location=Location((1, 1)),
     )
 
 
 @lru_cache
 def tlv_message() -> Message:
     return Message(
-        "TLV::Message",
+        ID("TLV::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Tag")),
-            Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("Msg_Data"))),
-            Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("Msg_Error"))),
-            Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
-            Link(Field("Value"), FINAL),
+            Link(INITIAL, Field(ID("Tag", location=Location((1, 1))))),
+            Link(
+                Field(ID("Tag", location=Location((2, 2)))),
+                Field(ID("Length", location=Location((2, 2)))),
+                Equal(
+                    Variable(ID("Tag", location=Location((3, 3)))),
+                    Variable(ID("Msg_Data", location=Location((3, 3)))),
+                    location=Location((3, 1)),
+                ),
+            ),
+            Link(
+                Field(ID("Tag", location=Location((4, 4)))),
+                FINAL,
+                Equal(
+                    Variable(ID("Tag", location=Location((5, 5)))),
+                    Variable(ID("Msg_Error", location=Location((5, 5)))),
+                    location=Location((5, 1)),
+                ),
+            ),
+            Link(
+                Field(ID("Length", location=Location((6, 6)))),
+                Field(ID("Value", location=Location((6, 6)))),
+                size=Mul(
+                    Variable(ID("Length", location=Location((7, 7)))),
+                    Number(8),
+                    location=Location((7, 7)),
+                ),
+            ),
+            Link(Field(ID("Value", location=Location((8, 8)))), FINAL),
         ],
-        {Field("Tag"): tlv_tag(), Field("Length"): tlv_length(), Field("Value"): OPAQUE},
+        {
+            Field(ID("Tag", location=Location((1, 1)))): tlv_tag(),
+            Field(ID("Length", location=Location((2, 2)))): tlv_length(),
+            Field(ID("Value", location=Location((3, 3)))): OPAQUE,
+        },
+        location=Location((1, 1)),
     )
 
 
@@ -145,14 +179,41 @@ def tlv_with_checksum_checksum() -> Integer:
 @lru_cache
 def tlv_with_checksum_message() -> Message:
     return Message(
-        "TLV_With_Checksum::Message",
+        ID("TLV_With_Checksum::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Tag")),
-            Link(Field("Tag"), Field("Length"), Equal(Variable("Tag"), Variable("Msg_Data"))),
-            Link(Field("Tag"), FINAL, Equal(Variable("Tag"), Variable("Msg_Error"))),
-            Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
-            Link(Field("Value"), Field("Checksum")),
-            Link(Field("Checksum"), FINAL, ValidChecksum("Checksum")),
+            Link(INITIAL, Field(ID("Tag", location=Location((2, 2))))),
+            Link(
+                Field(ID("Tag", location=Location((3, 3)))),
+                Field(ID("Length", location=Location((3, 3)))),
+                Equal(
+                    Variable(ID("Tag", location=Location((4, 4)))),
+                    Variable(ID("Msg_Data", location=Location((4, 4)))),
+                    location=Location((4, 4)),
+                ),
+            ),
+            Link(
+                Field(ID("Tag", location=Location((5, 5)))),
+                FINAL,
+                Equal(
+                    Variable(ID("Tag", location=Location((5, 5)))),
+                    Variable(ID("Msg_Error", location=Location((5, 5)))),
+                    location=Location((5, 5)),
+                ),
+            ),
+            Link(
+                Field(ID("Length", location=Location((6, 6)))),
+                Field(ID("Value", location=Location((6, 6)))),
+                size=Mul(Variable(ID("Length", location=Location((7, 7)))), Number(8)),
+            ),
+            Link(
+                Field(ID("Value", location=Location((8, 8)))),
+                Field(ID("Checksum", location=Location((8, 8)))),
+            ),
+            Link(
+                Field(ID("Checksum", location=Location((9, 9)))),
+                FINAL,
+                ValidChecksum(ID("Checksum", location=Location((9, 9)))),
+            ),
         ],
         {
             Field("Tag"): tlv_with_checksum_tag(),
@@ -221,7 +282,7 @@ def ethernet_tci() -> Integer:
 @lru_cache
 def ethernet_frame() -> Message:
     return Message(
-        "Ethernet::Frame",
+        ID("Ethernet::Frame", Location((1, 1))),
         [
             Link(INITIAL, Field("Destination")),
             Link(Field("Destination"), Field("Source")),
@@ -229,13 +290,13 @@ def ethernet_frame() -> Message:
             Link(
                 Field("Type_Length_TPID"),
                 Field("TPID"),
-                Equal(Variable("Type_Length_TPID"), Number(0x8100, 16)),
+                Equal(Variable("Type_Length_TPID"), Number(0x8100, 16), Location((6, 1))),
                 first=First("Type_Length_TPID"),
             ),
             Link(
                 Field("Type_Length_TPID"),
                 Field("Type_Length"),
-                NotEqual(Variable("Type_Length_TPID"), Number(0x8100, 16)),
+                NotEqual(Variable("Type_Length_TPID"), Number(0x8100, 16), Location((8, 1))),
                 first=First("Type_Length_TPID"),
             ),
             Link(Field("TPID"), Field("TCI")),
@@ -243,20 +304,20 @@ def ethernet_frame() -> Message:
             Link(
                 Field("Type_Length"),
                 Field("Payload"),
-                LessEqual(Variable("Type_Length"), Number(1500)),
+                LessEqual(Variable("Type_Length"), Number(1500), Location((10, 1))),
                 Mul(Variable("Type_Length"), Number(8)),
             ),
             Link(
                 Field("Type_Length"),
                 Field("Payload"),
-                GreaterEqual(Variable("Type_Length"), Number(1536)),
+                GreaterEqual(Variable("Type_Length"), Number(1536), Location((12, 1))),
             ),
             Link(
                 Field("Payload"),
                 FINAL,
                 And(
-                    GreaterEqual(Div(Size("Payload"), Number(8)), Number(46)),
-                    LessEqual(Div(Size("Payload"), Number(8)), Number(1500)),
+                    GreaterEqual(Div(Size("Payload"), Number(8)), Number(46), Location((14, 1))),
+                    LessEqual(Div(Size("Payload"), Number(8)), Number(1500), Location((15, 1))),
                 ),
             ),
         ],
@@ -298,7 +359,7 @@ def enumeration_priority() -> Enumeration:
 @lru_cache
 def enumeration_message() -> Message:
     return Message(
-        "Enumeration::Message",
+        ID("Enumeration::Message", Location((1, 1))),
         [Link(INITIAL, Field("Priority")), Link(Field("Priority"), FINAL)],
         {Field("Priority"): enumeration_priority()},
     )
@@ -365,7 +426,7 @@ def sequence_av_enumeration_vector() -> Sequence:
 @lru_cache
 def sequence_message() -> Message:
     return Message(
-        "Sequence::Message",
+        ID("Sequence::Message", Location((1, 1))),
         [
             Link(INITIAL, Field("Length")),
             Link(Field("Length"), Field("Integer_Vector"), size=Mul(Variable("Length"), Number(8))),
@@ -385,7 +446,7 @@ def sequence_message() -> Message:
 @lru_cache
 def sequence_inner_message() -> Message:
     return Message(
-        "Sequence::Inner_Message",
+        ID("Sequence::Inner_Message", location=Location((1, 1))),
         [
             Link(INITIAL, Field("Length")),
             Link(Field("Length"), Field("Payload"), size=Mul(Variable("Length"), Number(8))),
@@ -397,13 +458,13 @@ def sequence_inner_message() -> Message:
 
 @lru_cache
 def sequence_inner_messages() -> Sequence:
-    return Sequence("Sequence::Inner_Messages", sequence_inner_message())
+    return Sequence(ID("Sequence::Inner_Messages", Location((1, 1))), sequence_inner_message())
 
 
 @lru_cache
 def sequence_messages_message() -> Message:
     return Message(
-        "Sequence::Messages_Message",
+        ID("Sequence::Messages_Message", Location((1, 1))),
         [
             Link(INITIAL, Field("Length")),
             Link(Field("Length"), Field("Messages"), size=Mul(Variable("Length"), Number(8))),
@@ -416,7 +477,7 @@ def sequence_messages_message() -> Message:
 @lru_cache
 def sequence_sequence_size_defined_by_message_size() -> Message:
     return Message(
-        "Sequence::Sequence_Size_Defined_By_Message_Size",
+        ID("Sequence::Sequence_Size_Defined_By_Message_Size", Location((1, 1))),
         [
             Link(INITIAL, Field("Header")),
             Link(Field("Header"), Field("Vector")),
@@ -452,7 +513,7 @@ def sequence_model() -> Model:
 @lru_cache
 def expression_message() -> Message:
     return Message(
-        "Expression::Message",
+        ID("Expression::Message", Location((1, 1))),
         [
             Link(INITIAL, Field("Payload"), size=Number(16)),
             Link(
@@ -472,7 +533,7 @@ def expression_model() -> Model:
 
 @lru_cache
 def derivation_message() -> DerivedMessage:
-    return DerivedMessage("Derivation::Message", tlv_message())
+    return DerivedMessage(ID("Derivation::Message", Location((1, 1))), tlv_message())
 
 
 @lru_cache
@@ -483,7 +544,7 @@ def derivation_model() -> Model:
 @lru_cache
 def valid_message() -> Message:
     return Message(
-        "P::M",
+        ID("P::M", Location((1, 1))),
         [
             Link(INITIAL, Field("F"), size=Number(16)),
             Link(Field("F"), FINAL),
@@ -494,13 +555,19 @@ def valid_message() -> Message:
 
 @lru_cache
 def integer() -> Integer:
-    return Integer("P::Integer", Number(1), Number(220), Number(8))
+    return Integer(
+        ID("P::Integer", location=Location((1, 1))),
+        Number(1),
+        Number(220),
+        Number(8),
+        location=Location((1, 1)),
+    )
 
 
 @lru_cache
 def enumeration() -> Enumeration:
     return Enumeration(
-        "P::Enumeration",
+        ID("P::Enumeration", location=Location((1, 1))),
         [("Zero", Number(0)), ("One", Number(1)), ("Two", Number(2))],
         Number(8),
         always_valid=False,
@@ -511,7 +578,7 @@ def enumeration() -> Enumeration:
 @lru_cache
 def message() -> Message:
     return Message(
-        "P::M",
+        ID("P::M", Location((1, 1))),
         [
             Link(INITIAL, Field("F"), size=Number(16)),
             Link(Field("F"), FINAL),
@@ -528,19 +595,20 @@ def refinement() -> Refinement:
 @lru_cache
 def universal_message_type() -> Enumeration:
     return Enumeration(
-        "Universal::Message_Type",
+        ID("Universal::Message_Type", location=Location((1, 1))),
         [
-            ("MT_Null", Number(0)),
-            ("MT_Data", Number(1)),
-            ("MT_Value", Number(2)),
-            ("MT_Values", Number(3)),
-            ("MT_Option_Types", Number(4)),
-            ("MT_Options", Number(5)),
-            ("MT_Unconstrained_Data", Number(6)),
-            ("MT_Unconstrained_Options", Number(7)),
+            (ID("MT_Null", location=Location((2, 2))), Number(0)),
+            (ID("MT_Data", location=Location((3, 3))), Number(1)),
+            (ID("MT_Value", location=Location((4, 4))), Number(2)),
+            (ID("MT_Values", location=Location((5, 5))), Number(3)),
+            (ID("MT_Option_Types", location=Location((6, 6))), Number(4)),
+            (ID("MT_Options", location=Location((7, 7))), Number(5)),
+            (ID("MT_Unconstrained_Data", location=Location((8, 8))), Number(6)),
+            (ID("MT_Unconstrained_Options", location=Location((9, 9))), Number(7)),
         ],
         size=Number(8),
         always_valid=False,
+        location=Location((1, 1)),
     )
 
 
@@ -590,25 +658,33 @@ def universal_option_types() -> Sequence:
 @lru_cache
 def universal_option() -> Message:
     return Message(
-        "Universal::Option",
+        ID("Universal::Option", Location((1, 1))),
         [
-            Link(INITIAL, Field("Option_Type")),
+            Link(INITIAL, Field(ID("Option_Type", location=Location((2, 2))))),
             Link(
-                Field("Option_Type"),
+                Field(ID("Option_Type", location=Location((2, 2)))),
                 FINAL,
-                condition=Equal(Variable("Option_Type"), Variable("OT_Null")),
+                condition=Equal(
+                    Variable(ID("Option_Type", location=Location((3, 3)))),
+                    Variable(ID("OT_Null", location=Location((3, 3)))),
+                    location=Location((3, 3)),
+                ),
             ),
             Link(
-                Field("Option_Type"),
-                Field("Length"),
-                condition=Equal(Variable("Option_Type"), Variable("OT_Data")),
+                Field(ID("Option_Type", location=Location((4, 4)))),
+                Field(ID("Length", location=Location((4, 4)))),
+                condition=Equal(
+                    Variable(ID("Option_Type", location=Location((5, 5)))),
+                    Variable(ID("OT_Data", location=Location((5, 5)))),
+                    location=Location((5, 5)),
+                ),
             ),
             Link(
-                Field("Length"),
-                Field("Data"),
-                size=Mul(Variable("Length"), Number(8)),
+                Field(ID("Length", location=Location((6, 6)))),
+                Field(ID("Data", location=Location((6, 6)))),
+                size=Mul(Variable(ID("Length", location=Location((6, 6)))), Number(8)),
             ),
-            Link(Field("Data"), FINAL),
+            Link(Field(ID("Data", location=Location((7, 7)))), FINAL),
         ],
         {
             Field("Option_Type"): universal_option_type(),
@@ -620,10 +696,10 @@ def universal_option() -> Message:
 
 @lru_cache
 def universal_options() -> Sequence:
-    return Sequence("Universal::Options", universal_option())
+    return Sequence(ID("Universal::Options", Location((1, 1))), universal_option())
 
 
-UNIVERSAL_MESSAGE_ID: Final = ID("Universal::Message")
+UNIVERSAL_MESSAGE_ID: Final = ID("Universal::Message", Location((1, 1)))
 
 
 @lru_cache
@@ -631,68 +707,118 @@ def universal_message() -> Message:
     return Message(
         UNIVERSAL_MESSAGE_ID,
         [
-            Link(INITIAL, Field("Message_Type")),
+            Link(INITIAL, Field(ID("Message_Type", location=Location((2, 2))))),
             Link(
-                Field("Message_Type"),
+                Field(ID("Message_Type", location=Location((3, 3)))),
                 FINAL,
-                condition=Equal(Variable("Message_Type"), Variable("MT_Null")),
-            ),
-            Link(
-                Field("Message_Type"),
-                Field("Data"),
-                condition=Equal(Variable("Message_Type"), Variable("MT_Unconstrained_Data")),
-            ),
-            Link(
-                Field("Message_Type"),
-                Field("Options"),
-                condition=Equal(Variable("Message_Type"), Variable("MT_Unconstrained_Options")),
-            ),
-            Link(
-                Field("Message_Type"),
-                Field("Length"),
-                condition=And(
-                    NotEqual(Variable("Message_Type"), Variable("MT_Null")),
-                    NotEqual(Variable("Message_Type"), Variable("MT_Unconstrained_Data")),
-                    NotEqual(Variable("Message_Type"), Variable("MT_Unconstrained_Options")),
+                condition=Equal(
+                    Variable(ID("Message_Type", location=Location((4, 4)))),
+                    Variable(ID("MT_Null", location=Location((4, 4)))),
+                    location=Location((4, 4)),
                 ),
             ),
             Link(
-                Field("Length"),
-                Field("Data"),
-                condition=Equal(Variable("Message_Type"), Variable("MT_Data")),
-                size=Mul(Variable("Length"), Number(8)),
-            ),
-            Link(Field("Data"), FINAL),
-            Link(
-                Field("Length"),
-                Field("Value"),
-                condition=And(
-                    Equal(Variable("Message_Type"), Variable("MT_Value")),
-                    Equal(Variable("Length"), Div(Size("Universal::Value"), Number(8))),
+                Field(ID("Message_Type", location=Location((5, 5)))),
+                Field(ID("Data", location=Location((5, 5)))),
+                condition=Equal(
+                    Variable(ID("Message_Type", location=Location((6, 6)))),
+                    Variable(ID("MT_Unconstrained_Data", location=Location((1, 1)))),
+                    location=Location((1, 1)),
                 ),
             ),
-            Link(Field("Value"), FINAL),
             Link(
-                Field("Length"),
-                Field("Values"),
-                condition=Equal(Variable("Message_Type"), Variable("MT_Values")),
-                size=Mul(Variable("Length"), Number(8)),
+                Field(ID("Message_Type", location=Location((7, 7)))),
+                Field(ID("Options", location=Location((7, 7)))),
+                condition=Equal(
+                    Variable(ID("Message_Type", location=Location((8, 8)))),
+                    Variable(ID("MT_Unconstrained_Options", location=Location((8, 8)))),
+                    location=Location((8, 8)),
+                ),
             ),
-            Link(Field("Values"), FINAL),
             Link(
-                Field("Length"),
-                Field("Option_Types"),
-                condition=Equal(Variable("Message_Type"), Variable("MT_Option_Types")),
-                size=Mul(Variable("Length"), Number(8)),
+                Field(ID("Message_Type", location=Location((9, 9)))),
+                Field(ID("Length", location=Location((9, 9)))),
+                condition=And(
+                    NotEqual(
+                        Variable(ID("Message_Type", location=Location((10, 10)))),
+                        Variable(ID("MT_Null", location=Location((10, 10)))),
+                        location=Location((10, 10)),
+                    ),
+                    NotEqual(
+                        Variable(ID("Message_Type", location=Location((11, 11)))),
+                        Variable(ID("MT_Unconstrained_Data", location=Location((11, 11)))),
+                        location=Location((11, 11)),
+                    ),
+                    NotEqual(
+                        Variable(ID("Message_Type", location=Location((12, 12)))),
+                        Variable(ID("MT_Unconstrained_Options", location=Location((12, 12)))),
+                        location=Location((12, 12)),
+                    ),
+                    location=Location((12, 12)),
+                ),
             ),
-            Link(Field("Option_Types"), FINAL),
             Link(
-                Field("Length"),
-                Field("Options"),
-                condition=Equal(Variable("Message_Type"), Variable("MT_Options")),
-                size=Mul(Variable("Length"), Number(8)),
+                Field(ID("Length", location=Location((13, 13)))),
+                Field(ID("Data", location=Location((13, 13)))),
+                condition=Equal(
+                    Variable(ID("Message_Type", location=Location((14, 14)))),
+                    Variable(ID("MT_Data", location=Location((14, 14)))),
+                    location=Location((14, 14)),
+                ),
+                size=Mul(Variable(ID("Length", location=Location((15, 15)))), Number(8)),
             ),
-            Link(Field("Options"), FINAL),
+            Link(Field(ID("Data", location=Location((16, 16)))), FINAL),
+            Link(
+                Field(ID("Length", location=Location((17, 17)))),
+                Field(ID("Value", location=Location((18, 18)))),
+                condition=And(
+                    Equal(
+                        Variable(ID("Message_Type", location=Location((19, 19)))),
+                        Variable(ID("MT_Value", location=Location((19, 19)))),
+                        location=Location((19, 19)),
+                    ),
+                    Equal(
+                        Variable(ID("Length", location=Location((20, 20)))),
+                        Div(Size(ID("Universal::Value", location=Location((20, 20)))), Number(8)),
+                        location=Location((20, 20)),
+                    ),
+                    location=Location((19, 19)),
+                ),
+            ),
+            Link(Field(ID("Value", location=Location((21, 21)))), FINAL),
+            Link(
+                Field(ID("Length", location=Location((22, 22)))),
+                Field(ID("Values", location=Location((23, 23)))),
+                condition=Equal(
+                    Variable(ID("Message_Type", location=Location((24, 24)))),
+                    Variable(ID("MT_Values", location=Location((24, 24)))),
+                    location=Location((24, 24)),
+                ),
+                size=Mul(Variable(ID("Length", location=Location((25, 25)))), Number(8)),
+            ),
+            Link(Field(ID("Values", location=Location((26, 26)))), FINAL),
+            Link(
+                Field(ID("Length", location=Location((27, 27)))),
+                Field(ID("Option_Types", location=Location((28, 28)))),
+                condition=Equal(
+                    Variable(ID("Message_Type", location=Location((29, 29)))),
+                    Variable(ID("MT_Option_Types", location=Location((29, 29)))),
+                    location=Location((29, 29)),
+                ),
+                size=Mul(Variable(ID("Length", location=Location((30, 30)))), Number(8)),
+            ),
+            Link(Field(ID("Option_Types", location=Location((31, 31)))), FINAL),
+            Link(
+                Field(ID("Length", location=Location((32, 32)))),
+                Field(ID("Options", location=Location((32, 32)))),
+                condition=Equal(
+                    Variable(ID("Message_Type", location=Location((33, 33)))),
+                    Variable(ID("MT_Options", location=Location((33, 33)))),
+                    location=Location((33, 33)),
+                ),
+                size=Mul(Variable(ID("Length", location=Location((34, 34)))), Number(8)),
+            ),
+            Link(Field(ID("Options", location=Location((35, 35)))), FINAL),
         ],
         {
             Field("Message_Type"): universal_message_type(),
@@ -733,32 +859,49 @@ def universal_model() -> Model:
 @lru_cache
 def fixed_size_message() -> Message:
     return Message(
-        "Fixed_Size::Message",
+        ID("Fixed_Size::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Message_Type")),
+            Link(INITIAL, Field(ID("Message_Type", location=Location((2, 2))))),
             Link(
-                Field("Message_Type"),
-                Field("Data"),
+                Field(ID("Message_Type", location=Location((3, 3)))),
+                Field(ID("Data", location=Location((3, 3)))),
                 condition=Or(
-                    Equal(Variable("Message_Type"), Variable("Universal::MT_Null")),
-                    Equal(Variable("Message_Type"), Variable("Universal::MT_Data")),
-                    Equal(Variable("Message_Type"), Variable("Universal::MT_Values")),
-                    Equal(Variable("Message_Type"), Variable("Universal::MT_Options")),
+                    Equal(
+                        Variable(ID("Message_Type", location=Location((1, 1)))),
+                        Variable(ID("Universal::MT_Null", location=Location((1, 1)))),
+                        location=Location((1, 1)),
+                    ),
+                    Equal(
+                        Variable(ID("Message_Type", location=Location((2, 2)))),
+                        Variable(ID("Universal::MT_Data", location=Location((2, 2)))),
+                        location=Location((2, 2)),
+                    ),
+                    Equal(
+                        Variable(ID("Message_Type", location=Location((3, 3)))),
+                        Variable(ID("Universal::MT_Values", location=Location((3, 3)))),
+                        location=Location((3, 3)),
+                    ),
+                    Equal(
+                        Variable(ID("Message_Type", location=Location((4, 4)))),
+                        Variable(ID("Universal::MT_Options", location=Location((4, 4)))),
+                        location=Location((4, 4)),
+                    ),
+                    location=Location((5, 5)),
                 ),
                 size=Number(64),
             ),
             Link(
-                Field("Data"),
-                Field("Values"),
-                size=Mul(Number(8), Size("Universal::Value")),
+                Field(ID("Data", location=Location((5, 5)))),
+                Field(ID("Values", location=Location((5, 5)))),
+                size=Mul(Number(8), Size(ID("Universal::Value", location=Location((5, 5))))),
             ),
             Link(
-                Field("Values"),
-                Field("Options"),
+                Field(ID("Values", location=Location((6, 6)))),
+                Field(ID("Options", location=Location((6, 6)))),
                 size=Number(64),
             ),
             Link(
-                Field("Options"),
+                Field(ID("Options", location=Location((7, 7)))),
                 FINAL,
             ),
         ],
@@ -774,13 +917,17 @@ def fixed_size_message() -> Message:
 @lru_cache
 def fixed_size_simple_message() -> Message:
     return Message(
-        "Fixed_Size::Simple_Message",
+        ID("Fixed_Size::Simple_Message", Location((1, 1))),
         [
             Link(INITIAL, Field("Message_Type")),
             Link(
                 Field("Message_Type"),
                 Field("Data"),
-                condition=Equal(Variable("Message_Type"), Variable("Universal::OT_Data")),
+                condition=Equal(
+                    Variable("Message_Type"),
+                    Variable("Universal::OT_Data"),
+                    location=Location((4, 4)),
+                ),
                 size=Number(24),
             ),
             Link(
@@ -798,7 +945,7 @@ def fixed_size_simple_message() -> Message:
 @lru_cache
 def definite_message() -> Message:
     return Message(
-        "Definite::Message",
+        ID("Definite::Message", Location((1, 1))),
         [
             Link(INITIAL, Field("Length")),
             Link(

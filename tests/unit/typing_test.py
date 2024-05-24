@@ -5,8 +5,8 @@ from typing import Union
 
 import pytest
 
-from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
+from rflx.rapidflux import Location, RecordFluxError
 from rflx.typing_ import (
     Aggregate,
     Any,
@@ -760,19 +760,19 @@ def test_check_type(actual: Type, expected: Type) -> None:
         (
             Message("A"),
             Channel(readable=False, writable=True),
-            r"^<stdin>:10:20: model: error: expected writable channel\n"
-            r'<stdin>:10:20: model: info: found message type "A"$',
+            r"^<stdin>:10:20: error: expected writable channel\n"
+            r'<stdin>:10:20: info: found message type "A"$',
         ),
         (
             UndefinedInteger(),
             Message("A"),
-            r'^<stdin>:10:20: model: error: expected message type "A"\n'
-            r"<stdin>:10:20: model: info: found integer type$",
+            r'^<stdin>:10:20: error: expected message type "A"\n'
+            r"<stdin>:10:20: info: found integer type$",
         ),
         (
             Undefined(),
             Integer("A"),
-            r'^<stdin>:10:20: model: error: undefined "A"$',
+            r'^<stdin>:10:20: error: undefined "A"$',
         ),
     ],
 )
@@ -803,19 +803,19 @@ def test_check_type_instance(
         (
             Message("M"),
             Channel,
-            r"^<stdin>:10:20: model: error: expected channel\n"
-            r'<stdin>:10:20: model: info: found message type "M"$',
+            r"^<stdin>:10:20: error: expected channel\n"
+            r'<stdin>:10:20: info: found message type "M"$',
         ),
         (
             UndefinedInteger(),
             (Sequence, Message),
-            r"^<stdin>:10:20: model: error: expected sequence type or message type\n"
-            r"<stdin>:10:20: model: info: found integer type$",
+            r"^<stdin>:10:20: error: expected sequence type or message type\n"
+            r"<stdin>:10:20: info: found integer type$",
         ),
         (
             Undefined(),
             Integer,
-            r'^<stdin>:10:20: model: error: undefined "A"$',
+            r'^<stdin>:10:20: error: undefined "A"$',
         ),
     ],
 )

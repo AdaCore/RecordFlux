@@ -14,7 +14,7 @@ from attr import define
 
 from rflx import ada, const as constants, expression as expr, ir, typing_ as rty
 from rflx.common import file_name
-from rflx.error import BaseError, FatalError, Location, RecordFluxError
+from rflx.error import FatalError
 from rflx.generator import Generator, common, const
 from rflx.generator.allocator import AllocatorGenerator
 from rflx.generator.common import Debug
@@ -28,14 +28,15 @@ from rflx.model import (
     type_decl as mty,
 )
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
+from rflx.rapidflux import Location, RecordFluxError
 from tests.const import DATA_DIR, GENERATED_DIR
 from tests.data import models
 from tests.utils import assert_equal, assert_equal_code
 
 GENERATOR_TEST_DATA_DIR = DATA_DIR / "generator/generated"
 
-MSG_TY = rty.Message("M")
-SEQ_TY = rty.Sequence("S", rty.Message("M"))
+MSG_TY = rty.Message(ID("M", Location((1, 1))))
+SEQ_TY = rty.Sequence("S", rty.Message(ID("M", Location((1, 1)))))
 
 
 @dataclass
@@ -51,7 +52,7 @@ GENERATOR_TEST_CASES = [
         lambda: Model(
             [
                 Message(
-                    "P::Message",
+                    ID("P::Message", Location((1, 1))),
                     [
                         Link(INITIAL, Field("A")),
                         Link(Field("A"), Field("B")),
@@ -89,29 +90,26 @@ def test_equality(tc: TC, tmp_path: Path) -> None:
 
 
 def test_invalid_prefix() -> None:
-    with pytest.raises(FatalError, match=r'^id: error: empty part in identifier "A::::B"$'):
+    with pytest.raises(FatalError, match=r'^error: empty part in identifier "A::::B"$'):
         Generator("A..B")
 
 
 def test_unsupported_checksum(tmp_path: Path) -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(
-            r"^generator: error: unsupported checksum"
-            r" \(consider --ignore-unsupported-checksum option\)$"
-        ),
+        match=(r"^error: unsupported checksum \(consider --ignore-unsupported-checksum option\)$"),
     ):
         Generator().generate(models.tlv_with_checksum_model(), Integration(), tmp_path)
 
 
-def test_ignore_unsupported_checksum(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
+def test_ignore_unsupported_checksum(capfd: pytest.CaptureFixture[str], tmp_path: Path) -> None:
     Generator(ignore_unsupported_checksum=True).generate(
         models.tlv_with_checksum_model(),
         Integration(),
         tmp_path,
     )
-    captured = capsys.readouterr()
-    assert "generator: warning: unsupported checksum ignored" in captured.out
+    captured = capfd.readouterr()
+    assert "warning: unsupported checksum ignored" in captured.err
 
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
@@ -196,10 +194,10 @@ def test_generate_partial_update(tmp_path: Path) -> None:
         RecordFluxError,
         match=(
             "^"
-            "generator: error: partial update of generated files\n"
-            "generator: info: files not generated in the current run could lead to unexpected"
+            "error: partial update of generated files\n"
+            "info: files not generated in the current run could lead to unexpected"
             " behavior: tlv-message.adb, tlv-message.ads, tlv.ads\n"
-            "generator: info: remove the affected files or choose another directory and retry"
+            "info: remove the affected files or choose another directory and retry"
             "$"
         ),
     ):
@@ -509,7 +507,7 @@ class UnknownDeclaration(ir.FormalDecl):
 )
 def test_session_create_abstract_functions_error(
     parameter: ir.FormalDecl,
-    error_type: type[BaseError],
+    error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
@@ -518,7 +516,7 @@ def test_session_create_abstract_functions_error(
         debug=Debug.BUILTIN,
     )
 
-    with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
+    with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
         session_generator._create_abstract_functions([parameter])  # noqa: SLF001
 
 
@@ -1102,7 +1100,7 @@ def test_session_declare(
 def test_session_declare_error(
     type_: rty.Type,
     expression: Optional[ir.ComplexExpr],
-    error_type: type[BaseError],
+    error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
@@ -1111,7 +1109,7 @@ def test_session_declare_error(
         debug=Debug.BUILTIN,
     )
 
-    with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
+    with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
         session_generator._declare(  # pragma: no branch # noqa: SLF001
             ID("X", Location((10, 20))),
             type_,
@@ -1349,7 +1347,7 @@ def test_session_state_action(action: ir.Stmt, expected: str) -> None:
 )
 def test_session_state_action_error(
     action: ir.Stmt,
-    error_type: type[BaseError],
+    error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
@@ -1358,7 +1356,7 @@ def test_session_state_action_error(
         debug=Debug.BUILTIN,
     )
 
-    with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
+    with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
         session_generator._state_action(  # pragma: no branch # noqa: SLF001
             ID("S"),
             action,
@@ -1723,7 +1721,7 @@ class UnknownExpr(ir.Expr):
 def test_session_assign_error(
     type_: rty.Type,
     expression: ir.Expr,
-    error_type: type[BaseError],
+    error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
     allocator = AllocatorGenerator(dummy_session(), Integration())
@@ -1732,7 +1730,7 @@ def test_session_assign_error(
 
     allocator._allocation_slots[alloc_id] = 1  # noqa: SLF001
 
-    with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
+    with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
         session_generator._assign(  # noqa: SLF001
             ID("X", Location((10, 20))),
             type_,
@@ -1799,7 +1797,7 @@ def test_session_assign_error(
 )
 def test_session_append_error(
     append: ir.Append,
-    error_type: type[BaseError],
+    error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
@@ -1808,7 +1806,7 @@ def test_session_append_error(
         debug=Debug.BUILTIN,
     )
 
-    with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
+    with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
         session_generator._append(  # noqa: SLF001
             append,
             ExceptionHandler(
@@ -1844,14 +1842,18 @@ def test_session_append_error(
         ),
     ],
 )
-def test_session_read_error(read: ir.Read, error_type: type[BaseError], error_msg: str) -> None:
+def test_session_read_error(
+    read: ir.Read,
+    error_type: type[RecordFluxError],
+    error_msg: str,
+) -> None:
     session_generator = SessionGenerator(
         dummy_session(),
         AllocatorGenerator(dummy_session(), Integration()),
         debug=Debug.BUILTIN,
     )
 
-    with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
+    with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
         session_generator._read(  # pragma: no branch # noqa: SLF001
             read,
             lambda _: False,
@@ -1875,14 +1877,18 @@ def test_session_read_error(read: ir.Read, error_type: type[BaseError], error_ms
         ),
     ],
 )
-def test_session_write_error(write: ir.Write, error_type: type[BaseError], error_msg: str) -> None:
+def test_session_write_error(
+    write: ir.Write,
+    error_type: type[RecordFluxError],
+    error_msg: str,
+) -> None:
     session_generator = SessionGenerator(
         dummy_session(),
         AllocatorGenerator(dummy_session(), Integration()),
         debug=Debug.BUILTIN,
     )
 
-    with pytest.raises(error_type, match=rf"^<stdin>:10:20: generator: error: {error_msg}$"):
+    with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
         session_generator._write(write)  # noqa: SLF001
 
 
@@ -2175,7 +2181,7 @@ def test_generate_enumeration_base_type_use(
 
 def test_generate_field_size_optimization() -> None:
     message = Message(
-        "P::Message",
+        ID("P::Message", Location((1, 1))),
         [
             Link(INITIAL, Field("Length")),
             Link(
@@ -2224,7 +2230,7 @@ def test_param_enumeration_condition() -> None:
     )
 
     message = Message(
-        "P::Message",
+        ID("P::Message", Location((1, 1))),
         [
             Link(INITIAL, Field("A")),
             link,
@@ -2312,18 +2318,37 @@ def test_comment_box(lines: list[str], width: int, result: str) -> None:
 
 def test_generate_multiple_initial_conditions(tmp_path: Path) -> None:
     message = Message(
-        "P::Message",
+        ID("P::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Tag"), condition=expr.Equal(expr.Variable("P"), expr.TRUE)),
-            Link(Field("Tag"), FINAL),
-            Link(INITIAL, Field("Length"), condition=expr.Equal(expr.Variable("P"), expr.FALSE)),
             Link(
-                Field("Length"),
-                Field("Data"),
-                size=expr.Add(expr.Size(expr.Variable("Length")), expr.Number(8)),
+                INITIAL,
+                Field(ID("Tag", location=Location((2, 2)))),
+                condition=expr.Equal(
+                    expr.Variable(ID("P", location=Location((3, 3)))),
+                    expr.TRUE,
+                    location=Location((3, 3)),
+                ),
+            ),
+            Link(Field(ID("Tag", location=Location((4, 4)))), FINAL),
+            Link(
+                INITIAL,
+                Field(ID("Length", location=Location((5, 5)))),
+                condition=expr.Equal(
+                    expr.Variable(ID("P", location=Location((6, 6)))),
+                    expr.FALSE,
+                    location=Location((6, 6)),
+                ),
             ),
             Link(
-                Field("Data"),
+                Field(ID("Length", location=Location((7, 7)))),
+                Field(ID("Data", location=Location((8, 8)))),
+                size=expr.Add(
+                    expr.Size(expr.Variable(ID("Length", location=Location((9, 9))))),
+                    expr.Number(8),
+                ),
+            ),
+            Link(
+                Field(ID("Data", location=Location((10, 10)))),
                 FINAL,
             ),
         ],

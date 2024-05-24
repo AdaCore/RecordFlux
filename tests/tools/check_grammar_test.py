@@ -6,7 +6,7 @@ from typing import Optional
 
 import pytest
 
-from rflx.error import RecordFluxError
+from rflx.rapidflux import RecordFluxError
 from tests.const import DATA_DIR as BASE_DATA_DIR
 from tools.check_grammar import check_spec, main
 
@@ -29,7 +29,7 @@ def check_rst(filename: Path, invalid: bool = False, examples: Optional[list[Pat
 def test_missing_grammar() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=rf"^{DATA_DIR}/without_grammar.rst:1:1: parser: error: No grammar found$",
+        match=rf"^{DATA_DIR}/without_grammar.rst:1:1: error: No grammar found$",
     ):
         check_rst(DATA_DIR / "without_grammar.rst")
 
@@ -38,7 +38,7 @@ def test_multiple_start_rules() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            rf"{DATA_DIR}/unused_grammar_rule.rst:1:1: parser: error: "
+            rf"{DATA_DIR}/unused_grammar_rule.rst:1:1: error: "
             r"Multiple start rules: root, unused$"
         ),
     ):
@@ -49,7 +49,7 @@ def test_missing_mapping() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            rf"{DATA_DIR}/complex_grammar.rst:4:13: parser: error: "
+            rf"{DATA_DIR}/complex_grammar.rst:4:13: error: "
             r"No mapping for verbal: 'some characters'$"
         ),
     ):
@@ -59,10 +59,7 @@ def test_missing_mapping() -> None:
 def test_specification_not_rejected() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(
-            rf"{DATA_DIR}/simple_grammar.txt:1:1: parser: error: "
-            r"Specification should be rejected$"
-        ),
+        match=(rf"{DATA_DIR}/simple_grammar.txt:1:1: error: Specification should be rejected$"),
     ):
         check_rst(
             filename=DATA_DIR / "simple_grammar.rst",
@@ -75,9 +72,9 @@ def test_reject_invalid_example() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            rf"{DATA_DIR}/empty.txt:1:1: parser: error: "
+            rf"{DATA_DIR}/empty.txt:1:1: error: "
             r"Unexpected end-of-input. Expected one of: \n"
-            rf"{DATA_DIR}/empty.txt:1:1: parser: info: \t[*] FOO$"
+            rf"{DATA_DIR}/empty.txt:1:1: info: \t[*] FOO$"
         ),
     ):
         check_rst(
@@ -112,13 +109,13 @@ def test_invalid_grammar() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            rf"{DATA_DIR}/invalid_grammar.rst:4:9: parser: error: "
+            rf"{DATA_DIR}/invalid_grammar.rst:4:9: error: "
             r"No terminal matches '/' in the current parser context, at line 4 col 9\n"
-            rf"{DATA_DIR}/invalid_grammar.rst:4:9: parser: info: \n"
-            rf"{DATA_DIR}/invalid_grammar.rst:4:9: parser: info:    start/\n"
-            rf"{DATA_DIR}/invalid_grammar.rst:4:9: parser: info:         \^\n"
-            rf"{DATA_DIR}/invalid_grammar.rst:4:9: parser: info: Expected one of: \n"
-            rf"{DATA_DIR}/invalid_grammar.rst:4:9: parser: info: \t\* COLON$"
+            rf"{DATA_DIR}/invalid_grammar.rst:4:9: info: \n"
+            rf"{DATA_DIR}/invalid_grammar.rst:4:9: info:    start/\n"
+            rf"{DATA_DIR}/invalid_grammar.rst:4:9: info:         \^\n"
+            rf"{DATA_DIR}/invalid_grammar.rst:4:9: info: Expected one of: \n"
+            rf"{DATA_DIR}/invalid_grammar.rst:4:9: info: \t\* COLON$"
         ),
     ):
         check_rst(DATA_DIR / "invalid_grammar.rst")
@@ -170,6 +167,6 @@ def test_cli_error(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     with pytest.raises(
         SystemExit,
-        match=rf"^{DATA_DIR}/without_grammar.rst:1:1: parser: error: No grammar found$",
+        match=rf"^{DATA_DIR}/without_grammar.rst:1:1: error: No grammar found$",
     ):
         main()

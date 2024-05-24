@@ -91,8 +91,9 @@ from rflx.ada import (
     WithClause,
 )
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
-from rflx.error import Location, Subsystem, fail, fatal_fail
+from rflx.error import fail, fatal_fail
 from rflx.identifier import ID
+from rflx.rapidflux import Location
 
 from . import common, const
 from .allocator import AllocatorGenerator
@@ -548,7 +549,6 @@ class SessionGenerator:
             else:
                 fatal_fail(
                     f'unexpected formal parameter "{parameter.identifier}"',
-                    Subsystem.GENERATOR,
                     location=parameter.location,
                 )
 
@@ -560,19 +560,16 @@ class SessionGenerator:
         if function.type_ == rty.Undefined():
             fatal_fail(
                 f'return type of function "{function.identifier}" is undefined',
-                Subsystem.GENERATOR,
                 location=function.location,
             )
         if function.type_ == rty.OPAQUE:
             fatal_fail(
                 f'Opaque as return type of function "{function.identifier}" not allowed',
-                Subsystem.GENERATOR,
                 location=function.location,
             )
         if isinstance(function.type_, rty.Sequence):
             fail(
                 f'sequence as return type of function "{function.identifier}" not yet supported',
-                Subsystem.GENERATOR,
                 location=function.location,
             )
         if isinstance(function.type_, rty.Message):
@@ -580,7 +577,6 @@ class SessionGenerator:
                 fatal_fail(
                     "non-definite message"
                     f' in return type of function "{function.identifier}" not allowed',
-                    Subsystem.GENERATOR,
                     location=function.location,
                 )
             if any(
@@ -590,7 +586,6 @@ class SessionGenerator:
                 fail(
                     "message containing sequence fields"
                     f' in return type of function "{function.identifier}" not yet supported',
-                    Subsystem.GENERATOR,
                     location=function.location,
                 )
 
@@ -600,7 +595,6 @@ class SessionGenerator:
             if isinstance(a.type_, rty.Sequence) and a.type_ != rty.OPAQUE:
                 fail(
                     f'sequence as parameter of function "{function.identifier}" not yet supported',
-                    Subsystem.GENERATOR,
                     location=function.location,
                 )
             procedure_parameters.append(
@@ -2085,7 +2079,6 @@ class SessionGenerator:
         elif isinstance(action, ir.Extend):
             fail(
                 "Extend statement not yet supported",
-                Subsystem.GENERATOR,
                 location=action.location,
             )
 
@@ -2104,7 +2097,6 @@ class SessionGenerator:
         else:
             fatal_fail(
                 f'unexpected statement "{type(action).__name__}"',
-                Subsystem.GENERATOR,
                 location=action.location,
             )
 
@@ -2126,7 +2118,6 @@ class SessionGenerator:
         if expression and isinstance(expression.expr, ir.Call):
             fail(
                 "initialization using function call not yet supported",
-                Subsystem.GENERATOR,
                 location=expression.expr.location,
             )
 
@@ -2153,7 +2144,6 @@ class SessionGenerator:
                 else:
                     fail(
                         "initialization not yet supported",
-                        Subsystem.GENERATOR,
                         location=expression.expr.location,
                     )
 
@@ -2198,7 +2188,6 @@ class SessionGenerator:
                 if not expression.is_basic_expr():
                     fail(
                         "initialization with complex expression not yet supported",
-                        Subsystem.GENERATOR,
                         location=expression.expr.location,
                     )
 
@@ -2206,7 +2195,6 @@ class SessionGenerator:
             if expression is not None:
                 fail(
                     f"initialization for {type_} not yet supported",
-                    Subsystem.GENERATOR,
                     location=expression.expr.location,
                 )
 
@@ -2259,7 +2247,6 @@ class SessionGenerator:
         else:
             fatal_fail(
                 f"unexpected variable declaration for {type_}",
-                Subsystem.GENERATOR,
                 location=identifier.location,
             )
 
@@ -2309,7 +2296,6 @@ class SessionGenerator:
             fail(
                 f'referencing assignment target "{target}" of type message in expression'
                 " not yet supported",
-                Subsystem.GENERATOR,
                 location=expression.location,
             )
 
@@ -2458,14 +2444,12 @@ class SessionGenerator:
             # (i.e. misinterpreting trailing bytes in the new buffer as sequence elements).
             fail(
                 "copying of sequence not yet supported",
-                Subsystem.GENERATOR,
                 location=target.location,
             )
 
         fatal_fail(
             f'unexpected type ({field_access.type_}) for "{field_access}"'
             f' in assignment of "{target}"',
-            Subsystem.GENERATOR,
             location=target.location,
         )
 
@@ -2570,7 +2554,6 @@ class SessionGenerator:
             fatal_fail(
                 f"unexpected sequence element type {head.type_}"
                 f' for "{head}" in assignment of "{target}"',
-                Subsystem.GENERATOR,
                 location=head.location,
             )
 
@@ -2693,7 +2676,6 @@ class SessionGenerator:
         fail(
             f"iterating over sequence of {sequence_element_type}"
             " in list comprehension not yet supported",
-            Subsystem.GENERATOR,
             location=find.sequence.location,
         )
 
@@ -2983,7 +2965,6 @@ class SessionGenerator:
         fail(
             f"iterating over sequence of {sequence_element_type}"
             " in list comprehension not yet supported",
-            Subsystem.GENERATOR,
             location=comprehension.sequence.location,
         )
 
@@ -3278,7 +3259,6 @@ class SessionGenerator:
             fatal_fail(
                 f'no refinement for field "{field}" of message "{pdu.identifier}"'
                 f' leads to "{sdu.identifier}"',
-                Subsystem.GENERATOR,
                 location=conversion.location,
             )
         assert len(refinements) == 1
@@ -3479,7 +3459,6 @@ class SessionGenerator:
 
         fatal_fail(
             f"unexpected element type {append.type_.element} in Append statement",
-            Subsystem.GENERATOR,
             location=append.expression.location,
         )
 
@@ -4842,7 +4821,6 @@ class SessionGenerator:
                 fail(
                     "expressions other than variables not yet supported"
                     " as selector for message types",
-                    Subsystem.GENERATOR,
                     location=selector.location,
                 )
             element_id = selector.identifier + "_Ctx"
@@ -4931,7 +4909,6 @@ class SessionGenerator:
                 fail(
                     "expressions other than variables not yet supported"
                     " as selector for message types",
-                    Subsystem.GENERATOR,
                     location=selector.location,
                 )
 
@@ -5293,7 +5270,6 @@ def state_id(identifier: ID) -> ID:
 def _unexpected_expression(expression: ir.Expr, context: str) -> NoReturn:
     fatal_fail(
         f'unexpected expression "{type(expression).__name__}" with {expression.type_} {context}',
-        Subsystem.GENERATOR,
         location=expression.location,
     )
 
@@ -5301,6 +5277,5 @@ def _unexpected_expression(expression: ir.Expr, context: str) -> NoReturn:
 def _unsupported_expression(expression: ir.Expr, context: str) -> NoReturn:
     fail(
         f"{type(expression).__name__} with {expression.type_} {context} not yet supported",
-        Subsystem.GENERATOR,
         location=expression.location,
     )

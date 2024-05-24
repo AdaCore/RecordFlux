@@ -8,8 +8,8 @@ from typing import ClassVar, Final, Optional, Union
 import attr
 
 from rflx import const
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 
 @attr.s(frozen=True)
@@ -401,11 +401,23 @@ def check_type(
         desc = (
             " or ".join(map(str, expected_types)) if isinstance(expected, tuple) else str(expected)
         )
-        error.extend(
-            [
-                (f"expected {desc}", Subsystem.MODEL, Severity.ERROR, location),
-                (f"found {actual}", Subsystem.MODEL, Severity.INFO, location),
-            ],
+
+        assert location is not None
+        error.push(
+            ErrorEntry(
+                f"expected {desc}",
+                Severity.ERROR,
+                location,
+                annotations=(
+                    [
+                        Annotation(
+                            f"found {actual}",
+                            Severity.INFO,
+                            location,
+                        ),
+                    ]
+                ),
+            ),
         )
 
     return error
@@ -430,29 +442,29 @@ def check_type_instance(
             if isinstance(expected, tuple)
             else expected.DESCRIPTIVE_NAME
         )
-        error.extend(
-            [
-                (f"expected {desc}", Subsystem.MODEL, Severity.ERROR, location),
-                (f"found {actual}", Subsystem.MODEL, Severity.INFO, location),
-            ],
+        assert location is not None
+        error.push(
+            ErrorEntry(
+                f"expected {desc}",
+                Severity.ERROR,
+                location,
+                annotations=([Annotation(f"found {actual}", Severity.INFO, location)]),
+            ),
         )
 
     return error
 
 
 def _undefined_type(location: Optional[Location], description: str = "") -> RecordFluxError:
-    error = RecordFluxError()
-    error.extend(
+    return RecordFluxError(
         [
-            (
+            ErrorEntry(
                 "undefined" + (f" {description}" if description else ""),
-                Subsystem.MODEL,
                 Severity.ERROR,
                 location,
             ),
         ],
     )
-    return error
 
 
 BOOLEAN = Enumeration(

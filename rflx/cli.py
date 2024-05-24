@@ -23,11 +23,7 @@ from rflx import __version__
 from rflx.common import assert_never
 from rflx.converter import iana
 from rflx.error import (
-    ERROR_CONFIG,
     FatalError,
-    RecordFluxError,
-    Severity,
-    Subsystem,
     fail,
     fatal_fail,
 )
@@ -38,6 +34,7 @@ from rflx.integration import Integration
 from rflx.ls.server import server
 from rflx.model import AlwaysVerify, Cache, Message, Model, NeverVerify, Session
 from rflx.pyrflx import PyRFLXError
+from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
 from rflx.specification import Parser
 from rflx.validator import ValidationError, Validator
 
@@ -135,7 +132,7 @@ def run() -> Union[int, str]:
 
 def main(  # noqa: PLR0915
     argv: Sequence[str],
-) -> Union[int, str]:
+) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-q",
@@ -456,23 +453,36 @@ def main(  # noqa: PLR0915
         logging.disable(logging.CRITICAL)
 
     if not args.unsafe and args.no_verification:
-        return 'cli: error: unsafe option "--no-verification" given without "--unsafe"'
+        RecordFluxError(
+            [
+                ErrorEntry(
+                    'unsafe option "--no-verification" given without "--unsafe"',
+                    Severity.ERROR,
+                ),
+            ],
+        ).print_messages()
+        return 1
 
-    ERROR_CONFIG.fail_after_value = args.max_errors
+    RecordFluxError.set_max_error(args.max_errors)
 
     try:
         args.func(args)
     except RecordFluxError as e:
-        return f"{e}"
+        e.print_messages()
+        return 1
     except Exception:  # noqa: BLE001
         if args.unsafe:
-            return f"""
+            print(  # noqa: T201
+                f"""
 ----------------------------------------------------------------------------
 EXCEPTION IN UNSAFE MODE, PLEASE RERUN WITHOUT UNSAFE OPTIONS
 ----------------------------------------------------------------------------
 {traceback.format_exc()}
-----------------------------------------------------------------------------"""
-        return f"""
+----------------------------------------------------------------------------""",
+                file=sys.stderr,
+            )
+        print(  # noqa: T201
+            f"""
 ------------------------------ RecordFlux Bug ------------------------------
 {version()}
 
@@ -488,7 +498,10 @@ A bug was detected. Please report this issue on GitHub:
 https://github.com/AdaCore/RecordFlux/issues/new?labels=bug
 
 Include the complete content of the bug box shown above and all input files
-in the report."""
+in the report.""",
+            file=sys.stderr,
+        )
+        return 1
 
     return 0
 
@@ -521,7 +534,7 @@ class Requirement:
             self.name = groups[0]
             self.extra = groups[1]
         else:
-            fatal_fail(f'failed parsing requirement "{string}"', Subsystem.CLI)
+            fatal_fail(f'failed parsing requirement "{string}"')
 
 
 def check(args: argparse.Namespace) -> None:
@@ -533,10 +546,10 @@ def generate(args: argparse.Namespace) -> None:
     args.prefix = args.prefix if args.prefix != " " else ""
 
     if args.prefix and "" in args.prefix.split("."):
-        fail(f'invalid prefix: "{args.prefix}"', Subsystem.CLI)
+        fail(f'invalid prefix: "{args.prefix}"')
 
     if not args.output_directory.is_dir():
-        fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
+        fail(f'directory not found: "{args.output_directory}"')
 
     model, integration = parse(
         args.files,
@@ -570,7 +583,7 @@ def generate(args: argparse.Namespace) -> None:
 
 def optimize(args: argparse.Namespace) -> None:
     if not args.directory.is_dir():
-        fail(f'directory not found: "{args.directory}"', Subsystem.CLI)
+        fail(f'directory not found: "{args.directory}"')
 
     optimizer.optimize(args.directory, args.workers, args.timeout)
 
@@ -592,7 +605,7 @@ def parse(
 
     for f in files:
         if not f.is_file():
-            error.extend([(f'file not found: "{f}"', Subsystem.CLI, Severity.ERROR, None)])
+            error.push(ErrorEntry(f'file not found: "{f}"', Severity.ERROR))
             continue
 
         present_files.append(Path(f))
@@ -600,12 +613,12 @@ def parse(
     try:
         parser.parse(*present_files)
     except RecordFluxError as e:
-        error.extend(e)
+        error.extend(e.entries)
 
     try:
         model = parser.create_model()
     except RecordFluxError as e:
-        error.extend(e)
+        error.extend(e.entries)
 
     error.propagate()
     return model, parser.get_integration()
@@ -613,7 +626,7 @@ def parse(
 
 def graph(args: argparse.Namespace) -> None:
     if not args.output_directory.is_dir():
-        fail(f'directory not found: "{args.output_directory}"', Subsystem.CLI)
+        fail(f'directory not found: "{args.output_directory}"')
 
     model, _ = parse(args.files, args.no_caching, args.no_verification)
 
@@ -646,7 +659,7 @@ def validate(args: argparse.Namespace) -> None:
     try:
         identifier = ID(args.message_identifier)
     except FatalError as e:
-        fail(f"invalid identifier: {e}", Subsystem.CLI)
+        fail(f"invalid identifier: {e}")
 
     try:
         Validator(
@@ -664,10 +677,9 @@ def validate(args: argparse.Namespace) -> None:
             args.target_coverage,
         )
     except ValidationError as e:
-        fail(str(e), Subsystem.VALIDATOR)
+        fail(str(e))
     except PyRFLXError as e:
-        fatal_error = FatalError()
-        fatal_error.extend(e)
+        fatal_error = FatalError(e.__str__())
         raise fatal_error from e
 
 
@@ -686,7 +698,7 @@ def install(args: argparse.Namespace) -> None:
             try:
                 subprocess.run(["code", "--install-extension", extension, "--force"], check=True)
             except (FileNotFoundError, subprocess.CalledProcessError) as e:
-                fail(f"installation of VS Code extension failed: {e}", Subsystem.CLI)
+                fail(f"installation of VS Code extension failed: {e}")
 
     else:
         assert_never(args.ide)  # pragma: no cover

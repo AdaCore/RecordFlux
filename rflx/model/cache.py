@@ -9,7 +9,7 @@ from typing import Optional
 
 from rflx import __version__
 from rflx.const import CACHE_PATH
-from rflx.error import Subsystem, warn
+from rflx.error import warn
 from rflx.model.message import Message, Refinement
 from rflx.model.top_level_declaration import TopLevelDeclaration
 
@@ -58,7 +58,7 @@ class Cache:
                 else:
                     raise TypeError  # noqa: TRY301
         except (json.JSONDecodeError, TypeError):
-            warn("verification cache will be ignored due to invalid format", Subsystem.PARSER)
+            warn("verification cache will be ignored due to invalid format")
         except FileNotFoundError:
             pass
 
@@ -81,7 +81,7 @@ class AlwaysVerify(Cache):
 
 class NeverVerify(Cache):
     def __init__(self) -> None:
-        warn("model verification skipped", Subsystem.MODEL)
+        warn("model verification skipped")
 
     def is_verified(self, digest: Digest) -> bool:  # noqa: ARG002
         return True

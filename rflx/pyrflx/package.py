@@ -42,5 +42,7 @@ class Package(Base):
         for message_name, field_name_to_function_mapping in functions.items():
             name = str(message_name)
             if name not in self._messages:
-                raise PyRFLXError(f'"{name}" is not a message in {self._name}')
+                e = PyRFLXError()
+                e.push_msg(f'"{name}" is not a message in {self._name}')
+                raise e
             self._messages[name].set_checksum_function(field_name_to_function_mapping)

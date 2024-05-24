@@ -4,9 +4,9 @@ import pytest
 
 from rflx import expression as expr, lang, model
 from rflx.common import STDIN
-from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.model import State, declaration as decl, statement as stmt
+from rflx.rapidflux import Location, RecordFluxError
 from rflx.specification.parser import (
     Parser,
     create_declaration,
@@ -154,9 +154,9 @@ def test_expression_numeric_literal(string: str, expected: expr.Expr) -> None:
 @pytest.mark.parametrize(
     ("string", "error"),
     [
-        ("3#100#", '<stdin>:1:2: parser: error: End of input expected, got "Hash"'),
-        ("2#555#", '<stdin>:1:2: parser: error: End of input expected, got "Hash"'),
-        ("50#123#", '<stdin>:1:3: parser: error: End of input expected, got "Hash"'),
+        ("3#100#", '<stdin>:1:2: error: End of input expected, got "Hash"'),
+        ("2#555#", '<stdin>:1:2: error: End of input expected, got "Hash"'),
+        ("50#123#", '<stdin>:1:3: error: End of input expected, got "Hash"'),
     ],
 )
 def test_invalid_expression_numeric_literal(string: str, error: expr.Expr) -> None:
@@ -179,14 +179,14 @@ def test_variable(string: str, expected: decl.Declaration) -> None:
     [
         (
             "Double__Underscore",
-            "<stdin>:1:7: parser: error: Invalid token, ignored\n"
-            "<stdin>:1:8: parser: error: Invalid token, ignored\n"
-            '<stdin>:1:9: parser: error: End of input expected, got "Unqualified_Identifier"',
+            "<stdin>:1:7: error: Invalid token, ignored\n"
+            "<stdin>:1:8: error: Invalid token, ignored\n"
+            '<stdin>:1:9: error: End of input expected, got "Unqualified_Identifier"',
         ),
         (
             "Trailing_Underscore_ < 5",
-            "<stdin>:1:20: parser: error: Invalid token, ignored\n"
-            '<stdin>:1:22: parser: error: End of input expected, got "Lt"',
+            "<stdin>:1:20: error: Invalid token, ignored\n"
+            '<stdin>:1:22: error: End of input expected, got "Lt"',
         ),
     ],
 )
@@ -356,15 +356,15 @@ def test_extended_boolean_expression(string: str, expected: expr.Expr) -> None:
 @pytest.mark.parametrize(
     ("string", "error", "extended"),
     [
-        ("42 > X", "<stdin>:1:1: parser: error: boolean expression in math context", False),
-        ("42 > X", "<stdin>:1:1: parser: error: boolean expression in math context", True),
-        ("X and Y", "<stdin>:1:1: parser: error: boolean expression in math context", False),
-        ("X and Y", "<stdin>:1:1: parser: error: boolean expression in math context", True),
-        ("(5 + ()", "<stdin>:1:2: parser: error: empty subexpression", False),
+        ("42 > X", "<stdin>:1:1: error: boolean expression in math context", False),
+        ("42 > X", "<stdin>:1:1: error: boolean expression in math context", True),
+        ("X and Y", "<stdin>:1:1: error: boolean expression in math context", False),
+        ("X and Y", "<stdin>:1:1: error: boolean expression in math context", True),
+        ("(5 + ()", "<stdin>:1:2: error: empty subexpression", False),
         (
             "(5 + ()",
-            "<stdin>:1:2: parser: error: Cannot parse <extended_simple_expr>\n"
-            r"<stdin>:1:7: parser: error: Expected 'case', got '\)'",
+            "<stdin>:1:2: error: Cannot parse <extended_simple_expr>\n"
+            r"<stdin>:1:7: error: Expected 'case', got '\)'",
             True,
         ),
     ],
@@ -377,17 +377,17 @@ def test_mathematical_expression_error(string: str, error: expr.Expr, extended: 
 @pytest.mark.parametrize(
     ("string", "error", "extended"),
     [
-        ("42", "<stdin>:1:1: parser: error: math expression in boolean context", True),
-        ("42", "<stdin>:1:1: parser: error: math expression in boolean context", False),
-        ("X * 3", "<stdin>:1:1: parser: error: math expression in boolean context", True),
-        ("X * 3", "<stdin>:1:1: parser: error: math expression in boolean context", False),
+        ("42", "<stdin>:1:1: error: math expression in boolean context", True),
+        ("42", "<stdin>:1:1: error: math expression in boolean context", False),
+        ("X * 3", "<stdin>:1:1: error: math expression in boolean context", True),
+        ("X * 3", "<stdin>:1:1: error: math expression in boolean context", False),
         (
             "(True and ()",
-            "<stdin>:1:2: parser: error: Cannot parse <extended_expression>\n"
-            r"<stdin>:1:12: parser: error: Expected 'case', got '\)'",
+            "<stdin>:1:2: error: Cannot parse <extended_expression>\n"
+            r"<stdin>:1:12: error: Expected 'case', got '\)'",
             True,
         ),
-        ("(True and ()", "<stdin>:1:2: parser: error: empty subexpression", False),
+        ("(True and ()", "<stdin>:1:2: error: empty subexpression", False),
     ],
 )
 def test_boolean_expression_error(string: str, error: expr.Expr, extended: bool) -> None:
@@ -841,7 +841,7 @@ def test_state_error() -> None:
           goto B
        end C
     """
-    error = "<stdin>:2:8: parser: error: inconsistent state identifier: A /= C.*"
+    error = "<stdin>:2:8: error: inconsistent state identifier: A /= C.*"
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         parse_state(string)
 
@@ -925,7 +925,7 @@ def test_parse_session() -> None:
                   end A;
                end Y
          """,
-            "<stdin>:2:16: parser: error: inconsistent session identifier: X /= Y.*",
+            "<stdin>:2:16: error: inconsistent session identifier: X /= Y.*",
         ),
         (
             """
@@ -939,7 +939,7 @@ def test_parse_session() -> None:
                   end A
                end Y
          """,
-            "<stdin>:10:16: parser: error: Expected ';', got 'end'",
+            "<stdin>:10:16: error: Expected ';', got 'end'",
         ),
     ],
 )
@@ -979,6 +979,6 @@ def test_session() -> None:
 def test_expression_aggregate_no_number() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(r"^<stdin>:1:5: parser: error: Expected Numeral, got 'First'$"),
+        match=(r"^<stdin>:1:5: error: Expected Numeral, got 'First'$"),
     ):
         parse_expression("[1, Foo]", lang.GrammarRule.expression_rule)

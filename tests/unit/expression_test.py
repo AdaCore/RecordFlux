@@ -7,7 +7,7 @@ import pytest
 import z3
 
 from rflx import ada, ir, typing_ as rty
-from rflx.error import FatalError, Location, RecordFluxError
+from rflx.error import FatalError
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -72,6 +72,7 @@ from rflx.expression import (
 )
 from rflx.identifier import ID, StrID, id_generator
 from rflx.model import Integer
+from rflx.rapidflux import Location, RecordFluxError
 from tests.data import models
 from tests.utils import assert_equal, check_regex
 
@@ -152,8 +153,8 @@ def test_not_type() -> None:
 def test_not_type_error() -> None:
     assert_type_error(
         Not(Variable("X", type_=rty.AnyInteger(), location=Location((10, 20)))),
-        r'^<stdin>:10:20: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:20: model: info: found integer type$",
+        r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+        r"<stdin>:10:20: info: found integer type$",
     )
 
 
@@ -430,10 +431,10 @@ def test_bool_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
             Variable("X", type_=rty.Integer("A", rty.Bounds(0, 100)), location=Location((10, 20))),
             Number(1, location=Location((10, 30))),
         ),
-        r'^<stdin>:10:20: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r'<stdin>:10:20: model: info: found integer type "A" \(0 .. 100\)\n'
-        r'<stdin>:10:30: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:30: model: info: found type universal integer \(1\)$",
+        r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+        r'<stdin>:10:20: info: found integer type "A" \(0 .. 100\)\n'
+        r'<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+        r"<stdin>:10:30: info: found type universal integer \(1\)$",
     )
 
 
@@ -701,10 +702,10 @@ def test_math_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
             Variable("X", type_=rty.BOOLEAN, location=Location((10, 20))),
             Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
-        r"^<stdin>:10:20: model: error: expected integer type\n"
-        r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:30: model: error: expected integer type\n"
-        r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r"^<stdin>:10:20: error: expected integer type\n"
+        r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"\n'
+        r"<stdin>:10:30: error: expected integer type\n"
+        r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -736,8 +737,8 @@ def test_neg_type() -> None:
 def test_neg_type_error() -> None:
     assert_type_error(
         Neg(Variable("X", type_=rty.BOOLEAN, location=Location((10, 20)))),
-        r"^<stdin>:10:20: model: error: expected integer type\n"
-        r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r"^<stdin>:10:20: error: expected integer type\n"
+        r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -1090,7 +1091,7 @@ def test_variable_type() -> None:
 def test_variable_type_error() -> None:
     assert_type_error(
         Variable("X", location=Location((10, 20))),
-        r'^<stdin>:10:20: model: error: undefined variable "X"$',
+        r'^<stdin>:10:20: error: undefined variable "X"$',
     )
 
 
@@ -1216,7 +1217,7 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
     [
         (
             Present(Variable("X", location=Location((10, 30)))),
-            r"^<stdin>:10:30: model: error: invalid prefix for attribute Present$",
+            r"^<stdin>:10:30: error: invalid prefix for attribute Present$",
         ),
         (
             Head(
@@ -1228,8 +1229,7 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
                     ),
                 ),
             ),
-            r"^<stdin>:10:30: model: error: prefix of attribute "
-            r"Head must be a name or comprehension$",
+            r"^<stdin>:10:30: error: prefix of attribute Head must be a name or comprehension$",
         ),
         (
             Opaque(
@@ -1240,8 +1240,8 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
                     location=Location((10, 20)),
                 ),
             ),
-            r'^<stdin>:10:30: model: error: undefined variable "Y"\n'
-            r'<stdin>:10:20: model: error: undefined function "X"$',
+            r'^<stdin>:10:30: error: undefined variable "Y"\n'
+            r'<stdin>:10:20: error: undefined function "X"$',
         ),
     ],
 )
@@ -1470,8 +1470,8 @@ def test_relation_integer_type_error(relation: Callable[[Expr, Expr], Expr]) -> 
             Variable("X", type_=rty.AnyInteger()),
             Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
-        r"^<stdin>:10:30: model: error: expected integer type\n"
-        r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r"^<stdin>:10:30: error: expected integer type\n"
+        r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -1493,18 +1493,18 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
             Variable("X", type_=rty.AnyInteger(), location=Location((10, 20))),
             Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
-        r"^<stdin>:10:30: model: error: expected aggregate"
+        r"^<stdin>:10:30: error: expected aggregate"
         r" with element integer type\n"
-        r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
     assert_type_error(
         relation(
             Variable("X", type_=rty.AnyInteger(), location=Location((10, 20))),
             Variable("Y", type_=rty.Sequence("A", rty.BOOLEAN), location=Location((10, 30))),
         ),
-        r"^<stdin>:10:30: model: error: expected aggregate"
+        r"^<stdin>:10:30: error: expected aggregate"
         r" with element integer type\n"
-        r'<stdin>:10:30: model: info: found sequence type "A"'
+        r'<stdin>:10:30: info: found sequence type "A"'
         r' with element enumeration type "__BUILTINS__::Boolean"$',
     )
 
@@ -1906,10 +1906,10 @@ def test_value_range_type_error() -> None:
             Variable("Y", type_=rty.Sequence("A", rty.AnyInteger()), location=Location((10, 40))),
             location=Location((10, 20)),
         ),
-        r"^<stdin>:10:30: model: error: expected integer type\n"
-        r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:40: model: error: expected integer type\n"
-        r'<stdin>:10:40: model: info: found sequence type "A" with element integer type$',
+        r"^<stdin>:10:30: error: expected integer type\n"
+        r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"\n'
+        r"<stdin>:10:40: error: expected integer type\n"
+        r'<stdin>:10:40: info: found sequence type "A" with element integer type$',
     )
 
 
@@ -1966,22 +1966,22 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
         (
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
             Variable("Z", type_=rty.Sequence("A", rty.AnyInteger()), location=Location((10, 40))),
-            r"^<stdin>:10:30: model: error: expected composite type\n"
-            r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"\n'
-            r'<stdin>:10:40: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r'<stdin>:10:40: model: info: found sequence type "A" with element integer type$',
+            r"^<stdin>:10:30: error: expected composite type\n"
+            r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"\n'
+            r'<stdin>:10:40: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+            r'<stdin>:10:40: info: found sequence type "A" with element integer type$',
         ),
         (
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
             Equal(Variable("X"), Number(1)),
-            r"^<stdin>:10:30: model: error: expected composite type\n"
-            r'<stdin>:10:30: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+            r"^<stdin>:10:30: error: expected composite type\n"
+            r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"$',
         ),
         (
             Variable("Y", type_=rty.Sequence("A", rty.BOOLEAN)),
             Equal(Variable("X"), Number(1, location=Location((10, 30)))),
-            r'^<stdin>:10:30: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:30: model: info: found type universal integer \(1\)$",
+            r'^<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+            r"<stdin>:10:30: info: found type universal integer \(1\)$",
         ),
     ],
 )
@@ -2296,8 +2296,8 @@ def test_selected_type() -> None:
     [
         (
             Selected(Variable("X", type_=rty.BOOLEAN, location=Location((10, 20))), "Y"),
-            r"^<stdin>:10:20: model: error: expected message type\n"
-            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+            r"^<stdin>:10:20: error: expected message type\n"
+            r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$',
         ),
         (
             Selected(
@@ -2308,7 +2308,7 @@ def test_selected_type() -> None:
                 "Y",
                 location=Location((10, 20)),
             ),
-            r'^<stdin>:10:20: model: error: invalid field "Y" for message type "M"$',
+            r'^<stdin>:10:20: error: invalid field "Y" for message type "M"$',
         ),
         (
             Selected(
@@ -2323,8 +2323,8 @@ def test_selected_type() -> None:
                 "F",
                 location=Location((10, 20)),
             ),
-            r'^<stdin>:10:20: model: error: invalid field "F" for message type "M"\n'
-            r"<stdin>:10:20: model: info: similar field names: F1, F2$",
+            r'^<stdin>:10:20: error: invalid field "F" for message type "M"\n'
+            r"<stdin>:10:20: info: similar field names: F1, F2$",
         ),
     ],
 )
@@ -2413,8 +2413,8 @@ def test_call_type_error() -> None:
             [Variable("Y", location=Location((10, 30)))],
             location=Location((10, 20)),
         ),
-        r'^<stdin>:10:30: model: error: undefined variable "Y"\n'
-        r'<stdin>:10:20: model: error: undefined function "X"$',
+        r'^<stdin>:10:30: error: undefined variable "Y"\n'
+        r'<stdin>:10:20: error: undefined function "X"$',
     )
     assert_type_error(
         Call(
@@ -2429,10 +2429,10 @@ def test_call_type_error() -> None:
                 rty.AnyInteger(),
             ],
         ),
-        r'^<stdin>:10:30: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:30: model: info: found integer type\n"
-        r"<stdin>:10:40: model: error: expected integer type\n"
-        r'<stdin>:10:40: model: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r'^<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+        r"<stdin>:10:30: info: found integer type\n"
+        r"<stdin>:10:40: error: expected integer type\n"
+        r'<stdin>:10:40: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -2523,9 +2523,9 @@ def test_conversion_type_error() -> None:
             Selected(Variable("Y", location=Location((10, 30))), "Z"),
             location=Location((10, 20)),
         ),
-        r'^<stdin>:10:30: model: error: undefined variable "Y"\n'
-        r'<stdin>:10:20: model: error: invalid conversion to "X"\n'
-        r'<stdin>:10:20: model: error: undefined type "X"$',
+        r'^<stdin>:10:30: error: undefined variable "Y"\n'
+        r'<stdin>:10:20: error: invalid conversion to "X"\n'
+        r'<stdin>:10:20: error: undefined type "X"$',
     )
 
 
@@ -2619,7 +2619,7 @@ def test_comprehension_type_error() -> None:
             Variable("X", location=Location((10, 30))),
             TRUE,
         ),
-        r'^<stdin>:10:20: model: error: undefined variable "Y"$',
+        r'^<stdin>:10:20: error: undefined variable "Y"$',
     )
 
 
@@ -2774,8 +2774,8 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
-            r'^<stdin>:10:30: model: error: undefined variable "A"\n'
-            r'<stdin>:10:40: model: error: undefined variable "B"$',
+            r'^<stdin>:10:30: error: undefined variable "A"\n'
+            r'<stdin>:10:40: error: undefined variable "B"$',
         ),
         (
             {
@@ -2793,7 +2793,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
-            r'^<stdin>:10:50: model: error: invalid field "Z" for message type "M"$',
+            r'^<stdin>:10:50: error: invalid field "Z" for message type "M"$',
         ),
         (
             {
@@ -2810,7 +2810,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
-            r'^<stdin>:10:30: model: error: invalid position for field "Y" of message type "M"$',
+            r'^<stdin>:10:30: error: invalid position for field "Y" of message type "M"$',
         ),
         (
             {
@@ -2828,8 +2828,8 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ID("Z"): rty.Integer("A"),
                 },
             ),
-            r'^<stdin>:10:20: model: error: missing fields for message type "M"\n'
-            r"<stdin>:10:20: model: info: possible next fields: Y$",
+            r'^<stdin>:10:20: error: missing fields for message type "M"\n'
+            r"<stdin>:10:20: info: possible next fields: Y$",
         ),
         (
             {
@@ -2847,10 +2847,10 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ID("Z"): rty.Integer("A"),
                 },
             ),
-            r'^<stdin>:10:40: model: error: undefined variable "A"\n'
-            r'<stdin>:10:30: model: error: undefined variable "B"\n'
-            r'<stdin>:10:20: model: error: missing fields for message type "M"\n'
-            r"<stdin>:10:20: model: info: possible next fields: Z$",
+            r'^<stdin>:10:40: error: undefined variable "A"\n'
+            r'<stdin>:10:30: error: undefined variable "B"\n'
+            r'<stdin>:10:20: error: missing fields for message type "M"\n'
+            r"<stdin>:10:20: info: possible next fields: Z$",
         ),
         (
             {
@@ -2858,9 +2858,9 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                 "Y": Literal("B", location=Location((10, 30))),
             },
             rty.Undefined(),
-            r'^<stdin>:10:40: model: error: undefined variable "A"\n'
-            r'<stdin>:10:30: model: error: undefined literal "B"\n'
-            r'<stdin>:10:20: model: error: undefined message "X"$',
+            r'^<stdin>:10:40: error: undefined variable "A"\n'
+            r'<stdin>:10:30: error: undefined literal "B"\n'
+            r'<stdin>:10:20: error: undefined message "X"$',
         ),
     ],
 )
@@ -3018,8 +3018,8 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
-            r'^<stdin>:10:30: model: error: undefined variable "A"\n'
-            r'<stdin>:10:40: model: error: undefined variable "B"$',
+            r'^<stdin>:10:30: error: undefined variable "A"\n'
+            r'<stdin>:10:40: error: undefined variable "B"$',
         ),
         (
             {
@@ -3038,7 +3038,7 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
-            r'^<stdin>:10:50: model: error: invalid field "Z" for message type "M"$',
+            r'^<stdin>:10:50: error: invalid field "Z" for message type "M"$',
         ),
         (
             {
@@ -3056,7 +3056,7 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
-            r'^<stdin>:10:30: model: error: invalid position for field "X" of message type "M"$',
+            r'^<stdin>:10:30: error: invalid position for field "X" of message type "M"$',
         ),
         (
             {
@@ -3064,9 +3064,9 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
                 "Y": Variable("B", location=Location((10, 30))),
             },
             rty.Undefined(),
-            r'^<stdin>:10:40: model: error: undefined variable "A"\n'
-            r'<stdin>:10:30: model: error: undefined variable "B"\n'
-            r'<stdin>:10:20: model: error: undefined message "T"$',
+            r'^<stdin>:10:40: error: undefined variable "A"\n'
+            r'<stdin>:10:30: error: undefined variable "B"\n'
+            r'<stdin>:10:20: error: undefined message "T"$',
         ),
     ],
 )
@@ -3214,16 +3214,31 @@ def test_case_type() -> None:
     assert_type(CaseExpr(c2, [([Number(1), Number(2)], TRUE), ([Number(3)], FALSE)]), rty.BOOLEAN)
 
     assert_type_error(
-        CaseExpr(c1, [([ID("V1"), ID("V2")], TRUE), ([ID("V3")], Number(1))]),
-        r'^model: error: dependent expression "True" has incompatible enumeration type '
+        CaseExpr(
+            c1,
+            [
+                ([ID("V1", location=Location((1, 1))), ID("V2", location=Location((1, 2)))], TRUE),
+                ([ID("V3", location=Location((1, 3)))], Number(1, location=Location((1, 4)))),
+            ],
+        ),
+        r'^__BUILTINS__:0:0: error: dependent expression "True" has incompatible enumeration type '
         r'"__BUILTINS__::Boolean"\n'
-        r'model: info: conflicting with "1" which has type universal integer \(1\)$',
+        r'<stdin>:1:4: info: conflicting with "1" which has type universal integer \(1\)$',
     )
     assert_type_error(
-        CaseExpr(Opaque(Variable("X", type_=rty.Message("A"))), [([ID("V")], Number(1))]),
-        r'^model: error: invalid discrete choice with sequence type "__INTERNAL__::Opaque" '
+        CaseExpr(
+            Opaque(
+                Variable(
+                    ID("X", location=Location((1, 1))),
+                    type_=rty.Message(ID("A", location=Location((1, 2)))),
+                    location=Location((1, 3)),
+                ),
+            ),
+            [([ID("V", location=Location((1, 4)))], Number(1, location=Location((1, 5))))],
+        ),
+        r'^<stdin>:1:3: error: invalid discrete choice with sequence type "__INTERNAL__::Opaque" '
         r'with element integer type "Byte" \(0 .. 255\)\n'
-        r"model: info: expected enumeration or integer type$",
+        r"<stdin>:1:3: info: expected enumeration or integer type$",
     )
 
 
@@ -3244,8 +3259,8 @@ def test_case_invalid() -> None:
             [([ID("Zero")], TRUE), ([ID("One")], FALSE)],
             location=Location((1, 2)),
         ),
-        "^<stdin>:1:2: model: error: not all enumeration literals covered by case expression\n"
-        '<stdin>:10:2: model: info: missing literal "Two"$',
+        "^<stdin>:1:2: error: not all enumeration literals covered by case expression\n"
+        '<stdin>:10:2: info: missing literal "Two"$',
     )
     assert_type_error(
         CaseExpr(
@@ -3253,8 +3268,8 @@ def test_case_invalid() -> None:
             [([ID("Zero"), ID("One")], TRUE), ([ID("Two"), ID("Invalid")], FALSE)],
             location=Location((1, 2)),
         ),
-        "^<stdin>:1:2: model: error: invalid literals used in case expression\n"
-        '<stdin>:10:2: model: info: literal "Invalid" not part of "P::Enumeration"$',
+        "^<stdin>:1:2: error: invalid literals used in case expression\n"
+        '<stdin>:10:2: info: literal "Invalid" not part of "P::Enumeration"$',
     )
     assert_type_error(
         CaseExpr(
@@ -3265,8 +3280,8 @@ def test_case_invalid() -> None:
             ],
             location=Location((1, 2)),
         ),
-        "^<stdin>:1:2: model: error: duplicate literals used in case expression\n"
-        '<stdin>:3:2: model: info: duplicate literal "One"$',
+        "^<stdin>:1:2: error: duplicate literals used in case expression\n"
+        '<stdin>:3:2: info: duplicate literal "One"$',
     )
 
     assert_type_error(
@@ -3275,8 +3290,8 @@ def test_case_invalid() -> None:
             [([Number(1)], TRUE), ([Number(2)], FALSE)],
             location=Location((2, 2)),
         ),
-        '^<stdin>:2:2: model: error: case expression does not cover full range of "P::Tiny"\n'
-        "<stdin>:1:2: model: info: missing value 3$",
+        '^<stdin>:2:2: error: case expression does not cover full range of "P::Tiny"\n'
+        "<stdin>:1:2: info: missing value 3$",
     )
     assert_type_error(
         CaseExpr(
@@ -3284,8 +3299,8 @@ def test_case_invalid() -> None:
             [([Number(1)], TRUE)],
             location=Location((2, 2)),
         ),
-        '^<stdin>:2:2: model: error: case expression does not cover full range of "P::Tiny"\n'
-        "<stdin>:1:2: model: info: missing range 2 .. 3$",
+        '^<stdin>:2:2: error: case expression does not cover full range of "P::Tiny"\n'
+        "<stdin>:1:2: info: missing range 2 .. 3$",
     )
     assert_type_error(
         CaseExpr(
@@ -3293,10 +3308,10 @@ def test_case_invalid() -> None:
             [([Number(1), Number(2)], TRUE), ([Number(51)], FALSE), ([Number(53)], TRUE)],
             location=Location((5, 2)),
         ),
-        '^<stdin>:5:2: model: error: case expression does not cover full range of "P::Int"\n'
-        "<stdin>:3:2: model: info: missing range 3 .. 50\n"
-        "<stdin>:3:2: model: info: missing value 52\n"
-        "<stdin>:3:2: model: info: missing range 54 .. 100$",
+        '^<stdin>:5:2: error: case expression does not cover full range of "P::Int"\n'
+        "<stdin>:3:2: info: missing range 3 .. 50\n"
+        "<stdin>:3:2: info: missing value 52\n"
+        "<stdin>:3:2: info: missing range 54 .. 100$",
     )
     assert_type_error(
         CaseExpr(
@@ -3304,8 +3319,8 @@ def test_case_invalid() -> None:
             [([Number(1), Number(2)], TRUE), ([Number(3), Number(4)], FALSE)],
             location=Location((2, 2)),
         ),
-        "^<stdin>:2:2: model: error: invalid literals used in case expression\n"
-        '<stdin>:1:2: model: info: value 4 not part of "P::Tiny"$',
+        "^<stdin>:2:2: error: invalid literals used in case expression\n"
+        '<stdin>:1:2: info: value 4 not part of "P::Tiny"$',
     )
     assert_type_error(
         CaseExpr(
@@ -3316,8 +3331,8 @@ def test_case_invalid() -> None:
             ],
             location=Location((1, 2)),
         ),
-        "^<stdin>:1:2: model: error: duplicate literals used in case expression\n"
-        '<stdin>:1:14: model: info: duplicate literal "2"$',
+        "^<stdin>:1:2: error: duplicate literals used in case expression\n"
+        '<stdin>:1:14: info: duplicate literal "2"$',
     )
 
 
@@ -3353,7 +3368,7 @@ def test_case_to_ir() -> None:
 def test_invalid_division_by_zero() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(r"^model: error: division by zero$"),
+        match=(r"^error: division by zero$"),
     ):
         Div(Number(255), Number(0)).simplified()
 
@@ -3361,6 +3376,6 @@ def test_invalid_division_by_zero() -> None:
 def test_invalid_modulo_by_zero() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(r"^model: error: modulo by zero$"),
+        match=(r"^error: modulo by zero$"),
     ):
         Mod(Number(255), Number(0)).simplified()

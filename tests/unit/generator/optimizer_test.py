@@ -8,7 +8,6 @@ from subprocess import CompletedProcess
 import pytest
 
 import rflx.generator
-from rflx.error import RecordFluxError
 from rflx.generator.optimizer import (
     Check,
     analyze,
@@ -19,6 +18,7 @@ from rflx.generator.optimizer import (
     prove,
     remove,
 )
+from rflx.rapidflux import RecordFluxError
 from tests.const import DATA_DIR
 
 
@@ -134,7 +134,7 @@ def test_optimize_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     monkeypatch.setattr(rflx.generator.optimizer, "gnatprove_found", lambda: False)
     with pytest.raises(
         RecordFluxError,
-        match=r"^generator: error: GNATprove is required for code optimization$",
+        match=r"^error: GNATprove is required for code optimization$",
     ):
         optimize(tmp_path)
 
@@ -338,7 +338,7 @@ def test_prove_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
 
     with pytest.raises(
         RecordFluxError,
-        match=r"^generator: error: gnatprove terminated with exit code 1$",
+        match=r"^error: gnatprove terminated with exit code 1$",
     ):
         prove(tmp_path, [])
 

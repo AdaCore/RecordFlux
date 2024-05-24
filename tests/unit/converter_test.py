@@ -5,16 +5,13 @@ import pytest
 
 from rflx.common import STDIN
 from rflx.converter import iana
-from rflx.error import RecordFluxError
+from rflx.rapidflux import RecordFluxError
 
 
 def test_convert_iana_invalid_xml(tmp_path: Path) -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(
-            r"^<stdin>:1:0: converter: error: invalid XML document: "
-            r"syntax error: line 1, column 0$"
-        ),
+        match=(r"^<stdin>:1:0: error: invalid XML document: syntax error: line 1, column 0$"),
     ):
         iana.convert(
             data="NOT A VALID XML DOCUMENT",
@@ -42,7 +39,7 @@ def test_convert_iana_invalid_xml(tmp_path: Path) -> None:
                 </registry>
             """,
             (
-                'converter: warning: registry "Test registry" (id=test) skipped due to conversion '
+                'warning: registry "Test registry" (id=test) skipped due to conversion '
                 'error: cannot normalize hex value "0xcejunk"\n'
             ),
             id="value",
@@ -62,7 +59,7 @@ def test_convert_iana_invalid_xml(tmp_path: Path) -> None:
                 </registry>
             """,
             (
-                'converter: warning: registry "Test registry" (id=test) skipped due to conversion '
+                'warning: registry "Test registry" (id=test) skipped due to conversion '
                 'error: cannot normalize hex value range "0xce-0xdf"\n'
             ),
             id="range",
@@ -72,7 +69,7 @@ def test_convert_iana_invalid_xml(tmp_path: Path) -> None:
 def test_convert_iana_invalid_hex_value(
     xml_str: str,
     warning_str: str,
-    capsys: pytest.CaptureFixture[str],
+    capfd: pytest.CaptureFixture[str],
     tmp_path: Path,
 ) -> None:
     iana.convert(
@@ -82,8 +79,8 @@ def test_convert_iana_invalid_hex_value(
         output_dir=tmp_path,
         reproducible=True,
     )
-    captured = capsys.readouterr()
-    assert captured.out == warning_str
+    captured = capfd.readouterr()
+    assert captured.err == warning_str
 
 
 @pytest.mark.parametrize(
@@ -104,7 +101,7 @@ def test_convert_iana_invalid_hex_value(
                 </registry>
             """,
             (
-                'converter: warning: registry "Test registry" (id=test) skipped due to conversion '
+                'warning: registry "Test registry" (id=test) skipped due to conversion '
                 "error: invalid literal for int() with base 10: 'SOME_STRING'\n"
             ),
             id="value",
@@ -114,7 +111,7 @@ def test_convert_iana_invalid_hex_value(
 def test_convert_iana_invalid_int_value(
     xml_str: str,
     warning_str: str,
-    capsys: pytest.CaptureFixture[str],
+    capfd: pytest.CaptureFixture[str],
     tmp_path: Path,
 ) -> None:
     iana.convert(
@@ -124,14 +121,14 @@ def test_convert_iana_invalid_int_value(
         output_dir=tmp_path,
         reproducible=True,
     )
-    captured = capsys.readouterr()
-    assert captured.out == warning_str
+    captured = capfd.readouterr()
+    assert captured.err == warning_str
 
 
 def test_convert_iana_invalid_no_registry_id(tmp_path: Path) -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(r"^<stdin>:0:0: converter: error: no registry ID found$"),
+        match=(r"^<stdin>:0:0: error: no registry ID found$"),
     ):
         iana.convert(
             data=textwrap.dedent(

@@ -11,8 +11,8 @@ from typing import Final, Optional
 
 from rflx import expression as expr, ir, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID, id_generator
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 from . import (
     declaration as decl,
@@ -547,7 +547,7 @@ class Session(TopLevelDeclaration):
                     self._enum_literals,
                     self._type_names,
                 ),
-            ),
+            ).entries,
         )
 
         for state in self.states:
@@ -591,14 +591,12 @@ class Session(TopLevelDeclaration):
                         state.declarations,
                         (s.identifier for s in self.states),
                     ),
-                ),
+                ).entries,
             )
 
     def _validate_states(self) -> None:
         if all(s == FINAL_STATE for s in self.states):
-            self.error.extend(
-                [("empty states", Subsystem.MODEL, Severity.ERROR, self.location)],
-            )
+            self.error.push(ErrorEntry("empty states", Severity.ERROR, self.location))
 
         self._validate_state_existence()
         self._validate_duplicate_states()
@@ -609,16 +607,13 @@ class Session(TopLevelDeclaration):
         for s in self.states:
             for t in s.transitions:
                 if t.target not in state_identifiers:
-                    self.error.extend(
-                        [
-                            (
-                                f'transition from state "{s.identifier}" to non-existent state'
-                                f' "{t.target}" in "{self.identifier}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                t.target.location,
-                            ),
-                        ],
+                    self.error.push(
+                        ErrorEntry(
+                            f'transition from state "{s.identifier}" to non-existent state'
+                            f' "{t.target}" in "{self.identifier}"',
+                            Severity.ERROR,
+                            t.target.location,
+                        ),
                     )
 
     def _validate_duplicate_states(self) -> None:
@@ -629,21 +624,22 @@ class Session(TopLevelDeclaration):
         for identifier, states in identifier_states.items():
             if len(states) >= 2:
                 for s in states[1:]:
-                    self.error.extend(
-                        [
-                            (
-                                f'duplicate state "{identifier}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                s.location,
+                    assert states[0].location is not None
+                    self.error.push(
+                        ErrorEntry(
+                            f'duplicate state "{identifier}"',
+                            Severity.ERROR,
+                            s.location,
+                            annotations=(
+                                [
+                                    Annotation(
+                                        f'previous definition of state "{identifier}"',
+                                        Severity.INFO,
+                                        states[0].location,
+                                    ),
+                                ]
                             ),
-                            (
-                                f'previous definition of state "{identifier}"',
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                states[0].location,
-                            ),
-                        ],
+                        ),
                     )
 
     def _validate_state_reachability(self) -> None:
@@ -659,27 +655,21 @@ class Session(TopLevelDeclaration):
                     inputs[t.target] = [s.identifier]
 
             if s not in [self.initial_state, FINAL_STATE] and s.identifier not in inputs:
-                self.error.extend(
-                    [
-                        (
-                            f'unreachable state "{s.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            s.location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        f'unreachable state "{s.identifier}"',
+                        Severity.ERROR,
+                        s.location,
+                    ),
                 )
 
             if s != FINAL_STATE and not s.transitions:
-                self.error.extend(
-                    [
-                        (
-                            f'detached state "{s.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            s.location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        f'detached state "{s.identifier}"',
+                        Severity.ERROR,
+                        s.location,
+                    ),
                 )
 
     def _validate_declarations(
@@ -690,34 +680,33 @@ class Session(TopLevelDeclaration):
         visible_declarations = dict(visible_declarations)
 
         def undefined_type(type_identifier: StrID, location: Optional[Location]) -> None:
-            self.error.extend(
-                [
-                    (
-                        f'undefined type "{type_identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'undefined type "{type_identifier}"',
+                    Severity.ERROR,
+                    location,
+                ),
             )
 
         for k, d in declarations.items():
             if k in visible_declarations:
-                self.error.extend(
-                    [
-                        (
-                            f'local variable "{k}" shadows previous declaration',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            d.location,
+                location = visible_declarations[k].location
+                assert location is not None
+                self.error.push(
+                    ErrorEntry(
+                        f'local variable "{k}" shadows previous declaration',
+                        Severity.ERROR,
+                        d.location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    f'previous declaration of variable "{k}"',
+                                    Severity.INFO,
+                                    location,
+                                ),
+                            ]
                         ),
-                        (
-                            f'previous declaration of variable "{k}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            visible_declarations[k].location,
-                        ),
-                    ],
+                    ),
                 )
 
             self._reference_variable_declaration(d.variables(), visible_declarations)
@@ -729,7 +718,7 @@ class Session(TopLevelDeclaration):
                         d.check_type(
                             self.types[type_identifier].type_,
                             lambda x: self._typify_variable(x, visible_declarations),
-                        ),
+                        ).entries,
                     )
                 else:
                     undefined_type(d.type_identifier, d.location)
@@ -767,7 +756,7 @@ class Session(TopLevelDeclaration):
                 a.check_type(
                     type_,
                     lambda x: self._typify_variable(x, declarations),
-                ),
+                ).entries,
             )
 
             self._reference_variable_declaration(a.variables(), declarations)
@@ -788,40 +777,31 @@ class Session(TopLevelDeclaration):
 
         if io_statements:
             if local_declarations:
-                self.error.extend(
-                    [
-                        (
-                            "IO state must not contain declarations",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            next(iter(local_declarations.values())).location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        "IO state must not contain declarations",
+                        Severity.ERROR,
+                        next(iter(local_declarations.values())).location,
+                    ),
                 )
 
             if len(io_statements) != len(actions):
-                self.error.extend(
-                    [
-                        (
-                            "channel IO must not be combined with other actions in one state",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            io_statements[0].location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        "channel IO must not be combined with other actions in one state",
+                        Severity.ERROR,
+                        io_statements[0].location,
+                    ),
                 )
 
         for i, s1 in enumerate(io_statements):
             if not isinstance(s1.parameter, expr.Variable):
-                self.error.extend(
-                    [
-                        (
-                            "channel parameter must be a variable",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            s1.location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        "channel parameter must be a variable",
+                        Severity.ERROR,
+                        s1.location,
+                    ),
                 )
 
             for j, s2 in enumerate(io_statements):
@@ -829,26 +809,23 @@ class Session(TopLevelDeclaration):
                     continue
 
                 if s1.identifier == s2.identifier:
-                    self.error.extend(
-                        [
-                            (
-                                f'channel "{s1.identifier}" may be read or written'
-                                " at most once per state",
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                s1.identifier.location,
+                    assert s2.identifier.location is not None
+                    self.error.push(
+                        ErrorEntry(
+                            f'channel "{s1.identifier}" may be read or written'
+                            " at most once per state",
+                            Severity.ERROR,
+                            s1.identifier.location,
+                            annotations=(
+                                [
+                                    Annotation(
+                                        "conflicting read/write",
+                                        Severity.INFO,
+                                        s2.identifier.location,
+                                    ),
+                                ]
                             ),
-                        ],
-                    )
-                    self.error.extend(
-                        [
-                            (
-                                "conflicting read/write",
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                s2.identifier.location,
-                            ),
-                        ],
+                        ),
                     )
 
                 if (
@@ -856,26 +833,23 @@ class Session(TopLevelDeclaration):
                     and isinstance(s2.parameter, expr.Variable)
                     and s1.parameter.identifier == s2.parameter.identifier
                 ):
-                    self.error.extend(
-                        [
-                            (
-                                f'message "{s1.parameter.identifier}" may be read or written'
-                                " at most once per state",
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                s1.parameter.location,
+                    assert s2.parameter.location is not None
+                    self.error.push(
+                        ErrorEntry(
+                            f'message "{s1.parameter.identifier}" may be read or written'
+                            " at most once per state",
+                            Severity.ERROR,
+                            s1.parameter.location,
+                            annotations=(
+                                [
+                                    Annotation(
+                                        "conflicting read/write",
+                                        Severity.INFO,
+                                        s2.parameter.location,
+                                    ),
+                                ]
                             ),
-                        ],
-                    )
-                    self.error.extend(
-                        [
-                            (
-                                "conflicting read/write",
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                s2.parameter.location,
-                            ),
-                        ],
+                        ),
                     )
 
     def _validate_transitions(
@@ -885,33 +859,27 @@ class Session(TopLevelDeclaration):
     ) -> None:
         for t in state.transitions:
             t.condition = t.condition.substituted(lambda x: self._typify_variable(x, declarations))
-            self.error.extend(t.condition.check_type(rty.BOOLEAN))
+            self.error.extend(t.condition.check_type(rty.BOOLEAN).entries)
             self._reference_variable_declaration(t.condition.variables(), declarations)
 
             t.condition.substituted(lambda e: error_on_unsupported_expression(e, self.error))
 
         if not state.exception_transition and state.has_exceptions:
-            self.error.extend(
-                [
-                    (
-                        f'missing exception transition in state "{state.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        state.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'missing exception transition in state "{state.identifier}"',
+                    Severity.ERROR,
+                    state.location,
+                ),
             )
 
         if state.exception_transition and not state.has_exceptions:
-            self.error.extend(
-                [
-                    (
-                        f'unnecessary exception transition in state "{state.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        state.exception_transition.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'unnecessary exception transition in state "{state.identifier}"',
+                    Severity.ERROR,
+                    state.exception_transition.location,
+                ),
             )
 
     def _validate_usage(self) -> None:
@@ -919,15 +887,12 @@ class Session(TopLevelDeclaration):
         local_declarations = ((k, d) for s in self.states for k, d in s.declarations.items())
         for k, d in itertools.chain(global_declarations, local_declarations):
             if not d.is_referenced:
-                self.error.extend(
-                    [
-                        (
-                            f'unused {d.DESCRIPTIVE_NAME} "{k}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            d.location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        f'unused {d.DESCRIPTIVE_NAME} "{k}"',
+                        Severity.ERROR,
+                        d.location,
+                    ),
                 )
 
     def _typify_variable(
@@ -1092,14 +1057,11 @@ def error_on_unsupported_expression(expression: expr.Expr, error: RecordFluxErro
     if isinstance(expression, (expr.Equal, expr.NotEqual)):
         for e in [expression.left, expression.right]:
             if isinstance(e, expr.Selected) and e.type_ == rty.OPAQUE:
-                error.extend(
-                    [
-                        (
-                            "comparisons of opaque fields not yet supported",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            expression.left.location,
-                        ),
-                    ],
+                error.push(
+                    ErrorEntry(
+                        "comparisons of opaque fields not yet supported",
+                        Severity.ERROR,
+                        expression.left.location,
+                    ),
                 )
     return expression

@@ -95,7 +95,8 @@ class Neg(Expr):
         return Precedence.HIGHEST_PRECEDENCE_OPERATOR
 
     def rflx_expr(self) -> expr.Neg:
-        return expr.Neg(self.expression.rflx_expr())
+        e = self.expression.rflx_expr()
+        return expr.Neg(e, e.location)
 
 
 class BinExpr(Expr):

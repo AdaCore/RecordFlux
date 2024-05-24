@@ -11,7 +11,9 @@ from rflx.pyrflx.error import PyRFLXError
 class Bitstring:
     def __init__(self, bits: str = ""):
         if not self.valid_bitstring(bits):
-            raise PyRFLXError("Bitstring does not consist of only 0 and 1")
+            e = PyRFLXError()
+            e.push_msg("Bitstring does not consist of only 0 and 1")
+            raise e
         self._bits = bits
 
     def __add__(self, other: Bitstring) -> Bitstring:

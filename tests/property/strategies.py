@@ -7,7 +7,7 @@ from typing import Optional, Protocol, TypeVar, Union
 
 from hypothesis import assume, strategies as st
 
-from rflx import error, expression as expr, typing_ as rty
+from rflx import expression as expr, typing_ as rty
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,
@@ -27,6 +27,7 @@ from rflx.model import (
     Sequence,
     TypeDecl,
 )
+from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 from rflx.specification import const
 
 T = TypeVar("T")
@@ -47,7 +48,7 @@ def unique_qualified_identifiers() -> abc.Generator[ID, None, None]:
         name = prefix + string.ascii_uppercase[pos]
         if name.lower() in const.RESERVED_WORDS:
             continue
-        yield ID(["Test", name])
+        yield ID(["Test", name], Location((1, 1)))
 
 
 @st.composite
@@ -205,6 +206,7 @@ def messages(  # noqa: PLR0915
                 return expr.Equal(
                     expr.Variable(pair.source.name),
                     expr.Number(draw(st.integers(min_value=first, max_value=last))),
+                    location=Location((1, 1)),
                 )
         elif isinstance(pair.source_type, Enumeration) and len(pair.source_type.literals) > 1:
             return expr.Equal(
@@ -214,6 +216,7 @@ def messages(  # noqa: PLR0915
                         draw(st.integers(min_value=0, max_value=len(pair.source_type.literals) - 1))
                     ],
                 ),
+                location=Location((1, 1)),
             )
         return expr.TRUE
 
@@ -278,7 +281,10 @@ def messages(  # noqa: PLR0915
                     Link(
                         source,
                         target,
-                        condition=expr.Not(out[0].condition).simplified(),
+                        condition=expr.Not(
+                            out[0].condition,
+                            location=Location((1, 1)),
+                        ).simplified(),
                         size=size(pair),
                     ),
                 )
@@ -299,16 +305,13 @@ def messages(  # noqa: PLR0915
 
     try:
         message = Message(next(unique_identifiers), structure, types_)
-    except error.RecordFluxError as e:
-        e.extend(
-            [
-                (
-                    f"incorrectly generated message:\n {message!r}",
-                    error.Subsystem.MODEL,
-                    error.Severity.INFO,
-                    None,
-                ),
-            ],
+    except RecordFluxError as e:
+        e.push(
+            ErrorEntry(
+                f"incorrectly generated message:\n {message!r}",
+                Severity.INFO,
+                None,
+            ),
         )
         raise
 

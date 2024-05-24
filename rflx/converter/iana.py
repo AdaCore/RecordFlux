@@ -14,7 +14,8 @@ from defusedxml import ElementTree
 
 import rflx.specification.const
 from rflx.common import file_name
-from rflx.error import Location, RecordFluxError, Subsystem, fail, warn
+from rflx.error import fail, warn
+from rflx.rapidflux import Location, RecordFluxError
 
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
 RESERVED_WORDS = "|".join(rflx.specification.const.RESERVED_WORDS)
@@ -35,14 +36,12 @@ def convert(
     except ParseError as e:
         fail(
             f"invalid XML document: {e}",
-            subsystem=Subsystem.CONVERTER,
             location=Location(start=e.position, source=source),
         )
     registry_id = root.get("id")
     if registry_id is None:
         fail(
             "no registry ID found",
-            subsystem=Subsystem.CONVERTER,
             location=Location(start=(0, 0), source=source),
         )
     package_name = _normalize_name(registry_id)
@@ -59,10 +58,9 @@ def convert(
             sub_registry_title = sub_registry.find("iana:title", NAMESPACE)
             title_str = f'"{sub_registry_title.text}"' if sub_registry_title is not None else ""
             id_str = f' (id={sub_registry_id if sub_registry_id is not None else "<Unknown>"})'
-            err_msg = f"{e}"[len("converter: error: ") :]
+            err_msg = f"{e}"[len("error: ") :]
             warn(
                 f"registry {title_str}{id_str} skipped due to conversion error: {err_msg}",
-                subsystem=Subsystem.CONVERTER,
             )
             package_entries.append(
                 CommentBlock(
@@ -419,16 +417,16 @@ def _normalize_hex_value(hex_value: str) -> str:
             re.match(r"^0x[0-9A-Fa-f]{2},0x[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2}$", hex_value) is not None
         ):  # 0xCC,0xAF-FF
             return f"16#{hex_value[2:4]}{hex_value[10:12]}#".upper()
-        fail(f'cannot normalize hex value range "{hex_value}"', subsystem=Subsystem.CONVERTER)
+        fail(f'cannot normalize hex value range "{hex_value}"')
     if re.match(r"^0x[0-9A-Fa-f]{2},0x[0-9A-Fa-f]{2}$", hex_value) is not None:  # 0x0A,0xFF
         return f"16#{hex_value.replace('0x', '').replace(',', '')}#".upper()
     if re.match(r"^0x[0-9A-Fa-f]+$", hex_value) is not None:  # 0xA1A1
         return f"16#{hex_value[2:]}#".upper()
-    fail(f'cannot normalize hex value "{hex_value}"', subsystem=Subsystem.CONVERTER)
+    fail(f'cannot normalize hex value "{hex_value}"')
 
 
 def _convert_int_value(value: str) -> int:
     try:
         return int(value)
     except ValueError as e:
-        fail(f"{e}", subsystem=Subsystem.CONVERTER)
+        fail(f"{e}")

@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
 INCORRECT_LINE_TERMINATORS = "\r"
 ILLEGAL_WHITESPACE_CHARACTERS = "\t\x0b\x0c"
@@ -82,15 +82,12 @@ def _append(
     spec_file: Path,
     check_type: Optional[Check] = None,
 ) -> None:
-    error.extend(
-        [
-            (
-                message + (f" [{check_type.value}]" if check_type else ""),
-                Subsystem.STYLE,
-                Severity.ERROR,
-                Location((row, col), spec_file),
-            ),
-        ],
+    error.push(
+        ErrorEntry(
+            message + (f" [{check_type.value}]" if check_type else ""),
+            Severity.ERROR,
+            Location((row, col), spec_file),
+        ),
     )
 
 

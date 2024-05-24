@@ -11,17 +11,19 @@ from dataclasses import dataclass
 from enum import Enum
 from itertools import groupby
 from operator import itemgetter
+from pathlib import Path
 from sys import intern
 from typing import TYPE_CHECKING, Final, Optional, Union
 
 import z3
 
-from rflx import ada, ir, typing_ as rty
+from rflx import ada, const, ir, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.const import MP_CONTEXT
 from rflx.contract import DBC, invariant, require
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import are_all_locations_present, fail
 from rflx.identifier import ID, StrID
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 if TYPE_CHECKING:
     from _typeshed import SupportsAllComparisons
@@ -118,7 +120,7 @@ class Proof:
 class ProofJob:
     goal: Expr
     facts: Sequence[Expr]
-    results: Mapping[ProofResult, RecordFluxError]
+    results: Mapping[ProofResult, Sequence[ErrorEntry]]
     add_unsat: bool
 
 
@@ -131,9 +133,9 @@ class ParallelProofs:
         self,
         goal: Expr,
         facts: Sequence[Expr],
-        unsat_error: RecordFluxError = RecordFluxError(),  # noqa: B008
-        unknown_error: RecordFluxError = RecordFluxError(),  # noqa: B008
-        sat_error: RecordFluxError = RecordFluxError(),  # noqa: B008
+        unsat_error: Sequence[ErrorEntry] | None = None,
+        unknown_error: Sequence[ErrorEntry] | None = None,
+        sat_error: Sequence[ErrorEntry] | None = None,
         add_unsat: bool = False,
     ) -> None:
         """
@@ -151,17 +153,17 @@ class ParallelProofs:
                 goal,
                 facts,
                 {
-                    ProofResult.SAT: sat_error,
-                    ProofResult.UNSAT: unsat_error,
-                    ProofResult.UNKNOWN: unknown_error,
+                    ProofResult.SAT: sat_error if sat_error is not None else [],
+                    ProofResult.UNSAT: unsat_error if unsat_error is not None else [],
+                    ProofResult.UNKNOWN: unknown_error if unknown_error is not None else [],
                 },
                 add_unsat,
             ),
         )
 
     @staticmethod
-    def check_proof(job: ProofJob) -> RecordFluxError:
-        result = RecordFluxError()
+    def check_proof(job: ProofJob) -> list[ErrorEntry]:
+        result: list[ErrorEntry] = []
         proof = job.goal.check(job.facts)
         result.extend(job.results[proof.result])
         if (
@@ -169,13 +171,12 @@ class ParallelProofs:
         ) or proof.result == ProofResult.UNKNOWN:
             result.extend(
                 [
-                    (
+                    ErrorEntry(
                         (
                             f'unsatisfied "{m}"'
                             if proof.result == ProofResult.UNSAT
                             else f"reason: {m}"
                         ),
-                        Subsystem.MODEL,
                         Severity.INFO,
                         locn,
                     )
@@ -254,24 +255,32 @@ class Expr(DBC, Base):
 
     def check_type(self, expected: Union[rty.Type, tuple[rty.Type, ...]]) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
-        return self._check_type_subexpr() + rty.check_type(
-            self.type_,
-            expected,
-            self.location,
-            _entity_name(self),
+        error = self._check_type_subexpr()
+        error.extend(
+            rty.check_type(
+                self.type_,
+                expected,
+                self.location,
+                _entity_name(self),
+            ).entries,
         )
+        return error
 
     def check_type_instance(
         self,
         expected: Union[type[rty.Type], tuple[type[rty.Type], ...]],
     ) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
-        return self._check_type_subexpr() + rty.check_type_instance(
-            self.type_,
-            expected,
-            self.location,
-            _entity_name(self),
+        error = self._check_type_subexpr()
+        error.extend(
+            rty.check_type_instance(
+                self.type_,
+                expected,
+                self.location,
+                _entity_name(self),
+            ).entries,
         )
+        return error
 
     @property
     @abstractmethod
@@ -382,7 +391,11 @@ class Not(Expr):
             (NotEqual, Equal),
         ]:
             if isinstance(self.expr, relation):
-                return inverse_relation(self.expr.left.simplified(), self.expr.right.simplified())
+                return inverse_relation(
+                    self.expr.left.simplified(),
+                    self.expr.right.simplified(),
+                    self.location,
+                )
         return self.__class__(self.expr.simplified(), self.location)
 
     def ada_expr(self) -> ada.Expr:
@@ -658,7 +671,7 @@ class BoolAssExpr(AssExpr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for t in self.terms:
-            error += t.check_type(rty.BOOLEAN)
+            error.extend(t.check_type(rty.BOOLEAN).entries)
         return error
 
     @abstractmethod
@@ -985,7 +998,7 @@ class MathAssExpr(AssExpr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for t in self.terms:
-            error += t.check_type_instance(rty.AnyInteger)
+            error.extend(t.check_type_instance(rty.AnyInteger).entries)
         return error
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
@@ -1123,7 +1136,7 @@ class MathBinExpr(BinExpr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error += e.check_type_instance(rty.AnyInteger)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
 
         self.type_ = rty.common_type([self.left.type_, self.right.type_])
 
@@ -1179,9 +1192,8 @@ class Div(MathBinExpr):
             if right.value == 0:
                 raise RecordFluxError(
                     [
-                        (
+                        ErrorEntry(
                             "division by zero",
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
                         ),
@@ -1244,9 +1256,8 @@ class Mod(MathBinExpr):
             if right.value == 0:
                 raise RecordFluxError(
                     [
-                        (
+                        ErrorEntry(
                             "modulo by zero",
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
                         ),
@@ -1450,6 +1461,7 @@ class Variable(Name):
     ) -> None:
         self.identifier = ID(identifier)
         super().__init__(immutable, type_, location)
+        self.location = location or self.identifier.location
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -1512,8 +1524,16 @@ class Variable(Name):
         )
 
 
-TRUE = Literal("True", type_=rty.BOOLEAN)
-FALSE = Literal("False", type_=rty.BOOLEAN)
+TRUE = Literal(
+    "True",
+    type_=rty.BOOLEAN,
+    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+)
+FALSE = Literal(
+    "False",
+    type_=rty.BOOLEAN,
+    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+)
 
 
 class Attribute(Name):
@@ -1737,12 +1757,10 @@ class Present(Attribute):
         if isinstance(self.prefix, Selected):
             error = self.prefix.prefix.check_type_instance(rty.Message)
         else:
-            error = RecordFluxError()
-            error.extend(
+            error = RecordFluxError(
                 [
-                    (
+                    ErrorEntry(
                         "invalid prefix for attribute Present",
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
                     ),
@@ -1806,15 +1824,12 @@ class Head(Attribute):
             self.prefix.type_.element if isinstance(self.prefix.type_, rty.Composite) else rty.Any()
         )
         if not isinstance(self.prefix, (Variable, Selected, Comprehension)):
-            error.extend(
-                [
-                    (
-                        "prefix of attribute Head must be a name or comprehension",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.prefix.location,
-                    ),
-                ],
+            error.push(
+                ErrorEntry(
+                    "prefix of attribute Head must be a name or comprehension",
+                    Severity.ERROR,
+                    self.prefix.location,
+                ),
             )
         return error
 
@@ -1961,9 +1976,8 @@ class Selected(Name):
             else:
                 error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'invalid field "{self.selector}" for {self.prefix.type_}',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             self.location,
                         ),
@@ -1977,7 +1991,8 @@ class Selected(Name):
                 self.type_ = rty.Any()
         else:
             self.type_ = rty.Any()
-        return error + self.prefix.check_type_instance(rty.Message)
+        error.extend(self.prefix.check_type_instance(rty.Message).entries)
+        return error
 
     @property
     def representation(self) -> str:
@@ -2075,31 +2090,25 @@ class Call(Name):
         error = RecordFluxError()
 
         for a, t in itertools.zip_longest(self.args, self.argument_types[: len(self.args)]):
-            error += a.check_type(t if t is not None else rty.Any())
+            error.extend(a.check_type(t if t is not None else rty.Any()).entries)
 
         if self.type_ != rty.UNDEFINED:
             if len(self.args) < len(self.argument_types):
-                error.extend(
-                    [
-                        (
-                            "missing function arguments",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.location,
-                        ),
-                    ],
+                error.push(
+                    ErrorEntry(
+                        "missing function arguments",
+                        Severity.ERROR,
+                        self.location,
+                    ),
                 )
 
             if len(self.args) > len(self.argument_types):
-                error.extend(
-                    [
-                        (
-                            "too many function arguments",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.location,
-                        ),
-                    ],
+                error.push(
+                    ErrorEntry(
+                        "too many function arguments",
+                        Severity.ERROR,
+                        self.location,
+                    ),
                 )
 
         return error
@@ -2260,7 +2269,7 @@ class Aggregate(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in self.elements:
-            error += e.check_type_instance(rty.Any)
+            error.extend(e.check_type_instance(rty.Any).entries)
         return error
 
     def __neg__(self) -> Expr:
@@ -2429,7 +2438,7 @@ class Relation(BinExpr):
 
             def apply_op(e: Expr, invert: bool) -> Expr:
                 if invert:
-                    return Not(e)
+                    return Not(e, e.location)
                 return e
 
             if left in [TRUE, FALSE]:
@@ -2481,7 +2490,7 @@ class Less(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error += e.check_type_instance(rty.AnyInteger)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     @property
@@ -2509,7 +2518,7 @@ class LessEqual(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error += e.check_type_instance(rty.AnyInteger)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     @property
@@ -2535,7 +2544,9 @@ class Equal(Relation):
         return NotEqual(self.left, self.right)
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.left.check_type_instance(rty.Any) + self.right.check_type(self.left.type_)
+        error = self.left.check_type_instance(rty.Any)
+        error.extend(self.right.check_type(self.left.type_).entries)
+        return error
 
     @property
     def symbol(self) -> str:
@@ -2562,7 +2573,7 @@ class GreaterEqual(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error += e.check_type_instance(rty.AnyInteger)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     @property
@@ -2590,7 +2601,7 @@ class Greater(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error += e.check_type_instance(rty.AnyInteger)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     @property
@@ -2616,7 +2627,9 @@ class NotEqual(Relation):
         return Equal(self.left, self.right)
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.left.check_type_instance(rty.Any) + self.right.check_type(self.left.type_)
+        error = self.left.check_type_instance(rty.Any)
+        error.extend(self.right.check_type(self.left.type_).entries)
+        return error
 
     @property
     def symbol(self) -> str:
@@ -2641,9 +2654,13 @@ class In(Relation):
         return NotIn(self.left, self.right)
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.left.check_type_instance(rty.Any) + self.right.check_type(
-            rty.Aggregate(self.left.type_),
+        error = self.left.check_type_instance(rty.Any)
+        error.extend(
+            self.right.check_type(
+                rty.Aggregate(self.left.type_),
+            ).entries,
         )
+        return error
 
     @property
     def symbol(self) -> str:
@@ -2671,9 +2688,13 @@ class NotIn(Relation):
         return In(self.left, self.right)
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.left.check_type_instance(rty.Any) + self.right.check_type(
-            rty.Aggregate(self.left.type_),
+        error = self.left.check_type_instance(rty.Any)
+        error.extend(
+            self.right.check_type(
+                rty.Aggregate(self.left.type_),
+            ).entries,
         )
+        return error
 
     @property
     def symbol(self) -> str:
@@ -2885,7 +2906,8 @@ class QuantifiedExpr(Expr):
 
         self.predicate = self.predicate.substituted(typify_variable)
 
-        return error + self.predicate.check_type(rty.BOOLEAN)
+        error.extend(self.predicate.check_type(rty.BOOLEAN).entries)
+        return error
 
     @property
     def precedence(self) -> Precedence:
@@ -2925,7 +2947,6 @@ class QuantifiedExpr(Expr):
     def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         fail(
             "quantified expressions not yet supported",
-            Subsystem.MODEL,
             location=self.location,
         )
 
@@ -3004,7 +3025,7 @@ class ValueRange(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.lower, self.upper]:
-            error += e.check_type_instance(rty.AnyInteger)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     def __neg__(self) -> Expr:
@@ -3064,40 +3085,36 @@ class Conversion(Expr):
 
         if isinstance(self.argument, Selected):
             if self.argument_types:
-                error += self.argument.prefix.check_type(tuple(self.argument_types))
+                error.extend(self.argument.prefix.check_type(tuple(self.argument_types)).entries)
             else:
-                error.extend(
-                    [
-                        (
-                            f'invalid conversion to "{self.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.location,
-                        ),
-                    ],
-                )
-                if isinstance(self.argument.prefix.type_, rty.Message):
-                    error.extend(
-                        [
-                            (
-                                f'refinement for message "{self.argument.prefix.type_.identifier}"'
-                                " would make operation legal",
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                self.location,
-                            ),
-                        ],
-                    )
-        else:
-            error.extend(
-                [
-                    (
-                        "invalid argument for conversion, expected message field",
-                        Subsystem.MODEL,
+                assert self.location is not None
+                error.push(
+                    ErrorEntry(
+                        f'invalid conversion to "{self.identifier}"',
                         Severity.ERROR,
-                        self.argument.location,
+                        self.location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    "refinement for message "
+                                    f'"{self.argument.prefix.type_.identifier}"'
+                                    " would make operation legal",
+                                    Severity.INFO,
+                                    self.location,
+                                ),
+                            ]
+                            if isinstance(self.argument.prefix.type_, rty.Message)
+                            else []
+                        ),
                     ),
-                ],
+                )
+        else:
+            error.push(
+                ErrorEntry(
+                    "invalid argument for conversion, expected message field",
+                    Severity.ERROR,
+                    self.argument.location,
+                ),
             )
 
         return error
@@ -3228,8 +3245,8 @@ class Comprehension(Expr):
         self.selector = self.selector.substituted(typify_variable)
         self.condition = self.condition.substituted(typify_variable)
 
-        error += self.selector.check_type_instance(rty.Any)
-        error += self.condition.check_type(rty.BOOLEAN)
+        error.extend(self.selector.check_type_instance(rty.Any).entries)
+        error.extend(self.condition.check_type(rty.BOOLEAN).entries)
 
         self.type_ = rty.Aggregate(self.selector.type_)
 
@@ -3326,11 +3343,13 @@ class MessageAggregate(Expr):
 
         if not isinstance(self.type_, rty.Message):
             for d in self.field_values.values():
-                error += d.check_type_instance(rty.Any)
+                error.extend(d.check_type_instance(rty.Any).entries)
 
             return error
 
-        return self._check_for_invalid_fields() + self._check_for_missing_fields()
+        error.extend(self._check_for_invalid_fields().entries)
+        error.extend(self._check_for_missing_fields().entries)
+        return error
 
     def _field_combinations(self) -> set[tuple[str, ...]]:
         assert isinstance(self.type_, rty.Message)
@@ -3354,9 +3373,8 @@ class MessageAggregate(Expr):
             if field not in self.type_.types:
                 error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'invalid field "{field}" for {self.type_}',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             field.location,
                         ),
@@ -3372,20 +3390,17 @@ class MessageAggregate(Expr):
                     r.field == field and expr.type_.is_compatible(r.sdu)
                     for r in self.type_.refinements
                 ):
-                    error += expr.check_type(field_type)
+                    error.extend(expr.check_type(field_type).entries)
             else:
-                error += expr.check_type(field_type)
+                error.extend(expr.check_type(field_type).entries)
 
             if not self._matching_field_combinations(i):
-                error.extend(
-                    [
-                        (
-                            f'invalid position for field "{field}" of {self.type_}',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            field.location,
-                        ),
-                    ],
+                error.push(
+                    ErrorEntry(
+                        f'invalid position for field "{field}" of {self.type_}',
+                        Severity.ERROR,
+                        field.location,
+                    ),
                 )
                 break
 
@@ -3397,27 +3412,28 @@ class MessageAggregate(Expr):
         if self._field_combinations() and all(
             len(c) > len(self.field_values) for c in self._field_combinations()
         ):
-            error.extend(
-                [
-                    (
-                        f"missing fields for {self.type_}",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                    (
-                        "possible next fields: "
-                        + ", ".join(
-                            unique(
-                                c[len(self.field_values)]
-                                for c in sorted(self._field_combinations())
+            assert self.location is not None
+            error.push(
+                ErrorEntry(
+                    f"missing fields for {self.type_}",
+                    Severity.ERROR,
+                    self.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                "possible next fields: "
+                                + ", ".join(
+                                    unique(
+                                        c[len(self.field_values)]
+                                        for c in sorted(self._field_combinations())
+                                    ),
+                                ),
+                                Severity.INFO,
+                                self.location,
                             ),
-                        ),
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        self.location,
+                        ]
                     ),
-                ],
+                ),
             )
 
         return error
@@ -3600,46 +3616,44 @@ class CaseExpr(Expr):
         type_literals = [l.name for l in self.expr.type_.literals]
         missing = set(type_literals) - set(literals)
         if missing:
-            error.extend(
-                [
-                    (
-                        "not all enumeration literals covered by case expression",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
+            assert self.expr.type_.location is not None
+            error.push(
+                ErrorEntry(
+                    "not all enumeration literals covered by case expression",
+                    Severity.ERROR,
+                    self.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                f'missing literal "{l.name}"',
+                                Severity.INFO,
+                                self.expr.type_.location,
+                            )
+                            for l in missing
+                        ]
                     ),
-                    *[
-                        (
-                            f'missing literal "{l.name}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            self.expr.type_.location,
-                        )
-                        for l in missing
-                    ],
-                ],
+                ),
             )
 
         invalid = set(literals) - set(type_literals)
         if invalid:
-            error.extend(
-                [
-                    (
-                        "invalid literals used in case expression",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
+            assert self.expr.type_.location is not None
+            error.push(
+                ErrorEntry(
+                    "invalid literals used in case expression",
+                    Severity.ERROR,
+                    self.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                f'literal "{l.name}" not part of "{self.expr.type_.identifier}"',
+                                Severity.INFO,
+                                self.expr.type_.location,
+                            )
+                            for l in invalid
+                        ]
                     ),
-                    *[
-                        (
-                            f'literal "{l.name}" not part of "{self.expr.type_.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            self.expr.type_.location,
-                        )
-                        for l in invalid
-                    ],
-                ],
+                ),
             )
         return error
 
@@ -3661,51 +3675,49 @@ class CaseExpr(Expr):
                 group = list(map(itemgetter(1), g))
                 missing_ranges.append((group[0], group[-1]))
 
-            error.extend(
-                [
-                    (
-                        f"case expression does not cover full range of "
-                        f'"{self.expr.type_.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
+            assert self.expr.type_.location is not None
+            error.push(
+                ErrorEntry(
+                    f"case expression does not cover full range of "
+                    f'"{self.expr.type_.identifier}"',
+                    Severity.ERROR,
+                    self.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                (
+                                    f"missing range {r[0]} .. {r[1]}"
+                                    if r[0] != r[1]
+                                    else f"missing value {r[0]}"
+                                ),
+                                Severity.INFO,
+                                self.expr.type_.location,
+                            )
+                            for r in missing_ranges
+                        ]
                     ),
-                    *[
-                        (
-                            (
-                                f"missing range {r[0]} .. {r[1]}"
-                                if r[0] != r[1]
-                                else f"missing value {r[0]}"
-                            ),
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            self.expr.type_.location,
-                        )
-                        for r in missing_ranges
-                    ],
-                ],
+                ),
             )
 
         invalid = set(literals) - set(type_literals)
         if invalid:
-            error.extend(
-                [
-                    (
-                        "invalid literals used in case expression",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
+            assert self.expr.type_.location is not None
+            error.push(
+                ErrorEntry(
+                    "invalid literals used in case expression",
+                    Severity.ERROR,
+                    self.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                f'value {l} not part of "{self.expr.type_.identifier}"',
+                                Severity.INFO,
+                                self.expr.type_.location,
+                            )
+                            for l in invalid
+                        ]
                     ),
-                    *[
-                        (
-                            f'value {l} not part of "{self.expr.type_.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            self.expr.type_.location,
-                        )
-                        for l in invalid
-                    ],
-                ],
+                ),
             )
 
         return error
@@ -3716,30 +3728,29 @@ class CaseExpr(Expr):
         literals = [c for (choice, _) in self.choices for c in choice]
 
         for _, expr in self.choices:
-            error += expr.check_type_instance(rty.Any)
+            error.extend(expr.check_type_instance(rty.Any).entries)
             result_type = result_type.common_type(expr.type_)
 
         for i1, (_, e1) in enumerate(self.choices):
             for i2, (_, e2) in enumerate(self.choices):
                 if i1 < i2 and not e1.type_.is_compatible(e2.type_):
-                    error.extend(
-                        [
-                            (
-                                f'dependent expression "{e1}" has incompatible {e1.type_}',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                e1.location,
-                            ),
-                            (
-                                f'conflicting with "{e2}" which has {e2.type_}',
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                e2.location,
-                            ),
-                        ],
+                    assert e2.location is not None
+                    error.push(
+                        ErrorEntry(
+                            f'dependent expression "{e1}" has incompatible {e1.type_}',
+                            Severity.ERROR,
+                            e1.location,
+                            annotations=[
+                                Annotation(
+                                    f'conflicting with "{e2}" which has {e2.type_}',
+                                    Severity.INFO,
+                                    e2.location,
+                                ),
+                            ],
+                        ),
                     )
 
-        error += self.expr.check_type_instance(rty.Any)
+        error.extend(self.expr.check_type_instance(rty.Any).entries)
         error.propagate()
 
         duplicates = [
@@ -3749,46 +3760,46 @@ class CaseExpr(Expr):
             if i1 > i2 and e1 == e2
         ]
         if duplicates:
-            error.extend(
-                [
-                    (
-                        "duplicate literals used in case expression",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                    *[
-                        (
-                            f'duplicate literal "{l}"',
-                            Subsystem.MODEL,
+            assert all(l.location is not None for l in duplicates)
+            locations = [l.location for l in duplicates]
+            assert are_all_locations_present(locations)
+            error.push(
+                ErrorEntry(
+                    "duplicate literals used in case expression",
+                    Severity.ERROR,
+                    self.location,
+                    annotations=[
+                        Annotation(
+                            f'duplicate literal "{link}"',
                             Severity.INFO,
-                            l.location,
+                            location,
                         )
-                        for l in duplicates
+                        for link, location in zip(duplicates, locations)
                     ],
-                ],
+                ),
             )
 
         if isinstance(self.expr.type_, rty.Enumeration):
-            error += self._check_enumeration()
+            error.extend(self._check_enumeration().entries)
         elif isinstance(self.expr.type_, rty.Integer):
-            error += self._check_integer()
+            error.extend(self._check_integer().entries)
         else:
-            error.extend(
-                [
-                    (
-                        f"invalid discrete choice with {self.expr.type_}",
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.expr.location,
+            assert self.expr.location is not None
+            error.push(
+                ErrorEntry(
+                    f"invalid discrete choice with {self.expr.type_}",
+                    Severity.ERROR,
+                    self.expr.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                "expected enumeration or integer type",
+                                Severity.INFO,
+                                self.expr.location,
+                            ),
+                        ]
                     ),
-                    (
-                        "expected enumeration or integer type",
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        self.expr.location,
-                    ),
-                ],
+                ),
             )
 
         self.type_ = result_type
@@ -3884,7 +3895,7 @@ def _similar_field_names(
     field: ID,
     fields: Iterable[ID],
     location: Optional[Location],
-) -> list[tuple[str, Subsystem, Severity, Optional[Location]]]:
+) -> list[ErrorEntry]:
     field_similarity = sorted(
         ((f, difflib.SequenceMatcher(None, str(f), str(field)).ratio()) for f in sorted(fields)),
         key=lambda x: x[1],
@@ -3893,9 +3904,8 @@ def _similar_field_names(
     similar_fields = [f for f, s in field_similarity if s >= 0.5]
     if similar_fields:
         return [
-            (
+            ErrorEntry(
                 "similar field names: " + ", ".join(str(f) for f in similar_fields),
-                Subsystem.MODEL,
                 Severity.INFO,
                 location,
             ),

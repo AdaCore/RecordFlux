@@ -2,11 +2,11 @@ from pathlib import Path, PosixPath
 
 import pytest
 
-from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.ls.lexer import LSLexer, Token
 from rflx.ls.model import LSModel, Symbol, SymbolCategory
 from rflx.model import UncheckedModel
+from rflx.rapidflux import Location, RecordFluxError
 from rflx.specification.parser import Parser
 
 DATA_DIR = Path("tests/unit/ls/data")

@@ -14,9 +14,10 @@ import rflx.typing_ as rty
 from rflx import expression as expr
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.const import MP_CONTEXT
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail, fatal_fail
+from rflx.error import are_all_locations_present, fail, fatal_fail
 from rflx.identifier import ID, StrID
 from rflx.model.top_level_declaration import TopLevelDeclaration
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 from . import type_decl as mty
 
@@ -168,7 +169,7 @@ class Message(mty.TypeDecl):
         self._skip_verification = skip_verification
         self._workers = workers
 
-        if not self.error.errors and not skip_verification:
+        if not self.error.has_errors() and not skip_verification:
             self._verify()
 
         self._check_identifiers(structure, types)
@@ -369,7 +370,11 @@ class Message(mty.TypeDecl):
 
             result = expr.Or(
                 *[
-                    expr.And(self.path_condition(l.source), l.condition)
+                    expr.And(
+                        self.path_condition(l.source),
+                        l.condition,
+                        location=l.condition.location,
+                    )
                     for l in self.incoming(field)
                 ],
                 location=field.identifier.location,
@@ -407,7 +412,6 @@ class Message(mty.TypeDecl):
             return result
         fail(
             f'unable to calculate size of field "{field.name}" of message "{self.identifier}"',
-            Subsystem.MODEL,
             Severity.ERROR,
             field.identifier.location,
         )
@@ -442,7 +446,10 @@ class Message(mty.TypeDecl):
             return expression.substituted(
                 mapping={
                     **{
-                        v: v.__class__(ID(prefix) + v.name)
+                        v: v.__class__(
+                            ID(prefix + v.name, v.identifier.location),
+                            location=v.location,
+                        )
                         for v in expression.variables()
                         if v.identifier in fields
                     },
@@ -517,7 +524,7 @@ class Message(mty.TypeDecl):
 
     def set_refinements(self, refinements: list[Refinement]) -> None:
         if any(r.pdu != self for r in refinements):
-            fatal_fail("setting refinements for different message", Subsystem.MODEL)
+            fatal_fail("setting refinements for different message")
         self._refinements = refinements
 
     @property
@@ -619,7 +626,6 @@ class Message(mty.TypeDecl):
                 fail(
                     f'unable to calculate size of invalid subpath "{subpath_str}"'
                     f' of message "{self.identifier}"',
-                    Subsystem.MODEL,
                     Severity.ERROR,
                     self.location,
                 )
@@ -708,8 +714,14 @@ class Message(mty.TypeDecl):
         conditional_field_size = []
 
         for field in fields:
+            locations = [
+                l.condition.location for l in self.incoming(field) if l.first != expr.UNDEFINED
+            ]
+            assert are_all_locations_present(locations)
+
             overlay_condition = expr.Not(
                 expr.Or(*[l.condition for l in self.incoming(field) if l.first != expr.UNDEFINED]),
+                location=Location.merge(locations),
             ).simplified()
             paths_to_field = sorted(
                 {
@@ -729,10 +741,15 @@ class Message(mty.TypeDecl):
                     fact for link in path for fact in self._link_size_constraints(link)
                 ]
 
+                path_conditions = [l.condition for l in path if l.condition != expr.TRUE]
+                path_conditions_locations = [c.location for c in path_conditions]
+                assert are_all_locations_present(path_conditions_locations)
+
                 path_condition = (
                     expr.And(
-                        *[l.condition for l in path if l.condition != expr.TRUE],
+                        *path_conditions,
                         overlay_condition,
+                        location=Location.merge(path_conditions_locations),
                     )
                     .substituted(mapping=to_mapping(link_size_expressions + facts))
                     .substituted(mapping=type_constraints)
@@ -789,7 +806,6 @@ class Message(mty.TypeDecl):
         if self.has_implicit_size:
             fail(
                 "unable to calculate maximum size of message with implicit size",
-                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -808,7 +824,6 @@ class Message(mty.TypeDecl):
         if self.has_implicit_size:
             fail(
                 "unable to calculate maximum field sizes of message with implicit size",
-                Subsystem.MODEL,
                 Severity.ERROR,
                 self.location,
             )
@@ -887,9 +902,8 @@ class Message(mty.TypeDecl):
             if f in structure_fields and not isinstance(t, (mty.Scalar, mty.Composite, Message)):
                 self.error.extend(
                     [
-                        (
+                        ErrorEntry(
                             "message fields must have a scalar or composite type",
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             f.identifier.location,
                         ),
@@ -898,38 +912,29 @@ class Message(mty.TypeDecl):
 
             if f in parameters:
                 if not isinstance(t, mty.Scalar):
-                    self.error.extend(
-                        [
-                            (
-                                "parameters must have a scalar type",
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                f.identifier.location,
-                            ),
-                        ],
+                    self.error.push(
+                        ErrorEntry(
+                            "parameters must have a scalar type",
+                            Severity.ERROR,
+                            f.identifier.location,
+                        ),
                     )
                 elif isinstance(t, mty.Enumeration) and t.always_valid:
-                    self.error.extend(
-                        [
-                            (
-                                "always valid enumeration types not allowed as parameters",
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                f.identifier.location,
-                            ),
-                        ],
+                    self.error.push(
+                        ErrorEntry(
+                            "always valid enumeration types not allowed as parameters",
+                            Severity.ERROR,
+                            f.identifier.location,
+                        ),
                     )
 
         for f in structure_fields - type_fields:
-            self.error.extend(
-                [
-                    (
-                        f'missing type for field "{f.name}" in "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        f.identifier.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'missing type for field "{f.name}" in "{self.identifier}"',
+                    Severity.ERROR,
+                    f.identifier.location,
+                ),
             )
 
     def _validate_initial_link(self) -> None:
@@ -938,9 +943,8 @@ class Message(mty.TypeDecl):
         if any(l.first != expr.UNDEFINED for l in initial_links):
             self.error.extend(
                 [
-                    (
+                    ErrorEntry(
                         "illegal first aspect on initial link",
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         l.first.location,
                     )
@@ -959,22 +963,23 @@ class Message(mty.TypeDecl):
 
         if name_conflicts:
             conflicting_field, conflicting_literal = name_conflicts.pop(0)
-            self.error.extend(
-                [
-                    (
-                        f'name conflict for field "{conflicting_field.name}" in'
-                        f' "{self.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        conflicting_field.identifier.location,
+            assert conflicting_literal.location is not None
+            self.error.push(
+                ErrorEntry(
+                    f'name conflict for field "{conflicting_field.name}" in'
+                    f' "{self.identifier}"',
+                    Severity.ERROR,
+                    conflicting_field.identifier.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                "conflicting enumeration literal",
+                                Severity.INFO,
+                                conflicting_literal.location,
+                            ),
+                        ]
                     ),
-                    (
-                        "conflicting enumeration literal",
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        conflicting_literal.location,
-                    ),
-                ],
+                ),
             )
 
     def _validate_structure(self, structure_fields: set[Field]) -> bool:
@@ -986,15 +991,12 @@ class Message(mty.TypeDecl):
                     break
             else:
                 has_unreachable = True
-                self.error.extend(
-                    [
-                        (
-                            f'unreachable field "{f.name}" in "{self.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            f.identifier.location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        f'unreachable field "{f.name}" in "{self.identifier}"',
+                        Severity.ERROR,
+                        f.identifier.location,
+                    ),
                 )
 
         def has_final(field: Field, seen: Optional[set[Field]] = None) -> bool:
@@ -1017,9 +1019,8 @@ class Message(mty.TypeDecl):
             if not has_final(f):
                 self.error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'no path to FINAL for field "{f.name}" in "{self.identifier}"',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             f.identifier.location,
                         ),
@@ -1032,25 +1033,23 @@ class Message(mty.TypeDecl):
 
         for links in duplicate_links.values():
             if len(links) > 1:
-                self.error.extend(
-                    [
-                        (
-                            f'duplicate link from "{links[0].source.identifier}"'
-                            f' to "{links[0].target.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            links[0].source.identifier.location,
-                        ),
-                        *[
-                            (
+                locations = [l.location for l in links]
+                assert are_all_locations_present(locations)
+                self.error.push(
+                    ErrorEntry(
+                        f'duplicate link from "{links[0].source.identifier}"'
+                        f' to "{links[0].target.identifier}"',
+                        Severity.ERROR,
+                        links[0].source.identifier.location,
+                        annotations=[
+                            Annotation(
                                 "duplicate link",
-                                Subsystem.MODEL,
                                 Severity.INFO,
-                                l.location,
+                                location,
                             )
-                            for l in links
+                            for location in locations
                         ],
-                    ],
+                    ),
                 )
 
         return has_unreachable
@@ -1065,33 +1064,30 @@ class Message(mty.TypeDecl):
                 assert isinstance(e, expr.Pow)
                 variables = e.right.findall(lambda x: isinstance(x, expr.Variable))
                 if variables:
-                    self.error.extend(
-                        [
-                            (
-                                f'unsupported expression in "{self.identifier}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                e.location,
-                            ),
-                            *[
-                                (
+                    locations = [v.location for v in variables]
+                    assert are_all_locations_present(locations)
+                    self.error.push(
+                        ErrorEntry(
+                            f'unsupported expression in "{self.identifier}"',
+                            Severity.ERROR,
+                            e.location,
+                            annotations=[
+                                Annotation(
                                     f'variable "{v}" in exponent',
-                                    Subsystem.MODEL,
                                     Severity.INFO,
-                                    v.location,
+                                    l,
                                 )
-                                for v in variables
+                                for v, l in zip(variables, locations)
                             ],
-                        ],
+                        ),
                     )
 
             if link.has_implicit_size:
                 if any(l.target != FINAL for l in self.outgoing(link.target)):
                     self.error.extend(
                         [
-                            (
+                            ErrorEntry(
                                 '"Message" must not be used in size aspects',
-                                Subsystem.MODEL,
                                 Severity.ERROR,
                                 link.size.location,
                             ),
@@ -1110,21 +1106,23 @@ class Message(mty.TypeDecl):
                         ]
                     )
                     if link.size not in valid_definitions:
-                        self.error.extend(
-                            [
-                                (
-                                    'invalid use of "Message" in size aspect',
-                                    Subsystem.MODEL,
-                                    Severity.ERROR,
-                                    link.size.location,
+                        assert link.size.location is not None
+                        self.error.push(
+                            ErrorEntry(
+                                'invalid use of "Message" in size aspect',
+                                Severity.ERROR,
+                                link.size.location,
+                                annotations=(
+                                    [
+                                        Annotation(
+                                            "remove size aspect to define field with implicit "
+                                            "size",
+                                            Severity.INFO,
+                                            link.size.location,
+                                        ),
+                                    ]
                                 ),
-                                (
-                                    "remove size aspect to define field with implicit size",
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    link.size.location,
-                                ),
-                            ],
+                            ),
                         )
 
     def _normalize(
@@ -1214,27 +1212,22 @@ class Message(mty.TypeDecl):
                     fields.append(e.target)
         if not has_unreachable and set(self.structure) - visited:
             for cycle in self._find_cycles():
-                self.error.extend(
-                    [
-                        (
-                            f'structure of "{self.identifier}" contains cycle',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.location,
-                        ),
-                    ],
-                )
-
-                self.error.extend(
-                    [
-                        (
-                            f'field "{link.source.name}" links to "{link.target.name}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            link.location,
-                        )
-                        for link in cycle
-                    ],
+                locations = [link.location for link in cycle]
+                assert are_all_locations_present(locations)
+                self.error.push(
+                    ErrorEntry(
+                        f'structure of "{self.identifier}" contains cycle',
+                        Severity.ERROR,
+                        self.location,
+                        annotations=[
+                            Annotation(
+                                f'field "{link.source.name}" links to "{link.target.name}"',
+                                Severity.INFO,
+                                location,
+                            )
+                            for link, location in zip(cycle, locations)
+                        ],
+                    ),
                 )
 
             return None
@@ -1422,9 +1415,8 @@ class Message(mty.TypeDecl):
             if p.identifier not in variables:
                 self.error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'unused parameter "{p.identifier}"',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             p.identifier.location,
                         ),
@@ -1436,9 +1428,8 @@ class Message(mty.TypeDecl):
             for expression in [link.condition, link.size, link.first]:
                 self.error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'invalid use of enum literal "{l}" in expression',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             l.location,
                         )
@@ -1466,9 +1457,8 @@ class Message(mty.TypeDecl):
             for expression in [link.condition, link.size, link.first]:
                 self.error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'invalid use of type name "{l}" in expression',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             l.location,
                         )
@@ -1505,9 +1495,8 @@ class Message(mty.TypeDecl):
                     if var.type_ == rty.Undefined():
                         self.error.extend(
                             [
-                                (
+                                ErrorEntry(
                                     f'undefined variable "{var.identifier}"',
-                                    Subsystem.MODEL,
                                     Severity.ERROR,
                                     var.location,
                                 ),
@@ -1561,18 +1550,15 @@ class Message(mty.TypeDecl):
 
                     error = expression.check_type(rty.Any())
 
-                    self.error.extend(error)
+                    self.error.extend(error.entries)
 
-                    if error.errors:
-                        self.error.extend(
-                            [
-                                (
-                                    "on path " + " -> ".join(f.name for f in path),
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    expression.location,
-                                ),
-                            ],
+                    if error.has_errors():
+                        self.error.push(
+                            ErrorEntry(
+                                "on path " + " -> ".join(f.name for f in path),
+                                Severity.INFO,
+                                expression.location,
+                            ),
                         )
 
     def _verify_links(self) -> None:
@@ -1586,9 +1572,8 @@ class Message(mty.TypeDecl):
         if link.source == INITIAL and link.target == FINAL:
             self.error.extend(
                 [
-                    (
+                    ErrorEntry(
                         "invalid empty message",
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         link.location,
                     ),
@@ -1609,9 +1594,8 @@ class Message(mty.TypeDecl):
             ):
                 self.error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'invalid use of size attribute for "{a.prefix}"',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             expression.location,
                         ),
@@ -1622,9 +1606,8 @@ class Message(mty.TypeDecl):
         if link.first not in (expr.UNDEFINED, expr.First(link.source.identifier)):
             self.error.extend(
                 [
-                    (
+                    ErrorEntry(
                         f'invalid First for field "{link.target.name}"',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         link.first.location,
                     ),
@@ -1635,9 +1618,8 @@ class Message(mty.TypeDecl):
         if link.target == FINAL and link.size != expr.UNDEFINED:
             self.error.extend(
                 [
-                    (
+                    ErrorEntry(
                         f'size aspect for final field in "{self.identifier}"',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         link.size.location,
                     ),
@@ -1649,9 +1631,8 @@ class Message(mty.TypeDecl):
             if not unconstrained and link.size != expr.UNDEFINED:
                 self.error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'fixed size field "{link.target.name}" with size aspect',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             link.target.identifier.location,
                         ),
@@ -1660,9 +1641,8 @@ class Message(mty.TypeDecl):
             if unconstrained and link.size == expr.UNDEFINED:
                 self.error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'unconstrained field "{link.target.name}" without size aspect',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             link.target.identifier.location,
                         ),
@@ -1689,9 +1669,8 @@ class Message(mty.TypeDecl):
             if Field(name) not in self.fields:
                 self.error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'checksum definition for unknown field "{name}"',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             name.location,
                         ),
@@ -1709,9 +1688,8 @@ class Message(mty.TypeDecl):
                 ):
                     self.error.extend(
                         [
-                            (
+                            ErrorEntry(
                                 f'unsupported expression "{e}" in definition of checksum "{name}"',
-                                Subsystem.MODEL,
                                 Severity.ERROR,
                                 e.location,
                             ),
@@ -1724,10 +1702,9 @@ class Message(mty.TypeDecl):
                     if Field(v.name) not in self.fields:
                         self.error.extend(
                             [
-                                (
+                                ErrorEntry(
                                     f'unknown field "{v.name}" referenced'
                                     f' in definition of checksum "{name}"',
-                                    Subsystem.MODEL,
                                     Severity.ERROR,
                                     v.location,
                                 ),
@@ -1752,10 +1729,9 @@ class Message(mty.TypeDecl):
                             if not any(lower_field == l.source for l in p):
                                 self.error.extend(
                                     [
-                                        (
+                                        ErrorEntry(
                                             f'invalid range "{e}" in definition of checksum'
                                             f' "{name}"',
-                                            Subsystem.MODEL,
                                             Severity.ERROR,
                                             e.location,
                                         ),
@@ -1770,9 +1746,8 @@ class Message(mty.TypeDecl):
         for name in set(self.checksums) - checked:
             self.error.extend(
                 [
-                    (
+                    ErrorEntry(
                         f'no validity check of checksum "{name}"',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         name.location,
                     ),
@@ -1781,9 +1756,8 @@ class Message(mty.TypeDecl):
         for name in checked - set(self.checksums):
             self.error.extend(
                 [
-                    (
+                    ErrorEntry(
                         f'validity check for undefined checksum "{name}"',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         name.location,
                     ),
@@ -1802,21 +1776,20 @@ class Message(mty.TypeDecl):
             ]
             unsat_error = RecordFluxError(
                 [
-                    (
+                    ErrorEntry(
                         f'condition "{l.condition}" on transition "{l.source.identifier}"'
                         f' -> "{l.target.identifier}" is always true',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         l.source.identifier.location,
                     ),
                 ],
             )
+
             unknown_error = RecordFluxError(
                 [
-                    (
+                    ErrorEntry(
                         f'condition "{l.condition}" on transition "{l.source.identifier}"'
                         f' -> "{l.target.identifier}" might be always true',
-                        Subsystem.MODEL,
                         Severity.WARNING,
                         l.source.identifier.location,
                     ),
@@ -1825,8 +1798,8 @@ class Message(mty.TypeDecl):
             proofs.add(
                 expr.Equal(l.condition, expr.FALSE),
                 facts,
-                unsat_error=unsat_error,
-                unknown_error=unknown_error,
+                unsat_error=unsat_error.entries,
+                unknown_error=unknown_error.entries,
             )
 
     def _prove_conflicting_conditions(self, proofs: expr.ParallelProofs) -> None:
@@ -1834,30 +1807,37 @@ class Message(mty.TypeDecl):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
                     if i1 < i2:
-                        conflict = expr.And(c1.condition, c2.condition)
+                        assert c1.condition.location is not None
+                        assert c2.condition.location is not None
+
+                        conflict = expr.And(
+                            c1.condition,
+                            c2.condition,
+                            location=Location.merge([c1.condition.location, c2.condition.location]),
+                        )
                         c1_message = str(c1.condition).replace("\n", " ")
                         c2_message = str(c2.condition).replace("\n", " ")
+
                         error = RecordFluxError(
                             [
-                                (
+                                ErrorEntry(
                                     f'conflicting conditions for field "{f.name}"',
-                                    Subsystem.MODEL,
                                     Severity.ERROR,
                                     f.identifier.location,
-                                ),
-                                (
-                                    f"condition {i1} ({f.identifier} ->"
-                                    f" {c1.target.identifier}): {c1_message}",
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    c1.condition.location,
-                                ),
-                                (
-                                    f"condition {i2} ({f.identifier} ->"
-                                    f" {c2.target.identifier}): {c2_message}",
-                                    Subsystem.MODEL,
-                                    Severity.INFO,
-                                    c2.condition.location,
+                                    [
+                                        Annotation(
+                                            f"condition {i1} ({f.identifier} ->"
+                                            f" {c1.target.identifier}): {c1_message}",
+                                            Severity.INFO,
+                                            c1.condition.location,
+                                        ),
+                                        Annotation(
+                                            f"condition {i2} ({f.identifier} ->"
+                                            f" {c2.target.identifier}): {c2_message}",
+                                            Severity.INFO,
+                                            c2.condition.location,
+                                        ),
+                                    ],
                                 ),
                             ],
                         )
@@ -1870,8 +1850,8 @@ class Message(mty.TypeDecl):
                             proofs.add(
                                 conflict,
                                 facts,
-                                sat_error=error,
-                                unknown_error=error,
+                                sat_error=error.entries,
+                                unknown_error=error.entries,
                             )
 
     def _prove_reachability(self, valid_paths: set[tuple[Link, ...]]) -> None:
@@ -1922,27 +1902,41 @@ class Message(mty.TypeDecl):
             else:
                 if paths:
                     error = []
-                    error.append(
-                        (
-                            f'unreachable field "{f.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            f.identifier.location,
-                        ),
-                    )
+                    annotations = []
                     for path, errors in sorted(paths):
-                        error.extend(
-                            (
-                                f'on path: "{l.target.identifier}"',
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                l.target.identifier.location,
-                            )
-                            for l in path
+                        path_locations = [l.target.identifier.location for l in path]
+                        unsatisfied_locations = [t[1] for t in errors]
+                        assert are_all_locations_present(path_locations)
+                        assert are_all_locations_present(unsatisfied_locations)
+
+                        annotations.extend(
+                            [
+                                Annotation(
+                                    f'on path: "{link.target.identifier}"',
+                                    Severity.INFO,
+                                    location,
+                                )
+                                for link, location in zip(path, path_locations)
+                            ],
                         )
-                        error.extend(
-                            (f'unsatisfied "{m}"', Subsystem.MODEL, Severity.INFO, l)
-                            for m, l in errors
+                        annotations.extend(
+                            [
+                                Annotation(
+                                    f'unsatisfied "{m}"',
+                                    Severity.INFO,
+                                    l,
+                                )
+                                for (m, _), l in zip(errors, unsatisfied_locations)
+                            ],
+                        )
+
+                        error.append(
+                            ErrorEntry(
+                                f'unreachable field "{f.identifier}"',
+                                Severity.ERROR,
+                                f.identifier.location,
+                                annotations=annotations,
+                            ),
                         )
                     self.error.extend(error)
 
@@ -1958,10 +1952,9 @@ class Message(mty.TypeDecl):
                     )
                     error = RecordFluxError(
                         [
-                            (
+                            ErrorEntry(
                                 f'field "{f.name}" not congruent with'
                                 f' overlaid field "{l.first.prefix}"',
-                                Subsystem.MODEL,
                                 Severity.ERROR,
                                 self.identifier.location,
                             ),
@@ -1970,8 +1963,8 @@ class Message(mty.TypeDecl):
                     proofs.add(
                         overlaid,
                         facts,
-                        unsat_error=error,
-                        unknown_error=error,
+                        unsat_error=error.entries,
+                        unknown_error=error.entries,
                         add_unsat=True,
                     )
 
@@ -2004,28 +1997,32 @@ class Message(mty.TypeDecl):
                 path_message = " -> ".join([l.target.name for l in path])
                 error = RecordFluxError(
                     [
-                        (
+                        ErrorEntry(
                             f'negative size for field "{f.name}" ({path_message})',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             field_size.location,
                         ),
                     ],
                 )
-                proofs.add(negative, facts, sat_error=error, unknown_error=error)
+                proofs.add(negative, facts, sat_error=error.entries, unknown_error=error.entries)
 
                 path_message = " -> ".join([last.target.name for last in path])
                 error = RecordFluxError(
                     [
-                        (
+                        ErrorEntry(
                             f'negative start for field "{f.name}" ({path_message})',
-                            Subsystem.MODEL,
                             Severity.ERROR,
                             self.identifier.location,
                         ),
                     ],
                 )
-                proofs.add(start, facts, unsat_error=error, unknown_error=error, add_unsat=True)
+                proofs.add(
+                    start,
+                    facts,
+                    unsat_error=error.entries,
+                    unknown_error=error.entries,
+                    add_unsat=True,
+                )
 
                 if f in self.types:
                     t = self.types[f]
@@ -2046,10 +2043,9 @@ class Message(mty.TypeDecl):
                         path_message = " -> ".join([p.target.name for p in path])
                         error = RecordFluxError(
                             [
-                                (
+                                ErrorEntry(
                                     f'opaque field "{f.name}" not aligned to {element_size} '
                                     f"bit boundary ({path_message})",
-                                    Subsystem.MODEL,
                                     Severity.ERROR,
                                     f.identifier.location,
                                 ),
@@ -2062,8 +2058,8 @@ class Message(mty.TypeDecl):
                                 *self.message_constraints,
                                 *self.aggregate_constraints(start_aligned),
                             ],
-                            sat_error=error,
-                            unknown_error=error,
+                            sat_error=error.entries,
+                            unknown_error=error.entries,
                         )
 
                         is_multiple_of_element_size = expr.Not(
@@ -2072,15 +2068,15 @@ class Message(mty.TypeDecl):
                                 expr.Number(0),
                                 last.location,
                             ),
+                            location=last.location,
                         )
 
                         path_message = " -> ".join([p.target.name for p in path])
                         error = RecordFluxError(
                             [
-                                (
+                                ErrorEntry(
                                     f'size of opaque field "{f.name}" not multiple'
                                     f" of {element_size} bit ({path_message})",
-                                    Subsystem.MODEL,
                                     Severity.ERROR,
                                     field_size.location,
                                 ),
@@ -2093,8 +2089,8 @@ class Message(mty.TypeDecl):
                                 *self.message_constraints,
                                 *self.aggregate_constraints(is_multiple_of_element_size),
                             ],
-                            sat_error=error,
-                            unknown_error=error,
+                            sat_error=error.entries,
+                            unknown_error=error.entries,
                         )
 
     def _prove_message_size(self, proofs: expr.ParallelProofs) -> None:
@@ -2119,27 +2115,30 @@ class Message(mty.TypeDecl):
                 *message_constraints,
                 *field_size_constraints,
             ]
+            assert self.identifier.location is not None, self.identifier
             error = RecordFluxError(
                 [
-                    (
+                    ErrorEntry(
                         "message size must be multiple of 8 bit",
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.identifier.location,
-                    ),
-                    (
-                        "on path " + " -> ".join(l.target.name for l in path),
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        self.identifier.location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    "on path " + " -> ".join(l.target.name for l in path),
+                                    Severity.INFO,
+                                    self.identifier.location,
+                                ),
+                            ]
+                        ),
                     ),
                 ],
             )
             proofs.add(
                 expr.NotEqual(expr.Mod(message_size, expr.Number(8)), expr.Number(0)),
                 facts,
-                sat_error=error,
-                unknown_error=error,
+                sat_error=error.entries,
+                unknown_error=error.entries,
             )
 
     def _prove_path_property(self, prop: expr.Expr, path: Sequence[Link]) -> expr.Proof:
@@ -2190,7 +2189,7 @@ class Message(mty.TypeDecl):
         self,
         link: Link,
     ) -> list[expr.Expr]:
-        name = link.target.name
+        name = ID(link.target.name, link.target.identifier.location)
         target_first = self._target_first(link)
         target_size = self._target_size_opt(link)
         target_last = self._target_last_opt(link)
@@ -2256,8 +2255,8 @@ class Message(mty.TypeDecl):
                     e
                     for l in sorted(structure)
                     for e in (
-                        expr.Variable(l.source.identifier),
-                        expr.Variable(l.target.identifier),
+                        expr.Variable(l.source.identifier, location=l.source.identifier.location),
+                        expr.Variable(l.target.identifier, location=l.target.identifier.location),
                         l.condition,
                         l.size,
                         l.first,
@@ -2269,7 +2268,7 @@ class Message(mty.TypeDecl):
                     self._qualified_enum_literals,
                     self._type_names,
                 ),
-            ),
+            ).entries,
         )
 
 
@@ -2299,19 +2298,22 @@ class DerivedMessage(Message):
         self.base = base
 
         if isinstance(base, DerivedMessage):
+            assert base.location is not None
             RecordFluxError(
                 [
-                    (
+                    ErrorEntry(
                         f'illegal derivation "{self.identifier}"',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    ),
-                    (
-                        f'illegal base message type "{base.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        base.location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    f'illegal base message type "{base.identifier}"',
+                                    Severity.INFO,
+                                    base.location,
+                                ),
+                            ]
+                        ),
                     ),
                 ],
             ).propagate()
@@ -2407,15 +2409,12 @@ class Refinement(mty.TypeDecl):
 
     def _check_identifier(self) -> None:
         if len(self.package.parts) != 1:
-            self.error.extend(
-                [
-                    (
-                        f'unexpected format of package name "{self.package}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.package.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'unexpected format of package name "{self.package}"',
+                    Severity.ERROR,
+                    self.package.location,
+                ),
             )
 
     def _verify(self) -> None:
@@ -2426,41 +2425,39 @@ class Refinement(mty.TypeDecl):
         for f, t in self.pdu.types.items():
             if f == self.field:
                 if not isinstance(t, mty.Opaque):
-                    self.error.extend(
-                        [
-                            (
-                                f'invalid type of field "{self.field.name}" in refinement of'
-                                f' "{self.pdu.identifier}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                self.field.identifier.location,
+                    assert f.identifier.location is not None
+                    self.error.push(
+                        ErrorEntry(
+                            f'invalid type of field "{self.field.name}" in refinement of'
+                            f' "{self.pdu.identifier}"',
+                            Severity.ERROR,
+                            self.field.identifier.location,
+                            annotations=(
+                                [
+                                    Annotation(
+                                        "expected field of type Opaque",
+                                        Severity.INFO,
+                                        f.identifier.location,
+                                    ),
+                                ]
                             ),
-                            (
-                                "expected field of type Opaque",
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                f.identifier.location,
-                            ),
-                        ],
+                        ),
                     )
                 break
         else:
-            self.error.extend(
-                [
-                    (
-                        f'invalid field "{self.field.name}" in refinement of'
-                        f' "{self.pdu.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.field.identifier.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'invalid field "{self.field.name}" in refinement of'
+                    f' "{self.pdu.identifier}"',
+                    Severity.ERROR,
+                    self.field.identifier.location,
+                ),
             )
 
     def _verify_condition(self) -> None:
-        self.error.extend(self.condition.check_type(rty.Any()))
+        self.error.extend(self.condition.check_type(rty.Any()).entries)
 
-        if not self.error.errors and self.condition != expr.TRUE:
+        if not self.error.has_errors() and self.condition != expr.TRUE:
             for cond, val in [
                 (expr.Equal(self.condition, expr.FALSE), "true"),
                 (self.condition, "false"),
@@ -2475,28 +2472,22 @@ class Refinement(mty.TypeDecl):
                     ],
                 )
                 if proof.result == expr.ProofResult.UNSAT:
-                    self.error.extend(
-                        [
-                            (
-                                f'condition "{self.condition}" in refinement of'
-                                f' "{self.pdu.identifier}" is always {val}',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                self.field.identifier.location,
-                            ),
-                        ],
+                    self.error.push(
+                        ErrorEntry(
+                            f'condition "{self.condition}" in refinement of'
+                            f' "{self.pdu.identifier}" is always {val}',
+                            Severity.ERROR,
+                            self.field.identifier.location,
+                        ),
                     )
                 if proof.result == expr.ProofResult.UNKNOWN:
-                    self.error.extend(
-                        [
-                            (
-                                f'condition "{self.condition}" in refinement of'
-                                f' "{self.pdu.identifier}" might be always {val}',
-                                Subsystem.MODEL,
-                                Severity.WARNING,
-                                self.field.identifier.location,
-                            ),
-                        ],
+                    self.error.push(
+                        ErrorEntry(
+                            f'condition "{self.condition}" in refinement of'
+                            f' "{self.pdu.identifier}" might be always {val}',
+                            Severity.WARNING,
+                            self.field.identifier.location,
+                        ),
                     )
 
     def _check_identifiers(self) -> None:
@@ -2509,7 +2500,7 @@ class Refinement(mty.TypeDecl):
                     self._qualified_enum_literals,
                     self._type_names,
                 ),
-            ),
+            ).entries,
         )
 
     def __str__(self) -> str:
@@ -2631,33 +2622,34 @@ class UncheckedMessage(mty.UncheckedTypeDecl):
                     )
                     arguments[type_identifier] = dict(type_arguments)
                 if field in fields:
-                    error.extend(  # pragma: no branch
-                        [
-                            (
-                                f'name conflict for "{field.identifier}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                field.identifier.location,
+                    location = next(
+                        f.identifier for f in fields if f == field
+                    ).location  # pragma: no branch
+                    assert location is not None
+                    error.push(
+                        ErrorEntry(
+                            f'name conflict for "{field.identifier}"',
+                            Severity.ERROR,
+                            field.identifier.location,
+                            annotations=(
+                                [
+                                    Annotation(
+                                        "conflicting name",
+                                        Severity.INFO,
+                                        location,
+                                    ),
+                                ]
                             ),
-                            (
-                                "conflicting name",
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                next(f.identifier for f in fields if f == field).location,
-                            ),
-                        ],
+                        ),
                     )
                 fields.append(field)
             else:
-                error.extend(
-                    [
-                        (
-                            f'undefined type "{type_identifier}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            type_identifier.location,
-                        ),
-                    ],
+                error.push(
+                    ErrorEntry(
+                        f'undefined type "{type_identifier}"',
+                        Severity.ERROR,
+                        type_identifier.location,
+                    ),
                 )
 
         error.propagate()
@@ -2714,42 +2706,45 @@ class UncheckedMessage(mty.UncheckedTypeDecl):
             if arg:
                 arg_id, arg_expression = arg
                 if not param or (arg_id != param.identifier):
-                    argument_errors.extend(
-                        [
-                            (
-                                f'unexpected argument "{arg_id}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                arg_id.location,
+                    assert arg_id.location is not None
+                    argument_errors.push(
+                        ErrorEntry(
+                            f'unexpected argument "{arg_id}"',
+                            Severity.ERROR,
+                            arg_id.location,
+                            annotations=(
+                                [
+                                    Annotation(
+                                        (
+                                            "expected no argument"
+                                            if not param
+                                            else "expected argument for parameter "
+                                            f'"{param.identifier}"'
+                                        ),
+                                        Severity.INFO,
+                                        arg_id.location,
+                                    ),
+                                ]
                             ),
-                            (
-                                (
-                                    "expected no argument"
-                                    if not param
-                                    else f'expected argument for parameter "{param.identifier}"'
-                                ),
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                arg_id.location,
-                            ),
-                        ],
+                        ),
                     )
             else:
-                argument_errors.extend(
-                    [
-                        (
-                            "missing argument",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            field_type_location,
+                assert param.identifier.location is not None
+                argument_errors.push(
+                    ErrorEntry(
+                        "missing argument",
+                        Severity.ERROR,
+                        field_type_location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    f'expected argument for parameter "{param.identifier}"',
+                                    Severity.INFO,
+                                    param.identifier.location,
+                                ),
+                            ]
                         ),
-                        (
-                            f'expected argument for parameter "{param.identifier}"',
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            param.identifier.location,
-                        ),
-                    ],
+                    ),
                 )
 
     def _merge_inner_message(
@@ -2828,6 +2823,7 @@ class UncheckedMessage(mty.UncheckedTypeDecl):
                             expr.And(
                                 link.condition,
                                 final_link.condition,
+                                location=link.condition.location,
                             )
                             .substituted(mapping=substitution)
                             .substituted(substitute_message_variables)
@@ -2906,7 +2902,6 @@ class UncheckedMessage(mty.UncheckedTypeDecl):
         if not structure or not field_types:
             fail(
                 f'empty message type when merging field "{field.identifier}"',
-                Subsystem.MODEL,
                 Severity.ERROR,
                 field.identifier.location,
             )
@@ -2985,24 +2980,22 @@ class UncheckedMessage(mty.UncheckedTypeDecl):
                     )
                 ]
                 if locations:
-                    error.extend(
-                        [
-                            (
-                                f"messages with {issue} may only be used for last fields",
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                field.identifier.location,
-                            ),
-                            *[
-                                (
-                                    f'message field with {issue} in "{inner_message.identifier}"',
-                                    Subsystem.MODEL,
+                    assert are_all_locations_present(locations)
+                    error.push(
+                        ErrorEntry(
+                            f"messages with {issue} may only be used for last fields",
+                            Severity.ERROR,
+                            field.identifier.location,
+                            annotations=[
+                                Annotation(
+                                    f"message field with {issue} in "
+                                    f'"{inner_message.identifier}"',
                                     Severity.INFO,
                                     loc,
                                 )
                                 for loc in locations
                             ],
-                        ],
+                        ),
                     )
 
         error.propagate()
@@ -3020,28 +3013,28 @@ class UncheckedMessage(mty.UncheckedTypeDecl):
 
         if name_conflicts:
             conflicting = name_conflicts.pop(0)
-            error.extend(
-                [
-                    (
-                        f'name conflict for "{conflicting.identifier}" in'
-                        f' "{message.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        conflicting.identifier.location,
+            assert inner_message.location is not None
+            assert field.identifier.location is not None
+            error.push(
+                ErrorEntry(
+                    f'name conflict for "{conflicting.identifier}" in "{message.identifier}"',
+                    Severity.ERROR,
+                    conflicting.identifier.location,
+                    annotations=(
+                        [
+                            Annotation(
+                                f'when merging message "{inner_message.identifier}"',
+                                Severity.INFO,
+                                inner_message.location,
+                            ),
+                            Annotation(
+                                f'into field "{field.name}"',
+                                Severity.INFO,
+                                field.identifier.location,
+                            ),
+                        ]
                     ),
-                    (
-                        f'when merging message "{inner_message.identifier}"',
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        inner_message.location,
-                    ),
-                    (
-                        f'into field "{field.name}"',
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        field.identifier.location,
-                    ),
-                ],
+                ),
             )
 
         error.propagate()
@@ -3095,7 +3088,6 @@ class UncheckedDerivedMessage(mty.UncheckedTypeDecl):
         if not base_types:
             fail(
                 f'undefined base message "{self.base_identifier}" in derived message',
-                Subsystem.MODEL,
                 Severity.ERROR,
                 self.base_identifier.location,
             )
@@ -3103,19 +3095,22 @@ class UncheckedDerivedMessage(mty.UncheckedTypeDecl):
         base_messages = [t for t in base_types if isinstance(t, Message)]
 
         if not base_messages:
+            assert base_types[0].identifier.location is not None
             RecordFluxError(
                 [
-                    (
+                    ErrorEntry(
                         f'illegal derivation "{self.identifier}"',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.identifier.location,
-                    ),
-                    (
-                        f'invalid base message type "{self.base_identifier}"',
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        base_types[0].identifier.location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    f'invalid base message type "{self.base_identifier}"',
+                                    Severity.INFO,
+                                    base_types[0].identifier.location,
+                                ),
+                            ]
+                        ),
                     ),
                 ],
             ).propagate()
@@ -3164,23 +3159,19 @@ class UncheckedRefinement(mty.UncheckedTypeDecl):
         messages = {t.identifier: t for t in declarations if isinstance(t, Message)}
 
         if self.pdu not in messages:
-            error.extend(
-                [
-                    (
-                        f'undefined type "{self.pdu}" in refinement',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.pdu.location,
-                    ),
-                ],
+            error.push(
+                ErrorEntry(
+                    f'undefined type "{self.pdu}" in refinement',
+                    Severity.ERROR,
+                    self.pdu.location,
+                ),
             )
 
         if self.sdu not in messages:
             undefined_type_errors = {
-                (
+                ErrorEntry(
                     f'type "{potential_declaration.identifier}" cannot be used in'
                     " refinement because it's not a message type",
-                    Subsystem.MODEL,
                     Severity.ERROR,
                     self.sdu.location,
                 )
@@ -3190,9 +3181,8 @@ class UncheckedRefinement(mty.UncheckedTypeDecl):
 
             if len(undefined_type_errors) == 0:
                 undefined_type_errors.add(
-                    (
+                    ErrorEntry(
                         f'undefined type "{self.sdu}" in refinement of "{self.pdu}"',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.sdu.location,
                     ),
@@ -3213,7 +3203,7 @@ class UncheckedRefinement(mty.UncheckedTypeDecl):
                 skip_verification,
             )
         except RecordFluxError as e:
-            error.extend(e)
+            error.extend(e.entries)
 
         error.propagate()
 

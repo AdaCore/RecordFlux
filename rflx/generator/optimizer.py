@@ -11,7 +11,7 @@ from pathlib import Path
 from subprocess import PIPE, STDOUT, run
 from tempfile import TemporaryDirectory
 
-from rflx.error import Subsystem, fail
+from rflx.error import fail
 from rflx.spark import SPARKFile
 
 log = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def optimize(generated_dir: Path, workers: int = 0, timeout: int = 1) -> None:
     """Remove unnecessary checks in generated state machine code."""
 
     if not gnatprove_found():
-        fail("GNATprove is required for code optimization", Subsystem.GENERATOR)
+        fail("GNATprove is required for code optimization")
 
     with TemporaryDirectory() as tmp_dir_name:
         tmp_dir = Path(tmp_dir_name)
@@ -167,7 +167,6 @@ def prove(file: Path, lines: Iterable[int], workers: int = 0, timeout: int = 1) 
             fail(
                 f"gnatprove terminated with exit code {p.returncode}"
                 + ("\n" + p.stdout.decode("utf-8") if p.stdout is not None else ""),
-                Subsystem.GENERATOR,
             )
 
         return get_proof_results_for_asserts(

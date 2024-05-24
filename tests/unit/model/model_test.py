@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 import rflx.model.type_decl as mty
-from rflx.error import Location, RecordFluxError
 from rflx.expression import Equal, Number
 from rflx.identifier import ID
 from rflx.model import (
@@ -34,6 +33,7 @@ from rflx.model import (
 )
 from rflx.model.cache import Digest
 from rflx.model.top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
+from rflx.rapidflux import Location, RecordFluxError
 from tests.data import models
 
 
@@ -42,8 +42,8 @@ def test_illegal_redefinition_of_builtin_type() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:1:2: model: error: illegal redefinition of built-in type "Boolean"\n'
-            r'<stdin>:3:4: model: error: illegal redefinition of built-in type "Opaque"'
+            r'<stdin>:1:2: error: illegal redefinition of built-in type "Boolean"\n'
+            r'<stdin>:3:4: error: illegal redefinition of built-in type "Opaque"'
             r"$"
         ),
     ):
@@ -74,8 +74,8 @@ def test_name_conflict_types() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:11:30: model: error: name conflict for type "P::T"\n'
-            r'<stdin>:10:20: model: info: previous occurrence of "P::T"'
+            r'<stdin>:11:30: error: name conflict for type "P::T"\n'
+            r'<stdin>:10:20: info: previous occurrence of "P::T"'
             r"$"
         ),
     ):
@@ -97,8 +97,8 @@ def test_conflicting_refinements() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:10:30: model: error: conflicting refinement of "P::M" with "P::M"\n'
-            r"<stdin>:10:20: model: info: previous occurrence of refinement"
+            r'<stdin>:10:30: error: conflicting refinement of "P::M" with "P::M"\n'
+            r"<stdin>:10:20: info: previous occurrence of refinement"
             r"$"
         ),
     ):
@@ -115,8 +115,8 @@ def test_name_conflict_sessions() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:10:30: model: error: name conflict for session "P::S"\n'
-            r'<stdin>:10:20: model: info: previous occurrence of "P::S"'
+            r'<stdin>:10:30: error: name conflict for session "P::S"\n'
+            r'<stdin>:10:20: info: previous occurrence of "P::S"'
             r"$"
         ),
     ):
@@ -128,8 +128,8 @@ def test_conflicting_literal_builtin_type() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:3:31: model: error: literal "Boolean" conflicts with type declaration\n'
-            r'__BUILTINS__:0:0: model: info: conflicting type "__BUILTINS__::Boolean"'
+            r'<stdin>:3:31: error: literal "Boolean" conflicts with type declaration\n'
+            r'__BUILTINS__:0:0: info: conflicting type "__BUILTINS__::Boolean"'
             r"$"
         ),
     ):
@@ -154,10 +154,10 @@ def test_name_conflict_between_literal_and_type() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:3:27: model: error: literal "FOO" conflicts with type declaration\n'
-            r'<stdin>:4:16: model: info: conflicting type "P::Foo"\n'
-            r'<stdin>:3:32: model: error: literal "BAR" conflicts with type declaration\n'
-            r'<stdin>:5:16: model: info: conflicting type "P::Bar"'
+            r'<stdin>:3:27: error: literal "FOO" conflicts with type declaration\n'
+            r'<stdin>:4:16: info: conflicting type "P::Foo"\n'
+            r'<stdin>:3:32: error: literal "BAR" conflicts with type declaration\n'
+            r'<stdin>:5:16: info: conflicting type "P::Bar"'
             r"$"
         ),
     ):
@@ -183,9 +183,9 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r"<stdin>:3:16: model: error: conflicting literals: False, True\n"
-            r'__BUILTINS__:0:0: model: info: previous occurrence of "False"\n'
-            r'__BUILTINS__:0:0: model: info: previous occurrence of "True"'
+            r"<stdin>:3:16: error: conflicting literals: False, True\n"
+            r'__BUILTINS__:0:0: info: previous occurrence of "False"\n'
+            r'__BUILTINS__:0:0: info: previous occurrence of "True"'
             r"$"
         ),
     ):
@@ -233,8 +233,8 @@ def test_invalid_enumeration_type_identical_literals() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r"<stdin>:4:16: model: error: conflicting literals: Bar\n"
-            r'<stdin>:3:33: model: info: previous occurrence of "Bar"'
+            r"<stdin>:4:16: error: conflicting literals: Bar\n"
+            r'<stdin>:3:33: info: previous occurrence of "Bar"'
             r"$"
         ),
     ):
@@ -261,7 +261,11 @@ def test_write_specification_files(tmp_path: Path) -> None:
     t = Integer("P::T", Number(0), Number(255), Number(8))
     v = mty.Sequence("P::V", element_type=t)
     s = Session("P::S", [State("A", [Transition("null")])], [], [], [])
-    m = Message("P::M", [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)], {Field("Foo"): t})
+    m = Message(
+        ID("P::M", Location((1, 1))),
+        [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)],
+        {Field("Foo"): t},
+    )
     Model([t, v, s, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
     assert list(tmp_path.glob("*.rflx")) == [expected_path]
@@ -296,7 +300,11 @@ def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
     s = Integer("P::S", Number(0), Number(65535), Number(16))
     t = Integer("P::T", Number(0), Number(255), Number(8))
     v = mty.Sequence("P::V", element_type=t)
-    m = Message("P::M", [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)], {Field("Foo"): t})
+    m = Message(
+        ID("P::M", Location((1, 1))),
+        [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)],
+        {Field("Foo"): t},
+    )
     Model([s, v, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
     assert list(tmp_path.glob("*.rflx")) == [expected_path]
@@ -330,7 +338,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
         Link(Field("Uniform"), FINAL),
     ]
     fields = {Field("Victor"): v, Field("Uniform"): u}
-    m = Message("R::M", links, fields)
+    m = Message(ID("R::M", Location((1, 1))), links, fields)
     Model([t, v, u1, m, u]).write_specification_files(tmp_path)
     p_path, q_path, r_path = (tmp_path / Path(pkg + ".rflx") for pkg in ("p", "q", "r"))
     assert set(tmp_path.glob("*.rflx")) == {p_path, q_path, r_path}
@@ -385,7 +393,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
         Link(Field("Uniform"), FINAL),
     ]
     fields = {Field("Victor"): v, Field("Uniform"): u}
-    m = Message("R::M", links, fields)
+    m = Message(ID("R::M", Location((1, 1))), links, fields)
     Model([u1, m, u, v]).write_specification_files(tmp_path)
     p_path, q_path, r_path = (tmp_path / Path(pkg + ".rflx") for pkg in ("p", "q", "r"))
     assert set(tmp_path.glob("*.rflx")) == {p_path, q_path, r_path}
@@ -483,7 +491,7 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
             [
                 UNCHECKED_OPAQUE,
                 UncheckedMessage(
-                    ID("P::M"),
+                    ID("P::M", Location((1, 1))),
                     [
                         Link(INITIAL, Field("F"), size=Number(16)),
                         Link(Field("F"), FINAL),
@@ -500,7 +508,7 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
             [
                 lambda: OPAQUE,
                 lambda: Message(
-                    "P::M",
+                    ID("P::M", Location((1, 1))),
                     [
                         Link(INITIAL, Field("F"), size=Number(16)),
                         Link(Field("F"), FINAL),
@@ -537,7 +545,7 @@ def test_unchecked_model_checked(
     [
         (
             [mty.UncheckedInteger(ID("P::T"), Number(0), Number(128), Number(2), Location((1, 2)))],
-            r'^<stdin>:1:2: model: error: size of "T" too small$',
+            r'^<stdin>:1:2: error: size of "T" too small$',
         ),
         (
             [
@@ -557,7 +565,7 @@ def test_unchecked_model_checked(
                     location=Location((2, 3)),
                 ),
                 UncheckedMessage(
-                    ID("P::M"),
+                    ID("P::M", Location((1, 1))),
                     [
                         Link(
                             INITIAL,
@@ -580,9 +588,9 @@ def test_unchecked_model_checked(
                 ),
             ],
             r"^"
-            r'<stdin>:1:2: model: error: size of "I" too small\n'
-            r'<stdin>:3:4: model: error: invalid format for identifier "E"\n'
-            r'<stdin>:5:6: model: error: condition "1 = 1" on transition "F1" -> "Final"'
+            r'<stdin>:1:2: error: size of "I" too small\n'
+            r'<stdin>:3:4: error: invalid format for identifier "E"\n'
+            r'<stdin>:5:6: error: condition "1 = 1" on transition "F1" -> "Final"'
             r" is always true"
             r"$",
         ),

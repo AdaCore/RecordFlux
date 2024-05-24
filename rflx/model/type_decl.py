@@ -10,8 +10,9 @@ from typing import Optional
 import rflx.typing_ as rty
 from rflx import const, expression as expr
 from rflx.common import indent_next, verbose_repr
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import fail
 from rflx.identifier import ID, StrID
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 from . import message
 from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
@@ -112,47 +113,40 @@ class Integer(Scalar):
         size_num = size.simplified()
 
         if not isinstance(first_num, expr.Number):
-            self.error.extend(
-                [
-                    (
-                        f'first of "{self.name}" contains variable',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'first of "{self.name}" contains variable',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
 
         if not isinstance(last_num, expr.Number):
-            self.error.fail(
-                f'last of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.push(
+                ErrorEntry(
+                    f'last of "{self.name}" contains variable',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
+            raise self.error
 
         if int(last_num) >= 2**const.MAX_SCALAR_SIZE:
-            self.error.extend(
-                [
-                    (
-                        f'last of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE} - 1)',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'last of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE} - 1)',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
 
         if not isinstance(size_num, expr.Number):
-            self.error.extend(
-                [
-                    (
-                        f'size of "{self.name}" contains variable',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'size of "{self.name}" contains variable',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
 
         self.error.propagate()
@@ -162,53 +156,41 @@ class Integer(Scalar):
         assert isinstance(size_num, expr.Number)
 
         if first_num < expr.Number(0):
-            self.error.extend(
-                [
-                    (
-                        f'first of "{self.name}" negative',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'first of "{self.name}" negative',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
         if first_num > last_num:
-            self.error.extend(
-                [
-                    (
-                        f'range of "{self.name}" negative',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'range of "{self.name}" negative',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
 
         if int(last_num).bit_length() > int(size_num):
-            self.error.extend(
-                [
-                    (
-                        f'size of "{self.name}" too small',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'size of "{self.name}" too small',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
 
         # Eng/RecordFlux/RecordFlux#1077
         # size of integers is limited to 63bits
 
         if int(size_num) > const.MAX_SCALAR_SIZE:
-            self.error.extend(
-                [
-                    (
-                        f'size of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'size of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
 
         self.error.propagate()
@@ -290,35 +272,34 @@ class Enumeration(Scalar):
         for i1, e1 in enumerate(literals):
             for i2, e2 in enumerate(literals):
                 if i2 < i1 and e1[0] == e2[0]:
-                    self.error.extend(
-                        [
-                            (
-                                f'duplicate literal "{e1[0]}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                e1[0].location if isinstance(e1[0], ID) else self.location,
+                    annotation_location = e2[0].location if isinstance(e2[0], ID) else self.location
+                    assert annotation_location is not None
+                    self.error.push(
+                        ErrorEntry(
+                            f'duplicate literal "{e1[0]}"',
+                            Severity.ERROR,
+                            e1[0].location if isinstance(e1[0], ID) else self.location,
+                            annotations=(
+                                [
+                                    Annotation(
+                                        "previous occurrence",
+                                        Severity.INFO,
+                                        annotation_location,
+                                    ),
+                                ]
                             ),
-                            (
-                                "previous occurrence",
-                                Subsystem.MODEL,
-                                Severity.INFO,
-                                e2[0].location if isinstance(e2[0], ID) else self.location,
-                            ),
-                        ],
+                        ),
                     )
 
         self.literals = {}
         for k, v in literals:
             if " " in str(k) or "." in str(k):
-                self.error.extend(
-                    [
-                        (
-                            f'invalid literal name "{k}" in "{self.name}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        f'invalid literal name "{k}" in "{self.name}"',
+                        Severity.ERROR,
+                        self.location,
+                    ),
                 )
                 continue
             self.literals[ID(k)] = v
@@ -326,79 +307,69 @@ class Enumeration(Scalar):
         size_num = size.simplified()
 
         if not isinstance(size_num, expr.Number):
-            self.error.fail(
-                f'size of "{self.name}" contains variable',
-                Subsystem.MODEL,
-                Severity.ERROR,
-                self.location,
+            self.error.push(
+                ErrorEntry(
+                    f'size of "{self.name}" contains variable',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
+            raise self.error
 
         if self.literals.values():
             min_literal_value = min(map(int, self.literals.values()))
             max_literal_value = max(map(int, self.literals.values()))
             if min_literal_value < 0 or max_literal_value > 2**const.MAX_SCALAR_SIZE - 1:
-                self.error.extend(
-                    [
-                        (
-                            f'enumeration value of "{self.name}"'
-                            f" outside of permitted range (0 .. 2**{const.MAX_SCALAR_SIZE} - 1)",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        f'enumeration value of "{self.name}"'
+                        f" outside of permitted range (0 .. 2**{const.MAX_SCALAR_SIZE} - 1)",
+                        Severity.ERROR,
+                        self.location,
+                    ),
                 )
             if max_literal_value.bit_length() > int(size_num):
-                self.error.extend(
-                    [
-                        (
-                            f'size of "{self.name}" too small',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.location,
-                        ),
-                    ],
+                self.error.push(
+                    ErrorEntry(
+                        f'size of "{self.name}" too small',
+                        Severity.ERROR,
+                        self.location,
+                    ),
                 )
 
         # Eng/RecordFlux/RecordFlux#1077
         # size of integers is limited to 63bits
 
         if int(size_num) > const.MAX_SCALAR_SIZE:
-            self.error.extend(
-                [
-                    (
-                        f'size of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'size of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
         for i1, v1 in enumerate(self.literals.values()):
             for i2, v2 in enumerate(self.literals.values()):
                 if i1 < i2 and v1 == v2:
-                    self.error.extend(
-                        [
-                            (
-                                f'duplicate enumeration value "{v1}" in "{self.name}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                v2.location,
-                            ),
-                            ("previous occurrence", Subsystem.MODEL, Severity.INFO, v1.location),
-                        ],
+                    assert v1.location is not None
+                    self.error.push(
+                        ErrorEntry(
+                            f'duplicate enumeration value "{v1}" in "{self.name}"',
+                            Severity.ERROR,
+                            v2.location,
+                            annotations=[
+                                Annotation("previous occurrence", Severity.INFO, v1.location),
+                            ],
+                        ),
                     )
 
         if always_valid and len(self.literals) == 2 ** int(size_num):
-            self.error.extend(
-                [
-                    (
-                        f'unnecessary always-valid aspect on "{self.name}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        self.location,
-                    ),
-                ],
+            self.error.push(
+                ErrorEntry(
+                    f'unnecessary always-valid aspect on "{self.name}"',
+                    Severity.ERROR,
+                    self.location,
+                ),
             )
 
         self.error.propagate()
@@ -502,48 +473,49 @@ class Sequence(Composite):
         self.element_type = element_type
 
         if not isinstance(element_type, Scalar) and not isinstance(element_type, message.Message):
-            self.error.extend(
-                [
-                    (
-                        f'invalid element type of sequence "{self.name}"',
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        location,
+            assert element_type.location is not None
+            self.error.push(
+                ErrorEntry(
+                    f'invalid element type of sequence "{self.name}"',
+                    Severity.ERROR,
+                    location,
+                    annotations=(
+                        [
+                            Annotation(
+                                f'type "{element_type.name}" must be scalar or message',
+                                Severity.INFO,
+                                element_type.location,
+                            ),
+                        ]
                     ),
-                    (
-                        f'type "{element_type.name}" must be scalar or message',
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        element_type.location,
-                    ),
-                ],
+                ),
             )
 
         if isinstance(element_type, Scalar):
             element_type_size = element_type.size.simplified()
             if not isinstance(element_type_size, expr.Number) or int(element_type_size) % 8 != 0:
-                self.error.extend(
-                    [
-                        (
-                            f'unsupported element type size of sequence "{self.name}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            location,
+                assert element_type.location is not None
+                self.error.push(
+                    ErrorEntry(
+                        f'unsupported element type size of sequence "{self.name}"',
+                        Severity.ERROR,
+                        location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    f'type "{element_type.name}" has size {element_type_size},'
+                                    r" must be multiple of 8",
+                                    Severity.INFO,
+                                    element_type.location,
+                                ),
+                            ]
                         ),
-                        (
-                            f'type "{element_type.name}" has size {element_type_size},'
-                            r" must be multiple of 8",
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            element_type.location,
-                        ),
-                    ],
+                    ),
                 )
 
         if isinstance(element_type, message.Message):
-            error_entry = (
+            error_entry = ErrorEntry(
                 f'invalid element type of sequence "{self.name}"',
-                Subsystem.MODEL,
                 Severity.ERROR,
                 location,
             )
@@ -552,9 +524,8 @@ class Sequence(Composite):
                 self.error.extend(
                     [
                         error_entry,
-                        (
+                        ErrorEntry(
                             "null messages must not be used as sequence element",
-                            Subsystem.MODEL,
                             Severity.INFO,
                             element_type.location,
                         ),
@@ -565,9 +536,8 @@ class Sequence(Composite):
                 self.error.extend(
                     [
                         error_entry,
-                        (
+                        ErrorEntry(
                             "parameterized messages must not be used as sequence element",
-                            Subsystem.MODEL,
                             Severity.INFO,
                             element_type.location,
                         ),
@@ -582,10 +552,9 @@ class Sequence(Composite):
                 self.error.extend(
                     [
                         error_entry,
-                        (
+                        ErrorEntry(
                             "messages used as sequence element must not depend"
                             ' on "Message\'Size" or "Message\'Last"',
-                            Subsystem.MODEL,
                             Severity.INFO,
                             element_type.location,
                         ),
@@ -713,7 +682,6 @@ class UncheckedSequence(UncheckedTypeDecl):
         if not element_type:
             fail(
                 f'undefined element type "{self.element_identifier}"',
-                Subsystem.MODEL,
                 Severity.ERROR,
                 self.element_identifier.location,
             )
@@ -846,23 +814,22 @@ def check_identifier_notation(
             and str(expression.identifier) != str(id_map[expression.identifier])
         ):
             declaration_location = id_map[expression.identifier].location
-            error.extend(
-                [
-                    (
-                        f'casing of "{expression.identifier}" differs from casing in the'
-                        f' declaration of "{id_map[expression.identifier]}"'
-                        + (f" at {declaration_location.short}" if declaration_location else ""),
-                        Subsystem.MODEL,
-                        Severity.ERROR,
-                        expression.identifier.location,
-                    ),
-                    (
-                        f'declaration of "{id_map[expression.identifier]}"',
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        declaration_location,
-                    ),
-                ],
+            assert declaration_location is not None
+            error.push(
+                ErrorEntry(
+                    f'casing of "{expression.identifier}" differs from casing in the'
+                    f' declaration of "{id_map[expression.identifier]}"'
+                    + (f" at {declaration_location.short}" if declaration_location else ""),
+                    Severity.ERROR,
+                    expression.identifier.location,
+                    annotations=[
+                        Annotation(
+                            f'declaration of "{id_map[expression.identifier]}"',
+                            Severity.INFO,
+                            declaration_location,
+                        ),
+                    ],
+                ),
             )
         return expression
 

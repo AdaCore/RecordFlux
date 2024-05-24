@@ -81,7 +81,7 @@ from rflx.ada import (
 )
 from rflx.common import file_name
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE, MAX_SCALAR_SIZE, MP_CONTEXT
-from rflx.error import RecordFluxError, Severity, Subsystem, fail, warn
+from rflx.error import fail, warn
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import (
@@ -100,6 +100,7 @@ from rflx.model import (
     Session,
     TypeDecl,
 )
+from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
 
 from . import common, const, message as message_generator
 from .allocator import AllocatorGenerator
@@ -163,22 +164,19 @@ class Generator:
         if non_updated_files:
             RecordFluxError(
                 [
-                    (
+                    ErrorEntry(
                         "partial update of generated files",
-                        Subsystem.GENERATOR,
                         Severity.ERROR,
                         None,
                     ),
-                    (
+                    ErrorEntry(
                         "files not generated in the current run could lead to unexpected behavior: "
                         + ", ".join(str(f.name) for f in non_updated_files),
-                        Subsystem.GENERATOR,
                         Severity.INFO,
                         None,
                     ),
-                    (
+                    ErrorEntry(
                         "remove the affected files or choose another directory and retry",
-                        Subsystem.GENERATOR,
                         Severity.INFO,
                         None,
                     ),
@@ -295,13 +293,11 @@ class Generator:
                     if not self._ignore_unsupported_checksum:
                         fail(
                             "unsupported checksum (consider --ignore-unsupported-checksum option)",
-                            Subsystem.GENERATOR,
                             location=c.location,
                         )
                     else:
                         warn(
                             "unsupported checksum ignored",
-                            Subsystem.GENERATOR,
                             location=c.location,
                         )
 

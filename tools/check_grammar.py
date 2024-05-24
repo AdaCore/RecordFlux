@@ -23,7 +23,7 @@ from typing import Final
 import lark.grammar
 import lark.visitors
 
-import rflx.error
+import rflx.rapidflux
 
 BNF_PARSER: Final = lark.Lark(
     r"""
@@ -73,7 +73,7 @@ class TreeToLark(lark.Transformer[lark.lexer.Token, lark.Lark]):
         self,
         filename: Path,
         verbal_map: dict[str, str],
-        errors: rflx.error.RecordFluxError,
+        errors: rflx.rapidflux.RecordFluxError,
     ):
         self._filename = filename
         self._verbal_map = verbal_map
@@ -95,18 +95,15 @@ class TreeToLark(lark.Transformer[lark.lexer.Token, lark.Lark]):
     def verbal(self, data: list[lark.lexer.Token]) -> str:
         verbal = data[0].value.strip()
         if verbal not in self._verbal_map:
-            self._errors.extend(
-                [
-                    (
-                        f"No mapping for verbal: '{verbal}'",
-                        rflx.error.Subsystem.PARSER,
-                        rflx.error.Severity.ERROR,
-                        rflx.error.Location(
-                            start=(data[0].line or 1, data[0].column or 1),
-                            source=self._filename,
-                        ),
+            self._errors.push(
+                rflx.rapidflux.ErrorEntry(
+                    f"No mapping for verbal: '{verbal}'",
+                    rflx.rapidflux.Severity.ERROR,
+                    rflx.rapidflux.Location(
+                        start=(data[0].line or 1, data[0].column or 1),
+                        source=self._filename,
                     ),
-                ],
+                ),
             )
             return ""
         return f"/{self._verbal_map[verbal]}/"
@@ -142,18 +139,15 @@ class TreeToLark(lark.Transformer[lark.lexer.Token, lark.Lark]):
         assert num_starts > 0
         if num_starts > 1:
             starts_str = ", ".join(sorted(starts))
-            self._errors.extend(
-                [
-                    (
-                        f"Multiple start rules: {starts_str}",
-                        rflx.error.Subsystem.PARSER,
-                        rflx.error.Severity.ERROR,
-                        rflx.error.Location(
-                            start=(1, 1),
-                            source=self._filename,
-                        ),
+            self._errors.push(
+                rflx.rapidflux.ErrorEntry(
+                    f"Multiple start rules: {starts_str}",
+                    rflx.rapidflux.Severity.ERROR,
+                    rflx.rapidflux.Location(
+                        start=(1, 1),
+                        source=self._filename,
                     ),
-                ],
+                ),
             )
         return starts.pop()
 
@@ -164,7 +158,7 @@ def check_spec(
     invalid: bool,
     verbal_map: dict[str, str],
     max_prod_line_len: int,
-    errors: rflx.error.RecordFluxError,
+    errors: rflx.rapidflux.RecordFluxError,
 ) -> None:
     with filename.open() as infile:
         data = ""
@@ -183,42 +177,33 @@ def check_spec(
 
             if inside:
                 if not re.match(r"^(\s+[a-z:]|$)", line):
-                    errors.extend(
-                        [
-                            (
-                                "Invalid production line",
-                                rflx.error.Subsystem.PARSER,
-                                rflx.error.Severity.ERROR,
-                                rflx.error.Location((lineno, 1), filename),
-                            ),
-                        ],
+                    errors.push(
+                        rflx.rapidflux.ErrorEntry(
+                            "Invalid production line",
+                            rflx.rapidflux.Severity.ERROR,
+                            rflx.rapidflux.Location((lineno, 1), filename),
+                        ),
                     )
                 if len(line) > max_prod_line_len:
-                    errors.extend(
-                        [
-                            (
-                                f"Line too long (expected <= {max_prod_line_len})",
-                                rflx.error.Subsystem.PARSER,
-                                rflx.error.Severity.ERROR,
-                                rflx.error.Location((lineno, len(line) - 1), filename),
-                            ),
-                        ],
+                    errors.push(
+                        rflx.rapidflux.ErrorEntry(
+                            f"Line too long (expected <= {max_prod_line_len})",
+                            rflx.rapidflux.Severity.ERROR,
+                            rflx.rapidflux.Location((lineno, len(line) - 1), filename),
+                        ),
                     )
             data += f"{line}" if inside else "\n"
 
     if not data.strip():
-        errors.extend(
-            [
-                (
-                    "No grammar found",
-                    rflx.error.Subsystem.PARSER,
-                    rflx.error.Severity.ERROR,
-                    rflx.error.Location((1, 1), filename),
-                ),
-            ],
+        errors.push(
+            rflx.rapidflux.ErrorEntry(
+                "No grammar found",
+                rflx.rapidflux.Severity.ERROR,
+                rflx.rapidflux.Location((1, 1), filename),
+            ),
         )
 
-    if errors.errors:
+    if errors.has_errors():
         return
 
     try:
@@ -232,17 +217,16 @@ def check_spec(
         column = max(ue.column, 1)
         errors.extend(
             [
-                (
+                rflx.rapidflux.ErrorEntry(
                     line,
-                    rflx.error.Subsystem.PARSER,
-                    rflx.error.Severity.ERROR if index == 0 else rflx.error.Severity.INFO,
-                    rflx.error.Location(start=(lineno, column), source=filename),
+                    rflx.rapidflux.Severity.ERROR if index == 0 else rflx.rapidflux.Severity.INFO,
+                    rflx.rapidflux.Location(start=(lineno, column), source=filename),
                 )
                 for index, line in enumerate(str(ue).strip().split("\n"))
             ],
         )
 
-    if errors.errors:
+    if errors.has_errors():
         return
 
     assert isinstance(tree, lark.Lark)
@@ -253,15 +237,12 @@ def check_spec(
             try:
                 tree.parse(ef.read())
                 if invalid:
-                    errors.extend(
-                        [
-                            (
-                                "Specification should be rejected",
-                                rflx.error.Subsystem.PARSER,
-                                rflx.error.Severity.ERROR,
-                                rflx.error.Location(start=(1, 1), source=example),
-                            ),
-                        ],
+                    errors.push(
+                        rflx.rapidflux.ErrorEntry(
+                            "Specification should be rejected",
+                            rflx.rapidflux.Severity.ERROR,
+                            rflx.rapidflux.Location(start=(1, 1), source=example),
+                        ),
                     )
             except (lark.exceptions.UnexpectedCharacters, lark.exceptions.UnexpectedEOF) as e:
                 lineno = max(e.line, 1)
@@ -270,15 +251,14 @@ def check_spec(
                 if not invalid:
                     errors.extend(
                         [
-                            (
+                            rflx.rapidflux.ErrorEntry(
                                 line,
-                                rflx.error.Subsystem.PARSER,
                                 (
-                                    rflx.error.Severity.ERROR
+                                    rflx.rapidflux.Severity.ERROR
                                     if index == 0
-                                    else rflx.error.Severity.INFO
+                                    else rflx.rapidflux.Severity.INFO
                                 ),
-                                rflx.error.Location(start=(lineno, column), source=example),
+                                rflx.rapidflux.Location(start=(lineno, column), source=example),
                             )
                             for index, line in enumerate(str(e).strip().split("\n"))
                         ],
@@ -317,7 +297,7 @@ def main() -> None:
     arguments = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    errors = rflx.error.RecordFluxError()
+    errors = rflx.rapidflux.RecordFluxError()
 
     verbal_map = {}
     if arguments.verbal_map:
@@ -333,7 +313,7 @@ def main() -> None:
         errors=errors,
     )
 
-    if errors.errors:
+    if errors.has_errors():
         sys.exit(str(errors))
 
 
