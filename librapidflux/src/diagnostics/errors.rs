@@ -2,6 +2,7 @@ use std::{
     fmt::{Debug, Display},
     fs,
     io::{self, Write},
+    sync::atomic::{AtomicU64, Ordering},
 };
 
 #[cfg(not(test))]
@@ -19,6 +20,9 @@ const RENDERER: annotate_snippets::Renderer = annotate_snippets::Renderer::style
 
 #[cfg(test)]
 const RENDERER: annotate_snippets::Renderer = annotate_snippets::Renderer::plain();
+
+static MAX_ERROR_COUNT: AtomicU64 = AtomicU64::new(0);
+static ERROR_COUNT: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum Severity {
@@ -244,14 +248,29 @@ impl From<Vec<ErrorEntry>> for RapidFluxError {
 }
 
 impl RapidFluxError {
-    /// Push a new error entry
-    pub fn push(&mut self, entry: ErrorEntry) {
+    /// Push a new error entry.
+    ///
+    /// Return true if the push succeeded or false otherwise.
+    /// A failed push indicates that we've reached the maximum number of error messages
+    /// and we should stop the execution.
+    pub fn push(&mut self, entry: ErrorEntry) -> bool {
         self.entries.push(entry);
+        ERROR_COUNT.fetch_add(1, Ordering::Relaxed);
+
+        Self::error_count_below_threshold()
     }
 
-    /// Extend error collection from an iterator. Takes the entries' ownership
-    pub fn extend<T: IntoIterator<Item = ErrorEntry>>(&mut self, entries: T) {
+    /// Extend error collection from an iterator. Takes the entries' ownership.
+    ///
+    /// Return value is the same as for the `push` method.
+    pub fn extend<T: IntoIterator<Item = ErrorEntry>>(&mut self, entries: T) -> bool {
+        let entries_count = self.entries.len();
         self.entries.extend(entries);
+
+        let added_entries_count = (self.entries.len() - entries_count) as u64;
+        debug_assert!(added_entries_count <= self.entries.len() as u64);
+        ERROR_COUNT.fetch_add(added_entries_count, Ordering::Relaxed);
+        Self::error_count_below_threshold()
     }
 
     pub fn clear(&mut self) {
@@ -260,6 +279,16 @@ impl RapidFluxError {
 
     pub fn entries(&self) -> &[ErrorEntry] {
         &self.entries
+    }
+
+    pub fn set_max_error(max: u64) {
+        MAX_ERROR_COUNT.store(max, Ordering::Relaxed);
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn reset_counts() {
+        ERROR_COUNT.store(0, Ordering::Relaxed);
+        MAX_ERROR_COUNT.store(0, Ordering::Relaxed);
     }
 
     /// Print all messages to `stdout`
@@ -293,6 +322,11 @@ impl RapidFluxError {
     pub fn has_errors(&self) -> bool {
         self.entries.iter().any(|e| e.severity == Severity::Error)
     }
+
+    fn error_count_below_threshold() -> bool {
+        ERROR_COUNT.load(Ordering::Relaxed) < MAX_ERROR_COUNT.load(Ordering::Relaxed)
+            || MAX_ERROR_COUNT.load(Ordering::Relaxed) == 0
+    }
 }
 
 #[cfg(test)]
@@ -302,6 +336,7 @@ mod tests {
     use indoc::indoc;
     use pretty_assertions::assert_eq;
     use rstest::rstest;
+    use serial_test::{parallel, serial};
 
     use crate::diagnostics::{ErrorEntry, FilePosition, Location};
 
@@ -668,6 +703,7 @@ mod tests {
         ],
         false,
     )]
+    #[parallel]
     fn test_rapid_flux_error_has_error(#[case] entries: Vec<ErrorEntry>, #[case] expected: bool) {
         let mut error = RapidFluxError::default();
         assert!(!error.has_errors());
@@ -723,22 +759,92 @@ mod tests {
     }
 
     #[test]
+    #[parallel]
     fn test_rapid_flux_error_push() {
+        RapidFluxError::reset_counts();
         let entry = ErrorEntry {
             message: "dummy".to_string(),
             severity: Severity::Error,
-            annotations: vec![Annotation::new(Severity::Error, Location::default(), None)],
+            annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
             location: Some(Location::default()),
         };
 
         let mut error: RapidFluxError = RapidFluxError::default();
-        error.push(entry.clone());
+        assert!(error.push(entry.clone()));
         assert_eq!(error.entries, vec![entry.clone()]);
-        error.push(entry.clone());
+        assert!(error.push(entry.clone()));
         assert_eq!(error.entries, vec![entry.clone(), entry]);
     }
 
     #[test]
+    #[serial]
+    fn test_rapid_flux_error_push_with_limit() {
+        RapidFluxError::reset_counts();
+        RapidFluxError::set_max_error(2);
+        let entry = ErrorEntry {
+            message: "dummy".to_string(),
+            severity: Severity::Error,
+            annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
+            location: Some(Location::default()),
+        };
+
+        let mut error: RapidFluxError = RapidFluxError::default();
+        assert!(error.push(entry.clone()));
+        assert_eq!(error.entries, vec![entry.clone()]);
+        assert!(!error.push(entry.clone()));
+        RapidFluxError::set_max_error(0);
+    }
+
+    #[test]
+    #[parallel]
+    fn test_rapid_flux_extend() {
+        RapidFluxError::reset_counts();
+        let entry = ErrorEntry {
+            message: "dummy".to_string(),
+            severity: Severity::Error,
+            annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
+            location: Some(Location::default()),
+        };
+        let second_entry = ErrorEntry {
+            message: "other dummy".to_string(),
+            severity: Severity::Error,
+            annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
+            location: Some(Location::default()),
+        };
+
+        let mut error: RapidFluxError = RapidFluxError::default();
+        assert!(error.extend([entry, second_entry]));
+    }
+
+    #[test]
+    #[serial]
+    fn test_rapid_flux_error_extend_with_limit() {
+        RapidFluxError::reset_counts();
+        RapidFluxError::set_max_error(3);
+        let entries = vec![
+            ErrorEntry {
+                message: "dummy".to_string(),
+                severity: Severity::Error,
+                annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
+                location: Some(Location::default()),
+            },
+            ErrorEntry {
+                message: "other dummy".to_string(),
+                severity: Severity::Error,
+                annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
+                location: Some(Location::default()),
+            },
+        ];
+
+        let mut error: RapidFluxError = RapidFluxError::default();
+        assert!(error.extend(entries.clone()));
+        assert!(!error.extend(entries.clone()));
+        assert!(!error.extend(entries.clone()));
+        RapidFluxError::set_max_error(0);
+    }
+
+    #[test]
+    #[parallel]
     fn test_rapid_flux_error_clear() {
         let vector = vec![
             ErrorEntry {
@@ -862,5 +968,15 @@ mod tests {
         let bytes = bincode::serialize(&errors).expect("failed to serialize");
         let deser: RapidFluxError = bincode::deserialize(&bytes).expect("failed to deserialize");
         assert_eq!(errors, deser);
+    }
+
+    #[allow(clippy::redundant_clone)]
+    #[test]
+    fn test_rapid_flux_error_clone() {
+        use std::ptr::addr_of;
+        let error = RapidFluxError::default();
+        let cloned = error.clone();
+
+        assert_ne!(addr_of!(error), addr_of!(cloned));
     }
 }
