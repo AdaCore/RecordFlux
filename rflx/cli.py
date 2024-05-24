@@ -432,12 +432,13 @@ Command: {' '.join(argv)}
 {traceback.format_exc()}
 ----------------------------------------------------------------------------
 
-A bug was detected. Please report this issue on GitHub:
-
-https://github.com/AdaCore/RecordFlux/issues/new?labels=bug
-
-Include the complete content of the bug box shown above and all input files
-in the report."""
+A bug was detected. Please submit a bug report using GNATtracker at
+https://support.adacore.com/csm by logging in and clicking the
+'Create A New Case' button. Alternatively, submit a bug report by email to
+support@adacore.com, including your account number #xxxx in the subject line.
+Use a subject line meaningful to you and us to track the bug. Include the
+complete content of the bug box shown above and all the input files in the
+report. Use plain ASCII or MIME attachment(s)."""
 
     return 0
 

@@ -451,7 +451,7 @@ def test_main_validate_fatal_error(
 def test_main_unexpected_exception(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
     assert re.fullmatch(
-        r"\n-* RecordFlux Bug -*.*Traceback.*-*.*RecordFlux/issues.*",
+        r"\n-* RecordFlux Bug -*.*Traceback.*-*.*GNATtracker.*",
         str(
             cli.main(
                 ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
