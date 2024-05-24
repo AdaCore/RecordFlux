@@ -13,12 +13,12 @@ import pytest
 
 from rflx import ada, lang
 from rflx.common import STDIN
-from rflx.error import Location, RecordFluxError
 from rflx.expression import Expr
 from rflx.generator import Debug, Generator, const
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import Field, Link, Message, Model, Session, State, TypeDecl, declaration as decl
+from rflx.rapidflux import Location, RecordFluxError
 from rflx.specification import Parser
 from rflx.specification.parser import (
     create_bool_expression,
@@ -47,9 +47,16 @@ def assert_message_model_error(
     checksums: Optional[Mapping[ID, Sequence[Expr]]] = None,
     location: Optional[Location] = None,
 ) -> None:
+    location = location or Location((1, 1))
     check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
-        Message("P::M", structure, types, checksums=checksums, location=location)
+        Message(
+            ID("P::M", location),
+            structure,
+            types,
+            checksums=checksums,
+            location=location,
+        )
 
 
 def assert_session_model_error(
@@ -891,3 +898,12 @@ def spark_version() -> str:
         p.stdout.decode("utf-8").split("\n")[0],
     )
     return m.group(1) if m else "unknown"
+
+
+def assert_stderr_regex(
+    expected_regex: str,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    check_regex(expected_regex)
+    capture = capfd.readouterr()
+    assert re.match(expected_regex, capture.err) is not None

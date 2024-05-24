@@ -6,7 +6,7 @@ import pygments.lexer
 import pygments.token
 
 from rflx import lang
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
+from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
 # TODO(eng/recordflux/RecordFlux#1411): Obtain mapping from langkit parser
 MAPPINGS = {
@@ -125,15 +125,12 @@ def _calculate_offset(text: str, line: int, column: int) -> int:
     error = RecordFluxError()
 
     if line > len(split):
-        error.extend(
-            [
-                (
-                    "line out of range",
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    Location((line, column)),
-                ),
-            ],
+        error.push(
+            ErrorEntry(
+                "line out of range",
+                Severity.ERROR,
+                Location((line, column)),
+            ),
         )
 
     error.propagate()
@@ -141,15 +138,12 @@ def _calculate_offset(text: str, line: int, column: int) -> int:
     offset, linelen = split[line - 1]
 
     if column > linelen:
-        error.extend(
-            [
-                (
-                    "column out of range",
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    Location((line, column)),
-                ),
-            ],
+        error.push(
+            ErrorEntry(
+                "column out of range",
+                Severity.ERROR,
+                Location((line, column)),
+            ),
         )
 
     error.propagate()

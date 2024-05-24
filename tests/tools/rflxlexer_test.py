@@ -2,7 +2,7 @@ import pytest
 from pygments import token
 
 import tools.rflxlexer
-from rflx.error import RecordFluxError
+from rflx.rapidflux import RecordFluxError
 from tests.const import FEATURE_DIR
 
 # ruff: noqa: SLF001
@@ -16,10 +16,10 @@ def test_calculate_offset_valid() -> None:
 
 
 def test_calculate_offset_invalid() -> None:
-    with pytest.raises(RecordFluxError, match="^<stdin>:2:1: parser: error: line out of range$"):
+    with pytest.raises(RecordFluxError, match="^<stdin>:2:1: error: line out of range$"):
         tools.rflxlexer._calculate_offset("", 2, 1)
 
-    with pytest.raises(RecordFluxError, match="^<stdin>:2:4: parser: error: column out of range$"):
+    with pytest.raises(RecordFluxError, match="^<stdin>:2:4: error: column out of range$"):
         tools.rflxlexer._calculate_offset("1234232\n1", 2, 4)
 
 

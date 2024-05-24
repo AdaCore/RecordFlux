@@ -10,10 +10,10 @@ from ruamel.yaml.error import MarkedYAMLError
 from ruamel.yaml.main import YAML
 from typing_extensions import Annotated
 
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID
 from rflx.model import Model
 from rflx.model.session import Session
+from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
 # TODO(eng/recordflux/RecordFlux#1359): Replace ty.* by collections.abc.*
 # Sequence and Mapping are imported from collections.abc as importing them
@@ -75,7 +75,7 @@ class Integration:
                     ),
                     source=integration_file,
                 )
-                error.extend([(str(e), Subsystem.PARSER, Severity.ERROR, location)])
+                error.push(ErrorEntry(str(e), Severity.ERROR, location))
                 return
             self._add_integration_object(integration_file, content, error)
 
@@ -88,15 +88,12 @@ class Integration:
                     if package == str(s.package).lower() and str(s.identifier.name) == session_name
                 ]
                 if not matching_sessions:
-                    error.extend(
-                        [
-                            (
-                                f'unknown session "{session_name}"',
-                                Subsystem.PARSER,
-                                Severity.ERROR,
-                                Integration._to_location(package),
-                            ),
-                        ],
+                    error.push(
+                        ErrorEntry(
+                            f'unknown session "{session_name}"',
+                            Severity.ERROR,
+                            Integration._to_location(package),
+                        ),
                     )
                     return
                 assert len(matching_sessions) == 1
@@ -151,9 +148,7 @@ class Integration:
         try:
             self._packages[filename.stem] = IntegrationFile.model_validate(file)
         except ValidationError as e:
-            error.extend(
-                [(f"{e}", Subsystem.PARSER, Severity.ERROR, self._to_location(filename.stem))],
-            )
+            error.push(ErrorEntry(f"{e}", Severity.ERROR, self._to_location(filename.stem)))
 
     @staticmethod
     def _to_location(package: str) -> Location:
@@ -171,18 +166,15 @@ class Integration:
         session_decl_vars = [str(x.name) for x in session.declarations]
         for var_name in integration.buffer_size.global_:
             if var_name not in session_decl_vars:
-                error.extend(
-                    [
+                error.push(
+                    ErrorEntry(
                         (
-                            (
-                                f'unknown global variable "{var_name}" '
-                                f'in session "{session.identifier.name}"'
-                            ),
-                            Subsystem.PARSER,
-                            Severity.ERROR,
-                            Integration._to_location(package),
+                            f'unknown global variable "{var_name}" '
+                            f'in session "{session.identifier.name}"'
                         ),
-                    ],
+                        Severity.ERROR,
+                        Integration._to_location(package),
+                    ),
                 )
 
     @staticmethod
@@ -200,33 +192,27 @@ class Integration:
                 if str(s.identifier.name) == state_name:
                     state = s
             if state is None:
-                error.extend(
-                    [
+                error.push(
+                    ErrorEntry(
                         (
-                            (
-                                f'unknown state "{state_name}" in session '
-                                f'"{session.identifier.name}"'
-                            ),
-                            Subsystem.PARSER,
-                            Severity.ERROR,
-                            Integration._to_location(package),
+                            f'unknown state "{state_name}" in session '
+                            f'"{session.identifier.name}"'
                         ),
-                    ],
+                        Severity.ERROR,
+                        Integration._to_location(package),
+                    ),
                 )
                 return
             state_declaration_vars = [str(x.name) for x in state.declarations]
             for var_name in state_entry:
                 if var_name not in state_declaration_vars:
-                    error.extend(
-                        [
+                    error.push(
+                        ErrorEntry(
                             (
-                                (
-                                    f'unknown variable "{var_name}" in state '
-                                    f'"{state_name}" of session "{session.identifier.name}"'
-                                ),
-                                Subsystem.PARSER,
-                                Severity.ERROR,
-                                Integration._to_location(package),
+                                f'unknown variable "{var_name}" in state '
+                                f'"{state_name}" of session "{session.identifier.name}"'
                             ),
-                        ],
+                            Severity.ERROR,
+                            Integration._to_location(package),
+                        ),
                     )

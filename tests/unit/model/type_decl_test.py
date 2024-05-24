@@ -3,7 +3,6 @@ from typing import Callable
 import pytest
 
 import rflx.typing_ as rty
-from rflx.error import Location, RecordFluxError
 from rflx.expression import Add, Equal, Number, Pow, Size, Sub, Variable
 from rflx.identifier import ID
 from rflx.model import (
@@ -24,6 +23,7 @@ from rflx.model import (
     UncheckedSequence,
     UncheckedTypeDecl,
 )
+from rflx.rapidflux import Location, RecordFluxError
 from tests.data import models
 from tests.utils import assert_equal
 
@@ -34,12 +34,12 @@ def test_type_name() -> None:
     assert t.package == ID("Package")
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:10:20: model: error: invalid format for identifier "X"$',
+        match=r'^<stdin>:10:20: error: invalid format for identifier "X"$',
     ):
         Integer(ID("X", Location((10, 20))), Number(0), Number(255), Number(8))
     with pytest.raises(
         RecordFluxError,
-        match='^<stdin>:10:20: model: error: invalid format for identifier "X::Y::Z"$',
+        match='^<stdin>:10:20: error: invalid format for identifier "X::Y::Z"$',
     ):
         Integer(ID("X::Y::Z", Location((10, 20))), Number(0), Number(255), Number(8))
 
@@ -101,7 +101,7 @@ def test_integer_last() -> None:
 def test_integer_invalid_first_variable() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:5:3: model: error: first of "T" contains variable$',
+        match=r'^<stdin>:5:3: error: first of "T" contains variable$',
     ):
         Integer("P::T", Add(Number(1), Variable("X")), Number(15), Number(4), Location((5, 3)))
 
@@ -109,7 +109,7 @@ def test_integer_invalid_first_variable() -> None:
 def test_integer_invalid_last_variable() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:80:6: model: error: last of "T" contains variable$',
+        match=r'^<stdin>:80:6: error: last of "T" contains variable$',
     ):
         Integer("P::T", Number(1), Add(Number(1), Variable("X")), Number(4), Location((80, 6)))
 
@@ -117,7 +117,7 @@ def test_integer_invalid_last_variable() -> None:
 def test_integer_invalid_last_exceeds_limit() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^model: error: last of "T" exceeds limit \(2\*\*63 - 1\)$',
+        match=r'^error: last of "T" exceeds limit \(2\*\*63 - 1\)$',
     ):
         Integer("P::T", Number(1), Pow(Number(2), Number(63)), Number(64))
 
@@ -125,7 +125,7 @@ def test_integer_invalid_last_exceeds_limit() -> None:
 def test_integer_invalid_first_negative() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:6:4: model: error: first of "T" negative$',
+        match=r'^<stdin>:6:4: error: first of "T" negative$',
     ):
         Integer("P::T", Number(-1), Number(0), Number(1), Location((6, 4)))
 
@@ -133,7 +133,7 @@ def test_integer_invalid_first_negative() -> None:
 def test_integer_invalid_range() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:10:5: model: error: range of "T" negative$',
+        match=r'^<stdin>:10:5: error: range of "T" negative$',
     ):
         Integer("P::T", Number(1), Number(0), Number(1), Location((10, 5)))
 
@@ -141,7 +141,7 @@ def test_integer_invalid_range() -> None:
 def test_integer_invalid_size_variable() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:22:4: model: error: size of "T" contains variable$',
+        match=r'^<stdin>:22:4: error: size of "T" contains variable$',
     ):
         Integer("P::T", Number(0), Number(256), Add(Number(8), Variable("X")), Location((22, 4)))
 
@@ -149,7 +149,7 @@ def test_integer_invalid_size_variable() -> None:
 def test_integer_invalid_size_too_small() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:10:4: model: error: size of "T" too small$',
+        match=r'^<stdin>:10:4: error: size of "T" too small$',
     ):
         Integer("P::T", Number(0), Number(256), Number(8), Location((10, 4)))
 
@@ -158,7 +158,7 @@ def test_integer_invalid_size_exceeds_limit() -> None:
     # Eng/RecordFlux/RecordFlux#238
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:50:3: model: error: size of "T" exceeds limit \(2\*\*63\)$',
+        match=r'^<stdin>:50:3: error: size of "T" exceeds limit \(2\*\*63\)$',
     ):
         Integer("P::T", Number(0), Number(256), Number(128), Location((50, 3)))
 
@@ -212,7 +212,7 @@ def test_enumeration_value_count() -> None:
 def test_enumeration_invalid_size_variable() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:34:3: model: error: size of "T" contains variable$',
+        match=r'^<stdin>:34:3: error: size of "T" contains variable$',
     ):
         Enumeration(
             "P::T",
@@ -227,9 +227,9 @@ def test_enumeration_invalid_literal_value() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            r'^<stdin>:10:5: model: error: enumeration value of "T"'
+            r'^<stdin>:10:5: error: enumeration value of "T"'
             r" outside of permitted range \(0 .. 2\*\*63 - 1\)\n"
-            r'<stdin>:10:5: model: error: size of "T" exceeds limit \(2\*\*63\)$'
+            r'<stdin>:10:5: error: size of "T" exceeds limit \(2\*\*63\)$'
         ),
     ):
         Enumeration(
@@ -244,7 +244,7 @@ def test_enumeration_invalid_literal_value() -> None:
 def test_enumeration_invalid_size_too_small() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:10:5: model: error: size of "T" too small$',
+        match=r'^<stdin>:10:5: error: size of "T" too small$',
     ):
         Enumeration(
             "P::T",
@@ -258,7 +258,7 @@ def test_enumeration_invalid_size_too_small() -> None:
 def test_enumeration_invalid_size_exceeds_limit() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:8:20: model: error: size of "T" exceeds limit \(2\*\*63\)$',
+        match=r'^<stdin>:8:20: error: size of "T" exceeds limit \(2\*\*63\)$',
     ):
         Enumeration(
             "P::T",
@@ -272,7 +272,7 @@ def test_enumeration_invalid_size_exceeds_limit() -> None:
 def test_enumeration_invalid_always_valid_aspect() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^model: error: unnecessary always-valid aspect on "T"$',
+        match=r'^error: unnecessary always-valid aspect on "T"$',
     ):
         Enumeration(
             "P::T",
@@ -285,7 +285,7 @@ def test_enumeration_invalid_always_valid_aspect() -> None:
 def test_enumeration_invalid_literal() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:1:2: model: error: invalid literal name "A B" in "T"$',
+        match=r'^<stdin>:1:2: error: invalid literal name "A B" in "T"$',
     ):
         Enumeration(
             "P::T",
@@ -296,7 +296,7 @@ def test_enumeration_invalid_literal() -> None:
         )
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:6:4: model: error: invalid literal name "A.B" in "T"$',
+        match=r'^<stdin>:6:4: error: invalid literal name "A.B" in "T"$',
     ):
         Enumeration(
             "P::T",
@@ -312,8 +312,8 @@ def test_enumeration_invalid_duplicate_elements() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:3:32: model: error: duplicate literal "Foo"\n'
-            r"<stdin>:3:27: model: info: previous occurrence"
+            r'<stdin>:3:32: error: duplicate literal "Foo"\n'
+            r"<stdin>:3:27: info: previous occurrence"
             r"$"
         ),
     ):
@@ -330,10 +330,10 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:3:37: model: error: duplicate literal "Foo"\n'
-            r"<stdin>:3:27: model: info: previous occurrence\n"
-            r'<stdin>:3:42: model: error: duplicate literal "Bar"\n'
-            r"<stdin>:3:32: model: info: previous occurrence"
+            r'<stdin>:3:37: error: duplicate literal "Foo"\n'
+            r"<stdin>:3:27: info: previous occurrence\n"
+            r'<stdin>:3:42: error: duplicate literal "Bar"\n'
+            r"<stdin>:3:32: info: previous occurrence"
             r"$"
         ),
     ):
@@ -406,33 +406,33 @@ def test_sequence_dependencies() -> None:
     [
         (
             lambda: Sequence("P::B", models.integer(), Location((3, 4))),
-            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
-            r'<stdin>:3:4: model: info: type "B" must be scalar or message',
+            r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
+            r'<stdin>:3:4: info: type "B" must be scalar or message',
         ),
         (
             lambda: OPAQUE,
-            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
-            r'__BUILTINS__:0:0: model: info: type "Opaque" must be scalar or message',
+            r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
+            r'__BUILTINS__:0:0: info: type "Opaque" must be scalar or message',
         ),
         (
             lambda: Message("P::B", [], {}, location=Location((3, 4))),
-            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
-            r"<stdin>:3:4: model: info: null messages must not be used as sequence element",
+            r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
+            r"<stdin>:3:4: info: null messages must not be used as sequence element",
         ),
         (
             lambda: Message(
-                "P::B",
+                ID("P::B", Location((1, 1))),
                 [Link(INITIAL, Field("A"), size=Size("Message")), Link(Field("A"), FINAL)],
                 {Field("A"): OPAQUE},
                 location=Location((3, 4)),
             ),
-            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
-            r"<stdin>:3:4: model: info: messages used as sequence element must not depend"
+            r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
+            r"<stdin>:3:4: info: messages used as sequence element must not depend"
             ' on "Message\'Size" or "Message\'Last"',
         ),
         (
             lambda: Message(
-                "P::B",
+                ID("P::B", Location((1, 1))),
                 [
                     Link(INITIAL, Field("A"), condition=Equal(Size("Message"), Number(8))),
                     Link(Field("A"), FINAL),
@@ -440,13 +440,13 @@ def test_sequence_dependencies() -> None:
                 {Field("A"): models.integer()},
                 location=Location((3, 4)),
             ),
-            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
-            r"<stdin>:3:4: model: info: messages used as sequence element must not depend"
+            r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
+            r"<stdin>:3:4: info: messages used as sequence element must not depend"
             ' on "Message\'Size" or "Message\'Last"',
         ),
         (
             lambda: Message(
-                "P::B",
+                ID("P::B", Location((1, 1))),
                 [
                     Link(INITIAL, Field("A"), condition=Variable("P")),
                     Link(Field("A"), FINAL),
@@ -454,8 +454,8 @@ def test_sequence_dependencies() -> None:
                 {Field("P"): BOOLEAN, Field("A"): models.integer()},
                 location=Location((3, 4)),
             ),
-            r'<stdin>:1:2: model: error: invalid element type of sequence "A"\n'
-            r"<stdin>:3:4: model: info: parameterized messages must not be used"
+            r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
+            r"<stdin>:3:4: info: parameterized messages must not be used"
             r" as sequence element",
         ),
     ],
@@ -469,8 +469,8 @@ def test_sequence_unsupported_element_type() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            r'^<stdin>:5:4: model: error: unsupported element type size of sequence "A"\n'
-            r'<stdin>:3:4: model: info: type "B" has size 4, must be multiple of 8$'
+            r'^<stdin>:5:4: error: unsupported element type size of sequence "A"\n'
+            r'<stdin>:3:4: info: type "B" has size 4, must be multiple of 8$'
         ),
     ):
         Sequence(
@@ -487,8 +487,8 @@ def test_sequence_unsupported_element_type() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            r'^<stdin>:5:4: model: error: unsupported element type size of sequence "A"\n'
-            r'__BUILTINS__:0:0: model: info: type "Boolean" has size 1, must be multiple of 8$'
+            r'^<stdin>:5:4: error: unsupported element type size of sequence "A"\n'
+            r'__BUILTINS__:0:0: info: type "Boolean" has size 1, must be multiple of 8$'
         ),
     ):
         Sequence("P::A", BOOLEAN, Location((5, 4)))
@@ -552,7 +552,7 @@ def test_unchecked_type_checked(unchecked: UncheckedTypeDecl, expected: TypeDecl
                 Number(8),
                 Location((1, 2)),
             ),
-            r'^<stdin>:2:3: model: error: invalid format for identifier "T"$',
+            r'^<stdin>:2:3: error: invalid format for identifier "T"$',
         ),
         (
             UncheckedEnumeration(
@@ -562,7 +562,7 @@ def test_unchecked_type_checked(unchecked: UncheckedTypeDecl, expected: TypeDecl
                 always_valid=False,
                 location=Location((1, 2)),
             ),
-            r'^<stdin>:2:3: model: error: invalid format for identifier "T"$',
+            r'^<stdin>:2:3: error: invalid format for identifier "T"$',
         ),
         (
             UncheckedSequence(
@@ -570,7 +570,7 @@ def test_unchecked_type_checked(unchecked: UncheckedTypeDecl, expected: TypeDecl
                 ID("T", Location((2, 3))),
                 Location((3, 4)),
             ),
-            r'^<stdin>:2:3: model: error: undefined element type "T"$',
+            r'^<stdin>:2:3: error: undefined element type "T"$',
         ),
     ],
 )

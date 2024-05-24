@@ -7,7 +7,6 @@ import pytest
 
 import rflx.expression as expr
 import rflx.typing_ as rty
-from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -20,6 +19,7 @@ from rflx.model import (
     declaration as decl,
     statement as stmt,
 )
+from rflx.rapidflux import Location, RecordFluxError
 from tests.data import models
 from tests.utils import assert_equal, assert_session_model_error, get_test_model
 
@@ -196,33 +196,33 @@ def test_inconsistent_identifier_casing() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:1:1: model: error: casing of "tlv::message" differs from casing'
-            r' in the declaration of "TLV::Message"\n'
-            r'model: info: declaration of "TLV::Message"\n'
-            r'<stdin>:2:2: model: error: casing of "x" differs from casing'
+            r'<stdin>:1:1: error: casing of "tlv::message" differs from casing'
+            r' in the declaration of "TLV::Message" at <stdin>:1:1\n'
+            r'<stdin>:1:1: info: declaration of "TLV::Message"\n'
+            r'<stdin>:2:2: error: casing of "x" differs from casing'
             r' in the declaration of "X" at <stdin>:12:12\n'
-            r'<stdin>:12:12: model: info: declaration of "X"\n'
-            r'<stdin>:3:3: model: error: casing of "m" differs from casing'
+            r'<stdin>:12:12: info: declaration of "X"\n'
+            r'<stdin>:3:3: error: casing of "m" differs from casing'
             r' in the declaration of "M" at <stdin>:13:13\n'
-            r'<stdin>:13:13: model: info: declaration of "M"\n'
-            r'<stdin>:4:4: model: error: casing of "b" differs from casing'
+            r'<stdin>:13:13: info: declaration of "M"\n'
+            r'<stdin>:4:4: error: casing of "b" differs from casing'
             r' in the declaration of "B" at <stdin>:14:14\n'
-            r'<stdin>:14:14: model: info: declaration of "B"\n'
-            r'<stdin>:5:5: model: error: casing of "y" differs from casing'
+            r'<stdin>:14:14: info: declaration of "B"\n'
+            r'<stdin>:5:5: error: casing of "y" differs from casing'
             r' in the declaration of "Y" at <stdin>:15:15\n'
-            r'<stdin>:15:15: model: info: declaration of "Y"\n'
-            r'<stdin>:6:6: model: error: casing of "z" differs from casing'
+            r'<stdin>:15:15: info: declaration of "Y"\n'
+            r'<stdin>:6:6: error: casing of "z" differs from casing'
             r' in the declaration of "Z" at <stdin>:16:16\n'
-            r'<stdin>:16:16: model: info: declaration of "Z"\n'
-            r'<stdin>:7:7: model: error: casing of "g" differs from casing'
+            r'<stdin>:16:16: info: declaration of "Z"\n'
+            r'<stdin>:7:7: error: casing of "g" differs from casing'
             r' in the declaration of "G" at <stdin>:17:17\n'
-            r'<stdin>:17:17: model: info: declaration of "G"\n'
-            r'<stdin>:8:8: model: error: casing of "f" differs from casing'
+            r'<stdin>:17:17: info: declaration of "G"\n'
+            r'<stdin>:8:8: error: casing of "f" differs from casing'
             r' in the declaration of "F" at <stdin>:18:18\n'
-            r'<stdin>:18:18: model: info: declaration of "F"\n'
-            r'<stdin>:9:9: model: error: casing of "a" differs from casing'
+            r'<stdin>:18:18: info: declaration of "F"\n'
+            r'<stdin>:9:9: error: casing of "a" differs from casing'
             r' in the declaration of "A" at <stdin>:19:19\n'
-            r'<stdin>:19:19: model: info: declaration of "A"'
+            r'<stdin>:19:19: info: declaration of "A"'
             r"$"
         ),
     ):
@@ -309,7 +309,7 @@ def test_inconsistent_identifier_casing() -> None:
 def test_invalid_name() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:10:20: model: error: invalid format for identifier "P::S::X"$',
+        match=r'^<stdin>:10:20: error: invalid format for identifier "P::S::X"$',
     ):
         Session(
             identifier=ID("P::S::X", location=Location((10, 20))),
@@ -328,7 +328,7 @@ def test_empty_states() -> None:
         declarations=[],
         parameters=[],
         types=[],
-        regex=r"^<stdin>:1:1: model: error: empty states$",
+        regex=r"^<stdin>:1:1: error: empty states$",
     )
 
 
@@ -347,7 +347,7 @@ def test_invalid_target_state() -> None:
         types=[],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: transition from state "Start" to non-existent'
+            r'<stdin>:10:20: error: transition from state "Start" to non-existent'
             r' state "NonExistent" in "P::S"'
             r"$"
         ),
@@ -373,8 +373,8 @@ def test_duplicate_state() -> None:
         types=[],
         regex=(
             r"^"
-            r'<stdin>:10:30: model: error: duplicate state "Start"\n'
-            r'<stdin>:10:20: model: info: previous definition of state "Start"'
+            r'<stdin>:10:30: error: duplicate state "Start"\n'
+            r'<stdin>:10:20: info: previous definition of state "Start"'
             r"$"
         ),
     )
@@ -424,14 +424,14 @@ def test_multiple_duplicate_states() -> None:
         types=[],
         regex=(
             r"^"
-            r'<stdin>:10:30: model: error: duplicate state "Start"\n'
-            r'<stdin>:10:20: model: info: previous definition of state "Start"\n'
-            r'<stdin>:10:60: model: error: duplicate state "Foo"\n'
-            r'<stdin>:10:40: model: info: previous definition of state "Foo"\n'
-            r'<stdin>:10:80: model: error: duplicate state "Foo"\n'
-            r'<stdin>:10:40: model: info: previous definition of state "Foo"\n'
-            r'<stdin>:10:70: model: error: duplicate state "Bar"\n'
-            r'<stdin>:10:50: model: info: previous definition of state "Bar"'
+            r'<stdin>:10:30: error: duplicate state "Start"\n'
+            r'<stdin>:10:20: info: previous definition of state "Start"\n'
+            r'<stdin>:10:60: error: duplicate state "Foo"\n'
+            r'<stdin>:10:40: info: previous definition of state "Foo"\n'
+            r'<stdin>:10:80: error: duplicate state "Foo"\n'
+            r'<stdin>:10:40: info: previous definition of state "Foo"\n'
+            r'<stdin>:10:70: error: duplicate state "Bar"\n'
+            r'<stdin>:10:50: info: previous definition of state "Bar"'
             r"$"
         ),
     )
@@ -450,7 +450,7 @@ def test_unreachable_state() -> None:
         declarations=[],
         parameters=[],
         types=[],
-        regex=r'^<stdin>:10:20: model: error: unreachable state "Unreachable"$',
+        regex=r'^<stdin>:10:20: error: unreachable state "Unreachable"$',
     )
 
 
@@ -474,8 +474,8 @@ def test_multiple_unreachable_states() -> None:
         types=[],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: unreachable state "Unreachable1"\n'
-            r'<stdin>:10:30: model: error: unreachable state "Unreachable2"'
+            r'<stdin>:10:20: error: unreachable state "Unreachable1"\n'
+            r'<stdin>:10:30: error: unreachable state "Unreachable2"'
             r"$"
         ),
     )
@@ -493,7 +493,7 @@ def test_detached_state() -> None:
         declarations=[],
         parameters=[],
         types=[],
-        regex=r'^<stdin>:10:20: model: error: detached state "Detached"$',
+        regex=r'^<stdin>:10:20: error: detached state "Detached"$',
     )
 
 
@@ -516,8 +516,8 @@ def test_multiple_detached_states() -> None:
         types=[],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: detached state "Detached1"\n'
-            r'<stdin>:10:30: model: error: detached state "Detached2"'
+            r'<stdin>:10:20: error: detached state "Detached1"\n'
+            r'<stdin>:10:30: error: detached state "Detached2"'
             r"$"
         ),
     )
@@ -545,7 +545,7 @@ def test_undeclared_variable() -> None:
         declarations=[],
         parameters=[],
         types=[],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "Undefined"$',
     )
 
 
@@ -570,7 +570,7 @@ def test_undefined_type() -> None:
         ],
         parameters=[],
         types=[],
-        regex=r'^<stdin>:10:20: model: error: undefined type "Undefined_Type"$',
+        regex=r'^<stdin>:10:20: error: undefined type "Undefined_Type"$',
     )
 
 
@@ -657,7 +657,7 @@ def test_undeclared_local_variable() -> None:
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Local"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "Local"$',
     )
 
 
@@ -730,7 +730,7 @@ def test_assignment_to_undeclared_variable() -> None:
         declarations=[],
         parameters=[],
         types=[],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "Undefined"$',
     )
 
 
@@ -752,7 +752,7 @@ def test_assignment_from_undeclared_variable() -> None:
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "Undefined"$',
     )
 
 
@@ -775,7 +775,7 @@ def test_assignment_with_undeclared_message_in_delta_message_aggregate() -> None
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: undefined message "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined message "Undefined"$',
     )
 
 
@@ -792,7 +792,7 @@ def test_reset_of_undeclared_list() -> None:
         declarations=[],
         parameters=[],
         types=[],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "Undefined"$',
     )
 
 
@@ -810,8 +810,8 @@ def test_reset_incompatible() -> None:
         parameters=[],
         types=[BOOLEAN],
         regex=(
-            r"^<stdin>:10:20: model: error: expected sequence type or message type\n"
-            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
+            r"^<stdin>:10:20: error: expected sequence type or message type\n"
+            r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
 
@@ -839,7 +839,7 @@ def test_call_to_undeclared_function() -> None:
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: undefined function "UndefSub"$',
+        regex=r'^<stdin>:10:20: error: undefined function "UndefSub"$',
     )
 
 
@@ -877,7 +877,7 @@ def test_call_undeclared_variable() -> None:
             decl.FunctionDeclaration("SubProg", [decl.Argument("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "Undefined"$',
     )
 
 
@@ -910,8 +910,8 @@ def test_call_invalid_argument_type() -> None:
         types=[BOOLEAN],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:20: model: info: found readable channel"
+            r'<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+            r"<stdin>:10:20: info: found readable channel"
             "$"
         ),
     )
@@ -943,7 +943,7 @@ def test_call_missing_arguments() -> None:
             decl.FunctionDeclaration("Function", [decl.Argument("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
-        regex=r"^<stdin>:10:20: model: error: missing function arguments$",
+        regex=r"^<stdin>:10:20: error: missing function arguments$",
     )
 
 
@@ -974,7 +974,7 @@ def test_call_too_many_arguments() -> None:
             decl.FunctionDeclaration("Function", [decl.Argument("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
-        regex=r"^<stdin>:10:20: model: error: too many function arguments$",
+        regex=r"^<stdin>:10:20: error: too many function arguments$",
     )
 
 
@@ -1035,7 +1035,7 @@ def test_channel_read_undeclared() -> None:
         declarations=[decl.VariableDeclaration("Result", "TLV::Message")],
         parameters=[],
         types=[models.tlv_message()],
-        regex=r'^<stdin>:10:20: model: error: undefined channel "Undeclared"$',
+        regex=r'^<stdin>:10:20: error: undefined channel "Undeclared"$',
     )
 
 
@@ -1060,11 +1060,11 @@ def test_channel_read_invalid_type() -> None:
         types=[models.tlv_message()],
         regex=(
             r"^"
-            r"<stdin>:10:20: model: error: channel parameter must be a variable\n"
-            r"<stdin>:10:20: model: error: expected readable channel\n"
-            r'<stdin>:10:20: model: info: found message type "TLV::Message"\n'
-            r"<stdin>:10:30: model: error: expected message type\n"
-            r"<stdin>:10:30: model: info: found type universal integer \(0\)"
+            r"<stdin>:10:20: error: channel parameter must be a variable\n"
+            r"<stdin>:10:20: error: expected readable channel\n"
+            r'<stdin>:10:20: info: found message type "TLV::Message"\n'
+            r"<stdin>:10:30: error: expected message type\n"
+            r"<stdin>:10:30: info: found type universal integer \(0\)"
             r"$"
         ),
     )
@@ -1091,8 +1091,8 @@ def test_channel_read_invalid_mode() -> None:
         types=[models.tlv_message()],
         regex=(
             r"^"
-            r"<stdin>:10:20: model: error: expected readable channel\n"
-            r"<stdin>:10:20: model: info: found writable channel"
+            r"<stdin>:10:20: error: expected readable channel\n"
+            r"<stdin>:10:20: info: found writable channel"
             r"$"
         ),
     )
@@ -1119,8 +1119,8 @@ def test_channel_write_invalid_mode() -> None:
         types=[models.tlv_message()],
         regex=(
             r"^"
-            r"<stdin>:10:20: model: error: expected writable channel\n"
-            r"<stdin>:10:20: model: info: found readable channel"
+            r"<stdin>:10:20: error: expected writable channel\n"
+            r"<stdin>:10:20: info: found readable channel"
             r"$"
         ),
     )
@@ -1180,7 +1180,7 @@ def test_undeclared_variable_in_function_call() -> None:
             decl.FunctionDeclaration("SubProg", [decl.Argument("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "Undefined"$',
     )
 
 
@@ -1208,9 +1208,9 @@ def test_local_variable_shadows_global() -> None:
         types=[BOOLEAN],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: local variable "Global" shadows previous declaration\n'
-            r'<stdin>:10:30: model: info: previous declaration of variable "Global"\n'
-            r'<stdin>:10:30: model: error: unused variable "Global"'
+            r'<stdin>:10:20: error: local variable "Global" shadows previous declaration\n'
+            r'<stdin>:10:30: info: previous declaration of variable "Global"\n'
+            r'<stdin>:10:30: error: unused variable "Global"'
             r"$"
         ),
     )
@@ -1228,7 +1228,7 @@ def test_unused_global_variable() -> None:
         declarations=[decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20)))],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: unused variable "Global"$',
+        regex=r'^<stdin>:10:20: error: unused variable "Global"$',
     )
 
 
@@ -1246,7 +1246,7 @@ def test_unused_local_variable() -> None:
         declarations=[],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: unused variable "Data"$',
+        regex=r'^<stdin>:10:20: error: unused variable "Data"$',
     )
 
 
@@ -1260,7 +1260,7 @@ def test_unused_channel() -> None:
             decl.ChannelDeclaration("X", readable=True, writable=True, location=Location((10, 20))),
         ],
         types=[],
-        regex=r'^<stdin>:10:20: model: error: unused channel "X"$',
+        regex=r'^<stdin>:10:20: error: unused channel "X"$',
     )
 
 
@@ -1274,7 +1274,7 @@ def test_unused_function() -> None:
             decl.FunctionDeclaration("X", [], "Boolean", location=Location((10, 20))),
         ],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: unused function "X"$',
+        regex=r'^<stdin>:10:20: error: unused function "X"$',
     )
 
 
@@ -1309,7 +1309,7 @@ def test_renaming() -> None:
         ],
         parameters=[],
         types=[models.null_message(), models.tlv_message(), models.null_message_in_tlv_message()],
-        regex=r"^<stdin>:10:20: model: error: renaming declarations not yet supported$",
+        regex=r"^<stdin>:10:20: error: renaming declarations not yet supported$",
     )
 
 
@@ -1350,8 +1350,8 @@ def test_renaming_invalid() -> None:
         ],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: invalid renaming to "Universal_Message"\n'
-            r'<stdin>:10:20: model: info: refinement for message "TLV::Message"'
+            r'<stdin>:10:20: error: invalid renaming to "Universal_Message"\n'
+            r'<stdin>:10:20: info: refinement for message "TLV::Message"'
             r" would make operation legal"
             r"$"
         ),
@@ -1384,7 +1384,7 @@ def test_renaming_undefined() -> None:
         ],
         parameters=[],
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Message"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "Message"$',
     )
 
 
@@ -1415,7 +1415,7 @@ def test_for_all() -> None:
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
         types=[BOOLEAN, models.tlv_messages()],
-        regex=r"^<stdin>:10:20: model: error: quantified expressions not yet supported$",
+        regex=r"^<stdin>:10:20: error: quantified expressions not yet supported$",
     )
 
 
@@ -1462,8 +1462,8 @@ def test_append_incompatible() -> None:
         parameters=[],
         types=[BOOLEAN],
         regex=(
-            r"^<stdin>:10:20: model: error: expected sequence type\n"
-            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
+            r"^<stdin>:10:20: error: expected sequence type\n"
+            r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
 
@@ -1488,8 +1488,8 @@ def test_append_message_unsupported() -> None:
         parameters=[],
         types=[models.tlv_message(), models.tlv_messages()],
         regex=(
-            r"^<stdin>:10:20: model: error: appending independently created message not supported\n"
-            r"<stdin>:10:20: model: info: message aggregate should be used instead$"
+            r"^<stdin>:10:20: error: appending independently created message not supported\n"
+            r"<stdin>:10:20: info: message aggregate should be used instead$"
         ),
     )
 
@@ -1532,8 +1532,8 @@ def test_extend_incompatible() -> None:
         parameters=[],
         types=[BOOLEAN],
         regex=(
-            r"^<stdin>:10:20: model: error: expected sequence type\n"
-            r'<stdin>:10:20: model: info: found enumeration type "__BUILTINS__::Boolean"$'
+            r"^<stdin>:10:20: error: expected sequence type\n"
+            r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
 
@@ -1560,7 +1560,7 @@ def test_message_aggregate_with_undefined_parameter() -> None:
         declarations=[decl.VariableDeclaration("Data", "TLV::Message")],
         parameters=[],
         types=[BOOLEAN, models.tlv_message()],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "Undef"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "Undef"$',
     )
 
 
@@ -1590,8 +1590,8 @@ def test_message_aggregate_with_undefined_type() -> None:
         parameters=[],
         types=[BOOLEAN],
         regex=(
-            r'^<stdin>:10:20: model: error: undefined type "P::Undefined"\n'
-            r'<stdin>:10:30: model: error: undefined message "P::Undefined"$'
+            r'^<stdin>:10:20: error: undefined type "P::Undefined"\n'
+            r'<stdin>:10:30: error: undefined message "P::Undefined"$'
         ),
     )
 
@@ -1657,7 +1657,7 @@ def test_assignment_opaque_function_undef_parameter() -> None:
             decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
         ],
         types=[BOOLEAN, OPAQUE, models.tlv_message()],
-        regex=r'^<stdin>:10:20: model: error: undefined variable "UndefData"$',
+        regex=r'^<stdin>:10:20: error: undefined variable "UndefData"$',
     )
 
 
@@ -1710,7 +1710,7 @@ def test_message_field_assignment_with_invalid_field_name() -> None:
         ],
         parameters=[],
         types=[models.tlv_message()],
-        regex=r'^<stdin>:1:2: model: error: invalid message field "Invalid"$',
+        regex=r'^<stdin>:1:2: error: invalid message field "Invalid"$',
     )
 
 
@@ -1738,9 +1738,9 @@ def test_message_field_assignment_to_message_parameter() -> None:
         types=parameterized_model.types,
         regex=(
             r"^"
-            r'<stdin>:1:2: model: error: message parameter "Length" cannot be set using an'
+            r'<stdin>:1:2: error: message parameter "Length" cannot be set using an'
             r" assignment\n"
-            r"<stdin>:1:2: model: info: use a Reset statement to change the message parameters"
+            r"<stdin>:1:2: info: use a Reset statement to change the message parameters"
             r"$"
         ),
     )
@@ -1769,8 +1769,8 @@ def test_message_field_assignment_with_incompatible_field_type() -> None:
         types=[models.tlv_message()],
         regex=(
             r"^"
-            r'<stdin>:1:2: model: error: expected enumeration type "TLV::Tag"\n'
-            r"<stdin>:1:2: model: info: found type universal integer \(42\)"
+            r'<stdin>:1:2: error: expected enumeration type "TLV::Tag"\n'
+            r"<stdin>:1:2: info: found type universal integer \(42\)"
             r"$"
         ),
     )
@@ -1800,8 +1800,8 @@ def test_message_field_assignment_with_incompatible_variable_type() -> None:
         types=[models.tlv_tag()],
         regex=(
             r"^"
-            r"<stdin>:1:2: model: error: expected message type\n"
-            r'<stdin>:1:2: model: info: found enumeration type "TLV::Tag"'
+            r"<stdin>:1:2: error: expected message type\n"
+            r'<stdin>:1:2: info: found enumeration type "TLV::Tag"'
             r"$"
         ),
     )
@@ -1861,11 +1861,11 @@ def test_conversion_undefined() -> None:
         parameters=[],
         types=[models.tlv_message()],
         regex=(
-            r'^<stdin>:10:20: model: error: undefined type "P::Undef"\n'
-            r'<stdin>:10:30: model: error: invalid conversion to "P::Undef"\n'
-            r'<stdin>:10:30: model: info: refinement for message "TLV::Message"'
+            r'^<stdin>:10:20: error: undefined type "P::Undef"\n'
+            r'<stdin>:10:30: error: invalid conversion to "P::Undef"\n'
+            r'<stdin>:10:30: info: refinement for message "TLV::Message"'
             r" would make operation legal\n"
-            r'<stdin>:10:30: model: error: undefined type "P::Undef"$'
+            r'<stdin>:10:30: error: undefined type "P::Undef"$'
         ),
     )
 
@@ -1894,10 +1894,7 @@ def test_conversion_invalid_argument() -> None:
         ],
         parameters=[],
         types=[OPAQUE, models.tlv_message()],
-        regex=(
-            r"^<stdin>:10:20: model: error: invalid argument for conversion,"
-            r" expected message field$"
-        ),
+        regex=(r"^<stdin>:10:20: error: invalid argument for conversion, expected message field$"),
     )
 
 
@@ -1928,8 +1925,8 @@ def test_conversion_invalid() -> None:
         types=[models.null_message(), models.tlv_message()],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: invalid conversion to "Null_Msg::Message"\n'
-            r'<stdin>:10:20: model: info: refinement for message "TLV::Message"'
+            r'<stdin>:10:20: error: invalid conversion to "Null_Msg::Message"\n'
+            r'<stdin>:10:20: info: refinement for message "TLV::Message"'
             r" would make operation legal"
             r"$"
         ),
@@ -1976,7 +1973,7 @@ def test_undefined_type_in_parameters(parameters: abc.Sequence[decl.FormalDeclar
         declarations=[],
         parameters=parameters,
         types=[BOOLEAN],
-        regex=r'^<stdin>:10:20: model: error: undefined type "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined type "Undefined"$',
     )
 
 
@@ -2014,7 +2011,7 @@ def test_undefined_type_in_declarations(declarations: abc.Sequence[decl.BasicDec
         declarations=declarations,
         parameters=[],
         types=[models.tlv_message()],
-        regex=r'^<stdin>:10:20: model: error: undefined type "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined type "Undefined"$',
     )
 
 
@@ -2055,7 +2052,7 @@ def test_undefined_type_in_local_declarations(
         declarations=[],
         parameters=[],
         types=[models.tlv_message()],
-        regex=r'^<stdin>:10:20: model: error: undefined type "Undefined"$',
+        regex=r'^<stdin>:10:20: error: undefined type "Undefined"$',
     )
 
 
@@ -2083,8 +2080,8 @@ def test_type_error_in_variable_declaration() -> None:
         types=[BOOLEAN],
         regex=(
             r"^"
-            r'<stdin>:10:20: model: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:20: model: info: found type universal integer \(1\)"
+            r'<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
+            r"<stdin>:10:20: info: found type universal integer \(1\)"
             r"$"
         ),
     )
@@ -2118,8 +2115,8 @@ def test_type_error_in_renaming_declaration() -> None:
         types=[BOOLEAN],
         regex=(
             r"^"
-            r"<stdin>:10:20: model: error: expected message type\n"
-            r"<stdin>:10:20: model: info: found type universal integer \(1\)"
+            r"<stdin>:10:20: error: expected message type\n"
+            r"<stdin>:10:20: info: found type universal integer \(1\)"
             r"$"
         ),
     )
@@ -2140,7 +2137,7 @@ def test_type_error_in_renaming_declaration() -> None:
                 stmt.Read("C1", expr.Variable("M"), location=Location((1, 2))),
                 stmt.Write("C2", expr.Variable("M2"), location=Location((2, 3))),
             ],
-            "<stdin>:1:2: model: error: IO state must not contain declarations",
+            "<stdin>:1:2: error: IO state must not contain declarations",
         ),
         (
             [],
@@ -2155,7 +2152,7 @@ def test_type_error_in_renaming_declaration() -> None:
                 ),
                 stmt.Write("C2", expr.Variable("M1")),
             ],
-            "<stdin>:1:2: model: error: channel parameter must be a variable",
+            "<stdin>:1:2: error: channel parameter must be a variable",
         ),
         (
             [],
@@ -2164,7 +2161,7 @@ def test_type_error_in_renaming_declaration() -> None:
                 stmt.Write("C2", expr.Variable("M2"), location=Location((2, 3))),
                 stmt.VariableAssignment("X", expr.FALSE, location=Location((3, 4))),
             ],
-            "<stdin>:1:2: model: error: channel IO must not be combined with other actions"
+            "<stdin>:1:2: error: channel IO must not be combined with other actions"
             " in one state",
         ),
         (
@@ -2183,9 +2180,9 @@ def test_type_error_in_renaming_declaration() -> None:
                     expr.Variable("M3"),
                 ),
             ],
-            '<stdin>:1:1: model: error: channel "C1" may be read or written'
+            '<stdin>:1:1: error: channel "C1" may be read or written'
             " at most once per state\n"
-            "<stdin>:2:1: model: info: conflicting read/write",
+            "<stdin>:2:1: info: conflicting read/write",
         ),
         (
             [],
@@ -2199,9 +2196,9 @@ def test_type_error_in_renaming_declaration() -> None:
                     expr.Variable("M1", location=Location((2, 1))),
                 ),
             ],
-            '<stdin>:1:1: model: error: message "M1" may be read or written'
+            '<stdin>:1:1: error: message "M1" may be read or written'
             " at most once per state\n"
-            "<stdin>:2:1: model: info: conflicting read/write",
+            "<stdin>:2:1: info: conflicting read/write",
         ),
     ],
 )
@@ -2284,8 +2281,8 @@ def test_unsupported_expression() -> None:
         types=[BOOLEAN, models.universal_message()],
         regex=(
             r"^"
-            r"<stdin>:1:2: model: error: comparisons of opaque fields not yet supported\n"
-            r"<stdin>:3:4: model: error: comparisons of opaque fields not yet supported"
+            r"<stdin>:1:2: error: comparisons of opaque fields not yet supported\n"
+            r"<stdin>:3:4: error: comparisons of opaque fields not yet supported"
             r"$"
         ),
     )
@@ -2313,7 +2310,7 @@ def test_missing_exception_transition() -> None:
         declarations=[decl.VariableDeclaration("List", "TLV::Messages")],
         parameters=[],
         types=[models.tlv_tag(), models.tlv_message(), models.tlv_messages()],
-        regex=r'^<stdin>:10:20: model: error: missing exception transition in state "Start"$',
+        regex=r'^<stdin>:10:20: error: missing exception transition in state "Start"$',
     )
 
 
@@ -2359,7 +2356,7 @@ def test_unnecessary_exception_transition(
         declarations=[],
         parameters=parameters,
         types=types,
-        regex=r'^<stdin>:10:20: model: error: unnecessary exception transition in state "Start"$',
+        regex=r'^<stdin>:10:20: error: unnecessary exception transition in state "Start"$',
     )
 
 
@@ -3203,7 +3200,7 @@ def test_unchecked_session_checked() -> None:
                 [],
                 Location((1, 2)),
             ),
-            r'^<stdin>:2:3: model: error: invalid format for identifier "T"$',
+            r'^<stdin>:2:3: error: invalid format for identifier "T"$',
         ),
     ],
 )

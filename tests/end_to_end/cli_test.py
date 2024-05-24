@@ -42,13 +42,25 @@ def test_check_error() -> None:
         Processing Test
         Verifying __BUILTINS__::Boolean
         Verifying __INTERNAL__::Opaque
-        tests/data/specs/invalid/incorrect_name.rflx:1:9: parser: \
-error: source file name does not match the package name "Test"
-        tests/data/specs/invalid/incorrect_name.rflx:1:9: parser: info: either rename the file to \
-"test.rflx"
-        tests/data/specs/invalid/incorrect_name.rflx:1:9: parser: info: or change the package name\
- to "Incorrect_Name"
-""",
+        error: source file name does not match the package name "Test"
+         --> tests/data/specs/invalid/incorrect_name.rflx:1:9
+          |
+        1 | package Test is
+          |         ^^^^
+          |
+        info: either rename the file to "test.rflx"
+         --> tests/data/specs/invalid/incorrect_name.rflx:1:9
+          |
+        1 | package Test is
+          |         ----
+          |
+        info: or change the package name to "Incorrect_Name"
+         --> tests/data/specs/invalid/incorrect_name.rflx:1:9
+          |
+        1 | package Test is
+          |         ----
+          |
+        """,
     )
 
 
@@ -66,9 +78,10 @@ def test_check_no_verification() -> None:
         check=False,
     )
     assert p.returncode == 0
-    assert p.stdout.decode("utf-8") == "model: warning: model verification skipped\n"
+    assert p.stdout.decode("utf-8") == ""
     assert p.stderr.decode("utf-8") == textwrap.dedent(
         """\
+        warning: model verification skipped
         Parsing tests/data/specs/ethernet.rflx
         Processing Ethernet
         """,

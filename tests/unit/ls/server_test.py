@@ -27,7 +27,7 @@ from lsprotocol.types import (
 )
 from pygls.workspace import Workspace
 
-from rflx import error
+import rflx.rapidflux as error
 from rflx.ls import model, server
 from rflx.model import Message
 
@@ -131,7 +131,8 @@ def test_to_lsp_location() -> None:
         (error.Severity.ERROR, DiagnosticSeverity.Error),
         (error.Severity.WARNING, DiagnosticSeverity.Warning),
         (error.Severity.INFO, DiagnosticSeverity.Information),
-        (error.Severity.NONE, None),
+        (error.Severity.NOTE, DiagnosticSeverity.Information),
+        (error.Severity.HELP, DiagnosticSeverity.Hint),
     ],
 )
 def test_to_lsp_severity(severity: error.Severity, expected: Optional[DiagnosticSeverity]) -> None:
@@ -280,24 +281,22 @@ def test_publish_errors_as_diagnostics(monkeypatch: pytest.MonkeyPatch) -> None:
     mock_publish_diagnostics(published_diagnostics, monkeypatch)
 
     ls = server.RecordFluxLanguageServer()
-    ls._publish_errors_as_diagnostics(  # noqa: SLF001
-        error.RecordFluxError(
-            [
-                (
-                    "foo",
-                    error.Subsystem.MODEL,
-                    error.Severity.ERROR,
-                    error.Location((1, 2), Path("test"), (3, 4)),
-                ),
-                (
-                    "bar",
-                    error.Subsystem.MODEL,
-                    error.Severity.ERROR,
-                    None,
-                ),
-            ],
-        ),
+    errs = error.RecordFluxError()
+    errs.extend(
+        [
+            error.ErrorEntry(
+                "foo",
+                error.Severity.ERROR,
+                error.Location((1, 2), Path("test"), (3, 4)),
+            ),
+            error.ErrorEntry(
+                "bar",
+                error.Severity.ERROR,
+                None,
+            ),
+        ],
     )
+    ls._publish_errors_as_diagnostics(errs)  # noqa: SLF001
 
     assert published_diagnostics == [
         (

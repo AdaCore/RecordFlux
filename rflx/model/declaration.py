@@ -7,9 +7,10 @@ from typing import ClassVar, Optional
 import rflx.typing_ as rty
 from rflx import ir
 from rflx.common import Base
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import fail
 from rflx.expression import Expr, Selected, Variable
 from rflx.identifier import ID, StrID
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 from . import type_decl as mty
 
@@ -162,7 +163,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         self.expression = expression
 
         error = self.expression.prefix.check_type_instance(rty.Message)
-        if error.errors:
+        if error.has_errors():
             return error
 
         assert isinstance(self.expression.prefix.type_, rty.Message)
@@ -172,24 +173,29 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
             if ID(r.field) == self.expression.selector and r.sdu.is_compatible(declaration_type):
                 break
         else:
+            assert self.location is not None
             error.extend(
                 [
-                    (
+                    ErrorEntry(
                         f'invalid renaming to "{self.identifier}"',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.location,
-                    ),
-                    (
-                        f'refinement for message "{self.expression.prefix.type_.identifier}"'
-                        " would make operation legal",
-                        Subsystem.MODEL,
-                        Severity.INFO,
-                        self.location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    "refinement for message "
+                                    f'"{self.expression.prefix.type_.identifier}"'
+                                    " would make operation legal",
+                                    Severity.INFO,
+                                    self.location,
+                                ),
+                            ]
+                        ),
                     ),
                 ],
             )
-        return error + self.expression.check_type(rty.OPAQUE)
+        error.extend(self.expression.check_type(rty.OPAQUE).entries)
+        return error
 
     def variables(self) -> Sequence[Variable]:
         return self.expression.variables()
@@ -197,7 +203,6 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
     def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.VarDecl:
         fail(
             "renaming declarations not yet supported",
-            Subsystem.MODEL,
             location=self.location,
         )
 

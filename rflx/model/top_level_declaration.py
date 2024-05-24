@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from rflx.common import Base
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.identifier import ID, StrID
+from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
 
 class TopLevelDeclaration(Base):
@@ -36,9 +36,8 @@ class TopLevelDeclaration(Base):
         if len(self.identifier.parts) != 2:
             self.error.extend(
                 [
-                    (
+                    ErrorEntry(
                         f'invalid format for identifier "{self.identifier}"',
-                        Subsystem.MODEL,
                         Severity.ERROR,
                         self.identifier.location,
                     ),

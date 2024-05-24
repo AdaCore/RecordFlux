@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 from ruamel.yaml.main import YAML
 
-from rflx.error import RecordFluxError
 from rflx.identifier import ID
 from rflx.integration import Integration
+from rflx.rapidflux import RecordFluxError
 
 
 @pytest.mark.parametrize(
@@ -102,10 +102,7 @@ from rflx.integration import Integration
 def test_rfi_add_integration(rfi_content: str, match_error: str) -> None:
     # pydantic messages end with the type of the error in parentheses.
     regex = re.compile(
-        (
-            "^test.rfi:0:0: parser: error: 1 validation error for "
-            rf"IntegrationFile.*{match_error}.*$"
-        ),
+        (f"^test.rfi:0:0: error: 1 validation error for IntegrationFile.*{match_error}.*$"),
         re.DOTALL,
     )
     yaml = YAML()
@@ -176,7 +173,7 @@ def test_load_integration_file(
     test_rfi.write_text(content)
     integration = Integration()
     error = RecordFluxError()
-    regex = rf"^{test_rfi}:{line}:{column}: parser: error: "
+    regex = rf"^{test_rfi}:{line}:{column}: error: "
     for elt in error_msg:
         regex += elt
         regex += rf'.*in "{test_rfi}", line [0-9]+, column [0-9]+.*'
@@ -197,7 +194,7 @@ def test_load_integration_path(tmp_path: Path) -> None:
     regex = re.compile(
         (
             r"^"
-            r"test.rfi:0:0: parser: error: 1 validation error for IntegrationFile.*"
+            r"test.rfi:0:0: error: 1 validation error for IntegrationFile.*"
             r"Input should be a valid dictionary.*"
             r"$"
         ),

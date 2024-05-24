@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -115,7 +116,7 @@ def test_initialize_pyrflx_checksum_invalid_message() -> None:
         match=(
             r"^"
             r"invalid checksum definition: "
-            r'pyrflx: error: "Invalid_Message" is not a message in Checksum_Message'
+            r'error: "Invalid_Message" is not a message in Checksum_Message'
             r"$"
         ),
     ):
@@ -132,7 +133,7 @@ def test_initialize_pyrflx_checksum_invalid_field() -> None:
         match=(
             r"^"
             r"invalid checksum definition: "
-            r"pyrflx: error: cannot set checksum function: field Invalid_Field is not defined"
+            r"error: cannot set checksum function: field Invalid_Field is not defined"
             r"$"
         ),
     ):
@@ -473,7 +474,7 @@ def test_validate_negative_output(tmp_path: Path) -> None:
     )
 
 
-def test_validate_coverage(capsys: pytest.CaptureFixture[str]) -> None:
+def test_validate_coverage(capfd: pytest.CaptureFixture[str]) -> None:
     validator = Validator(
         [SPEC_DIR / "ethernet.rflx"],
         CHECKSUM_MODULE,
@@ -486,7 +487,7 @@ def test_validate_coverage(capsys: pytest.CaptureFixture[str]) -> None:
         coverage=True,
         target_coverage=100,
     )
-    expected_output = f"""model: warning: model verification skipped
+    expected_stdout_output = f"""\
 {VALIDATOR_DIR}/ethernet/frame/valid/802.3-LLC-CDP.raw                      PASSED
 {VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1AD-802.1Q-IPv4.raw            PASSED
 {VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1Q-802.1Q-IPv4-ICMP.raw        PASSED
@@ -512,10 +513,12 @@ ethernet.rflx                                    10         10         100.00%
 TOTAL                                            10         10         100.00%
 --------------------------------------------------------------------------------
 """
-    assert capsys.readouterr().out == expected_output
+    capture = capfd.readouterr()
+    assert capture.out == expected_stdout_output
+    re.fullmatch(r"^warning: model verification skipped\n$", capture.err)
 
 
-def test_coverage_threshold_missed(capsys: pytest.CaptureFixture[str]) -> None:
+def test_coverage_threshold_missed(capfd: pytest.CaptureFixture[str]) -> None:
     validator = Validator(
         [SPEC_DIR / "in_ethernet.rflx"],
         CHECKSUM_MODULE,
@@ -533,7 +536,7 @@ def test_coverage_threshold_missed(capsys: pytest.CaptureFixture[str]) -> None:
             coverage=True,
             target_coverage=90,
         )
-    expected_output = f"""model: warning: model verification skipped
+    expected_output = f"""\
 {VALIDATOR_DIR}/ethernet/frame/valid/802.3-LLC-CDP.raw                      PASSED
 {VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1AD-802.1Q-IPv4.raw            PASSED
 {VALIDATOR_DIR}/ethernet/frame/valid/EII-802.1Q-802.1Q-IPv4-ICMP.raw        PASSED
@@ -579,7 +582,7 @@ TOTAL                                            38         28          73.68%
 {SPEC_DIR}/ipv4.rflx:33:23: missing link       Option_Length       ->     Option_Data
 {SPEC_DIR}/ipv4.rflx:35:50: missing link        Option_Data        ->        Final
 """
-    assert capsys.readouterr().out == expected_output
+    assert capfd.readouterr().out == expected_output
 
 
 def test_validate_coverage_threshold_invalid() -> None:
@@ -815,7 +818,7 @@ def test_parameterized_message_missing_parameter() -> None:
         match=(
             r"^"
             f"{VALIDATOR_DIR}/parameterized/message/invalid/parameterized_message_missing_parameter.raw:"
-            r" pyrflx: error: missing parameter values: Tag_Mode"
+            r" error: missing parameter values: Tag_Mode"
             r"$"
         ),
     ):
@@ -841,7 +844,7 @@ def test_parameterized_message_excess_parameter() -> None:
         match=(
             r"^"
             f"{VALIDATOR_DIR}/parameterized/message/invalid/parameterized_message_excess_parameter.raw:"
-            r" pyrflx: error: unexpected parameter values: Excess"
+            r" error: unexpected parameter values: Excess"
             r"$"
         ),
     ):

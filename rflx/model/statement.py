@@ -6,9 +6,9 @@ from typing import Optional
 
 from rflx import ir, typing_ as rty
 from rflx.common import Base
-from rflx.error import Location, RecordFluxError, Severity, Subsystem
 from rflx.expression import Expr, Variable, _to_ir_basic_expr
 from rflx.identifier import ID, StrID
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 
 class Statement(Base):
@@ -67,12 +67,14 @@ class VariableAssignment(Assignment):
     ) -> RecordFluxError:
         self.type_ = statement_type
         self.expression = self.expression.substituted(typify_variable)
-        return rty.check_type_instance(
+        error = rty.check_type_instance(
             statement_type,
             rty.Any,
             self.location,
             f'variable "{self.identifier}"',
-        ) + self.expression.check_type(statement_type)
+        )
+        error.extend(self.expression.check_type(statement_type).entries)
+        return error
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.NamedType)
@@ -107,45 +109,43 @@ class MessageFieldAssignment(Assignment):
             if self.field in statement_type.fields:
                 field_type = statement_type.types[self.field]
             elif self.field in statement_type.parameters:
-                error.extend(
-                    [
-                        (
-                            f'message parameter "{self.field}" cannot be set using an assignment',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.field.location,
+                assert self.field.location is not None
+                error.push(
+                    ErrorEntry(
+                        f'message parameter "{self.field}" cannot be set using an assignment',
+                        Severity.ERROR,
+                        self.field.location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    "use a Reset statement to change the message parameters",
+                                    Severity.INFO,
+                                    self.field.location,
+                                ),
+                            ]
                         ),
-                        (
-                            "use a Reset statement to change the message parameters",
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            self.field.location,
-                        ),
-                    ],
+                    ),
                 )
             else:
-                error.extend(
-                    [
-                        (
-                            f'invalid message field "{self.field}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.field.location,
-                        ),
-                    ],
+                error.push(
+                    ErrorEntry(
+                        f'invalid message field "{self.field}"',
+                        Severity.ERROR,
+                        self.field.location,
+                    ),
                 )
         self.type_ = statement_type
         self.expression = self.expression.substituted(typify_variable)
-        return (
-            error
-            + rty.check_type_instance(
+        error.extend(
+            rty.check_type_instance(
                 statement_type,
                 rty.Message,
                 self.location,
                 f'variable "{self.identifier}"',
-            )
-            + self.expression.check_type(field_type)
+            ).entries,
         )
+        error.extend(self.expression.check_type(field_type).entries)
+        return error
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.Message)
@@ -214,26 +214,27 @@ class Append(ListAttributeStatement):
             f'variable "{self.identifier}"',
         )
         if isinstance(statement_type, rty.Sequence):
-            error += self.parameter.check_type(statement_type.element)
+            error.extend(self.parameter.check_type(statement_type.element).entries)
             if isinstance(statement_type.element, rty.Message) and isinstance(
                 self.parameter,
                 Variable,
             ):
-                error.extend(
-                    [
-                        (
-                            "appending independently created message not supported",
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            self.parameter.location,
+                assert self.parameter.location is not None
+                error.push(
+                    ErrorEntry(
+                        "appending independently created message not supported",
+                        Severity.ERROR,
+                        self.parameter.location,
+                        annotations=(
+                            [
+                                Annotation(
+                                    "message aggregate should be used instead",
+                                    Severity.INFO,
+                                    self.parameter.location,
+                                ),
+                            ]
                         ),
-                        (
-                            "message aggregate should be used instead",
-                            Subsystem.MODEL,
-                            Severity.INFO,
-                            self.parameter.location,
-                        ),
-                    ],
+                    ),
                 )
         return error
 
@@ -263,12 +264,14 @@ class Extend(ListAttributeStatement):
     ) -> RecordFluxError:
         self.type_ = statement_type
         self.parameter = self.parameter.substituted(typify_variable)
-        return rty.check_type_instance(
+        error = rty.check_type_instance(
             statement_type,
             rty.Sequence,
             self.location,
             f'variable "{self.identifier}"',
-        ) + self.parameter.check_type(statement_type)
+        )
+        error.extend(self.parameter.check_type(statement_type).entries)
+        return error
 
     @property
     def parameter(self) -> Expr:
@@ -317,49 +320,43 @@ class Reset(AttributeStatement):
         }
         if isinstance(statement_type, rty.Sequence):
             for i, e in self.associations.items():
-                error.extend(
-                    [
-                        (
-                            f'unexpected argument "{i}"',
-                            Subsystem.MODEL,
-                            Severity.ERROR,
-                            e.location,
-                        ),
-                    ],
+                error.push(
+                    ErrorEntry(
+                        f'unexpected argument "{i}"',
+                        Severity.ERROR,
+                        e.location,
+                    ),
                 )
         elif isinstance(statement_type, rty.Message):
             for i, e in self.associations.items():
                 if i in statement_type.parameter_types:
-                    error.extend(e.check_type(statement_type.parameter_types[i]))
+                    error.extend(e.check_type(statement_type.parameter_types[i]).entries)
                 else:
-                    error.extend(
-                        [
-                            (
-                                f'unexpected argument "{i}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                e.location,
-                            ),
-                        ],
+                    error.push(
+                        ErrorEntry(
+                            f'unexpected argument "{i}"',
+                            Severity.ERROR,
+                            e.location,
+                        ),
                     )
             for a in statement_type.parameter_types:
                 if a not in self.associations:
-                    error.extend(
-                        [
-                            (
-                                f'missing argument "{a}"',
-                                Subsystem.MODEL,
-                                Severity.ERROR,
-                                self.location,
-                            ),
-                        ],
+                    error.push(
+                        ErrorEntry(
+                            f'missing argument "{a}"',
+                            Severity.ERROR,
+                            self.location,
+                        ),
                     )
-        return error + rty.check_type_instance(
-            statement_type,
-            (rty.Sequence, rty.Message),
-            self.location,
-            f'variable "{self.identifier}"',
+        error.extend(
+            rty.check_type_instance(
+                statement_type,
+                (rty.Sequence, rty.Message),
+                self.location,
+                f'variable "{self.identifier}"',
+            ).entries,
         )
+        return error
 
     def variables(self) -> Sequence[Variable]:
         return [
@@ -398,12 +395,14 @@ class ChannelAttributeStatement(AttributeStatement):
     ) -> RecordFluxError:
         self.type_ = statement_type
         self.parameters = [self.parameter.substituted(typify_variable)]
-        return rty.check_type(
+        error = rty.check_type(
             statement_type,
             self._expected_channel_type(),
             self.location,
             f'channel "{self.identifier}"',
-        ) + self.parameter.check_type_instance(rty.Message)
+        )
+        error.extend(self.parameter.check_type_instance(rty.Message).entries)
+        return error
 
     @property
     def parameter(self) -> Expr:

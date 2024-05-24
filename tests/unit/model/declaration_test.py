@@ -1,15 +1,15 @@
 import pytest
 
 from rflx import expression as expr
-from rflx.error import Location, RecordFluxError
 from rflx.identifier import id_generator
 from rflx.model import declaration as decl
+from rflx.rapidflux import Location, RecordFluxError
 
 
 def test_renaming_declaration_to_ir() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r"^<stdin>:1:2: model: error: renaming declarations not yet supported$",
+        match=r"^<stdin>:1:2: error: renaming declarations not yet supported$",
     ):
         decl.RenamingDeclaration(
             "X",

@@ -1,7 +1,11 @@
-from rflx.error import RecordFluxError, Severity, Subsystem
+from __future__ import annotations
+
+from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
 
 
 class PyRFLXError(RecordFluxError):
-    def __init__(self, message: str) -> None:
-        super().__init__()
-        self.extend([(message, Subsystem.PYRFLX, Severity.ERROR, None)])
+    def __init__(self, entries: list[ErrorEntry] | None = None) -> None:
+        super().__init__(entries if entries is not None else [])
+
+    def push_msg(self, message: str) -> None:
+        self.push(ErrorEntry(message, Severity.ERROR, None))

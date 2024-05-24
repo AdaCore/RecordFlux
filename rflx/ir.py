@@ -16,8 +16,9 @@ from attr import define, field, frozen
 from rflx import typing_ as rty
 from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE, MP_CONTEXT
-from rflx.error import Location, Subsystem, info
+from rflx.error import info
 from rflx.identifier import ID, StrID
+from rflx.rapidflux import Location
 
 if TYPE_CHECKING:
     from rflx.model import type_decl as mty
@@ -1911,7 +1912,6 @@ def add_required_checks(
         if isinstance(s, Check):
             info(
                 f'precondition "{s.expression.origin_str}" must be checked at runtime',
-                Subsystem.MODEL,
                 s.expression.location,
             )
 

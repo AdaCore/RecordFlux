@@ -3,7 +3,6 @@ from pathlib import Path
 import pytest
 from pydotplus import Dot, InvocationException  # type: ignore[attr-defined]
 
-from rflx.error import RecordFluxError
 from rflx.expression import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Sub, Variable
 from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
@@ -22,6 +21,7 @@ from rflx.model import (
     declaration as decl,
     statement as stmt,
 )
+from rflx.rapidflux import Location, RecordFluxError
 
 
 def assert_graph(graph: Dot, expected: str, tmp_path: Path) -> None:
@@ -33,7 +33,7 @@ def assert_graph(graph: Dot, expected: str, tmp_path: Path) -> None:
 def test_graph_object() -> None:
     f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
-        "P::M",
+        ID("P::M", Location((1, 1))),
         structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
         types={Field("X"): f_type},
     )
@@ -57,7 +57,7 @@ def test_graph_object() -> None:
 
 
 def test_empty_message_graph(tmp_path: Path) -> None:
-    m = Message("P::M", [], {})
+    m = Message(ID("P::M", Location((1, 1))), [], {})
     expected = """
         digraph "P::M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
@@ -80,7 +80,7 @@ def test_empty_message_graph(tmp_path: Path) -> None:
 def test_dot_graph(tmp_path: Path) -> None:
     f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
-        "P::M",
+        ID("P::M", Location((1, 1))),
         structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
         types={Field("X"): f_type},
     )
@@ -111,7 +111,7 @@ def test_dot_graph(tmp_path: Path) -> None:
 def test_dot_graph_with_condition(tmp_path: Path) -> None:
     f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
-        "P::M",
+        ID("P::M", Location((1, 1))),
         structure=[
             Link(INITIAL, Field("X")),
             Link(Field("X"), FINAL, Greater(Variable("X"), Number(100))),
@@ -145,11 +145,11 @@ def test_dot_graph_with_condition(tmp_path: Path) -> None:
 def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
     f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
-        "P::M",
+        ID("P::M", Location((1, 1))),
         structure=[
             Link(INITIAL, Field("X")),
-            Link(Field("X"), FINAL, Greater(Variable("X"), Number(100))),
-            Link(Field("X"), FINAL, Less(Variable("X"), Number(50))),
+            Link(Field("X"), FINAL, Greater(Variable("X"), Number(100), location=Location((3, 3)))),
+            Link(Field("X"), FINAL, Less(Variable("X"), Number(50), location=Location((4, 4)))),
         ],
         types={Field("X"): f_type},
     )
@@ -258,8 +258,8 @@ def test_missing_graphviz(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> No
         RecordFluxError,
         match=(
             r"^"
-            r"graph: error: GraphViz not found\n"
-            r"graph: info: GraphViz is required for creating graphs"
+            r"error: GraphViz not found\n"
+            r"info: GraphViz is required for creating graphs"
             r"$"
         ),
     ):

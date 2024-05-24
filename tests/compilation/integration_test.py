@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from rflx.error import RecordFluxError
 from rflx.generator import Debug
 from rflx.integration import Integration
 from rflx.model import Model, Session, State, Transition
+from rflx.rapidflux import RecordFluxError
 from rflx.specification import Parser
 from tests import utils
 from tests.const import SPEC_DIR
@@ -977,7 +977,7 @@ end Test;
     # TODO(eng/recordflux/RecordFlux#1497): Support comparisons of opaque fields
     with pytest.raises(
         RecordFluxError,
-        match=r"^<stdin>:22:17: model: error: comparisons of opaque fields not yet supported$",
+        match=r"^<stdin>:22:17: error: comparisons of opaque fields not yet supported$",
     ):
         utils.assert_compilable_code_string(spec, tmp_path)
 

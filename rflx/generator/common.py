@@ -107,13 +107,13 @@ def substitution(
                 expression.right,
                 expr.Aggregate,
             ):
-                field = model.Field(expression.left.name)
+                field = model.Field(ID(expression.left.name, expression.left.location))
                 aggregate = byte_aggregate(expression.right)
             elif isinstance(expression.left, expr.Aggregate) and isinstance(
                 expression.right,
                 expr.Variable,
             ):
-                field = model.Field(expression.right.name)
+                field = model.Field(ID(expression.right.name, expression.right.location))
                 aggregate = byte_aggregate(expression.left)
             if field and field in message.fields and len(field.identifier.parts) == 1 and aggregate:
                 if embedded:
@@ -176,21 +176,23 @@ def substitution(
         if isinstance(expression, expr.Relation):
             if (
                 isinstance(expression.left, expr.Variable)
-                and model.Field(expression.left.name) in message.fields
+                and model.Field(ID(expression.left.name, expression.left.location))
+                in message.fields
                 and isinstance(expression.right, expr.Number)
             ):
                 return expression.__class__(
-                    field_value(model.Field(expression.left.name)),
+                    field_value(model.Field(ID(expression.left.name, expression.left.location))),
                     expression.right,
                 )
             if (
                 isinstance(expression.right, expr.Variable)
-                and model.Field(expression.right.name) in message.fields
+                and model.Field(ID(expression.right.name, expression.right.location))
+                in message.fields
                 and isinstance(expression.left, expr.Number)
             ):
                 return expression.__class__(
                     expression.left,
-                    field_value(model.Field(expression.right.name)),
+                    field_value(model.Field(ID(expression.right.name, expression.right.location))),
                 )
 
         return expression

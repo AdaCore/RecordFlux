@@ -11,10 +11,11 @@ from typing import Iterable, Optional, Union
 import rflx.typing_ as rty
 from rflx import expression as expr, lang, model
 from rflx.common import STDIN, unique
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import fail
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import AlwaysVerify, Cache, declaration as decl, statement as stmt
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 from rflx.specification.const import RESERVED_WORDS
 
 from . import style
@@ -65,19 +66,16 @@ def diagnostics_to_error(
 
     for diag in diagnostics:
         loc = diag.sloc_range
-        error.extend(
-            [
-                (
-                    diag.message,
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    Location(
-                        start=(loc.start.line, loc.start.column),
-                        source=filename,
-                        end=(loc.end.line, loc.end.column),
-                    ),
+        error.push(
+            ErrorEntry(
+                diag.message,
+                Severity.ERROR,
+                Location(
+                    start=(loc.start.line, loc.start.column),
+                    source=filename,
+                    end=(loc.end.line, loc.end.column),
                 ),
-            ],
+            ),
         )
     return True
 
@@ -105,9 +103,8 @@ def validate_handler(
     if entity.kind_name not in handlers:
         error.extend(
             [
-                (
+                ErrorEntry(
                     f"{readable_name(entity.kind_name)} unsupported in {context} context",
-                    Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(entity, filename),
                 ),
@@ -230,10 +227,9 @@ def create_state(
     if state.f_identifier.text != state.f_body.f_end_identifier.text:
         error.extend(
             [
-                (
+                ErrorEntry(
                     "inconsistent state identifier: "
                     f"{state.f_identifier.text} /= {state.f_body.f_end_identifier.text}",
-                    Subsystem.PARSER,
                     Severity.ERROR,
                     location,
                 ),
@@ -272,10 +268,9 @@ def _check_session_identifier(
     if session.f_identifier.text != session.f_end_identifier.text:
         error.extend(
             [
-                (
+                ErrorEntry(
                     "inconsistent session identifier: "
                     f"{session.f_identifier.text} /= {session.f_end_identifier.text}",
-                    Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(session, filename),
                 ),
@@ -303,28 +298,23 @@ def create_session(
 def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Path) -> ID:
     if isinstance(identifier, lang.UnqualifiedID):
         if identifier.text.lower() in RESERVED_WORDS:
-            error.extend(
-                [
-                    (
-                        f'reserved word "{identifier.text}" used as identifier',
-                        Subsystem.PARSER,
-                        Severity.ERROR,
-                        node_location(identifier, filename),
-                    ),
-                ],
+            error.push(
+                ErrorEntry(
+                    f'reserved word "{identifier.text}" used as identifier',
+                    Severity.ERROR,
+                    node_location(identifier, filename),
+                ),
             )
         if identifier.text.upper().startswith("RFLX_"):
             error.extend(
                 [
-                    (
+                    ErrorEntry(
                         f'illegal identifier "{identifier.text}"',
-                        Subsystem.PARSER,
                         Severity.ERROR,
                         node_location(identifier, filename),
                     ),
-                    (
+                    ErrorEntry(
                         'identifiers starting with "RFLX_" are reserved for internal use',
-                        Subsystem.PARSER,
                         Severity.INFO,
                         node_location(identifier, filename),
                     ),
@@ -398,15 +388,12 @@ def create_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) 
     assert isinstance(expression, lang.BinOp)
     loc = node_location(expression, filename)
     if expression.f_right is None:
-        error.extend(  # type: ignore[unreachable]
-            [
-                (
-                    "missing right operand",
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    loc,
-                ),
-            ],
+        error.push(  # type: ignore[unreachable]
+            ErrorEntry(
+                "missing right operand",
+                Severity.ERROR,
+                loc,
+            ),
         )
         error.propagate()
 
@@ -450,7 +437,6 @@ def create_math_binop(error: RecordFluxError, expression: lang.Expr, filename: P
         # TODO(eng/recordflux/RecordFlux#1526): This should be rejected by the parser already.
         fail(
             "empty subexpression",
-            Subsystem.PARSER,
             location=node_location(expression, filename),
         )
     if expression.f_op.kind_name in MATH_OPERATIONS:
@@ -463,7 +449,6 @@ def create_math_binop(error: RecordFluxError, expression: lang.Expr, filename: P
     if expression.f_op.kind_name in [*OPERATIONS, *MATH_COMPARISONS, *BOOLEAN_OPERATIONS]:
         fail(
             "boolean expression in math context",
-            Subsystem.PARSER,
             location=node_location(expression, filename),
         )
 
@@ -492,7 +477,6 @@ def create_bool_binop(error: RecordFluxError, expression: lang.Expr, filename: P
         # TODO(eng/recordflux/RecordFlux#1526): This should be rejected by the parser already.
         fail(
             "empty subexpression",
-            Subsystem.PARSER,
             location=node_location(expression, filename),
         )
 
@@ -518,7 +502,6 @@ def create_bool_binop(error: RecordFluxError, expression: lang.Expr, filename: P
     if expression.f_op.kind_name in MATH_OPERATIONS:
         fail(
             "math expression in boolean context",
-            Subsystem.PARSER,
             location=node_location(expression, filename),
         )
 
@@ -663,15 +646,12 @@ def create_quantified_expression(
 
 def create_binding(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Binding)
-    error.extend(
-        [
-            (
-                "bindings are not supported",
-                Subsystem.PARSER,
-                Severity.ERROR,
-                node_location(expression, filename),
-            ),
-        ],
+    error.push(
+        ErrorEntry(
+            "bindings are not supported",
+            Severity.ERROR,
+            node_location(expression, filename),
+        ),
     )
     return create_expression(error, expression.f_expression, filename)
 
@@ -782,15 +762,12 @@ def create_function_decl(
 def create_negation(error: RecordFluxError, expression: lang.Expr, filename: Path) -> expr.Expr:
     assert isinstance(expression, lang.Negation)
     if expression.f_data is None:
-        error.extend(  # type: ignore[unreachable]
-            [
-                (
-                    "negation of non-expression",
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    node_location(expression, filename),
-                ),
-            ],
+        error.push(  # type: ignore[unreachable]
+            ErrorEntry(
+                "negation of non-expression",
+                Severity.ERROR,
+                node_location(expression, filename),
+            ),
         )
         error.propagate()
 
@@ -991,7 +968,6 @@ def create_math_expression(
     if result.type_ == rty.BOOLEAN:
         fail(
             "boolean expression in math context",
-            Subsystem.PARSER,
             location=node_location(expression, filename),
         )
     return result
@@ -1016,7 +992,6 @@ def create_bool_expression(
     if expression.kind_name == "NumericLiteral":
         fail(
             "math expression in boolean context",
-            Subsystem.PARSER,
             location=node_location(expression, filename),
         )
     validate_handler(error, "boolean expression", expression, list(handlers.keys()), filename)
@@ -1036,16 +1011,14 @@ def create_modular(
     upper = int(modulus) - 1
     error.extend(
         [
-            (
+            ErrorEntry(
                 "modular integer types are not supported",
-                Subsystem.PARSER,
                 Severity.ERROR,
                 type_location(identifier, modular),
             ),
-            (
+            ErrorEntry(
                 f'use "type {identifier.name} is range 0 .. {upper}'
                 f' with Size => {upper.bit_length()}" instead',
-                Subsystem.PARSER,
                 Severity.INFO,
                 type_location(identifier, modular),
             ),
@@ -1064,10 +1037,9 @@ def create_range(
     if rangetype.f_size.f_identifier.text != "Size":
         error.extend(
             [
-                (
+                ErrorEntry(
                     f'invalid aspect "{rangetype.f_size.f_identifier.text}" '
                     f'for range type "{identifier}"',
-                    Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(rangetype, filename),
                 ),
@@ -1075,15 +1047,12 @@ def create_range(
         )
         return None
     if rangetype.f_size.f_value is None:
-        error.extend(  # type: ignore[unreachable]
-            [
-                (
-                    '"Size" aspect has no value',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    node_location(rangetype.f_size, filename),
-                ),
-            ],
+        error.push(  # type: ignore[unreachable]
+            ErrorEntry(
+                '"Size" aspect has no value',
+                Severity.ERROR,
+                node_location(rangetype.f_size, filename),
+            ),
         )
         return None
 
@@ -1225,15 +1194,12 @@ def create_message_structure(
             aspect, location = locations[0]
 
             if aspect.f_value is None:
-                error.extend(  # type: ignore[unreachable]
-                    [
-                        (
-                            f'"{name}" aspect has no value',
-                            Subsystem.PARSER,
-                            Severity.ERROR,
-                            location,
-                        ),
-                    ],
+                error.push(  # type: ignore[unreachable]
+                    ErrorEntry(
+                        f'"{name}" aspect has no value',
+                        Severity.ERROR,
+                        location,
+                    ),
                 )
                 continue
 
@@ -1244,9 +1210,8 @@ def create_message_structure(
             else:
                 error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'invalid aspect "{name}"',
-                            Subsystem.PARSER,
                             Severity.ERROR,
                             location,
                         ),
@@ -1265,7 +1230,7 @@ def create_message_structure(
         condition = (
             create_bool_expression(error, then.f_condition, filename)
             if then.f_condition
-            else expr.TRUE
+            else expr.Literal("True", type_=rty.BOOLEAN, location=node_location(then, filename))
         )
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)
@@ -1296,9 +1261,8 @@ def create_message_structure(
         if field.f_identifier.text.lower() == "message":
             error.extend(
                 [
-                    (
+                    ErrorEntry(
                         'reserved word "Message" used as identifier',
-                        Subsystem.PARSER,
                         Severity.ERROR,
                         field_identifiers[i].location,
                     ),
@@ -1322,9 +1286,8 @@ def create_message_structure(
             ):
                 error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'undefined field "{then.f_target.text}"',
-                            Subsystem.PARSER,
                             Severity.ERROR,
                             node_location(then.f_target, filename) if then.f_target else None,
                         ),
@@ -1333,7 +1296,7 @@ def create_message_structure(
                 continue
             structure.append(model.Link(source_node, *extract_then(then)))
 
-        if error.errors:
+        if error.has_errors():
             continue
 
         merge_field_aspects(
@@ -1345,16 +1308,14 @@ def create_message_structure(
         if field.f_condition:
             error.extend(
                 [
-                    (
+                    ErrorEntry(
                         "short form condition is not supported anymore",
-                        Subsystem.PARSER,
                         Severity.ERROR,
                         node_location(field.f_condition, filename),
                     ),
-                    (
+                    ErrorEntry(
                         "add condition to all outgoing links of "
                         f'field "{field_identifiers[i]}" instead',
-                        Subsystem.PARSER,
                         Severity.INFO,
                         node_location(field.f_condition, filename),
                     ),
@@ -1379,17 +1340,15 @@ def merge_field_aspects(
                 else:
                     error.extend(
                         [
-                            (
+                            ErrorEntry(
                                 f'first aspect of field "{field_identifier}"'
                                 " conflicts with previous"
                                 " specification",
-                                Subsystem.MODEL,
                                 Severity.ERROR,
                                 first.location,
                             ),
-                            (
+                            ErrorEntry(
                                 "previous specification of first",
-                                Subsystem.MODEL,
                                 Severity.INFO,
                                 l.first.location,
                             ),
@@ -1402,16 +1361,14 @@ def merge_field_aspects(
                 else:
                     error.extend(
                         [
-                            (
+                            ErrorEntry(
                                 f'size aspect of field "{field_identifier}" conflicts with'
                                 " previous specification",
-                                Subsystem.MODEL,
                                 Severity.ERROR,
                                 size.location,
                             ),
-                            (
+                            ErrorEntry(
                                 "previous specification of size",
-                                Subsystem.MODEL,
                                 Severity.INFO,
                                 l.size.location,
                             ),
@@ -1427,16 +1384,14 @@ def check_duplicate_aspect(
     if len(locations) > 1:
         error.extend(
             [
-                (
+                ErrorEntry(
                     f'duplicate aspect "{name}"',
-                    Subsystem.PARSER,
                     Severity.ERROR,
                     locations[1],
                 ),
                 *[
-                    (
+                    ErrorEntry(
                         "previous location",
-                        Subsystem.PARSER,
                         Severity.INFO,
                         l,
                     )
@@ -1547,9 +1502,8 @@ def create_enumeration(
                     else:
                         error.extend(
                             [
-                                (
+                                ErrorEntry(
                                     f"invalid Always_Valid expression: {av_expr}",
-                                    Subsystem.PARSER,
                                     Severity.ERROR,
                                     node_location(aspect.f_value, filename),
                                 ),
@@ -1560,9 +1514,8 @@ def create_enumeration(
         if not size:
             error.extend(
                 [
-                    (
+                    ErrorEntry(
                         f'no size set for "{identifier}"',
-                        Subsystem.PARSER,
                         Severity.ERROR,
                         identifier.location,
                     ),
@@ -1635,78 +1588,69 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
     if identifier.startswith("RFLX"):
         error.extend(
             [
-                (
+                ErrorEntry(
                     f'illegal prefix "RFLX" in package identifier "{identifier}"',
-                    Subsystem.PARSER,
                     Severity.ERROR,
                     node_location(package.f_identifier, name),
                 ),
             ],
         )
     if identifier != package.f_end_identifier.text:
-        error.extend(
-            [
-                (
-                    f'inconsistent package identifier "{package.f_end_identifier.text}"',
-                    Subsystem.PARSER,
-                    Severity.ERROR,
-                    node_location(package.f_end_identifier, name),
-                ),
-                (
-                    f'previous identifier was "{identifier}"',
-                    Subsystem.PARSER,
-                    Severity.INFO,
-                    node_location(package.f_identifier, name),
-                ),
-            ],
+        error.push(
+            ErrorEntry(
+                f'inconsistent package identifier "{package.f_end_identifier.text}"',
+                Severity.ERROR,
+                node_location(package.f_end_identifier, name),
+                annotations=[
+                    Annotation(
+                        f'previous identifier was "{identifier}"',
+                        Severity.INFO,
+                        node_location(package.f_identifier, name),
+                    ),
+                ],
+            ),
         )
     if name != STDIN:
         expected_filename = f"{identifier.lower()}.rflx"
         expected_package_name = "_".join(
             x.capitalize() for x in Path(name.name).stem.lower().split("_")
         )
+        # TODO(eng/recordflux/RecordFlux#1611): Improve invalid package name error format
         if name.name != expected_filename:
-            error.extend(
-                [
-                    (
-                        (
-                            f'source file name "{name.name}" must be in lower case characters only',
-                            Subsystem.PARSER,
-                            Severity.ERROR,
-                            node_location(package.f_identifier, name),
-                        )
-                        if any(c.isupper() for c in Path(name.name).stem)
-                        else (
-                            f'source file name does not match the package name "{identifier}"',
-                            Subsystem.PARSER,
-                            Severity.ERROR,
-                            node_location(package.f_identifier, name),
-                        )
-                    ),
-                ],
+            error.push(
+                (
+                    ErrorEntry(
+                        f'source file name "{name.name}" must be in lower case characters only',
+                        Severity.ERROR,
+                        node_location(package.f_identifier, name),
+                    )
+                    if any(c.isupper() for c in Path(name.name).stem)
+                    else ErrorEntry(
+                        f'source file name does not match the package name "{identifier}"',
+                        Severity.ERROR,
+                        node_location(package.f_identifier, name),
+                    )
+                ),
             )
 
             error.extend(
                 (
                     [
-                        (
+                        ErrorEntry(
                             f'rename the file to "{expected_filename}"',
-                            Subsystem.PARSER,
                             Severity.INFO,
                             node_location(package.f_identifier, name),
                         ),
                     ]
                     if any(c.isupper() for c in Path(name.name).stem)
                     else [
-                        (
+                        ErrorEntry(
                             f'either rename the file to "{expected_filename}"',
-                            Subsystem.PARSER,
                             Severity.INFO,
                             node_location(package.f_identifier, name),
                         ),
-                        (
+                        ErrorEntry(
                             f'or change the package name to "{expected_package_name}"',
-                            Subsystem.PARSER,
                             Severity.INFO,
                             node_location(package.f_identifier, name),
                         ),
@@ -1822,7 +1766,7 @@ class Parser:
 
             self._specifications = _sort_specs_topologically(self._specifications)
 
-            error.extend(style.check_string(string, filename))
+            error.extend(style.check_string(string, filename).entries)
 
         error.propagate()
 
@@ -1863,7 +1807,7 @@ class Parser:
         log.info("Parsing %s", filename)
         unit = lang.AnalysisContext().get_from_file(str(filename))
 
-        error.extend(style.check(filename))
+        error.extend(style.check(filename).entries)
 
         if diagnostics_to_error(unit.diagnostics, error, filename):
             return None
@@ -1909,9 +1853,8 @@ class Parser:
             else:
                 error.extend(
                     [
-                        (
+                        ErrorEntry(
                             f'cannot find specification "{context_clause.name}"',
-                            Subsystem.PARSER,
                             Severity.ERROR,
                             context_clause.location,
                         ),
@@ -1958,9 +1901,8 @@ class Parser:
                 if t.f_definition.kind_name != "MessageTypeDef" and t.f_parameters:
                     error.extend(
                         [
-                            (
+                            ErrorEntry(
                                 "only message types can be parameterized",
-                                Subsystem.PARSER,
                                 Severity.ERROR,
                                 node_location(t.f_parameters.f_parameters, filename),
                             ),
@@ -1999,15 +1941,13 @@ def _check_for_duplicate_specifications(
             if n1.package == n2.package:
                 error.extend(
                     [
-                        (
+                        ErrorEntry(
                             "duplicate specification",
-                            Subsystem.PARSER,
                             Severity.ERROR,
                             node_location(n2.spec.f_package_declaration.f_identifier, n2.filename),
                         ),
-                        (
+                        ErrorEntry(
                             "previous specification",
-                            Subsystem.PARSER,
                             Severity.INFO,
                             node_location(n1.spec.f_package_declaration.f_identifier, n1.filename),
                         ),
@@ -2028,7 +1968,7 @@ def _check_for_dependency_cycles(
                 _check_for_dependency_cycle(p, c, [], specifications)
             except RecordFluxError as e:  # noqa: PERF203
                 result = True
-                error.extend(e)
+                error.extend(e.entries)
 
     return result
 
@@ -2052,19 +1992,16 @@ def _check_for_dependency_cycle(
             cycle.append(c)
         if context not in cycle:
             cycle.append(context)
-        error = RecordFluxError()
-        error.extend(
+        raise RecordFluxError(
             [
-                (
+                ErrorEntry(
                     f'dependency cycle when including "{cycle[0].name}"',
-                    Subsystem.PARSER,
                     Severity.ERROR,
                     cycle[0].location,
                 ),
                 *[
-                    (
+                    ErrorEntry(
                         f'when including "{c.name}"',
-                        Subsystem.PARSER,
                         Severity.INFO,
                         c.location,
                     )
@@ -2072,7 +2009,6 @@ def _check_for_dependency_cycle(
                 ],
             ],
         )
-        raise error
 
     for p, c in [(c.name, c) for c in specifications[package].context_clauses]:
         _check_for_dependency_cycle(p, c, [*visited, (package, context)], specifications)

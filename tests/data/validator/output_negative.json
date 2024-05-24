@@ -26,7 +26,7 @@
             "last": 111
         }
     },
-    "error": "pyrflx: error: Bitstring representing the message is too short - stopped while parsing field: Payload"
+    "error": "error: Bitstring representing the message is too short - stopped while parsing field: Payload"
 },
 {
     "file name": "tests/data/validator/ethernet/frame/invalid/ethernet_invalid_too_long.raw",
@@ -90,7 +90,7 @@
             "last": 111
         }
     },
-    "error": "pyrflx: error: Bitstring representing the message is too short - stopped while parsing field: Payload"
+    "error": "error: Bitstring representing the message is too short - stopped while parsing field: Payload"
 },
 {
     "file name": "tests/data/validator/ethernet/frame/invalid/ethernet_undefined.raw",
@@ -114,7 +114,7 @@
             "last": 111
         }
     },
-    "error": "pyrflx: error: none of the field conditions ['Type_Length <= 1500', 'Type_Length >= 1536'] for field Type_Length have been met by the assigned value: 0000010111101011"
+    "error": "error: none of the field conditions ['Type_Length <= 1500', 'Type_Length >= 1536'] for field Type_Length have been met by the assigned value: 0000010111101011"
 },
 {
     "file name": "tests/data/validator/ethernet/frame/invalid2/ethernet_802.3_invalid_length.raw",
@@ -143,7 +143,7 @@
             "last": 111
         }
     },
-    "error": "pyrflx: error: Bitstring representing the message is too short - stopped while parsing field: Payload"
+    "error": "error: Bitstring representing the message is too short - stopped while parsing field: Payload"
 },
 {
     "file name": "tests/data/validator/ethernet/frame/invalid2/ethernet_undefined.raw",
@@ -167,7 +167,7 @@
             "last": 111
         }
     },
-    "error": "pyrflx: error: none of the field conditions ['Type_Length <= 1500', 'Type_Length >= 1536'] for field Type_Length have been met by the assigned value: 0000010111101011"
+    "error": "error: none of the field conditions ['Type_Length <= 1500', 'Type_Length >= 1536'] for field Type_Length have been met by the assigned value: 0000010111101011"
 },
 {
     "file name": "tests/data/validator/ethernet/frame/invalid3/ethernet_invalid_too_long.bin",
@@ -231,7 +231,7 @@
             "last": 111
         }
     },
-    "error": "pyrflx: error: Bitstring representing the message is too short - stopped while parsing field: Payload"
+    "error": "error: Bitstring representing the message is too short - stopped while parsing field: Payload"
 },
 {
     "file name": "tests/data/validator/ethernet/frame/valid/802.3-LLC-CDP.raw",

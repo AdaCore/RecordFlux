@@ -1,9 +1,9 @@
 import pytest
 
 from rflx import expression as expr, ir, typing_ as rty
-from rflx.error import Location, RecordFluxError
 from rflx.identifier import ID, id_generator
 from rflx.model import statement as stmt
+from rflx.rapidflux import Location, RecordFluxError
 
 INT_TY = rty.Integer("I", rty.Bounds(10, 100))
 MSG_TY = rty.Message("M")
@@ -107,7 +107,7 @@ def test_reset_check_type_error_undefined_argument_type() -> None:
     )
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:1:2: model: error: undefined variable "M"$',
+        match=r'^<stdin>:1:2: error: undefined variable "M"$',
     ):
         reset.check_type(
             rty.Message("T", parameter_types={ID("Y"): INT_TY}),
@@ -130,8 +130,8 @@ def test_reset_check_type_error_invalid_arguments() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:1:2: model: error: unexpected argument "Z"\n'
-            r'<stdin>:1:1: model: error: missing argument "Y"'
+            r'<stdin>:1:2: error: unexpected argument "Z"\n'
+            r'<stdin>:1:1: error: missing argument "Y"'
             r"$"
         ),
     ):
@@ -153,7 +153,7 @@ def test_reset_check_type_error_unexpected_arguments() -> None:
     )
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:1:2: model: error: unexpected argument "Z"$',
+        match=r'^<stdin>:1:2: error: unexpected argument "Z"$',
     ):
         reset.check_type(
             rty.Sequence("T", INT_TY),

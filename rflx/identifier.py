@@ -4,7 +4,8 @@ import re
 from collections.abc import Generator, Sequence
 from typing import Optional, TypeVar, Union
 
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fatal_fail
+from rflx.error import fatal_fail
+from rflx.rapidflux import Location, Severity
 
 Self = TypeVar("Self", bound="ID")
 
@@ -28,21 +29,18 @@ class ID:
         else:
             assert False, f'unexpected identifier type "{type(identifier).__name__}"'
 
-        error = RecordFluxError()
         if not self._parts:
-            fatal_fail("empty identifier", Subsystem.ID, Severity.ERROR, location)
+            fatal_fail("empty identifier", Severity.ERROR, location)
         elif "" in self._parts:
-            fatal_fail(f'empty part in identifier "{self}"', Subsystem.ID, Severity.ERROR, location)
+            fatal_fail(f'empty part in identifier "{self}"', Severity.ERROR, location)
         else:
             for c in [" ", ".", ":"]:
                 if any(c in part for part in self._parts):
                     fatal_fail(
                         f'"{c}" in identifier parts of "{self}"',
-                        Subsystem.ID,
                         Severity.ERROR,
                         location,
                     )
-        error.propagate()
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):

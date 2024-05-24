@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from rflx import expression as expr, typing_ as rty
-from rflx.error import ERROR_CONFIG, RecordFluxError
+from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
     FINAL,
@@ -25,13 +25,14 @@ from rflx.model import (
     declaration as decl,
     statement as stmt,
 )
+from rflx.rapidflux import Location, RecordFluxError
 from rflx.specification import parser
 from tests.const import SPEC_DIR
 from tests.utils import check_regex
 
 
 def assert_error_string(string: str, regex: str) -> None:
-    assert " model: error: " in regex
+    assert " error: " in regex
     check_regex(regex)
     p = parser.Parser()
     with pytest.raises(RecordFluxError, match=regex):  # noqa: PT012
@@ -49,7 +50,7 @@ def test_message_undefined_type() -> None:
               end message;
         end Test;
         """,
-        r'^<stdin>:4:16: model: error: undefined type "Test::T"$',
+        r'^<stdin>:4:16: error: undefined type "Test::T"$',
     )
 
 
@@ -72,9 +73,9 @@ def test_message_field_first_conflict() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:11:27: model: error: first aspect of field "B" conflicts with previous'
+        r'<stdin>:11:27: error: first aspect of field "B" conflicts with previous'
         r" specification\n"
-        r"<stdin>:9:30: model: info: previous specification of first"
+        r"<stdin>:9:30: info: previous specification of first"
         r"$",
     )
 
@@ -98,9 +99,9 @@ def test_message_field_size_conflict() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:11:26: model: error: size aspect of field "B" conflicts with previous'
+        r'<stdin>:11:26: error: size aspect of field "B" conflicts with previous'
         r" specification\n"
-        r"<stdin>:9:29: model: info: previous specification of size"
+        r"<stdin>:9:29: info: previous specification of size"
         r"$",
     )
 
@@ -114,8 +115,8 @@ def test_message_derivation_of_derived_type() -> None:
            type Baz is new Bar;
         end Test;
         """,
-        r'^<stdin>:4:9: model: error: illegal derivation "Test::Baz"\n'
-        r'<stdin>:3:9: model: info: illegal base message type "Test::Bar"$',
+        r'^<stdin>:4:9: error: illegal derivation "Test::Baz"\n'
+        r'<stdin>:3:9: info: illegal base message type "Test::Bar"$',
     )
 
 
@@ -126,7 +127,7 @@ def test_illegal_redefinition() -> None:
            type Boolean is range 0 .. 1 with Size => 2;
         end Test;
         """,
-        r'^<stdin>:2:9: model: error: illegal redefinition of built-in type "Boolean"$',
+        r'^<stdin>:2:9: error: illegal redefinition of built-in type "Boolean"$',
     )
 
 
@@ -137,7 +138,7 @@ def test_invalid_enumeration_type_size() -> None:
            type T is (Foo, Bar, Baz) with Size => 1;
         end Test;
         """,
-        r'^<stdin>:2:9: model: error: size of "T" too small$',
+        r'^<stdin>:2:9: error: size of "T" too small$',
     )
 
 
@@ -148,8 +149,8 @@ def test_invalid_enumeration_type_duplicate_values() -> None:
            type T is (Foo => 0, Bar => 0) with Size => 1;
         end Test;
         """,
-        r'^<stdin>:2:32: model: error: duplicate enumeration value "0" in "T"\n'
-        r"<stdin>:2:22: model: info: previous occurrence$",
+        r'^<stdin>:2:32: error: duplicate enumeration value "0" in "T"\n'
+        r"<stdin>:2:22: info: previous occurrence$",
     )
 
 
@@ -161,10 +162,10 @@ def test_invalid_enumeration_type_multiple_duplicate_values() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:2:44: model: error: duplicate enumeration value "0" in "T"\n'
-        r"<stdin>:2:22: model: info: previous occurrence\n"
-        r'<stdin>:2:56: model: error: duplicate enumeration value "1" in "T"\n'
-        r"<stdin>:2:34: model: info: previous occurrence"
+        r'<stdin>:2:44: error: duplicate enumeration value "0" in "T"\n'
+        r"<stdin>:2:22: info: previous occurrence\n"
+        r'<stdin>:2:56: error: duplicate enumeration value "1" in "T"\n'
+        r"<stdin>:2:34: info: previous occurrence"
         r"$",
     )
 
@@ -177,8 +178,8 @@ def test_invalid_enumeration_type_identical_literals() -> None:
            type T2 is (Bar, Baz) with Size => 1;
         end Test;
         """,
-        r"^<stdin>:3:9: model: error: conflicting literals: Bar\n"
-        r'<stdin>:2:21: model: info: previous occurrence of "Bar"$',
+        r"^<stdin>:3:9: error: conflicting literals: Bar\n"
+        r'<stdin>:2:21: info: previous occurrence of "Bar"$',
     )
 
 
@@ -194,7 +195,7 @@ def test_refinement_invalid_field() -> None:
            for PDU use (Bar => PDU);
         end Test;
         """,
-        r'^<stdin>:7:17: model: error: invalid field "Bar" in refinement of "Test::PDU"$',
+        r'^<stdin>:7:17: error: invalid field "Bar" in refinement of "Test::PDU"$',
     )
 
 
@@ -214,8 +215,8 @@ def test_refinement_invalid_condition() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:10:10: model: error: undefined variable "X"\n'
-        r'<stdin>:10:14: model: error: undefined variable "Y"'
+        r'<stdin>:10:10: error: undefined variable "X"\n'
+        r'<stdin>:10:14: error: undefined variable "Y"'
         r"$",
     )
 
@@ -235,8 +236,8 @@ def test_model_name_conflict_messages() -> None:
               end message;
         end Test;
         """,
-        r'^<stdin>:7:9: model: error: name conflict for type "Test::PDU"\n'
-        r'<stdin>:3:9: model: info: previous occurrence of "Test::PDU"$',
+        r'^<stdin>:7:9: error: name conflict for type "Test::PDU"\n'
+        r'<stdin>:3:9: info: previous occurrence of "Test::PDU"$',
     )
 
 
@@ -256,8 +257,8 @@ def test_model_conflicting_refinements() -> None:
         end Test;
         """,
         r"^"
-        r'^<stdin>:10:4: model: error: conflicting refinement of "Test::PDU" with "Test::PDU"\n'
-        r"<stdin>:9:4: model: info: previous occurrence of refinement"
+        r'^<stdin>:10:4: error: conflicting refinement of "Test::PDU" with "Test::PDU"\n'
+        r"<stdin>:9:4: info: previous occurrence of refinement"
         r"$",
     )
 
@@ -275,8 +276,8 @@ def test_model_name_conflict_derivations() -> None:
            type Bar is new Foo;
         end Test;
         """,
-        r'^<stdin>:8:9: model: error: name conflict for type "Test::Bar"\n'
-        r'<stdin>:7:9: model: info: previous occurrence of "Test::Bar"$',
+        r'^<stdin>:8:9: error: name conflict for type "Test::Bar"\n'
+        r'<stdin>:7:9: info: previous occurrence of "Test::Bar"$',
     )
 
 
@@ -297,8 +298,8 @@ def test_model_name_conflict_sessions() -> None:
            end X;
         end Test;
         """,
-        r'^<stdin>:4:4: model: error: name conflict for session "Test::X"\n'
-        r'<stdin>:2:9: model: info: previous occurrence of "Test::X"$',
+        r'^<stdin>:4:4: error: name conflict for session "Test::X"\n'
+        r'<stdin>:2:9: info: previous occurrence of "Test::X"$',
     )
 
 
@@ -316,7 +317,7 @@ def test_model_illegal_first_aspect_on_initial_link() -> None:
               end message;
         end Test;
         """,
-        r"^<stdin>:7:30: model: error: illegal first aspect on initial link$",
+        r"^<stdin>:7:30: error: illegal first aspect on initial link$",
     )
 
 
@@ -333,8 +334,8 @@ def test_model_errors_in_type_and_session() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:2:9: model: error: last of "T" exceeds limit \(2\*\*63 - 1\)\n'
-        r"<stdin>:4:4: model: error: empty states"
+        r'<stdin>:2:9: error: last of "T" exceeds limit \(2\*\*63 - 1\)\n'
+        r"<stdin>:4:4: error: empty states"
         r"$",
     )
 
@@ -402,8 +403,8 @@ def test_invalid_implicit_size() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:14:26: model: error: invalid use of "Message" in size aspect\n'
-        r"<stdin>:14:26: model: info: remove size aspect to define field with implicit size"
+        r'<stdin>:14:26: error: invalid use of "Message" in size aspect\n'
+        r"<stdin>:14:26: info: remove size aspect to define field with implicit size"
         r"$",
     )
 
@@ -430,9 +431,9 @@ def test_invalid_use_of_message_type_with_implicit_size() -> None:
         end Test;
         """,
         r"^"
-        r"<stdin>:13:10: model: error: messages with implicit size may only be used"
+        r"<stdin>:13:10: error: messages with implicit size may only be used"
         " for last fields\n"
-        r'<stdin>:7:10: model: info: message field with implicit size in "Test::Inner"'
+        r'<stdin>:7:10: info: message field with implicit size in "Test::Inner"'
         r"$",
     )
 
@@ -453,9 +454,9 @@ def test_invalid_message_with_multiple_fields_with_implicit_size() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:8:26: model: error: invalid use of "Message" in size aspect\n'
-        r"<stdin>:8:26: model: info: remove size aspect to define field with implicit size\n"
-        r'<stdin>:6:26: model: error: "Message" must not be used in size aspects'
+        r'<stdin>:8:26: error: invalid use of "Message" in size aspect\n'
+        r"<stdin>:8:26: info: remove size aspect to define field with implicit size\n"
+        r'<stdin>:6:26: error: "Message" must not be used in size aspects'
         r"$",
     )
 
@@ -477,7 +478,7 @@ def test_invalid_message_with_field_after_field_with_implicit_size() -> None:
 
         end Test;
         """,
-        r'^<stdin>:9:26: model: error: "Message" must not be used in size aspects$',
+        r'^<stdin>:9:26: error: "Message" must not be used in size aspects$',
     )
 
 
@@ -505,15 +506,17 @@ def test_invalid_message_with_unreachable_field_after_merging() -> None:
 
         end Test;
         """,
-        r'^<stdin>:17:10: model: error: unreachable field "D" in "Test::O"$',
+        r'^<stdin>:17:10: error: unreachable field "D" in "Test::O"$',
     )
 
 
-def test_fail_after_value(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(ERROR_CONFIG, "fail_after_value", 1)
+@pytest.mark.usefixtures("_cleared_error_count")
+def test_fail_after_value() -> None:
+    RecordFluxError.set_max_error(1)
     p = parser.Parser()
     p.parse(Path(f"{SPEC_DIR}/ethernet.rflx"))
     p.create_model()
+    RecordFluxError.set_max_error(0)
 
 
 def test_dependency_order() -> None:
@@ -529,14 +532,14 @@ def test_dependency_order_after_dependency_cycle() -> None:
         RecordFluxError,
         match=(
             r"^"
-            f"{SPEC_DIR}/invalid/context_cycle.rflx:1:6: parser: error: dependency cycle when "
+            f"{SPEC_DIR}/invalid/context_cycle.rflx:1:6: error: dependency cycle when "
             f'including "Context_Cycle_1"\n'
             f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: "
-            'parser: info: when including "Context_Cycle_2"\n'
+            'info: when including "Context_Cycle_2"\n'
             f"{SPEC_DIR}/invalid/context_cycle_2.rflx:1:6: "
-            'parser: info: when including "Context_Cycle_3"\n'
+            'info: when including "Context_Cycle_3"\n'
             f"{SPEC_DIR}/invalid/context_cycle_3.rflx:1:6: "
-            'parser: info: when including "Context_Cycle_1"'
+            'info: when including "Context_Cycle_1"'
             r"$"
         ),
     ):
@@ -560,15 +563,27 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
         expr.Number(16),
     )
     message = Message(
-        "Test::Message",
+        ID("Test::Message", Location((1, 1))),
         [
             Link(INITIAL, Field("Tag")),
             Link(
                 Field("Tag"),
                 Field("Length"),
-                expr.Equal(expr.Variable("Tag"), expr.Variable("Msg_Data")),
+                expr.Equal(
+                    expr.Variable("Tag"),
+                    expr.Variable("Msg_Data"),
+                    location=Location((3, 3)),
+                ),
             ),
-            Link(Field("Tag"), FINAL, expr.Equal(expr.Variable("Tag"), expr.Variable("Msg_Error"))),
+            Link(
+                Field("Tag"),
+                FINAL,
+                expr.Equal(
+                    expr.Variable("Tag"),
+                    expr.Variable("Msg_Error"),
+                    location=Location((5, 5)),
+                ),
+            ),
             Link(
                 Field("Length"),
                 Field("Value"),
@@ -804,7 +819,7 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
         p.parse(test_spec)
         p.create_model()
     else:
-        regex = re.compile(rf"^test.rfi:0:0: parser: error: {match_error}$", re.DOTALL)
+        regex = re.compile(rf"^test.rfi:0:0: error: {match_error}$", re.DOTALL)
         with pytest.raises(RecordFluxError, match=regex):  # noqa: PT012
             p.parse(test_spec)
             p.create_model()
@@ -817,5 +832,5 @@ def test_parse_error_negated_variable() -> None:
                type Kind is range 0 .. 2 ** 16 - 1 with Size => - Cobra16;
             end P1;
             """,
-        '^<stdin>:2:9: model: error: size of "Kind" contains variable$',
+        '^<stdin>:2:9: error: size of "Kind" contains variable$',
     )

@@ -7,8 +7,8 @@ from cobrafuzz.main import CobraFuzz
 def fuzz(buf: bytes) -> None:
     import sys
 
-    from rflx import error
     from rflx.model import Cache, Digest
+    from rflx.rapidflux import RecordFluxError
     from rflx.specification import parser
 
     class SilentlyNeverVerify(Cache):
@@ -26,7 +26,7 @@ def fuzz(buf: bytes) -> None:
         p = parser.Parser(cache=SilentlyNeverVerify())
         p.parse_string(string)
         p.create_model()
-    except (UnicodeDecodeError, error.RecordFluxError):
+    except (UnicodeDecodeError, RecordFluxError):
         pass
     except KeyboardInterrupt:  # pragma: no cover
         sys.exit()

@@ -12,6 +12,7 @@ from rflx.expression import (
     Add,
     And,
     Equal,
+    Expr,
     First,
     Last,
     Mul,
@@ -32,6 +33,7 @@ from rflx.model.message import INITIAL, Field
 from rflx.model.model import Model
 from rflx.model.type_decl import OPAQUE
 from rflx.pyrflx import MessageValue, Package, PyRFLX, PyRFLXError, TypeValue, utils
+from rflx.rapidflux import Location
 from rflx.specification.parser import Parser
 from tests.const import CAPTURED_DIR, SPEC_DIR
 from tests.data import models
@@ -139,7 +141,7 @@ def test_tls_invalid_outgoing(tls_record_value: MessageValue) -> None:
     tls_record_value.set("Tag", "INVALID")
     with pytest.raises(
         PyRFLXError,
-        match=r"^pyrflx: error: none of the field conditions .* for field Length"
+        match=r"^error: none of the field conditions .* for field Length"
         " have been met by the assigned value: 16385$",
     ):
         tls_record_value.set("Length", 2**14 + 1)
@@ -233,21 +235,21 @@ end Foo;""",
 
     with pytest.raises(
         PyRFLXError,
-        match=r"^pyrflx: error: none of the field conditions \['A = Foo::E1'\] for field A have "
+        match=r"^error: none of the field conditions \['A = Foo::E1'\] for field A have "
         r"been met by the assigned value: 00001100$",
     ):
         m.parse(b"\x0C")
 
     with pytest.raises(
         PyRFLXError,
-        match=r"^pyrflx: error: none of the field conditions \['A = Foo::E1'\] for field A have "
+        match=r"^error: none of the field conditions \['A = Foo::E1'\] for field A have "
         r"been met by the assigned value: E2$",
     ):
         m.set("A", "E2")
 
     with pytest.raises(
         PyRFLXError,
-        match=r"^pyrflx: error: none of the field conditions \['A = Foo::E1'\] for field A have "
+        match=r"^error: none of the field conditions \['A = Foo::E1'\] for field A have "
         r"been met by the assigned value: Foo::E2$",
     ):
         m.set("A", "Foo::E2")
@@ -421,13 +423,26 @@ def test_tlv_message_serialization(tlv_message_value: MessageValue) -> None:
 
 def test_tlv_message_with_not_operator() -> None:
     message = Message(
-        "TLV::Message_With_Not_Operator",
+        ID("TLV::Message_With_Not_Operator", Location((1, 1))),
         [
             Link(INITIAL, Field("Tag")),
             Link(
                 Field("Tag"),
                 Field("Length"),
-                Not(Not(Not(NotEqual(Variable("Tag"), Variable("Msg_Data"))))),
+                Not(
+                    Not(
+                        Not(
+                            NotEqual(
+                                Variable("Tag"),
+                                Variable("Msg_Data"),
+                                location=Location((4, 4)),
+                            ),
+                            location=Location((4, 4)),
+                        ),
+                        location=Location((4, 4)),
+                    ),
+                    location=Location((4, 4)),
+                ),
             ),
             Link(
                 Field("Tag"),
@@ -436,11 +451,31 @@ def test_tlv_message_with_not_operator() -> None:
                     Not(
                         Not(
                             Or(
-                                Not(Not(Equal(Variable("Tag"), Variable("Msg_Data")))),
-                                Not(Equal(Variable("Tag"), Variable("Msg_Error"))),
+                                Not(
+                                    Not(
+                                        Equal(
+                                            Variable("Tag"),
+                                            Variable("Msg_Data"),
+                                            location=Location((6, 6)),
+                                        ),
+                                        location=Location((6, 6)),
+                                    ),
+                                    location=Location((6, 6)),
+                                ),
+                                Not(
+                                    Equal(
+                                        Variable("Tag"),
+                                        Variable("Msg_Error"),
+                                        location=Location((6, 6)),
+                                    ),
+                                ),
+                                location=Location((6, 6)),
                             ),
+                            location=Location((6, 6)),
                         ),
+                        location=Location((6, 6)),
                     ),
+                    location=Location((6, 6)),
                 ),
             ),
             Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
@@ -463,26 +498,61 @@ def test_tlv_message_with_not_operator() -> None:
 
 
 def test_tlv_message_with_not_operator_exhausting() -> None:
+    def located_not(e: Expr) -> Not:
+        return Not(e, location=Location((3, 3)))
+
     message = Message(
-        "TLV::Message_With_Not_Operator_Exhausting",
+        ID("TLV::Message_With_Not_Operator_Exhausting", Location((1, 1))),
         [
             Link(INITIAL, Field("Tag")),
             Link(
                 Field("Tag"),
                 Field("Length"),
-                Not(Not(Not(NotEqual(Variable("Tag"), Variable("Msg_Data"))))),
+                Not(
+                    Not(
+                        Not(
+                            NotEqual(
+                                Variable("Tag"),
+                                Variable("Msg_Data"),
+                                location=Location((3, 3)),
+                            ),
+                            location=Location((3, 3)),
+                        ),
+                        location=Location((3, 3)),
+                    ),
+                    location=Location((3, 3)),
+                ),
             ),
             Link(
                 Field("Tag"),
                 FINAL,
                 reduce(
                     lambda acc, f: f(acc),
-                    [Not, Not] * 16,
+                    [located_not, located_not] * 16,
                     Not(
                         Or(
-                            Not(Not(Equal(Variable("Tag"), Variable("Msg_Data")))),
-                            Not(Equal(Variable("Tag"), Variable("Msg_Error"))),
+                            Not(
+                                Not(
+                                    Equal(
+                                        Variable("Tag"),
+                                        Variable("Msg_Data"),
+                                        location=Location((4, 1)),
+                                    ),
+                                    location=Location((4, 2)),
+                                ),
+                                location=Location((4, 3)),
+                            ),
+                            Not(
+                                Equal(
+                                    Variable("Tag"),
+                                    Variable("Msg_Error"),
+                                    location=Location((4, 4)),
+                                ),
+                                location=Location((4, 5)),
+                            ),
+                            location=Location((4, 6)),
                         ),
+                        location=Location((4, 7)),
                     ),
                 ),
             ),
@@ -501,7 +571,7 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
         match=(
             "^"
             + re.escape(
-                "pyrflx: error: "
+                "<stdin>:3:3: error: "
                 "failed to simplify complex expression `not (not (not (not "
                 "(not (not (not (not (not (not (not (not (not (not (not (not "
                 "(not (not (not (not (not (not (not (not (not (not (not (not "

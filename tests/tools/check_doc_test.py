@@ -142,10 +142,7 @@ Some more text...
 def test_invalid_rflx_spec() -> None:
     with pytest.raises(
         CheckDocError,
-        match=(
-            r"^<stdin>:6: error in code block\n"
-            r"<stdin>:2:32: parser: error: Expected 'with', got ';'$"
-        ),
+        match=(r"^<stdin>:6: error in code block\n<stdin>:2:32: error: Expected 'with', got ';'$"),
     ):
         check_file(
             STDIN,
@@ -194,8 +191,8 @@ def test_invalid_rflx_rule() -> None:
         CheckDocError,
         match=(
             r"^<stdin>:6: error in code block\n"
-            "<stdin>:1:4: parser: error: Cannot parse <factor>\n"
-            r"<stdin>:1:8: parser: error: Expected '[(]', got '[*]'$"
+            "<stdin>:1:4: error: Cannot parse <factor>\n"
+            r"<stdin>:1:8: error: Expected '[(]', got '[*]'$"
         ),
     ):
         check_file(
@@ -218,7 +215,7 @@ def test_invalid_rflx_rule_style() -> None:
         CheckDocError,
         match=(
             r"^<stdin>:6: error in code block\n"
-            r'<stdin>:1:8: style: error: missing space after "\*\*" \[token-spacing\]$'
+            r'<stdin>:1:8: error: missing space after "\*\*" \[token-spacing\]$'
         ),
     ):
         check_file(
@@ -241,7 +238,7 @@ def test_invalid_rflx_spec_style() -> None:
         CheckDocError,
         match=(
             r"^<stdin>:6: error in code block\n"
-            r"<stdin>:3:4: style: error: unexpected keyword indentation \(expected 3 or 6\) "
+            r"<stdin>:3:4: error: unexpected keyword indentation \(expected 3 or 6\) "
             r"\[indentation\]$"
         ),
     ):

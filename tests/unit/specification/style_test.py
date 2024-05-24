@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx.error import RecordFluxError
+from rflx.rapidflux import RecordFluxError
 from rflx.specification import style
 
 
@@ -90,62 +90,61 @@ def test_no_error(spec: str, tmp_path: Path) -> None:
     [
         (
             "\npackage Test is end Test;",
-            r"1:1: style: error: leading blank line \[blank-lines\]",
+            r"1:1: error: leading blank line \[blank-lines\]",
         ),
         (
             "package Test is end Test;\n\n",
-            r"2:1: style: error: trailing blank line \[blank-lines\]",
+            r"2:1: error: trailing blank line \[blank-lines\]",
         ),
         (
             "package Test is\n\n\nend Test;",
-            r"3:1: style: error: multiple blank lines \[blank-lines\]",
+            r"3:1: error: multiple blank lines \[blank-lines\]",
         ),
         (
             """package Test is\tend Test;""",
-            r'1:16: style: error: illegal whitespace character "\\t" \[characters\]',
+            r'1:16: error: illegal whitespace character "\\t" \[characters\]',
         ),
         (
             "package Test is\r\nend Test;",
-            r'1:16: style: error: incorrect line terminator "\\r" \[characters\]',
+            r'1:16: error: incorrect line terminator "\\r" \[characters\]',
         ),
         (
             "package Test is end Test; ",
-            r"1:26: style: error: trailing whitespace \[trailing-spaces\]",
+            r"1:26: error: trailing whitespace \[trailing-spaces\]",
         ),
         (
             "package Test is\n         type T is range 0 .. 2 ** 16 with Size => 16;\nend Test;",
-            r"2:9: style: error: unexpected keyword indentation \(expected 3 or 6\)"
-            r" \[indentation\]",
+            r"2:9: error: unexpected keyword indentation \(expected 3 or 6\) \[indentation\]",
         ),
         (
             "package Test is\n   type T is mod 2* 128;\nend Test;",
-            r'2:19: style: error: missing space before "\*" \[token-spacing\]',
+            r'2:19: error: missing space before "\*" \[token-spacing\]',
         ),
         (
             "package Test is end Test; --A test package",
-            r'1:29: style: error: missing space after "--" \[token-spacing\]',
+            r'1:29: error: missing space after "--" \[token-spacing\]',
         ),
         (
             f"package Test is end Test; -- {'X' * 100}",
-            r"1:121: style: error: line too long \(129/120\) \[line-length\]",
+            r"1:121: error: line too long \(129/120\) \[line-length\]",
         ),
         (
             "package Test is\n"
             "   type E is range 0 .. 2 ** 16 - 1 with Size => 16;\n"
             "   type S is sequence of Test ::E;\n"
             "end Test;",
-            r'3:31: style: error: space before "::" \[token-spacing\]',
+            r'3:31: error: space before "::" \[token-spacing\]',
         ),
         (
             "package Test is\n"
             "   type E is range 0 .. 2 ** 16 - 1 with Size => 16;\n"
             "   type S is sequence of Test:: E;\n"
             "end Test;",
-            r'3:33: style: error: space after "::" \[token-spacing\]',
+            r'3:33: error: space after "::" \[token-spacing\]',
         ),
         (
             "-- style: disable = foo",
-            r'1:1: style: error: invalid check "foo"',
+            r'1:1: error: invalid check "foo"',
         ),
     ],
 )

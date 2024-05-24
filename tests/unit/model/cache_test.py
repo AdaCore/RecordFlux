@@ -3,8 +3,11 @@ from pathlib import Path
 import pytest
 
 from rflx import expression as expr, model
+from rflx.identifier import ID
 from rflx.model import cache
+from rflx.rapidflux import Location
 from tests.data import models
+from tests.utils import assert_stderr_regex
 
 
 def test_init(tmp_path: Path) -> None:
@@ -20,17 +23,19 @@ def test_init_valid(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("content", ["invalid", "[]", "{A: B}"])
-def test_init_invalid(content: str, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_init_invalid(content: str, tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
     file = tmp_path / "test.json"
     file.write_text(content)
     cache.Cache(file)
-    captured = capsys.readouterr()
-    assert "verification cache will be ignored due to invalid format" in captured.out
+    assert_stderr_regex(
+        r"^warning: verification cache will be ignored due to invalid format$",
+        capfd,
+    )
 
 
 def test_verified(tmp_path: Path) -> None:
     m1 = model.Message(
-        "P::M",
+        ID("P::M", Location((1, 1))),
         [
             model.Link(model.INITIAL, model.Field("A")),
             model.Link(model.Field("A"), model.FINAL),
@@ -46,7 +51,7 @@ def test_verified(tmp_path: Path) -> None:
     )
     d1 = cache.Digest(m1)
     m2 = model.Message(
-        "P::M",
+        ID("P::M", Location((1, 1))),
         [
             model.Link(model.INITIAL, model.Field("B")),
             model.Link(model.Field("B"), model.FINAL),
@@ -62,7 +67,7 @@ def test_verified(tmp_path: Path) -> None:
     )
     d2 = cache.Digest(m2)
     m3 = model.Message(
-        "P::M",
+        ID("P::M", Location((1, 1))),
         [
             model.Link(model.INITIAL, model.Field("A")),
             model.Link(model.Field("A"), model.FINAL),

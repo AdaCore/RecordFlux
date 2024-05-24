@@ -9,10 +9,11 @@ from typing import Any
 import pytest
 
 from rflx import expression as expr, model
-from rflx.error import Location, RecordFluxError, Severity, Subsystem, fail
+from rflx.error import fail
 from rflx.identifier import ID
 from rflx.model import BOOLEAN, FINAL, INITIAL, OPAQUE, Enumeration, Field, Integer, Link, Message
 from rflx.model.message import ByteOrder
+from rflx.rapidflux import Location, RecordFluxError, Severity
 from rflx.specification import parser
 from tests.const import SPEC_DIR
 from tests.data import models
@@ -185,13 +186,13 @@ def assert_refinements_string(string: str, refinements: Sequence[model.Refinemen
 
 
 def raise_parser_error() -> None:
-    fail("TEST", Subsystem.PARSER, Severity.ERROR)
+    fail("TEST", Severity.ERROR)
 
 
 # This test must fail to get full coverage of assert_error_files.
 @pytest.mark.xfail()
 def test_assert_error_files() -> None:
-    assert_error_files([], "^ parser: error: $")
+    assert_error_files([], "^ error: $")
 
 
 def test_create_model() -> None:
@@ -206,10 +207,10 @@ def test_parse_string_error() -> None:
         RecordFluxError,
         match=(
             r"^"
-            'a/b.rflx:1:9: parser: error: source file name does not match the package name "A"\n'
-            'a/b.rflx:1:9: parser: info: either rename the file to "a.rflx"\n'
-            'a/b.rflx:1:9: parser: info: or change the package name to "B"\n'
-            r"a/b.rflx:2:0: style: error: unexpected keyword indentation \(expected 3 or 6\)"
+            'a/b.rflx:1:9: error: source file name does not match the package name "A"\n'
+            'a/b.rflx:1:9: info: either rename the file to "a.rflx"\n'
+            'a/b.rflx:1:9: info: or change the package name to "B"\n'
+            r"a/b.rflx:2:0: error: unexpected keyword indentation \(expected 3 or 6\)"
             r" \[indentation\]"
             r"$"
         ),
@@ -223,8 +224,8 @@ def test_parse_string_error() -> None:
 @pytest.mark.parametrize(
     ("value", "error"),
     [
-        ("", "<stdin>:1:1: parser: error: Expected 'package', got Termination"),
-        ("\n", "<stdin>:2:1: parser: error: Expected 'package', got Termination"),
+        ("", "<stdin>:1:1: error: Expected 'package', got Termination"),
+        ("\n", "<stdin>:2:1: error: Expected 'package', got Termination"),
     ],
 )
 def test_parse_string_empty_file_error(value: str, error: str) -> None:
@@ -1893,7 +1894,7 @@ def test_parse_error_illegal_package_identifiers() -> None:
         package RFLX_Types is
         end RFLX_Types;
         """,
-        r'^<stdin>:1:9: parser: error: illegal prefix "RFLX" in package identifier "RFLX_Types"$',
+        r'^<stdin>:1:9: error: illegal prefix "RFLX" in package identifier "RFLX_Types"$',
     )
 
 
@@ -1903,19 +1904,19 @@ def test_parse_error_inconsistent_package_identifiers() -> None:
         package A is
         end B;
         """,
-        r'^<stdin>:2:5: parser: error: inconsistent package identifier "B"\n'
-        r'<stdin>:1:9: parser: info: previous identifier was "A"$',
+        r'^<stdin>:2:5: error: inconsistent package identifier "B"\n'
+        r'<stdin>:1:9: info: previous identifier was "A"$',
     )
 
 
 def test_parse_error_incorrect_name() -> None:
     assert_error_files(
         [f"{SPEC_DIR}/invalid/incorrect_name.rflx"],
-        f"^{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: parser: error: "
+        f"^{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: error: "
         "source file name does not match the package name"
-        f' "Test"\n{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: parser: info: either rename'
+        f' "Test"\n{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: info: either rename'
         f' the file to "test.rflx"\n'
-        f"{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: parser: info: or "
+        f"{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: info: or "
         r'change the package name to "Incorrect_Name"$',
     )
 
@@ -1924,9 +1925,9 @@ def test_parse_error_incorrect_name() -> None:
 def test_parse_error_incorrect_name_should_rename_only(filename: str) -> None:
     assert_error_files(
         [f"{SPEC_DIR}/invalid/{filename}.rflx"],
-        f"^{SPEC_DIR}/invalid/{filename}.rflx:1:9: parser: error: "
+        f"^{SPEC_DIR}/invalid/{filename}.rflx:1:9: error: "
         f'source file name "{filename}.rflx" must be in lower case characters only\n'
-        f"{SPEC_DIR}/invalid/{filename}.rflx:1:9: parser: info: rename the file "
+        f"{SPEC_DIR}/invalid/{filename}.rflx:1:9: info: rename the file "
         f'to "{filename.lower()}.rflx"$',
     )
 
@@ -1934,15 +1935,14 @@ def test_parse_error_incorrect_name_should_rename_only(filename: str) -> None:
 def test_parse_error_incorrect_specification() -> None:
     assert_error_files(
         [f"{SPEC_DIR}/invalid/incorrect_specification.rflx"],
-        f"^{SPEC_DIR}/invalid/incorrect_specification.rflx:3:10: parser: error: "
-        "Expected 'is', got ';'$",
+        f"^{SPEC_DIR}/invalid/incorrect_specification.rflx:3:10: error: Expected 'is', got ';'$",
     )
 
 
 def test_parse_error_unexpected_exception_in_parser(monkeypatch: pytest.MonkeyPatch) -> None:
     p = parser.Parser()
     monkeypatch.setattr(parser, "check_naming", lambda _x, _e, _o: raise_parser_error())
-    with pytest.raises(RecordFluxError, match=r"^parser: error: TEST$"):
+    with pytest.raises(RecordFluxError, match=r"^error: TEST$"):
         p.parse_string(
             """\
             package Test is
@@ -1959,14 +1959,14 @@ def test_parse_error_context_dependency_cycle() -> None:
         RecordFluxError,
         match=(
             r"^"
-            f"{SPEC_DIR}/invalid/context_cycle.rflx:1:6: parser: error: dependency cycle when "
+            f"{SPEC_DIR}/invalid/context_cycle.rflx:1:6: error: dependency cycle when "
             f'including "Context_Cycle_1"\n'
             f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: "
-            'parser: info: when including "Context_Cycle_2"\n'
+            'info: when including "Context_Cycle_2"\n'
             f"{SPEC_DIR}/invalid/context_cycle_2.rflx:1:6: "
-            'parser: info: when including "Context_Cycle_3"\n'
+            'info: when including "Context_Cycle_3"\n'
             f"{SPEC_DIR}/invalid/context_cycle_3.rflx:1:6: "
-            'parser: info: when including "Context_Cycle_1"'
+            'info: when including "Context_Cycle_1"'
             r"$"
         ),
     ):
@@ -1979,12 +1979,12 @@ def test_parse_error_context_dependency_cycle_2() -> None:
     assert_error_files(
         [f"{SPEC_DIR}/invalid/context_cycle_1.rflx"],
         f"^"
-        f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: parser: error: dependency cycle when "
+        f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: error: dependency cycle when "
         f'including "Context_Cycle_2"\n'
         f"{SPEC_DIR}/invalid/context_cycle_2.rflx:1:6: "
-        'parser: info: when including "Context_Cycle_3"\n'
+        'info: when including "Context_Cycle_3"\n'
         f"{SPEC_DIR}/invalid/context_cycle_3.rflx:1:6: "
-        'parser: info: when including "Context_Cycle_1"'
+        'info: when including "Context_Cycle_1"'
         f"$",
     )
 
@@ -1999,9 +1999,9 @@ def test_parse_string_error_context_dependency_cycle() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:1:6: parser: error: dependency cycle when including "Context_Cycle_1"\n'
-            r'<stdin>:1:6: parser: info: when including "Context_Cycle_2"\n'
-            r'<stdin>:1:6: parser: info: when including "Context_Cycle_3"'
+            r'<stdin>:1:6: error: dependency cycle when including "Context_Cycle_1"\n'
+            r'<stdin>:1:6: info: when including "Context_Cycle_2"\n'
+            r'<stdin>:1:6: info: when including "Context_Cycle_3"'
             r"$"
         ),
     ):
@@ -2023,7 +2023,7 @@ def test_parse_error_message_undefined_message_field() -> None:
               end message;
         end Test;
         """,
-        r'^<stdin>:6:18: parser: error: undefined field "Bar"$',
+        r'^<stdin>:6:18: error: undefined field "Bar"$',
     )
 
 
@@ -2041,7 +2041,7 @@ def test_parse_error_invalid_location_expression() -> None:
               end message;
         end Test;
         """,
-        r'^<stdin>:7:21: parser: error: invalid aspect "Foo"$',
+        r'^<stdin>:7:21: error: invalid aspect "Foo"$',
     )
 
 
@@ -2052,7 +2052,7 @@ def test_parse_error_sequence_undefined_type() -> None:
            type T is sequence of Foo;
         end Test;
         """,
-        r'^<stdin>:2:26: model: error: undefined element type "Test::Foo"$',
+        r'^<stdin>:2:26: error: undefined element type "Test::Foo"$',
     )
 
 
@@ -2063,8 +2063,8 @@ def test_parse_error_refinement_undefined_message() -> None:
            for PDU use (Foo => Bar);
         end Test;
         """,
-        r'^<stdin>:2:8: model: error: undefined type "Test::PDU" in refinement\n'
-        r'<stdin>:2:24: model: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
+        r'^<stdin>:2:8: error: undefined type "Test::PDU" in refinement\n'
+        r'<stdin>:2:24: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
     )
 
 
@@ -2080,7 +2080,7 @@ def test_parse_error_refinement_undefined_sdu() -> None:
            for PDU use (Foo => Bar);
         end Test;
         """,
-        r'^<stdin>:7:24: model: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
+        r'^<stdin>:7:24: error: undefined type "Test::Bar" in refinement of "Test::PDU"$',
     )
 
 
@@ -2091,7 +2091,7 @@ def test_parse_error_derivation_undefined_type() -> None:
            type Bar is new Foo;
         end Test;
         """,
-        r'^<stdin>:2:20: model: error: undefined base message "Test::Foo" in derived message$',
+        r'^<stdin>:2:20: error: undefined base message "Test::Foo" in derived message$',
     )
 
 
@@ -2104,8 +2104,8 @@ def test_parse_error_derivation_unsupported_type() -> None:
         end Test;
         """,
         r"^"
-        r'^<stdin>:3:9: model: error: illegal derivation "Test::Bar"\n'
-        r'<stdin>:2:9: model: info: invalid base message type "Test::Foo"'
+        r'^<stdin>:3:9: error: illegal derivation "Test::Bar"\n'
+        r'<stdin>:2:9: info: invalid base message type "Test::Foo"'
         r"$",
     )
 
@@ -2125,7 +2125,7 @@ def test_parse_error_multiple_initial_node_edges() -> None:
               end message;
         end Test;
         """,
-        r"^<stdin>:6:21: parser: error: Expected ';', got ','$",
+        r"^<stdin>:6:21: error: Expected ';', got ','$",
     )
 
 
@@ -2145,7 +2145,7 @@ def test_parse_error_multiple_initial_nodes() -> None:
               end message;
         end Test;
         """,
-        r"^<stdin>:8:13: parser: error: Expected ':', got 'then'$",
+        r"^<stdin>:8:13: error: Expected ':', got 'then'$",
     )
 
 
@@ -2157,7 +2157,7 @@ def test_parse_error_reserved_word_in_type_name(keyword: str) -> None:
            type {keyword.title()} is range 0 .. 255 with Size => 8;
         end Test;
         """,
-        rf'^<stdin>:2:9: parser: error: reserved word "{keyword.title()}" used as identifier$',
+        rf'^<stdin>:2:9: error: reserved word "{keyword.title()}" used as identifier$',
     )
 
 
@@ -2173,7 +2173,7 @@ def test_parse_error_reserved_word_in_message_field(keyword: str) -> None:
               end message;
         end Test;
         """,
-        rf'^<stdin>:5:10: parser: error: reserved word "{keyword.title()}" used as identifier$',
+        rf'^<stdin>:5:10: error: reserved word "{keyword.title()}" used as identifier$',
     )
 
 
@@ -2189,8 +2189,8 @@ def test_parse_error_reserved_word_in_refinement_field() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:4:10: parser: error: reserved word "End" used as identifier\n'
-        r'<stdin>:6:17: parser: error: reserved word "End" used as identifier'
+        r'<stdin>:4:10: error: reserved word "End" used as identifier\n'
+        r'<stdin>:6:17: error: reserved word "End" used as identifier'
         r"$",
     )
 
@@ -2211,7 +2211,7 @@ def test_parse_error_reserved_word_in_session_identifier() -> None:
            end End;
         end Test;
         """,
-        r'^<stdin>:3:12: parser: error: reserved word "End" used as identifier$',
+        r'^<stdin>:3:12: error: reserved word "End" used as identifier$',
     )
 
 
@@ -2224,8 +2224,8 @@ def test_parse_error_illegal_identifier_in_type_name(identifier: str) -> None:
         end Test;
         """,
         r"^"
-        rf'<stdin>:2:9: parser: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:2:9: parser: info: identifiers starting with "RFLX_"'
+        rf'<stdin>:2:9: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:2:9: info: identifiers starting with "RFLX_"'
         r" are reserved for internal use"
         r"$",
     )
@@ -2244,8 +2244,8 @@ def test_parse_error_illegal_identifier_in_message_field(identifier: str) -> Non
         end Test;
         """,
         r"^"
-        rf'<stdin>:5:10: parser: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:5:10: parser: info: identifiers starting with "RFLX_"'
+        rf'<stdin>:5:10: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:5:10: info: identifiers starting with "RFLX_"'
         r" are reserved for internal use"
         r"$",
     )
@@ -2264,11 +2264,11 @@ def test_parse_error_illegal_identifier_in_refinement_field(identifier: str) -> 
         end Test;
         """,
         r"^"
-        rf'<stdin>:4:10: parser: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:4:10: parser: info: identifiers starting with "RFLX_"'
+        rf'<stdin>:4:10: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:4:10: info: identifiers starting with "RFLX_"'
         r" are reserved for internal use\n"
-        rf'<stdin>:6:17: parser: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:6:17: parser: info: identifiers starting with "RFLX_"'
+        rf'<stdin>:6:17: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:6:17: info: identifiers starting with "RFLX_"'
         r" are reserved for internal use"
         r"$",
     )
@@ -2292,8 +2292,8 @@ def test_parse_error_illegal_identifier_in_session_identifier(identifier: str) -
         end Test;
         """,
         r"^"
-        rf'<stdin>:3:12: parser: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:3:12: parser: info: identifiers starting with "RFLX_"'
+        rf'<stdin>:3:12: error: illegal identifier "{identifier}"\n'
+        r'<stdin>:3:12: info: identifiers starting with "RFLX_"'
         r" are reserved for internal use"
         r"$",
     )
@@ -2308,7 +2308,7 @@ def test_parse_error_invalid_context_clause(tmp_path: Path) -> None:
 
     with pytest.raises(
         RecordFluxError,
-        match=rf"^{test_file}:1:13: parser: error: Expected ';', got Termination$",
+        match=rf"^{test_file}:1:13: error: Expected ';', got Termination$",
     ):
         p.parse(test_file)
 
@@ -2342,19 +2342,23 @@ def test_create_model_message_type_message() -> None:
         model.Field("Baz"): model.Opaque(),
     }
 
-    simple_message = model.Message("Message_Type::Simple_PDU", simple_structure, simple_types)
+    simple_message = model.Message(
+        ID("Message_Type::Simple_PDU", Location((1, 1))),
+        simple_structure,
+        simple_types,
+    )
 
     structure = [
         model.Link(model.INITIAL, model.Field("Foo")),
         model.Link(
             model.Field("Foo"),
             model.Field("Bar"),
-            expr.LessEqual(expr.Variable("Foo"), expr.Number(30, 16)),
+            expr.LessEqual(expr.Variable("Foo"), expr.Number(30, 16), location=Location((3, 3))),
         ),
         model.Link(
             model.Field("Foo"),
             model.Field("Baz"),
-            expr.Greater(expr.Variable("Foo"), expr.Number(30, 16)),
+            expr.Greater(expr.Variable("Foo"), expr.Number(30, 16), location=Location((5, 5))),
             size=expr.Mul(expr.Number(8), expr.Variable("Foo")),
         ),
         model.Link(
@@ -2378,9 +2382,9 @@ def test_create_model_message_type_message() -> None:
         ),
     }
 
-    message = model.Message("Message_Type::PDU", structure, types)
+    message = model.Message(ID("Message_Type::PDU", Location((1, 1))), structure, types)
 
-    empty_message = model.Message("Message_Type::Empty_PDU", [], {})
+    empty_message = model.Message(ID("Message_Type::Empty_PDU", Location((1, 1))), [], {})
 
     assert_messages_files(
         [f"{SPEC_DIR}/message_type.rflx"],
@@ -2397,7 +2401,7 @@ def test_create_model_message_in_message() -> None:
     )
 
     length_value = model.Message(
-        "Message_In_Message::Length_Value",
+        ID("Message_In_Message::Length_Value", Location((1, 1))),
         [
             model.Link(model.INITIAL, model.Field("Length")),
             model.Link(
@@ -2411,12 +2415,12 @@ def test_create_model_message_in_message() -> None:
     )
 
     derived_length_value = model.DerivedMessage(
-        "Message_In_Message::Derived_Length_Value",
+        ID("Message_In_Message::Derived_Length_Value", Location((1, 1))),
         length_value,
     )
 
     message = model.Message(
-        "Message_In_Message::Message",
+        ID("Message_In_Message::Message", Location((1, 1))),
         [
             model.Link(model.INITIAL, model.Field("Foo_Length")),
             model.Link(model.Field("Foo_Value"), model.Field("Bar_Length")),
@@ -2440,7 +2444,10 @@ def test_create_model_message_in_message() -> None:
         },
     )
 
-    derived_message = model.DerivedMessage("Message_In_Message::Derived_Message", message)
+    derived_message = model.DerivedMessage(
+        ID("Message_In_Message::Derived_Message", Location((1, 1))),
+        message,
+    )
 
     assert_messages_files(
         [f"{SPEC_DIR}/message_in_message.rflx"],
@@ -2462,8 +2469,8 @@ def test_create_model_type_derivation_message() -> None:
 
     types = {model.Field("Baz"): t}
 
-    message_foo = model.Message("Test::Foo", structure, types)
-    message_bar = model.DerivedMessage("Test::Bar", message_foo)
+    message_foo = model.Message(ID("Test::Foo", Location((1, 1))), structure, types)
+    message_bar = model.DerivedMessage(ID("Test::Bar", Location((1, 1))), message_foo)
 
     assert_messages_string(
         """\
@@ -2482,14 +2489,14 @@ def test_create_model_type_derivation_message() -> None:
 
 def test_create_model_type_derivation_refinements() -> None:
     message_foo = model.Message(
-        "Test::Foo",
+        ID("Test::Foo", Location((1, 1))),
         [
             model.Link(model.INITIAL, model.Field("Baz"), size=expr.Number(48)),
             model.Link(model.Field("Baz"), model.FINAL),
         ],
         {model.Field("Baz"): model.Opaque()},
     )
-    message_bar = model.DerivedMessage("Test::Bar", message_foo)
+    message_bar = model.DerivedMessage(ID("Test::Bar", Location((1, 1))), message_foo)
 
     assert_refinements_string(
         """\
@@ -2732,7 +2739,7 @@ def test_message_field_condition(spec: str) -> None:
         """,
         [
             Message(
-                "Test::M",
+                ID("Test::M", Location((1, 1))),
                 [
                     Link(INITIAL, Field("A")),
                     Link(
@@ -2784,7 +2791,7 @@ def test_message_field_first(spec: str) -> None:
         """,
         [
             Message(
-                "Test::M",
+                ID("Test::M", Location((1, 1))),
                 [
                     Link(INITIAL, Field("A")),
                     Link(Field("A"), Field("B"), first=expr.First("A")),
@@ -2831,7 +2838,7 @@ def test_message_field_size(spec: str) -> None:
         """,
         [
             Message(
-                "Test::M",
+                ID("Test::M", Location((1, 1))),
                 [
                     Link(INITIAL, Field("A")),
                     Link(Field("A"), Field("B"), size=expr.Number(8)),
@@ -2869,7 +2876,7 @@ def test_message_field_condition_and_aspects(link: str, field_b: str) -> None:
         """,
         [
             Message(
-                "Test::M",
+                ID("Test::M", Location((1, 1))),
                 [
                     Link(INITIAL, Field("A")),
                     Link(
@@ -2920,7 +2927,7 @@ def test_parameterized_messages() -> None:
         """,
         [
             Message(
-                "Test::M",
+                ID("Test::M", Location((1, 1))),
                 [
                     Link(INITIAL, Field("F"), size=expr.Mul(expr.Variable("P"), expr.Number(8))),
                     Link(
@@ -2932,7 +2939,7 @@ def test_parameterized_messages() -> None:
                 {Field("P"): T, Field("F"): OPAQUE},
             ),
             Message(
-                "Test::M_S",
+                ID("Test::M_S", Location((1, 1))),
                 [
                     Link(INITIAL, Field("F_F"), size=expr.Mul(expr.Number(16), expr.Number(8))),
                     Link(Field("F_F"), FINAL, condition=expr.TRUE),
@@ -2940,7 +2947,7 @@ def test_parameterized_messages() -> None:
                 {Field("F_F"): OPAQUE},
             ),
             Message(
-                "Test::M_D",
+                ID("Test::M_D", Location((1, 1))),
                 [
                     Link(INITIAL, Field("L")),
                     Link(
@@ -2966,38 +2973,38 @@ def test_parameterized_messages() -> None:
         (
             "",
             r"^"
-            r"<stdin>:15:14: model: error: missing argument\n"
-            r'<stdin>:5:14: model: info: expected argument for parameter "P"'
+            r"<stdin>:15:14: error: missing argument\n"
+            r'<stdin>:5:14: info: expected argument for parameter "P"'
             r"$",
         ),
         (
             " (Q => 16)",
             r"^"
-            r'<stdin>:15:19: model: error: unexpected argument "Q"\n'
-            r'<stdin>:15:19: model: info: expected argument for parameter "P"'
+            r'<stdin>:15:19: error: unexpected argument "Q"\n'
+            r'<stdin>:15:19: info: expected argument for parameter "P"'
             r"$",
         ),
         (
             " (P => 16, Q => 16)",
             r"^"
-            r'<stdin>:15:28: model: error: unexpected argument "Q"\n'
-            r"<stdin>:15:28: model: info: expected no argument"
+            r'<stdin>:15:28: error: unexpected argument "Q"\n'
+            r"<stdin>:15:28: info: expected no argument"
             r"$",
         ),
         (
             " (Q => 16, P => 16)",
             r"^"
-            r'<stdin>:15:19: model: error: unexpected argument "Q"\n'
-            r'<stdin>:15:19: model: info: expected argument for parameter "P"\n'
-            r'<stdin>:15:28: model: error: unexpected argument "P"\n'
-            r"<stdin>:15:28: model: info: expected no argument"
+            r'<stdin>:15:19: error: unexpected argument "Q"\n'
+            r'<stdin>:15:19: info: expected argument for parameter "P"\n'
+            r'<stdin>:15:28: error: unexpected argument "P"\n'
+            r"<stdin>:15:28: info: expected no argument"
             r"$",
         ),
         (
             " (P => 16, P => 16)",
             r"^"
-            r'<stdin>:15:28: model: error: unexpected argument "P"\n'
-            r"<stdin>:15:28: model: info: expected no argument"
+            r'<stdin>:15:28: error: unexpected argument "P"\n'
+            r"<stdin>:15:28: info: expected no argument"
             r"$",
         ),
     ],
@@ -3038,7 +3045,7 @@ def test_parse_error_invalid_range_aspect() -> None:
            type T is range 1 .. 200 with Invalid => 42;
         end Test;
         """,
-        r'^<stdin>:2:14: parser: error: invalid aspect "Invalid" for range type "Test::T"$',
+        r'^<stdin>:2:14: error: invalid aspect "Invalid" for range type "Test::T"$',
     )
 
 
@@ -3051,7 +3058,7 @@ def test_parse_error_invalid_range_aspect() -> None:
            type T is (A, B) with Foo;
         end Test;
         """,
-            r'^<stdin>:2:9: parser: error: no size set for "Test::T"$',
+            r'^<stdin>:2:9: error: no size set for "Test::T"$',
         ),
         (
             """\
@@ -3060,8 +3067,8 @@ def test_parse_error_invalid_range_aspect() -> None:
         end Test;
         """,
             r"^"
-            "<stdin>:2:42: parser: error: invalid Always_Valid expression: Invalid\n"
-            '<stdin>:2:9: parser: error: no size set for "Test::T"'
+            "<stdin>:2:42: error: invalid Always_Valid expression: Invalid\n"
+            '<stdin>:2:9: error: no size set for "Test::T"'
             r"$",
         ),
     ],
@@ -3092,7 +3099,7 @@ def test_parse_error_invalid_parameterized_type(spec: str) -> None:
            {spec};
         end Test;
         """,
-        r"^<stdin>:7:12: parser: error: only message types can be parameterized$",
+        r"^<stdin>:7:12: error: only message types can be parameterized$",
     )
 
 
@@ -3107,7 +3114,7 @@ def test_parse_error_undefined_parameter() -> None:
               end message;
         end Test;
         """,
-        r'^<stdin>:3:16: model: error: undefined type "Test::X"$',
+        r'^<stdin>:3:16: error: undefined type "Test::X"$',
     )
 
 
@@ -3125,8 +3132,8 @@ def test_parse_error_name_conflict_between_parameters() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:3:19: model: error: name conflict for "P"\n'
-        r"<stdin>:3:12: model: info: conflicting name"
+        r'<stdin>:3:19: error: name conflict for "P"\n'
+        r"<stdin>:3:12: info: conflicting name"
         r"$",
     )
 
@@ -3143,8 +3150,8 @@ def test_parse_error_name_conflict_between_field_and_parameter() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:5:10: model: error: name conflict for "P"\n'
-        r"<stdin>:3:12: model: info: conflicting name"
+        r'<stdin>:5:10: error: name conflict for "P"\n'
+        r"<stdin>:3:12: info: conflicting name"
         r"$",
     )
 
@@ -3155,9 +3162,9 @@ def test_parse_error_duplicate_spec_file() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            "^tests/data/specs/subdir/message_type.rflx:1:9: parser: error: duplicate"
+            "^tests/data/specs/subdir/message_type.rflx:1:9: error: duplicate"
             " specification\n"
-            "tests/data/specs/message_type.rflx:1:9: parser: info: previous specification$"
+            "tests/data/specs/message_type.rflx:1:9: info: previous specification$"
         ),
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
@@ -3179,9 +3186,9 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            "^tests/data/specs/subdir/message_type.rflx:1:9: parser: error: duplicate"
+            "^tests/data/specs/subdir/message_type.rflx:1:9: error: duplicate"
             " specification\n"
-            "<stdin>:1:9: parser: info: previous specification$"
+            "<stdin>:1:9: info: previous specification$"
         ),
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
@@ -3235,10 +3242,10 @@ def test_parse_error_duplicate_message_aspect() -> None:
               end message;
         end Test;
         """,
-        r'^<stdin>:7:52: parser: error: duplicate aspect "First"\n'
-        "<stdin>:7:18: parser: info: previous location\n"
-        '<stdin>:7:70: parser: error: duplicate aspect "Size"\n'
-        "<stdin>:7:36: parser: info: previous location$",
+        r'^<stdin>:7:52: error: duplicate aspect "First"\n'
+        "<stdin>:7:18: info: previous location\n"
+        '<stdin>:7:70: error: duplicate aspect "Size"\n'
+        "<stdin>:7:36: info: previous location$",
     )
 
 
@@ -3266,8 +3273,8 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
            end S;
         end Test;
         """,
-        r'^<stdin>:8:44: parser: error: duplicate aspect "Readable"\n'
-        "<stdin>:8:24: parser: info: previous location$",
+        r'^<stdin>:8:44: error: duplicate aspect "Readable"\n'
+        "<stdin>:8:24: info: previous location$",
     )
 
 
@@ -3295,7 +3302,7 @@ def test_parse_error_unsupported_binding() -> None:
            end S;
         end Test;
         """,
-        r"^<stdin>:15:19: parser: error: bindings are not supported$",
+        r"^<stdin>:15:19: error: bindings are not supported$",
     )
 
 
@@ -3307,8 +3314,8 @@ def test_parse_error_unsupported_modular_integer_type() -> None:
         end Test;
         """,
         r"^"
-        r"<stdin>:2:9: parser: error: modular integer types are not supported\n"
-        r'<stdin>:2:9: parser: info: use "type T is range 0 .. 65535 with Size => 16" instead'
+        r"<stdin>:2:9: error: modular integer types are not supported\n"
+        r'<stdin>:2:9: info: use "type T is range 0 .. 65535 with Size => 16" instead'
         r"$",
     )
 
@@ -3320,7 +3327,7 @@ def test_parse_error_duplicate_integer_size_aspect() -> None:
            type T is range 1 .. 10 with Size => 8, Size => 16;
         end Test;
         """,
-        r"^<stdin>:2:42: parser: error: Expected ';', got ','$",
+        r"^<stdin>:2:42: error: Expected ';', got ','$",
     )
 
 
@@ -3331,10 +3338,10 @@ def test_parse_error_duplicate_enumeration_aspect() -> None:
            type E is (L1, L2, L3) with Size => 8, Always_Valid, Size => 16, Always_Valid;
         end Test;
         """,
-        r'^<stdin>:2:57: parser: error: duplicate aspect "Size"\n'
-        r"<stdin>:2:32: parser: info: previous location\n"
-        r'<stdin>:2:69: parser: error: duplicate aspect "Always_Valid"\n'
-        r"<stdin>:2:43: parser: info: previous location$",
+        r'^<stdin>:2:57: error: duplicate aspect "Size"\n'
+        r"<stdin>:2:32: info: previous location\n"
+        r'<stdin>:2:69: error: duplicate aspect "Always_Valid"\n'
+        r"<stdin>:2:43: info: previous location$",
     )
 
 
@@ -3352,7 +3359,7 @@ def test_parse_error_duplicate_message_checksum_aspect() -> None:
                       Checksum => (F1 => (F1'First .. F1'Last));
         end Test;
         """,
-        r"^<stdin>:9:15: parser: error: Expected 'Byte_Order', got 'First'$",
+        r"^<stdin>:9:15: error: Expected 'Byte_Order', got 'First'$",
     )
 
 
@@ -3370,8 +3377,8 @@ def test_parse_error_duplicate_message_byte_order_aspect() -> None:
                       Byte_Order => High_Order_First;
         end Test;
         """,
-        r'^<stdin>:9:15: parser: error: duplicate aspect "Byte_Order"\n'
-        "<stdin>:8:15: parser: info: previous location$",
+        r'^<stdin>:9:15: error: duplicate aspect "Byte_Order"\n'
+        "<stdin>:8:15: info: previous location$",
     )
 
 
@@ -3400,7 +3407,7 @@ def test_parse_error_duplicate_state_desc() -> None:
            end S;
         end Test;
         """,
-        r"^<stdin>:13:27: parser: error: Expected 'is', got ','$",
+        r"^<stdin>:13:27: error: Expected 'is', got ','$",
     )
 
 
@@ -3429,7 +3436,7 @@ def test_parse_error_duplicate_transition_desc() -> None:
            end S;
         end Test;
         """,
-        r"^<stdin>:18:30: parser: error: Expected 'end', got ','$",
+        r"^<stdin>:18:30: error: Expected 'end', got ','$",
     )
 
 
@@ -3530,7 +3537,7 @@ def test_parse_order_of_include_paths(tmp_path: Path) -> None:
 
     with pytest.raises(
         RecordFluxError,
-        match=(rf"^{invalid}:1:1: parser: error: Expected 'package', got 'First'$"),
+        match=(rf"^{invalid}:1:1: error: Expected 'package', got 'First'$"),
     ):
         parser.Parser().parse(b, a)
 
@@ -3544,7 +3551,7 @@ def test_parse_non_existent_dependencies(tmp_path: Path) -> None:
     b.parent.mkdir()
     b.write_text("package B is end B;")
 
-    error = rf'^{a}:1:6: parser: error: cannot find specification "C"$'
+    error = rf'^{a}:1:6: error: cannot find specification "C"$'
 
     with pytest.raises(RecordFluxError, match=error):
         parser.Parser().parse(a, b)
@@ -3556,8 +3563,8 @@ def test_parse_non_existent_dependencies(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("expression", "message"),
     [
-        ("A + 1", r"^<stdin>:7:19: parser: error: math expression in boolean context$"),
-        ("42", r"^<stdin>:7:19: parser: error: math expression in boolean context$"),
+        ("A + 1", r"^<stdin>:7:19: error: math expression in boolean context$"),
+        ("42", r"^<stdin>:7:19: error: math expression in boolean context$"),
     ],
 )
 def test_parse_error_math_expression_in_bool_context(expression: str, message: str) -> None:
@@ -3580,10 +3587,10 @@ def test_parse_error_math_expression_in_bool_context(expression: str, message: s
 @pytest.mark.parametrize(
     ("expression", "message"),
     [
-        ("True", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),
-        ("3 < 4", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),
-        ("A = B", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),
-        ("A /= False", r"^<stdin>:5:26: parser: error: boolean expression in math context$"),
+        ("True", r"^<stdin>:5:26: error: boolean expression in math context$"),
+        ("3 < 4", r"^<stdin>:5:26: error: boolean expression in math context$"),
+        ("A = B", r"^<stdin>:5:26: error: boolean expression in math context$"),
+        ("A /= False", r"^<stdin>:5:26: error: boolean expression in math context$"),
     ],
 )
 def test_parse_error_bool_expression_in_math_context(expression: str, message: str) -> None:
@@ -3613,8 +3620,8 @@ def test_parse_error_short_form_condition() -> None:
               end message;
         end Test;
         """,
-        r"^<stdin>:6:16: parser: error: short form condition is not supported anymore\n"
-        r'<stdin>:6:16: parser: info: add condition to all outgoing links of field "A" instead$',
+        r"^<stdin>:6:16: error: short form condition is not supported anymore\n"
+        r'<stdin>:6:16: info: add condition to all outgoing links of field "A" instead$',
     )
 
 
@@ -3625,7 +3632,7 @@ def test_parse_error_missing_aspect_expression() -> None:
            type T is range 0 .. 1 with A;
         end Test;
         """,
-        r'^<stdin>:2:14: parser: error: invalid aspect "A" for range type "Test::T"$',
+        r'^<stdin>:2:14: error: invalid aspect "A" for range type "Test::T"$',
     )
 
 
@@ -3641,7 +3648,7 @@ def test_parse_error_unclosed_parenthesis() -> None:
               end message;
         end Test;
         """,
-        r"^<stdin>:6:27: parser: error: empty subexpression$",
+        r"^<stdin>:6:27: error: empty subexpression$",
     )
 
 
@@ -3661,7 +3668,7 @@ def test_negated_case_expression() -> None:
            end S;
         end Test;
         """,
-        r"^<stdin>:7:26: parser: error: case expression unsupported in math expression context$",
+        r"^<stdin>:7:26: error: case expression unsupported in math expression context$",
     )
 
 
@@ -3683,7 +3690,7 @@ def test_parse_only() -> None:
                   end message;
             end Test;
             """,
-            "^<stdin>:5:31: parser: error: missing right operand$",
+            "^<stdin>:5:31: error: missing right operand$",
         ),
         (
             """\
@@ -3702,7 +3709,7 @@ def test_parse_only() -> None:
                   end message;
             end Message_Size;
             """,
-            "^<stdin>:9:35: parser: error: missing right operand$",
+            "^<stdin>:9:35: error: missing right operand$",
         ),
         (
             """\
@@ -3710,7 +3717,7 @@ def test_parse_only() -> None:
                type T is range 0 .. 2 ** 8 - 1 with Size => (8 / )'Size;
             end Test;
             """,
-            "^<stdin>:2:50: parser: error: missing right operand$",
+            "^<stdin>:2:50: error: missing right operand$",
         ),
         (
             """\
@@ -3718,7 +3725,7 @@ def test_parse_only() -> None:
                type T is range 0 .. (- + 1) with Size => 8;
             end Test;
             """,
-            "^<stdin>:2:26: parser: error: negation of non-expression$",
+            "^<stdin>:2:26: error: negation of non-expression$",
         ),
         (
             """\
@@ -3729,7 +3736,7 @@ def test_parse_only() -> None:
                   end message;
             end Test;
             """,
-            "^<stdin>:4:30: parser: error: missing right operand$",
+            "^<stdin>:4:30: error: missing right operand$",
         ),
     ],
     ids=range(1, 6),
@@ -3747,7 +3754,7 @@ def test_parse_error_duplicate_operator(string: str, regex: str) -> None:
                type T is range 0 .. 2 ** 8 - 1 with Size;
             end Test;
             """,
-            '^<stdin>:2:41: parser: error: "Size" aspect has no value$',
+            '^<stdin>:2:41: error: "Size" aspect has no value$',
         ),
         (
             """\
@@ -3764,7 +3771,7 @@ def test_parse_error_duplicate_operator(string: str, regex: str) -> None:
                   end message;
             end Test;
             """,
-            '^<stdin>:6:18: parser: error: "First" aspect has no value$',
+            '^<stdin>:6:18: error: "First" aspect has no value$',
         ),
     ],
     ids=range(1, 3),

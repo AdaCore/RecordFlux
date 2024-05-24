@@ -37,7 +37,8 @@ from lsprotocol.types import (
 )
 from pygls.server import LanguageServer
 
-from rflx import __version__, error
+import rflx.rapidflux as error
+from rflx import __version__
 from rflx.common import assert_never
 from rflx.const import BUILTINS_PACKAGE, CACHE_PATH, INTERNAL_PACKAGE
 from rflx.graph import create_message_graph, write_graph
@@ -85,12 +86,13 @@ def to_lsp_location(location: Optional[error.Location]) -> Optional[Location]:
 def to_lsp_severity(severity: error.Severity) -> Optional[DiagnosticSeverity]:
     if severity is error.Severity.ERROR:
         return DiagnosticSeverity.Error
-    if severity is error.Severity.INFO:
+    if severity is error.Severity.INFO or severity is error.Severity.NOTE:
         return DiagnosticSeverity.Information
     if severity is error.Severity.WARNING:
         return DiagnosticSeverity.Warning
-    if severity is error.Severity.NONE:
-        return None
+    if severity is error.Severity.HELP:
+        return DiagnosticSeverity.Hint
+
     assert_never(severity)
 
 
@@ -151,15 +153,15 @@ class RecordFluxLanguageServer(LanguageServer):
             try:
                 parser.parse_string(document.source, path)
             except error.RecordFluxError as e:
-                self._error.extend(e)
+                self._error.extend(e.entries)
 
         unchecked_model = parser.create_unchecked_model()
 
-        self._error.extend(unchecked_model.error)
+        self._error.extend(unchecked_model.error.entries)
 
         self._publish_errors_as_diagnostics(self._error)
         self._reset_diagnostics(
-            set(workspace_files) - {e.location.source for e in self._error.errors if e.location},
+            set(workspace_files) - {e.location.source for e in self._error.entries if e.location},
         )
         self._models[directory] = Models(unchecked_model)
 
@@ -178,7 +180,7 @@ class RecordFluxLanguageServer(LanguageServer):
         try:
             self._models[directory].verify(self._cache, workers=self.workers)
         except error.RecordFluxError as e:
-            self._error.extend(e)
+            self._error.extend(e.entries)
 
         self._publish_errors_as_diagnostics(self._error)
 
@@ -187,7 +189,7 @@ class RecordFluxLanguageServer(LanguageServer):
     def _publish_errors_as_diagnostics(self, errors: error.RecordFluxError) -> None:
         diagnostics = defaultdict(list)
 
-        for msg in errors.messages:
+        for msg in errors.entries:
             location = to_lsp_location(msg.location)
             severity = to_lsp_severity(msg.severity)
 
