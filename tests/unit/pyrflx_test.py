@@ -1205,8 +1205,7 @@ def test_set_checksum_to_pyrflx_invalid_id(
 ) -> None:
     with pytest.raises(
         PyRFLXError,
-        match='^error: "Refinement_With_Checksum:Message" is not a valid identifier:'
-        ' error: ":" in identifier parts of "Refinement_With_Checksum:Message"$',
+        match='^error: invalid identifier "Refinement_With_Checksum:Message"$',
     ):
         pyrflx_checksum.set_checksum_functions(
             {
@@ -1217,7 +1216,7 @@ def test_set_checksum_to_pyrflx_invalid_id(
 
     with pytest.raises(
         PyRFLXError,
-        match='^error: "Not_A_Package" is not a valid identifier$',
+        match='^error: invalid identifier "Not_A_Package"$',
     ):
         pyrflx_checksum.set_checksum_functions(
             {

@@ -563,7 +563,7 @@ def test_main_validate_invalid_identifier(
     )
 
     assert_stderr_regex(
-        '^error: invalid identifier: error: " " in identifier parts of "Ethernet Frame"$',
+        '^error: invalid identifier "Ethernet Frame"$',
         capfd,
     )
 

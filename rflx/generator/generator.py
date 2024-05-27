@@ -99,7 +99,7 @@ from rflx.model import (
     Session,
     TypeDecl,
 )
-from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
+from rflx.rapidflux import ErrorEntry, FatalError, RecordFluxError, Severity, logging
 
 from . import common, const, message as message_generator
 from .allocator import AllocatorGenerator
@@ -123,7 +123,10 @@ class Generator:
         debug: common.Debug = common.Debug.NONE,
         ignore_unsupported_checksum: bool = False,
     ) -> None:
-        self._prefix = str(ID(prefix)) if prefix else ""
+        try:
+            self._prefix = str(ID(prefix)) if prefix else ""
+        except FatalError:
+            fail(f'invalid prefix "{prefix}"')
         self._reproducible = reproducible
         self._debug = debug
         self._ignore_unsupported_checksum = ignore_unsupported_checksum

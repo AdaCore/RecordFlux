@@ -29,7 +29,7 @@ impl Location {
         0
     }
 
-    fn __repr__(&self) -> String {
+    pub(crate) fn __repr__(&self) -> String {
         format!(
             "Location({:?}, {}, {})",
             std::convert::Into::<(u32, u32)>::into(self.0.start),

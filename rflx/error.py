@@ -4,15 +4,13 @@ from typing import NoReturn, Optional, Sequence
 
 from typing_extensions import TypeGuard
 
-from rflx.rapidflux import ErrorEntry, Location as Location, RecordFluxError, Severity
-
-
-class FatalError(Exception):
-    """
-    Error indicating a bug.
-
-    This exception should never be caught outside of RecordFlux.
-    """
+from rflx.rapidflux import (
+    ErrorEntry,
+    FatalError as FatalError,
+    Location as Location,
+    RecordFluxError,
+    Severity,
+)
 
 
 def fail(

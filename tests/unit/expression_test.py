@@ -7,7 +7,6 @@ import pytest
 import z3
 
 from rflx import ada, ir, typing_ as rty
-from rflx.error import FatalError
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -1073,7 +1072,7 @@ def test_literal_to_ir() -> None:
 
 
 def test_variable_invalid_name() -> None:
-    with pytest.raises(FatalError):
+    with pytest.raises(BaseException, match=r"^invalid identifier$"):
         Variable("Foo (Bar)")
 
 

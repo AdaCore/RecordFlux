@@ -7,8 +7,9 @@ rust-version = "1.77"
 [dependencies]
 annotate-snippets = { workspace = true }
 anstream = { workspace = true }
-serde = { workspace = true }
 lazy_static = { workspace = true }
+serde = { workspace = true }
+thiserror = "1.0.61"
 
 [dev-dependencies]
 bincode = { workspace = true }

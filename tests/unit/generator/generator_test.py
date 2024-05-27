@@ -90,7 +90,7 @@ def test_equality(tc: TC, tmp_path: Path) -> None:
 
 
 def test_invalid_prefix() -> None:
-    with pytest.raises(FatalError, match=r'^error: empty part in identifier "A::::B"$'):
+    with pytest.raises(RecordFluxError, match=r'^error: invalid prefix "A..B"$'):
         Generator("A..B")
 
 
