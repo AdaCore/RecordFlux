@@ -658,8 +658,8 @@ def graph(args: argparse.Namespace) -> None:
 def validate(args: argparse.Namespace) -> None:
     try:
         identifier = ID(args.message_identifier)
-    except FatalError as e:
-        fail(f"invalid identifier: {e}")
+    except FatalError:
+        fail(f'invalid identifier "{args.message_identifier}"')
 
     try:
         Validator(

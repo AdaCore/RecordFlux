@@ -9,6 +9,7 @@ use std::{
 use bincode::{deserialize, serialize};
 use pyo3::{
     basic::CompareOp,
+    create_exception,
     exceptions::{PyException, PyNotImplementedError, PyValueError},
     prelude::*,
     types::{PyBytes, PyType},
@@ -411,5 +412,12 @@ impl From<RapidFluxError> for PyErr {
         PyErr::new::<RapidFluxError, RapidFluxError>(value)
     }
 }
+
+create_exception!(
+    rflx.rapidflux,
+    FatalError,
+    PyException,
+    "Error indicating a bug."
+);
 
 impl_states!(Annotation, ErrorEntry, Severity, RapidFluxError);

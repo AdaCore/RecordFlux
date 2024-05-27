@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+import pickle
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Union
+
 import pytest
 
-from rflx.error import FatalError
 from rflx.identifier import ID
+from rflx.rapidflux import FatalError, Location
 
 
 def test_id_constructor() -> None:
@@ -19,39 +26,33 @@ def test_id_invalid_type() -> None:
         ID(0)  # type: ignore[arg-type]
 
 
-def test_id_invalid_empty() -> None:
-    with pytest.raises(FatalError, match=r"^error: empty identifier$"):
-        ID([])
+@pytest.mark.parametrize(
+    "identifier",
+    [
+        [],
+        "",
+        "A::::B",
+        "::A::B",
+        "A::B::",
+        "A::B C::D",
+        "A::B:C::D",
+    ],
+)
+def test_id_invalid(identifier: Union[str, Sequence[str]]) -> None:
+    with pytest.raises(FatalError, match=r"^invalid identifier$"):
+        ID(identifier)
 
 
-def test_id_invalid_empty_string() -> None:
-    with pytest.raises(FatalError, match=r'^error: empty part in identifier ""$'):
-        ID("")
-
-
-def test_id_invalid_empty_part() -> None:
-    with pytest.raises(FatalError, match=r'^error: empty part in identifier "A::::B"$'):
-        ID("A::::B")
-
-
-def test_id_invalid_empty_first_part() -> None:
-    with pytest.raises(FatalError, match=r'^error: empty part in identifier "::A::B"$'):
-        ID("::A::B")
-
-
-def test_id_invalid_empty_last_part() -> None:
-    with pytest.raises(FatalError, match=r'^error: empty part in identifier "A::B::"$'):
-        ID("A::B::")
-
-
-def test_id_invalid_whitespace() -> None:
-    with pytest.raises(FatalError, match=r'^error: " " in identifier parts of "A::B C::D"$'):
-        ID("A::B C::D")
-
-
-def test_id_invalid_colon() -> None:
-    with pytest.raises(FatalError, match=r'^error: ":" in identifier parts of "A::B:C::D"$'):
-        ID("A::B:C::D")
+@pytest.mark.parametrize(
+    ("identifier", "expected"),
+    [
+        (ID(ID("A", Location((1, 2)))), ID("A", Location((1, 2)))),
+        (ID(ID("A", Location((1, 2))), Location((3, 4))), ID("A", Location((3, 4)))),
+    ],
+)
+def test_id_from_id(identifier: ID, expected: ID) -> None:
+    assert identifier == expected
+    assert identifier.location == expected.location
 
 
 def test_id_eq() -> None:
@@ -66,32 +67,80 @@ def test_id_str() -> None:
     assert str(ID("A::B::C")) == "A::B::C"
 
 
-def test_id_add() -> None:
-    assert ID("A") + ID("B::C") == ID("AB::C")
-    assert ID("B::C") + ID("D") == ID("B::CD")
+def test_id_contains() -> None:
+    assert ID("A") in [ID("a")]
+    assert None not in [ID("a")]
 
 
-def test_id_add_str() -> None:
-    assert "A" + ID("B::C") == ID("AB::C")
-    assert ID("B::C") + "D" == ID("B::CD")
-    assert ID("B::C") + "" == ID("B::C")
-    assert "" + ID("B::C") == ID("B::C")
-    assert "A.B" + ID("C") == ID("A::BC")
-    assert ID("A") + "B.C" == ID("AB::C")
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [
+        (ID("A", Location((1, 2))), ID("B"), ID("AB", Location((1, 2)))),
+        (ID("A", Location((1, 2))), ID("B::C", Location((3, 4))), ID("AB::C", Location((1, 2)))),
+        (ID("B::C"), ID("D", Location((1, 2))), ID("B::CD", Location((1, 2)))),
+    ],
+)
+def test_id_add_id(left: ID, right: ID, expected: ID) -> None:
+    result = left + right
+    assert result == expected
+    assert result.location == expected.location
 
 
-def test_id_mul_id() -> None:
-    assert ID("A") * ID("B::C") == ID("A::B::C")
-    assert ID("B::C") * ID("D") == ID("B::C::D")
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [
+        ("A", ID("B::C", Location((1, 2))), ID("AB::C", Location((1, 2)))),
+        (ID("B::C", Location((1, 2))), "D", ID("B::CD", Location((1, 2)))),
+        (ID("B::C", Location((1, 2))), "", ID("B::C", Location((1, 2)))),
+        ("", ID("B::C", Location((1, 2))), ID("B::C", Location((1, 2)))),
+        ("A.B", ID("C", Location((1, 2))), ID("A::BC", Location((1, 2)))),
+        (ID("A", Location((1, 2))), "B.C", ID("AB::C", Location((1, 2)))),
+    ],
+)
+def test_id_add_str(left: ID, right: ID, expected: ID) -> None:
+    result = left + right
+    assert result == expected
+    assert result.location == expected.location
 
 
-def test_id_mul_str() -> None:
-    assert "A" * ID("B::C") == ID("A::B::C")
-    assert ID("B::C") * "D" == ID("B::C::D")
-    assert "" * ID("B::C") == ID("B::C")
-    assert ID("B::C") * "" == ID("B::C")
-    assert "A.B" * ID("C") == ID("A::B::C")
-    assert ID("A") * "B.C" == ID("A::B::C")
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [
+        (ID("A", Location((1, 2))), ID("B"), ID("A::B", Location((1, 2)))),
+        (ID("A", Location((1, 2))), ID("B::C", Location((3, 4))), ID("A::B::C", Location((1, 2)))),
+        (ID("B::C"), ID("D", Location((3, 4))), ID("B::C::D", Location((3, 4)))),
+    ],
+)
+def test_id_mul_id(left: ID, right: ID, expected: ID) -> None:
+    result = left * right
+    assert result == expected
+    assert result.location == expected.location
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [
+        ("A", ID("B::C", Location((1, 2))), ID("A::B::C", Location((1, 2)))),
+        (ID("B::C", Location((1, 2))), "D", ID("B::C::D", Location((1, 2)))),
+        ("", ID("B::C", Location((1, 2))), ID("B::C", Location((1, 2)))),
+        (ID("B::C", Location((1, 2))), "", ID("B::C", Location((1, 2)))),
+        ("A.B", ID("C", Location((1, 2))), ID("A::B::C", Location((1, 2)))),
+        (ID("A", Location((1, 2))), "B.C", ID("A::B::C", Location((1, 2)))),
+    ],
+)
+def test_id_mul_str(left: ID, right: ID, expected: ID) -> None:
+    result = left * right
+    assert result == expected
+    assert result.location == expected.location
+
+
+def test_id_parts() -> None:
+    assert ID("A::B").parts == ["A", "B"]
+
+
+def test_id_location() -> None:
+    assert ID("A::B").location is None
+    assert ID("A::B", Location((1, 2))).location == Location((1, 2))
 
 
 def test_id_name() -> None:
@@ -103,7 +152,7 @@ def test_id_parent() -> None:
 
 
 def test_id_parent_error() -> None:
-    with pytest.raises(FatalError, match=r"^error: empty identifier$"):
+    with pytest.raises(FatalError, match=r"^no parent$"):
         ID("A").parent  # noqa: B018
 
 
@@ -113,3 +162,16 @@ def test_id_flat() -> None:
 
 def test_id_sorted() -> None:
     assert sorted([ID("B"), ID("A")]) == [ID("A"), ID("B")]
+
+
+def test_id_pickle(tmp_path: Path) -> None:
+    pickle_file = tmp_path / "pickle"
+    identifier = ID("A::B")
+
+    with pickle_file.open("w+b") as f:
+        pickle.dump(identifier, f)
+        f.flush()
+
+    with pickle_file.open("rb") as f:
+        loaded = pickle.load(f)  # noqa: S301
+        assert loaded == identifier

@@ -77,12 +77,12 @@ class PyRFLX:
                 message_identifier = ID(identifier_str)
             except FatalError as e:
                 new_error = PyRFLXError()
-                new_error.push_msg(f'"{identifier_str}" is not a valid identifier: {e}')
+                new_error.push_msg(f'invalid identifier "{identifier_str}"')
                 raise new_error from e
 
             if len(message_identifier.parts) < 2:
                 new_error = PyRFLXError()
-                new_error.push_msg(f'"{identifier_str}" is not a valid identifier')
+                new_error.push_msg(f'invalid identifier "{identifier_str}"')
                 raise new_error
 
             if str(message_identifier.parent) in self._packages:
