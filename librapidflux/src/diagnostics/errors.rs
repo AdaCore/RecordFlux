@@ -191,6 +191,7 @@ impl ErrorEntry {
         }
 
         if self.annotations.is_empty()
+            || source.is_empty()
             || self.location.as_ref().is_some_and(|l| {
                 l.source
                     .as_ref()
