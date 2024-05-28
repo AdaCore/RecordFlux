@@ -5,11 +5,14 @@ edition = "2021"
 rust-version = "1.77"
 
 [dependencies]
-annotate-snippets = "=0.10.0"
+annotate-snippets = "0.11.1"
 serde = { workspace = true }
 
 [dev-dependencies]
 rstest = "0.19.0"
+# Enable `testing-colors` feature only for tests. This is to make testing easier with colored
+# output
+annotate-snippets = { version = "0.11.1", features = ["testing-colors"] }
 bincode = { workspace = true }
 indoc = "2.0.5"
 pretty_assertions = "1.4.0"
