@@ -1,7 +1,6 @@
 # ruff: noqa: SLF001
 
 from collections import abc
-from pathlib import Path
 
 import pytest
 
@@ -44,51 +43,6 @@ def assert_bytestring_error(msg: MessageValue, msg_name: ID) -> None:
         msg.bytestring  # noqa: B018
 
 
-def test_file_not_found(tmp_path: Path) -> None:
-    with pytest.raises(FileNotFoundError):
-        PyRFLX.from_specs([f"{tmp_path}/test.rflx"])
-
-
-def test_package_name() -> None:
-    p = Package("Test")
-    assert p.name == "Test"
-
-
-def test_package_iterator(tlv_package: Package) -> None:
-    assert [m.name for m in tlv_package] == ["Message"]
-
-
-def test_pyrflx_iterator(pyrflx_: PyRFLX) -> None:
-    assert {p.name for p in pyrflx_} == {
-        "Endianness",
-        "Ethernet",
-        "ICMP",
-        "IPv4",
-        "Message_Size",
-        "TLS_Alert",
-        "TLS_Record",
-        "TLV",
-        "UDP",
-        "Sequence_Message",
-        "Sequence_Type",
-        "Null_Message",
-        "Parameterized",
-        "TLV_With_Checksum",
-        "No_Conditionals",
-        "Message_Type_Size_Condition",
-        "Always_Valid_Aspect",
-        "Low_Order",
-        "Aggregate_In_Relation",
-    }
-
-
-def test_attributes(pyrflx_: PyRFLX) -> None:
-    pyrflx_ = PyRFLX.from_specs([SPEC_DIR / "tlv.rflx"])
-    assert isinstance(pyrflx_.package("TLV"), Package)
-    tlv_package = pyrflx_.package("TLV")
-    assert isinstance(tlv_package.new_message("Message"), MessageValue)
-
-
 def test_no_verification(icmp_message_value: MessageValue) -> None:
     pyrflx_ = PyRFLX.from_specs(
         [SPEC_DIR / "icmp.rflx"],
@@ -125,16 +79,6 @@ def test_message_value_eq(tlv_package: Package) -> None:
     assert tlv_package.new_message("Message") == tlv_package.new_message("Message")
     assert tlv_package.new_message("Message") is not tlv_package.new_message("Message")
     assert m1 is not None
-
-
-def test_message_value_bitstring(tlv_message_value: MessageValue) -> None:
-    assert tlv_message_value.bitstring == Bitstring("")
-    tlv_message_value.set("Tag", "Msg_Data")
-    assert tlv_message_value.bitstring == Bitstring("00000001")
-    tlv_message_value.set("Length", 1)
-    assert tlv_message_value.bitstring == Bitstring("000000010000000000000001")
-    tlv_message_value.set("Value", b"\x01")
-    assert tlv_message_value.bitstring == Bitstring("00000001000000000000000100000001")
 
 
 def test_message_value_all_fields(
