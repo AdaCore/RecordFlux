@@ -25,7 +25,9 @@ def check_file_coverage(source_dir: Path, test_dir: Path) -> None:
     if not test_dir.exists():
         raise CheckUnitTestFileError(f"missing test directory: {test_dir}")
 
-    source_files = [s.relative_to(source_dir) for s in source_dir.glob("**/*.py")]
+    source_files = [
+        s.relative_to(source_dir) for ext in ("**/*.py", "**/*.pyi") for s in source_dir.glob(ext)
+    ]
     test_files = [t.relative_to(test_dir) for t in test_dir.glob("**/*.py")]
 
     excess_source_files = [
@@ -44,7 +46,10 @@ def check_file_coverage(source_dir: Path, test_dir: Path) -> None:
             test_file.name != "__init__.py"
             and (
                 not test_file.stem.endswith("_test")
-                or test_file.with_name(test_file.stem[:-5] + ".py") not in source_files
+                or (
+                    test_file.with_name(test_file.stem[:-5] + ".py") not in source_files
+                    and test_file.with_name(test_file.stem[:-5] + ".pyi") not in source_files
+                )
             )
         )
     ]
