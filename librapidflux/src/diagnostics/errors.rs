@@ -562,6 +562,20 @@ mod tests {
                 |"
         },
     )]
+    #[case::error_entry_stdin(
+        ErrorEntry::new(
+            "Some terrible error".to_string(),
+            Severity::Error,
+            Some(Location {
+                source: Some("<stdin>".into()),
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 8)),
+            }),
+            Vec::new(),
+        ),
+        "package Test is end Test;",
+        "<stdin>:1:1: error: Some terrible error",
+    )]
     #[case::error_entry_with_location_and_source_file(
         ErrorEntry::new(
             "Some terrible error".to_string(),
