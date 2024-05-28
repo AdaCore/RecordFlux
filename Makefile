@@ -31,6 +31,7 @@ VSIX = rflx/ide/vscode/recordflux.vsix
 BIN_DIR := $(MAKEFILE_DIR)/.bin
 GENERATED_DIR := generated
 BUILD_GENERATED_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/$(GENERATED_DIR)
+COVERAGE_DIR := $(MAKEFILE_DIR)/$(BUILD_DIR)/coverage
 
 # --- External repositories ---
 
@@ -358,11 +359,11 @@ fmt: format
 
 # --- Tests ---
 
-.PHONY: test test_rflx test_rapidflux test_rapidflux_coverage test_rapidflux_mutation test_rapidflux_doc test_examples test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
+.PHONY: test test_rflx test_rapidflux test_rapidflux_coverage test_rapidflux_mutation test_rapidflux_doc test_examples test_coverage test_unit_coverage test_per_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
 
 test: test_rflx test_rapidflux test_examples
 
-test_rflx: test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
+test_rflx: test_coverage test_unit_coverage test_per_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
 
 
 test_rapidflux_coverage: rapidflux_devel
@@ -397,6 +398,33 @@ test_coverage: $(RFLX)
 test_unit_coverage: $(RFLX)
 	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tools --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/tools
 	$(POETRY) run coverage report --fail-under=95.0 --show-missing --skip-covered --omit="rflx/lang/*"
+
+$(COVERAGE_DIR)/%.coverage: $(MAKEFILE_DIR)/rflx/%.py $(MAKEFILE_DIR)/tests/unit/%_test.py $(RFLX)
+	@$(eval TMP_DIR := $(shell mktemp -d))
+	@COVERAGE_FILE=$(TMP_DIR)/coverage $(POETRY) run coverage run --branch --include=rflx/$*.py -m pytest -n8 --dist=no --timeout=7200 --no-header --no-summary --quiet tests/unit/$*_test.py > /dev/null 2> /dev/null
+	@mkdir -p $(dir $@)
+	@COVERAGE_FILE=$@ $(POETRY) run coverage combine --keep $(TMP_DIR)/coverage* > /dev/null 2> /dev/null
+	@rm -rf $(TMP_DIR)
+	@echo Measured: $*
+
+
+COVERAGE_FILES = \
+	$(filter-out \
+		$(COVERAGE_DIR)/ide/vscode/node_modules/%, \
+		$(foreach file, $(shell find $(MAKEFILE_DIR)/rflx -type f -name "*.py" ! -name "__init__.py"), \
+			$(addprefix $(COVERAGE_DIR)/, \
+				$(addsuffix .coverage, \
+					$(basename $(subst $(MAKEFILE_DIR)/rflx/,,$(file))) \
+				) \
+			) \
+		) \
+	)
+
+$(COVERAGE_DIR)/_full.coverage: $(COVERAGE_FILES)
+	@COVERAGE_FILE=$@ $(POETRY) run coverage combine --keep $^ > /dev/null
+
+test_per_unit_coverage:: $(COVERAGE_DIR)/_full.coverage
+	@$(POETRY) run coverage report --fail-under=32.0 --show-missing --skip-covered --data-file=$<
 
 test_language_coverage: $(RFLX)
 	timeout -k 60 7200 $(PYTEST) --cov=rflx/lang --cov-branch --cov-fail-under=73.8 --cov-report=term-missing:skip-covered tests/language
