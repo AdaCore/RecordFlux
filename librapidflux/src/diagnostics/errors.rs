@@ -187,7 +187,7 @@ impl ErrorEntry {
 
             // Add squiggles below the actual error. Without this, the user won't be able to
             // see the error location (e.g. `foo.rflx:3:4`).
-            self.annotations.push(default_annotation);
+            self.annotations.insert(0, default_annotation);
         }
 
         if self.annotations.is_empty()
@@ -623,7 +623,7 @@ mod tests {
         },
         indoc! {
             r"error: Some terrible error
-               --> test.rflx:2:1
+               --> test.rflx:1:1
                 |
               1 | package Test is
                 | ^^^^^^^
