@@ -8,10 +8,11 @@
 use pyo3::prelude::*;
 
 mod diagnostics;
+mod logging;
 mod utils;
 
 #[pymodule]
-fn rapidflux(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn rapidflux(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Locations
     m.add_class::<diagnostics::Location>()?;
 
@@ -20,5 +21,11 @@ fn rapidflux(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<diagnostics::Annotation>()?;
     m.add_class::<diagnostics::ErrorEntry>()?;
     m.add_class::<diagnostics::RapidFluxError>()?;
+
+    // Logging module
+    let logging_module = PyModule::new_bound(m.py(), "logging")?;
+    logging::register_logging_module(py, &logging_module)?;
+    m.add_submodule(&logging_module)?;
+
     Ok(())
 }
