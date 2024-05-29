@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging
+import logging as py_logging
 import os
 import re
 import shutil
@@ -34,13 +34,13 @@ from rflx.integration import Integration
 from rflx.ls.server import server
 from rflx.model import AlwaysVerify, Cache, Message, Model, NeverVerify, Session
 from rflx.pyrflx import PyRFLXError
-from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
+from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
 from rflx.specification import Parser
 from rflx.validator import ValidationError, Validator
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-
 DEFAULT_PREFIX = "RFLX"
+
+py_logging.basicConfig(level=py_logging.INFO, format="%(message)s")
 
 
 class IDE(Enum):
@@ -450,7 +450,7 @@ def main(  # noqa: PLR0915
         return 2
 
     if args.quiet:
-        logging.disable(logging.CRITICAL)
+        logging.set_quiet(value=True)
 
     if not args.unsafe and args.no_verification:
         RecordFluxError(

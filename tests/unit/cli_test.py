@@ -18,7 +18,7 @@ from rflx.converter import iana
 from rflx.error import FatalError, fail, fatal_fail
 from rflx.ls.server import server
 from rflx.pyrflx import PyRFLXError
-from rflx.rapidflux import ErrorEntry, Location, Severity
+from rflx.rapidflux import ErrorEntry, Location, Severity, logging
 from tests.const import DATA_DIR, SPEC_DIR
 from tests.utils import assert_stderr_regex
 
@@ -89,6 +89,7 @@ def test_main_check() -> None:
 def test_main_check_quiet() -> None:
     assert cli.main(["rflx", "-q", "check", MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]) == 0
     assert cli.main(["rflx", "--quiet", "check", MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]) == 0
+    logging.set_quiet(False)
 
 
 def test_main_check_parser_error(
@@ -123,7 +124,12 @@ def test_main_check_non_existent_file(
     capfd: pytest.CaptureFixture[str],
 ) -> None:
     assert cli.main(["rflx", "check", "non-existent file"]) == 1
-    assert_stderr_regex('^error: file not found: "non-existent file"\n$', capfd)
+    assert_stderr_regex(
+        "^info: Verifying __BUILTINS__::Boolean\n"
+        "info: Verifying __INTERNAL__::Opaque\n"
+        'error: file not found: "non-existent file"\n$',
+        capfd,
+    )
 
 
 def test_main_generate(tmp_path: Path) -> None:
@@ -396,7 +402,12 @@ def test_main_graph_non_existent_file(
     capfd: pytest.CaptureFixture[str],
 ) -> None:
     assert cli.main(["rflx", "graph", "-d", str(tmp_path), "non-existent file"]) == 1
-    assert_stderr_regex('^error: file not found: "non-existent file"$', capfd)
+    assert_stderr_regex(
+        "^info: Verifying __BUILTINS__::Boolean\n"
+        "info: Verifying __INTERNAL__::Opaque\n"
+        'error: file not found: "non-existent file"$',
+        capfd,
+    )
 
 
 def test_main_graph_non_existent_files(
@@ -418,7 +429,9 @@ def test_main_graph_non_existent_files(
     )
 
     assert_stderr_regex(
-        '^error: file not found: "non-existent file 1"\n'
+        "^info: Verifying __BUILTINS__::Boolean\n"
+        "info: Verifying __INTERNAL__::Opaque\n"
+        'error: file not found: "non-existent file 1"\n'
         'error: file not found: "non-existent file 2"$',
         capfd,
     )

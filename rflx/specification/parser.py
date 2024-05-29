@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import textwrap
 from collections import OrderedDict, defaultdict
 from collections.abc import Callable, Mapping, Sequence
@@ -15,12 +14,10 @@ from rflx.error import fail
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import AlwaysVerify, Cache, declaration as decl, statement as stmt
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity, logging
 from rflx.specification.const import RESERVED_WORDS
 
 from . import style
-
-log = logging.getLogger(__name__)
 
 
 def node_location(node: lang.RFLXNode, filename: Path, end_location: bool = False) -> Location:
@@ -1804,7 +1801,7 @@ class Parser:
         }
 
     def _parse_file(self, error: RecordFluxError, filename: Path) -> Optional[SpecificationFile]:
-        log.info("Parsing %s", filename)
+        logging.info("Parsing {filename}", filename=filename)
         unit = lang.AnalysisContext().get_from_file(str(filename))
 
         error.extend(style.check(filename).entries)
@@ -1891,7 +1888,7 @@ class Parser:
             "TypeDerivationDef": create_derived_message,
             "EnumerationTypeDef": create_enumeration,
         }
-        log.info("Processing %s", spec.f_package_declaration.f_identifier.text)
+        logging.info("Processing {name}", name=spec.f_package_declaration.f_identifier.text)
         package_id = create_id(error, spec.f_package_declaration.f_identifier, filename)
 
         for t in spec.f_package_declaration.f_declarations:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from collections import abc
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
@@ -100,15 +99,13 @@ from rflx.model import (
     Session,
     TypeDecl,
 )
-from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
+from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
 
 from . import common, const, message as message_generator
 from .allocator import AllocatorGenerator
 from .parser import ParserGenerator
 from .serializer import SerializerGenerator
 from .session import SessionGenerator
-
-log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -184,7 +181,7 @@ class Generator:
             ).propagate()
         else:
             for f in files:
-                log.info("Creating %s", f.name)
+                logging.info("Creating {name}", name=f.name)
                 f.name.write_text(f.content)
 
     def _create_library_files(self, directory: Path) -> list[File]:
@@ -278,7 +275,7 @@ class Generator:
             if d.package in [BUILTINS_PACKAGE, INTERNAL_PACKAGE]:
                 continue
 
-            log.info("Generating %s", d.identifier)
+            logging.info("Generating {identifier}", identifier=d.identifier)
 
             if d.package not in units:
                 unit = self._create_unit(self._prefix, d.package, terminating=False)
