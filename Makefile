@@ -345,7 +345,7 @@ fmt: format
 
 # --- Tests ---
 
-.PHONY: test test_rflx test_rapidflux test_rapidflux_coverage test_rapidflux_mutation test_examples test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
+.PHONY: test test_rflx test_rapidflux test_rapidflux_coverage test_rapidflux_mutation test_rapidflux_doc test_examples test_coverage test_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
 
 test: test_rflx test_rapidflux test_examples
 
@@ -361,7 +361,12 @@ test_rapidflux_coverage: rapidflux_devel
 		--skip-functions \
 		--no-fail-fast # Do not stop on the first failure for CI runs
 
-test_rapidflux: test_rapidflux_coverage test_rapidflux_mutation
+# nextest cannot be used with `doctests` with stable Rust.
+# See: https://github.com/nextest-rs/nextest/issues/16
+test_rapidflux_doc: rapidflux_devel
+	cargo test --package librapidflux --doc --no-fail-fast
+
+test_rapidflux: test_rapidflux_coverage test_rapidflux_mutation test_rapidflux_doc
 
 test_rapidflux_mutation: rapidflux_devel
 	cargo mutants -j 0 --package librapidflux --timeout 300 --output $(BUILD_DIR)
