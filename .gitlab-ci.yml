@@ -181,6 +181,7 @@ checks:
   script:
     - *setup_gnat
     - *setup_python
+    - export CHECK_VENV_FULL_SYNC=1
     - make check
 
 code_generation:

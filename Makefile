@@ -14,6 +14,7 @@ VERSION ?= $(shell test -f pyproject.toml && test -f $(POETRY) && $(POETRY) vers
 PYTHON_VERSIONS ?= 3.8 3.9 3.10 3.11
 CARGO_HOME ?= $(MAKEFILE_DIR)/.cargo-home
 NO_GIT_CHECKOUT ?=
+CHECK_VENV_FULL_SYNC ?=
 
 # --- Dependencies ---
 
@@ -319,9 +320,22 @@ check_rapidflux:
 
 check_poetry: export PYTHONPATH=
 check_poetry: $(RFLX)
+	@echo "Checking the consistency between pyproject.toml and poetry.lock"  
 	$(POETRY) check
-	@$(POETRY) install --sync --dry-run | grep "-" | grep -v "Already installed" | ( test -z "$$(cat -)" ) || ( echo 'The virtual environment is out of sync with the lock file, run "$(shell realpath --relative-to $(PWD) $(POETRY)) install --sync".' && false )
-
+	@echo "Checking the consistency between poetry.lock and the environment"  
+	@SYNC_OPT=$(if $(CHECK_VENV_FULL_SYNC),--sync,); \
+		OUTPUT=$$($(POETRY) install $$SYNC_OPT --dry-run | grep "-" | grep -v "Already installed"); \
+		if [ -n "$$OUTPUT" ]; then \
+			echo "The virtual environment is out of sync with the lock file." ; \
+			echo "To synchronize the environment run:" ; \
+			echo "  $(realpath --relative-to=$(PWD) $(POETRY)) install $$SYNC_OPT" ; \
+			echo "Changes to be made to the environment:" ; \
+			echo "$$OUTPUT" ; \
+			echo "Alternatively, revise the dependencies in 'pyproject.toml.in' and update 'pyproject.toml' and the lock file by running:" ; \
+			echo "  make pyproject.toml && \\" ; \
+			echo "  $(realpath --relative-to=$(PWD) $(POETRY)) lock [--no-update]" ; \
+			false ; \
+		fi
 
 check_contracts: $(RFLX)
 	$(POETRY) run pyicontract-lint $(PYTHON_PACKAGES)
