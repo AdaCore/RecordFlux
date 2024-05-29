@@ -320,7 +320,7 @@ check_rapidflux:
 check_poetry: export PYTHONPATH=
 check_poetry: $(RFLX)
 	$(POETRY) check
-	@$(POETRY) install --sync --dry-run | grep "•" | grep -v "Already installed" | ( test -z "$$(cat -)" ) || ( echo 'The virtual environment is out of sync with the lock file, run "$(shell realpath --relative-to $(PWD) $(POETRY)) install --sync".' && false )
+	@$(POETRY) install --sync --dry-run | grep "-" | grep -v "Already installed" | ( test -z "$$(cat -)" ) || ( echo 'The virtual environment is out of sync with the lock file, run "$(shell realpath --relative-to $(PWD) $(POETRY)) install --sync".' && false )
 
 
 check_contracts: $(RFLX)
