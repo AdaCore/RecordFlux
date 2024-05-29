@@ -14,13 +14,13 @@ use serde::{Deserialize, Serialize};
 use super::Location;
 
 #[cfg(not(test))]
-const RENDERER: annotate_snippets::Renderer = annotate_snippets::Renderer::styled()
+pub(crate) const RENDERER: annotate_snippets::Renderer = annotate_snippets::Renderer::styled()
     .error(Style::new().fg_color(Some(Color::Rgb(RgbColor(225, 0, 0)))))
     .help(Style::new().fg_color(Some(Color::Rgb(RgbColor(0, 80, 200)))))
     .note(Style::new().fg_color(Some(Color::Rgb(RgbColor(180, 180, 0)))));
 
 #[cfg(test)]
-const RENDERER: annotate_snippets::Renderer = annotate_snippets::Renderer::plain();
+pub(crate) const RENDERER: annotate_snippets::Renderer = annotate_snippets::Renderer::plain();
 
 static MAX_ERROR_COUNT: AtomicU64 = AtomicU64::new(0);
 static ERROR_COUNT: AtomicU64 = AtomicU64::new(0);
@@ -43,6 +43,18 @@ impl Display for Severity {
             Severity::Error => write!(f, "error"),
             Severity::Help => write!(f, "help"),
             Severity::Note => write!(f, "note"),
+        }
+    }
+}
+
+impl From<Severity> for annotate_snippets::Level {
+    fn from(value: Severity) -> Self {
+        match value {
+            Severity::Info => annotate_snippets::Level::Info,
+            Severity::Warning => annotate_snippets::Level::Warning,
+            Severity::Error => annotate_snippets::Level::Error,
+            Severity::Help => annotate_snippets::Level::Help,
+            Severity::Note => annotate_snippets::Level::Note,
         }
     }
 }
