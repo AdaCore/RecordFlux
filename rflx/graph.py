@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import re
 from collections.abc import Sequence
 from pathlib import Path
@@ -11,9 +10,7 @@ from pydotplus import Dot, Edge, InvocationException, Node  # type: ignore[attr-
 from rflx.expression import TRUE, UNDEFINED
 from rflx.identifier import ID
 from rflx.model import FINAL_STATE, Link, Message, Session
-from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
-
-log = logging.getLogger(__name__)
+from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
 
 
 def _graph_with_defaults(name: str) -> Dot:
@@ -46,7 +43,7 @@ def _graph_with_defaults(name: str) -> Dot:
 
 
 def write_graph(graph: Dot, filename: Path, fmt: str = "svg") -> None:
-    log.info("Creating %s", filename)
+    logging.info("Creating {filename}", filename=filename)
 
     with filename.open("wb") as f:
         try:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import itertools
-import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,14 +9,12 @@ from rflx import const
 from rflx.common import Base, unique, verbose_repr
 from rflx.error import are_all_locations_present
 from rflx.identifier import ID
-from rflx.rapidflux import Annotation, ErrorEntry, RecordFluxError, Severity
+from rflx.rapidflux import Annotation, ErrorEntry, RecordFluxError, Severity, logging
 
 from . import message, session, top_level_declaration, type_decl
 from .cache import Cache, Digest
 from .package import Package
 from .type_decl import BUILTIN_TYPES
-
-log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -40,7 +37,7 @@ class UncheckedModel(Base):
                 if cache.is_verified(digest):
                     checked = unverified
                 else:
-                    log.info("Verifying %s", d.identifier)
+                    logging.info("Verifying {identifier}", identifier=d.identifier)
                     checked = d.checked(declarations, workers=workers)
                 declarations.append(checked)
                 cache.add_verified(digest)

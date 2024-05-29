@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import re
 import shutil
 import tempfile
@@ -12,9 +11,8 @@ from subprocess import PIPE, STDOUT, run
 from tempfile import TemporaryDirectory
 
 from rflx.error import fail
+from rflx.rapidflux import logging
 from rflx.spark import SPARKFile
-
-log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -50,16 +48,18 @@ def optimize(generated_dir: Path, workers: int = 0, timeout: int = 1) -> None:
         checks_to_remove: dict[Path, dict[int, Check]] = {}
 
         for i, (f, cs) in enumerate(checks.items(), start=1):
-            log.info("Analyzing %s (%d/%d)", f.name, i, len(checks))
+            logging.info("Analyzing {name} ({i}/{total})", name=f.name, i=i, total=len(checks))
             checks_to_remove[f] = analyze(f, cs, workers, timeout)
             if checks_to_remove[f]:
                 remove(f, checks_to_remove[f], checks[f])
                 shutil.copy(f, generated_dir)
 
-        log.info(
-            "Optimization completed: %d/%d checks removed",
-            sum(1 for cs in checks_to_remove.values() for c in cs),
-            sum(1 for cs in checks.values() for c in cs),
+        completed = sum(1 for cs in checks_to_remove.values() for c in cs)
+        total = sum(1 for cs in checks.values() for c in cs)
+        logging.info(
+            "Optimization completed: {completed}/{total} checks removed",
+            completed=completed,
+            total=total,
         )
 
 

@@ -15,15 +15,15 @@ def test_check() -> None:
     assert p.stdout.decode("utf-8") == ""
     assert p.stderr.decode("utf-8") == textwrap.dedent(
         """\
-        Parsing tests/data/specs/ethernet.rflx
-        Processing Ethernet
-        Verifying __BUILTINS__::Boolean
-        Verifying __INTERNAL__::Opaque
-        Verifying Ethernet::Address
-        Verifying Ethernet::Type_Length
-        Verifying Ethernet::TPID
-        Verifying Ethernet::TCI
-        Verifying Ethernet::Frame
+        info: Parsing tests/data/specs/ethernet.rflx
+        info: Processing Ethernet
+        info: Verifying __BUILTINS__::Boolean
+        info: Verifying __INTERNAL__::Opaque
+        info: Verifying Ethernet::Address
+        info: Verifying Ethernet::Type_Length
+        info: Verifying Ethernet::TPID
+        info: Verifying Ethernet::TCI
+        info: Verifying Ethernet::Frame
         """,
     )
 
@@ -38,10 +38,10 @@ def test_check_error() -> None:
     assert p.stdout.decode("utf-8") == ""
     assert p.stderr.decode("utf-8") == textwrap.dedent(
         """\
-        Parsing tests/data/specs/invalid/incorrect_name.rflx
-        Processing Test
-        Verifying __BUILTINS__::Boolean
-        Verifying __INTERNAL__::Opaque
+        info: Parsing tests/data/specs/invalid/incorrect_name.rflx
+        info: Processing Test
+        info: Verifying __BUILTINS__::Boolean
+        info: Verifying __INTERNAL__::Opaque
         error: source file name does not match the package name "Test"
          --> tests/data/specs/invalid/incorrect_name.rflx:1:9
           |
@@ -82,8 +82,8 @@ def test_check_no_verification() -> None:
     assert p.stderr.decode("utf-8") == textwrap.dedent(
         """\
         warning: model verification skipped
-        Parsing tests/data/specs/ethernet.rflx
-        Processing Ethernet
+        info: Parsing tests/data/specs/ethernet.rflx
+        info: Processing Ethernet
         """,
     )
 
@@ -105,39 +105,39 @@ def test_generate(tmp_path: Path) -> None:
     assert p.stdout.decode("utf-8") == ""
     assert p.stderr.decode("utf-8") == textwrap.dedent(
         f"""\
-        Parsing tests/data/specs/ethernet.rflx
-        Processing Ethernet
-        Verifying __BUILTINS__::Boolean
-        Verifying __INTERNAL__::Opaque
-        Verifying Ethernet::Address
-        Verifying Ethernet::Type_Length
-        Verifying Ethernet::TPID
-        Verifying Ethernet::TCI
-        Verifying Ethernet::Frame
-        Generating Ethernet::Address
-        Generating Ethernet::Type_Length
-        Generating Ethernet::TPID
-        Generating Ethernet::TCI
-        Generating Ethernet::Frame
-        Creating {tmp_path}/rflx-ethernet.ads
-        Creating {tmp_path}/rflx-ethernet-frame.ads
-        Creating {tmp_path}/rflx-ethernet-frame.adb
-        Creating {tmp_path}/rflx-rflx_arithmetic.ads
-        Creating {tmp_path}/rflx-rflx_builtin_types-conversions.ads
-        Creating {tmp_path}/rflx-rflx_builtin_types.ads
-        Creating {tmp_path}/rflx-rflx_generic_types.ads
-        Creating {tmp_path}/rflx-rflx_generic_types-generic_operators.ads
-        Creating {tmp_path}/rflx-rflx_generic_types-generic_operations.ads
-        Creating {tmp_path}/rflx-rflx_message_sequence.ads
-        Creating {tmp_path}/rflx-rflx_scalar_sequence.ads
-        Creating {tmp_path}/rflx-rflx_types.ads
-        Creating {tmp_path}/rflx-rflx_types-operators.ads
-        Creating {tmp_path}/rflx-rflx_types-operations.ads
-        Creating {tmp_path}/rflx-rflx_arithmetic.adb
-        Creating {tmp_path}/rflx-rflx_generic_types-generic_operations.adb
-        Creating {tmp_path}/rflx-rflx_message_sequence.adb
-        Creating {tmp_path}/rflx-rflx_scalar_sequence.adb
-        Creating {tmp_path}/rflx.ads
+        info: Parsing tests/data/specs/ethernet.rflx
+        info: Processing Ethernet
+        info: Verifying __BUILTINS__::Boolean
+        info: Verifying __INTERNAL__::Opaque
+        info: Verifying Ethernet::Address
+        info: Verifying Ethernet::Type_Length
+        info: Verifying Ethernet::TPID
+        info: Verifying Ethernet::TCI
+        info: Verifying Ethernet::Frame
+        info: Generating Ethernet::Address
+        info: Generating Ethernet::Type_Length
+        info: Generating Ethernet::TPID
+        info: Generating Ethernet::TCI
+        info: Generating Ethernet::Frame
+        info: Creating {tmp_path}/rflx-ethernet.ads
+        info: Creating {tmp_path}/rflx-ethernet-frame.ads
+        info: Creating {tmp_path}/rflx-ethernet-frame.adb
+        info: Creating {tmp_path}/rflx-rflx_arithmetic.ads
+        info: Creating {tmp_path}/rflx-rflx_builtin_types-conversions.ads
+        info: Creating {tmp_path}/rflx-rflx_builtin_types.ads
+        info: Creating {tmp_path}/rflx-rflx_generic_types.ads
+        info: Creating {tmp_path}/rflx-rflx_generic_types-generic_operators.ads
+        info: Creating {tmp_path}/rflx-rflx_generic_types-generic_operations.ads
+        info: Creating {tmp_path}/rflx-rflx_message_sequence.ads
+        info: Creating {tmp_path}/rflx-rflx_scalar_sequence.ads
+        info: Creating {tmp_path}/rflx-rflx_types.ads
+        info: Creating {tmp_path}/rflx-rflx_types-operators.ads
+        info: Creating {tmp_path}/rflx-rflx_types-operations.ads
+        info: Creating {tmp_path}/rflx-rflx_arithmetic.adb
+        info: Creating {tmp_path}/rflx-rflx_generic_types-generic_operations.adb
+        info: Creating {tmp_path}/rflx-rflx_message_sequence.adb
+        info: Creating {tmp_path}/rflx-rflx_scalar_sequence.adb
+        info: Creating {tmp_path}/rflx.ads
         """,
     )
     assert (tmp_path / "rflx.ads").is_file()
@@ -160,16 +160,16 @@ def test_graph(tmp_path: Path) -> None:
     assert p.stdout.decode("utf-8") == ""
     assert p.stderr.decode("utf-8") == textwrap.dedent(
         f"""\
-        Parsing tests/data/specs/ethernet.rflx
-        Processing Ethernet
-        Verifying __BUILTINS__::Boolean
-        Verifying __INTERNAL__::Opaque
-        Verifying Ethernet::Address
-        Verifying Ethernet::Type_Length
-        Verifying Ethernet::TPID
-        Verifying Ethernet::TCI
-        Verifying Ethernet::Frame
-        Creating {tmp_path}/Ethernet_Frame.svg
+        info: Parsing tests/data/specs/ethernet.rflx
+        info: Processing Ethernet
+        info: Verifying __BUILTINS__::Boolean
+        info: Verifying __INTERNAL__::Opaque
+        info: Verifying Ethernet::Address
+        info: Verifying Ethernet::Type_Length
+        info: Verifying Ethernet::TPID
+        info: Verifying Ethernet::TCI
+        info: Verifying Ethernet::Frame
+        info: Creating {tmp_path}/Ethernet_Frame.svg
         """,
     )
     assert (tmp_path / "Ethernet_Frame.svg").is_file()
@@ -205,15 +205,15 @@ def test_validate() -> None:
     )
     assert p.stderr.decode("utf-8") == textwrap.dedent(
         """\
-        Parsing tests/data/specs/ethernet.rflx
-        Processing Ethernet
-        Verifying __BUILTINS__::Boolean
-        Verifying __INTERNAL__::Opaque
-        Verifying Ethernet::Address
-        Verifying Ethernet::Type_Length
-        Verifying Ethernet::TPID
-        Verifying Ethernet::TCI
-        Verifying Ethernet::Frame
+        info: Parsing tests/data/specs/ethernet.rflx
+        info: Processing Ethernet
+        info: Verifying __BUILTINS__::Boolean
+        info: Verifying __INTERNAL__::Opaque
+        info: Verifying Ethernet::Address
+        info: Verifying Ethernet::Type_Length
+        info: Verifying Ethernet::TPID
+        info: Verifying Ethernet::TCI
+        info: Verifying Ethernet::Frame
         """,
     )
 

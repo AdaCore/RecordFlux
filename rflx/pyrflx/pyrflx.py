@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
 from typing import Optional, Union
@@ -13,8 +12,6 @@ from rflx.specification import Parser
 from .error import PyRFLXError
 from .package import Package
 from .typevalue import ChecksumFunction, MessageValue, RefinementValue
-
-log = logging.getLogger(__name__)
 
 
 class PyRFLX:
