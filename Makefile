@@ -258,7 +258,7 @@ install_devel: $(RFLX) rapidflux_devel
 
 $(RFLX):: export PYTHONPATH=
 $(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(RAPIDFLUX) $(PROJECT_MANAGEMENT)
-	$(POETRY) install -v --sync
+	$(POETRY) install -v
 
 $(DEVEL_VENV):
 	$(PYTHON) -m venv --clear $(DEVEL_VENV)
