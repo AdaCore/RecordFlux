@@ -76,14 +76,33 @@ Additional tools can be found in ``tools/``.
 Poetry
 ------
 
-The Python project is managed by Poetry.
-If there is no active virtual environment before executing the ``make`` commands, the Python project will be installed into a dedicated virtual environment named ``.venv``.
-If there is already an active virtual environment, RecordFlux will be installed into that virtual environment instead.
-Poetry will always be installed into its own environment (``.venv.poetry``).
+The Python project is managed by `Poetry <https://python-poetry.org/>`_.
 
-It is not necessary to explicitly activate the virtual environments before executing any of the ``make`` targets.
-They are used automatically during the execution of ``make``.
-However, in order to have the ``rflx`` command directly available in the shell, it is necessary to activate the project's virtual environment.
+Poetry's virtual environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Poetry will be automatically installed into its own virtual environment (``.venv.poetry``) the first time when any of the ``make`` commands that require it are executed.
+It is important that the Poetry's own virtual environment is kept separate from the development virtual environment described next.
+
+Project's virtual environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Python packages of RecordFlux and its dependencies will be installed into a separate virtual environment.
+
+Default (.venv)
+"""""""""""""""
+
+The default and recommended scenario is to let ``make`` and Poetry handle the creation of the project's virtual environment.
+If there is no active virtual environment before executing the ``make`` commands, a dedicated virtual environment named ``.venv`` will be created if it doesn't exist yet.
+
+.. note::
+   If there is already an active virtual environment, RecordFlux will be installed into that virtual environment instead.
+   Hence, if you intend to use the default scenario make sure to deactivate any other virtual environment in the current shell.
+   See the section `Custom virtual environment (advanced usage)`_ for more information.
+
+It is not necessary to explicitly activate the default virtual environment.
+You can run the ``make`` commands directly and Poetry will use ``.venv`` automatically.
+However, in order to have the ``rflx`` command directly available in the shell or use the Python tools from the virtual environment it is necessary to activate the project's virtual environment.
 The following commands can be used to respectively activate and deactivate it, as well as add or remove Poetry to/from the ``PATH``.
 Note the need to use ``source <(...)`` in the command below.
 
@@ -92,11 +111,59 @@ Note the need to use ``source <(...)`` in the command below.
    $ source <(make activate)
    $ deactivate
 
-Alternatively, RecordFlux can be executed also via Poetry by executing ``.venv.poetry/bin/poetry run rflx``.
+Alternatively, RecordFlux can be executed also without activating the default virtual environment by calling:
 
-Poetry locks the dependencies to ensure deterministic test results.
-``poetry lock`` creates the lock file ``poetry.lock`` based on the dependencies listed in ``pyproject.toml``.
-The lock file must be updated manually if the dependencies in ``devutils`` have changed: ``poetry add --group=dev "./devutils[devel]"``.
+.. code:: console
+
+  $ .venv.poetry/bin/poetry run rflx
+
+Custom virtual environment (advanced usage)
+"""""""""""""""""""""""""""""""""""""""""""
+
+If another virtual environment is active before running ``make`` commands that virtual environment will be used for RecordFlux and its dependencies.
+The following points need to be kept in mind in that scenario:
+
+* If a non-default virtual environment is intended to be used, then it must always be explicitly activated before running the ``make`` commands.
+  *If that is not done, then Poetry will switch to the default environment instead.*
+* In order for the ``source <(make activate)`` command to work with a non-default virtual environment it is recommended to set the following environment variable:
+
+  .. code:: console
+
+    $ export DEVEL_VENV=/path/to/custom/venv
+
+* The command ``make clean_all`` removes the ``DEVEL_VENV`` directory.
+
+However, Poetry will always be installed into its own environment as described in the section `Poetry's virtual environment`_.
+
+Python dependencies and Poetry lock
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Dependencies managed by Poetry
+""""""""""""""""""""""""""""""
+
+The Python dependencies for the RecordFlux project are specified in ``pyproject.toml``.
+
+.. note::
+   The ``pyproject.toml`` file is not supposed to be edited manually.
+   The dependencies should be configured in the ``pyproject.toml.in`` file instead.
+   The respective ``make`` rules refer to that and compose the ``pyproject.toml`` file automatically.
+
+The ``pyproject.toml`` file typically specifies a range of supported versions for each dependency.
+However, to ensure deterministic test results the dependencies are locked to concrete versions in the ``poetry.lock`` file.
+If the dependencies in ``pyproject.toml`` are modified or a different compatible version of a dependency is to be used, then the lock file should be updated using the `poetry lock <https://python-poetry.org/docs/cli/#lock>`_ command.
+In addition, if the dependencies in ``devutils`` have changed, the lock file must be updated using the following specific command:
+
+.. code:: console
+
+   $ poetry add --group=dev "./devutils[devel]"
+
+When building RecordFlux through ``make`` the ``poetry install`` command is executed to install any missing dependencies and set the versions of all the dependencies specified in ``pyproject.toml`` to the versions selected in ``poetry.lock``.
+
+Additional Python packages
+""""""""""""""""""""""""""
+
+It is also possible to add further packages to the project's virtual environment.
+For instance, see the `README.md <../../tests/README.md>`_ file in the ``tests`` folder for some additional packages that make the test outputs more readable.
 
 Rust
 ====
