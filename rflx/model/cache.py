@@ -2,18 +2,73 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import time
 import typing as ty
 from functools import singledispatch
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional, TextIO
 
 from rflx import __version__
 from rflx.const import CACHE_PATH
 from rflx.error import warn
 from rflx.model.message import Message, Refinement
 from rflx.model.top_level_declaration import TopLevelDeclaration
+from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
 
 DEFAULT_FILE = CACHE_PATH / "verification.json"
+
+
+class FileLock:
+    """ContextManager that handles cache file lock."""
+
+    LOCK_TIMEOUT = 5
+
+    def __init__(
+        self,
+        cache_file: Path,
+        mode: Literal["r", "w"],
+        encoding: str = "utf-8",
+    ) -> None:
+        self._cache_file = cache_file
+        self._lock_file = cache_file.with_suffix(".lock")
+        self._mode = mode
+        self._encoding = encoding
+
+    def __enter__(self) -> TextIO:
+        begin_time = time.time()
+        while (time.time() - begin_time) < self.LOCK_TIMEOUT and self._lock_file.exists():
+            time.sleep(0.1)
+
+        if (time.time() - begin_time) >= self.LOCK_TIMEOUT and self._lock_file.exists():
+            cache_locked_pid = Path.read_text(self._lock_file)
+            raise RecordFluxError(
+                [
+                    ErrorEntry(
+                        f"failed to acquire cache lock after {FileLock.LOCK_TIMEOUT} seconds",
+                        Severity.ERROR,
+                    ),
+                    ErrorEntry(
+                        f'the cache is locked by a process with a PID of "{cache_locked_pid}"',
+                        Severity.NOTE,
+                    ),
+                    ErrorEntry(
+                        f"if the process that owns the lock isn't active anymore, deleting "
+                        f'"{self._lock_file}" will solve this issue',
+                        Severity.HELP,
+                    ),
+                ],
+            )
+
+        self._lock_file.write_text(str(os.getpid()), encoding="utf-8")
+        try:
+            return self._cache_file.open(self._mode, encoding=self._encoding)
+        except Exception as e:
+            self._lock_file.unlink()
+            raise e from e
+
+    def __exit__(self, *_: object) -> None:
+        self._lock_file.unlink()
 
 
 class Cache:
@@ -46,17 +101,15 @@ class Cache:
 
     def _load_cache(self) -> None:
         try:
-            with self._file.open(encoding="utf-8") as f:
+            with FileLock(self._file, "r") as f:
                 cache = json.load(f)
-                if isinstance(cache, dict) and all(
-                    isinstance(i, str)
-                    and isinstance(l, list)
-                    and all(isinstance(h, str) for h in l)
-                    for i, l in cache.items()
-                ):
-                    self._verified = cache
-                else:
-                    raise TypeError  # noqa: TRY301
+            if isinstance(cache, dict) and all(
+                isinstance(i, str) and isinstance(l, list) and all(isinstance(h, str) for h in l)
+                for i, l in cache.items()
+            ):
+                self._verified = cache
+            else:
+                raise TypeError  # noqa: TRY301
         except (json.JSONDecodeError, TypeError):
             warn("verification cache will be ignored due to invalid format")
         except FileNotFoundError:
@@ -64,7 +117,7 @@ class Cache:
 
     def _write_cache(self) -> None:
         self._file.parent.mkdir(parents=True, exist_ok=True)
-        with self._file.open("w", encoding="utf-8") as f:
+        with FileLock(self._file, "w") as f:
             json.dump(self._verified, f)
 
 
