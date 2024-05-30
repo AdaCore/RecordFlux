@@ -9,6 +9,7 @@ use pyo3::prelude::*;
 
 mod diagnostics;
 mod logging;
+mod source_code;
 mod utils;
 
 #[pymodule]
@@ -23,9 +24,10 @@ fn rapidflux(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<diagnostics::RapidFluxError>()?;
 
     // Logging module
-    let logging_module = PyModule::new_bound(m.py(), "logging")?;
-    logging::register_logging_module(py, &logging_module)?;
-    m.add_submodule(&logging_module)?;
+    register_submodule!(logging, py, m);
+
+    // Source code module
+    register_submodule!(source_code, py, m);
 
     Ok(())
 }
