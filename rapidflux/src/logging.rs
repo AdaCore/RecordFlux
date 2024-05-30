@@ -5,6 +5,8 @@ use pyo3::{
 
 use librapidflux as lib;
 
+use crate::register_submodule_functions;
+
 /// Format a Python's string with the arguments passed in `args` dict.
 ///
 /// # Errors
@@ -109,17 +111,4 @@ fn set_quiet(value: bool) {
     lib::diagnostics::logging::set_quiet(value);
 }
 
-pub fn register_logging_module<'py>(py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(error, m)?)?;
-    m.add_function(wrap_pyfunction!(help, m)?)?;
-    m.add_function(wrap_pyfunction!(info, m)?)?;
-    m.add_function(wrap_pyfunction!(note, m)?)?;
-    m.add_function(wrap_pyfunction!(set_quiet, m)?)?;
-    m.add_function(wrap_pyfunction!(warning, m)?)?;
-
-    // Submodules need to be added manually to `sys.modules`.
-    // See: https://github.com/PyO3/pyo3/issues/759#issuecomment-1208179322
-    py.import_bound("sys")?
-        .getattr("modules")?
-        .set_item("rflx.rapidflux.logging", m)
-}
+register_submodule_functions!(logging, [error, help, info, note, set_quiet, warning]);
