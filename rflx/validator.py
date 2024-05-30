@@ -13,7 +13,7 @@ from typing import Optional, TextIO, Union
 from ruamel.yaml.main import YAML
 from typing_extensions import Self
 
-from rflx import expression as expr
+from rflx import expr_proof, expression as expr
 from rflx.identifier import ID, StrID
 from rflx.model import AlwaysVerify, Cache, Link, Message, Model, Refinement, type_decl as mty
 from rflx.pyrflx import ChecksumFunction, Package, PyRFLX, PyRFLXError
@@ -265,7 +265,10 @@ class Validator:
         result: list[expr.Expr] = []
         for value in (expr.And(*dict.fromkeys(p)).simplified() for p in product(*disjunctions)):
             for seen in result:
-                if expr.Not(expr.Equal(value, seen)).check().result == expr.ProofResult.UNSAT:
+                if (
+                    expr_proof.Proof(expr.Not(expr.Equal(value, seen))).result
+                    == expr_proof.ProofResult.UNSAT
+                ):
                     break
             else:
                 result.append(value)

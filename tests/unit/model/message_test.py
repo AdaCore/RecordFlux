@@ -7,7 +7,7 @@ from functools import lru_cache
 
 import pytest
 
-from rflx import typing_ as rty
+from rflx import expr_proof, typing_ as rty
 from rflx.error import FatalError
 from rflx.expression import (
     FALSE,
@@ -35,8 +35,6 @@ from rflx.expression import (
     Opaque,
     Or,
     Pow,
-    Proof,
-    ProofResult,
     Selected,
     Size,
     Sub,
@@ -5923,7 +5921,7 @@ def test_possibly_always_true_refinement(
         Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
     )
     inner_message = models.message()
-    monkeypatch.setattr(Proof, "result", ProofResult.UNKNOWN)
+    monkeypatch.setattr(expr_proof.Proof, "result", expr_proof.ProofResult.UNKNOWN)
     Refinement(
         "In_Message",
         message,
