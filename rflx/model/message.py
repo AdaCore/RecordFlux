@@ -11,7 +11,7 @@ from functools import cached_property
 from typing import Optional, Union
 
 import rflx.typing_ as rty
-from rflx import expression as expr
+from rflx import expr_proof, expression as expr
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.const import MP_CONTEXT
 from rflx.error import are_all_locations_present, fail, fatal_fail
@@ -517,7 +517,7 @@ class Message(mty.TypeDecl):
                 continue
             empty_field = expr.Equal(expr.Size(field.name), expr.Number(0))
             proof = self._prove_path_property(empty_field, p)
-            if proof.result == expr.ProofResult.SAT:
+            if proof.result == expr_proof.ProofResult.SAT:
                 return True
 
         return False
@@ -1349,7 +1349,7 @@ class Message(mty.TypeDecl):
 
             self.error.propagate()
 
-            proofs = expr.ParallelProofs(self._workers)
+            proofs = expr_proof.ParallelProofs(self._workers)
 
             self._prove_static_conditions(proofs)
             self._prove_conflicting_conditions(proofs)
@@ -1381,7 +1381,7 @@ class Message(mty.TypeDecl):
 
         with ProcessPoolExecutor(max_workers=self._workers, mp_context=MP_CONTEXT) as executor:
             for i, e in enumerate(executor.map(prove, facts)):
-                if e == expr.ProofResult.SAT:
+                if e == expr_proof.ProofResult.SAT:
                     result.add(paths[i])
 
         return result
@@ -1764,7 +1764,7 @@ class Message(mty.TypeDecl):
                 ],
             )
 
-    def _prove_static_conditions(self, proofs: expr.ParallelProofs) -> None:
+    def _prove_static_conditions(self, proofs: expr_proof.ParallelProofs) -> None:
         for l in self._structure:
             if l.condition == expr.TRUE:
                 continue
@@ -1802,7 +1802,7 @@ class Message(mty.TypeDecl):
                 unknown_error=unknown_error.entries,
             )
 
-    def _prove_conflicting_conditions(self, proofs: expr.ParallelProofs) -> None:
+    def _prove_conflicting_conditions(self, proofs: expr_proof.ParallelProofs) -> None:
         for f in (INITIAL, *self.fields):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
@@ -1888,14 +1888,15 @@ class Message(mty.TypeDecl):
                 facts = self._path_constraints(path)
                 outgoing = self.outgoing(path[-1].target)
                 condition = expr.Or(*[o.condition for o in outgoing]) if outgoing else expr.TRUE
-                proof = condition.check(
+                proof = expr_proof.Proof(
+                    condition,
                     [
                         *facts,
                         *self.aggregate_constraints(condition),
                         *self.message_constraints,
                     ],
                 )
-                assert proof.result != expr.ProofResult.SAT
+                assert proof.result != expr_proof.ProofResult.SAT
 
                 paths.append((path, proof.error))
                 unreachable_paths.add(path)
@@ -1940,7 +1941,7 @@ class Message(mty.TypeDecl):
                         )
                     self.error.extend(error)
 
-    def _prove_overlays(self, proofs: expr.ParallelProofs) -> None:
+    def _prove_overlays(self, proofs: expr_proof.ParallelProofs) -> None:
         for f in (INITIAL, *self.fields):
             for p, l in [(p, p[-1]) for p in self.paths(f) if p]:
                 if l.first != expr.UNDEFINED and isinstance(l.first, expr.First):
@@ -1970,7 +1971,7 @@ class Message(mty.TypeDecl):
 
     def _prove_field_positions(
         self,
-        proofs: expr.ParallelProofs,
+        proofs: expr_proof.ParallelProofs,
         valid_paths: set[tuple[Link, ...]],
     ) -> None:
         for f in (*self.fields, FINAL):
@@ -2093,7 +2094,7 @@ class Message(mty.TypeDecl):
                             unknown_error=error.entries,
                         )
 
-    def _prove_message_size(self, proofs: expr.ParallelProofs) -> None:
+    def _prove_message_size(self, proofs: expr_proof.ParallelProofs) -> None:
         """Prove that all paths lead to a message with a size that is a multiple of 8 bit."""
         message_constraints = self.message_constraints
         field_size_constraints = [
@@ -2141,12 +2142,13 @@ class Message(mty.TypeDecl):
                 unknown_error=error.entries,
             )
 
-    def _prove_path_property(self, prop: expr.Expr, path: Sequence[Link]) -> expr.Proof:
+    def _prove_path_property(self, prop: expr.Expr, path: Sequence[Link]) -> expr_proof.Proof:
         conditions = [l.condition for l in path if l.condition != expr.TRUE]
         sizes = [
             expr.Equal(expr.Size(l.target.name), l.size) for l in path if l.size != expr.UNDEFINED
         ]
-        return prop.check(
+        return expr_proof.Proof(
+            prop,
             [*self.message_constraints, *self.aggregate_constraints(prop), *conditions, *sizes],
         )
 
@@ -2462,7 +2464,8 @@ class Refinement(mty.TypeDecl):
                 (expr.Equal(self.condition, expr.FALSE), "true"),
                 (self.condition, "false"),
             ]:
-                proof = expr.TRUE.check(
+                proof = expr_proof.Proof(
+                    expr.TRUE,
                     [
                         *self.pdu.message_constraints,
                         *self.pdu.aggregate_constraints(self.condition),
@@ -2471,7 +2474,7 @@ class Refinement(mty.TypeDecl):
                         cond,
                     ],
                 )
-                if proof.result == expr.ProofResult.UNSAT:
+                if proof.result == expr_proof.ProofResult.UNSAT:
                     self.error.push(
                         ErrorEntry(
                             f'condition "{self.condition}" in refinement of'
@@ -2480,7 +2483,7 @@ class Refinement(mty.TypeDecl):
                             self.field.identifier.location,
                         ),
                     )
-                if proof.result == expr.ProofResult.UNKNOWN:
+                if proof.result == expr_proof.ProofResult.UNKNOWN:
                     self.error.push(
                         ErrorEntry(
                             f'condition "{self.condition}" in refinement of'
@@ -2830,7 +2833,8 @@ class UncheckedMessage(mty.UncheckedTypeDecl):
                             .substituted(typed_variable)
                         )
                         merged_condition.check_type(rty.Any()).propagate()
-                        proof = merged_condition.check(
+                        proof = expr_proof.Proof(
+                            merged_condition,
                             [
                                 *message_constraints(
                                     inner_message_types,
@@ -2841,7 +2845,7 @@ class UncheckedMessage(mty.UncheckedTypeDecl):
                                 inner_message.path_condition(final_link.source),
                             ],
                         )
-                        if proof.result != expr.ProofResult.UNSAT:
+                        if proof.result != expr_proof.ProofResult.UNSAT:
                             structure.append(
                                 Link(
                                     final_link.source,
@@ -3413,5 +3417,5 @@ def all_types_declared(
 
 def prove(
     facts: list[expr.Expr],
-) -> expr.ProofResult:
-    return expr.TRUE.check(facts).result
+) -> expr_proof.ProofResult:
+    return expr_proof.Proof(expr.TRUE, facts).result
