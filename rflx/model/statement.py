@@ -4,9 +4,9 @@ from abc import abstractmethod
 from collections.abc import Callable, Generator, Mapping, Sequence
 from typing import Optional
 
-from rflx import ir, typing_ as rty
+from rflx import expr_conv, ir, typing_ as rty
 from rflx.common import Base
-from rflx.expression import Expr, Variable, _to_ir_basic_expr
+from rflx.expression import Expr, Variable
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
@@ -78,7 +78,7 @@ class VariableAssignment(Assignment):
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.NamedType)
-        expression = self.expression.to_ir(variable_id)
+        expression = expr_conv.to_ir(self.expression, variable_id)
         return [*expression.stmts, ir.Assign(self.identifier, expression.expr, self.type_, self)]
 
 
@@ -150,7 +150,7 @@ class MessageFieldAssignment(Assignment):
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.Message)
 
-        expression = self.expression.to_ir(variable_id)
+        expression = expr_conv.to_ir(self.expression, variable_id)
         return [
             *expression.stmts,
             ir.FieldAssign(self.message, self.field, expression.expr, self.type_, self),
@@ -249,7 +249,7 @@ class Append(ListAttributeStatement):
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.Sequence)
-        parameter = self.parameter.to_ir(variable_id)
+        parameter = expr_conv.to_ir(self.parameter, variable_id)
         return [
             *parameter.stmts,
             ir.Append(self.identifier, parameter.expr, self.type_, self),
@@ -284,7 +284,7 @@ class Extend(ListAttributeStatement):
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
         assert isinstance(self.type_, rty.Sequence)
-        parameter = self.parameter.to_ir(variable_id)
+        parameter = expr_conv.to_ir(self.parameter, variable_id)
         return [
             *parameter.stmts,
             ir.Extend(self.identifier, parameter.expr, self.type_, self),
@@ -369,7 +369,7 @@ class Reset(AttributeStatement):
         associations = {}
         stmts = []
         for i, e in self.associations.items():
-            e_ir = e.to_ir(variable_id)
+            e_ir = expr_conv.to_ir(e, variable_id)
             associations[i] = e_ir.expr
             stmts.extend(e_ir.stmts)
         return [
@@ -409,7 +409,7 @@ class ChannelAttributeStatement(AttributeStatement):
         return self.parameters[0]
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
-        parameter_stmts, parameter_expr = _to_ir_basic_expr(self.parameter, variable_id)
+        parameter_stmts, parameter_expr = expr_conv.to_ir_basic_expr(self.parameter, variable_id)
         return [
             *parameter_stmts,
             getattr(ir, self.__class__.__name__)(self.identifier, parameter_expr, self),

@@ -6,7 +6,7 @@ from collections.abc import Callable, Mapping
 import pytest
 import z3
 
-from rflx import ada, ir, typing_ as rty
+from rflx import ada, typing_ as rty
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -69,7 +69,7 @@ from rflx.expression import (
     Variable,
     Z3TypeError,
 )
-from rflx.identifier import ID, StrID, id_generator
+from rflx.identifier import ID, StrID
 from rflx.model import Integer
 from rflx.rapidflux import Location, RecordFluxError
 from tests.data import models
@@ -115,10 +115,6 @@ def test_true_z3expr() -> None:
     assert TRUE.z3expr() == z3.BoolVal(val=True)
 
 
-def test_true_to_ir() -> None:
-    assert TRUE.to_ir(id_generator()) == ir.ComplexExpr([], ir.BoolVal(value=True))
-
-
 def test_false_type() -> None:
     assert_type(
         FALSE,
@@ -136,10 +132,6 @@ def test_false_variables() -> None:
 
 def test_false_z3expr() -> None:
     assert FALSE.z3expr() == z3.BoolVal(val=False)
-
-
-def test_false_to_ir() -> None:
-    assert FALSE.to_ir(id_generator()) == ir.ComplexExpr([], ir.BoolVal(value=False))
 
 
 def test_not_type() -> None:
@@ -224,23 +216,6 @@ def test_not_z3expr() -> None:
     assert Not(FALSE).z3expr() == z3.Not(z3.BoolVal(val=False))
     with pytest.raises(Z3TypeError):
         Not(Variable("X")).z3expr()
-
-
-def test_not_to_ir() -> None:
-    assert Not(TRUE).to_ir(id_generator()) == ir.ComplexBoolExpr([], ir.Not(ir.BoolVal(value=True)))
-    assert Not(Variable("X", type_=rty.BOOLEAN)).to_ir(id_generator()) == ir.ComplexBoolExpr(
-        [],
-        ir.Not(ir.BoolVar("X")),
-    )
-    assert Not(Less(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY))).to_ir(
-        id_generator(),
-    ) == ir.ComplexBoolExpr(
-        [
-            ir.VarDecl("T_0", rty.BOOLEAN),
-            ir.Assign("T_0", ir.Less(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), rty.BOOLEAN),
-        ],
-        ir.Not(ir.BoolVar("T_0")),
-    )
 
 
 def test_bin_expr_findall() -> None:
@@ -498,45 +473,6 @@ def test_and_z3expr() -> None:
     assert_equal(And(TRUE, TRUE).z3expr(), z3.And(z3.BoolVal(val=True), z3.BoolVal(val=True)))
 
 
-@pytest.mark.parametrize(("op", "ir_op"), [(And, ir.And), (Or, ir.Or)])
-def test_and_or_to_ir(  # type: ignore[misc]
-    op: Callable[..., Expr],
-    ir_op: Callable[[ir.BoolExpr, ir.BoolExpr], ir.BoolExpr],
-) -> None:
-    assert op().to_ir(id_generator()) == ir.ComplexBoolExpr(
-        [],
-        ir.BoolVal(value=True),
-    )
-    assert op(Variable("X", type_=rty.BOOLEAN)).to_ir(id_generator()) == ir.ComplexBoolExpr(
-        [],
-        ir.BoolVar("X"),
-    )
-    assert op(
-        Variable("X", type_=rty.BOOLEAN),
-        Variable("Y", type_=rty.BOOLEAN),
-        Variable("Z", type_=rty.BOOLEAN),
-    ).to_ir(id_generator()) == ir.ComplexBoolExpr(
-        [
-            ir.VarDecl("T_0", rty.BOOLEAN),
-            ir.Assign("T_0", ir_op(ir.BoolVar("Y"), ir.BoolVar("Z")), rty.BOOLEAN),
-        ],
-        ir_op(ir.BoolVar("X"), ir.BoolVar("T_0")),
-    )
-    assert op(
-        op(
-            Variable("X", type_=rty.BOOLEAN),
-            Variable("Y", type_=rty.BOOLEAN),
-        ),
-        Variable("Z", type_=rty.BOOLEAN),
-    ).to_ir(id_generator()) == ir.ComplexBoolExpr(
-        [
-            ir.VarDecl("T_0", rty.BOOLEAN),
-            ir.Assign("T_0", ir_op(ir.BoolVar("X"), ir.BoolVar("Y")), rty.BOOLEAN),
-        ],
-        ir_op(ir.BoolVar("T_0"), ir.BoolVar("Z")),
-    )
-
-
 def test_and_str() -> None:
     assert str(And(Variable("X"), Variable("Y"))) == "X\nand Y"
     assert str(And()) == "True"
@@ -784,27 +720,6 @@ def test_neg_z3expr() -> None:
         Neg(TRUE).z3expr()
 
 
-def test_neg_to_ir() -> None:
-    assert Neg(Number(42)).to_ir(id_generator()) == ir.ComplexIntExpr([], ir.Neg(ir.IntVal(42)))
-    assert Neg(Variable("X", type_=INT_TY)).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [],
-        ir.Neg(ir.IntVar("X", INT_TY)),
-    )
-    assert Neg(Add(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY))).to_ir(
-        id_generator(),
-    ) == ir.ComplexIntExpr(
-        [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign(
-                "T_0",
-                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
-                INT_TY,
-            ),
-        ],
-        ir.Neg(ir.IntVar("T_0", INT_TY)),
-    )
-
-
 def test_add_str() -> None:
     assert str(Add(Variable("X"), Number(1))) == "X + 1"
     assert str(-Add(Variable("X"), Number(1))) == "-X - 1"
@@ -878,45 +793,6 @@ def test_add_z3expr() -> None:
     )
 
 
-@pytest.mark.parametrize(("op", "ir_op"), [(Add, ir.Add), (Mul, ir.Mul)])
-def test_add_mul_to_ir(  # type: ignore[misc]
-    op: Callable[..., Expr],
-    ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr],
-) -> None:
-    assert op().to_ir(id_generator()) == ir.ComplexIntExpr(
-        [],
-        ir.IntVal(0),
-    )
-    assert op(Variable("X", type_=INT_TY)).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [],
-        ir.IntVar("X", INT_TY),
-    )
-    assert op(
-        Variable("X", type_=INT_TY),
-        Variable("Y", type_=INT_TY),
-        Variable("Z", type_=INT_TY),
-    ).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign("T_0", ir_op(ir.IntVar("Y", INT_TY), ir.IntVar("Z", INT_TY)), INT_TY),
-        ],
-        ir_op(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
-    )
-    assert op(
-        op(
-            Variable("X", type_=INT_TY),
-            Variable("Y", type_=INT_TY),
-        ),
-        Variable("Z", type_=INT_TY),
-    ).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign("T_0", ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), INT_TY),
-        ],
-        ir_op(ir.IntVar("T_0", INT_TY), ir.IntVar("Z", INT_TY)),
-    )
-
-
 def test_mul_neg() -> None:
     assert -Mul(Variable("X"), Number(2)) == Mul(Variable("X"), Number(-2))
 
@@ -963,36 +839,6 @@ def test_sub_simplified() -> None:
 def test_sub_z3expr() -> None:
     assert Sub(Number(6), Number(4)).z3expr() == z3.IntVal(6) - z3.IntVal(4)
     assert Sub(Number(12), Number(20)).z3expr() == z3.IntVal(12) - z3.IntVal(20)
-
-
-@pytest.mark.parametrize(
-    ("op", "ir_op"),
-    [(Sub, ir.Sub), (Div, ir.Div), (Pow, ir.Pow), (Mod, ir.Mod)],
-)
-def test_sub_div_pow_mod_to_ir(  # type: ignore[misc]
-    op: Callable[..., Expr],
-    ir_op: Callable[[ir.IntExpr, ir.IntExpr], ir.IntExpr],
-) -> None:
-    assert op(
-        Variable("X", type_=INT_TY),
-        Variable("Y", type_=INT_TY),
-    ).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [],
-        ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
-    )
-    assert op(
-        op(
-            Variable("X", type_=INT_TY),
-            Variable("Y", type_=INT_TY),
-        ),
-        Variable("Z", type_=INT_TY),
-    ).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign("T_0", ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), INT_TY),
-        ],
-        ir_op(ir.IntVar("T_0", INT_TY), ir.IntVar("Z", INT_TY)),
-    )
 
 
 def test_div_neg() -> None:
@@ -1064,13 +910,6 @@ def test_term_simplified() -> None:
     )
 
 
-def test_literal_to_ir() -> None:
-    assert Literal("X", type_=ENUM_TY).to_ir(id_generator()) == ir.ComplexExpr(
-        [],
-        ir.EnumLit("X", ENUM_TY),
-    )
-
-
 def test_variable_invalid_name() -> None:
     with pytest.raises(BaseException, match=r"^invalid identifier$"):
         Variable("Foo (Bar)")
@@ -1128,29 +967,6 @@ def test_variable_z3expr() -> None:
     assert Variable("X").z3expr() == z3.Int("X")
     assert Neg(Variable("X")).z3expr() == -z3.Int("X")
     assert z3.simplify(Sub(Variable("X"), Variable("X")).z3expr()) == z3.IntVal(0)
-
-
-def test_variable_to_ir() -> None:
-    assert Variable("X", type_=rty.BOOLEAN).to_ir(id_generator()) == ir.ComplexBoolExpr(
-        [],
-        ir.BoolVar("X"),
-    )
-    assert Variable("X", type_=INT_TY).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [],
-        ir.IntVar("X", INT_TY),
-    )
-    assert Neg(Variable("X", type_=INT_TY)).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [],
-        ir.Neg(ir.IntVar("X", INT_TY)),
-    )
-    assert Variable("X", type_=MSG_TY).to_ir(id_generator()) == ir.ComplexExpr(
-        [],
-        ir.ObjVar("X", MSG_TY),
-    )
-    assert Variable("X", type_=SEQ_TY).to_ir(id_generator()) == ir.ComplexExpr(
-        [],
-        ir.ObjVar("X", SEQ_TY),
-    )
 
 
 def test_attribute() -> None:
@@ -1330,37 +1146,6 @@ def test_attribute_z3expr_error() -> None:
         First(Call("X", rty.BASE_INTEGER)).z3expr()
 
 
-@pytest.mark.parametrize(
-    ("attribute", "ir_attribute"),
-    [
-        (Size(Variable("X", type_=MSG_TY)), ir.Size("X", MSG_TY)),
-        (Length(Variable("X", type_=MSG_TY)), ir.Length("X", MSG_TY)),
-        (First(Variable("X", type_=MSG_TY)), ir.First("X", MSG_TY)),
-        (Last(Variable("X", type_=MSG_TY)), ir.Last("X", MSG_TY)),
-        (Head(Variable("X", type_=SEQ_TY), type_=MSG_TY), ir.Head("X", SEQ_TY)),
-        (Opaque(Variable("X", type_=MSG_TY)), ir.Opaque("X", MSG_TY)),
-    ],
-)
-def test_attribute_to_ir_int(attribute: Expr, ir_attribute: ir.Expr) -> None:
-    assert attribute.to_ir(id_generator()) == ir.ComplexExpr([], ir_attribute)
-
-
-@pytest.mark.parametrize(
-    ("attribute", "ir_attribute"),
-    [
-        (ValidChecksum(Variable("X", type_=MSG_TY)), ir.ValidChecksum("X", MSG_TY)),
-        (Valid(Variable("X", type_=MSG_TY)), ir.Valid("X", MSG_TY)),
-        (Present(Variable("X", type_=MSG_TY)), ir.Present("X", MSG_TY)),
-        (
-            HasData(Variable("X", type_=rty.Channel(readable=True, writable=False))),
-            ir.HasData("X", MSG_TY),
-        ),
-    ],
-)
-def test_attribute_to_ir_bool(attribute: Expr, ir_attribute: ir.Expr) -> None:
-    assert attribute.to_ir(id_generator()) == ir.ComplexExpr([], ir_attribute)
-
-
 def test_val_substituted() -> None:
     assert_equal(  # pragma: no branch
         Val("X", Variable("Y")).substituted(
@@ -1434,24 +1219,6 @@ def test_aggregate_precedence() -> None:
 
 def test_aggregate_z3expr() -> None:
     assert Aggregate(Number(1), Number(2)).z3expr() == z3.Int("[1, 2]")
-
-
-def test_aggregate_to_ir() -> None:
-    assert Aggregate(Add(First(Variable("X", type_=INT_TY)), Number(1)), Number(2)).to_ir(
-        id_generator(),
-    ) == ir.ComplexExpr(
-        [
-            ir.VarDecl("T_0", rty.BASE_INTEGER),
-            ir.Assign("T_0", ir.First("X", INT_TY), rty.BASE_INTEGER),
-            ir.VarDecl("T_1", rty.BASE_INTEGER),
-            ir.Assign(
-                "T_1",
-                ir.Add(ir.IntVar("T_0", rty.BASE_INTEGER), ir.IntVal(1)),
-                rty.BASE_INTEGER,
-            ),
-        ],
-        ir.Agg([ir.IntVar("T_1", rty.BASE_INTEGER), ir.IntVal(2)]),
-    )
 
 
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
@@ -1602,26 +1369,6 @@ def test_relation_variables() -> None:
 def test_relation_z3expr_error(relation: Callable[[Expr, Expr], Expr]) -> None:
     with pytest.raises(Z3TypeError):
         relation(Variable("X", type_=rty.BOOLEAN), Number(1)).z3expr()
-
-
-@pytest.mark.parametrize(
-    ("relation", "ir_relation"),
-    [
-        (Less, ir.Less),
-        (LessEqual, ir.LessEqual),
-        (Equal, ir.Equal),
-        (GreaterEqual, ir.GreaterEqual),
-        (Greater, ir.Greater),
-        (NotEqual, ir.NotEqual),
-    ],
-)
-def test_relation_to_ir(  # type: ignore[misc]
-    relation: Callable[..., Expr],
-    ir_relation: Callable[[ir.IntExpr, ir.IntExpr], ir.BoolExpr],
-) -> None:
-    assert relation(Variable("X", type_=INT_TY), Number(10)).to_ir(
-        id_generator(),
-    ) == ir.ComplexBoolExpr([], ir_relation(ir.IntVar("X", INT_TY), ir.IntVal(10)))
 
 
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
@@ -1842,53 +1589,6 @@ def test_if_expr_z3expr() -> None:
         IfExpr([(Variable("X"), Variable("Y"))]).z3expr()
     with pytest.raises(Z3TypeError, match=r"^non-boolean condition$"):
         IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).z3expr()
-
-
-def test_if_expr_to_ir() -> None:
-    assert IfExpr(
-        [(Variable("X", type_=rty.BOOLEAN), Variable("Y", type_=rty.BOOLEAN))],
-        Variable("Z", type_=rty.BOOLEAN),
-    ).to_ir(id_generator()) == ir.ComplexBoolExpr(
-        [],
-        ir.BoolIfExpr(
-            ir.BoolVar("X"),
-            ir.ComplexBoolExpr([], ir.BoolVar("Y")),
-            ir.ComplexBoolExpr([], ir.BoolVar("Z")),
-            rty.BOOLEAN,
-        ),
-    )
-    assert IfExpr(
-        [(Variable("X", type_=rty.BOOLEAN), Variable("Y", type_=INT_TY))],
-        Variable("Z", type_=INT_TY),
-    ).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [],
-        ir.IntIfExpr(
-            ir.BoolVar("X"),
-            ir.ComplexIntExpr([], ir.IntVar("Y", INT_TY)),
-            ir.ComplexIntExpr([], ir.IntVar("Z", INT_TY)),
-            INT_TY,
-        ),
-    )
-    assert IfExpr(
-        [
-            (
-                And(Variable("X", type_=rty.BOOLEAN), TRUE),
-                Add(Variable("Y", type_=INT_TY), Number(1)),
-            ),
-        ],
-        Sub(Variable("Z", type_=INT_TY), Number(2)),
-    ).to_ir(id_generator()) == ir.ComplexIntExpr(
-        [
-            ir.VarDecl("T_0", rty.BOOLEAN),
-            ir.Assign("T_0", ir.And(ir.BoolVar("X"), ir.BoolVal(value=True)), rty.BOOLEAN),
-        ],
-        ir.IntIfExpr(
-            ir.BoolVar("T_0"),
-            ir.ComplexIntExpr([], ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1))),
-            ir.ComplexIntExpr([], ir.Sub(ir.IntVar("Z", INT_TY), ir.IntVal(2))),
-            INT_TY,
-        ),
-    )
 
 
 def test_value_range_type() -> None:
@@ -2216,10 +1916,6 @@ def test_number_z3expr() -> None:
     assert Number(42).z3expr() == z3.IntVal(42)
 
 
-def test_number_to_ir() -> None:
-    assert Number(42).to_ir(id_generator()) == ir.ComplexIntExpr([], ir.IntVal(42))
-
-
 def test_number_str() -> None:
     assert str(Number(15)) == "15"
 
@@ -2365,27 +2061,6 @@ def test_selected_z3expr() -> None:
     assert Neg(Selected(Variable("X"), "Y")).z3expr() == -z3.Int("X.Y")
 
 
-def test_selected_to_ir() -> None:
-    assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=rty.BOOLEAN).to_ir(
-        id_generator(),
-    ) == ir.ComplexExpr([], ir.BoolFieldAccess("X", "Y", MSG_TY))
-    assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY).to_ir(
-        id_generator(),
-    ) == ir.ComplexExpr([], ir.IntFieldAccess("X", "Y", MSG_TY))
-    assert Neg(Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY)).to_ir(
-        id_generator(),
-    ) == ir.ComplexIntExpr(
-        [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign("T_0", ir.IntFieldAccess("X", "Y", MSG_TY), INT_TY),
-        ],
-        ir.Neg(ir.IntVar("T_0", INT_TY)),
-    )
-    assert Selected(Variable("X", type_=rty.Message("M")), "Y", type_=SEQ_TY).to_ir(
-        id_generator(),
-    ) == ir.ComplexExpr([], ir.ObjFieldAccess("X", "Y", MSG_TY))
-
-
 def test_in_variables() -> None:
     result = In(Variable("A"), Variable("B")).variables()
     expected = [Variable("A"), Variable("B")]
@@ -2458,51 +2133,6 @@ def test_call_neg() -> None:
     assert -Call("Test", rty.BASE_INTEGER, []) == Neg(Call("Test", rty.BASE_INTEGER, []))
 
 
-def test_call_to_ir() -> None:
-    assert Call(
-        "X",
-        INT_TY,
-        [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=INT_TY)],
-    ).to_ir(id_generator()) == ir.ComplexExpr(
-        [],
-        ir.IntCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], INT_TY),
-    )
-    assert Call(
-        "X",
-        rty.BOOLEAN,
-        [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=rty.BOOLEAN)],
-    ).to_ir(id_generator()) == ir.ComplexExpr(
-        [],
-        ir.BoolCall("X", [ir.BoolVar("Y"), ir.BoolVar("Z")], [rty.BOOLEAN, rty.BOOLEAN]),
-    )
-    assert Call(
-        "X",
-        rty.BOOLEAN,
-        [
-            And(Variable("X", type_=rty.BOOLEAN), TRUE),
-            Add(Variable("Y", type_=INT_TY), Number(1)),
-        ],
-    ).to_ir(id_generator()) == ir.ComplexExpr(
-        [],
-        ir.BoolCall(
-            "X",
-            [
-                ir.And(ir.BoolVar("X"), ir.BoolVal(value=True)),
-                ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)),
-            ],
-            [rty.BOOLEAN, INT_TY],
-        ),
-    )
-    assert Call(
-        "X",
-        MSG_TY,
-        [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=INT_TY)],
-    ).to_ir(id_generator()) == ir.ComplexExpr(
-        [],
-        ir.ObjCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], MSG_TY),
-    )
-
-
 def test_conversion_type() -> None:
     assert_type(
         Conversion(
@@ -2560,12 +2190,6 @@ def test_conversion_variables() -> None:
 
 def test_conversion_ada_expr() -> None:
     assert Conversion("X", Variable("Y")).ada_expr() == ada.Conversion("X", ada.Variable("Y"))
-
-
-def test_conversion_to_ir() -> None:
-    assert Conversion("X", Variable("Y", type_=rty.BOOLEAN), type_=INT_TY).to_ir(
-        id_generator(),
-    ) == ir.ComplexExpr([], ir.Conversion("X", ir.BoolVar("Y"), INT_TY))
 
 
 def test_qualified_expr_simplified() -> None:
@@ -2675,35 +2299,6 @@ def test_comprehension_str() -> None:
     assert (
         str(In(Variable("A"), Comprehension("X", Variable("Y"), Variable("Z"), TRUE)))
         == "A in [for X in Y if True => Z]"
-    )
-
-
-def test_comprehension_to_ir() -> None:
-    assert Comprehension(
-        "X",
-        Selected(Variable("M", type_=rty.Message("M")), "Y", type_=rty.Sequence("S", INT_TY)),
-        Add(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY), Number(1)),
-        Less(Sub(Variable("X", type_=INT_TY), Number(1)), Number(100)),
-    ).to_ir(id_generator()) == ir.ComplexExpr(
-        [],
-        ir.Comprehension(
-            "X",
-            ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
-            ir.ComplexExpr(
-                [
-                    ir.VarDecl("T_0", INT_TY),
-                    ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
-                ],
-                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
-            ),
-            ir.ComplexBoolExpr(
-                [
-                    ir.VarDecl("T_1", INT_TY),
-                    ir.Assign("T_1", ir.Sub(ir.IntVar("X", INT_TY), ir.IntVal(1)), rty.BOOLEAN),
-                ],
-                ir.Less(ir.IntVar("T_1", INT_TY), ir.IntVal(100)),
-            ),
-        ),
     )
 
 
@@ -2912,41 +2507,6 @@ def test_message_aggregate_variables() -> None:
     ).variables()
     expected = [Variable("A"), Variable("B"), Variable("C")]
     assert result == expected
-
-
-@pytest.mark.parametrize(
-    ("agg", "ir_agg"),
-    [(MessageAggregate, ir.MsgAgg), (DeltaMessageAggregate, ir.DeltaMsgAgg)],
-)
-def test_message_aggregate_to_ir(  # type: ignore[misc]
-    agg: Callable[..., Expr],
-    ir_agg: Callable[..., ir.Expr],
-) -> None:
-    assert agg(
-        "X",
-        {
-            "Y": Selected(
-                Variable("M", type_=rty.Message("M")),
-                "Y",
-                type_=rty.Sequence("S", INT_TY),
-            ),
-            "Z": Add(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY), Number(1)),
-        },
-        MSG_TY,
-    ).to_ir(id_generator()) == ir.ComplexExpr(
-        [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
-        ],
-        ir_agg(
-            "X",
-            {
-                ID("Y"): ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
-                ID("Z"): ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
-            },
-            MSG_TY,
-        ),
-    )
 
 
 @pytest.mark.parametrize(
@@ -3332,35 +2892,6 @@ def test_case_invalid() -> None:
         ),
         "^<stdin>:1:2: error: duplicate literals used in case expression\n"
         '<stdin>:1:14: info: duplicate literal "2"$',
-    )
-
-
-def test_case_to_ir() -> None:
-    assert CaseExpr(
-        Variable("X", type_=INT_TY),
-        [
-            ([Number(1), Number(3)], Number(0)),
-            (
-                [Number(2)],
-                Variable("X", type_=INT_TY),
-            ),
-        ],
-    ).to_ir(id_generator()) == ir.ComplexExpr(
-        [],
-        ir.CaseExpr(
-            ir.IntVar("X", INT_TY),
-            [
-                (
-                    [ir.IntVal(1), ir.IntVal(3)],
-                    ir.IntVal(0),
-                ),
-                (
-                    [ir.IntVal(2)],
-                    ir.IntVar("X", INT_TY),
-                ),
-            ],
-            INT_TY,
-        ),
     )
 
 

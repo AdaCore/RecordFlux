@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Final, Optional
 
-from rflx import expression as expr, ir, typing_ as rty
+from rflx import expr_conv, expression as expr, ir, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.identifier import ID, StrID, id_generator
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
@@ -48,7 +48,7 @@ class Transition(Base):
         return f"goto {target}{with_aspects}{if_condition}"
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.Transition:
-        condition = self.condition.to_ir(variable_id)
+        condition = expr_conv.to_ir(self.condition, variable_id)
         return ir.Transition(
             self.target,
             ir.ComplexExpr(

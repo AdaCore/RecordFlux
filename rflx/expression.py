@@ -5,7 +5,7 @@ import fractions
 import itertools
 import operator
 from abc import abstractmethod
-from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
@@ -17,11 +17,11 @@ from typing import TYPE_CHECKING, Final, Optional, Union
 
 import z3
 
-from rflx import ada, const, ir, typing_ as rty
+from rflx import ada, const, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.const import MP_CONTEXT
 from rflx.contract import DBC, invariant, require
-from rflx.error import are_all_locations_present, fail
+from rflx.error import are_all_locations_present
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
@@ -319,10 +319,6 @@ class Expr(DBC, Base):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    @abstractmethod
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        raise NotImplementedError
-
     def check(self, facts: Optional[Sequence[Expr]] = None) -> Proof:
         return Proof(self, facts)
 
@@ -406,10 +402,6 @@ class Not(Expr):
         if not isinstance(z3expr, z3.BoolRef):
             raise Z3TypeError("negating non-boolean term")
         return z3.Not(z3expr)
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexBoolExpr:
-        inner_stmts, inner_expr = _to_ir_basic_bool(self.expr, variable_id)
-        return ir.ComplexBoolExpr(inner_stmts, ir.Not(inner_expr, origin=self))
 
 
 class BinExpr(Expr):
@@ -687,36 +679,6 @@ class BoolAssExpr(AssExpr):
     def symbol(self) -> str:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexBoolExpr:
-        if len(self.terms) == 0:
-            return ir.ComplexBoolExpr([], ir.BoolVal(value=True, origin=self))
-
-        if len(self.terms) == 1:
-            first_stmts, first_expr = _to_ir_basic_bool(self.terms[0], variable_id)
-            return ir.ComplexBoolExpr(first_stmts, first_expr)
-
-        if len(self.terms) == 2:
-            left_stmts, left_expr = _to_ir_basic_bool(self.terms[0], variable_id)
-            right_stmts, right_expr = _to_ir_basic_bool(self.terms[1], variable_id)
-            return ir.ComplexBoolExpr(
-                [*left_stmts, *right_stmts],
-                getattr(ir, self.__class__.__name__)(left_expr, right_expr, origin=self),
-            )
-
-        left_stmts, left_expr = _to_ir_basic_bool(self.terms[0], variable_id)
-        right_id = next(variable_id)
-        right_origin = self.__class__(*self.terms[1:])
-        right = right_origin.to_ir(variable_id)
-        return ir.ComplexBoolExpr(
-            [
-                *right.stmts,
-                ir.VarDecl(right_id, rty.BOOLEAN, None, origin=right_origin),
-                ir.Assign(right_id, right.expr, rty.BOOLEAN, origin=right_origin),
-                *left_stmts,
-            ],
-            getattr(ir, self.__class__.__name__)(left_expr, ir.BoolVar(right_id), origin=self),
-        )
-
 
 class And(BoolAssExpr):
     def __neg__(self) -> Expr:
@@ -922,9 +884,6 @@ class Number(Expr):
     def z3expr(self) -> z3.ArithRef:
         return z3.IntVal(self.value)
 
-    def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
-        return ir.ComplexIntExpr([], ir.IntVal(self.value, origin=self))
-
 
 class Neg(Expr):
     def __init__(self, expr: Expr, location: Optional[Location] = None) -> None:
@@ -983,11 +942,6 @@ class Neg(Expr):
             raise Z3TypeError("negating non-arithmetic term")
         return -z3expr
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
-        assert isinstance(self.type_, rty.AnyInteger)
-        inner_stmts, inner_expr = _to_ir_basic_int(self.expr, variable_id)
-        return ir.ComplexIntExpr(inner_stmts, ir.Neg(inner_expr, origin=self))
-
 
 class MathAssExpr(AssExpr):
     def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
@@ -1000,46 +954,6 @@ class MathAssExpr(AssExpr):
         for t in self.terms:
             error.extend(t.check_type_instance(rty.AnyInteger).entries)
         return error
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
-        if len(self.terms) == 0:
-            return ir.ComplexIntExpr([], ir.IntVal(0, origin=self))
-
-        assert isinstance(self.type_, rty.AnyInteger)
-
-        if len(self.terms) == 1:
-            first_stmts, first_expr = _to_ir_basic_int(self.terms[0], variable_id)
-            return ir.ComplexIntExpr(first_stmts, first_expr)
-
-        if len(self.terms) == 2:
-            left_stmts, left_expr = _to_ir_basic_int(self.terms[0], variable_id)
-            right_stmts, right_expr = _to_ir_basic_int(self.terms[1], variable_id)
-            return ir.ComplexIntExpr(
-                [*left_stmts, *right_stmts],
-                getattr(ir, self.__class__.__name__)(left_expr, right_expr, origin=self),
-            )
-
-        right_id = next(variable_id)
-        left_stmts, left_expr = _to_ir_basic_int(self.terms[0], variable_id)
-        right_origin = self.__class__(*self.terms[1:], location=self.terms[1].location)
-
-        assert isinstance(right_origin.type_, rty.AnyInteger)
-
-        right = right_origin.to_ir(variable_id)
-
-        return ir.ComplexIntExpr(
-            [
-                *right.stmts,
-                ir.VarDecl(right_id, ir.to_integer(self.type_), None, origin=right_origin),
-                ir.Assign(right_id, right.expr, ir.to_integer(self.type_), origin=right_origin),
-                *left_stmts,
-            ],
-            getattr(ir, self.__class__.__name__)(
-                left_expr,
-                ir.IntVar(right_id, right_origin.type_, origin=right_origin),
-                origin=self,
-            ),
-        )
 
 
 class Add(MathAssExpr):
@@ -1141,16 +1055,6 @@ class MathBinExpr(BinExpr):
         self.type_ = rty.common_type([self.left.type_, self.right.type_])
 
         return error
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
-        assert isinstance(self.type_, rty.AnyInteger)
-
-        left_stmts, left_expr = _to_ir_basic_int(self.left, variable_id)
-        right_stmts, right_expr = _to_ir_basic_int(self.right, variable_id)
-        return ir.ComplexIntExpr(
-            [*left_stmts, *right_stmts],
-            getattr(ir, self.__class__.__name__)(left_expr, right_expr, origin=self),
-        )
 
 
 class Sub(MathBinExpr):
@@ -1378,9 +1282,6 @@ class TypeName(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        raise NotImplementedError
-
 
 class Literal(Name):
     def __init__(
@@ -1426,17 +1327,6 @@ class Literal(Name):
         if self.identifier == ID("False"):
             return z3.BoolVal(val=False)
         return z3.Int(self.name)
-
-    def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Enumeration)
-
-        if self.type_ == rty.BOOLEAN:
-            if self.identifier == ID("True"):
-                return ir.ComplexExpr([], ir.BoolVal(value=True, origin=self))
-            assert self.identifier == ID("False")
-            return ir.ComplexExpr([], ir.BoolVal(value=False, origin=self))
-
-        return ir.ComplexExpr([], ir.EnumLit(self.name, self.type_, origin=self))
 
     def copy(
         self,
@@ -1495,19 +1385,6 @@ class Variable(Name):
         if self.type_ == rty.BOOLEAN:
             return z3.Bool(self.name)
         return z3.Int(self.name)
-
-    def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        if self.type_ == rty.BOOLEAN:
-            return ir.ComplexBoolExpr([], ir.BoolVar(self.name, origin=self))
-        if isinstance(self.type_, rty.Integer):
-            return ir.ComplexIntExpr(
-                [],
-                ir.IntVar(self.name, self.type_, origin=self),
-            )
-
-        assert isinstance(self.type_, rty.Any)
-
-        return ir.ComplexExpr([], ir.ObjVar(self.name, self.type_, origin=self))
 
     def copy(
         self,
@@ -1593,51 +1470,14 @@ class Attribute(Name):
             raise Z3TypeError("illegal prefix of attribute")
         return z3.Int(self.representation)
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Any)
-
-        if isinstance(self.prefix, TypeName):
-            return ir.ComplexExpr([], self._to_ir(self.prefix.identifier))
-
-        prefix_stmts, prefix_expr = _to_ir_basic_expr(self.prefix, variable_id)
-
-        assert isinstance(prefix_expr, ir.Var)
-
-        return ir.ComplexExpr(prefix_stmts, self._to_ir(prefix_expr.identifier))
-
-    @abstractmethod
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        raise NotImplementedError
-
 
 class Size(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
         super().__init__(prefix)
         self.type_ = rty.UniversalInteger()
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Any)
-
-        if isinstance(self.prefix, Selected):
-            assert isinstance(self.prefix.prefix.type_, rty.Compound)
-            assert isinstance(self.prefix.prefix, Variable)
-            return ir.ComplexExpr(
-                [],
-                ir.FieldSize(
-                    self.prefix.prefix.identifier,
-                    self.prefix.selector,
-                    self.prefix.prefix.type_,
-                ),
-            )
-
-        return super().to_ir(variable_id)
-
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
-
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, rty.Any)
-        return ir.Size(prefix, self.prefix.type_, origin=self)
 
 
 class Length(Attribute):
@@ -1648,10 +1488,6 @@ class Length(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, rty.Any)
-        return ir.Length(prefix, self.prefix.type_, origin=self)
-
 
 class First(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
@@ -1661,10 +1497,6 @@ class First(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
 
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, rty.Any)
-        return ir.First(prefix, self.prefix.type_, origin=self)
-
 
 class Last(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
@@ -1673,10 +1505,6 @@ class Last(Attribute):
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
-
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, rty.Any)
-        return ir.Last(prefix, self.prefix.type_, origin=self)
 
 
 class ValidChecksum(Attribute):
@@ -1694,64 +1522,22 @@ class ValidChecksum(Attribute):
     def representation(self) -> str:
         return f"{self.prefix}'Valid_Checksum"
 
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, rty.Any)
-        return ir.ValidChecksum(prefix, self.prefix.type_, origin=self)
-
 
 class Valid(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
         super().__init__(prefix)
         self.type_ = rty.BOOLEAN
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Any)
-
-        if isinstance(self.prefix, Selected):
-            assert isinstance(self.prefix.prefix, Variable)
-            assert isinstance(self.prefix.prefix.type_, rty.Compound)
-            return ir.ComplexExpr(
-                [],
-                ir.FieldValid(
-                    self.prefix.prefix.identifier,
-                    self.prefix.selector,
-                    self.prefix.prefix.type_,
-                ),
-            )
-
-        return super().to_ir(variable_id)
-
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(
             (rty.Sequence, rty.Message) if isinstance(self.prefix, Variable) else rty.Any,
         )
-
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, rty.Any)
-        return ir.Valid(prefix, self.prefix.type_, origin=self)
 
 
 class Present(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
         super().__init__(prefix)
         self.type_ = rty.BOOLEAN
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Any)
-
-        if isinstance(self.prefix, Selected):
-            assert isinstance(self.prefix.prefix, Variable)
-            assert isinstance(self.prefix.prefix.type_, rty.Compound)
-            return ir.ComplexExpr(
-                [],
-                ir.FieldPresent(
-                    self.prefix.prefix.identifier,
-                    self.prefix.selector,
-                    self.prefix.prefix.type_,
-                ),
-            )
-
-        return super().to_ir(variable_id)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         if isinstance(self.prefix, Selected):
@@ -1768,10 +1554,6 @@ class Present(Attribute):
             )
         return error
 
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, rty.Any)
-        return ir.Present(prefix, self.prefix.type_, origin=self)
-
 
 class HasData(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
@@ -1785,10 +1567,6 @@ class HasData(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Message)
 
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, rty.Any)
-        return ir.HasData(prefix, self.prefix.type_, origin=self)
-
 
 class Head(Attribute):
     def __init__(
@@ -1798,25 +1576,6 @@ class Head(Attribute):
     ):
         super().__init__(prefix)
         self.type_ = type_
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Any)
-
-        if isinstance(self.prefix, Comprehension):
-            comprehension = self.prefix.to_ir(variable_id)
-            assert isinstance(comprehension.expr, ir.Comprehension)
-            return ir.ComplexExpr(
-                comprehension.stmts,
-                ir.Find(
-                    comprehension.expr.iterator,
-                    comprehension.expr.sequence,
-                    comprehension.expr.selector,
-                    comprehension.expr.condition,
-                    comprehension.expr.origin,
-                ),
-            )
-
-        return super().to_ir(variable_id)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = self.prefix.check_type_instance(rty.Composite)
@@ -1833,11 +1592,6 @@ class Head(Attribute):
             )
         return error
 
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, rty.Composite)
-        assert isinstance(self.prefix.type_.element, rty.Any)
-        return ir.Head(prefix, self.prefix.type_, origin=self)
-
 
 class Opaque(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
@@ -1847,18 +1601,11 @@ class Opaque(Attribute):
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance((rty.Sequence, rty.Message))
 
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        assert isinstance(self.prefix.type_, (rty.Sequence, rty.Message))
-        return ir.Opaque(prefix, self.prefix.type_, origin=self)
-
 
 class Constrained(Attribute):
     """Only used by code generator and therefore provides minimum functionality."""
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        raise NotImplementedError
-
-    def _to_ir(self, prefix: ID) -> ir.Expr:
         raise NotImplementedError
 
 
@@ -1910,9 +1657,6 @@ class Val(Attribute):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def _to_ir(self, prefix: ID) -> ir.Expr:
-        raise NotImplementedError
-
 
 @invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
@@ -1940,9 +1684,6 @@ class Indexed(Name):
         )
 
     def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -2024,33 +1765,6 @@ class Selected(Name):
     def z3expr(self) -> z3.ExprRef:
         return z3.Int(self.representation)
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Any)
-        assert isinstance(self.prefix.type_, rty.Compound)
-        stmts, msg = _to_ir_basic_expr(self.prefix, variable_id)
-        assert isinstance(msg, ir.ObjVar)
-        if self.type_ == rty.BOOLEAN:
-            return ir.ComplexExpr(
-                stmts,
-                ir.BoolFieldAccess(msg.identifier, self.selector, self.prefix.type_, origin=self),
-            )
-        if isinstance(self.type_, rty.Integer):
-            return ir.ComplexExpr(
-                stmts,
-                ir.IntFieldAccess(
-                    msg.identifier,
-                    self.selector,
-                    self.prefix.type_,
-                    origin=self,
-                ),
-            )
-        if isinstance(self.type_, (rty.Enumeration, rty.Sequence)):
-            return ir.ComplexExpr(
-                stmts,
-                ir.ObjFieldAccess(msg.identifier, self.selector, self.prefix.type_, origin=self),
-            )
-        assert False, self.type_
-
     def copy(
         self,
         prefix: Optional[Expr] = None,
@@ -2126,47 +1840,6 @@ class Call(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        arguments_stmts = []
-        arguments_exprs = []
-
-        for a in self.args:
-            a_ir = a.to_ir(variable_id)
-            arguments_stmts.extend(a_ir.stmts)
-            arguments_exprs.append(a_ir.expr)
-
-        assert all(isinstance(t, rty.Any) for t in self.argument_types)
-        argument_types = [t for t in self.argument_types if isinstance(t, rty.Any)]
-
-        if self.type_ is rty.BOOLEAN:
-            return ir.ComplexExpr(
-                arguments_stmts,
-                ir.BoolCall(
-                    self.identifier,
-                    arguments_exprs,
-                    argument_types,
-                    origin=self,
-                ),
-            )
-
-        if isinstance(self.type_, rty.Integer):
-            return ir.ComplexExpr(
-                arguments_stmts,
-                ir.IntCall(
-                    self.identifier,
-                    arguments_exprs,
-                    argument_types,
-                    self.type_,
-                    origin=self,
-                ),
-            )
-
-        assert isinstance(self.type_, (rty.Enumeration, rty.Structure, rty.Message))
-        return ir.ComplexExpr(
-            arguments_stmts,
-            ir.ObjCall(self.identifier, arguments_exprs, argument_types, self.type_, origin=self),
-        )
-
     def variables(self) -> list[Variable]:
         result = [Variable(self.identifier, location=self.location)]
         for t in self.args:
@@ -2222,9 +1895,6 @@ class Slice(Name):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        raise NotImplementedError
-
 
 class UndefinedExpr(Name):
     @property
@@ -2241,9 +1911,6 @@ class UndefinedExpr(Name):
         raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -2306,19 +1973,6 @@ class Aggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         return z3.Int(str(self))
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Any)
-
-        elements = []
-        stmts = []
-
-        for e in self.elements:
-            e_stmts, e_expr = _to_ir_basic_expr(e, variable_id)
-            elements.append(e_expr)
-            stmts.extend(e_stmts)
-
-        return ir.ComplexExpr(stmts, ir.Agg(elements, origin=self))
-
 
 class String(Aggregate):
     def __init__(self, data: str, location: Optional[Location] = None) -> None:
@@ -2380,9 +2034,6 @@ class NamedAggregate(Expr):
         raise NotImplementedError
 
     def z3expr(self) -> z3.ExprRef:
-        raise NotImplementedError
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -2465,14 +2116,6 @@ class Relation(BinExpr):
         result = self._operator(left, right)
         assert isinstance(result, z3.BoolRef)
         return result
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        left_stmts, left_expr = _to_ir_basic_expr(self.left, variable_id)
-        right_stmts, right_expr = _to_ir_basic_expr(self.right, variable_id)
-        return ir.ComplexBoolExpr(
-            [*left_stmts, *right_stmts],
-            getattr(ir, self.__class__.__name__)(left_expr, right_expr, origin=self),
-        )
 
     @staticmethod
     @abstractmethod
@@ -2672,9 +2315,6 @@ class In(Relation):
     def z3expr(self) -> z3.BoolRef:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        raise NotImplementedError
-
     @staticmethod
     def _operator(
         left: Union[z3.ArithRef, z3.BoolRef],
@@ -2704,9 +2344,6 @@ class NotIn(Relation):
         return ada.NotIn(self.left.ada_expr(), self.right.ada_expr())
 
     def z3expr(self) -> z3.BoolRef:
-        raise NotImplementedError
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
     @staticmethod
@@ -2829,50 +2466,6 @@ class IfExpr(Expr):
             self.else_expression.z3expr(),
         )
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert len(self.condition_expressions) == 1
-        assert self.else_expression is not None
-
-        condition = self.condition_expressions[0][0]
-        condition_stmts, condition_expr = _to_ir_basic_bool(condition, variable_id)
-
-        assert condition.type_ is rty.BOOLEAN
-
-        then_expression = self.condition_expressions[0][1]
-
-        if then_expression.type_ is rty.BOOLEAN and self.else_expression.type_ is rty.BOOLEAN:
-            then_expr = then_expression.to_ir(variable_id)
-            else_expr = self.else_expression.to_ir(variable_id)
-            assert isinstance(then_expr, ir.ComplexBoolExpr)
-            assert isinstance(else_expr, ir.ComplexBoolExpr)
-            return ir.ComplexBoolExpr(
-                [*condition_stmts],
-                ir.BoolIfExpr(
-                    condition_expr,
-                    then_expr,
-                    else_expr,
-                    origin=self,
-                ),
-            )
-
-        assert isinstance(self.type_, rty.AnyInteger)
-        assert isinstance(then_expression.type_, rty.AnyInteger)
-        assert isinstance(self.else_expression.type_, rty.AnyInteger)
-        then_expr = then_expression.to_ir(variable_id)
-        else_expr = self.else_expression.to_ir(variable_id)
-        assert isinstance(then_expr, ir.ComplexIntExpr)
-        assert isinstance(else_expr, ir.ComplexIntExpr)
-        return ir.ComplexIntExpr(
-            [*condition_stmts],
-            ir.IntIfExpr(
-                condition_expr,
-                then_expr,
-                else_expr,
-                self.type_,
-                origin=self,
-            ),
-        )
-
 
 class QuantifiedExpr(Expr):
     def __init__(
@@ -2943,12 +2536,6 @@ class QuantifiedExpr(Expr):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
-
-    def to_ir(self, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        fail(
-            "quantified expressions not yet supported",
-            location=self.location,
-        )
 
     def substituted(
         self,
@@ -3059,9 +2646,6 @@ class ValueRange(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        raise NotImplementedError
-
 
 class Conversion(Expr):
     def __init__(
@@ -3158,14 +2742,6 @@ class Conversion(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.NamedType)
-        argument = self.argument.to_ir(variable_id)
-        return ir.ComplexExpr(
-            argument.stmts,
-            ir.Conversion(self.identifier, argument.expr, self.type_, origin=self),
-        )
-
     def variables(self) -> list[Variable]:
         return self.argument.variables()
 
@@ -3203,9 +2779,6 @@ class QualifiedExpr(Expr):
         return ada.QualifiedExpr(self.type_identifier, self.expression.ada_expr())
 
     def z3expr(self) -> z3.ArithRef:
-        raise NotImplementedError
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
         raise NotImplementedError
 
 
@@ -3290,23 +2863,6 @@ class Comprehension(Expr):
 
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
-
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        sequence = self.sequence.to_ir(variable_id)
-        selector = self.selector.to_ir(variable_id)
-        condition = self.condition.to_ir(variable_id)
-        assert isinstance(sequence.expr, (ir.Var, ir.FieldAccess))
-        assert isinstance(condition, ir.ComplexBoolExpr), condition
-        return ir.ComplexExpr(
-            sequence.stmts,
-            ir.Comprehension(
-                self.iterator,
-                sequence.expr,
-                selector,
-                condition,
-                origin=self,
-            ),
-        )
 
     def variables(self) -> list[Variable]:
         return [
@@ -3481,30 +3037,11 @@ class MessageAggregate(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Message)
-        field_values = {}
-        stmts = []
-        for i, e in self.field_values.items():
-            e_ir = e.to_ir(variable_id)
-            field_values[i] = e_ir.expr
-            stmts.extend(e_ir.stmts)
-        return ir.ComplexExpr(
-            stmts,
-            self._ir_expr(self.identifier, field_values, self.type_, self),
-        )
-
     def variables(self) -> list[Variable]:
         result = []
         for v in self.field_values.values():
             result.extend(v.variables())
         return result
-
-    @property
-    def _ir_expr(
-        self,
-    ) -> Callable[[ID, dict[ID, ir.Expr], rty.Message, ir.Origin], ir.Expr]:
-        return ir.MsgAgg
 
 
 class DeltaMessageAggregate(MessageAggregate):
@@ -3517,12 +3054,6 @@ class DeltaMessageAggregate(MessageAggregate):
             else "null message"
         )
         self._str = intern(f"{self.identifier} with delta {field_values}")
-
-    @property
-    def _ir_expr(
-        self,
-    ) -> Callable[[ID, dict[ID, ir.Expr], rty.Message, ir.Origin], ir.Expr]:
-        return ir.DeltaMsgAgg
 
     def _matching_field_combinations(self, field_position: int) -> set[tuple[str, ...]]:
         fields = tuple(str(f) for i, f in enumerate(self.field_values) if i <= field_position)
@@ -3848,36 +3379,6 @@ class CaseExpr(Expr):
     def z3expr(self) -> z3.ExprRef:
         raise NotImplementedError
 
-    def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-        assert isinstance(self.type_, rty.Any)
-
-        expression_stmts, expression_expr = _to_ir_basic_expr(self.expr, variable_id)
-        choices = []
-
-        for choice, expr in self.choices:
-            e_stmts, e_expr = _to_ir_basic_expr(expr, variable_id)
-            # TODO(eng/recordflux/RecordFlux#633): Check for unsupported case expressions in model
-            assert not e_stmts
-            cs: list[ir.BasicExpr]
-            if isinstance(self.expr.type_, rty.Enumeration):
-                assert all(isinstance(c, ID) for c in choice)
-                cs = [ir.EnumLit(c, self.expr.type_) for c in choice if isinstance(c, ID)]
-            else:
-                assert isinstance(self.expr.type_, rty.AnyInteger)
-                assert all(isinstance(c, Number) for c in choice)
-                cs = [ir.IntVal(int(c)) for c in choice if isinstance(c, Number)]
-            choices.append((cs, e_expr))
-
-        return ir.ComplexExpr(
-            expression_stmts,
-            ir.CaseExpr(
-                expression_expr,
-                choices,
-                self.type_,
-                origin=self,
-            ),
-        )
-
     def variables(self) -> list[Variable]:
         simplified = self.simplified()
         assert isinstance(simplified, CaseExpr)
@@ -3911,91 +3412,3 @@ def _similar_field_names(
             ),
         ]
     return []
-
-
-def _to_ir_basic_int(
-    expression: Expr,
-    variable_id: Generator[ID, None, None],
-) -> tuple[list[ir.Stmt], ir.BasicIntExpr]:
-    assert isinstance(expression.type_, rty.AnyInteger)
-
-    result = expression.to_ir(variable_id)
-    if isinstance(result.expr, ir.BasicIntExpr):
-        result_expr = result.expr
-        result_stmts = result.stmts
-    else:
-        result_id = next(variable_id)
-        result_type = ir.to_integer(expression.type_)
-        result_expr = ir.IntVar(result_id, result_type, origin=expression)
-        result_stmts = [
-            *result.stmts,
-            ir.VarDecl(result_id, result_type, None, origin=expression),
-            ir.Assign(result_id, result.expr, result_type, origin=expression),
-        ]
-    return (result_stmts, result_expr)
-
-
-def _to_ir_basic_bool(
-    expression: Expr,
-    variable_id: Generator[ID, None, None],
-) -> tuple[list[ir.Stmt], ir.BasicBoolExpr]:
-    assert expression.type_ == rty.BOOLEAN
-
-    result = expression.to_ir(variable_id)
-    if isinstance(result.expr, ir.BasicBoolExpr):
-        result_expr = result.expr
-        result_stmts = result.stmts
-    else:
-        result_id = next(variable_id)
-        result_expr = ir.BoolVar(result_id, origin=expression)
-        result_stmts = [
-            *result.stmts,
-            ir.VarDecl(result_id, rty.BOOLEAN, None, origin=expression),
-            ir.Assign(result_id, result.expr, rty.BOOLEAN, origin=expression),
-        ]
-    return (result_stmts, result_expr)
-
-
-def _to_ir_basic_expr(
-    expression: Expr,
-    variable_id: Generator[ID, None, None],
-) -> tuple[list[ir.Stmt], ir.BasicExpr]:
-    result = expression.to_ir(variable_id)
-    if isinstance(result.expr, ir.BasicExpr):
-        result_expr = result.expr
-        result_stmts = result.stmts
-    else:
-        result_id = next(variable_id)
-
-        if isinstance(result.expr, ir.BoolExpr):
-            result_expr = ir.BoolVar(result_id, origin=expression)
-        elif isinstance(result.expr, ir.IntExpr):
-            assert isinstance(expression.type_, rty.AnyInteger)
-            result_expr = ir.IntVar(result_id, ir.to_integer(expression.type_), origin=expression)
-        else:
-            assert isinstance(expression.type_, rty.Any)
-            result_expr = ir.ObjVar(result_id, expression.type_, origin=expression)
-
-        if isinstance(result_expr.type_, rty.Aggregate):
-            # TODO(eng/recordflux/RecordFlux#1497): Support comparisons of opaque fields
-            result_stmts = [  # pragma: no cover
-                *result.stmts,
-                ir.VarDecl(
-                    result_id,
-                    rty.OPAQUE,
-                    ir.ComplexExpr([], result.expr),
-                    origin=expression,
-                ),
-            ]
-        else:
-            result_type = result_expr.type_
-
-            assert isinstance(result_type, rty.NamedType)
-
-            result_stmts = [
-                *result.stmts,
-                ir.VarDecl(result_id, result_type, None, origin=expression),
-                ir.Assign(result_id, result.expr, result_type, origin=expression),
-            ]
-
-    return (result_stmts, result_expr)
