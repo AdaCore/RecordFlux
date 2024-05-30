@@ -4,7 +4,6 @@ import textwrap
 from collections.abc import Callable, Mapping
 
 import pytest
-import z3
 
 from rflx import ada, typing_ as rty
 from rflx.expression import (
@@ -65,7 +64,6 @@ from rflx.expression import (
     ValidChecksum,
     ValueRange,
     Variable,
-    Z3TypeError,
 )
 from rflx.identifier import ID, StrID
 from rflx.model import Integer
@@ -109,10 +107,6 @@ def test_true_variables() -> None:
     assert not TRUE.variables()
 
 
-def test_true_z3expr() -> None:
-    assert TRUE.z3expr() == z3.BoolVal(val=True)
-
-
 def test_false_type() -> None:
     assert_type(
         FALSE,
@@ -126,10 +120,6 @@ def test_false_simplified() -> None:
 
 def test_false_variables() -> None:
     assert not FALSE.variables()
-
-
-def test_false_z3expr() -> None:
-    assert FALSE.z3expr() == z3.BoolVal(val=False)
 
 
 def test_not_type() -> None:
@@ -207,13 +197,6 @@ def test_not_simplified() -> None:
         Not(NotEqual(Variable("X"), Variable("Y"))).simplified(),
         Equal(Variable("X"), Variable("Y")),
     )
-
-
-def test_not_z3expr() -> None:
-    assert Not(TRUE).z3expr() == z3.Not(z3.BoolVal(val=True))
-    assert Not(FALSE).z3expr() == z3.Not(z3.BoolVal(val=False))
-    with pytest.raises(Z3TypeError):
-        Not(Variable("X")).z3expr()
 
 
 def test_bin_expr_findall() -> None:
@@ -417,12 +400,6 @@ def test_bool_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize("expression", [And, AndThen, Or, OrElse])
-def test_bool_expr_z3expr_error(expression: Callable[[Expr, Expr], Expr]) -> None:
-    with pytest.raises(Z3TypeError):
-        expression(Number(1), Number(2)).z3expr()
-
-
 def test_and_neg() -> None:
     with pytest.raises(NotImplementedError):
         -And(Variable("X"), TRUE)
@@ -457,18 +434,6 @@ def test_and_simplified() -> None:
         Equal(Variable("X"), Number(0)),
         Equal(Variable("X"), Number(0)),
     ).simplified() == Equal(Variable("X"), Number(0))
-
-
-def test_and_z3expr() -> None:
-    assert_equal(
-        And(TRUE, FALSE, TRUE).z3expr(),
-        z3.And(z3.BoolVal(val=True), z3.BoolVal(val=False), z3.BoolVal(val=True)),
-    )
-    assert_equal(
-        And(TRUE, TRUE, TRUE).z3expr(),
-        z3.And(z3.BoolVal(val=True), z3.BoolVal(val=True), z3.BoolVal(val=True)),
-    )
-    assert_equal(And(TRUE, TRUE).z3expr(), z3.And(z3.BoolVal(val=True), z3.BoolVal(val=True)))
 
 
 def test_and_str() -> None:
@@ -507,18 +472,6 @@ def test_or_simplified() -> None:
         Equal(Variable("X"), Number(0)),
         Equal(Variable("X"), Number(0)),
     ).simplified() == Equal(Variable("X"), Number(0))
-
-
-def test_or_z3expr() -> None:
-    assert_equal(
-        Or(TRUE, FALSE, TRUE).z3expr(),
-        z3.Or(z3.BoolVal(val=True), z3.BoolVal(val=False), z3.BoolVal(val=True)),
-    )
-    assert_equal(
-        Or(TRUE, TRUE, TRUE).z3expr(),
-        z3.Or(z3.BoolVal(val=True), z3.BoolVal(val=True), z3.BoolVal(val=True)),
-    )
-    assert_equal(Or(TRUE, TRUE).z3expr(), z3.Or(z3.BoolVal(val=True), z3.BoolVal(val=True)))
 
 
 def test_or_str() -> None:
@@ -649,12 +602,6 @@ def test_math_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
     assert result == expected
 
 
-@pytest.mark.parametrize("expression", [Add, Mul, Sub, Div, Pow, Mod])
-def test_math_expr_z3expr_error(expression: Callable[[Expr, Expr], Expr]) -> None:
-    with pytest.raises(Z3TypeError):
-        expression(String("X"), TRUE).z3expr()
-
-
 def test_neg_str() -> None:
     assert str(Neg(Variable("X"))) == "-X"
     assert str(Neg(Neg(Variable("X")))) == "-(-X)"
@@ -708,14 +655,6 @@ def test_neg_simplified() -> None:
     assert Neg(Number(42)).simplified() == Number(-42)
     assert Neg(Neg(Number(42))).simplified() == Number(42)
     assert Neg(Neg(Neg(Number(42)))).simplified() == Number(-42)
-
-
-def test_neg_z3expr() -> None:
-    assert Neg(Variable("X")).z3expr() == -z3.Int("X")
-    assert Neg(Number(42)).z3expr() == -z3.IntVal(42)
-    assert Neg(Number(-42)).z3expr() == -z3.IntVal(-42)
-    with pytest.raises(Z3TypeError):
-        Neg(TRUE).z3expr()
 
 
 def test_add_str() -> None:
@@ -783,14 +722,6 @@ def test_add_ge() -> None:
     assert not Add(Variable("X"), Number(2)) >= Add(Variable("Y"), Variable("Z"), Number(1))
 
 
-def test_add_z3expr() -> None:
-    assert Add(Number(42), Number(1)).z3expr() == z3.IntVal(42) + z3.IntVal(1)
-    assert_equal(
-        Add(Number(42), Number(1), Number(10)).z3expr(),
-        z3.Sum(z3.IntVal(42), z3.IntVal(1), z3.IntVal(10)),
-    )
-
-
 def test_mul_neg() -> None:
     assert -Mul(Variable("X"), Number(2)) == Mul(Variable("X"), Number(-2))
 
@@ -803,14 +734,6 @@ def test_mul_simplified() -> None:
     assert Mul(Variable("X"), Number(2)).simplified() == Mul(Variable("X"), Number(2))
     assert Mul(Variable("X"), Number(1)).simplified() == Variable("X")
     assert Mul(Number(2), Number(3), Number(5)).simplified() == Number(30)
-
-
-def test_mul_z3expr() -> None:
-    assert Mul(Number(6), Number(4)).z3expr() == z3.IntVal(6) * z3.IntVal(4)
-    assert_equal(
-        Mul(Number(2), Number(4), Number(8)).z3expr(),
-        z3.Product(z3.IntVal(2), z3.IntVal(4), z3.IntVal(8)),
-    )
 
 
 def test_sub_neg() -> None:
@@ -834,11 +757,6 @@ def test_sub_simplified() -> None:
     )
 
 
-def test_sub_z3expr() -> None:
-    assert Sub(Number(6), Number(4)).z3expr() == z3.IntVal(6) - z3.IntVal(4)
-    assert Sub(Number(12), Number(20)).z3expr() == z3.IntVal(12) - z3.IntVal(20)
-
-
 def test_div_neg() -> None:
     assert -Div(Variable("X"), Number(1)) == Div(Neg(Variable("X")), Number(1))
 
@@ -851,10 +769,6 @@ def test_div_simplified() -> None:
     assert Div(Variable("X"), Number(1)).simplified() == Div(Variable("X"), Number(1))
     assert Div(Number(6), Number(2)).simplified() == Number(3)
     assert Div(Number(9), Number(2)).simplified() == Div(Number(9), Number(2))
-
-
-def test_div_z3expr() -> None:
-    assert Div(Number(6), Number(3)).z3expr() == z3.IntVal(6) / z3.IntVal(3)
 
 
 def test_pow_simplified() -> None:
@@ -870,10 +784,6 @@ def test_pow_variables() -> None:
     assert Pow(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
 
 
-def test_pow_z3expr() -> None:
-    assert Pow(Number(6), Number(2)).z3expr() == z3.IntVal(6) ** z3.IntVal(2)
-
-
 def test_mod_simplified() -> None:
     assert Mod(Variable("X"), Number(1)).simplified() == Mod(Variable("X"), Number(1))
     assert Mod(Variable("X"), Add(Number(1), Number(1))).simplified() == Mod(
@@ -885,16 +795,6 @@ def test_mod_simplified() -> None:
 
 def test_mod_variables() -> None:
     assert Mod(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
-
-
-def test_mod_z3expr() -> None:
-    assert Mod(Number(1000), Number(5)).z3expr() == z3.IntVal(1000) % z3.IntVal(5)
-    assert Mod(Pow(Number(6), Number(2)), Number(5)).z3expr() == z3.IntVal(36) % z3.IntVal(5)
-
-
-def test_mod_z3expr_error() -> None:
-    with pytest.raises(Z3TypeError):
-        Mod(Pow(Variable("X"), Number(2)), Number(5)).z3expr()
 
 
 def test_term_simplified() -> None:
@@ -959,12 +859,6 @@ def test_immutable_variable_substituted() -> None:
 
 def test_variable_simplified() -> None:
     assert Variable("X").simplified() == Variable("X")
-
-
-def test_variable_z3expr() -> None:
-    assert Variable("X").z3expr() == z3.Int("X")
-    assert Neg(Variable("X")).z3expr() == -z3.Int("X")
-    assert z3.simplify(Sub(Variable("X"), Variable("X")).z3expr()) == z3.IntVal(0)
 
 
 def test_attribute() -> None:
@@ -1125,25 +1019,6 @@ def test_attribute_variables() -> None:
     ]
 
 
-@pytest.mark.parametrize(
-    ("attribute", "z3name"),
-    [
-        (Size("X"), "X'Size"),
-        (Length("X"), "X'Length"),
-        (First("X"), "X'First"),
-        (Last("X"), "X'Last"),
-    ],
-)
-def test_attribute_z3expr(attribute: Expr, z3name: str) -> None:
-    assert attribute.z3expr() == z3.Int(z3name)
-    assert (-attribute).z3expr() == -z3.Int(z3name)
-
-
-def test_attribute_z3expr_error() -> None:
-    with pytest.raises(Z3TypeError):
-        First(Call("X", rty.BASE_INTEGER)).z3expr()
-
-
 def test_val_substituted() -> None:
     assert_equal(  # pragma: no branch
         Val("X", Variable("Y")).substituted(
@@ -1213,10 +1088,6 @@ def test_aggregate_str() -> None:
 
 def test_aggregate_precedence() -> None:
     assert Aggregate(Number(1), Number(2)).precedence == Precedence.LITERAL
-
-
-def test_aggregate_z3expr() -> None:
-    assert Aggregate(Number(1), Number(2)).z3expr() == z3.Int("[1, 2]")
 
 
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
@@ -1363,12 +1234,6 @@ def test_relation_variables() -> None:
     assert Less(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
 
 
-@pytest.mark.parametrize("relation", [Less, LessEqual, GreaterEqual, Greater])
-def test_relation_z3expr_error(relation: Callable[[Expr, Expr], Expr]) -> None:
-    with pytest.raises(Z3TypeError):
-        relation(Variable("X", type_=rty.BOOLEAN), Number(1)).z3expr()
-
-
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
 def test_math_relation_ada_expr(relation: Callable[[Expr, Expr], Expr]) -> None:
     result = relation(Variable("X"), Variable("Y")).ada_expr()
@@ -1396,10 +1261,6 @@ def test_less_simplified() -> None:
     assert Less(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == FALSE
 
 
-def test_less_z3expr() -> None:
-    assert Less(Number(1), Number(100)).z3expr() == (z3.IntVal(1) < z3.IntVal(100))
-
-
 def test_less_equal_neg() -> None:
     assert -LessEqual(Variable("X"), Number(1)) == Greater(Variable("X"), Number(1))
 
@@ -1411,10 +1272,6 @@ def test_less_equal_simplified() -> None:
     assert LessEqual(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == TRUE
     assert LessEqual(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == TRUE
     assert LessEqual(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == FALSE
-
-
-def test_less_equal_z3expr() -> None:
-    assert LessEqual(Number(1), Number(100)).z3expr() == (z3.IntVal(1) <= z3.IntVal(100))
 
 
 def test_equal_neg() -> None:
@@ -1435,10 +1292,6 @@ def test_equal_simplified() -> None:
     assert NotEqual(TRUE, Variable("X")).simplified() == Not(Variable("X"))
 
 
-def test_equal_z3expr() -> None:
-    assert Equal(Number(100), Number(100)).z3expr() == (z3.IntVal(100) == z3.IntVal(100))
-
-
 def test_greater_equal_neg() -> None:
     assert -GreaterEqual(Variable("X"), Number(1)) == Less(Variable("X"), Number(1))
 
@@ -1450,10 +1303,6 @@ def test_greater_equal_simplified() -> None:
     assert GreaterEqual(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == TRUE
     assert GreaterEqual(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == FALSE
     assert GreaterEqual(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == TRUE
-
-
-def test_greater_equal_z3expr() -> None:
-    assert GreaterEqual(Number(100), Number(1)).z3expr() == (z3.IntVal(100) >= z3.IntVal(1))
 
 
 def test_greater_neg() -> None:
@@ -1469,10 +1318,6 @@ def test_greater_simplified() -> None:
     assert Greater(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == TRUE
 
 
-def test_greater_z3expr() -> None:
-    assert Greater(Number(100), Number(1)).z3expr() == (z3.IntVal(100) > z3.IntVal(1))
-
-
 def test_not_equal_neg() -> None:
     assert -NotEqual(Variable("X"), Number(1)) == Equal(Variable("X"), Number(1))
 
@@ -1484,10 +1329,6 @@ def test_not_equal_simplified() -> None:
     assert NotEqual(Div(Number(1), Number(8)), Div(Number(1), Number(8))).simplified() == FALSE
     assert NotEqual(Div(Number(1), Number(8)), Div(Number(2), Number(8))).simplified() == TRUE
     assert NotEqual(Div(Number(1), Number(6)), Div(Number(1), Number(8))).simplified() == TRUE
-
-
-def test_not_equal_z3expr() -> None:
-    assert NotEqual(Number(100), Number(1)).z3expr() == (z3.IntVal(100) != z3.IntVal(1))
 
 
 def test_in_neg() -> None:
@@ -1570,23 +1411,6 @@ def test_if_expr_ada_expr() -> None:
         [(ada.Variable("X"), ada.Variable("Y"))],
         ada.Variable("Z"),
     )
-
-
-def test_if_expr_z3expr() -> None:
-    assert IfExpr([(TRUE, Variable("Y"))], Variable("Z")).z3expr() == z3.If(
-        z3.BoolVal(val=True),
-        z3.Int("Y"),
-        z3.Int("Z"),
-    )
-    with pytest.raises(Z3TypeError, match=r"^more than one condition$"):
-        IfExpr(
-            [(Variable("X"), Variable("Y")), (Variable("Y"), Variable("X"))],
-            Variable("Z"),
-        ).z3expr()
-    with pytest.raises(Z3TypeError, match=r"^missing else expression$"):
-        IfExpr([(Variable("X"), Variable("Y"))]).z3expr()
-    with pytest.raises(Z3TypeError, match=r"^non-boolean condition$"):
-        IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).z3expr()
 
 
 def test_value_range_type() -> None:
@@ -1910,10 +1734,6 @@ def test_not_variables() -> None:
     assert Not(Variable("X")).variables() == [Variable("X")]
 
 
-def test_number_z3expr() -> None:
-    assert Number(42).z3expr() == z3.IntVal(42)
-
-
 def test_number_str() -> None:
     assert str(Number(15)) == "15"
 
@@ -2052,11 +1872,6 @@ def test_selected_variables() -> None:
     result = Selected(Variable("X"), "Y").variables()
     expected = [Variable("X")]
     assert result == expected
-
-
-def test_selected_z3expr() -> None:
-    assert Selected(Variable("X"), "Y").z3expr() == z3.Int("X.Y")
-    assert Neg(Selected(Variable("X"), "Y")).z3expr() == -z3.Int("X.Y")
 
 
 def test_in_variables() -> None:

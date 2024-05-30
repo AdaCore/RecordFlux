@@ -1394,7 +1394,7 @@ class Message(mty.TypeDecl):
                 if link.target != FINAL and link.first == expr.UNDEFINED
             ],
         )
-        return expr.max_value(
+        return expr_proof.max_value(
             target,
             [
                 expr.Equal(expr.Size("Message"), message_size),
