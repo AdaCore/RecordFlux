@@ -7,7 +7,7 @@ use std::{
 };
 
 #[cfg(not(test))]
-use annotate_snippets::renderer::{Color, RgbColor, Style};
+use annotate_snippets::renderer::{Color, Style};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
@@ -16,10 +16,36 @@ use crate::source_code;
 use super::Location;
 
 #[cfg(not(test))]
+mod colors {
+    use annotate_snippets::renderer::RgbColor;
+    use owo_colors::colors::CustomColor;
+
+    pub(super) type ErrorColor = CustomColor<225, 0, 0>;
+    pub(super) type WarningColor = CustomColor<200, 200, 10>;
+    pub(super) type InfoColor = CustomColor<0, 50, 200>;
+    pub(super) type HelpColor = CustomColor<100, 160, 255>;
+    pub(super) type NoteColor = CustomColor<180, 180, 0>;
+
+    pub(super) const ERROR_COLOR: RgbColor = to_annotate_snippet_rgb(&ErrorColor {});
+    pub(super) const WARNING_COLOR: RgbColor = to_annotate_snippet_rgb(&WarningColor {});
+    pub(super) const INFO_COLOR: RgbColor = to_annotate_snippet_rgb(&InfoColor {});
+    pub(super) const HELP_COLOR: RgbColor = to_annotate_snippet_rgb(&HelpColor {});
+    pub(super) const NOTE_COLOR: RgbColor = to_annotate_snippet_rgb(&NoteColor {});
+
+    const fn to_annotate_snippet_rgb<const R: u8, const G: u8, const B: u8>(
+        _color: &CustomColor<R, G, B>,
+    ) -> RgbColor {
+        RgbColor(R, G, B)
+    }
+}
+
+#[cfg(not(test))]
 pub(crate) const RENDERER: annotate_snippets::Renderer = annotate_snippets::Renderer::styled()
-    .error(Style::new().fg_color(Some(Color::Rgb(RgbColor(225, 0, 0)))))
-    .help(Style::new().fg_color(Some(Color::Rgb(RgbColor(0, 80, 200)))))
-    .note(Style::new().fg_color(Some(Color::Rgb(RgbColor(180, 180, 0)))));
+    .error(Style::new().fg_color(Some(Color::Rgb(colors::ERROR_COLOR))))
+    .warning(Style::new().fg_color(Some(Color::Rgb(colors::WARNING_COLOR))))
+    .info(Style::new().fg_color(Some(Color::Rgb(colors::INFO_COLOR))))
+    .help(Style::new().fg_color(Some(Color::Rgb(colors::HELP_COLOR))))
+    .note(Style::new().fg_color(Some(Color::Rgb(colors::NOTE_COLOR))));
 
 #[cfg(test)]
 pub(crate) const RENDERER: annotate_snippets::Renderer = annotate_snippets::Renderer::plain();
@@ -38,6 +64,7 @@ pub enum Severity {
 }
 
 impl Display for Severity {
+    #[cfg(test)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Severity::Info => write!(f, "info"),
@@ -45,6 +72,20 @@ impl Display for Severity {
             Severity::Error => write!(f, "error"),
             Severity::Help => write!(f, "help"),
             Severity::Note => write!(f, "note"),
+        }
+    }
+
+    #[cfg(not(test))]
+    #[cfg_attr(test, mutants::skip)]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use owo_colors::OwoColorize;
+
+        match self {
+            Severity::Info => write!(f, "{}", "info".fg::<colors::InfoColor>()),
+            Severity::Warning => write!(f, "{}", "warning".fg::<colors::WarningColor>()),
+            Severity::Error => write!(f, "{}", "error".fg::<colors::ErrorColor>()),
+            Severity::Help => write!(f, "{}", "help".fg::<colors::HelpColor>()),
+            Severity::Note => write!(f, "{}", "note".fg::<colors::NoteColor>()),
         }
     }
 }
@@ -69,6 +110,7 @@ pub struct Annotation {
 }
 
 impl Display for Annotation {
+    #[cfg(test)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -76,6 +118,23 @@ impl Display for Annotation {
             self.location(),
             self.severity,
             self.label.as_ref().map_or("", std::string::String::as_str)
+        )
+    }
+
+    #[cfg(not(test))]
+    #[cfg_attr(test, mutants::skip)]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use owo_colors::OwoColorize;
+
+        write!(
+            f,
+            "{}: {}: {}",
+            self.location(),
+            self.severity,
+            self.label
+                .as_ref()
+                .map_or("", std::string::String::as_str)
+                .bold(),
         )
     }
 }
@@ -125,9 +184,11 @@ pub struct ErrorEntry {
     severity: Severity,
     location: Option<Location>,
     annotations: Vec<Annotation>,
+    generate_default: bool,
 }
 
 impl Display for ErrorEntry {
+    #[cfg(test)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -135,6 +196,30 @@ impl Display for ErrorEntry {
             self.location().map_or(String::new(), |l| format!("{l}: ")),
             self.severity,
             self.message,
+            if self.annotations().iter().any(|a| a.label().is_some()) {
+                "\n"
+            } else {
+                ""
+            },
+            self.annotations()
+                .iter()
+                .filter_map(|a| a.label().map(|_| a.to_string()))
+                .collect::<Vec<String>>()
+                .join("\n")
+        )
+    }
+
+    #[cfg(not(test))]
+    #[cfg_attr(test, mutants::skip)]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use owo_colors::OwoColorize;
+
+        write!(
+            f,
+            "{}{}: {}{}{}",
+            self.location().map_or(String::new(), |l| format!("{l}: ")),
+            self.severity,
+            self.message.bold(),
             if self.annotations().iter().any(|a| a.label().is_some()) {
                 "\n"
             } else {
@@ -155,12 +240,14 @@ impl ErrorEntry {
         severity: Severity,
         location: Option<Location>,
         annotations: Vec<Annotation>,
+        generate_default: bool,
     ) -> Self {
         Self {
             message,
             severity,
             location,
             annotations,
+            generate_default,
         }
     }
 
@@ -180,6 +267,10 @@ impl ErrorEntry {
         &self.annotations
     }
 
+    pub fn generate_default_annotation(&self) -> bool {
+        self.generate_default
+    }
+
     /// Convert an error entry to an `annotate_snippets`' snippet message
     ///
     /// # Parameters
@@ -196,13 +287,16 @@ impl ErrorEntry {
             Severity::Note => annotate_snippets::Level::Note.title(&self.message),
         };
 
-        if let Some(location) = self.location.as_ref() {
-            let default_annotation = Annotation::new(None, self.severity, location.clone());
+        match self.location() {
+            Some(location) if self.generate_default => {
+                let default_annotation = Annotation::new(None, self.severity, location.clone());
 
-            // Add squiggles below the actual error. Without this, the user won't be able to
-            // see the error location (e.g. `foo.rflx:3:4`).
-            self.annotations.insert(0, default_annotation);
-        }
+                // Add squiggles below the actual error. Without this, the user won't be able to
+                // see the error location (e.g. `foo.rflx:3:4`).
+                self.annotations.insert(0, default_annotation);
+            }
+            _ => (),
+        };
 
         if self.annotations.is_empty()
             || source.is_empty()
@@ -490,6 +584,7 @@ mod tests {
                     end: Some(FilePosition::new(3, 4)),
                 },
             )],
+            true,
         );
 
         assert_eq!(error_entry.severity(), Severity::Error);
@@ -507,6 +602,18 @@ mod tests {
                 },
             )]
         );
+        assert!(error_entry.generate_default_annotation());
+    }
+
+    #[rstest]
+    #[case::error_entry_default_annotation(true)]
+    #[case::error_entry_default_annotation(false)]
+    fn test_error_entry_creation_default_generation(#[case] generate_default: bool) {
+        let entry = ErrorEntry {
+            generate_default,
+            ..Default::default()
+        };
+        assert_eq!(entry.generate_default_annotation(), generate_default);
     }
 
     #[rstest]
@@ -516,6 +623,7 @@ mod tests {
             Severity::Error,
             None,
             Vec::new(),
+            true,
         ),
         "Some cool source code",
         "error: Some terrible error",
@@ -526,6 +634,7 @@ mod tests {
             Severity::Info,
             None,
             Vec::new(),
+            true,
         ),
         "",
         "info: info",
@@ -536,6 +645,7 @@ mod tests {
             Severity::Help,
             None,
             Vec::new(),
+            true,
         ),
         "",
         "help: help",
@@ -546,6 +656,7 @@ mod tests {
             Severity::Warning,
             None,
             Vec::new(),
+            true,
         ),
         "",
         "warning: warning",
@@ -556,6 +667,7 @@ mod tests {
             Severity::Note,
             None,
             Vec::new(),
+            true,
         ),
         "",
         "note: note",
@@ -570,6 +682,7 @@ mod tests {
                 end: Some(FilePosition::new(1, 8)),
             }),
             Vec::new(),
+            true,
         ),
         "package Test is end Test;",
         indoc! {
@@ -590,6 +703,7 @@ mod tests {
                 end: Some(FilePosition::new(1, 8)),
             }),
             Vec::new(),
+            true,
         ),
         "package Test is end Test;",
         "<stdin>:1:1: error: Some terrible error",
@@ -604,6 +718,7 @@ mod tests {
                 end: Some(FilePosition::new(1, 8)),
             }),
             Vec::new(),
+            true,
         ),
         "package Test is end Test;",
         indoc! {
@@ -633,8 +748,10 @@ mod tests {
                         start: FilePosition::new(2, 1),
                         end: Some(FilePosition::new(2, 4)),
                     },
-            )
-        ]),
+                )
+            ],
+            true
+        ),
         indoc! {
             r"package Test is
               end Test;"
@@ -677,6 +794,7 @@ mod tests {
                 end: Some(FilePosition::new(1, 8)),
             }),
             Vec::new(),
+            true,
         ),
         "<stdin>:1:1: error: Some terrible error"
     )]
@@ -690,6 +808,7 @@ mod tests {
                 end: Some(FilePosition::new(1, 8)),
             }),
             Vec::new(),
+            true,
         ),
         "foo.rflx:1:1: error: Some terrible error"
     )]
@@ -713,6 +832,7 @@ mod tests {
                     label: Some("some label".to_string())
                 }
             ],
+            true,
         ),
         indoc! {
             r"foo.rflx:1:1: error: Some terrible error
@@ -731,6 +851,7 @@ mod tests {
                 Severity::Error,
                 None,
                 Vec::new(),
+                true,
             )],
         };
         assert_eq!(
@@ -739,7 +860,8 @@ mod tests {
                 "first".to_string(),
                 Severity::Error,
                 None,
-                Vec::new()
+                Vec::new(),
+                true,
             )]
         );
     }
@@ -747,14 +869,14 @@ mod tests {
     #[rstest]
     #[case::errors(
         vec![
-            ErrorEntry::new("okay".to_string(), Severity::Info, None, Vec::new()),
-            ErrorEntry::new("ooof".to_string(), Severity::Error, None, Vec::new()),
+            ErrorEntry::new("okay".to_string(), Severity::Info, None, Vec::new(), true),
+            ErrorEntry::new("ooof".to_string(), Severity::Error, None, Vec::new(), true),
         ],
         true,
     )]
     #[case::no_errors(
         vec![
-            ErrorEntry::new("okay".to_string(), Severity::Info, None, Vec::new()),
+            ErrorEntry::new("okay".to_string(), Severity::Info, None, Vec::new(), true),
         ],
         false,
     )]
@@ -770,8 +892,14 @@ mod tests {
     fn test_rapid_flux_error_display() {
         let error = RapidFluxError {
             entries: vec![
-                ErrorEntry::new("first".to_string(), Severity::Error, None, Vec::new()),
-                ErrorEntry::new("second".to_string(), Severity::Warning, None, Vec::new()),
+                ErrorEntry::new("first".to_string(), Severity::Error, None, Vec::new(), true),
+                ErrorEntry::new(
+                    "second".to_string(),
+                    Severity::Warning,
+                    None,
+                    Vec::new(),
+                    true,
+                ),
             ],
         };
 
@@ -787,8 +915,15 @@ mod tests {
                     Severity::Error,
                     None,
                     vec![Annotation::new(None, Severity::Error, Location::default())],
+                    true,
                 ),
-                ErrorEntry::new("second".to_string(), Severity::Warning, None, Vec::new()),
+                ErrorEntry::new(
+                    "second".to_string(),
+                    Severity::Warning,
+                    None,
+                    Vec::new(),
+                    true,
+                ),
             ],
         };
 
@@ -796,8 +931,9 @@ mod tests {
             format!("{error:?}").as_str(),
             "[ErrorEntry { message: \"first\", severity: Error, location: None, annotations: \
             [Annotation { label: None, severity: Error, location: Location { start: \
-            FilePosition(0, 0), end: None, source: None } }] }, ErrorEntry { message: \"second\", \
-            severity: Warning, location: None, annotations: [] }]"
+            FilePosition(0, 0), end: None, source: None } }], generate_default: true }, \
+            ErrorEntry { message: \"second\", severity: Warning, location: None, \
+            annotations: [], generate_default: true }]"
         );
     }
 
@@ -822,6 +958,7 @@ mod tests {
             severity: Severity::Error,
             annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
             location: Some(Location::default()),
+            generate_default: true,
         };
 
         let mut error: RapidFluxError = RapidFluxError::default();
@@ -841,6 +978,7 @@ mod tests {
             severity: Severity::Error,
             annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
             location: Some(Location::default()),
+            generate_default: true,
         };
 
         let mut error: RapidFluxError = RapidFluxError::default();
@@ -859,12 +997,14 @@ mod tests {
             severity: Severity::Error,
             annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
             location: Some(Location::default()),
+            generate_default: true,
         };
         let second_entry = ErrorEntry {
             message: "other dummy".to_string(),
             severity: Severity::Error,
             annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
             location: Some(Location::default()),
+            generate_default: true,
         };
 
         let mut error: RapidFluxError = RapidFluxError::default();
@@ -882,12 +1022,14 @@ mod tests {
                 severity: Severity::Error,
                 annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
                 location: Some(Location::default()),
+                generate_default: true,
             },
             ErrorEntry {
                 message: "other dummy".to_string(),
                 severity: Severity::Error,
                 annotations: vec![Annotation::new(None, Severity::Error, Location::default())],
                 location: Some(Location::default()),
+                generate_default: true,
             },
         ];
 
@@ -922,24 +1064,48 @@ mod tests {
 
     #[rstest]
     #[case::rapidfluxerror_oneline_error(
-        vec![ErrorEntry::new("Simple error".to_string(), Severity::Error, None, Vec::new())].into(),
+        vec![ErrorEntry::new("Simple error".to_string(), Severity::Error, None, Vec::new(), true)].into(),
         "error: Simple error\n",
     )]
     #[case::rapidfluxerror_oneline_warning(
-        vec![ErrorEntry::new("Simple warning".to_string(), Severity::Warning, None, Vec::new())].into(),
+        vec![ErrorEntry::new("Simple warning".to_string(), Severity::Warning, None, Vec::new(), true)].into(),
         "warning: Simple warning\n",
     )]
     #[case::rapidfluxerror_oneline_note(
-        vec![ErrorEntry::new("Simple note".to_string(), Severity::Note, None, Vec::new())].into(),
+        vec![ErrorEntry::new("Simple note".to_string(), Severity::Note, None, Vec::new(), true)].into(),
         "note: Simple note\n",
     )]
     #[case::rapidfluxerror_oneline_help(
-        vec![ErrorEntry::new("Simple help".to_string(), Severity::Help, None, Vec::new())].into(),
+        vec![ErrorEntry::new("Simple help".to_string(), Severity::Help, None, Vec::new(), true)].into(),
         "help: Simple help\n",
     )]
     #[case::rapidfluxerror_oneline_info(
-        vec![ErrorEntry::new("Simple info".to_string(), Severity::Info, None, Vec::new())].into(),
+        vec![ErrorEntry::new("Simple info".to_string(), Severity::Info, None, Vec::new(), true)].into(),
         "info: Simple info\n",
+    )]
+    #[case::rapidfluxerror_default_annotation(
+        vec![
+            ErrorEntry::new(
+                "Annotated error".to_string(),
+                Severity::Error,
+                Some(Location {
+                    start: FilePosition::new(1, 1),
+                    source: Some(PathBuf::from_str("tests/data/sample.rflx").unwrap()),
+                    end: Some(FilePosition::new(1, 8)),
+                }),
+                Vec::new(),
+                true,
+            )
+        ].into(),
+        indoc! {
+            r"error: Annotated error
+               --> tests/data/sample.rflx:1:1
+                |
+              1 | package Sample is
+                | ^^^^^^^
+                |
+            "
+        },
     )]
     #[case::rapidfluxerror_location_from_stdin(
         vec![
@@ -952,6 +1118,7 @@ mod tests {
                     end: Some(FilePosition::new(1, 8)),
                 }),
                 Vec::new(),
+                true,
             )
         ].into(),
         "<stdin>:1:1: error: Annotated error\n",
@@ -992,6 +1159,7 @@ mod tests {
                 end: Some(FilePosition::new(1, 8)),
             }),
             Vec::new(),
+            true,
         )]
         .into();
         const EXPECTED_ERROR: &str = indoc! {
@@ -1036,6 +1204,7 @@ mod tests {
                     label: None,
                 }],
                 location: None,
+                generate_default: true,
             },
             ErrorEntry {
                 message: "some other".to_string(),

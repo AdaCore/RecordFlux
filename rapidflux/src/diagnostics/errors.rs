@@ -59,11 +59,13 @@ impl Severity {
 
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn __getnewargs__(&self) -> (String,) {
-        (self.0.to_string().to_uppercase(),)
+        // Removing ANSI escapes is needed here otherwise Python will not be able to rebuild the
+        // object while calling `pickle.load`
+        (strip_ansi_escapes::strip_str(self.0.to_string()).to_uppercase(),)
     }
 
     fn __str__(&self) -> String {
-        self.0.to_string()
+        strip_ansi_escapes::strip_str(self.0.to_string())
     }
 
     fn __repr__(&self) -> String {
@@ -166,7 +168,7 @@ impl Annotation {
     }
 
     fn __str__(&self) -> String {
-        self.0.to_string()
+        strip_ansi_escapes::strip_str(self.0.to_string())
     }
 
     fn __repr__(&self) -> String {
@@ -212,23 +214,32 @@ pub struct ErrorEntry(lib::ErrorEntry);
 #[pymethods]
 impl ErrorEntry {
     #[new]
-    #[pyo3(signature = (message, severity, location = None, annotations = Vec::new()))]
+    #[pyo3(signature = (
+            message,
+            severity,
+            location = None,
+            annotations = Vec::new(),
+            generate_default_annotation = true
+        )
+    )]
     pub fn new(
         message: String,
         severity: Severity,
         location: Option<Location>,
         annotations: Vec<Annotation>,
+        generate_default_annotation: bool,
     ) -> Self {
         Self(lib::ErrorEntry::new(
             message,
             severity.into(),
             location.map(|l| l.0),
             annotations.into_iter().map(|a| a.0).collect(),
+            generate_default_annotation,
         ))
     }
 
     fn __str__(&self) -> String {
-        self.0.to_string()
+        strip_ansi_escapes::strip_str(self.0.to_string())
     }
 
     fn __repr__(&self) -> String {
@@ -259,12 +270,14 @@ impl ErrorEntry {
         Borrowed<'py, 'py, PyAny>,
         Option<Location>,
         Vec<Annotation>,
+        bool,
     ) {
         (
             self.0.message().to_owned(),
             self.severity(py),
             self.location(),
             self.annotations(),
+            self.0.generate_default_annotation(),
         )
     }
 
@@ -320,7 +333,7 @@ impl RapidFluxError {
     }
 
     fn __str__(&self) -> String {
-        self.0.to_string()
+        strip_ansi_escapes::strip_str(self.0.to_string())
     }
 
     fn __repr__(&self) -> String {

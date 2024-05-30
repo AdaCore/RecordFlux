@@ -8,6 +8,7 @@ rust-version = "1.77"
 annotate-snippets = { workspace = true }
 anstream = { workspace = true }
 lazy_static = { workspace = true }
+owo-colors = "4.0.0"
 serde = { workspace = true }
 thiserror = "1.0.61"
 
