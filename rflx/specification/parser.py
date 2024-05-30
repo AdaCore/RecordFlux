@@ -1651,12 +1651,11 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
                     else [
                         ErrorEntry(
                             f'either rename the file to "{expected_filename}"',
-                            Severity.INFO,
-                            node_location(package.f_identifier, name),
+                            Severity.HELP,
                         ),
                         ErrorEntry(
                             f'or change the package name to "{expected_package_name}"',
-                            Severity.INFO,
+                            Severity.HELP,
                             node_location(package.f_identifier, name),
                         ),
                     ]

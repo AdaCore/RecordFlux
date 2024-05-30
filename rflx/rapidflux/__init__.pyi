@@ -77,6 +77,7 @@ class ErrorEntry:
         severity: Severity,
         location: Location | None = None,
         annotations: Sequence[Annotation] = [],
+        generate_default_annotation: bool = True,
     ) -> None: ...
     @property
     def message(self) -> str: ...
