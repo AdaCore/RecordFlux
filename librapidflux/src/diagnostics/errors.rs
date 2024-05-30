@@ -1,6 +1,5 @@
 use std::{
     fmt::{Debug, Display},
-    fs,
     io::{self, Write},
     path::PathBuf,
     str::FromStr,
@@ -9,7 +8,10 @@ use std::{
 
 #[cfg(not(test))]
 use annotate_snippets::renderer::{Color, RgbColor, Style};
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+
+use crate::source_code;
 
 use super::Location;
 
@@ -308,20 +310,17 @@ impl RapidFluxError {
     /// Source code needs to be retrieved and error message displayed. This function
     /// might return an `io::Error` if any io operation failed.
     pub fn print_messages<T: Write>(&mut self, stream: &mut T) -> io::Result<()> {
+        lazy_static! {
+            static ref STDIN_PATH: PathBuf = PathBuf::from_str("<stdin>").expect("unreachable");
+        }
+
         for entry in &mut self.entries {
             let source_code =
-                if let Some(Some(source_path)) = entry.location.as_ref().map(|l| &l.source) {
-                    if source_path.to_str().unwrap_or_default() == "<stdin>" {
-                        String::new()
-                    } else {
-                        // TODO(eng/recordflux/RecordFlux#1602): Use stored source code instead of reading file
-                        fs::read_to_string(source_path)?
-                    }
-                } else {
-                    String::new()
-                };
+                source_code::retrieve(entry.location().map_or(STDIN_PATH.as_path(), |l| {
+                    l.source.as_deref().unwrap_or(STDIN_PATH.as_path())
+                }));
 
-            match entry.to_message_mut(&source_code) {
+            match entry.to_message_mut(&source_code.unwrap_or_default()) {
                 Some(msg) => writeln!(stream, "{}", RENDERER.render(msg))?,
                 None => writeln!(stream, "{entry}")?,
             }
@@ -342,14 +341,21 @@ impl RapidFluxError {
 
 #[cfg(test)]
 mod tests {
-    use std::{io, path::PathBuf, str::FromStr};
+    use std::{
+        io::{self, Read, Seek},
+        path::PathBuf,
+        str::FromStr,
+    };
 
     use indoc::indoc;
     use pretty_assertions::assert_eq;
     use rstest::rstest;
     use serial_test::{parallel, serial};
 
-    use crate::diagnostics::{ErrorEntry, FilePosition, Location};
+    use crate::{
+        diagnostics::{ErrorEntry, FilePosition, Location},
+        source_code,
+    };
 
     use super::{Annotation, RapidFluxError, Severity};
 
@@ -935,29 +941,6 @@ mod tests {
         vec![ErrorEntry::new("Simple info".to_string(), Severity::Info, None, Vec::new())].into(),
         "info: Simple info\n",
     )]
-    #[case::rapidfluxerror_default_annotation(
-        vec![
-            ErrorEntry::new(
-                "Annotated error".to_string(),
-                Severity::Error,
-                Some(Location {
-                    start: FilePosition::new(1, 1),
-                    source: Some(PathBuf::from_str("tests/data/sample.rflx").unwrap()),
-                    end: Some(FilePosition::new(1, 8)),
-                }),
-                Vec::new(),
-            )
-        ].into(),
-        indoc! {
-            r"error: Annotated error
-               --> tests/data/sample.rflx:1:1
-                |
-              1 | package Sample is
-                | ^^^^^^^
-                |
-            "
-        },
-    )]
     #[case::rapidfluxerror_location_from_stdin(
         vec![
             ErrorEntry::new(
@@ -993,6 +976,52 @@ mod tests {
             .expect("failed to read message from memory stream");
 
         assert_eq!(&result, expected_str);
+    }
+
+    #[test]
+    #[serial]
+    #[allow(clippy::items_after_statements)]
+    fn test_rapid_flux_error_print_message_default_annotation() {
+        let file_path = PathBuf::from_str("tests/data/sample.rflx").unwrap();
+        let mut error: RapidFluxError = vec![ErrorEntry::new(
+            "Annotated error".to_string(),
+            Severity::Error,
+            Some(Location {
+                start: FilePosition::new(1, 1),
+                source: Some(file_path.clone()),
+                end: Some(FilePosition::new(1, 8)),
+            }),
+            Vec::new(),
+        )]
+        .into();
+        const EXPECTED_ERROR: &str = indoc! {
+            r"error: Annotated error
+               --> tests/data/sample.rflx:1:1
+                |
+              1 | package Sample is
+                | ^^^^^^^
+                |
+            "
+        };
+
+        let mut memory_stream = io::Cursor::new(Vec::new());
+        let mut result = String::new();
+
+        source_code::register(
+            file_path,
+            include_str!("../../tests/data/sample.rflx").to_string(),
+        );
+        error.print_messages(&mut memory_stream).unwrap();
+
+        // Set the cursor at the beginning of the stream and retrieve its content
+        memory_stream
+            .seek(io::SeekFrom::Start(0))
+            .expect("failed to seek at the position 0");
+        memory_stream
+            .read_to_string(&mut result)
+            .expect("failed to read message from memory stream");
+
+        assert_eq!(&result, EXPECTED_ERROR);
     }
 
     #[test]
