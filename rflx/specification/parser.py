@@ -14,7 +14,15 @@ from rflx.error import fail
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
 from rflx.model import AlwaysVerify, Cache, declaration as decl, statement as stmt
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity, logging
+from rflx.rapidflux import (
+    Annotation,
+    ErrorEntry,
+    Location,
+    RecordFluxError,
+    Severity,
+    logging,
+    source_code,
+)
 from rflx.specification.const import RESERVED_WORDS
 
 from . import style
@@ -1750,6 +1758,7 @@ class Parser:
     ) -> None:
         error = RecordFluxError()
         string = textwrap.dedent(string)
+        source_code.register(filename, string)
         unit = lang.AnalysisContext().get_from_buffer(str(filename), string, rule=rule)
 
         if not diagnostics_to_error(unit.diagnostics, error, filename):
@@ -1802,7 +1811,10 @@ class Parser:
 
     def _parse_file(self, error: RecordFluxError, filename: Path) -> Optional[SpecificationFile]:
         logging.info("Parsing {filename}", filename=filename)
-        unit = lang.AnalysisContext().get_from_file(str(filename))
+
+        source_code_str = filename.read_text()
+        source_code.register(filename, source_code_str)
+        unit = lang.AnalysisContext().get_from_buffer(str(filename), source_code_str)
 
         error.extend(style.check(filename).entries)
 
