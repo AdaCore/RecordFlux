@@ -3,9 +3,220 @@ from __future__ import annotations
 from functools import singledispatch
 from typing import Generator
 
-from rflx import expression as expr, ir, typing_ as rty
+from rflx import ada, expression as expr, ir, typing_ as rty
 from rflx.error import fail
 from rflx.identifier import ID
+
+
+@singledispatch
+def to_ada(expression: expr.Expr) -> ada.Expr:  # noqa: ARG001
+    raise NotImplementedError
+
+
+@to_ada.register
+def _(expression: expr.Not) -> ada.Expr:
+    return ada.Not(to_ada(expression.expr))
+
+
+@to_ada.register
+def _(expression: expr.And) -> ada.Expr:
+    return ada.And(*[to_ada(t) for t in expression.terms])
+
+
+@to_ada.register
+def _(expression: expr.AndThen) -> ada.Expr:
+    return ada.AndThen(*[to_ada(t) for t in expression.terms])
+
+
+@to_ada.register
+def _(expression: expr.Or) -> ada.Expr:
+    return ada.Or(*[to_ada(t) for t in expression.terms])
+
+
+@to_ada.register
+def _(expression: expr.OrElse) -> ada.Expr:
+    return ada.OrElse(*[to_ada(t) for t in expression.terms])
+
+
+@to_ada.register
+def _(expression: expr.Number) -> ada.Expr:
+    return ada.Number(expression.value, expression.base)
+
+
+@to_ada.register
+def _(expression: expr.Neg) -> ada.Expr:
+    return ada.Neg(to_ada(expression.expr))
+
+
+@to_ada.register
+def _(expression: expr.Add) -> ada.Expr:
+    return ada.Add(*[to_ada(t) for t in expression.terms])
+
+
+@to_ada.register
+def _(expression: expr.Mul) -> ada.Expr:
+    return ada.Mul(*[to_ada(t) for t in expression.terms])
+
+
+@to_ada.register
+def _(expression: expr.Sub) -> ada.Expr:
+    return ada.Sub(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.Div) -> ada.Expr:
+    return ada.Div(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.Pow) -> ada.Expr:
+    return ada.Pow(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.Mod) -> ada.Expr:
+    return ada.Mod(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.Rem) -> ada.Expr:
+    return ada.Rem(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.TypeName) -> ada.Expr:
+    return ada.Literal(expression.identifier)
+
+
+@to_ada.register
+def _(expression: expr.Literal) -> ada.Expr:
+    return ada.Literal(expression.identifier)
+
+
+@to_ada.register
+def _(expression: expr.Variable) -> ada.Expr:
+    return ada.Variable(expression.identifier)
+
+
+@to_ada.register
+def _(expression: expr.Attribute) -> ada.Expr:
+    result = getattr(ada, expression.__class__.__name__)(to_ada(expression.prefix))
+    assert isinstance(result, ada.Expr)
+    return result
+
+
+@to_ada.register
+def _(expression: expr.Val) -> ada.Expr:
+    result = getattr(ada, expression.__class__.__name__)(
+        to_ada(expression.prefix),
+        to_ada(expression.expression),
+    )
+    assert isinstance(result, ada.Expr)
+    return result
+
+
+@to_ada.register
+def _(expression: expr.Indexed) -> ada.Expr:
+    return ada.Indexed(
+        to_ada(expression.prefix),
+        *[to_ada(e) for e in expression.elements],
+    )
+
+
+@to_ada.register
+def _(expression: expr.Selected) -> ada.Expr:
+    return ada.Selected(to_ada(expression.prefix), ID(expression.selector))
+
+
+@to_ada.register
+def _(expression: expr.Call) -> ada.Expr:
+    return ada.Call(expression.identifier, [to_ada(a) for a in expression.args], {})
+
+
+@to_ada.register
+def _(expression: expr.Aggregate) -> ada.Expr:
+    return ada.Aggregate(*[to_ada(e) for e in expression.elements])
+
+
+@to_ada.register
+def _(expression: expr.String) -> ada.Expr:
+    return ada.String(expression.data)
+
+
+@to_ada.register
+def _(expression: expr.Less) -> ada.Expr:
+    return ada.Less(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.LessEqual) -> ada.Expr:
+    return ada.LessEqual(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.Equal) -> ada.Expr:
+    return ada.Equal(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.GreaterEqual) -> ada.Expr:
+    return ada.GreaterEqual(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.Greater) -> ada.Expr:
+    return ada.Greater(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.NotEqual) -> ada.Expr:
+    return ada.NotEqual(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.In) -> ada.Expr:
+    return ada.In(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.NotIn) -> ada.Expr:
+    return ada.NotIn(to_ada(expression.left), to_ada(expression.right))
+
+
+@to_ada.register
+def _(expression: expr.IfExpr) -> ada.Expr:
+    result = getattr(ada, expression.__class__.__name__)(
+        [(to_ada(c), to_ada(e)) for c, e in expression.condition_expressions],
+        to_ada(expression.else_expression) if expression.else_expression else None,
+    )
+    assert isinstance(result, ada.Expr)
+    return result
+
+
+@to_ada.register
+def _(expression: expr.QuantifiedExpr) -> ada.Expr:
+    result = getattr(ada, expression.__class__.__name__)(
+        expression.parameter_identifier,
+        to_ada(expression.iterable),
+        to_ada(expression.predicate),
+    )
+    assert isinstance(result, ada.Expr)
+    return result
+
+
+@to_ada.register
+def _(expression: expr.ValueRange) -> ada.Expr:
+    return ada.ValueRange(to_ada(expression.lower), to_ada(expression.upper))
+
+
+@to_ada.register
+def _(expression: expr.Conversion) -> ada.Expr:
+    return ada.Conversion(expression.identifier, to_ada(expression.argument))
+
+
+@to_ada.register
+def _(expression: expr.QualifiedExpr) -> ada.Expr:
+    return ada.QualifiedExpr(expression.type_identifier, to_ada(expression.expression))
 
 
 @singledispatch

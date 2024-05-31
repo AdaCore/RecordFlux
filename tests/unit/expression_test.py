@@ -5,7 +5,7 @@ from collections.abc import Callable, Mapping
 
 import pytest
 
-from rflx import ada, typing_ as rty
+from rflx import typing_ as rty
 from rflx.expression import (
     FALSE,
     TRUE,
@@ -54,7 +54,6 @@ from rflx.expression import (
     Precedence,
     Present,
     QualifiedExpr,
-    Rem,
     Selected,
     Size,
     String,
@@ -393,13 +392,6 @@ def test_bool_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
     )
 
 
-@pytest.mark.parametrize("expression", [And, AndThen, Or, OrElse])
-def test_bool_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
-    result = expression(Variable("X"), Variable("Y")).ada_expr()
-    expected = getattr(ada, expression.__name__)(ada.Variable("X"), ada.Variable("Y"))
-    assert result == expected
-
-
 def test_and_neg() -> None:
     with pytest.raises(NotImplementedError):
         -And(Variable("X"), TRUE)
@@ -593,13 +585,6 @@ def test_math_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
         r"<stdin>:10:30: error: expected integer type\n"
         r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"$',
     )
-
-
-@pytest.mark.parametrize("expression", [Add, Mul, Sub, Div, Pow, Mod, Rem])
-def test_math_expr_ada_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
-    result = expression(Variable("X"), Variable("Y")).ada_expr()
-    expected = getattr(ada, expression.__name__)(ada.Variable("X"), ada.Variable("Y"))
-    assert result == expected
 
 
 def test_neg_str() -> None:
@@ -1234,20 +1219,6 @@ def test_relation_variables() -> None:
     assert Less(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
 
 
-@pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
-def test_math_relation_ada_expr(relation: Callable[[Expr, Expr], Expr]) -> None:
-    result = relation(Variable("X"), Variable("Y")).ada_expr()
-    expected = getattr(ada, relation.__name__)(ada.Variable("X"), ada.Variable("Y"))
-    assert result == expected
-
-
-@pytest.mark.parametrize("relation", [In, NotIn])
-def test_composite_relation_ada_expr(relation: Callable[[Expr, Expr], Expr]) -> None:
-    result = relation(Variable("X"), Variable("Y")).ada_expr()
-    expected = getattr(ada, relation.__name__)(ada.Variable("X"), ada.Variable("Y"))
-    assert result == expected
-
-
 def test_less_neg() -> None:
     assert -Less(Variable("X"), Number(1)) == GreaterEqual(Variable("X"), Number(1))
 
@@ -1406,13 +1377,6 @@ def test_if_expr_simplified() -> None:
     )
 
 
-def test_if_expr_ada_expr() -> None:
-    assert IfExpr([(Variable("X"), Variable("Y"))], Variable("Z")).ada_expr() == ada.IfExpr(
-        [(ada.Variable("X"), ada.Variable("Y"))],
-        ada.Variable("Z"),
-    )
-
-
 def test_value_range_type() -> None:
     assert_type(
         ValueRange(Number(1), Number(42)),
@@ -1458,13 +1422,6 @@ def test_value_range_substituted() -> None:
             lambda x: Variable("Z") if isinstance(x, ValueRange) else x,
         ),
         Variable("Z"),
-    )
-
-
-def test_value_range_ada_expr() -> None:
-    assert ValueRange(Variable("X"), Variable("Y")).ada_expr() == ada.ValueRange(
-        ada.Variable("X"),
-        ada.Variable("Y"),
     )
 
 
@@ -1559,13 +1516,6 @@ def test_quantified_expression_str() -> None:
     assert str(ForAllOf("X", Variable("Y"), Variable("Z"))) == "(for all X of Y =>\n    Z)"
     assert str(ForAllIn("X", Variable("Y"), Variable("Z"))) == "(for all X in Y =>\n    Z)"
     assert str(ForSomeIn("X", Variable("Y"), Variable("Z"))) == "(for some X in Y =>\n    Z)"
-
-
-@pytest.mark.parametrize("expression", [ForAllOf, ForAllIn, ForSomeIn])
-def test_quantified_expression_ada_expr(expression: Callable[[str, Expr, Expr], Expr]) -> None:
-    result = expression("X", Variable("Y"), Variable("Z")).ada_expr()
-    expected = getattr(ada, expression.__name__)("X", ada.Variable("Y"), ada.Variable("Z"))
-    assert result == expected
 
 
 def test_for_all_in_variables() -> None:
@@ -1793,10 +1743,6 @@ def test_string_str() -> None:
     assert str(Equal(String("S"), Variable("X"))) == '"S" = X'
 
 
-def test_string_ada_expr() -> None:
-    assert String("X Y").ada_expr() == ada.String("X Y")
-
-
 def test_selected_type() -> None:
     assert_type(
         Selected(Variable("X", type_=rty.Message("M", {("F",)}, {ID("F"): rty.Integer("A")})), "F"),
@@ -2001,19 +1947,11 @@ def test_conversion_variables() -> None:
     assert result == expected
 
 
-def test_conversion_ada_expr() -> None:
-    assert Conversion("X", Variable("Y")).ada_expr() == ada.Conversion("X", ada.Variable("Y"))
-
-
 def test_qualified_expr_simplified() -> None:
     assert QualifiedExpr("X", Add(Number(21), Number(21))).simplified() == QualifiedExpr(
         "X",
         Number(42),
     )
-
-
-def test_qualified_expr_ada_expr() -> None:
-    assert QualifiedExpr("X", Variable("Y")).ada_expr() == ada.QualifiedExpr("X", ada.Variable("Y"))
 
 
 def test_comprehension_type() -> None:

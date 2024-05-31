@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expr_conv, expression as expr, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,
@@ -138,7 +138,7 @@ class ParserGenerator:
                                     Variable("Fld"),
                                     [
                                         *[
-                                            (Variable(f.affixed_name), t.size.ada_expr())
+                                            (Variable(f.affixed_name), expr_conv.to_ada(t.size))
                                             for f, t in scalar_fields.items()
                                         ],
                                         *(
@@ -1169,7 +1169,7 @@ class ParserGenerator:
         )
 
     def valid_message_condition(self, message: Message, well_formed: bool = False) -> Expr:
-        return (
+        return expr_conv.to_ada(
             expr.Or(
                 *[
                     expr.AndThen(
@@ -1193,8 +1193,7 @@ class ParserGenerator:
                 ],
             )
             .substituted(common.substitution(message, self.prefix))
-            .simplified()
-            .ada_expr()
+            .simplified(),
         )
 
 

@@ -8,7 +8,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Optional
 
-from rflx import __version__, expression as expr, typing_ as rty
+from rflx import __version__, expr_conv, expression as expr, typing_ as rty
 from rflx.ada import (
     FALSE,
     TRUE,
@@ -921,7 +921,12 @@ class Generator:
             specification.append(UseTypeClause(prefix * const.TYPES_BASE_INT))
 
         specification.append(
-            cls._type_validation_function(prefix, integer.name, "Val", constraints.ada_expr()),
+            cls._type_validation_function(
+                prefix,
+                integer.name,
+                "Val",
+                expr_conv.to_ada(constraints),
+            ),
         )
 
         if constraints == expr.TRUE:
@@ -947,14 +952,14 @@ class Generator:
 
         validation_expression = (
             (
-                Less(Variable("Val"), Pow(Number(2), enum.size.ada_expr()))
+                Less(Variable("Val"), Pow(Number(2), expr_conv.to_ada(enum.size)))
                 if enum.size.simplified() != expr.Number(MAX_SCALAR_SIZE)
                 else TRUE
             )
             if enum.always_valid
             else In(
                 Variable("Val"),
-                ChoiceList(*[value.ada_expr() for value in enum.literals.values()]),
+                ChoiceList(*[expr_conv.to_ada(value) for value in enum.literals.values()]),
             )
         )
 
@@ -984,7 +989,9 @@ class Generator:
                             Call(f"Valid_{enum.name}", [Variable("Val.Raw")]),
                             NotIn(
                                 Variable("Val.Raw"),
-                                ChoiceList(*[value.ada_expr() for value in enum.literals.values()]),
+                                ChoiceList(
+                                    *[expr_conv.to_ada(value) for value in enum.literals.values()],
+                                ),
                             ),
                         ),
                     ),
@@ -1010,7 +1017,10 @@ class Generator:
                 ),
                 Case(
                     Variable("Enum"),
-                    [(Variable(key), value.ada_expr()) for key, value in enum.literals.items()],
+                    [
+                        (Variable(key), expr_conv.to_ada(value))
+                        for key, value in enum.literals.items()
+                    ],
                 ),
             ),
         )
@@ -1036,7 +1046,7 @@ class Generator:
             )
 
             conversion_cases.extend(
-                (value.ada_expr(), Aggregate(Variable("True"), Variable(key)))
+                (expr_conv.to_ada(value), Aggregate(Variable("True"), Variable(key)))
                 for key, value in enum.literals.items()
             )
             conversion_cases.append(
@@ -1067,7 +1077,10 @@ class Generator:
         else:
             conversion_cases.extend(
                 [
-                    *[(value.ada_expr(), Variable(key)) for key, value in enum.literals.items()],
+                    *[
+                        (expr_conv.to_ada(value), Variable(key))
+                        for key, value in enum.literals.items()
+                    ],
                     *([(Variable("others"), Last(prefix * enum.identifier))] if incomplete else []),
                 ],
             )
@@ -1149,12 +1162,17 @@ class Generator:
             [
                 ExpressionFunctionDeclaration(
                     specification,
-                    expr.AndThen(
-                        *self._refinement_conditions(refinement, "Ctx", condition_fields, null_sdu),
-                        condition,
-                    )
-                    .simplified()
-                    .ada_expr(),
+                    expr_conv.to_ada(
+                        expr.AndThen(
+                            *self._refinement_conditions(
+                                refinement,
+                                "Ctx",
+                                condition_fields,
+                                null_sdu,
+                            ),
+                            condition,
+                        ).simplified(),
+                    ),
                 ),
             ],
         )
@@ -1188,7 +1206,7 @@ class Generator:
                                 Not(Constrained(pdu_context)),
                                 Not(Constrained(sdu_context)),
                                 *[
-                                    c.ada_expr()
+                                    expr_conv.to_ada(c)
                                     for c in self._refinement_conditions(
                                         refinement,
                                         pdu_context,
@@ -1342,7 +1360,7 @@ class Generator:
                                 Not(Constrained(sdu_context)),
                                 Call(sdu_identifier * "Has_Buffer", [Variable(sdu_context)]),
                                 *[
-                                    c.ada_expr()
+                                    expr_conv.to_ada(c)
                                     for c in self._refinement_conditions(
                                         refinement,
                                         pdu_context,
@@ -1657,9 +1675,9 @@ def integer_types(integer: Integer) -> list[Declaration]:
     return [
         RangeType(
             integer.name,
-            integer.first_expr.ada_expr(),
-            integer.last_expr.ada_expr(),
-            aspects=[SizeAspect(integer.size_expr.ada_expr())],
+            expr_conv.to_ada(integer.first_expr),
+            expr_conv.to_ada(integer.last_expr),
+            aspects=[SizeAspect(expr_conv.to_ada(integer.size_expr))],
         ),
     ]
 
@@ -1671,7 +1689,7 @@ def enumeration_types(enum: Enumeration) -> list[Declaration]:
         EnumerationType(
             common.enum_name(enum) if enum.always_valid else enum.name,
             {k: Number(v.value) for k, v in enum.literals.items()},
-            enum.size_expr.ada_expr(),
+            expr_conv.to_ada(enum.size_expr),
         ),
     )
     if enum.always_valid:

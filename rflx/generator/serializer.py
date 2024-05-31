@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Optional
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expr_conv, expression as expr, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,
@@ -117,15 +117,15 @@ class SerializerGenerator:
                                         Equal(Variable("Fld"), Variable(l.target.affixed_name)),
                                         *(
                                             [
-                                                l.condition.substituted(
-                                                    common.substitution(
-                                                        message,
-                                                        self.prefix,
-                                                        target_type=rty.BIT_LENGTH,
-                                                    ),
-                                                )
-                                                .simplified()
-                                                .ada_expr(),
+                                                expr_conv.to_ada(
+                                                    l.condition.substituted(
+                                                        common.substitution(
+                                                            message,
+                                                            self.prefix,
+                                                            target_type=rty.BIT_LENGTH,
+                                                        ),
+                                                    ).simplified(),
+                                                ),
                                             ]
                                             if l.condition != expr.TRUE
                                             else []
