@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx import expression as expr, lang, model
+from rflx import expr, lang, model
 from rflx.common import STDIN
 from rflx.identifier import ID
 from rflx.model import State, declaration as decl, statement as stmt

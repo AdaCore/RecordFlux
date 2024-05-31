@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx import expression as expr
+from rflx import expr
 from rflx.identifier import ID
 from rflx.model import NeverVerify
 from rflx.pyrflx import PyRFLX

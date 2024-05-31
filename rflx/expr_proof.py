@@ -10,7 +10,7 @@ from typing import Final, Optional, Union
 
 import z3
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expr, typing_ as rty
 from rflx.const import MP_CONTEXT
 from rflx.identifier import ID
 from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity

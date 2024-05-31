@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import abc
 from typing import Union
 
-from rflx import expr_conv, expression as expr, typing_ as rty
+from rflx import expr, expr_conv, typing_ as rty
 from rflx.ada import (
     FALSE,
     NULL,

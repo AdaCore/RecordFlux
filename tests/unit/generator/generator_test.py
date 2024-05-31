@@ -12,7 +12,7 @@ import pytest
 import z3
 from attr import define
 
-from rflx import ada, const as constants, expression as expr, ir, typing_ as rty
+from rflx import ada, const as constants, expr, ir, typing_ as rty
 from rflx.common import file_name
 from rflx.error import FatalError
 from rflx.generator import Generator, common, const

@@ -9,7 +9,7 @@ import pytest
 
 from rflx import expr_proof, typing_ as rty
 from rflx.error import FatalError
-from rflx.expression import (
+from rflx.expr import (
     FALSE,
     TRUE,
     UNDEFINED,

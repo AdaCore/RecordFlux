@@ -5,8 +5,8 @@ from collections import abc
 
 import pytest
 
-import rflx.expression as expr
 import rflx.typing_ as rty
+from rflx import expr
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,

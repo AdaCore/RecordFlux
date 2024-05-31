@@ -13,7 +13,7 @@ import pytest
 
 from rflx import ada, lang
 from rflx.common import STDIN
-from rflx.expression import Expr
+from rflx.expr import Expr
 from rflx.generator import Debug, Generator, const
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration

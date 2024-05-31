@@ -8,7 +8,7 @@ import rflx.typing_ as rty
 from rflx import expr_conv, ir
 from rflx.common import Base
 from rflx.error import fail
-from rflx.expression import Expr, Selected, Variable
+from rflx.expr import Expr, Selected, Variable
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 

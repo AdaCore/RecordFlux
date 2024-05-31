@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from rflx import expression as expr, model
+from rflx import expr, model
 from rflx.error import fail
 from rflx.identifier import ID
 from rflx.model import BOOLEAN, FINAL, INITIAL, OPAQUE, Enumeration, Field, Integer, Link, Message

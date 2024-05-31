@@ -14,7 +14,7 @@ from functools import lru_cache
 from typing import Final
 
 from rflx.error import Location
-from rflx.expression import (
+from rflx.expr import (
     Aggregate,
     And,
     Div,

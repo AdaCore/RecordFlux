@@ -6,7 +6,7 @@ from typing import Optional
 
 from rflx import expr_conv, ir, typing_ as rty
 from rflx.common import Base
-from rflx.expression import Expr, Variable
+from rflx.expr import Expr, Variable
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 

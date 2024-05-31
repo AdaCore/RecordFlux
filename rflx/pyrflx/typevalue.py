@@ -9,7 +9,7 @@ from typing import Any, Optional, Protocol, Union
 from rflx.common import Base
 from rflx.const import BUILTINS_PACKAGE
 from rflx.error import fatal_fail
-from rflx.expression import (
+from rflx.expr import (
     FALSE,
     TRUE,
     UNDEFINED,

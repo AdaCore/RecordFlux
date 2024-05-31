@@ -5,7 +5,7 @@ from collections.abc import Callable
 import pytest
 import z3
 
-from rflx import expression as expr, ir, typing_ as rty
+from rflx import expr, ir, typing_ as rty
 from rflx.error import Location
 from rflx.identifier import ID, id_generator
 

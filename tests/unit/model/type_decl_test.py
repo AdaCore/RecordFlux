@@ -3,7 +3,7 @@ from typing import Callable
 import pytest
 
 import rflx.typing_ as rty
-from rflx.expression import Add, Equal, Number, Pow, Size, Sub, Variable
+from rflx.expr import Add, Equal, Number, Pow, Size, Sub, Variable
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,

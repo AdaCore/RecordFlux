@@ -7,7 +7,7 @@ from typing import Optional, Protocol, TypeVar, Union
 
 from hypothesis import assume, strategies as st
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expr, typing_ as rty
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,

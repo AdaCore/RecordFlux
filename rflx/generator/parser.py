@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-from rflx import expr_conv, expression as expr, typing_ as rty
+from rflx import expr, expr_conv, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,

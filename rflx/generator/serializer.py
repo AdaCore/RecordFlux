@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Optional
 
-from rflx import expr_conv, expression as expr, typing_ as rty
+from rflx import expr, expr_conv, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,

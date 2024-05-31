@@ -1,6 +1,6 @@
 import pytest
 
-from rflx import expression as expr, model, pyrflx
+from rflx import expr, model, pyrflx
 from rflx.identifier import ID
 from tests.const import SPEC_DIR
 

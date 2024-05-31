@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx import expression as expr, pyrflx
+from rflx import expr, pyrflx
 from rflx.identifier import ID
 from rflx.model.cache import AlwaysVerify
 from rflx.pyrflx import PyRFLXError

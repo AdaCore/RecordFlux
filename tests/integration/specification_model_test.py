@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expr, typing_ as rty
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
