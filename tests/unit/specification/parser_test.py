@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import textwrap
 from collections.abc import Mapping, Sequence
 from itertools import zip_longest
@@ -313,13 +314,17 @@ def test_parse_string_error() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            r"^"
-            'a/b.rflx:1:9: error: source file name does not match the package name "A"\n'
-            'a/b.rflx:1:9: info: either rename the file to "a.rflx"\n'
-            'a/b.rflx:1:9: info: or change the package name to "B"\n'
-            r"a/b.rflx:2:1: error: unexpected keyword indentation \(expected 3 or 6\)"
-            r" \[indentation\]"
-            r"$"
+            "^{}$".format(
+                re.escape(
+                    'a/b.rflx:1:9: error: source file name does not match the package name "A"\n'
+                    'a/b.rflx:1:9: help: either rename the file to "a.rflx" or change the package '
+                    'name to "B"\n'
+                    'a/b.rflx:1:9: help: rename to "B"\n'
+                    'a/b.rflx:3:5: help: rename to "B"\n'
+                    "a/b.rflx:2:1: error: unexpected keyword indentation (expected 3 or 6) "
+                    "[indentation]",
+                ),
+            )
         ),
     ):
         p.parse_string(
@@ -2020,21 +2025,23 @@ def test_parse_error_incorrect_name() -> None:
     assert_error_files(
         [f"{SPEC_DIR}/invalid/incorrect_name.rflx"],
         f"^{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: error: "
-        "source file name does not match the package name"
-        f' "Test"\n{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: info: either rename'
-        f' the file to "test.rflx"\n'
-        f"{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: info: or "
-        r'change the package name to "Incorrect_Name"$',
+        'source file name does not match the package name "Test"\n'
+        f'{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: help: either rename the file to "test.rflx" '
+        f'or change the package name to "Incorrect_Name"\n'
+        f'{SPEC_DIR}/invalid/incorrect_name.rflx:1:9: help: rename to "Incorrect_Name"\n'
+        f'{SPEC_DIR}/invalid/incorrect_name.rflx:3:5: help: rename to "Incorrect_Name"$',
     )
 
 
 @pytest.mark.parametrize("filename", ["Tls", "TLS", "BadCasing"])
-def test_parse_error_incorrect_name_should_rename_only(filename: str) -> None:
+def test_parse_error_incorrect_name_should_rename_only(
+    filename: str,
+) -> None:
     assert_error_files(
         [f"{SPEC_DIR}/invalid/{filename}.rflx"],
-        f"^{SPEC_DIR}/invalid/{filename}.rflx:1:9: error: "
-        f'source file name "{filename}.rflx" must be in lower case characters only\n'
-        f"{SPEC_DIR}/invalid/{filename}.rflx:1:9: info: rename the file "
+        f'^{SPEC_DIR}/invalid/{filename}.rflx:1:9: error: source file name "{filename}.rflx" must '
+        "be in lower case characters only\n"
+        f"{SPEC_DIR}/invalid/{filename}.rflx:1:9: help: rename the file "
         f'to "{filename.lower()}.rflx"$',
     )
 

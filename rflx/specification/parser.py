@@ -1620,7 +1620,6 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
         expected_package_name = "_".join(
             x.capitalize() for x in Path(name.name).stem.lower().split("_")
         )
-        # TODO(eng/recordflux/RecordFlux#1611): Improve invalid package name error format
         if name.name != expected_filename:
             error.push(
                 (
@@ -1643,20 +1642,30 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
                     [
                         ErrorEntry(
                             f'rename the file to "{expected_filename}"',
-                            Severity.INFO,
+                            Severity.HELP,
                             node_location(package.f_identifier, name),
                         ),
                     ]
                     if any(c.isupper() for c in Path(name.name).stem)
                     else [
                         ErrorEntry(
-                            f'either rename the file to "{expected_filename}"',
-                            Severity.HELP,
-                        ),
-                        ErrorEntry(
-                            f'or change the package name to "{expected_package_name}"',
+                            f'either rename the file to "{expected_filename}" or change '
+                            f'the package name to "{expected_package_name}"',
                             Severity.HELP,
                             node_location(package.f_identifier, name),
+                            annotations=[
+                                Annotation(
+                                    f'rename to "{expected_package_name}"',
+                                    Severity.HELP,
+                                    node_location(package.f_identifier, name),
+                                ),
+                                Annotation(
+                                    f'rename to "{expected_package_name}"',
+                                    Severity.HELP,
+                                    node_location(package.f_end_identifier, name),
+                                ),
+                            ],
+                            generate_default_annotation=False,
                         ),
                     ]
                 ),
