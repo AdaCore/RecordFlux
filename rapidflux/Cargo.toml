@@ -22,4 +22,3 @@ pyo3 = { version = "0.21.1", features = ["extension-module"] }
 serde = { workspace = true }
 lazy_static = { workspace = true }
 paste = "1.0.15"
-strip-ansi-escapes = "0.2.0"

@@ -42,15 +42,19 @@ def test_multiple_errors() -> None:
             f'{path}:6:9: info: previous identifier was "RFLX_Invalid"',
             f"{path}:6:9: error: source file name does not match the package name"
             ' "RFLX_Invalid"',
-            f'{path}:6:9: info: either rename the file to "rflx_invalid.rflx"',
-            f'{path}:6:9: info: or change the package name to "Multiple_Errors"',
+            f"{path}:6:9: help: either rename the file to "
+            '"rflx_invalid.rflx" or change the package name to "Multiple_Errors"',
+            f'{path}:6:9: help: rename to "Multiple_Errors"',
+            f'{path}:295:5: help: rename to "Multiple_Errors"',
             f'{path}:6:9: error: illegal prefix "RFLX" in package identifier "RFLX_Invalid"',
             f'{path}:295:5: error: inconsistent package identifier "Inconsistent"',
             f'{path}:6:9: info: previous identifier was "RFLX_Invalid"',
             f"{path}:6:9: error: source file name does not match the package name"
             ' "RFLX_Invalid"',
-            f'{path}:6:9: info: either rename the file to "rflx_invalid.rflx"',
-            f'{path}:6:9: info: or change the package name to "Multiple_Errors"',
+            f"{path}:6:9: help: either rename the file to "
+            '"rflx_invalid.rflx" or change the package name to "Multiple_Errors"',
+            f'{path}:6:9: help: rename to "Multiple_Errors"',
+            f'{path}:295:5: help: rename to "Multiple_Errors"',
             f'{path}:6:9: error: illegal identifier "RFLX_Invalid"',
             f'{path}:6:9: info: identifiers starting with "RFLX_" are reserved for internal use',
             f'{path}:72:18: error: undefined field "X"',

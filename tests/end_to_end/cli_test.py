@@ -48,19 +48,16 @@ def test_check_error() -> None:
         1 | package Test is
           |         ^^^^
           |
-        info: either rename the file to "test.rflx"
+        help: either rename the file to "test.rflx" or change the package name to "Incorrect_Name"
          --> tests/data/specs/invalid/incorrect_name.rflx:1:9
           |
         1 | package Test is
-          |         ----
+          |         ---- help: rename to "Incorrect_Name"
+        2 |
+        3 | end Test;
+          |     ---- help: rename to "Incorrect_Name"
           |
-        info: or change the package name to "Incorrect_Name"
-         --> tests/data/specs/invalid/incorrect_name.rflx:1:9
-          |
-        1 | package Test is
-          |         ----
-          |
-        """,
+          """,
     )
 
 

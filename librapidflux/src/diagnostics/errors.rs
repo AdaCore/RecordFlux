@@ -1,6 +1,6 @@
 use std::{
     fmt::{Debug, Display},
-    io::{self, Write},
+    io::{self, BufRead, Write},
     path::PathBuf,
     str::FromStr,
     sync::atomic::{AtomicU64, Ordering},
@@ -8,6 +8,7 @@ use std::{
 
 #[cfg(not(test))]
 use annotate_snippets::renderer::{Color, Style};
+use annotate_snippets::Message;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
@@ -20,23 +21,18 @@ mod colors {
     use annotate_snippets::renderer::RgbColor;
     use owo_colors::colors::CustomColor;
 
-    pub(super) type ErrorColor = CustomColor<225, 0, 0>;
-    pub(super) type WarningColor = CustomColor<200, 200, 10>;
-    pub(super) type InfoColor = CustomColor<0, 50, 200>;
-    pub(super) type HelpColor = CustomColor<100, 160, 255>;
-    pub(super) type NoteColor = CustomColor<180, 180, 0>;
-
-    pub(super) const ERROR_COLOR: RgbColor = to_annotate_snippet_rgb(&ErrorColor {});
-    pub(super) const WARNING_COLOR: RgbColor = to_annotate_snippet_rgb(&WarningColor {});
-    pub(super) const INFO_COLOR: RgbColor = to_annotate_snippet_rgb(&InfoColor {});
-    pub(super) const HELP_COLOR: RgbColor = to_annotate_snippet_rgb(&HelpColor {});
-    pub(super) const NOTE_COLOR: RgbColor = to_annotate_snippet_rgb(&NoteColor {});
-
-    const fn to_annotate_snippet_rgb<const R: u8, const G: u8, const B: u8>(
-        _color: &CustomColor<R, G, B>,
-    ) -> RgbColor {
-        RgbColor(R, G, B)
+    macro_rules! define_color {
+        ($type_name:ident, $const_name:ident, $r:expr, $g:expr, $b:expr) => {
+            pub(super) type $type_name = CustomColor<$r, $g, $b>;
+            pub(super) const $const_name: RgbColor = RgbColor($r, $g, $b);
+        };
     }
+
+    define_color!(ErrorColor, ERROR_COLOR, 225, 0, 0);
+    define_color!(WarningColor, WARNING_COLOR, 200, 200, 10);
+    define_color!(InfoColor, INFO_COLOR, 0, 50, 200);
+    define_color!(HelpColor, HELP_COLOR, 100, 160, 255);
+    define_color!(NoteColor, NOTE_COLOR, 180, 180, 0);
 }
 
 #[cfg(not(test))]
@@ -415,9 +411,29 @@ impl RapidFluxError {
                 }));
 
             match entry.to_message_mut(&source_code.unwrap_or_default()) {
-                Some(msg) => writeln!(stream, "{}", RENDERER.render(msg))?,
+                Some(msg) => Self::print_without_trailing_whitespaces(stream, msg)?,
                 None => writeln!(stream, "{entry}")?,
             }
+        }
+
+        Ok(())
+    }
+
+    /// Print an `annotate_snippets` message while stripping trailing whitespaces.
+    ///
+    /// # Errors
+    ///
+    /// Any `io::Error` that can occurs on the given stream.
+    fn print_without_trailing_whitespaces<T: Write>(
+        stream: &mut T,
+        msg: Message<'_>,
+    ) -> io::Result<()> {
+        let mut memory_stream = io::Cursor::new(Vec::new());
+        write!(&mut memory_stream, "{}", RENDERER.render(msg))?;
+        memory_stream.set_position(0);
+
+        for line in memory_stream.lines() {
+            writeln!(stream, "{}", line?.trim_end())?;
         }
 
         Ok(())
@@ -608,7 +624,7 @@ mod tests {
     #[rstest]
     #[case::error_entry_default_annotation(true)]
     #[case::error_entry_default_annotation(false)]
-    fn test_error_entry_creation_default_generation(#[case] generate_default: bool) {
+    fn test_error_entry_generate_default_annotation(#[case] generate_default: bool) {
         let entry = ErrorEntry {
             generate_default,
             ..Default::default()

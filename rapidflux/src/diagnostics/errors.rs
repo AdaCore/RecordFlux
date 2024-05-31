@@ -61,11 +61,13 @@ impl Severity {
     pub fn __getnewargs__(&self) -> (String,) {
         // Removing ANSI escapes is needed here otherwise Python will not be able to rebuild the
         // object while calling `pickle.load`
-        (strip_ansi_escapes::strip_str(self.0.to_string()).to_uppercase(),)
+        (anstream::adapter::strip_str(&self.0.to_string())
+            .to_string()
+            .to_uppercase(),)
     }
 
     fn __str__(&self) -> String {
-        strip_ansi_escapes::strip_str(self.0.to_string())
+        anstream::adapter::strip_str(&self.0.to_string()).to_string()
     }
 
     fn __repr__(&self) -> String {
@@ -168,7 +170,7 @@ impl Annotation {
     }
 
     fn __str__(&self) -> String {
-        strip_ansi_escapes::strip_str(self.0.to_string())
+        anstream::adapter::strip_str(&self.0.to_string()).to_string()
     }
 
     fn __repr__(&self) -> String {
@@ -239,7 +241,7 @@ impl ErrorEntry {
     }
 
     fn __str__(&self) -> String {
-        strip_ansi_escapes::strip_str(self.0.to_string())
+        anstream::adapter::strip_str(&self.0.to_string()).to_string()
     }
 
     fn __repr__(&self) -> String {
@@ -333,7 +335,7 @@ impl RapidFluxError {
     }
 
     fn __str__(&self) -> String {
-        strip_ansi_escapes::strip_str(self.0.to_string())
+        anstream::adapter::strip_str(&self.0.to_string()).to_string()
     }
 
     fn __repr__(&self) -> String {
