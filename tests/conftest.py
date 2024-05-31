@@ -6,7 +6,7 @@ from collections.abc import Sequence
 
 import hypothesis
 
-from rflx import expression as expr, ir, model
+from rflx import expr, ir, model
 from tests.const import FIXTURE_DIR
 
 hypothesis.settings.register_profile(

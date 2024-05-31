@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import singledispatch
 from typing import Generator
 
-from rflx import ada, expression as expr, ir, typing_ as rty
+from rflx import ada, expr, ir, typing_ as rty
 from rflx.error import fail
 from rflx.identifier import ID
 

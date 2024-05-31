@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Iterable, Optional, Union
 
 import rflx.typing_ as rty
-from rflx import expression as expr, lang, model
+from rflx import expr, lang, model
 from rflx.common import STDIN, unique
 from rflx.error import fail
 from rflx.identifier import ID, StrID

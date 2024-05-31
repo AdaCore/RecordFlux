@@ -8,7 +8,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Optional
 
-from rflx import __version__, expr_conv, expression as expr, typing_ as rty
+from rflx import __version__, expr, expr_conv, typing_ as rty
 from rflx.ada import (
     FALSE,
     TRUE,

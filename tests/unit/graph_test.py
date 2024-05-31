@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydotplus import Dot, InvocationException  # type: ignore[attr-defined]
 
-from rflx.expression import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Sub, Variable
+from rflx.expr import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Sub, Variable
 from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
 from rflx.model import (

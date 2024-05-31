@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from rflx.error import FatalError
-from rflx.expression import (
+from rflx.expr import (
     Add,
     And,
     Equal,

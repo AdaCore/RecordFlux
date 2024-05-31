@@ -6,7 +6,7 @@ from collections.abc import Callable, Mapping
 import pytest
 
 from rflx import typing_ as rty
-from rflx.expression import (
+from rflx.expr import (
     FALSE,
     TRUE,
     UNDEFINED,

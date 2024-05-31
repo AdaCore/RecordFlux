@@ -4,8 +4,7 @@ import pytest
 import z3
 
 from rflx import typing_ as rty
-from rflx.expr_proof import Proof, ProofResult, Z3TypeError, _to_z3
-from rflx.expression import (
+from rflx.expr import (
     FALSE,
     TRUE,
     Add,
@@ -39,6 +38,7 @@ from rflx.expression import (
     Sub,
     Variable,
 )
+from rflx.expr_proof import Proof, ProofResult, Z3TypeError, _to_z3
 from tests.utils import assert_equal
 
 

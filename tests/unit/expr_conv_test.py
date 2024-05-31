@@ -3,7 +3,7 @@ from typing import Callable
 import pytest
 
 from rflx import ada, expr_conv, ir, typing_ as rty
-from rflx.expression import (
+from rflx.expr import (
     FALSE,
     TRUE,
     Add,

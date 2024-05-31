@@ -7,7 +7,7 @@ from typing import Optional
 
 from pydotplus import Dot, Edge, InvocationException, Node  # type: ignore[attr-defined]
 
-from rflx.expression import TRUE, UNDEFINED
+from rflx.expr import TRUE, UNDEFINED
 from rflx.identifier import ID
 from rflx.model import FINAL_STATE, Link, Message, Session
 from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging

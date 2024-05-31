@@ -12,7 +12,7 @@ from typing import Optional, Union
 
 from typing_extensions import Self
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expr, typing_ as rty
 from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.contract import invariant
 from rflx.identifier import ID, StrID

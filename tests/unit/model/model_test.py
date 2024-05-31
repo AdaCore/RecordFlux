@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 import rflx.model.type_decl as mty
-from rflx.expression import Equal, Number
+from rflx.expr import Equal, Number
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,

@@ -1,6 +1,6 @@
 import pytest
 
-from rflx import expression as expr, ir, typing_ as rty
+from rflx import expr, ir, typing_ as rty
 from rflx.identifier import ID, id_generator
 from rflx.model import statement as stmt
 from rflx.rapidflux import Location, RecordFluxError

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Final, Optional
 
-from rflx import expr_conv, expression as expr, ir, typing_ as rty
+from rflx import expr, expr_conv, ir, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.identifier import ID, StrID, id_generator
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity

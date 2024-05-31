@@ -6,7 +6,7 @@ import textwrap
 from collections.abc import Callable
 from typing import Optional
 
-from rflx import expr_conv, expression as expr, model, typing_ as rty
+from rflx import expr, expr_conv, model, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,

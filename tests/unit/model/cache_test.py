@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx import expression as expr, model
+from rflx import expr, model
 from rflx.identifier import ID
 from rflx.model import cache
 from rflx.rapidflux import Location, RecordFluxError

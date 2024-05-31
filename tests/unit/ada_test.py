@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 import pytest
 
-from rflx import ada, expression as expr, typing_ as rty
+from rflx import ada, expr, typing_ as rty
 from rflx.identifier import ID
 from tests.utils import assert_equal
 

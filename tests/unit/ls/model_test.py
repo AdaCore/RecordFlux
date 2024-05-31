@@ -2,7 +2,7 @@ from pathlib import Path, PosixPath
 
 import pytest
 
-from rflx import expression as expr
+from rflx import expr
 from rflx.error import Location
 from rflx.identifier import ID
 from rflx.ls.model import LSModel, Symbol, SymbolCategory

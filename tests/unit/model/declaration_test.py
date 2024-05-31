@@ -1,6 +1,6 @@
 import pytest
 
-from rflx import expression as expr
+from rflx import expr
 from rflx.identifier import id_generator
 from rflx.model import declaration as decl
 from rflx.rapidflux import Location, RecordFluxError

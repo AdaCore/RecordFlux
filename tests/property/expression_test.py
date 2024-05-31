@@ -1,7 +1,6 @@
 from hypothesis import given, settings, strategies as st
 
-import rflx.expression as expr
-from rflx import expr_conv
+from rflx import expr, expr_conv
 from tests.property import strategies
 
 

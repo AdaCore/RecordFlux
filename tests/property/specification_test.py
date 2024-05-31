@@ -3,7 +3,7 @@ import math
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-import rflx.expression as expr
+from rflx import expr
 from rflx.model import Model
 from rflx.specification import Parser
 from tests.property import strategies

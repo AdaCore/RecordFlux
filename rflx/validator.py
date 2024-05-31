@@ -13,7 +13,7 @@ from typing import Optional, TextIO, Union
 from ruamel.yaml.main import YAML
 from typing_extensions import Self
 
-from rflx import expr_proof, expression as expr
+from rflx import expr, expr_proof
 from rflx.identifier import ID, StrID
 from rflx.model import AlwaysVerify, Cache, Link, Message, Model, Refinement, type_decl as mty
 from rflx.pyrflx import ChecksumFunction, Package, PyRFLX, PyRFLXError

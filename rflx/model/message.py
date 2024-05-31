@@ -11,7 +11,7 @@ from functools import cached_property
 from typing import Optional, Union
 
 import rflx.typing_ as rty
-from rflx import expr_proof, expression as expr
+from rflx import expr, expr_proof
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.const import MP_CONTEXT
 from rflx.error import are_all_locations_present, fail, fatal_fail

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import rflx.typing_ as rty
-from rflx import const, expression as expr
+from rflx import const, expr
 from rflx.common import indent_next, verbose_repr
 from rflx.error import fail
 from rflx.identifier import ID, StrID
