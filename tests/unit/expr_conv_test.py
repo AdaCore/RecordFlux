@@ -2,13 +2,14 @@ from typing import Callable
 
 import pytest
 
-from rflx import expr_conv, ir, typing_ as rty
+from rflx import ada, expr_conv, ir, typing_ as rty
 from rflx.expression import (
     FALSE,
     TRUE,
     Add,
     Aggregate,
     And,
+    AndThen,
     Call,
     CaseExpr,
     Comprehension,
@@ -18,11 +19,15 @@ from rflx.expression import (
     Equal,
     Expr,
     First,
+    ForAllIn,
+    ForAllOf,
+    ForSomeIn,
     Greater,
     GreaterEqual,
     HasData,
     Head,
     IfExpr,
+    In,
     Last,
     Length,
     Less,
@@ -34,16 +39,22 @@ from rflx.expression import (
     Neg,
     Not,
     NotEqual,
+    NotIn,
     Number,
     Opaque,
     Or,
+    OrElse,
     Pow,
     Present,
+    QualifiedExpr,
+    Rem,
     Selected,
     Size,
+    String,
     Sub,
     Valid,
     ValidChecksum,
+    ValueRange,
     Variable,
 )
 from rflx.identifier import ID, id_generator
@@ -52,6 +63,73 @@ INT_TY = rty.Integer("I", rty.Bounds(10, 100))
 ENUM_TY = rty.Enumeration("E", [ID("E1"), ID("E2")])
 MSG_TY = rty.Message("M")
 SEQ_TY = rty.Sequence("S", rty.Message("M"))
+
+
+@pytest.mark.parametrize("expression", [And, AndThen, Or, OrElse])
+def test_to_ada_bool_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
+    result = expr_conv.to_ada(expression(Variable("X"), Variable("Y")))
+    expected = getattr(ada, expression.__name__)(ada.Variable("X"), ada.Variable("Y"))
+    assert result == expected
+
+
+@pytest.mark.parametrize("expression", [Add, Mul, Sub, Div, Pow, Mod, Rem])
+def test_to_ada_math_expr(expression: Callable[[Expr, Expr], Expr]) -> None:
+    result = expr_conv.to_ada(expression(Variable("X"), Variable("Y")))
+    expected = getattr(ada, expression.__name__)(ada.Variable("X"), ada.Variable("Y"))
+    assert result == expected
+
+
+@pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
+def test_to_ada_math_relation(relation: Callable[[Expr, Expr], Expr]) -> None:
+    result = expr_conv.to_ada(relation(Variable("X"), Variable("Y")))
+    expected = getattr(ada, relation.__name__)(ada.Variable("X"), ada.Variable("Y"))
+    assert result == expected
+
+
+@pytest.mark.parametrize("relation", [In, NotIn])
+def test_to_ada_composite_relation(relation: Callable[[Expr, Expr], Expr]) -> None:
+    result = expr_conv.to_ada(relation(Variable("X"), Variable("Y")))
+    expected = getattr(ada, relation.__name__)(ada.Variable("X"), ada.Variable("Y"))
+    assert result == expected
+
+
+def test_to_ada_if_expr() -> None:
+    assert expr_conv.to_ada(IfExpr([(Variable("X"), Variable("Y"))], Variable("Z"))) == ada.IfExpr(
+        [(ada.Variable("X"), ada.Variable("Y"))],
+        ada.Variable("Z"),
+    )
+
+
+def test_to_ada_value_range() -> None:
+    assert expr_conv.to_ada(ValueRange(Variable("X"), Variable("Y"))) == ada.ValueRange(
+        ada.Variable("X"),
+        ada.Variable("Y"),
+    )
+
+
+@pytest.mark.parametrize("expression", [ForAllOf, ForAllIn, ForSomeIn])
+def test_to_ada_quantified_expression(expression: Callable[[str, Expr, Expr], Expr]) -> None:
+    result = expr_conv.to_ada(expression("X", Variable("Y"), Variable("Z")))
+    expected = getattr(ada, expression.__name__)("X", ada.Variable("Y"), ada.Variable("Z"))
+    assert result == expected
+
+
+def test_to_ada_string() -> None:
+    assert expr_conv.to_ada(String("X Y")) == ada.String("X Y")
+
+
+def test_to_ada_conversion() -> None:
+    assert expr_conv.to_ada(Conversion("X", Variable("Y"))) == ada.Conversion(
+        "X",
+        ada.Variable("Y"),
+    )
+
+
+def test_to_ada_qualified_expr() -> None:
+    assert expr_conv.to_ada(QualifiedExpr("X", Variable("Y"))) == ada.QualifiedExpr(
+        "X",
+        ada.Variable("Y"),
+    )
 
 
 def test_to_ir_true() -> None:

@@ -6,7 +6,7 @@ import textwrap
 from collections.abc import Callable
 from typing import Optional
 
-from rflx import expression as expr, model, typing_ as rty
+from rflx import expr_conv, expression as expr, model, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,
@@ -404,7 +404,7 @@ def message_structure_invariant(
                     "Well_Formed",
                     [Indexed(Variable("Cursors"), Variable(link.source.affixed_name))],
                 ),
-                condition.ada_expr(),
+                expr_conv.to_ada(condition),
             )
             if link.source != model.INITIAL and not unique
             else TRUE
@@ -418,14 +418,14 @@ def message_structure_invariant(
                         Sub(
                             Selected(
                                 Indexed(
-                                    prefixed("Cursors").ada_expr(),
+                                    expr_conv.to_ada(prefixed("Cursors")),
                                     Variable(link.target.affixed_name),
                                 ),
                                 "Last",
                             ),
                             Selected(
                                 Indexed(
-                                    prefixed("Cursors").ada_expr(),
+                                    expr_conv.to_ada(prefixed("Cursors")),
                                     Variable(link.target.affixed_name),
                                 ),
                                 "First",
@@ -433,17 +433,17 @@ def message_structure_invariant(
                         ),
                         Number(1),
                     ),
-                    size.ada_expr(),
+                    expr_conv.to_ada(size),
                 ),
                 Equal(
                     Selected(
                         Indexed(
-                            prefixed("Cursors").ada_expr(),
+                            expr_conv.to_ada(prefixed("Cursors")),
                             Variable(link.target.affixed_name),
                         ),
                         "First",
                     ),
-                    first.ada_expr(),
+                    expr_conv.to_ada(first),
                 ),
             ),
         )
@@ -457,7 +457,7 @@ def message_structure_invariant(
         return IfThenElse(
             Call(
                 "Well_Formed",
-                [Indexed(prefixed("Cursors").ada_expr(), Variable(fld.affixed_name))],
+                [Indexed(expr_conv.to_ada(prefixed("Cursors")), Variable(fld.affixed_name))],
             ),
             field_property(fld),
         )
@@ -583,9 +583,11 @@ def valid_path_to_next_field_condition(
 ) -> list[Expr]:
     return [
         IfThenElse(
-            l.condition.substituted(substitution(message, public=True, prefix=prefix))
-            .simplified()
-            .ada_expr(),
+            expr_conv.to_ada(
+                l.condition.substituted(
+                    substitution(message, public=True, prefix=prefix),
+                ).simplified(),
+            ),
             (
                 Call("Valid_Next", [Variable("Ctx"), Variable(l.target.affixed_name)])
                 if l.target != model.FINAL
@@ -967,7 +969,7 @@ def conditional_field_size(
     prefix: str,
 ) -> Expr:
     def substituted(expression: expr.Expr) -> Expr:
-        return (
+        return expr_conv.to_ada(
             expression.substituted(
                 substitution(
                     message,
@@ -975,15 +977,13 @@ def conditional_field_size(
                     target_type=rty.BIT_LENGTH,
                     embedded=True,
                 ),
-            )
-            .simplified()
-            .ada_expr()
+            ).simplified(),
         )
 
     field_type = message.field_types[field]
 
     if isinstance(field_type, model.Scalar):
-        return field_type.size.ada_expr()
+        return expr_conv.to_ada(field_type.size)
 
     links = message.incoming(field)
 

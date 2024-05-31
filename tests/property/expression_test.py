@@ -1,6 +1,7 @@
 from hypothesis import given, settings, strategies as st
 
 import rflx.expression as expr
+from rflx import expr_conv
 from tests.property import strategies
 
 
@@ -47,4 +48,4 @@ from tests.property import strategies
 )
 @settings(deadline=None)
 def test_conversion(expression: expr.Expr) -> None:
-    assert expression.ada_expr().rflx_expr() == expression
+    assert expr_conv.to_ada(expression).rflx_expr() == expression

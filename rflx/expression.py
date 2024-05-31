@@ -13,7 +13,7 @@ from pathlib import Path
 from sys import intern
 from typing import TYPE_CHECKING, Final, Optional, Union
 
-from rflx import ada, const, typing_ as rty
+from rflx import const, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.contract import DBC, invariant, require
 from rflx.error import are_all_locations_present
@@ -157,10 +157,6 @@ class Expr(DBC, Base):
             return "(" + indent_next(str(expr), 1) + ")"
         return str(expr)
 
-    @abstractmethod
-    def ada_expr(self) -> ada.Expr:
-        raise NotImplementedError
-
 
 class Not(Expr):
     def __init__(self, expr: Expr, location: Optional[Location] = None) -> None:
@@ -232,9 +228,6 @@ class Not(Expr):
                     self.location,
                 )
         return self.__class__(self.expr.simplified(), self.location)
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Not(self.expr.ada_expr())
 
 
 class BinExpr(Expr):
@@ -537,17 +530,11 @@ class And(BoolAssExpr):
     def symbol(self) -> str:
         return " and "
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.And(*[t.ada_expr() for t in self.terms])
-
 
 class AndThen(And):
     @property
     def symbol(self) -> str:
         return " and then "
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.AndThen(*[t.ada_expr() for t in self.terms])
 
 
 class Or(BoolAssExpr):
@@ -574,17 +561,11 @@ class Or(BoolAssExpr):
     def symbol(self) -> str:
         return " or "
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Or(*[t.ada_expr() for t in self.terms])
-
 
 class OrElse(Or):
     @property
     def symbol(self) -> str:
         return " or else "
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.OrElse(*[t.ada_expr() for t in self.terms])
 
 
 class Number(Expr):
@@ -697,9 +678,6 @@ class Number(Expr):
     def simplified(self) -> Expr:
         return self
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Number(self.value, self.base)
-
 
 class Neg(Expr):
     def __init__(self, expr: Expr, location: Optional[Location] = None) -> None:
@@ -748,9 +726,6 @@ class Neg(Expr):
         if isinstance(self.expr, Number):
             return (-self.expr).simplified()
         return self.__class__(self.expr.simplified(), self.location)
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Neg(self.expr.ada_expr())
 
 
 class MathAssExpr(AssExpr):
@@ -815,9 +790,6 @@ class Add(MathAssExpr):
     def symbol(self) -> str:
         return " + "
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Add(*[t.ada_expr() for t in self.terms])
-
 
 class Mul(MathAssExpr):
     def __neg__(self) -> Expr:
@@ -836,9 +808,6 @@ class Mul(MathAssExpr):
     @property
     def symbol(self) -> str:
         return " * "
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Mul(*[t.ada_expr() for t in self.terms])
 
 
 class MathBinExpr(BinExpr):
@@ -871,9 +840,6 @@ class Sub(MathBinExpr):
     def symbol(self) -> str:
         return " - "
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Sub(self.left.ada_expr(), self.right.ada_expr())
-
 
 class Div(MathBinExpr):
     @property
@@ -901,9 +867,6 @@ class Div(MathBinExpr):
     def symbol(self) -> str:
         return " / "
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Div(self.left.ada_expr(), self.right.ada_expr())
-
 
 class Pow(MathBinExpr):
     @property
@@ -920,9 +883,6 @@ class Pow(MathBinExpr):
     @property
     def symbol(self) -> str:
         return " ** "
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Pow(self.left.ada_expr(), self.right.ada_expr())
 
 
 class Mod(MathBinExpr):
@@ -951,9 +911,6 @@ class Mod(MathBinExpr):
     def symbol(self) -> str:
         return " mod "
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Mod(self.left.ada_expr(), self.right.ada_expr())
-
 
 class Rem(MathBinExpr):
     """Only used by code generator and therefore provides minimum functionality."""
@@ -965,9 +922,6 @@ class Rem(MathBinExpr):
     @property
     def symbol(self) -> str:
         return " rem "
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Rem(self.left.ada_expr(), self.right.ada_expr())
 
 
 class Name(Expr):
@@ -1006,10 +960,6 @@ class Name(Expr):
     def simplified(self) -> Expr:
         return self
 
-    @abstractmethod
-    def ada_expr(self) -> ada.Expr:
-        raise NotImplementedError
-
 
 class TypeName(Name):
     def __init__(
@@ -1037,9 +987,6 @@ class TypeName(Name):
 
     def variables(self) -> list[Variable]:
         return []
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Literal(self.identifier)
 
 
 class Literal(Name):
@@ -1076,9 +1023,6 @@ class Literal(Name):
 
     def variables(self) -> list[Variable]:
         return []
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Literal(self.identifier)
 
     def copy(
         self,
@@ -1129,9 +1073,6 @@ class Variable(Name):
 
     def variables(self) -> list[Variable]:
         return [self]
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Variable(self.identifier)
 
     def copy(
         self,
@@ -1206,11 +1147,6 @@ class Attribute(Name):
 
     def variables(self) -> list[Variable]:
         return self.prefix.variables()
-
-    def ada_expr(self) -> ada.Expr:
-        result = getattr(ada, self.__class__.__name__)(self.prefix.ada_expr())
-        assert isinstance(result, ada.Expr)
-        return result
 
 
 class Size(Attribute):
@@ -1385,14 +1321,6 @@ class Val(Attribute):
     def representation(self) -> str:
         return f"{self.prefix}'{self.__class__.__name__} ({self.expression})"
 
-    def ada_expr(self) -> ada.Expr:
-        result = getattr(ada, self.__class__.__name__)(
-            self.prefix.ada_expr(),
-            self.expression.ada_expr(),
-        )
-        assert isinstance(result, ada.Expr)
-        return result
-
 
 @invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
@@ -1412,12 +1340,6 @@ class Indexed(Name):
     @property
     def representation(self) -> str:
         return f"{self.prefix} (" + ", ".join(map(str, self.elements)) + ")"
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Indexed(
-            self.prefix.ada_expr(),
-            *[e.ada_expr() for e in self.elements],
-        )
 
 
 class Selected(Name):
@@ -1492,9 +1414,6 @@ class Selected(Name):
             )
         return expr
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Selected(self.prefix.ada_expr(), ID(self.selector))
-
     def copy(
         self,
         prefix: Optional[Expr] = None,
@@ -1564,9 +1483,6 @@ class Call(Name):
             args = f" ({args})"
         return f"{self.identifier}{args}"
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Call(self.identifier, [a.ada_expr() for a in self.args], {})
-
     def variables(self) -> list[Variable]:
         result = [Variable(self.identifier, location=self.location)]
         for t in self.args:
@@ -1616,9 +1532,6 @@ class Slice(Name):
     def representation(self) -> str:
         return f"{self.prefix} ({self.first} .. {self.last})"
 
-    def ada_expr(self) -> ada.Expr:
-        raise NotImplementedError
-
 
 class UndefinedExpr(Name):
     @property
@@ -1629,9 +1542,6 @@ class UndefinedExpr(Name):
         raise NotImplementedError
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        raise NotImplementedError
-
-    def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
 
@@ -1688,9 +1598,6 @@ class Aggregate(Expr):
     def length(self) -> Expr:
         return Number(len(self.elements))
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Aggregate(*[e.ada_expr() for e in self.elements])
-
 
 class String(Aggregate):
     def __init__(self, data: str, location: Optional[Location] = None) -> None:
@@ -1718,9 +1625,6 @@ class String(Aggregate):
     def simplified(self) -> Expr:
         return self
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.String(self.data)
-
 
 class NamedAggregate(Expr):
     """Only used by code generator and therefore provides minimum functionality."""
@@ -1746,9 +1650,6 @@ class NamedAggregate(Expr):
         raise NotImplementedError
 
     def simplified(self) -> Expr:
-        raise NotImplementedError
-
-    def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
 
@@ -1836,9 +1737,6 @@ class Less(Relation):
     def simplified(self) -> Expr:
         return self._simplified(operator.lt)
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Less(self.left.ada_expr(), self.right.ada_expr())
-
 
 class LessEqual(Relation):
     def __neg__(self) -> Expr:
@@ -1857,9 +1755,6 @@ class LessEqual(Relation):
     def simplified(self) -> Expr:
         return self._simplified(operator.le)
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.LessEqual(self.left.ada_expr(), self.right.ada_expr())
-
 
 class Equal(Relation):
     def __neg__(self) -> Expr:
@@ -1876,9 +1771,6 @@ class Equal(Relation):
 
     def simplified(self) -> Expr:
         return self._simplified(operator.eq)
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.Equal(self.left.ada_expr(), self.right.ada_expr())
 
 
 class GreaterEqual(Relation):
@@ -1898,9 +1790,6 @@ class GreaterEqual(Relation):
     def simplified(self) -> Expr:
         return self._simplified(operator.ge)
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.GreaterEqual(self.left.ada_expr(), self.right.ada_expr())
-
 
 class Greater(Relation):
     def __neg__(self) -> Expr:
@@ -1919,9 +1808,6 @@ class Greater(Relation):
     def simplified(self) -> Expr:
         return self._simplified(operator.gt)
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Greater(self.left.ada_expr(), self.right.ada_expr())
-
 
 class NotEqual(Relation):
     def __neg__(self) -> Expr:
@@ -1938,9 +1824,6 @@ class NotEqual(Relation):
 
     def simplified(self) -> Expr:
         return self._simplified(operator.ne)
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.NotEqual(self.left.ada_expr(), self.right.ada_expr())
 
 
 class In(Relation):
@@ -1960,9 +1843,6 @@ class In(Relation):
     def symbol(self) -> str:
         return " in "
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.In(self.left.ada_expr(), self.right.ada_expr())
-
 
 class NotIn(Relation):
     def __neg__(self) -> Expr:
@@ -1980,9 +1860,6 @@ class NotIn(Relation):
     @property
     def symbol(self) -> str:
         return " not in "
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.NotIn(self.left.ada_expr(), self.right.ada_expr())
 
 
 class IfExpr(Expr):
@@ -2072,14 +1949,6 @@ class IfExpr(Expr):
             self.else_expression.simplified() if self.else_expression else None,
         )
 
-    def ada_expr(self) -> ada.Expr:
-        result = getattr(ada, self.__class__.__name__)(
-            [(c.ada_expr(), e.ada_expr()) for c, e in self.condition_expressions],
-            self.else_expression.ada_expr() if self.else_expression else None,
-        )
-        assert isinstance(result, ada.Expr)
-        return result
-
 
 class QuantifiedExpr(Expr):
     def __init__(
@@ -2138,15 +2007,6 @@ class QuantifiedExpr(Expr):
                 if v.identifier != self.parameter_identifier
             ),
         )
-
-    def ada_expr(self) -> ada.Expr:
-        result = getattr(ada, self.__class__.__name__)(
-            self.parameter_identifier,
-            self.iterable.ada_expr(),
-            self.predicate.ada_expr(),
-        )
-        assert isinstance(result, ada.Expr)
-        return result
 
     def substituted(
         self,
@@ -2251,9 +2111,6 @@ class ValueRange(Expr):
     def simplified(self) -> Expr:
         return self.__class__(self.lower.simplified(), self.upper.simplified(), self.location)
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.ValueRange(self.lower.ada_expr(), self.upper.ada_expr())
-
 
 class Conversion(Expr):
     def __init__(
@@ -2344,9 +2201,6 @@ class Conversion(Expr):
             self.location,
         )
 
-    def ada_expr(self) -> ada.Expr:
-        return ada.Conversion(self.identifier, self.argument.ada_expr())
-
     def variables(self) -> list[Variable]:
         return self.argument.variables()
 
@@ -2379,9 +2233,6 @@ class QualifiedExpr(Expr):
 
     def simplified(self) -> Expr:
         return QualifiedExpr(self.type_identifier, self.expression.simplified())
-
-    def ada_expr(self) -> ada.Expr:
-        return ada.QualifiedExpr(self.type_identifier, self.expression.ada_expr())
 
 
 class Comprehension(Expr):
@@ -2459,9 +2310,6 @@ class Comprehension(Expr):
     @property
     def precedence(self) -> Precedence:
         return Precedence.LITERAL
-
-    def ada_expr(self) -> ada.Expr:
-        raise NotImplementedError
 
     def variables(self) -> list[Variable]:
         return [
@@ -2628,9 +2476,6 @@ class MessageAggregate(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        raise NotImplementedError
-
-    def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
     def variables(self) -> list[Variable]:
@@ -2956,9 +2801,6 @@ class CaseExpr(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        raise NotImplementedError
-
-    def ada_expr(self) -> ada.Expr:
         raise NotImplementedError
 
     def variables(self) -> list[Variable]:

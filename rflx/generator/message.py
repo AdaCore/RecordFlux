@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import abc
 from typing import Union
 
-from rflx import expression as expr, typing_ as rty
+from rflx import expr_conv, expression as expr, typing_ as rty
 from rflx.ada import (
     FALSE,
     NULL,
@@ -406,37 +406,37 @@ def create_valid_predecessors_invariant_function(
                                 ),
                                 Or(
                                     *[
-                                        expr.AndThen(
-                                            (
-                                                expr.Call(
-                                                    (
-                                                        "Well_Formed"
-                                                        if l.source in composite_fields
-                                                        else "Valid"
-                                                    ),
-                                                    rty.BOOLEAN,
-                                                    [
-                                                        expr.Indexed(
-                                                            expr.Variable("Cursors"),
-                                                            expr.Variable(
-                                                                l.source.affixed_name,
-                                                            ),
+                                        expr_conv.to_ada(
+                                            expr.AndThen(
+                                                (
+                                                    expr.Call(
+                                                        (
+                                                            "Well_Formed"
+                                                            if l.source in composite_fields
+                                                            else "Valid"
                                                         ),
-                                                    ],
-                                                )
-                                                if l.source != INITIAL
-                                                else expr.TRUE
-                                            ),
-                                            l.condition.substituted(
-                                                common.substitution(
-                                                    message,
-                                                    embedded=True,
-                                                    prefix=prefix,
+                                                        rty.BOOLEAN,
+                                                        [
+                                                            expr.Indexed(
+                                                                expr.Variable("Cursors"),
+                                                                expr.Variable(
+                                                                    l.source.affixed_name,
+                                                                ),
+                                                            ),
+                                                        ],
+                                                    )
+                                                    if l.source != INITIAL
+                                                    else expr.TRUE
                                                 ),
-                                            ),
+                                                l.condition.substituted(
+                                                    common.substitution(
+                                                        message,
+                                                        embedded=True,
+                                                        prefix=prefix,
+                                                    ),
+                                                ),
+                                            ).simplified(),
                                         )
-                                        .simplified()
-                                        .ada_expr()
                                         for l in message.incoming(f)
                                     ],
                                 ),
@@ -501,7 +501,7 @@ def create_valid_next_internal_function(
                 "Well_Formed" if link.source in composite_fields else "Valid",
                 [Indexed(Variable("Cursors"), Variable(link.source.affixed_name))],
             ),
-            condition.ada_expr(),
+            expr_conv.to_ada(condition),
         )
 
     def valid_next_expr(fld: Field) -> Expr:
@@ -737,7 +737,7 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
                     Case(
                         Variable("Fld"),
                         [
-                            (Variable(f.affixed_name), fld_first_expr(f).ada_expr())
+                            (Variable(f.affixed_name), expr_conv.to_ada(fld_first_expr(f)))
                             for f in message.fields
                         ],
                     ),
@@ -2161,7 +2161,7 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
             c = c.substituted(
                 lambda x: expr.Variable("Agg") if x == expr.Variable(field.name) else x,
             )
-        return c.substituted(common.substitution(message, prefix)).simplified().ada_expr()
+        return expr_conv.to_ada(c.substituted(common.substitution(message, prefix)).simplified())
 
     parameters = [
         Parameter(["Ctx"], "Context"),
@@ -3382,12 +3382,12 @@ def _create_structure_type(prefix: str, message: Message) -> UnitPart:
                         First(const.TYPES_INDEX),
                         Add(
                             First(const.TYPES_INDEX),
-                            expr.Sub(
-                                expr.Div(field_size[link.target], expr.Number(8)),
-                                expr.Number(1),
-                            )
-                            .simplified()
-                            .ada_expr(),
+                            expr_conv.to_ada(
+                                expr.Sub(
+                                    expr.Div(field_size[link.target], expr.Number(8)),
+                                    expr.Number(1),
+                                ).simplified(),
+                            ),
                         ),
                     ),
                 )
@@ -3421,14 +3421,15 @@ def _create_valid_structure_function(prefix: str, message: Message) -> UnitPart:
         for path in message.paths(FINAL)
         for link in path
         for condition in [
-            link.condition.substituted(
-                # Eng/RecordFlux/RecordFlux#276
-                mapping={expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
-            )
-            .substituted(_struct_substitution(message))
-            .substituted(common.substitution(message, prefix))
-            .simplified()
-            .ada_expr(),
+            expr_conv.to_ada(
+                link.condition.substituted(
+                    # Eng/RecordFlux/RecordFlux#276
+                    mapping={expr.ValidChecksum(f): expr.TRUE for f in message.checksums},
+                )
+                .substituted(_struct_substitution(message))
+                .substituted(common.substitution(message, prefix))
+                .simplified(),
+            ),
         ]
         if condition != TRUE
     ]
@@ -3500,10 +3501,11 @@ def _create_sufficient_buffer_length_function(prefix: str, message: Message) -> 
                             ),
                         ],
                     ),
-                    message_size.substituted(_struct_substitution(message))
-                    .substituted(common.substitution(message, prefix))
-                    .simplified()
-                    .ada_expr(),
+                    expr_conv.to_ada(
+                        message_size.substituted(_struct_substitution(message))
+                        .substituted(common.substitution(message, prefix))
+                        .simplified(),
+                    ),
                 ),
             ),
         ],
@@ -3666,7 +3668,7 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
 
             if isinstance(type_, (Scalar, Opaque)):
                 if isinstance(type_, Opaque) and link.size.variables():
-                    size = (
+                    size = expr_conv.to_ada(
                         link.size.substituted(
                             lambda x: (
                                 expr.Size(expr.Variable("Struct" * x.prefix.identifier))
@@ -3675,8 +3677,7 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
                                 and Field(x.prefix.identifier) in message.fields
                                 else x
                             ),
-                        )
-                        .substituted(
+                        ).substituted(
                             lambda x: (
                                 expr.Call(
                                     const.TYPES_BIT_LENGTH,
@@ -3687,8 +3688,7 @@ def _create_to_context_procedure(prefix: str, message: Message) -> UnitPart:
                                 and Field(x.identifier) in message.fields
                                 else x
                             ),
-                        )
-                        .ada_expr()
+                        ),
                     )
                     statements.append(
                         CallStatement(
@@ -3778,7 +3778,7 @@ def _create_structure_field_size_function(message: Message, field: Field) -> Uni
         [Parameter(["Struct"], "Structure")],
     )
     if isinstance(field_type, Scalar):
-        expression = field_type.size.ada_expr()
+        expression = expr_conv.to_ada(field_type.size)
     else:
         assert isinstance(field_type, Opaque)
 
@@ -3812,7 +3812,7 @@ def _create_structure_field_size_function(message: Message, field: Field) -> Uni
 
         links = message.incoming(field)
         assert len(links) == 1
-        expression = links[0].size.substituted(substitute).simplified().ada_expr()
+        expression = expr_conv.to_ada(links[0].size.substituted(substitute).simplified())
 
     return UnitPart(
         [
