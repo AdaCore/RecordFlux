@@ -605,7 +605,7 @@ $(VSIX):
 
 .PHONY: audit
 
-audit: $(PROJECT_MANAGEMENT) rapidflux_devel
+audit: $(RFLX) rapidflux_devel
 	@mkdir -p $(BUILD_DIR)
 	@$(POETRY) export --with=build --with=dev | grep -v "@ file" > $(BUILD_DIR)/requirements.txt
 	@echo Auditing Python dependencies
