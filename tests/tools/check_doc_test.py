@@ -238,7 +238,7 @@ def test_invalid_rflx_spec_style() -> None:
         CheckDocError,
         match=(
             r"^<stdin>:6: error in code block\n"
-            r"<stdin>:3:4: error: unexpected keyword indentation \(expected 3 or 6\) "
+            r"<stdin>:3:5: error: unexpected keyword indentation \(expected 3 or 6\) "
             r"\[indentation\]$"
         ),
     ):

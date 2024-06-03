@@ -253,13 +253,13 @@ def test_deactivation_of_checks_on_file_level(
             ),
             textwrap.dedent(
                 """\
-            error: unexpected keyword indentation (expected 3 or 6) [indentation]
-             --> {}:2:1
-              |
-            2 | type M is
-              | ^
-              |
-            """,
+                error: unexpected keyword indentation (expected 3 or 6) [indentation]
+                 --> {}:2:1
+                  |
+                2 | type M is
+                  | ^
+                  |
+                """,
             ),
         ),
         (
@@ -275,13 +275,13 @@ def test_deactivation_of_checks_on_file_level(
             ),
             textwrap.dedent(
                 """\
-            error: unexpected keyword indentation (expected 3 or 6) [indentation]
-             --> {}:2:5
-              |
-            2 |     type M is
-              |     ^
-              |
-            """,
+                error: unexpected keyword indentation (expected 3 or 6) [indentation]
+                 --> {}:2:5
+                  |
+                2 |     type M is
+                  |     ^
+                  |
+                """,
             ),
         ),
     ],

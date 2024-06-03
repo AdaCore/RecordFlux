@@ -54,7 +54,7 @@ def test_parse_no_subsequent_errors_caused_by_style_errors(tmp_path: Path) -> No
         RecordFluxError,
         match=(
             r"^"
-            rf"{a}:12:0: error: unexpected keyword indentation \(expected 3, 12 or 15\)"
+            rf"{a}:12:1: error: unexpected keyword indentation \(expected 3, 12 or 15\)"
             r" \[indentation\]"
             r"$"
         ),
