@@ -1,9 +1,12 @@
+import re
+import textwrap
 from pathlib import Path
 
 import pytest
 
-from rflx.rapidflux import RecordFluxError
+from rflx.rapidflux import RecordFluxError, source_code
 from rflx.specification import style
+from tests.utils import assert_stderr_regex
 
 
 @pytest.mark.parametrize(
@@ -232,3 +235,66 @@ def test_deactivation_of_checks_on_file_level(
     spec_file = tmp_path / "test.rflx"
     spec_file.write_text(f"-- style: disable = {disabled_checks}\n\n{spec}")
     style.check(spec_file).propagate()
+
+
+@pytest.mark.parametrize(
+    ("spec_code", "expected_message"),
+    [
+        (
+            textwrap.dedent(
+                """\
+                package Test is
+                type M is
+                      message
+                         A : Opaque with Size => 8;
+                      end message;
+                end Test;
+            """,
+            ),
+            textwrap.dedent(
+                """\
+            error: unexpected keyword indentation (expected 3 or 6) [indentation]
+             --> {}:2:1
+              |
+            2 | type M is
+              | ^
+              |
+            """,
+            ),
+        ),
+        (
+            textwrap.dedent(
+                """\
+                package Test is
+                    type M is
+                      message
+                         A : Opaque with Size => 8;
+                      end message;
+                end Test;
+            """,
+            ),
+            textwrap.dedent(
+                """\
+            error: unexpected keyword indentation (expected 3 or 6) [indentation]
+             --> {}:2:5
+              |
+            2 |     type M is
+              |     ^
+              |
+            """,
+            ),
+        ),
+    ],
+)
+def test_incorrect_indentation_message_display(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+    spec_code: str,
+    expected_message: str,
+) -> None:
+    spec_file = tmp_path / "test.rflx"
+    spec_file.write_text(spec_code)
+    source_code.register(spec_file, spec_file.read_text())
+
+    style.check(spec_file).print_messages()
+    assert_stderr_regex(f"^{re.escape(expected_message.format(spec_file))}$", capfd)
