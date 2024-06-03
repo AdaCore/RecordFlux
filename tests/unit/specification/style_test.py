@@ -114,7 +114,7 @@ def test_no_error(spec: str, tmp_path: Path) -> None:
         ),
         (
             "package Test is\n         type T is range 0 .. 2 ** 16 with Size => 16;\nend Test;",
-            r"2:9: error: unexpected keyword indentation \(expected 3 or 6\) \[indentation\]",
+            r"2:10: error: unexpected keyword indentation \(expected 3 or 6\) \[indentation\]",
         ),
         (
             "package Test is\n   type T is mod 2* 128;\nend Test;",
