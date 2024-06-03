@@ -157,7 +157,7 @@ def _check_indentation(error: RecordFluxError, line: str, row: int, spec_file: P
                 error,
                 f"unexpected keyword indentation (expected {expected_indentation})",
                 row,
-                match.end(),
+                match.end() + 1,
                 spec_file,
                 Check.INDENTATION,
             )
