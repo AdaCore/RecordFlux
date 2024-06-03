@@ -341,8 +341,7 @@ check_contracts: $(RFLX)
 	$(POETRY) run pyicontract-lint $(PYTHON_PACKAGES)
 
 check_unit_test_file_coverage:
-	# TODO(eng/recordflux/RecordFlux#1600): Enforce test file coverage
-	-$(POETRY) run tools/check_unit_test_file_coverage.py --source-dir $(MAKEFILE_DIR)/rflx/ --test-dir $(MAKEFILE_DIR)/tests/unit/
+	$(POETRY) run tools/check_unit_test_file_coverage.py --source-dir $(MAKEFILE_DIR)/rflx/ --test-dir $(MAKEFILE_DIR)/tests/unit/ --ignore ide/vscode/node_modules/flatted/python
 
 check_doc: $(RFLX)
 	$(POETRY) run tools/check_doc.py -d doc -x doc/user_guide/gfdl.rst
