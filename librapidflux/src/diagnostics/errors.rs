@@ -299,7 +299,7 @@ impl ErrorEntry {
             || self.location.as_ref().is_some_and(|l| {
                 l.source
                     .as_ref()
-                    .is_some_and(|s| s == &PathBuf::from_str("<stdin>").expect("unreachable"))
+                    .is_some_and(|s| s == &PathBuf::from_str("<stdin>").expect("unreachable")) || l.source.is_none()
             })
         {
             return None;
