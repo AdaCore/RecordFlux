@@ -210,7 +210,7 @@ def test_parse_string_error() -> None:
             'a/b.rflx:1:9: error: source file name does not match the package name "A"\n'
             'a/b.rflx:1:9: info: either rename the file to "a.rflx"\n'
             'a/b.rflx:1:9: info: or change the package name to "B"\n'
-            r"a/b.rflx:2:0: error: unexpected keyword indentation \(expected 3 or 6\)"
+            r"a/b.rflx:2:1: error: unexpected keyword indentation \(expected 3 or 6\)"
             r" \[indentation\]"
             r"$"
         ),
