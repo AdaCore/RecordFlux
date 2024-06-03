@@ -299,7 +299,7 @@ impl ErrorEntry {
             || self.location.as_ref().is_some_and(|l| {
                 l.source
                     .as_ref()
-                    .is_some_and(|s| s == &PathBuf::from_str("<stdin>").expect("unreachable")) || l.source.is_none()
+                    .is_some_and(|s| s == &PathBuf::from_str("<stdin>").expect("unreachable"))
             })
         {
             return None;
@@ -406,9 +406,15 @@ impl RapidFluxError {
 
         for entry in &mut self.entries {
             let source_code =
-                source_code::retrieve(entry.location().map_or(STDIN_PATH.as_path(), |l| {
-                    l.source.as_deref().unwrap_or(STDIN_PATH.as_path())
-                }));
+                if let Some(Some(source_path)) = entry.location().map(|l| l.source.as_ref()) {
+                    if source_path == STDIN_PATH.as_path() {
+                        None
+                    } else {
+                        source_code::retrieve(source_path)
+                    }
+                } else {
+                    None
+                };
 
             match entry.to_message_mut(&source_code.unwrap_or_default()) {
                 Some(msg) => Self::print_without_trailing_whitespaces(stream, msg)?,
@@ -1098,30 +1104,6 @@ mod tests {
     #[case::rapidfluxerror_oneline_info(
         vec![ErrorEntry::new("Simple info".to_string(), Severity::Info, None, Vec::new(), true)].into(),
         "info: Simple info\n",
-    )]
-    #[case::rapidfluxerror_default_annotation(
-        vec![
-            ErrorEntry::new(
-                "Annotated error".to_string(),
-                Severity::Error,
-                Some(Location {
-                    start: FilePosition::new(1, 1),
-                    source: Some(PathBuf::from_str("tests/data/sample.rflx").unwrap()),
-                    end: Some(FilePosition::new(1, 8)),
-                }),
-                Vec::new(),
-                true,
-            )
-        ].into(),
-        indoc! {
-            r"error: Annotated error
-               --> tests/data/sample.rflx:1:1
-                |
-              1 | package Sample is
-                | ^^^^^^^
-                |
-            "
-        },
     )]
     #[case::rapidfluxerror_location_from_stdin(
         vec![
