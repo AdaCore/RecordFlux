@@ -45,6 +45,19 @@ pub fn retrieve(path: &Path) -> Option<Arc<String>> {
     locked_map.get(path).cloned()
 }
 
+/// Clear source code map entries.
+///
+/// # Panics
+///
+/// This function will panic if:
+///
+/// * The mutex protecting the global map is poisoned (i.e., if another thread panicked while
+///     holding the lock).
+pub fn clear() {
+    let mut locked_map = SOURCE_CODE_MAP.lock().expect("mutex is poisoned");
+    locked_map.clear();
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(clippy::used_underscore_binding)]
@@ -54,7 +67,7 @@ mod tests {
     use rstest::{fixture, rstest};
     use serial_test::serial;
 
-    use super::{register, retrieve, SOURCE_CODE_MAP};
+    use super::{clear, register, retrieve, SOURCE_CODE_MAP};
 
     #[fixture]
     fn cleanup() {
@@ -116,5 +129,25 @@ mod tests {
         }
 
         assert!(retrieve(&PathBuf::from_str("bar.rflx").expect("failed to create path")).is_none());
+    }
+
+    #[test]
+    #[serial]
+    fn test_clear_source_code_map() {
+        let source_path = PathBuf::from_str("foo.rflx").expect("failed to create path");
+
+        {
+            let mut locked = SOURCE_CODE_MAP.lock().expect("mutex is poisoned");
+            locked.insert(
+                source_path.clone(),
+                Arc::new("some source code".to_string()),
+            );
+        }
+
+        clear();
+        assert!(SOURCE_CODE_MAP
+            .lock()
+            .expect("mutexs is poisoned")
+            .is_empty());
     }
 }
