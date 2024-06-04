@@ -2519,7 +2519,7 @@ def test_case_type() -> None:
                 ([ID("V3", location=Location((1, 3)))], Number(1, location=Location((1, 4)))),
             ],
         ),
-        r'^__BUILTINS__:0:0: error: dependent expression "True" has incompatible enumeration type '
+        r'^__BUILTINS__:1:1: error: dependent expression "True" has incompatible enumeration type '
         r'"__BUILTINS__::Boolean"\n'
         r'<stdin>:1:4: info: conflicting with "1" which has type universal integer \(1\)$',
     )

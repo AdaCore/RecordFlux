@@ -699,12 +699,12 @@ class UncheckedOpaque(UncheckedTypeDecl):
         skip_verification: bool = False,  # noqa: ARG002
         workers: int = 1,  # noqa: ARG002
     ) -> Opaque:
-        return Opaque(location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)))
+        return Opaque(location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)))
 
 
 UNCHECKED_OPAQUE = UncheckedOpaque(
     const.INTERNAL_PACKAGE * "Opaque",
-    Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 OPAQUE = UNCHECKED_OPAQUE.checked([])
 
@@ -715,8 +715,8 @@ INTERNAL_TYPES = {
 UNCHECKED_BOOLEAN = UncheckedEnumeration(
     const.BUILTINS_PACKAGE * "Boolean",
     [
-        (ID("False", Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0))), expr.Number(0)),
-        (ID("True", Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0))), expr.Number(1)),
+        (ID("False", Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1))), expr.Number(0)),
+        (ID("True", Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1))), expr.Number(1)),
     ],
     expr.Number(1),
     always_valid=False,

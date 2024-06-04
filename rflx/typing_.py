@@ -470,7 +470,7 @@ def _undefined_type(location: Optional[Location], description: str = "") -> Reco
 BOOLEAN = Enumeration(
     const.BUILTINS_PACKAGE * "Boolean",
     [ID("False"), ID("True")],
-    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 
 # Assumes a Bit_Length type semantically equivalent to:
@@ -482,23 +482,23 @@ BOOLEAN = Enumeration(
 BIT_LENGTH = Integer(
     const.BUILTINS_PACKAGE * "Bit_Length",
     Bounds(0, (2**31 - 1) * 8),
-    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 
 BASE_INTEGER = Integer(
     const.BUILTINS_PACKAGE * "Base_Integer",
     Bounds(0, 2**const.MAX_SCALAR_SIZE - 1),
-    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 
 INDEX = Integer(
     const.BUILTINS_PACKAGE * "Index",
     Bounds(1, 2**31 - 1),
-    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 
 BIT_INDEX = Integer(
     const.BUILTINS_PACKAGE * "Bit_Index",
     Bounds(1, BIT_LENGTH.bounds.upper),
-    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )

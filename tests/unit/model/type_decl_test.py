@@ -412,7 +412,7 @@ def test_sequence_dependencies() -> None:
         (
             lambda: OPAQUE,
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
-            r'__BUILTINS__:0:0: info: type "Opaque" must be scalar or message',
+            r'__BUILTINS__:1:1: info: type "Opaque" must be scalar or message',
         ),
         (
             lambda: Message("P::B", [], {}, location=Location((3, 4))),
@@ -488,7 +488,7 @@ def test_sequence_unsupported_element_type() -> None:
         RecordFluxError,
         match=(
             r'^<stdin>:5:4: error: unsupported element type size of sequence "A"\n'
-            r'__BUILTINS__:0:0: info: type "Boolean" has size 1, must be multiple of 8$'
+            r'__BUILTINS__:1:1: info: type "Boolean" has size 1, must be multiple of 8$'
         ),
     ):
         Sequence("P::A", BOOLEAN, Location((5, 4)))

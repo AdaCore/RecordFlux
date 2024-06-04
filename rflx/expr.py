@@ -1092,12 +1092,12 @@ class Variable(Name):
 TRUE = Literal(
     "True",
     type_=rty.BOOLEAN,
-    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 FALSE = Literal(
     "False",
     type_=rty.BOOLEAN,
-    location=Location((0, 0), Path(str(const.BUILTINS_PACKAGE)), (0, 0)),
+    location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 
 

@@ -34,6 +34,10 @@ def convert(
     try:
         root = ElementTree.fromstring(data)
     except ParseError as e:
+        if e.position[1] == 0:
+            (line, col) = e.position
+            e.position = (line, col + 1)
+
         fail(
             f"invalid XML document: {e}",
             location=Location(start=e.position, source=source),
@@ -42,7 +46,7 @@ def convert(
     if registry_id is None:
         fail(
             "no registry ID found",
-            location=Location(start=(0, 0), source=source),
+            location=Location(start=(1, 1), source=source),
         )
     package_name = _normalize_name(registry_id)
     registry_last_updated = root.find("iana:updated", NAMESPACE)

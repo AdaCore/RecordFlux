@@ -250,7 +250,7 @@ class State(Base):
                 {a.field: a.expression for a in field_assignments},
             ),
             location=Location(
-                field_assignments[0].location.start if field_assignments[0].location else (0, 0),
+                field_assignments[0].location.start if field_assignments[0].location else (1, 1),
                 field_assignments[0].location.source if field_assignments[0].location else None,
                 field_assignments[-1].location.end if field_assignments[-1].location else None,
             ),
