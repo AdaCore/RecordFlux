@@ -8,18 +8,33 @@ pub struct FilePosition(u32, u32);
 
 impl From<(u32, u32)> for FilePosition {
     fn from(value: (u32, u32)) -> Self {
+        assert_ne!(value.0, 0);
+        assert_ne!(value.1, 0);
+
         Self(value.0, value.1)
     }
 }
 
 impl From<FilePosition> for (u32, u32) {
     fn from(value: FilePosition) -> Self {
+        assert_ne!(value.0, 0);
+        assert_ne!(value.1, 0);
+
         (value.0, value.1)
     }
 }
 
 impl FilePosition {
+    /// Creates a new instance with the specified line and column numbers.
+    ///
+    /// # Panics
+    ///
+    /// The function will panic if either `line` or `column` is zero.
+    ///
     pub fn new(line: u32, column: u32) -> Self {
+        assert_ne!(line, 0);
+        assert_ne!(column, 0);
+
         Self(line, column)
     }
 
@@ -33,10 +48,6 @@ impl FilePosition {
 
     pub fn get_offset(&self, source: &str) -> usize {
         let mut offset = 0usize;
-
-        if self.line() == 0 {
-            return 0;
-        }
 
         for (line_number, line) in source.lines().enumerate() {
             if line_number + 1 == self.line() as usize {
@@ -110,16 +121,8 @@ impl Location {
         let end_offset = self.end.as_ref().unwrap_or(&self.start).get_offset(source);
 
         std::ops::Range {
-            start: if start_offset > 0 {
-                start_offset - 1
-            } else {
-                start_offset
-            },
-            end: if end_offset > 0 {
-                end_offset - 1
-            } else {
-                end_offset
-            },
+            start: start_offset - 1,
+            end: end_offset - 1,
         }
     }
 
@@ -159,13 +162,11 @@ mod tests {
     }
 
     #[rstest]
-    #[case::file_position_offset_zero(FilePosition::new(0, 0), "foo code", 0)]
-    #[case::file_position_offset_line_zero(FilePosition::new(0, 2), "foo\ncode", 0)]
-    #[case::file_position_offset_column_zero_first_line(FilePosition::new(1, 0), "foo\ncode", 0)]
-    #[case::file_position_offset_column_zero_second_line(
-        FilePosition::new(2, 0),
+    #[case::file_position_offset_column_one_first_line(FilePosition::new(1, 1), "foo\ncode", 1)]
+    #[case::file_position_offset_column_one_second_line(
+        FilePosition::new(2, 1),
         "foo\nbar\nbaz",
-        4
+        5
     )]
     #[case::file_position_single_line_offset(FilePosition::new(1, 5), "foo code", 5)]
     #[case::file_position_multiline_offset(
@@ -184,15 +185,6 @@ Third",
     }
 
     #[rstest]
-    #[case::location_offset_zero(
-        Location {
-            source: None,
-            start: FilePosition::new(0, 0),
-            end: None
-        },
-        "foo code",
-        0usize..0usize
-    )]
     #[case::location_with_start_and_end(
         Location {
             source: None,
