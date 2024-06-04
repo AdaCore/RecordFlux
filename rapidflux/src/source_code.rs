@@ -21,4 +21,9 @@ fn retrieve(path: PathBuf) -> Option<String> {
     lib::retrieve(&path).map(|s| s.to_string())
 }
 
-register_submodule_functions!(source_code, [register, retrieve]);
+#[pyfunction]
+fn clear() {
+    lib::clear();
+}
+
+register_submodule_functions!(source_code, [clear, register, retrieve]);
