@@ -39,7 +39,6 @@ pub fn register(path: PathBuf, source_code: String) {
 ///
 /// * The mutex protecting the global map is poisoned (i.e., if another thread panicked while
 ///     holding the lock).
-/// * There is no source code registered for the given path.
 pub fn retrieve(path: &Path) -> Option<Arc<String>> {
     let locked_map = SOURCE_CODE_MAP.lock().expect("mutex is poisoned");
     locked_map.get(path).cloned()
