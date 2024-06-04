@@ -4,14 +4,11 @@ import argparse
 import json
 import logging as py_logging
 import os
-import re
 import shutil
 import subprocess
 import sys
-import traceback
 from collections.abc import Sequence
 from enum import Enum
-from importlib import metadata
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Optional, Union
@@ -19,14 +16,13 @@ from typing import Optional, Union
 import importlib_resources
 from importlib_resources.abc import Traversable
 
-from rflx import __version__
 from rflx.common import assert_never
 from rflx.converter import iana
 from rflx.error import (
     FatalError,
     fail,
-    fatal_fail,
 )
+from rflx.fatal_error import FatalErrorHandler
 from rflx.generator import Debug, Generator, optimizer
 from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
@@ -37,6 +33,7 @@ from rflx.pyrflx import PyRFLXError
 from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
 from rflx.specification import Parser
 from rflx.validator import ValidationError, Validator
+from rflx.version import version
 
 DEFAULT_PREFIX = "RFLX"
 
@@ -465,76 +462,17 @@ def main(  # noqa: PLR0915
 
     RecordFluxError.set_max_error(args.max_errors)
 
-    try:
-        args.func(args)
-    except RecordFluxError as e:
-        e.print_messages()
-        return 1
-    except Exception:  # noqa: BLE001
-        if args.unsafe:
-            print(  # noqa: T201
-                f"""
-----------------------------------------------------------------------------
-EXCEPTION IN UNSAFE MODE, PLEASE RERUN WITHOUT UNSAFE OPTIONS
-----------------------------------------------------------------------------
-{traceback.format_exc()}
-----------------------------------------------------------------------------""",
-                file=sys.stderr,
-            )
-        print(  # noqa: T201
-            f"""
------------------------------- RecordFlux Bug ------------------------------
-{version()}
-
-Optimized: {not __debug__}
-
-Command: {' '.join(argv)}
-
-{traceback.format_exc()}
-----------------------------------------------------------------------------
-
-A bug was detected. Please report this issue on GitHub:
-
-https://github.com/AdaCore/RecordFlux/issues/new?labels=bug
-
-Include the complete content of the bug box shown above and all input files
-in the report.""",
-            file=sys.stderr,
-        )
-        return 1
+    with FatalErrorHandler(
+        lambda msg: print(msg, file=sys.stderr),  # noqa: T201
+        unsafe=args.unsafe,
+    ):
+        try:
+            args.func(args)
+        except RecordFluxError as e:
+            e.print_messages()
+            return 1
 
     return 0
-
-
-def version() -> str:
-    dependencies = [
-        f"{r.name} {metadata.version(r.name)}"
-        for r in (Requirement(r) for r in metadata.requires("RecordFlux") or [])
-        if r.extra != "devel"
-    ]
-    return "\n".join(
-        [
-            f"RecordFlux {__version__}",
-            *dependencies,
-        ],
-    )
-
-
-class Requirement:
-    def __init__(self, string: str) -> None:
-        self.name: str
-        self.extra: Optional[str]
-
-        match = re.match(r'([^<=> (]{1,})[^;]*(?: *; extra == [\'"](.*)[\'"])?', string)
-
-        if match:
-            groups = match.groups()
-            assert len(groups) == 2
-            assert isinstance(groups[0], str)
-            self.name = groups[0]
-            self.extra = groups[1]
-        else:
-            fatal_fail(f'failed parsing requirement "{string}"')
 
 
 def check(args: argparse.Namespace) -> None:

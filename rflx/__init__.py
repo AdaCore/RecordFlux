@@ -1,3 +1,3 @@
-from importlib.metadata import version
+import importlib.metadata
 
-__version__ = version("RecordFlux")
+__version__ = importlib.metadata.version("RecordFlux")
