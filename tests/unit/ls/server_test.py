@@ -169,7 +169,7 @@ def test_update_no_folders(tmp_path: Path) -> None:
         TextDocumentSyncKind.None_,
         workspace_folders=[],
     )
-    ls.lsp._workspace.put_document(  # type: ignore[no-untyped-call]  # noqa: SLF001
+    ls.lsp._workspace.put_text_document(  # noqa: SLF001
         TextDocumentItem(document_uri, "", 0, ""),
     )
     ls.update(document_uri)
