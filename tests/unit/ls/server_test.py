@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from pathlib import Path
 from typing import Final, Optional
 
@@ -1257,3 +1258,33 @@ async def test_semantic_tokens(language_server: server.RecordFluxLanguageServer)
         7,
         0,
     ]
+
+
+@pytest.mark.asyncio()
+async def test_fatal_error(
+    language_server: server.RecordFluxLanguageServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def raise_fatal_error(_ls: server.RecordFluxLanguageServer, _uri: str) -> None:
+        raise TypeError("Test")
+
+    monkeypatch.setattr(server, "update_model_and_verify_debounced", raise_fatal_error)
+
+    result = []
+
+    monkeypatch.setattr(
+        server.RecordFluxLanguageServer,
+        "show_message",
+        lambda _self, message, _message_type: result.append(message),
+    )
+
+    with pytest.raises(SystemExit, match="^2$"):
+        await server.did_save(
+            language_server,
+            DidSaveTextDocumentParams(TextDocumentIdentifier("")),
+        )
+    assert re.fullmatch(
+        r"\n-* RecordFlux Bug -*.*",
+        result[0],
+        re.DOTALL,
+    )

@@ -15,7 +15,7 @@ import pytest
 import rflx.specification
 from rflx import cli, generator, validator
 from rflx.converter import iana
-from rflx.error import FatalError, fail, fatal_fail
+from rflx.error import fail, fatal_fail
 from rflx.ls.server import server
 from rflx.pyrflx import PyRFLXError
 from rflx.rapidflux import ErrorEntry, Location, Severity, logging
@@ -456,7 +456,7 @@ def test_main_graph_no_output_files(tmp_path: Path) -> None:
 
 
 def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match="^2$"):
         cli.main(
             [
                 "rflx",
@@ -469,7 +469,7 @@ def test_main_validate_required_arg_not_provided(tmp_path: Path) -> None:
             ],
         )
 
-    with pytest.raises(SystemExit, match="2"):
+    with pytest.raises(SystemExit, match="^2$"):
         cli.main(
             [
                 "rflx",
@@ -637,7 +637,7 @@ def test_main_validate_fatal_error(
         "validate",
         lambda _a, _b, _c, _d, _e, _f, _g, _h: raise_error(),
     )
-    assert (
+    with pytest.raises(SystemExit, match="^2$"):
         cli.main(
             [
                 "rflx",
@@ -648,8 +648,6 @@ def test_main_validate_fatal_error(
                 str(tmp_path),
             ],
         )
-        == 1
-    )
     assert "RecordFlux Bug" in capfd.readouterr().err
 
 
@@ -659,12 +657,10 @@ def test_main_unexpected_exception(
     capfd: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
-    assert (
+    with pytest.raises(SystemExit, match="^2$"):
         cli.main(
             ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
         )
-        == 1
-    )
     assert re.fullmatch(
         r"\n-* RecordFlux Bug -*.*Traceback.*-*.*RecordFlux/issues.*",
         capfd.readouterr().err,
@@ -777,7 +773,7 @@ def test_exception_in_unsafe_mode(
     capfd: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
-    assert (
+    with pytest.raises(SystemExit, match="^2$"):
         cli.main(
             [
                 "rflx",
@@ -789,8 +785,6 @@ def test_exception_in_unsafe_mode(
                 SESSION_SPEC_FILE,
             ],
         )
-        == 1
-    )
     assert re.fullmatch(
         r"\n-*\nEXCEPTION IN UNSAFE MODE, PLEASE RERUN WITHOUT UNSAFE OPTIONS\n-*\n"
         r"Traceback.*\n-*$",
@@ -837,31 +831,6 @@ def test_main_run_ls(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(server, "start_io", lambda: called.append(True))
     assert cli.main(["rflx", "run_ls"]) == 0
     assert any(called)
-
-
-@pytest.mark.parametrize(
-    ("requirement", "name", "extra"),
-    [
-        ("pydantic (<2,>=1)", "pydantic", None),
-        ("pydantic<2,>=1", "pydantic", None),
-        ("ruamel.yaml (<0.18,>=0.17)", "ruamel.yaml", None),
-        ("ruamel.yaml<0.18,>=0.17", "ruamel.yaml", None),
-        ("setuptools-scm (<8,>=6.2) ; extra == 'devel'", "setuptools-scm", "devel"),
-        ('setuptools_scm<8,>=6.2; extra == "devel"', "setuptools_scm", "devel"),
-    ],
-)
-def test_requirement(requirement: str, name: str, extra: Optional[str]) -> None:
-    r = cli.Requirement(requirement)
-    assert r.name == name
-    assert r.extra == extra
-
-
-def test_requirement_error() -> None:
-    with pytest.raises(
-        FatalError,
-        match=r'^error: failed parsing requirement "\(<2,>=1\) pydantic"$',
-    ):
-        cli.Requirement("(<2,>=1) pydantic")
 
 
 class TestDuplicateArgs:

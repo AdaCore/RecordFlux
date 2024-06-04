@@ -26,6 +26,7 @@ from lsprotocol.types import (
     DidOpenTextDocumentParams,
     DidSaveTextDocumentParams,
     Location,
+    MessageType,
     Position,
     Range,
     SemanticTokens,
@@ -41,6 +42,7 @@ import rflx.rapidflux as error
 from rflx import __version__
 from rflx.common import assert_never
 from rflx.const import BUILTINS_PACKAGE, CACHE_PATH, INTERNAL_PACKAGE
+from rflx.fatal_error import FatalErrorHandler
 from rflx.graph import create_message_graph, write_graph
 from rflx.model import Message, Model, UncheckedModel
 from rflx.model.cache import Cache
@@ -270,24 +272,31 @@ def update_model_and_verify_debounced(ls: RecordFluxLanguageServer, uri: str) ->
     ls.thread_pool_executor.submit(lambda: ls.verify(uri))
 
 
+def LSFatalErrorHandler(ls: RecordFluxLanguageServer) -> FatalErrorHandler:  # noqa: N802
+    return FatalErrorHandler(lambda msg: ls.show_message(msg, MessageType.Error))
+
+
 server = RecordFluxLanguageServer()
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls: RecordFluxLanguageServer, params: DidOpenTextDocumentParams) -> None:
-    if ls.needs_update_for_document(params.text_document):
-        ls.update(params.text_document.uri)
-        ls.thread_pool_executor.submit(lambda: ls.verify(params.text_document.uri))
+    with LSFatalErrorHandler(ls):
+        if ls.needs_update_for_document(params.text_document):
+            ls.update(params.text_document.uri)
+            ls.thread_pool_executor.submit(lambda: ls.verify(params.text_document.uri))
 
 
 @server.feature(TEXT_DOCUMENT_DID_SAVE)
 async def did_save(ls: RecordFluxLanguageServer, params: DidSaveTextDocumentParams) -> None:
-    update_model_and_verify_debounced(ls, params.text_document.uri)
+    with LSFatalErrorHandler(ls):
+        update_model_and_verify_debounced(ls, params.text_document.uri)
 
 
 @server.feature(TEXT_DOCUMENT_DID_CHANGE)
 async def did_change(ls: RecordFluxLanguageServer, params: DidChangeTextDocumentParams) -> None:
-    update_model_debounced(ls, params.text_document.uri)
+    with LSFatalErrorHandler(ls):
+        update_model_debounced(ls, params.text_document.uri)
 
 
 @server.feature(TEXT_DOCUMENT_DEFINITION)
@@ -295,13 +304,14 @@ async def go_to_definition(
     ls: RecordFluxLanguageServer,
     params: DefinitionParams,
 ) -> Optional[list[Location]]:
-    lexer = initialize_lexer(ls, params.text_document.uri)
-    token = lexer.search_token(params.position.line, params.position.character)
+    with LSFatalErrorHandler(ls):
+        lexer = initialize_lexer(ls, params.text_document.uri)
+        token = lexer.search_token(params.position.line, params.position.character)
 
-    if token is None or token.symbol is None:
-        return None
+        if token is None or token.symbol is None:
+            return None
 
-    location = to_lsp_location(token.symbol.definition_location)
+        location = to_lsp_location(token.symbol.definition_location)
 
     if location is None:
         return None
@@ -317,77 +327,80 @@ async def semantic_tokens(
     ls: RecordFluxLanguageServer,
     params: SemanticTokensParams,
 ) -> SemanticTokens:
-    lexer = initialize_lexer(ls, params.text_document.uri)
+    with LSFatalErrorHandler(ls):
+        lexer = initialize_lexer(ls, params.text_document.uri)
 
-    result: list[int] = []
+        result: list[int] = []
 
-    previous_line = 0
-    previous_offset = 0
+        previous_line = 0
+        previous_offset = 0
 
-    for token in lexer.tokens:
-        if token.symbol is None:
-            continue
+        for token in lexer.tokens:
+            if token.symbol is None:
+                continue
 
-        if token.line_number != previous_line:
-            previous_offset = 0
+            if token.line_number != previous_line:
+                previous_offset = 0
 
-        relative_line = token.line_number - previous_line
-        relative_offset = token.character_offset - previous_offset
-        length = len(token.lexeme)
-        token_category = LSP_TOKEN_CATEGORIES[token.symbol.category.to_lsp_token()]
+            relative_line = token.line_number - previous_line
+            relative_offset = token.character_offset - previous_offset
+            length = len(token.lexeme)
+            token_category = LSP_TOKEN_CATEGORIES[token.symbol.category.to_lsp_token()]
 
-        previous_line = token.line_number
-        previous_offset = token.character_offset
+            previous_line = token.line_number
+            previous_offset = token.character_offset
 
-        result.extend([relative_line, relative_offset, length, token_category, 0])
+            result.extend([relative_line, relative_offset, length, token_category, 0])
 
     return SemanticTokens(data=result)
 
 
 @server.command(RecordFluxLanguageServer.CMD_SHOW_MESSAGE_GRAPH)
 async def show_message_graph(ls: RecordFluxLanguageServer, parameters: list[object]) -> None:
-    assert isinstance(parameters[0], str)
-    assert isinstance(parameters[1], int)
+    with LSFatalErrorHandler(ls):
+        assert isinstance(parameters[0], str)
+        assert isinstance(parameters[1], int)
 
-    directory = Path(parameters[0])
-    message = ls.models[directory].checked_model.declarations[parameters[1]]
+        directory = Path(parameters[0])
+        message = ls.models[directory].checked_model.declarations[parameters[1]]
 
-    assert isinstance(message, Message)
+        assert isinstance(message, Message)
 
-    graph_cache = CACHE_PATH / "graphs"
-    graph_cache.mkdir(parents=True, exist_ok=True)
+        graph_cache = CACHE_PATH / "graphs"
+        graph_cache.mkdir(parents=True, exist_ok=True)
 
-    graph = create_message_graph(message)
-    write_graph(graph, graph_cache / f"{message.name}.svg")
+        graph = create_message_graph(message)
+        write_graph(graph, graph_cache / f"{message.name}.svg")
 
 
 @server.feature(TEXT_DOCUMENT_CODE_LENS)
 async def code_lens(ls: RecordFluxLanguageServer, params: CodeLensParams) -> list[CodeLens]:
-    directory = Path(unquote(urlparse(params.text_document.uri).path)).parent
+    with LSFatalErrorHandler(ls):
+        directory = Path(unquote(urlparse(params.text_document.uri).path)).parent
 
-    if directory not in ls.models:
-        return []
+        if directory not in ls.models:
+            return []
 
-    result: list[CodeLens] = []
+        result: list[CodeLens] = []
 
-    for index, declaration in enumerate(ls.models[directory].checked_model.declarations):
-        if not isinstance(declaration, Message):
-            continue
+        for index, declaration in enumerate(ls.models[directory].checked_model.declarations):
+            if not isinstance(declaration, Message):
+                continue
 
-        location = to_lsp_location(declaration.location)
+            location = to_lsp_location(declaration.location)
 
-        if location is None or location.uri != params.text_document.uri:
-            continue
+            if location is None or location.uri != params.text_document.uri:
+                continue
 
-        result.append(
-            CodeLens(
-                location.range,
-                Command(
-                    "Show message graph",
-                    RecordFluxLanguageServer.CMD_SHOW_MESSAGE_GRAPH,
-                    [directory, index],
+            result.append(
+                CodeLens(
+                    location.range,
+                    Command(
+                        "Show message graph",
+                        RecordFluxLanguageServer.CMD_SHOW_MESSAGE_GRAPH,
+                        [directory, index],
+                    ),
                 ),
-            ),
-        )
+            )
 
     return result
