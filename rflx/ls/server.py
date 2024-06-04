@@ -212,7 +212,7 @@ class RecordFluxLanguageServer(LanguageServer):
         ]
 
         if len(self.workspace.folders) == 0:
-            for document_uri in self.workspace.documents:
+            for document_uri in self.workspace.text_documents:
                 document_path = Path(unquote(urlparse(document_uri).path))
                 workspace_files.append(document_path)
 
