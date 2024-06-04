@@ -557,7 +557,7 @@ def test_unchecked_model_checked(
 
 
 @pytest.mark.parametrize(
-    ("unchecked", "expected"),
+    ("unchecked", "expected", "expect_cached"),
     [
         (
             [
@@ -570,6 +570,7 @@ def test_unchecked_model_checked(
                 ),
             ],
             r'^<stdin>:1:2: error: size of "T" too small$',
+            [],
         ),
         (
             [
@@ -617,12 +618,70 @@ def test_unchecked_model_checked(
             r'<stdin>:5:6: error: condition "1 = 1" on transition "F1" -> "Final"'
             r" is always true"
             r"$",
+            [],
+        ),
+        (
+            [
+                type_decl.UncheckedInteger(
+                    ID("P::T", Location((1, 1))),
+                    Number(0),
+                    Number(255),
+                    Number(8),
+                    Location((1, 2)),
+                ),
+                UncheckedMessage(
+                    ID("P::T", Location((2, 1))),
+                    [
+                        Link(
+                            INITIAL,
+                            Field("F"),
+                        ),
+                        Link(
+                            Field(ID("F", Location((3, 1)))),
+                            FINAL,
+                        ),
+                    ],
+                    [],
+                    [
+                        (Field("F"), ID("P::T"), []),
+                    ],
+                    None,
+                    None,
+                    location=((2, 10)),
+                ),
+                UncheckedMessage(
+                    ID("P::M", Location((4, 1))),
+                    [
+                        Link(
+                            INITIAL,
+                            Field("F"),
+                        ),
+                        Link(
+                            Field(ID("F", Location((5, 1)))),
+                            FINAL,
+                        ),
+                    ],
+                    [],
+                    [
+                        (Field("F"), ID("P::T"), []),
+                    ],
+                    None,
+                    None,
+                    None,
+                ),
+            ],
+            r"^"
+            r'<stdin>:2:1: error: duplicate declaration of "P::T"\n'
+            r'<stdin>:1:2: info: previous occurrence of "P::T"'
+            r"$",
+            ["P::M"],
         ),
     ],
 )
 def test_unchecked_model_checked_error(
     unchecked: list[UncheckedTopLevelDeclaration],
     expected: str,
+    expect_cached: list[str],
     tmp_path: Path,
 ) -> None:
     cache = Cache(tmp_path / "test.json")
@@ -630,4 +689,4 @@ def test_unchecked_model_checked_error(
     with pytest.raises(RecordFluxError, match=expected):
         UncheckedModel(unchecked, RecordFluxError()).checked(cache=cache)
 
-    assert not cache._verified  # noqa: SLF001
+    assert list(cache._verified) == expect_cached  # noqa: SLF001
