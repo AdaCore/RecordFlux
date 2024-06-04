@@ -2616,6 +2616,29 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
         error = RecordFluxError()
         arguments = {}
         fields: list[Field] = []
+
+        previous_declarations = [
+            previous for previous in declarations if previous.identifier == self.identifier
+        ]
+        if previous_declarations:
+            previous_location = previous_declarations[0].location
+            assert previous_location is not None
+            error.push(
+                ErrorEntry(
+                    f'duplicate declaration of "{self.identifier}"',
+                    Severity.ERROR,
+                    self.identifier.location,
+                    [
+                        Annotation(
+                            f'previous occurrence of "{self.identifier}"',
+                            Severity.INFO,
+                            previous_location,
+                        ),
+                    ],
+                ),
+            )
+        error.propagate()
+
         for field, type_identifier, type_arguments in (*self.parameter_types, *self.field_types):
             field_type = next(
                 (
@@ -2635,10 +2658,10 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                     )
                     arguments[type_identifier] = dict(type_arguments)
                 if field in fields:
-                    location = next(
+                    previous_location = next(
                         f.identifier for f in fields if f == field
                     ).location  # pragma: no branch
-                    assert location is not None
+                    assert previous_location is not None
                     error.push(
                         ErrorEntry(
                             f'name conflict for "{field.identifier}"',
@@ -2649,7 +2672,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                                     Annotation(
                                         "conflicting name",
                                         Severity.INFO,
-                                        location,
+                                        previous_location,
                                     ),
                                 ]
                             ),

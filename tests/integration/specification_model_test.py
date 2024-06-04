@@ -236,7 +236,7 @@ def test_model_name_conflict_messages() -> None:
               end message;
         end Test;
         """,
-        r'^<stdin>:7:9: error: name conflict for type "Test::PDU"\n'
+        r'^<stdin>:7:9: error: duplicate declaration of "Test::PDU"\n'
         r'<stdin>:3:9: info: previous occurrence of "Test::PDU"$',
     )
 
