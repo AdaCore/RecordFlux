@@ -129,7 +129,7 @@ def test_conflicting_literal_builtin_type() -> None:
         match=(
             r"^"
             r'<stdin>:3:31: error: literal "Boolean" conflicts with type declaration\n'
-            r'__BUILTINS__:0:0: info: conflicting type "__BUILTINS__::Boolean"'
+            r'__BUILTINS__:1:1: info: conflicting type "__BUILTINS__::Boolean"'
             r"$"
         ),
     ):
@@ -184,8 +184,8 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
         match=(
             r"^"
             r"<stdin>:3:16: error: conflicting literals: False, True\n"
-            r'__BUILTINS__:0:0: info: previous occurrence of "False"\n'
-            r'__BUILTINS__:0:0: info: previous occurrence of "True"'
+            r'__BUILTINS__:1:1: info: previous occurrence of "False"\n'
+            r'__BUILTINS__:1:1: info: previous occurrence of "True"'
             r"$"
         ),
     ):

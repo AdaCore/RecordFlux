@@ -11,10 +11,26 @@ from rflx.rapidflux import RecordFluxError
 def test_convert_iana_invalid_xml(tmp_path: Path) -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(r"^<stdin>:1:0: error: invalid XML document: syntax error: line 1, column 0$"),
+        match=(r"^<stdin>:1:1: error: invalid XML document: syntax error: line 1, column 0$"),
     ):
         iana.convert(
             data="NOT A VALID XML DOCUMENT",
+            source=STDIN,
+            always_valid=False,
+            output_dir=tmp_path,
+        )
+
+
+def test_convert_iana_invalid_xml_syntax(tmp_path: Path) -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(r"^<stdin>:2:16: error: invalid XML document: unclosed token: line 2, column 16$"),
+    ):
+        iana.convert(
+            data="""\
+                <registry xmlns="http://www.iana.org/assignments" id="test_registry">
+                </registry
+            """,
             source=STDIN,
             always_valid=False,
             output_dir=tmp_path,
@@ -128,7 +144,7 @@ def test_convert_iana_invalid_int_value(
 def test_convert_iana_invalid_no_registry_id(tmp_path: Path) -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(r"^<stdin>:0:0: error: no registry ID found$"),
+        match=(r"^<stdin>:1:1: error: no registry ID found$"),
     ):
         iana.convert(
             data=textwrap.dedent(

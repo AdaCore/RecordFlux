@@ -102,7 +102,7 @@ from rflx.rapidflux import RecordFluxError
 def test_rfi_add_integration(rfi_content: str, match_error: str) -> None:
     # pydantic messages end with the type of the error in parentheses.
     regex = re.compile(
-        (f"^test.rfi:0:0: error: 1 validation error for IntegrationFile.*{match_error}.*$"),
+        (f"^test.rfi:1:1: error: 1 validation error for IntegrationFile.*{match_error}.*$"),
         re.DOTALL,
     )
     yaml = YAML()
@@ -194,7 +194,7 @@ def test_load_integration_path(tmp_path: Path) -> None:
     regex = re.compile(
         (
             r"^"
-            r"test.rfi:0:0: error: 1 validation error for IntegrationFile.*"
+            r"test.rfi:1:1: error: 1 validation error for IntegrationFile.*"
             r"Input should be a valid dictionary.*"
             r"$"
         ),

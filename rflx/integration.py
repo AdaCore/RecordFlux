@@ -69,7 +69,7 @@ class Integration:
             except MarkedYAMLError as e:
                 location = Location(
                     start=(
-                        (0, 0)
+                        (1, 1)
                         if e.problem_mark is None
                         else (e.problem_mark.line + 1, e.problem_mark.column + 1)
                     ),
@@ -152,7 +152,7 @@ class Integration:
 
     @staticmethod
     def _to_location(package: str) -> Location:
-        return Location(start=(0, 0), source=Path(package + ".rfi"))
+        return Location(start=(1, 1), source=Path(package + ".rfi"))
 
     @staticmethod
     def _validate_globals(

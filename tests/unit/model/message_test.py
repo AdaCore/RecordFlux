@@ -753,7 +753,7 @@ def test_successors() -> None:
 
 
 def test_field_identifier_locations() -> None:
-    p = Field(ID("P", Location((0, 1))))
+    p = Field(ID("P", Location((1, 1))))
     a = Field(ID("A", Location((1, 2))))
     b = Field(ID("B", Location((2, 3))))
 
