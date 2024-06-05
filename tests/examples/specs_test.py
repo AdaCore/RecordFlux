@@ -15,10 +15,17 @@ EX_DATA_DIR = Path("tests/examples/data")
 EX_IANA_REGISTRIES_DIR = EX_SPEC_DIR / "iana_registries"
 
 
-@pytest.mark.parametrize("spec", EX_SPEC_DIR.glob("*.rflx"))
-def test_spec(spec: Path, tmp_path: Path) -> None:
+def test_spec(tmp_path: Path) -> None:
     subprocess.run(
-        ["rflx", "--no-caching", "generate", "--ignore-unsupported-checksum", "-d", tmp_path, spec],
+        [
+            "rflx",
+            "--no-caching",
+            "generate",
+            "--ignore-unsupported-checksum",
+            "-d",
+            tmp_path,
+            *EX_SPEC_DIR.glob("*.rflx"),
+        ],
         check=True,
     )
     subprocess.run(["gprbuild", "-U", "-j0"], check=True, cwd=tmp_path)
