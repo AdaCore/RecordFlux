@@ -74,6 +74,8 @@ setup:
       - alr
       - generated
       - rflx/lang
+      - rflx/rapidflux.so
+      - target/debug/librapidflux.so
   script:
     - git fetch --unshallow
     - *setup_alire
@@ -113,6 +115,10 @@ setup:
     - touch generated/python/librflxlang
     - touch generated/lib/relocatable/dev/librflxlang.so
     - touch rflx/lang/librflxlang.so
+    # Prevent recompilation of RapidFlux library.
+    - find librapidflux rapidflux -type f -exec touch {} \;
+    - touch target/debug/librapidflux.so
+    - touch rflx/rapidflux.so
 
 changelog:
   rules:
