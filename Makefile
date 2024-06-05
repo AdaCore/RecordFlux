@@ -442,7 +442,6 @@ test_binary_size: $(RFLX)
 	$(MAKE) -C examples/apps/dhcp_client test_binary_size
 	$(MAKE) -C examples/apps/spdm_responder test_binary_size
 
-test_specs: TEST_PROCS=1
 test_specs: $(RFLX)
 	$(PYTEST) tests/examples/specs_test.py
 
