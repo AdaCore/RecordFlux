@@ -6,7 +6,12 @@ All Python test files have the suffix `_test.py` (e.g., `generator_test.py`). Th
 
 ### Unit Tests (`tests/unit`)
 
-A unit test verifies the functionality of a single Python module. The result of a unit test mainly depends on the functionality of the to be tested module, but may involve data structures of different modules (counterexample: validating errors which are actually detected in another module). A unit test is simple, fast and generic (counterexample: testing multiple complex examples). Each test file corresponds to a module in `rflx`.
+A unit test verifies the functionality of a single Python module. The result of a unit test mainly depends on the functionality of the to be tested module, but may involve data structures of different modules (counterexample: validating errors which are actually detected in another module). A unit test is simple, fast and generic (counterexample: testing multiple complex examples).
+
+Each test file corresponds to a module in `rflx` and for each module in `rflx` a unit test file must exist.
+This correspondence is checked in the Makefile. 
+In addition, the per-unit branch coverage can be measured using the `test_per_unit_coverage` make target.
+
 
 ### Integration Tests (`tests/integration`)
 
