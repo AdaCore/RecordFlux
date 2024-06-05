@@ -54,11 +54,11 @@ $(BUILD_DIR)/%/example/main: $(GENERATED)
 # The verification of the SPDM specification occasionally gets stuck in the CI. The code generation
 # is attempted twice to decrease the occurrence of unsuccessful pipelines.
 generated/%: $(SPECIFICATIONS) | $(INTEGRATION_FILES) $(RFLX)
-	timeout -k 60 1200 $(RFLX) generate $^ -d generated; \
+	timeout -k 60 600 $(RFLX) generate $^ -d generated; \
 	RC=$$?; \
 	if [ $$RC -eq 124 ]; \
 	then \
-		timeout -k 60 1200 $(RFLX) generate $^ -d generated; \
+		timeout -k 60 600 $(RFLX) generate $^ -d generated; \
 	else \
 		(exit $$RC); \
 	fi
