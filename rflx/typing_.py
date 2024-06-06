@@ -130,6 +130,15 @@ class Enumeration(NamedType):
 @attr.s(frozen=True)
 class BaseInteger(Any):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
+    bounds: Bounds = attr.ib(Bounds(None, None))
+
+    def __str__(self) -> str:
+        bounds = (
+            f" ({self.bounds})"
+            if self.bounds.lower is not None and self.bounds.upper is not None
+            else ""
+        )
+        return f"{self.DESCRIPTIVE_NAME}{bounds}"
 
     def is_compatible(self, other: Type) -> bool:
         return other == Any() or isinstance(other, BaseInteger)
@@ -141,12 +150,7 @@ class BaseInteger(Any):
 
 
 @attr.s(frozen=True)
-class BoundedInteger(BaseInteger):
-    bounds: Bounds = attr.ib(Bounds(None, None))
-
-
-@attr.s(frozen=True)
-class UniversalInteger(BoundedInteger):
+class UniversalInteger(BaseInteger):
     DESCRIPTIVE_NAME: ClassVar[str] = "type universal integer"
     bounds: Bounds = attr.ib(Bounds(None, None))
 
@@ -164,7 +168,7 @@ class UniversalInteger(BoundedInteger):
 
 
 @attr.s(frozen=True)
-class Integer(BoundedInteger, NamedType):
+class Integer(BaseInteger, NamedType):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
     identifier: ID = attr.ib(converter=ID)
     bounds: Bounds = attr.ib(Bounds(None, None))
@@ -213,13 +217,13 @@ class Aggregate(Composite):
                 and (
                     other.element == Any()
                     or (
-                        isinstance(self.element, BoundedInteger)
-                        and isinstance(other.element, BoundedInteger)
+                        isinstance(self.element, BaseInteger)
+                        and isinstance(other.element, BaseInteger)
                         and self.element.is_compatible_strong(other.element)
                         and self.element.bounds in other.element.bounds
                     )
                     or (
-                        not isinstance(self.element, BoundedInteger)
+                        not isinstance(self.element, BaseInteger)
                         and self.element.is_compatible_strong(other.element)
                     )
                 )
@@ -253,13 +257,13 @@ class Sequence(Composite, NamedType):
                 and (
                     other.element == Any()
                     or (
-                        isinstance(self.element, BoundedInteger)
-                        and isinstance(other.element, BoundedInteger)
+                        isinstance(self.element, BaseInteger)
+                        and isinstance(other.element, BaseInteger)
                         and other.element.is_compatible_strong(self.element)
                         and other.element.bounds in self.element.bounds
                     )
                     or (
-                        not isinstance(self.element, BoundedInteger)
+                        not isinstance(self.element, BaseInteger)
                         and other.element.is_compatible_strong(self.element)
                     )
                 )

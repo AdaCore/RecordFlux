@@ -889,7 +889,7 @@ class Add(BinaryIntExpr):
         v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
-            if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None
+            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds.upper is not None
             else INT_MAX
         )
         return [
@@ -956,7 +956,7 @@ class Mul(BinaryIntExpr):
         v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
-            if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None
+            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds.upper is not None
             else INT_MAX
         )
         return [
@@ -1015,7 +1015,7 @@ class Pow(BinaryIntExpr):
         v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
-            if isinstance(self.type_, rty.BoundedInteger) and self.type_.bounds.upper is not None
+            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds.upper is not None
             else INT_MAX
         )
         return [
