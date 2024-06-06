@@ -19,7 +19,6 @@ from rflx.typing_ import (
     Sequence,
     Type,
     Undefined,
-    UndefinedInteger,
     UniversalInteger,
     check_type,
     check_type_instance,
@@ -96,17 +95,12 @@ def test_enumeration_is_compatible(enumeration: Type, other: Type, expected: boo
         (
             AnyInteger(),
             Integer("A", Bounds(10, 100)),
-            Integer("A", Bounds(10, 100)),
+            AnyInteger(),
         ),
         (
             AnyInteger(),
             UniversalInteger(Bounds(10, 100)),
-            UniversalInteger(Bounds(10, 100)),
-        ),
-        (
             AnyInteger(),
-            UndefinedInteger(),
-            UndefinedInteger(),
         ),
         (AnyInteger(), Undefined(), Undefined()),
         (AnyInteger(), ENUMERATION_B, Undefined()),
@@ -132,11 +126,6 @@ def test_any_integer_common_type(any_integer: Type, other: Type, expected: Type)
             UniversalInteger(Bounds(10, 100)),
             True,
         ),
-        (
-            AnyInteger(),
-            UndefinedInteger(),
-            True,
-        ),
         (AnyInteger(), Undefined(), False),
         (AnyInteger(), ENUMERATION_B, False),
     ],
@@ -147,68 +136,10 @@ def test_any_integer_is_compatible(any_integer: Type, other: Type, expected: boo
 
 
 @pytest.mark.parametrize(
-    ("undefined_integer", "other", "expected"),
-    [
-        (UndefinedInteger(), Any(), UndefinedInteger()),
-        (UndefinedInteger(), AnyInteger(), UndefinedInteger()),
-        (UndefinedInteger(), UndefinedInteger(), UndefinedInteger()),
-        (
-            UndefinedInteger(),
-            Integer("A", Bounds(10, 100)),
-            UndefinedInteger(),
-        ),
-        (
-            UndefinedInteger(),
-            UniversalInteger(Bounds(10, 100)),
-            UndefinedInteger(),
-        ),
-        (UndefinedInteger(), Undefined(), Undefined()),
-        (UndefinedInteger(), ENUMERATION_B, Undefined()),
-    ],
-)
-def test_undefined_integer_common_type(
-    undefined_integer: Type,
-    other: Type,
-    expected: Type,
-) -> None:
-    assert undefined_integer.common_type(other) == expected
-    assert other.common_type(undefined_integer) == expected
-
-
-@pytest.mark.parametrize(
-    ("undefined_integer", "other", "expected"),
-    [
-        (UndefinedInteger(), Any(), True),
-        (UndefinedInteger(), AnyInteger(), True),
-        (UndefinedInteger(), UndefinedInteger(), True),
-        (
-            UndefinedInteger(),
-            Integer("A", Bounds(10, 100)),
-            True,
-        ),
-        (
-            UndefinedInteger(),
-            UniversalInteger(Bounds(10, 100)),
-            True,
-        ),
-        (UndefinedInteger(), Undefined(), False),
-        (UndefinedInteger(), ENUMERATION_B, False),
-    ],
-)
-def test_undefined_integer_is_compatible(
-    undefined_integer: Type,
-    other: Type,
-    expected: bool,
-) -> None:
-    assert undefined_integer.is_compatible(other) == expected
-    assert other.is_compatible(undefined_integer) == expected
-
-
-@pytest.mark.parametrize(
     ("universal_integer", "other", "expected"),
     [
         (UniversalInteger(), Any(), UniversalInteger()),
-        (UniversalInteger(), AnyInteger(), UniversalInteger()),
+        (UniversalInteger(), AnyInteger(), AnyInteger()),
         (UniversalInteger(), UniversalInteger(), UniversalInteger()),
         (
             UniversalInteger(),
@@ -271,7 +202,7 @@ def test_universal_integer_is_compatible(
     ("integer", "other", "expected"),
     [
         (Integer("A"), Any(), Integer("A")),
-        (Integer("A"), AnyInteger(), Integer("A")),
+        (Integer("A"), AnyInteger(), AnyInteger()),
         (Integer("A"), Integer("A"), Integer("A")),
         (Integer("A"), UniversalInteger(), Integer("A")),
         (
@@ -292,12 +223,12 @@ def test_universal_integer_is_compatible(
         (
             Integer("A"),
             Integer("B"),
-            UndefinedInteger(),
+            AnyInteger(),
         ),
         (
             Integer("A", Bounds(10, 100)),
             Integer("B", Bounds(10, 100)),
-            UndefinedInteger(),
+            AnyInteger(),
         ),
         (
             Integer("A", Bounds(10, 100)),
@@ -368,7 +299,7 @@ def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> No
     ("integer", "other", "expected"),
     [
         (Integer("A"), Any(), True),
-        (Integer("A"), AnyInteger(), True),
+        (Integer("A"), AnyInteger(), False),
         (Integer("A"), Integer("A"), True),
         (Integer("A"), UniversalInteger(), True),
         (
@@ -431,12 +362,12 @@ def test_integer_is_compatible_strong(integer: Type, other: Type, expected: bool
         (
             Aggregate(Integer("A", Bounds(10, 100))),
             Aggregate(Integer("B", Bounds(10, 100))),
-            Aggregate(UndefinedInteger()),
+            Aggregate(AnyInteger()),
         ),
         (
             Aggregate(Integer("A", Bounds(10, 100))),
             Aggregate(Integer("A", Bounds(20, 200))),
-            Aggregate(UndefinedInteger()),
+            Aggregate(AnyInteger()),
         ),
         (
             Aggregate(UniversalInteger(Bounds(10, 100))),
@@ -724,7 +655,7 @@ def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> No
                 Aggregate(UniversalInteger(Bounds(20, 100))),
                 Aggregate(Integer("B", Bounds(20, 200))),
             ],
-            Aggregate(UndefinedInteger()),
+            Aggregate(AnyInteger()),
         ),
         (
             [
@@ -764,7 +695,7 @@ def test_check_type(actual: Type, expected: Type) -> None:
             r'<stdin>:10:20: info: found message type "A"$',
         ),
         (
-            UndefinedInteger(),
+            AnyInteger(),
             Message("A"),
             r'^<stdin>:10:20: error: expected message type "A"\n'
             r"<stdin>:10:20: info: found integer type$",
@@ -807,7 +738,7 @@ def test_check_type_instance(
             r'<stdin>:10:20: info: found message type "M"$',
         ),
         (
-            UndefinedInteger(),
+            AnyInteger(),
             (Sequence, Message),
             r"^<stdin>:10:20: error: expected sequence type or message type\n"
             r"<stdin>:10:20: info: found integer type$",

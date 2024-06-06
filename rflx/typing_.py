@@ -135,16 +135,6 @@ class AnyInteger(Any):
         return other == Any() or isinstance(other, AnyInteger)
 
     def common_type(self, other: Type) -> Type:
-        if other == Any() or self == other:
-            return self
-        if isinstance(other, AnyInteger):
-            return other
-        return Undefined()
-
-
-@attr.s(frozen=True)
-class UndefinedInteger(AnyInteger):
-    def common_type(self, other: Type) -> Type:
         if other == Any() or isinstance(other, AnyInteger):
             return self
         return Undefined()
@@ -164,13 +154,11 @@ class UniversalInteger(BoundedInteger):
         return f"{self.DESCRIPTIVE_NAME} ({self.bounds})"
 
     def common_type(self, other: Type) -> Type:
-        if isinstance(other, UndefinedInteger):
-            return UndefinedInteger()
         if isinstance(other, UniversalInteger) and self.bounds != other.bounds:
             return UniversalInteger(Bounds.union(self.bounds, other.bounds))
-        if isinstance(other, Integer):
+        if isinstance(other, AnyInteger):
             return other
-        if other == Any() or other == AnyInteger() or self == other:
+        if other == Any() or self == other:
             return self
         return Undefined()
 
@@ -186,23 +174,18 @@ class Integer(BoundedInteger, NamedType):
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}" ({self.bounds})'
 
     def is_compatible_strong(self, other: Type) -> bool:
-        return (
-            self == other
-            or other == Any()
-            or other == AnyInteger()
-            or isinstance(other, UniversalInteger)
-        )
+        return self == other or other == Any() or isinstance(other, UniversalInteger)
 
     def common_type(self, other: Type) -> Type:
-        if isinstance(other, UndefinedInteger):
-            return UndefinedInteger()
         if isinstance(other, UniversalInteger):
             return self
         if isinstance(other, Integer) and (
             self.identifier != other.identifier or self.bounds != other.bounds
         ):
-            return UndefinedInteger()
-        if other == Any() or other == AnyInteger() or self == other:
+            return AnyInteger()
+        if isinstance(other, AnyInteger):
+            return other
+        if other == Any() or self == other:
             return self
         return Undefined()
 
