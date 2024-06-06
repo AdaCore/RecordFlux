@@ -1104,7 +1104,7 @@ class UnknownExpr(ir.Expr):
             ir.ObjFieldAccess(
                 "Z",
                 "Z",
-                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Aggregate(rty.AnyInteger())}),
+                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Aggregate(rty.BaseInteger())}),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
@@ -1321,7 +1321,7 @@ class UnknownExpr(ir.Expr):
                 "E",
                 ir.ObjVar(
                     "L",
-                    rty.Sequence("A", rty.AnyInteger()),
+                    rty.Sequence("A", rty.BaseInteger()),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
                 ir.ComplexExpr([], ir.ObjVar("E", rty.Integer("B"))),
@@ -1336,7 +1336,7 @@ class UnknownExpr(ir.Expr):
                 "E",
                 ir.ObjVar(
                     "L",
-                    rty.Sequence("A", rty.AnyInteger()),
+                    rty.Sequence("A", rty.BaseInteger()),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
                 ir.ComplexExpr([], ir.ObjVar("E", rty.Integer("B"))),

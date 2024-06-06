@@ -276,7 +276,7 @@ def _(expression: expr.Number, _variable_id: Generator[ID, None, None]) -> ir.Co
 
 @to_ir.register
 def _(expression: expr.Neg, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
-    assert isinstance(expression.type_, rty.AnyInteger)
+    assert isinstance(expression.type_, rty.BaseInteger)
     inner_stmts, inner_expr = _to_ir_basic_int(expression.expr, variable_id)
     return ir.ComplexIntExpr(inner_stmts, ir.Neg(inner_expr, origin=expression))
 
@@ -286,7 +286,7 @@ def _(expression: expr.MathAssExpr, variable_id: Generator[ID, None, None]) -> i
     if len(expression.terms) == 0:
         return ir.ComplexIntExpr([], ir.IntVal(0, origin=expression))
 
-    assert isinstance(expression.type_, rty.AnyInteger)
+    assert isinstance(expression.type_, rty.BaseInteger)
 
     if len(expression.terms) == 1:
         first_stmts, first_expr = _to_ir_basic_int(expression.terms[0], variable_id)
@@ -307,7 +307,7 @@ def _(expression: expr.MathAssExpr, variable_id: Generator[ID, None, None]) -> i
         location=expression.terms[1].location,
     )
 
-    assert isinstance(right_origin.type_, rty.AnyInteger)
+    assert isinstance(right_origin.type_, rty.BaseInteger)
 
     right = to_ir(right_origin, variable_id)
 
@@ -328,7 +328,7 @@ def _(expression: expr.MathAssExpr, variable_id: Generator[ID, None, None]) -> i
 
 @to_ir.register
 def _(expression: expr.MathBinExpr, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
-    assert isinstance(expression.type_, rty.AnyInteger)
+    assert isinstance(expression.type_, rty.BaseInteger)
 
     left_stmts, left_expr = _to_ir_basic_int(expression.left, variable_id)
     right_stmts, right_expr = _to_ir_basic_int(expression.right, variable_id)
@@ -747,9 +747,9 @@ def _(expression: expr.IfExpr, variable_id: Generator[ID, None, None]) -> ir.Com
             ),
         )
 
-    assert isinstance(expression.type_, rty.AnyInteger)
-    assert isinstance(then_expression.type_, rty.AnyInteger)
-    assert isinstance(expression.else_expression.type_, rty.AnyInteger)
+    assert isinstance(expression.type_, rty.BaseInteger)
+    assert isinstance(then_expression.type_, rty.BaseInteger)
+    assert isinstance(expression.else_expression.type_, rty.BaseInteger)
     then_expr = to_ir(then_expression, variable_id)
     else_expr = to_ir(expression.else_expression, variable_id)
     assert isinstance(then_expr, ir.ComplexIntExpr)
@@ -871,7 +871,7 @@ def _(expression: expr.CaseExpr, variable_id: Generator[ID, None, None]) -> ir.C
             assert all(isinstance(c, ID) for c in choice)
             cs = [ir.EnumLit(c, expression.expr.type_) for c in choice if isinstance(c, ID)]
         else:
-            assert isinstance(expression.expr.type_, rty.AnyInteger)
+            assert isinstance(expression.expr.type_, rty.BaseInteger)
             assert all(isinstance(c, expr.Number) for c in choice)
             cs = [ir.IntVal(int(c)) for c in choice if isinstance(c, expr.Number)]
         choices.append((cs, e_expr))
@@ -891,7 +891,7 @@ def _to_ir_basic_int(
     expression: expr.Expr,
     variable_id: Generator[ID, None, None],
 ) -> tuple[list[ir.Stmt], ir.BasicIntExpr]:
-    assert isinstance(expression.type_, rty.AnyInteger)
+    assert isinstance(expression.type_, rty.BaseInteger)
 
     result = to_ir(expression, variable_id)
     if isinstance(result.expr, ir.BasicIntExpr):
@@ -944,7 +944,7 @@ def to_ir_basic_expr(
         if isinstance(result.expr, ir.BoolExpr):
             result_expr = ir.BoolVar(result_id, origin=expression)
         elif isinstance(result.expr, ir.IntExpr):
-            assert isinstance(expression.type_, rty.AnyInteger)
+            assert isinstance(expression.type_, rty.BaseInteger)
             result_expr = ir.IntVar(result_id, ir.to_integer(expression.type_), origin=expression)
         else:
             assert isinstance(expression.type_, rty.Any)

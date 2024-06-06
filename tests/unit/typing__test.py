@@ -10,7 +10,7 @@ from rflx.rapidflux import Location, RecordFluxError
 from rflx.typing_ import (
     Aggregate,
     Any,
-    AnyInteger,
+    BaseInteger,
     Bounds,
     Channel,
     Enumeration,
@@ -88,58 +88,58 @@ def test_enumeration_is_compatible(enumeration: Type, other: Type, expected: boo
 
 
 @pytest.mark.parametrize(
-    ("any_integer", "other", "expected"),
+    ("base_integer", "other", "expected"),
     [
-        (AnyInteger(), Any(), AnyInteger()),
-        (AnyInteger(), AnyInteger(), AnyInteger()),
+        (BaseInteger(), Any(), BaseInteger()),
+        (BaseInteger(), BaseInteger(), BaseInteger()),
         (
-            AnyInteger(),
+            BaseInteger(),
             Integer("A", Bounds(10, 100)),
-            AnyInteger(),
+            BaseInteger(),
         ),
         (
-            AnyInteger(),
+            BaseInteger(),
             UniversalInteger(Bounds(10, 100)),
-            AnyInteger(),
+            BaseInteger(),
         ),
-        (AnyInteger(), Undefined(), Undefined()),
-        (AnyInteger(), ENUMERATION_B, Undefined()),
+        (BaseInteger(), Undefined(), Undefined()),
+        (BaseInteger(), ENUMERATION_B, Undefined()),
     ],
 )
-def test_any_integer_common_type(any_integer: Type, other: Type, expected: Type) -> None:
-    assert any_integer.common_type(other) == expected
-    assert other.common_type(any_integer) == expected
+def test_base_integer_common_type(base_integer: Type, other: Type, expected: Type) -> None:
+    assert base_integer.common_type(other) == expected
+    assert other.common_type(base_integer) == expected
 
 
 @pytest.mark.parametrize(
-    ("any_integer", "other", "expected"),
+    ("base_integer", "other", "expected"),
     [
-        (AnyInteger(), Any(), True),
-        (AnyInteger(), AnyInteger(), True),
+        (BaseInteger(), Any(), True),
+        (BaseInteger(), BaseInteger(), True),
         (
-            AnyInteger(),
+            BaseInteger(),
             Integer("A", Bounds(10, 100)),
             True,
         ),
         (
-            AnyInteger(),
+            BaseInteger(),
             UniversalInteger(Bounds(10, 100)),
             True,
         ),
-        (AnyInteger(), Undefined(), False),
-        (AnyInteger(), ENUMERATION_B, False),
+        (BaseInteger(), Undefined(), False),
+        (BaseInteger(), ENUMERATION_B, False),
     ],
 )
-def test_any_integer_is_compatible(any_integer: Type, other: Type, expected: bool) -> None:
-    assert any_integer.is_compatible(other) == expected
-    assert other.is_compatible(any_integer) == expected
+def test_base_integer_is_compatible(base_integer: Type, other: Type, expected: bool) -> None:
+    assert base_integer.is_compatible(other) == expected
+    assert other.is_compatible(base_integer) == expected
 
 
 @pytest.mark.parametrize(
     ("universal_integer", "other", "expected"),
     [
         (UniversalInteger(), Any(), UniversalInteger()),
-        (UniversalInteger(), AnyInteger(), AnyInteger()),
+        (UniversalInteger(), BaseInteger(), BaseInteger()),
         (UniversalInteger(), UniversalInteger(), UniversalInteger()),
         (
             UniversalInteger(),
@@ -173,7 +173,7 @@ def test_universal_integer_common_type(
     ("universal_integer", "other", "expected"),
     [
         (UniversalInteger(), Any(), True),
-        (UniversalInteger(), AnyInteger(), True),
+        (UniversalInteger(), BaseInteger(), True),
         (UniversalInteger(), UniversalInteger(), True),
         (
             UniversalInteger(),
@@ -202,7 +202,7 @@ def test_universal_integer_is_compatible(
     ("integer", "other", "expected"),
     [
         (Integer("A"), Any(), Integer("A")),
-        (Integer("A"), AnyInteger(), AnyInteger()),
+        (Integer("A"), BaseInteger(), BaseInteger()),
         (Integer("A"), Integer("A"), Integer("A")),
         (Integer("A"), UniversalInteger(), Integer("A")),
         (
@@ -223,12 +223,12 @@ def test_universal_integer_is_compatible(
         (
             Integer("A"),
             Integer("B"),
-            AnyInteger(),
+            BaseInteger(),
         ),
         (
             Integer("A", Bounds(10, 100)),
             Integer("B", Bounds(10, 100)),
-            AnyInteger(),
+            BaseInteger(),
         ),
         (
             Integer("A", Bounds(10, 100)),
@@ -248,7 +248,7 @@ def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None
     ("integer", "other", "expected"),
     [
         (Integer("A"), Any(), True),
-        (Integer("A"), AnyInteger(), True),
+        (Integer("A"), BaseInteger(), True),
         (Integer("A"), Integer("A"), True),
         (Integer("A"), UniversalInteger(), True),
         (
@@ -299,7 +299,7 @@ def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> No
     ("integer", "other", "expected"),
     [
         (Integer("A"), Any(), True),
-        (Integer("A"), AnyInteger(), False),
+        (Integer("A"), BaseInteger(), False),
         (Integer("A"), Integer("A"), True),
         (Integer("A"), UniversalInteger(), True),
         (
@@ -362,12 +362,12 @@ def test_integer_is_compatible_strong(integer: Type, other: Type, expected: bool
         (
             Aggregate(Integer("A", Bounds(10, 100))),
             Aggregate(Integer("B", Bounds(10, 100))),
-            Aggregate(AnyInteger()),
+            Aggregate(BaseInteger()),
         ),
         (
             Aggregate(Integer("A", Bounds(10, 100))),
             Aggregate(Integer("A", Bounds(20, 200))),
-            Aggregate(AnyInteger()),
+            Aggregate(BaseInteger()),
         ),
         (
             Aggregate(UniversalInteger(Bounds(10, 100))),
@@ -655,7 +655,7 @@ def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> No
                 Aggregate(UniversalInteger(Bounds(20, 100))),
                 Aggregate(Integer("B", Bounds(20, 200))),
             ],
-            Aggregate(AnyInteger()),
+            Aggregate(BaseInteger()),
         ),
         (
             [
@@ -695,7 +695,7 @@ def test_check_type(actual: Type, expected: Type) -> None:
             r'<stdin>:10:20: info: found message type "A"$',
         ),
         (
-            AnyInteger(),
+            BaseInteger(),
             Message("A"),
             r'^<stdin>:10:20: error: expected message type "A"\n'
             r"<stdin>:10:20: info: found integer type$",
@@ -738,7 +738,7 @@ def test_check_type_instance(
             r'<stdin>:10:20: info: found message type "M"$',
         ),
         (
-            AnyInteger(),
+            BaseInteger(),
             (Sequence, Message),
             r"^<stdin>:10:20: error: expected sequence type or message type\n"
             r"<stdin>:10:20: info: found integer type$",
