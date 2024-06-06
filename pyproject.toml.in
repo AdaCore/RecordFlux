@@ -2,7 +2,7 @@
 name = "RecordFlux"
 version = "0.0.0"
 description = "A toolset for the formal specification and generation of verifiable binary parsers, message generators and protocol state machines."
-license = "AGPL-3.0"
+license = "Apache-2.0"
 authors = [
     "Tobias Reiher <reiher@adacore.com>"
 ]
