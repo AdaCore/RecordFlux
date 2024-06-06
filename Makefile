@@ -303,11 +303,11 @@ $(BIN_DIR)/poetry:
 
 # --- Checks ---
 
-.PHONY: check check_code check_poetry check_contracts check_rapidflux check_doc check_unit_test_file_coverage
+.PHONY: check check_code check_poetry check_rapidflux check_doc check_unit_test_file_coverage
 
 check: check_code check_doc
 
-check_code: check_poetry common_check check_contracts check_rapidflux check_unit_test_file_coverage
+check_code: check_poetry common_check check_rapidflux check_unit_test_file_coverage
 
 check_rapidflux:
 	cargo fmt --check
@@ -331,9 +331,6 @@ check_poetry: $(RFLX)
 			echo "  $(realpath --relative-to=$(PWD) $(POETRY)) lock [--no-update]" ; \
 			false ; \
 		fi
-
-check_contracts: $(RFLX)
-	$(POETRY) run pyicontract-lint $(PYTHON_PACKAGES)
 
 check_unit_test_file_coverage:
 	$(POETRY) run tools/check_unit_test_file_coverage.py --source-dir $(MAKEFILE_DIR)/rflx/ --test-dir $(MAKEFILE_DIR)/tests/unit/ --ignore ide/vscode/node_modules/flatted/python
