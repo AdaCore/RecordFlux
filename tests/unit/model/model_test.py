@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-import rflx.model.type_decl as mty
 from rflx.expr import Equal, Number
 from rflx.identifier import ID
 from rflx.model import (
@@ -30,6 +29,7 @@ from rflx.model import (
     TypeDecl,
     UncheckedMessage,
     UncheckedModel,
+    type_decl,
 )
 from rflx.model.cache import Digest
 from rflx.model.top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
@@ -259,7 +259,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 
 def test_write_specification_files(tmp_path: Path) -> None:
     t = Integer("P::T", Number(0), Number(255), Number(8))
-    v = mty.Sequence("P::V", element_type=t)
+    v = type_decl.Sequence("P::V", element_type=t)
     s = Session("P::S", [State("A", [Transition("null")])], [], [], [])
     m = Message(
         ID("P::M", Location((1, 1))),
@@ -299,7 +299,7 @@ def test_write_specification_files(tmp_path: Path) -> None:
 def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
     s = Integer("P::S", Number(0), Number(65535), Number(16))
     t = Integer("P::T", Number(0), Number(255), Number(8))
-    v = mty.Sequence("P::V", element_type=t)
+    v = type_decl.Sequence("P::V", element_type=t)
     m = Message(
         ID("P::M", Location((1, 1))),
         [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)],
@@ -329,8 +329,8 @@ def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
 
 def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
     t = Integer("P::T", Number(0), Number(255), Number(8))
-    u = mty.Sequence("Q::U", element_type=t)
-    u1 = mty.Sequence("Q::U1", element_type=t)
+    u = type_decl.Sequence("Q::U", element_type=t)
+    u1 = type_decl.Sequence("Q::U1", element_type=t)
     v = Integer("R::V", Number(0), Number(65535), Number(16))
     links = [
         Link(INITIAL, Field("Victor")),
@@ -384,8 +384,8 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
 
 def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path) -> None:
     t = Integer("P::T", Number(0), Number(255), Number(8))
-    u = mty.Sequence("R::U", element_type=t)
-    u1 = mty.Sequence("Q::U1", element_type=t)
+    u = type_decl.Sequence("R::U", element_type=t)
+    u1 = type_decl.Sequence("Q::U1", element_type=t)
     v = Integer("R::V", Number(0), Number(65535), Number(16))
     links = [
         Link(INITIAL, Field("Victor")),
@@ -450,19 +450,35 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
     [
         ([], []),
         (
-            [mty.UncheckedInteger(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))],
-            [lambda: mty.Integer(ID("P::T"), Number(0), Number(128), Number(8), Location((1, 2)))],
+            [
+                type_decl.UncheckedInteger(
+                    ID("P::T"),
+                    Number(0),
+                    Number(128),
+                    Number(8),
+                    Location((1, 2)),
+                ),
+            ],
+            [
+                lambda: type_decl.Integer(
+                    ID("P::T"),
+                    Number(0),
+                    Number(128),
+                    Number(8),
+                    Location((1, 2)),
+                ),
+            ],
         ),
         (
             [
-                mty.UncheckedInteger(
+                type_decl.UncheckedInteger(
                     ID("P::I"),
                     Number(0),
                     Number(128),
                     Number(8),
                     Location((1, 2)),
                 ),
-                mty.UncheckedEnumeration(
+                type_decl.UncheckedEnumeration(
                     ID("P::E"),
                     [(ID("A"), Number(0)), (ID("B"), Number(1))],
                     Number(8),
@@ -471,14 +487,14 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
                 ),
             ],
             [
-                lambda: mty.Integer(
+                lambda: type_decl.Integer(
                     ID("P::I"),
                     Number(0),
                     Number(128),
                     Number(8),
                     Location((1, 2)),
                 ),
-                lambda: mty.Enumeration(
+                lambda: type_decl.Enumeration(
                     ID("P::E"),
                     [(ID("A"), Number(0)), (ID("B"), Number(1))],
                     Number(8),
@@ -544,20 +560,28 @@ def test_unchecked_model_checked(
     ("unchecked", "expected"),
     [
         (
-            [mty.UncheckedInteger(ID("P::T"), Number(0), Number(128), Number(2), Location((1, 2)))],
+            [
+                type_decl.UncheckedInteger(
+                    ID("P::T"),
+                    Number(0),
+                    Number(128),
+                    Number(2),
+                    Location((1, 2)),
+                ),
+            ],
             r'^<stdin>:1:2: error: size of "T" too small$',
         ),
         (
             [
                 UNCHECKED_OPAQUE,
-                mty.UncheckedInteger(
+                type_decl.UncheckedInteger(
                     ID("P::I"),
                     Number(0),
                     Number(128),
                     Number(2),
                     Location((1, 2)),
                 ),
-                mty.UncheckedEnumeration(
+                type_decl.UncheckedEnumeration(
                     ID("E", Location((3, 4))),
                     [(ID("A"), Number(0)), (ID("B"), Number(1))],
                     Number(8),

@@ -12,7 +12,7 @@ from rflx.expr import Expr, Selected, Variable
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
-from . import type_decl as mty
+from . import type_decl
 
 
 class Declaration(Base):
@@ -325,6 +325,6 @@ class ChannelDeclaration(FormalDeclaration):
 
 
 def ada_type_name(identifier: ID) -> StrID:
-    if mty.is_builtin_type(identifier) or mty.is_internal_type(identifier):
+    if type_decl.is_builtin_type(identifier) or type_decl.is_internal_type(identifier):
         return identifier.name
     return identifier
