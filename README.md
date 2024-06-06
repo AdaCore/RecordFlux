@@ -15,4 +15,4 @@ See the [development guide](https://github.com/AdaCore/RecordFlux/blob/main/doc/
 
 ## Licence
 
-This software is licensed under the `AGPL-3.0`. See the `LICENSE` file for the full license text.
+This software is licensed under the `Apache-2.0`. See the `LICENSE` file for the full license text.
