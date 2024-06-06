@@ -14,7 +14,6 @@ from typing_extensions import Self
 
 from rflx import expr, typing_ as rty
 from rflx.common import Base, file_name, indent, indent_next, unique
-from rflx.contract import invariant
 from rflx.identifier import ID, StrID
 
 MAX_LINE_LENGTH = 100
@@ -541,9 +540,9 @@ class Update(NamedAttributeExpr):
     pass
 
 
-@invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
     def __init__(self, prefix: Expr, *elements: Expr) -> None:
+        assert len(elements) > 0
         self.prefix = prefix
         self.elements = list(elements)
         super().__init__()
@@ -2335,7 +2334,6 @@ class Unit(Base):
         raise NotImplementedError
 
 
-@invariant(lambda self: self.declaration.identifier == self.body.identifier)
 class PackageUnit(Unit):
     def __init__(
         self,
@@ -2344,6 +2342,7 @@ class PackageUnit(Unit):
         body_context: list[ContextItem],
         body: PackageBody,
     ) -> None:
+        assert declaration.identifier == body.identifier
         self.declaration_context = declaration_context
         self.declaration = declaration
         self.body_context = body_context

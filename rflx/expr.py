@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Final, Optional, Union
 
 from rflx import const, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
-from rflx.contract import DBC, invariant, require
 from rflx.error import are_all_locations_present
 from rflx.identifier import ID, StrID
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
@@ -37,7 +36,7 @@ class Precedence(Enum):
     LITERAL = 7
 
 
-class Expr(DBC, Base):
+class Expr(Base):
     _str: str
 
     def __init__(
@@ -139,7 +138,6 @@ class Expr(DBC, Base):
     def findall(self, match: Callable[[Expr], bool]) -> Sequence[Expr]:
         return [self] if match(self) else []
 
-    @require(lambda func, mapping: (func and mapping is None) or (not func and mapping is not None))
     def substituted(
         self,
         func: Optional[Callable[[Expr], Expr]] = None,
@@ -1322,11 +1320,11 @@ class Val(Attribute):
         return f"{self.prefix}'{self.__class__.__name__} ({self.expression})"
 
 
-@invariant(lambda self: len(self.elements) > 0)
 class Indexed(Name):
     """Only used by code generator and therefore provides minimum functionality."""
 
     def __init__(self, prefix: Expr, *elements: Expr) -> None:
+        assert len(elements) > 0
         self.prefix = prefix
         self.elements = list(elements)
         super().__init__()
@@ -2512,6 +2510,7 @@ def substitution(
     mapping: Mapping[Name, Expr],
     func: Optional[Callable[[Expr], Expr]] = None,
 ) -> Callable[[Expr], Expr]:
+    assert not (mapping and func)
     if func:
         return func
     return lambda expression: (

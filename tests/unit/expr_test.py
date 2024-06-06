@@ -42,6 +42,7 @@ from rflx.expr import (
     MessageAggregate,
     Mod,
     Mul,
+    Name,
     Neg,
     Not,
     NotEqual,
@@ -1616,36 +1617,36 @@ def test_expr_variables_duplicates() -> None:
     )
 
 
-@pytest.mark.skipif(not __debug__, reason="depends on contract")
+@pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_expr_substituted_pre() -> None:
+    mapping: Mapping[Name, Expr] = {Variable("X"): Number(1)}
     with pytest.raises(AssertionError):
-        Number(1).substituted()  # pragma: no branch
+        Number(1).substituted(lambda x: x, mapping)  # pragma: no branch
     with pytest.raises(AssertionError):
-        Add(Number(1), Number(1)).substituted()  # pragma: no branch
+        Add(Number(1), Number(1)).substituted(lambda x: x, mapping)  # pragma: no branch
     with pytest.raises(AssertionError):
-        Number(1).substituted(lambda x: x, {})  # pragma: no branch
+        Selected(Variable("X"), "F").substituted(lambda x: x, mapping)  # pragma: no branch
     with pytest.raises(AssertionError):
-        Add(Number(1), Number(1)).substituted(lambda x: x, {})  # pragma: no branch
-    with pytest.raises(AssertionError):
-        Selected(Variable("X"), "F").substituted(lambda x: x, {})  # pragma: no branch
-    with pytest.raises(AssertionError):
-        Call("Sub", rty.BASE_INTEGER).substituted(lambda x: x, {})  # pragma: no branch
+        Call("Sub", rty.BASE_INTEGER).substituted(lambda x: x, mapping)  # pragma: no branch
     with pytest.raises(AssertionError):
         ForAllOf("X", Variable("Y"), Variable("Z")).substituted(  # pragma: no branch
             lambda x: x,
-            {},
+            mapping,
         )
     with pytest.raises(AssertionError):
-        Conversion("X", Variable("Y")).substituted(lambda x: x, {})  # pragma: no branch
+        Conversion("X", Variable("Y")).substituted(lambda x: x, mapping)  # pragma: no branch
     with pytest.raises(AssertionError):
         Comprehension(  # pragma: no branch
             "X",
             Variable("Y"),
             Variable("Z"),
             Variable("A"),
-        ).substituted(lambda x: x, {})
+        ).substituted(lambda x: x, mapping)
     with pytest.raises(AssertionError):
-        MessageAggregate("X", {"A": Number(5)}).substituted(lambda x: x, {})  # pragma: no branch
+        MessageAggregate("X", {"A": Number(5)}).substituted(
+            lambda x: x,
+            mapping,
+        )  # pragma: no branch
 
 
 def test_length_variables() -> None:
