@@ -21,7 +21,7 @@ from rflx.identifier import ID, StrID
 from rflx.rapidflux import Location
 
 if TYPE_CHECKING:
-    from rflx.model import type_decl as mty
+    from rflx.model import type_decl
 
 INT_MIN: int = 0
 INT_MAX: int = 2**MAX_SCALAR_SIZE - 1
@@ -1782,7 +1782,7 @@ class Session:
     states: Sequence[State]
     declarations: Sequence[VarDecl]
     parameters: Sequence[FormalDecl]
-    types: Mapping[ID, mty.TypeDecl]
+    types: Mapping[ID, type_decl.TypeDecl]
     location: Optional[Location]
 
     def __init__(  # noqa: PLR0913
@@ -1791,7 +1791,7 @@ class Session:
         states: Sequence[State],
         declarations: Sequence[VarDecl],
         parameters: Sequence[FormalDecl],
-        types: Mapping[ID, mty.TypeDecl],
+        types: Mapping[ID, type_decl.TypeDecl],
         location: Optional[Location],
         variable_id: Generator[ID, None, None],
         workers: int = 1,

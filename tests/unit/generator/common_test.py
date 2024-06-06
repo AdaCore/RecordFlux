@@ -8,7 +8,7 @@ import pytest
 from rflx import expr, typing_ as rty
 from rflx.generator import common, const
 from rflx.identifier import ID
-from rflx.model import BUILTIN_TYPES, type_decl as mty
+from rflx.model import BUILTIN_TYPES, type_decl
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
 from rflx.rapidflux import Location
 from tests.data import models
@@ -132,7 +132,7 @@ def test_prefixed_type_identifier() -> None:
 
 def test_param_enumeration_condition() -> None:
     """Test proper substitution of parameter of enumeration type in link condition."""
-    type_ = mty.Enumeration(
+    type_ = type_decl.Enumeration(
         "P::T",
         literals=[("E1", expr.Number(1)), ("E2", expr.Number(2))],
         size=expr.Number(8),

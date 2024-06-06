@@ -17,7 +17,7 @@ from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Se
 from . import (
     declaration as decl,
     statement as stmt,
-    type_decl as mty,
+    type_decl,
 )
 from .message import Message, Refinement
 from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
@@ -350,7 +350,7 @@ class Session(TopLevelDeclaration):
         states: Sequence[State],
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
-        types: Sequence[mty.TypeDecl],
+        types: Sequence[type_decl.TypeDecl],
         location: Optional[Location] = None,
         workers: int = 1,
     ):
@@ -378,8 +378,8 @@ class Session(TopLevelDeclaration):
             **self.parameters,
             **self.declarations,
         }
-        self._enum_literals = mty.enum_literals(self.types.values(), self.package)
-        self._type_names = mty.qualified_type_names(self.types.values())
+        self._enum_literals = type_decl.enum_literals(self.types.values(), self.package)
+        self._type_names = type_decl.qualified_type_names(self.types.values())
 
         self._check_identifiers()
         self._normalize()
@@ -528,7 +528,7 @@ class Session(TopLevelDeclaration):
 
     def _check_identifiers(self) -> None:
         self.error.extend(
-            mty.check_identifier_notation(
+            type_decl.check_identifier_notation(
                 itertools.chain(
                     (
                         expr.Variable(d.type_identifier)
@@ -552,7 +552,7 @@ class Session(TopLevelDeclaration):
 
         for state in self.states:
             self.error.extend(
-                mty.check_identifier_notation(
+                type_decl.check_identifier_notation(
                     itertools.chain(
                         (
                             d.expression
@@ -712,7 +712,10 @@ class Session(TopLevelDeclaration):
             self._reference_variable_declaration(d.variables(), visible_declarations)
 
             if isinstance(d, decl.TypeCheckableDeclaration):
-                type_identifier = mty.internal_type_identifier(d.type_identifier, self.package)
+                type_identifier = type_decl.internal_type_identifier(
+                    d.type_identifier,
+                    self.package,
+                )
                 if type_identifier in self.types:
                     self.error.extend(
                         d.check_type(
@@ -726,7 +729,7 @@ class Session(TopLevelDeclaration):
 
                 if isinstance(d, decl.FunctionDeclaration):
                     for a in d.arguments:
-                        type_identifier = mty.internal_type_identifier(
+                        type_identifier = type_decl.internal_type_identifier(
                             a.type_identifier,
                             self.package,
                         )
@@ -935,7 +938,7 @@ class Session(TopLevelDeclaration):
                     if isinstance(t, Refinement) and t.sdu.identifier == identifier
                 ]
             if isinstance(expression, expr.MessageAggregate):
-                type_identifier = mty.internal_type_identifier(identifier, self.package)
+                type_identifier = type_decl.internal_type_identifier(identifier, self.package)
                 if type_identifier in self.types:
                     expression.type_ = self.types[type_identifier].type_
             if isinstance(expression, expr.DeltaMessageAggregate) and identifier in declarations:
@@ -1044,7 +1047,7 @@ class UncheckedSession(UncheckedTopLevelDeclaration):
             deepcopy(self.states),
             deepcopy(self.declarations),
             deepcopy(self.parameters),
-            [d for d in declarations if isinstance(d, mty.TypeDecl)],
+            [d for d in declarations if isinstance(d, type_decl.TypeDecl)],
             self.location,
         )
 

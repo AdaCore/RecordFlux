@@ -15,7 +15,16 @@ from typing_extensions import Self
 
 from rflx import expr, expr_proof
 from rflx.identifier import ID, StrID
-from rflx.model import AlwaysVerify, Cache, Link, Message, Model, Refinement, type_decl as mty
+from rflx.model import (
+    AlwaysVerify,
+    Cache,
+    Link,
+    Message,
+    Model,
+    Refinement,
+    Sequence as SequenceDecl,
+    TypeDecl,
+)
 from rflx.pyrflx import ChecksumFunction, Package, PyRFLX, PyRFLXError
 from rflx.pyrflx.typevalue import MessageValue
 from rflx.specification import Parser
@@ -221,7 +230,10 @@ class Validator:
         return message.copy(structure=structure, types=types)
 
     @staticmethod
-    def _replace_messages(type_decl: mty.TypeDecl, messages: Mapping[ID, Message]) -> mty.TypeDecl:
+    def _replace_messages(
+        type_decl: TypeDecl,
+        messages: Mapping[ID, Message],
+    ) -> TypeDecl:
         """Recursively replace messages."""
         if isinstance(type_decl, Message):
             return messages[type_decl.identifier]
@@ -234,8 +246,11 @@ class Validator:
                 type_decl.condition,
                 type_decl.location,
             )
-        if isinstance(type_decl, mty.Sequence) and isinstance(type_decl.element_type, Message):
-            return mty.Sequence(
+        if isinstance(type_decl, SequenceDecl) and isinstance(
+            type_decl.element_type,
+            Message,
+        ):
+            return SequenceDecl(
                 type_decl.identifier,
                 messages[type_decl.element_type.identifier],
                 type_decl.location,

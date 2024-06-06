@@ -14,7 +14,7 @@ from rflx.generator.common import Debug
 from rflx.generator.message import create_structure
 from rflx.identifier import ID
 from rflx.integration import Integration
-from rflx.model import Model, type_decl as mty
+from rflx.model import Model, type_decl
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
 from rflx.rapidflux import Location, RecordFluxError
 from tests.const import DATA_DIR, GENERATED_DIR
@@ -48,8 +48,8 @@ GENERATOR_TEST_CASES = [
                         ),
                     ],
                     {
-                        Field("A"): mty.BOOLEAN,
-                        Field("B"): mty.Integer(
+                        Field("A"): type_decl.BOOLEAN,
+                        Field("B"): type_decl.Integer(
                             "P::T",
                             first=expr.Number(0),
                             last=expr.Number(127),
@@ -99,7 +99,7 @@ def test_ignore_unsupported_checksum(capfd: pytest.CaptureFixture[str], tmp_path
 
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
 def test_unexpected_declaration(tmp_path: Path) -> None:
-    class TestType(mty.TypeDecl):
+    class TestType(type_decl.TypeDecl):
         pass
 
     with pytest.raises(AssertionError, match='unexpected declaration "TestType"'):
@@ -200,7 +200,7 @@ def test_generate_unused_valid_function_parameter(
 ) -> None:
     monkeypatch.setattr(Generator, "_license_header", "")
     types = [
-        mty.Integer(
+        type_decl.Integer(
             "P::T",
             first=expr.Number(0),
             last=expr.Sub(
@@ -372,7 +372,7 @@ def test_generate_enumeration_base_type_use(
 ) -> None:
     monkeypatch.setattr(Generator, "_license_header", "")
     types = [
-        mty.Enumeration(
+        type_decl.Enumeration(
             "P::T",
             literals=[("E1", expr.Number(1))],
             size=expr.Number(constants.MAX_SCALAR_SIZE),
@@ -407,7 +407,7 @@ def test_generate_field_size_optimization() -> None:
         ],
         {
             Field("Length"): models.universal_length(),
-            Field("Data"): mty.OPAQUE,
+            Field("Data"): type_decl.OPAQUE,
         },
     )
     structure = create_structure("", message)
@@ -465,8 +465,8 @@ def test_generate_multiple_initial_conditions(tmp_path: Path) -> None:
         {
             Field("Tag"): models.enumeration(),
             Field("Length"): models.universal_length(),
-            Field("Data"): mty.OPAQUE,
-            Field("P"): mty.BOOLEAN,
+            Field("Data"): type_decl.OPAQUE,
+            Field("P"): type_decl.BOOLEAN,
         },
     )
     Generator().generate(Model([message]), Integration(), tmp_path)
