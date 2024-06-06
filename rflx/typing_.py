@@ -128,20 +128,20 @@ class Enumeration(NamedType):
 
 
 @attr.s(frozen=True)
-class AnyInteger(Any):
+class BaseInteger(Any):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
 
     def is_compatible(self, other: Type) -> bool:
-        return other == Any() or isinstance(other, AnyInteger)
+        return other == Any() or isinstance(other, BaseInteger)
 
     def common_type(self, other: Type) -> Type:
-        if other == Any() or isinstance(other, AnyInteger):
+        if other == Any() or isinstance(other, BaseInteger):
             return self
         return Undefined()
 
 
 @attr.s(frozen=True)
-class BoundedInteger(AnyInteger):
+class BoundedInteger(BaseInteger):
     bounds: Bounds = attr.ib(Bounds(None, None))
 
 
@@ -156,7 +156,7 @@ class UniversalInteger(BoundedInteger):
     def common_type(self, other: Type) -> Type:
         if isinstance(other, UniversalInteger) and self.bounds != other.bounds:
             return UniversalInteger(Bounds.union(self.bounds, other.bounds))
-        if isinstance(other, AnyInteger):
+        if isinstance(other, BaseInteger):
             return other
         if other == Any() or self == other:
             return self
@@ -182,8 +182,8 @@ class Integer(BoundedInteger, NamedType):
         if isinstance(other, Integer) and (
             self.identifier != other.identifier or self.bounds != other.bounds
         ):
-            return AnyInteger()
-        if isinstance(other, AnyInteger):
+            return BaseInteger()
+        if isinstance(other, BaseInteger):
             return other
         if other == Any() or self == other:
             return self
