@@ -18,7 +18,9 @@ class Bounds:
     upper: Optional[int] = attr.ib()
 
     def __attrs_post_init__(self) -> None:
-        assert self.lower is None or self.upper is None or self.lower <= self.upper
+        assert (self.lower is None and self.upper is None) or (
+            self.lower is not None and self.upper is not None and self.lower <= self.upper
+        )
 
     def __bool__(self) -> bool:
         return self.lower is not None and self.upper is not None

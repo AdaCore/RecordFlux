@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import abc
-from typing import Union
+from typing import Optional, Union
 
 import pytest
 
@@ -41,10 +41,18 @@ def test_bounds_contains() -> None:
     assert "invalid" not in Bounds(1, 100)
 
 
+@pytest.mark.parametrize(
+    ("lower", "upper"),
+    [
+        (10, 0),
+        (None, 1),
+        (1, None),
+    ],
+)
 @pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_bounds_error() -> None:
+def test_bounds_error(lower: Optional[int], upper: Optional[int]) -> None:
     with pytest.raises(AssertionError):
-        Bounds(10, 1)
+        Bounds(lower, upper)
 
 
 def test_bounds_str() -> None:
