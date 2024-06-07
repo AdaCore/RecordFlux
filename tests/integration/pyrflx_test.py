@@ -425,7 +425,7 @@ def test_tlv_message_with_not_operator() -> None:
     message = Message(
         ID("TLV::Message_With_Not_Operator", Location((1, 1))),
         [
-            Link(INITIAL, Field("Tag")),
+            Link(INITIAL, Field("Tag"), location=Location((1, 1))),
             Link(
                 Field("Tag"),
                 Field("Length"),
@@ -443,6 +443,7 @@ def test_tlv_message_with_not_operator() -> None:
                     ),
                     location=Location((4, 4)),
                 ),
+                location=Location((2, 2)),
             ),
             Link(
                 Field("Tag"),
@@ -477,14 +478,20 @@ def test_tlv_message_with_not_operator() -> None:
                     ),
                     location=Location((6, 6)),
                 ),
+                location=Location((6, 6)),
             ),
-            Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
-            Link(Field("Value"), FINAL),
+            Link(
+                Field("Length"),
+                Field("Value"),
+                size=Mul(Variable("Length"), Number(8), location=Location((7, 7))),
+                location=Location((7, 7)),
+            ),
+            Link(Field("Value"), FINAL, location=Location((8, 8))),
         ],
         {
-            Field("Tag"): models.tlv_tag(),
-            Field("Length"): models.tlv_length(),
-            Field("Value"): OPAQUE,
+            Field(ID("Tag", location=Location((1, 1)))): models.tlv_tag(),
+            Field(ID("Length", location=Location((2, 2)))): models.tlv_length(),
+            Field(ID("Value", location=Location((3, 3)))): OPAQUE,
         },
     )
 
@@ -504,7 +511,7 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
     message = Message(
         ID("TLV::Message_With_Not_Operator_Exhausting", Location((1, 1))),
         [
-            Link(INITIAL, Field("Tag")),
+            Link(INITIAL, Field("Tag"), location=Location((1, 1))),
             Link(
                 Field("Tag"),
                 Field("Length"),
@@ -522,6 +529,7 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
                     ),
                     location=Location((3, 3)),
                 ),
+                location=Location((2, 2)),
             ),
             Link(
                 Field("Tag"),
@@ -555,14 +563,20 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
                         location=Location((4, 7)),
                     ),
                 ),
+                location=Location((2, 2)),
             ),
-            Link(Field("Length"), Field("Value"), size=Mul(Variable("Length"), Number(8))),
-            Link(Field("Value"), FINAL),
+            Link(
+                Field("Length"),
+                Field("Value"),
+                size=Mul(Variable("Length"), Number(8), location=Location((8, 8))),
+                location=Location((8, 8)),
+            ),
+            Link(Field(ID("Value", location=Location((9, 9)))), FINAL),
         ],
         {
-            Field("Tag"): models.tlv_tag(),
-            Field("Length"): models.tlv_length(),
-            Field("Value"): OPAQUE,
+            Field(ID("Tag", location=Location((1, 1)))): models.tlv_tag(),
+            Field(ID("Length", location=Location((2, 2)))): models.tlv_length(),
+            Field(ID("Value", location=Location((3, 3)))): OPAQUE,
         },
     )
 

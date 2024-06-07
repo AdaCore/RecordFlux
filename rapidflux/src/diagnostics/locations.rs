@@ -120,10 +120,11 @@ impl Location {
     }
 
     #[staticmethod]
-    fn merge(positions: Vec<Self>) -> Option<Self> {
+    fn merge(positions: Vec<Option<Self>>) -> Option<Self> {
         lib::Location::merge(
             positions
                 .into_iter()
+                .flatten()
                 .map(|l| l.0)
                 .collect::<Vec<lib::Location>>()
                 .as_slice(),

@@ -34,8 +34,11 @@ def test_graph_object() -> None:
     f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
         ID("P::M", Location((1, 1))),
-        structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
-        types={Field("X"): f_type},
+        structure=[
+            Link(INITIAL, Field("X"), location=Location((2, 2))),
+            Link(Field("X"), FINAL, location=Location((3, 3))),
+        ],
+        types={Field(ID("X", location=Location((4, 4)))): f_type},
     )
     g = create_message_graph(m)
     assert [(e.get_source(), e.get_destination()) for e in g.get_edges()] == [
@@ -81,8 +84,11 @@ def test_dot_graph(tmp_path: Path) -> None:
     f_type = Integer("P::T", Number(0), Sub(Pow(Number(2), Number(32)), Number(1)), Number(32))
     m = Message(
         ID("P::M", Location((1, 1))),
-        structure=[Link(INITIAL, Field("X")), Link(Field("X"), FINAL)],
-        types={Field("X"): f_type},
+        structure=[
+            Link(INITIAL, Field("X"), location=Location((1, 1))),
+            Link(Field("X"), FINAL, location=Location((2, 2))),
+        ],
+        types={Field(ID("X", location=Location((1, 1)))): f_type},
     )
     expected = """
         digraph "P::M" {
@@ -113,10 +119,10 @@ def test_dot_graph_with_condition(tmp_path: Path) -> None:
     m = Message(
         ID("P::M", Location((1, 1))),
         structure=[
-            Link(INITIAL, Field("X")),
-            Link(Field("X"), FINAL, Greater(Variable("X"), Number(100))),
+            Link(INITIAL, Field("X"), location=Location((1, 1))),
+            Link(Field("X"), FINAL, Greater(Variable("X"), Number(100)), location=Location((2, 2))),
         ],
-        types={Field("X"): f_type},
+        types={Field(ID("X", location=Location((1, 1)))): f_type},
     )
     expected = """
         digraph "P::M" {
@@ -147,11 +153,21 @@ def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
     m = Message(
         ID("P::M", Location((1, 1))),
         structure=[
-            Link(INITIAL, Field("X")),
-            Link(Field("X"), FINAL, Greater(Variable("X"), Number(100), location=Location((3, 3)))),
-            Link(Field("X"), FINAL, Less(Variable("X"), Number(50), location=Location((4, 4)))),
+            Link(INITIAL, Field("X"), location=Location((1, 1))),
+            Link(
+                Field("X"),
+                FINAL,
+                Greater(Variable("X"), Number(100), location=Location((3, 3))),
+                location=Location((2, 2)),
+            ),
+            Link(
+                Field("X"),
+                FINAL,
+                Less(Variable("X"), Number(50), location=Location((4, 4))),
+                location=Location((3, 3)),
+            ),
         ],
-        types={Field("X"): f_type},
+        types={Field(ID("X", location=Location((1, 1)))): f_type},
     )
     expected = """
         digraph "P::M" {

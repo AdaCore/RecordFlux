@@ -7,8 +7,8 @@ from concurrent.futures import ProcessPoolExecutor
 from copy import copy
 from dataclasses import dataclass, field as dataclass_field
 from enum import Enum
-from functools import cached_property
-from typing import Optional, Union
+from functools import cached_property, partial
+from typing import Callable, Optional, Union
 
 import rflx.typing_ as rty
 from rflx import expr, expr_proof
@@ -51,8 +51,8 @@ class Field(Base):
         return f"F_{self.name}"
 
 
-INITIAL = Field("Initial")
-FINAL = Field("Final")
+INITIAL = Field(ID("Initial", location=Location((1, 1))))
+FINAL = Field(ID("Final", location=Location((1, 1))))
 
 
 @dataclass(order=True)
@@ -654,7 +654,11 @@ class Message(type_decl.TypeDecl):
                 and Field(expression.identifier) in self.types
             ):
                 return expr.Selected(
-                    expr.Variable(message_instance, type_=self.type_),
+                    expr.Variable(
+                        message_instance,
+                        type_=self.type_,
+                        location=message_instance.location,
+                    ),
                     expression.identifier,
                     type_=expression.type_,
                     location=expression.location,
@@ -720,7 +724,6 @@ class Message(type_decl.TypeDecl):
             locations = [
                 l.condition.location for l in self.incoming(field) if l.first != expr.UNDEFINED
             ]
-            assert are_all_locations_present(locations)
 
             overlay_condition = expr.Not(
                 expr.Or(*[l.condition for l in self.incoming(field) if l.first != expr.UNDEFINED]),
@@ -745,14 +748,12 @@ class Message(type_decl.TypeDecl):
                 ]
 
                 path_conditions = [l.condition for l in path if l.condition != expr.TRUE]
-                path_conditions_locations = [c.location for c in path_conditions]
-                assert are_all_locations_present(path_conditions_locations)
 
                 path_condition = (
                     expr.And(
                         *path_conditions,
                         overlay_condition,
-                        location=Location.merge(path_conditions_locations),
+                        location=Location.merge([c.location for c in path_conditions]),
                     )
                     .substituted(mapping=to_mapping(link_size_expressions + facts))
                     .substituted(mapping=type_constraints)
@@ -1106,13 +1107,25 @@ class Message(type_decl.TypeDecl):
                 else:
                     valid_definitions = (
                         [
-                            expr.Add(expr.Last("Message"), -expr.Last(link.source.name)),
-                            expr.Sub(expr.Last("Message"), expr.Last(link.source.name)),
+                            expr.Add(
+                                expr.Last("Message"),
+                                -expr.Last(link.source.name),
+                                location=link.location,
+                            ),
+                            expr.Sub(
+                                expr.Last("Message"),
+                                expr.Last(link.source.name),
+                                location=link.location,
+                            ),
                         ]
                         if link.source != INITIAL
                         else [
                             expr.Size("Message"),
-                            expr.Sub(expr.Last("Message"), expr.Last(INITIAL.name)),
+                            expr.Sub(
+                                expr.Last("Message"),
+                                expr.Last(INITIAL.name),
+                                location=link.location,
+                            ),
                         ]
                     )
                     if link.size not in valid_definitions:
@@ -1913,23 +1926,12 @@ class Message(type_decl.TypeDecl):
             else:
                 if paths:
                     error = []
-                    annotations = []
+                    annotations: list[Annotation] = []
                     for path, errors in sorted(paths):
-                        path_locations = [l.target.identifier.location for l in path]
                         unsatisfied_locations = [t[1] for t in errors]
-                        assert are_all_locations_present(path_locations)
                         assert are_all_locations_present(unsatisfied_locations)
 
-                        annotations.extend(
-                            [
-                                Annotation(
-                                    f'on path: "{link.target.identifier}"',
-                                    Severity.INFO,
-                                    location,
-                                )
-                                for link, location in zip(path, path_locations)
-                            ],
-                        )
+                        annotations.extend(annotate_path(path))
                         annotations.extend(
                             [
                                 Annotation(
@@ -2051,14 +2053,29 @@ class Message(type_decl.TypeDecl):
                             last.location,
                         )
 
-                        path_message = " -> ".join([p.target.name for p in path])
+                        path_locations = [p.target.identifier.location for p in path]
+                        assert are_all_locations_present(path_locations)
+                        assert f.identifier.location is not None
                         error = RecordFluxError(
                             [
                                 ErrorEntry(
                                     f'opaque field "{f.name}" not aligned to {element_size} '
-                                    f"bit boundary ({path_message})",
+                                    f"bit boundary",
                                     Severity.ERROR,
                                     f.identifier.location,
+                                    annotations=[
+                                        *annotate_path(
+                                            path[:-1],
+                                            partial(lambda p, f: p.target.name != f.name, f=f),
+                                        ),
+                                        Annotation(
+                                            "a previous field in the path may be the cause of "
+                                            "this error",
+                                            Severity.ERROR,
+                                            f.identifier.location,
+                                        ),
+                                    ],
+                                    generate_default_annotation=False,
                                 ),
                             ],
                         )
@@ -2082,14 +2099,34 @@ class Message(type_decl.TypeDecl):
                             location=last.location,
                         )
 
-                        path_message = " -> ".join([p.target.name for p in path])
+                        assert field_size.location is not None
+                        path_locations = [p.location for p in path]
+                        assert are_all_locations_present(path_locations)
                         error = RecordFluxError(
                             [
                                 ErrorEntry(
                                     f'size of opaque field "{f.name}" not multiple'
-                                    f" of {element_size} bit ({path_message})",
+                                    f" of {element_size} bit",
                                     Severity.ERROR,
                                     field_size.location,
+                                    annotations=annotate_path(
+                                        path[:-1],
+                                        lambda p: p.source != INITIAL,
+                                    ),
+                                ),
+                                ErrorEntry(
+                                    "sizes are expressed in bits, not bytes",
+                                    Severity.HELP,
+                                    field_size.location,
+                                    annotations=[
+                                        Annotation(
+                                            "did you mean "
+                                            f'"{expr.Mul(field_size, expr.Number(8))}"?',
+                                            Severity.HELP,
+                                            field_size.location,
+                                        ),
+                                    ],
+                                    generate_default_annotation=False,
                                 ),
                             ],
                         )
@@ -2133,15 +2170,7 @@ class Message(type_decl.TypeDecl):
                         "message size must be multiple of 8 bit",
                         Severity.ERROR,
                         self.identifier.location,
-                        annotations=(
-                            [
-                                Annotation(
-                                    "on path " + " -> ".join(l.target.name for l in path),
-                                    Severity.INFO,
-                                    self.identifier.location,
-                                ),
-                            ]
-                        ),
+                        annotations=annotate_path(path),
                     ),
                 ],
             )
@@ -2182,7 +2211,7 @@ class Message(type_decl.TypeDecl):
 
     def _target_last(self, link: Link) -> expr.Expr:
         return expr.Sub(
-            expr.Add(self._target_first(link), self._target_size(link)),
+            expr.Add(self._target_first(link), self._target_size(link), location=link.location),
             expr.Number(1),
             link.target.identifier.location,
         )
@@ -2234,7 +2263,10 @@ class Message(type_decl.TypeDecl):
             expr.GreaterEqual(expr.Last("Message"), expr.First("Message"), self.location),
             expr.Equal(
                 expr.Size("Message"),
-                expr.Add(expr.Sub(expr.Last("Message"), expr.First("Message")), expr.Number(1)),
+                expr.Add(
+                    expr.Sub(expr.Last("Message"), expr.First("Message"), location=self.location),
+                    expr.Number(1),
+                ),
                 self.location,
             ),
         ]
@@ -2973,7 +3005,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
             if isinstance(expression, expr.Size):
                 return expr.Sub(
                     expr.Last(ID("Message", location=expression.location)),
-                    expr.Last(INITIAL.name),
+                    expr.Last(INITIAL.identifier),
                     location=expression.location,
                 )
             assert False
@@ -3456,3 +3488,25 @@ def prove(
     facts: list[expr.Expr],
 ) -> expr_proof.ProofResult:
     return expr_proof.Proof(expr.TRUE, facts).result
+
+
+def annotate_path(
+    path: Sequence[Link],
+    link_filter: Optional[Callable[[Link], bool]] = None,
+) -> Sequence[Annotation]:
+    link_filter = link_filter or (lambda _: True)
+    result = []
+
+    for link in path:
+        assert link.target.identifier.location is not None
+
+        if link_filter(link):
+            result.append(
+                Annotation(
+                    f'on path "{link.target.name}"',
+                    Severity.NOTE,
+                    link.target.identifier.location,
+                ),
+            )
+
+    return result

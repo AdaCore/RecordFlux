@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import textwrap
 from collections import abc
 from copy import deepcopy
@@ -69,10 +70,16 @@ from tests.utils import assert_equal, assert_message_model_error
 M_NO_REF = UncheckedMessage(
     ID("P::No_Ref", Location((1, 1))),
     [
-        Link(INITIAL, Field(ID("F1", location=Location((2, 2)))), size=Number(16)),
+        Link(
+            INITIAL,
+            Field(ID("F1", location=Location((2, 2)))),
+            size=Number(16, location=Location((1, 1))),
+            location=Location((1, 1)),
+        ),
         Link(
             Field(ID("F1", location=Location((3, 3)))),
             Field(ID("F2", location=Location((3, 3)))),
+            location=Location((3, 3)),
         ),
         Link(
             Field(ID("F2", location=Location((4, 4)))),
@@ -83,6 +90,7 @@ M_NO_REF = UncheckedMessage(
                 location=Location((5, 5)),
             ),
             first=First(ID("F2", location=Location((6, 6)))),
+            location=Location((4, 4)),
         ),
         Link(
             Field(ID("F2", location=Location((7, 7)))),
@@ -93,6 +101,7 @@ M_NO_REF = UncheckedMessage(
                 location=Location((9, 9)),
             ),
             first=First(ID("F2", location=Location((10, 10)))),
+            location=Location((7, 7)),
         ),
         Link(
             Field(ID("F3", location=Location((11, 11)))),
@@ -102,23 +111,24 @@ M_NO_REF = UncheckedMessage(
                 Variable(ID("One", location=Location((12, 12)))),
                 location=Location((12, 12)),
             ),
+            location=Location((11, 11)),
         ),
-        Link(Field(ID("F4", location=Location((12, 12)))), FINAL),
+        Link(Field(ID("F4", location=Location((12, 12)))), FINAL, location=Location((12, 12))),
     ],
     [],
     [
-        (Field("F1"), OPAQUE.identifier, []),
-        (Field("F2"), models.integer().identifier, []),
-        (Field("F3"), models.enumeration().identifier, []),
-        (Field("F4"), models.integer().identifier, []),
+        (Field(ID("F1", location=Location((1, 1)))), OPAQUE.identifier, []),
+        (Field(ID("F2", location=Location((2, 2)))), models.integer().identifier, []),
+        (Field(ID("F3", location=Location((3, 3)))), models.enumeration().identifier, []),
+        (Field(ID("F4", location=Location((4, 4)))), models.integer().identifier, []),
     ],
 )
 
 M_SMPL_REF = UncheckedMessage(
     ID("P::Smpl_Ref", Location((1, 1))),
     [
-        Link(INITIAL, Field(ID("NR", location=Location((2, 2))))),
-        Link(Field(ID("NR", location=Location((2, 2)))), FINAL),
+        Link(INITIAL, Field(ID("NR", location=Location((2, 2)))), location=Location((1, 1))),
+        Link(Field(ID("NR", location=Location((2, 2)))), FINAL, location=Location((2, 2))),
     ],
     [],
     [(Field(ID("NR", location=Location((2, 2)))), M_NO_REF.identifier, [])],
@@ -155,29 +165,37 @@ def parameterized_message() -> Message:
         [
             Link(
                 INITIAL,
-                Field("F1"),
-                size=Mul(Variable("P1"), Number(8)),
+                Field(ID("F1", location=Location((1, 1)))),
+                size=Mul(
+                    Variable(ID("P1", location=Location((2, 2)))),
+                    Number(8),
+                    location=Location((3, 3)),
+                ),
+                location=Location((4, 4)),
             ),
             Link(
-                Field("F1"),
+                Field(ID("F1", location=Location((5, 5)))),
                 FINAL,
                 condition=Equal(Variable("P2"), Variable("One"), Location((4, 1))),
+                location=Location((2, 2)),
             ),
             Link(
-                Field("F1"),
-                Field("F2"),
+                Field(ID("F1", location=Location((3, 3)))),
+                Field(ID("F2", location=Location((3, 1)))),
                 condition=Equal(Variable("P2"), Variable("Two"), Location((6, 1))),
+                location=Location((3, 3)),
             ),
             Link(
-                Field("F2"),
+                Field(ID("F2", location=Location((4, 4)))),
                 FINAL,
+                location=Location((4, 1)),
             ),
         ],
         {
-            Field("P1"): models.integer(),
-            Field("P2"): models.enumeration(),
-            Field("F1"): OPAQUE,
-            Field("F2"): models.integer(),
+            Field(ID("P1", location=Location((1, 2)))): models.integer(),
+            Field(ID("P2", location=Location((2, 4)))): models.enumeration(),
+            Field(ID("F1", location=Location((3, 6)))): OPAQUE,
+            Field(ID("F2", location=Location((4, 8)))): models.integer(),
         },
     )
 
@@ -537,15 +555,15 @@ def test_two_cycles() -> None:
 
 def test_cycle_detection_no_false_positive() -> None:
     t = Integer("P::T", Number(0), Number(10), Number(8))
-    x = Field(ID("X"))
-    y = Field(ID("Y"))
-    z = Field(ID("Z"))
+    x = Field(ID("X", location=Location((1, 1))))
+    y = Field(ID("Y", location=Location((2, 2))))
+    z = Field(ID("Z", location=Location((3, 3))))
 
     structure = [
-        Link(INITIAL, x),
-        Link(x, y),
-        Link(y, z),
-        Link(z, FINAL),
+        Link(INITIAL, x, location=Location((1, 1))),
+        Link(x, y, location=Location((2, 2))),
+        Link(y, z, location=Location((3, 3))),
+        Link(z, FINAL, location=Location((4, 4))),
     ]
 
     types = {Field("X"): t, Field("Y"): t, Field("Z"): t}
@@ -1196,7 +1214,10 @@ def test_sequence_aggregate_out_of_range() -> None:
 def test_sequence_aggregate_invalid_element_type() -> None:
     inner = Message(
         ID("P::I", Location((1, 1))),
-        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+        [
+            Link(INITIAL, Field(ID("F", location=Location((1, 1)))), location=Location((2, 2))),
+            Link(Field(ID("F", location=Location((3, 3)))), FINAL, location=Location((3, 1))),
+        ],
         {Field("F"): models.integer()},
     )
     sequence_type = Sequence("P::Sequence", inner)
@@ -1233,17 +1254,23 @@ def test_opaque_not_byte_aligned() -> None:
     with pytest.raises(
         RecordFluxError,
         match=(
-            r'^<stdin>:44:3: error: opaque field "O" not aligned to'
-            r" 8 bit boundary [(]P -> O[)]$"
+            '^<stdin>:44:3: error: opaque field "O" not aligned to 8 bit boundary\n'
+            '<stdin>:2:2: note: on path "P"\n'
+            "<stdin>:44:3: error: a previous field in the path may be the cause of this error$"
         ),
     ):
         Message(
             ID("P::M", Location((1, 1))),
             [
-                Link(INITIAL, Field("P")),
-                Link(Field("P"), o, size=Number(128)),
-                Link(o, Field("Q")),
-                Link(Field("Q"), FINAL),
+                Link(INITIAL, Field(ID("P", location=Location((2, 2)))), location=Location((2, 1))),
+                Link(
+                    Field(ID("P", location=Location((3, 3)))),
+                    o,
+                    size=Number(128, location=Location((3, 1))),
+                    location=Location((3, 2)),
+                ),
+                Link(o, Field(ID("Q", location=Location((4, 4)))), location=Location((4, 1))),
+                Link(Field(ID("Q", location=Location((5, 5)))), FINAL, location=Location((5, 6))),
             ],
             {
                 Field("P"): t,
@@ -1257,27 +1284,54 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
     o2 = Field(ID("O2", location=Location((44, 3))))
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: error: opaque field "O2" not aligned to'
-        r" 8 bit boundary [(]L1 -> O1 -> L2 -> O2[)]",
+        match='^<stdin>:44:3: error: opaque field "O2" not aligned to 8 bit boundary\n'
+        '<stdin>:1:2: note: on path "L1"\n'
+        '<stdin>:2:3: note: on path "O1"\n'
+        '<stdin>:3:4: note: on path "L2"\n'
+        "<stdin>:44:3: error: a previous field in the path may be the cause of this error\n"
+        "<stdin>:1:1: error: message size must be multiple of 8 bit\n"
+        '<stdin>:1:2: note: on path "L1"\n'
+        '<stdin>:2:3: note: on path "O1"\n'
+        '<stdin>:3:4: note: on path "L2"\n'
+        '<stdin>:44:3: note: on path "O2"$',
     ):
         Message(
             ID("P::M", Location((1, 1))),
             [
-                Link(INITIAL, Field("L1")),
                 Link(
-                    Field("L1"),
-                    Field("O1"),
-                    size=Variable("L1"),
-                    condition=Equal(Mod(Variable("L1"), Number(8)), Number(0)),
+                    INITIAL,
+                    Field(ID("L1", location=Location((1, 2)))),
+                    location=Location((1, 1)),
                 ),
-                Link(Field("O1"), Field("L2")),
-                Link(Field("L2"), o2, size=Number(128)),
-                Link(o2, FINAL),
+                Link(
+                    Field(ID("L1", location=Location((2, 2)))),
+                    Field(ID("O1", location=Location((2, 3)))),
+                    size=Variable(ID("L1", location=Location((2, 4)))),
+                    condition=Equal(Mod(Variable("L1"), Number(8)), Number(0)),
+                    location=Location((2, 5)),
+                ),
+                Link(
+                    Field(ID("O1", location=Location((3, 3)))),
+                    Field(ID("L2", location=Location((3, 4)))),
+                    location=Location((3, 5)),
+                ),
+                Link(
+                    Field(ID("L2", location=Location((4, 4)))),
+                    o2,
+                    size=Number(128, location=Location((4, 5))),
+                    location=Location((4, 6)),
+                ),
+                Link(o2, FINAL, location=Location((5, 5))),
             ],
             {
-                Field("L1"): models.integer(),
-                Field("L2"): Integer("P::T", Number(0), Number(3), Number(2)),
-                Field("O1"): OPAQUE,
+                Field(ID("L1", location=Location((1, 3)))): models.integer(),
+                Field(ID("L2", location=Location((2, 6)))): Integer(
+                    "P::T",
+                    Number(0),
+                    Number(3),
+                    Number(2),
+                ),
+                Field(ID("O1", location=Location((3, 5)))): OPAQUE,
                 o2: OPAQUE,
             },
         )
@@ -1287,11 +1341,19 @@ def test_opaque_valid_byte_aligned_dynamic_mul() -> None:
     Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("L")),
-            Link(Field("L"), Field("O1"), size=Mul(Number(8), Variable("L"))),
-            Link(Field("O1"), FINAL),
+            Link(INITIAL, Field(ID("L", location=Location((1, 1)))), location=Location((1, 1))),
+            Link(
+                Field(ID("L", location=Location((2, 2)))),
+                Field(ID("O1", location=Location((2, 2)))),
+                size=Mul(Number(8), Variable("L"), location=Location((2, 2))),
+                location=Location((2, 2)),
+            ),
+            Link(Field(ID("O1", location=Location((3, 3)))), FINAL, location=Location((3, 3))),
         ],
-        {Field("L"): models.integer(), Field("O1"): OPAQUE},
+        {
+            Field(ID("L", location=Location((1, 1)))): models.integer(),
+            Field(ID("O1", location=Location((2, 2)))): OPAQUE,
+        },
     )
 
 
@@ -1299,48 +1361,82 @@ def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
     Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("L")),
+            Link(INITIAL, Field(ID("L", location=Location((1, 1)))), location=Location((1, 1))),
             Link(
-                Field("L"),
-                Field("O1"),
-                size=Variable("L"),
+                Field(ID("L", location=Location((2, 2)))),
+                Field(ID("O1", location=Location((2, 2)))),
+                size=Variable(ID("L", location=Location((3, 3)))),
                 condition=Equal(Mod(Variable("L"), Number(8)), Number(0)),
+                location=Location((2, 2)),
             ),
-            Link(Field("O1"), Field("O2"), size=Number(128)),
-            Link(Field("O2"), FINAL),
+            Link(
+                Field(ID("O1", location=Location((4, 4)))),
+                Field(ID("O2", location=Location((4, 4)))),
+                size=Number(128, location=Location((4, 4))),
+                location=Location((3, 3)),
+            ),
+            Link(Field(ID("O2", location=Location((5, 5)))), FINAL, location=Location((5, 5))),
         ],
-        {Field("L"): models.integer(), Field("O1"): OPAQUE, Field("O2"): OPAQUE},
+        {
+            Field(ID("L", location=Location((1, 1)))): models.integer(),
+            Field(ID("O1", location=Location((2, 2)))): OPAQUE,
+            Field(ID("O2", location=Location((3, 3)))): OPAQUE,
+        },
     )
 
 
 def test_opaque_size_not_multiple_of_8() -> None:
-    o = Field("O")
+    o = Field(ID("O", location=Location((1, 1))))
     with pytest.raises(
         RecordFluxError,
-        match=(r'^<stdin>:44:3: error: size of opaque field "O" not multiple of 8 bit [(]O[)]$'),
+        match=re.escape(
+            '<stdin>:44:3: error: size of opaque field "O" not multiple of 8 bit\n'
+            "<stdin>:44:3: help: sizes are expressed in bits, not bytes\n"
+            '<stdin>:44:3: help: did you mean "68 * 8"',
+        ),
     ):
         Message(
             ID("P::M", Location((1, 1))),
-            [Link(INITIAL, o, size=Number(68, location=Location((44, 3)))), Link(o, FINAL)],
+            [
+                Link(
+                    INITIAL,
+                    o,
+                    size=Number(68, location=Location((44, 3))),
+                    location=Location((44, 4)),
+                ),
+                Link(o, FINAL, location=Location((45, 3))),
+            ],
             {o: OPAQUE},
         )
 
 
 def test_opaque_size_not_multiple_of_8_dynamic() -> None:
-    o = Field("O")
+    o = Field(ID("O", location=Location((44, 2))))
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:44:3: error: size of opaque field "O" not multiple of 8 bit'
-        " [(]L -> O[)]",
+        match=re.escape(
+            '<stdin>:44:3: error: size of opaque field "O" not multiple of 8 bit\n'
+            "<stdin>:44:3: help: sizes are expressed in bits, not bytes\n"
+            '<stdin>:44:3: help: did you mean "L * 8"',
+        ),
     ):
         Message(
             ID("P::M", Location((1, 1))),
             [
-                Link(INITIAL, Field("L")),
-                Link(Field("L"), o, size=Variable("L", location=Location((44, 3)))),
-                Link(o, FINAL),
+                Link(
+                    INITIAL,
+                    Field(ID("L", location=Location((43, 3)))),
+                    location=Location((43, 4)),
+                ),
+                Link(
+                    Field(ID("L", location=Location((44, 2)))),
+                    o,
+                    size=Variable("L", location=Location((44, 3))),
+                    location=Location((44, 4)),
+                ),
+                Link(o, FINAL, location=Location((45, 3))),
             ],
-            {Field("L"): models.integer(), o: OPAQUE},
+            {Field(ID("L", location=Location((1, 1)))): models.integer(), o: OPAQUE},
         )
 
 
@@ -1348,16 +1444,24 @@ def test_opaque_size_valid_multiple_of_8_dynamic_cond() -> None:
     Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("L")),
+            Link(INITIAL, Field(ID("L", location=Location((1, 1)))), location=Location((1, 1))),
             Link(
-                Field("L"),
-                Field("O"),
-                size=Variable("L"),
-                condition=Equal(Mod(Variable("L"), Number(8)), Number(0)),
+                Field(ID("L", location=Location((2, 2)))),
+                Field(ID("O", location=Location((2, 2)))),
+                size=Variable("L", location=Location((3, 3))),
+                condition=Equal(
+                    Mod(Variable("L"), Number(8)),
+                    Number(0),
+                    location=Location((4, 4)),
+                ),
+                location=Location((4, 4)),
             ),
-            Link(Field("O"), FINAL),
+            Link(Field(ID("O", location=Location((5, 5)))), FINAL, location=Location((5, 5))),
         ],
-        {Field("L"): models.integer(), Field("O"): OPAQUE},
+        {
+            Field(ID("L", location=Location((1, 1)))): models.integer(),
+            Field(ID("O", location=Location((2, 2)))): OPAQUE,
+        },
     )
 
 
@@ -1365,56 +1469,79 @@ def test_prefixed_message_attribute() -> None:
     result = Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("F1")),
+            Link(INITIAL, Field(ID("F1", location=Location((1, 1)))), location=Location((1, 1))),
             Link(
-                Field("F1"),
-                Field("F2"),
+                Field(ID("F1", location=Location((2, 2)))),
+                Field(ID("F2", location=Location((2, 2)))),
                 LessEqual(Variable("F1"), Number(100), Location((4, 1))),
                 first=First("F1"),
+                location=Location((2, 2)),
             ),
             Link(
-                Field("F1"),
-                Field("F3"),
+                Field(ID("F1", location=Location((3, 3)))),
+                Field(ID("F3", location=Location((3, 3)))),
                 GreaterEqual(Variable("F1"), Number(200), Location((6, 1))),
                 first=First("F1"),
+                location=Location((3, 3)),
             ),
-            Link(Field("F2"), FINAL, Equal(Variable("F2"), Number(42), Location((8, 1)))),
-            Link(Field("F3"), Field("F4")),
-            Link(Field("F4"), FINAL),
+            Link(
+                Field(ID("F2", location=Location((4, 4)))),
+                FINAL,
+                Equal(Variable("F2"), Number(42), Location((8, 1))),
+                location=Location((4, 4)),
+            ),
+            Link(
+                Field(ID("F3", location=Location((5, 5)))),
+                Field(ID("F4", location=Location((5, 5)))),
+                location=Location((5, 5)),
+            ),
+            Link(Field(ID("F4", location=Location((6, 6)))), FINAL, location=Location((6, 6))),
         ],
         {
-            Field("F1"): deepcopy(models.integer()),
-            Field("F2"): deepcopy(models.integer()),
-            Field("F3"): deepcopy(models.integer()),
-            Field("F4"): OPAQUE,
+            Field(ID("F1", location=Location((1, 1)))): deepcopy(models.integer()),
+            Field(ID("F2", location=Location((2, 2)))): deepcopy(models.integer()),
+            Field(ID("F3", location=Location((3, 3)))): deepcopy(models.integer()),
+            Field(ID("F4", location=Location((4, 4)))): OPAQUE,
         },
     ).prefixed("X_")
 
     expected = Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("X_F1")),
+            Link(INITIAL, Field(ID("X_F1", location=Location((1, 1)))), location=Location((1, 1))),
             Link(
-                Field("X_F1"),
-                Field("X_F2"),
+                Field(ID("X_F1", location=Location((2, 2)))),
+                Field(ID("X_F2", location=Location((2, 2)))),
                 LessEqual(Variable("X_F1"), Number(100), Location((4, 1))),
                 first=First("X_F1"),
+                location=Location((2, 2)),
             ),
             Link(
-                Field("X_F1"),
-                Field("X_F3"),
+                Field(ID("X_F1", location=Location((3, 3)))),
+                Field(ID("X_F3", location=Location((3, 3)))),
                 GreaterEqual(Variable("X_F1"), Number(200), Location((6, 1))),
                 first=First("X_F1"),
+                location=Location((2, 2)),
             ),
-            Link(Field("X_F2"), FINAL, Equal(Variable("X_F2"), Number(42), Location((8, 1)))),
-            Link(Field("X_F3"), Field("X_F4"), size=Add(Last("Message"), -Last("X_F3"))),
-            Link(Field("X_F4"), FINAL),
+            Link(
+                Field(ID("X_F2", location=Location((4, 4)))),
+                FINAL,
+                Equal(Variable("X_F2"), Number(42), Location((8, 1))),
+                location=Location((4, 4)),
+            ),
+            Link(
+                Field(ID("X_F3", location=Location((5, 5)))),
+                Field(ID("X_F4", location=Location((5, 5)))),
+                size=Add(Last("Message"), -Last("X_F3"), location=Location((5, 5))),
+                location=Location((5, 5)),
+            ),
+            Link(Field(ID("X_F4", location=Location((6, 6)))), FINAL, location=Location((6, 6))),
         ],
         {
-            Field("X_F1"): deepcopy(models.integer()),
-            Field("X_F2"): deepcopy(models.integer()),
-            Field("X_F3"): deepcopy(models.integer()),
-            Field("X_F4"): OPAQUE,
+            Field(ID("X_F1", location=Location((1, 1)))): deepcopy(models.integer()),
+            Field(ID("X_F2", location=Location((2, 2)))): deepcopy(models.integer()),
+            Field(ID("X_F3", location=Location((3, 3)))): deepcopy(models.integer()),
+            Field(ID("X_F4", location=Location((4, 4)))): OPAQUE,
         },
     )
 
@@ -1423,58 +1550,68 @@ def test_prefixed_message_attribute() -> None:
 
 def test_exclusive_valid() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, condition=Greater(Variable("F1"), Number(80), Location((3, 1)))),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 1)))), location=Location((1, 1))),
         Link(
-            Field("F1"),
-            Field("F2"),
-            condition=LessEqual(Variable("F1"), Number(80), Location((5, 1))),
+            Field(ID("F1", location=Location((2, 2)))),
+            FINAL,
+            condition=Greater(Variable("F1"), Number(80), Location((3, 1))),
+            location=Location((2, 2)),
         ),
-        Link(Field("F2"), FINAL),
+        Link(
+            Field(ID("F1", location=Location((3, 3)))),
+            Field(ID("F2", location=Location((3, 3)))),
+            condition=LessEqual(Variable("F1"), Number(80), Location((5, 1))),
+            location=Location((3, 3)),
+        ),
+        Link(Field(ID("F2", location=Location((4, 4)))), FINAL, location=Location((4, 4))),
     ]
     types = {
-        Field("F1"): models.integer(),
-        Field("F2"): models.integer(),
+        Field(ID("F1", location=Location((1, 1)))): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): models.integer(),
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
 
 def test_exclusive_enum_valid() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 1)))), location=Location((1, 1))),
         Link(
-            Field("F1"),
+            Field(ID("F1", location=Location((2, 2)))),
             FINAL,
             condition=Equal(Variable("F1"), Variable("One"), Location((3, 1))),
+            location=Location((2, 2)),
         ),
         Link(
-            Field("F1"),
-            Field("F2"),
+            Field(ID("F1", location=Location((4, 4)))),
+            Field(ID("F2", location=Location((4, 4)))),
             condition=Equal(Variable("F1"), Variable("Two"), Location((5, 1))),
+            location=Location((5, 5)),
         ),
-        Link(Field("F2"), FINAL),
+        Link(Field(ID("F2", location=Location((6, 6)))), FINAL, location=Location((6, 6))),
     ]
     types = {
-        Field("F1"): models.enumeration(),
-        Field("F2"): models.integer(),
+        Field(ID("F1", location=Location((1, 1)))): models.enumeration(),
+        Field(ID("F2", location=Location((2, 2)))): models.integer(),
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
 
 def test_exclusive_prefixed_enum_valid() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 1)))), location=Location((1, 1))),
         Link(
-            Field("F1"),
+            Field(ID("F1", location=Location((1, 1)))),
             FINAL,
             condition=Equal(Variable("F1"), Variable("One"), Location((3, 1))),
+            location=Location((2, 2)),
         ),
         Link(
-            Field("F1"),
-            Field("F2"),
+            Field(ID("F1", location=Location((2, 2)))),
+            Field(ID("F2", location=Location((2, 2)))),
             condition=Equal(Variable("F1"), Variable("P::Two"), Location((5, 1))),
+            location=Location((3, 3)),
         ),
-        Link(Field("F2"), FINAL),
+        Link(Field(ID("F2", location=Location((4, 4)))), FINAL, location=Location((4, 4))),
     ]
     types = {
         Field("F1"): models.enumeration(),
@@ -1490,14 +1627,19 @@ def test_exclusive_prefixed_enum_valid() -> None:
 
 def test_exclusive_conflict() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), FINAL, condition=Greater(Variable("F1"), Number(50), Location((10, 5)))),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
         Link(
-            Field("F1"),
-            Field("F2"),
-            condition=Less(Variable("F1"), Number(80), Location((11, 7))),
+            Field(ID("F1", location=Location((2, 2)))),
+            FINAL,
+            condition=Greater(Variable("F1"), Number(50), Location((10, 5))),
         ),
-        Link(Field("F2"), FINAL),
+        Link(
+            Field(ID("F1", location=Location((3, 3)))),
+            Field(ID("F2", location=Location((3, 4)))),
+            condition=Less(Variable("F1"), Number(80), Location((11, 7))),
+            location=Location((3, 5)),
+        ),
+        Link(Field(ID("F2", location=Location((4, 4)))), FINAL, location=Location((5, 5))),
     ]
     types = {
         Field(ID("F1", Location((8, 4)))): models.integer(),
@@ -1516,40 +1658,52 @@ def test_exclusive_conflict() -> None:
 
 def test_exclusive_with_size_valid() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), size=Number(32)),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 1)))), location=Location((1, 1))),
         Link(
-            Field("F2"),
+            Field(ID("F1", location=Location((2, 2)))),
+            Field(ID("F2", location=Location((2, 2)))),
+            size=Number(32, location=Location((2, 2))),
+            location=Location((2, 2)),
+        ),
+        Link(
+            Field(ID("F2", location=Location((3, 3)))),
             FINAL,
             condition=And(
                 Equal(Size("F2"), Number(32), location=Location((4, 5))),
                 Less(Variable("F1"), Number(50), location=Location((4, 5))),
                 location=Location((4, 5)),
             ),
+            location=Location((3, 3)),
         ),
         Link(
-            Field("F2"),
-            Field("F3"),
+            Field(ID("F2", location=Location((4, 4)))),
+            Field(ID("F3", location=Location((4, 4)))),
             condition=And(
                 Equal(Size("F2"), Number(32), location=Location((6, 5))),
                 Greater(Variable("F1"), Number(80), location=Location((6, 5))),
                 location=Location((6, 5)),
             ),
+            location=Location((4, 4)),
         ),
-        Link(Field("F3"), FINAL),
+        Link(Field(ID("F3", location=Location((5, 5)))), FINAL),
     ]
     types = {
-        Field("F1"): models.integer(),
-        Field("F2"): OPAQUE,
-        Field("F3"): models.integer(),
+        Field(ID("F1", location=Location((1, 1)))): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): OPAQUE,
+        Field(ID("F3", location=Location((3, 3)))): models.integer(),
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
 
 def test_exclusive_with_size_valid_and_not() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), size=Number(32)),
+        Link(INITIAL, Field("F1"), location=Location((1, 1))),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            size=Number(32, location=Location((2, 2))),
+            location=Location((2, 2)),
+        ),
         Link(
             Field("F2"),
             FINAL,
@@ -1558,6 +1712,7 @@ def test_exclusive_with_size_valid_and_not() -> None:
                 Less(Variable("F1"), Number(50), location=Location((4, 5))),
                 location=Location((4, 5)),
             ),
+            location=Location((3, 3)),
         ),
         Link(
             Field("F2"),
@@ -1567,27 +1722,43 @@ def test_exclusive_with_size_valid_and_not() -> None:
                 Not(Less(Variable("F1"), Number(80), location=Location((6, 5)))),
                 location=Location((6, 5)),
             ),
+            location=Location((4, 4)),
         ),
-        Link(Field("F3"), FINAL),
+        Link(Field("F3"), FINAL, location=Location((5, 5))),
     ]
     types = {
-        Field("F1"): models.integer(),
-        Field("F2"): OPAQUE,
-        Field("F3"): models.integer(),
+        Field(ID("F1", location=Location((1, 1)))): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): OPAQUE,
+        Field(ID("F3", location=Location((3, 3)))): models.integer(),
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
 
 def test_exclusive_with_size_invalid() -> None:
     structure = [
-        Link(INITIAL, Field("F1"), size=Number(32)),
-        Link(Field("F1"), FINAL, condition=Equal(Size("F1"), Number(32), Location((10, 2)))),
-        Link(Field("F1"), Field("F2"), condition=Equal(Size("F1"), Number(32), Location((12, 4)))),
-        Link(Field("F2"), FINAL),
+        Link(
+            INITIAL,
+            Field("F1"),
+            size=Number(32, location=Location((1, 1))),
+            location=Location((1, 2)),
+        ),
+        Link(
+            Field("F1"),
+            FINAL,
+            condition=Equal(Size("F1"), Number(32), Location((10, 2))),
+            location=Location((2, 2)),
+        ),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            condition=Equal(Size("F1"), Number(32), Location((12, 4))),
+            location=Location((3, 3)),
+        ),
+        Link(Field("F2"), FINAL, location=Location((4, 4))),
     ]
     types = {
         Field(ID("F1", Location((98, 10)))): OPAQUE,
-        Field("F2"): models.integer(),
+        Field(ID("F2", location=Location((99, 10)))): models.integer(),
     }
     assert_message_model_error(
         structure,
@@ -1633,13 +1804,13 @@ def test_no_valid_path() -> None:
         types,
         r"^"
         r'<stdin>:11:6: error: unreachable field "F2"\n'
-        r'<stdin>:10:8: info: on path: "F1"\n'
-        r'<stdin>:11:9: info: on path: "F2"\n'
+        r'<stdin>:10:8: note: on path "F1"\n'
+        r'<stdin>:11:9: note: on path "F2"\n'
         r'<stdin>:20:2: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:22:4: info: unsatisfied "F1 > 80"\n'
         r'<stdin>:12:7: error: unreachable field "F3"\n'
-        r'<stdin>:10:8: info: on path: "F1"\n'
-        r'<stdin>:12:10: info: on path: "F3"\n'
+        r'<stdin>:10:8: note: on path "F1"\n'
+        r'<stdin>:12:10: note: on path "F3"\n'
         r'<stdin>:21:3: info: unsatisfied "F1 > 80"\n'
         r'<stdin>:23:5: info: unsatisfied "F1 <= 80"'
         r"$",
@@ -1660,7 +1831,7 @@ def test_invalid_path_1() -> None:
         types,
         r"^"
         r'<stdin>:20:10: error: unreachable field "F1"\n'
-        r'<stdin>:20:10: info: on path: "F1"\n'
+        r'<stdin>:20:10: note: on path "F1"\n'
         r'<stdin>:5:10: info: unsatisfied "1 = 2"'
         r"$",
     )
@@ -1685,7 +1856,7 @@ def test_invalid_path_2() -> None:
         types,
         r"^"
         r'error: unreachable field "F1"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
+        r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:3:5: info: unsatisfied "1 = 2"'
         r"$",
     )
@@ -1697,7 +1868,7 @@ def test_unreachable() -> None:
         Number(1),
         Number(100),
         Number(8),
-        location=Location((1, 1)),
+        location=Location((1, 2)),
     )
     structure = [
         Link(INITIAL, Field(ID("F1", location=Location((2, 1))))),
@@ -1721,8 +1892,8 @@ def test_unreachable() -> None:
         types,
         r"^"
         r'error: unreachable field "F1"\n'
-        r'<stdin>:2:1: info: on path: "F1"\n'
-        r'<stdin>:1:1: info: unsatisfied "F1 <= 100"\n'
+        r'<stdin>:2:1: note: on path "F1"\n'
+        r'<stdin>:1:2: info: unsatisfied "F1 <= 100"\n'
         r'<stdin>:5:15: info: unsatisfied "F1 > 1000"'
         r"$",
     )
@@ -1751,7 +1922,7 @@ def test_invalid_type_condition_range_low() -> None:
         types,
         r"^"
         r'error: unreachable field "F1"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
+        r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1 >= 1"\n'
         r'<stdin>:4:1: info: unsatisfied "F1 < 1"'
         r"$",
@@ -1767,17 +1938,17 @@ def test_invalid_type_condition_range_high() -> None:
         location=Location((1, 1)),
     )
     structure = [
-        Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 2))))),
         Link(
-            Field(ID("F1", location=Location((1, 1)))),
-            Field(ID("F2", location=Location((1, 1)))),
+            Field(ID("F1", location=Location((1, 3)))),
+            Field(ID("F2", location=Location((1, 4)))),
             condition=Greater(
-                Variable(ID("F1", location=Location((1, 1)))),
+                Variable(ID("F1", location=Location((1, 5)))),
                 Number(200),
                 location=Location((4, 1)),
             ),
         ),
-        Link(Field(ID("F2", location=Location((1, 1)))), FINAL),
+        Link(Field(ID("F2", location=Location((1, 6)))), FINAL),
     ]
     types = {
         Field("F1"): integer,
@@ -1788,7 +1959,7 @@ def test_invalid_type_condition_range_high() -> None:
         types,
         r"^"
         r'error: unreachable field "F1"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
+        r'<stdin>:1:2: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1 <= 100"\n'
         r'<stdin>:4:1: info: unsatisfied "F1 > 200"'
         r"$",
@@ -1838,23 +2009,24 @@ def test_invalid_type_condition_enum() -> None:
 
 def test_tlv_valid_enum() -> None:
     structure = [
-        Link(INITIAL, Field("L")),
-        Link(Field("L"), Field("T")),
+        Link(INITIAL, Field("L"), location=Location((1, 1))),
+        Link(Field("L"), Field("T"), location=Location((2, 2))),
         Link(
             Field("T"),
             Field("V"),
-            size=Mul(Number(8), Variable("L")),
+            size=Mul(Number(8), Variable("L"), location=Location((3, 3))),
             condition=And(
                 NotEqual(Variable("T"), Variable("Two")),
                 LessEqual(Variable("L"), Number(8192)),
             ),
+            location=Location((3, 3)),
         ),
-        Link(Field("V"), FINAL),
+        Link(Field("V"), FINAL, location=Location((4, 4))),
     ]
     types = {
-        Field("L"): models.integer(),
-        Field("T"): models.enumeration(),
-        Field("V"): OPAQUE,
+        Field(ID("L", location=Location((1, 1)))): models.integer(),
+        Field(ID("T", location=Location((2, 2)))): models.enumeration(),
+        Field(ID("V", location=Location((3, 3)))): OPAQUE,
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
@@ -1878,13 +2050,13 @@ def test_invalid_fixed_size_field_with_size() -> None:
 
 def test_valid_first() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), first=First("F1")),
-        Link(Field("F2"), FINAL),
+        Link(INITIAL, Field("F1"), location=Location((1, 1))),
+        Link(Field("F1"), Field("F2"), first=First("F1"), location=Location((2, 2))),
+        Link(Field("F2"), FINAL, location=Location((3, 3))),
     ]
     types = {
-        Field("F1"): models.integer(),
-        Field("F2"): models.integer(),
+        Field(ID("F1", location=Location((1, 1)))): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): models.integer(),
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
@@ -1967,13 +2139,18 @@ def test_invalid_first_forward_reference() -> None:
 
 def test_valid_size_reference() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), size=Mul(Number(8), Variable("F1"))),
-        Link(Field("F2"), FINAL),
+        Link(INITIAL, Field("F1"), location=Location((1, 1))),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            size=Mul(Number(8), Variable("F1"), location=Location((2, 2))),
+            location=Location((2, 2)),
+        ),
+        Link(Field("F2"), FINAL, location=Location((3, 3))),
     ]
     types = {
-        Field("F1"): models.integer(),
-        Field("F2"): OPAQUE,
+        Field(ID("F1", location=Location((1, 1)))): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): OPAQUE,
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
@@ -1998,37 +2175,46 @@ def test_invalid_size_forward_reference() -> None:
 
 def test_invalid_negative_field_size_1() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), size=Sub(Variable("F1"), Number(2))),
-        Link(Field("F2"), FINAL),
+        Link(INITIAL, Field("F1"), location=Location((1, 1))),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            size=Sub(Variable("F1"), Number(2), location=Location((2, 2))),
+            location=Location((2, 2)),
+        ),
+        Link(Field("F2"), FINAL, location=Location((3, 3))),
     ]
     types = {
-        Field("F1"): models.integer(),
-        Field("F2"): OPAQUE,
+        Field(ID("F1", location=Location((1, 1)))): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): OPAQUE,
     }
+    regex = (
+        '<stdin>:2:2: error: negative size for field "F2" (F1 -> F2)\n'
+        '<stdin>:2:2: error: size of opaque field "F2" not multiple of 8 bit\n'
+        "<stdin>:2:2: help: sizes are expressed in bits, not bytes\n"
+        '<stdin>:2:2: help: did you mean "(F1 - 2) * 8"?'
+    )
     assert_message_model_error(
         structure,
         types,
-        r"^"
-        r'error: negative size for field "F2" [(]F1 -> F2[)]\n'
-        r'error: size of opaque field "F2" not multiple of 8 bit [(]F1 -> F2[)]'
-        "$",
+        f"^{re.escape(regex)}$",
     )
 
 
 def test_invalid_negative_field_size_2() -> None:
-    o = Field("O")
+    o = Field(ID("O", location=Location((2, 2))))
     structure = [
-        Link(INITIAL, Field("L")),
+        Link(INITIAL, Field("L"), location=Location((1, 1))),
         Link(
             Field("L"),
             o,
             size=Mul(Number(8), Sub(Variable("L"), Number(50)), location=Location((44, 3))),
+            location=Location((2, 2)),
         ),
-        Link(o, FINAL),
+        Link(o, FINAL, location=Location((3, 3))),
     ]
     types = {
-        Field("L"): models.integer(),
+        Field(ID("L", location=Location((1, 1)))): models.integer(),
         o: OPAQUE,
     }
     assert_message_model_error(
@@ -2040,21 +2226,23 @@ def test_invalid_negative_field_size_2() -> None:
 
 def test_invalid_negative_field_size_3() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
+        Link(INITIAL, Field("F1"), location=Location((1, 1))),
         Link(
             Field("F1"),
             Field("F2"),
             size=Sub(Mul(Variable("F1"), Number(8)), Number(16), location=Location((1, 2))),
+            location=Location((2, 2)),
         ),
         Link(
             Field("F2"),
             FINAL,
             condition=Greater(Variable("F1"), Number(1)),
+            location=Location((3, 3)),
         ),
     ]
     types = {
-        Field("F1"): models.integer(),
-        Field("F2"): OPAQUE,
+        Field(ID("F1", location=Location((1, 1)))): models.integer(),
+        Field(ID("F2", location=Location((2, 2)))): OPAQUE,
     }
     assert_message_model_error(
         structure,
@@ -2065,18 +2253,22 @@ def test_invalid_negative_field_size_3() -> None:
 
 def test_payload_no_size() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), FINAL),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 1)))), location=Location((1, 1))),
+        Link(
+            Field(ID("F1", location=Location((2, 2)))),
+            Field(ID("F2", location=Location((2, 2)))),
+            location=Location((2, 2)),
+        ),
+        Link(Field(ID("F2", location=Location((3, 3)))), FINAL, location=Location((3, 3))),
     ]
     types = {
-        Field("F1"): OPAQUE,
-        Field("F2"): OPAQUE,
+        Field(ID("F1", location=Location((1, 1)))): OPAQUE,
+        Field(ID("F2", location=Location((2, 2)))): OPAQUE,
     }
     assert_message_model_error(
         structure,
         types,
-        r'^error: unconstrained field "F1" without size aspect$',
+        r'^<stdin>:1:1: error: unconstrained field "F1" without size aspect$',
     )
 
 
@@ -2099,55 +2291,64 @@ def test_sequence_no_size() -> None:
 
 def test_incongruent_overlay() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2")),
-        Link(Field("F2"), Field("F3"), first=First("F2")),
-        Link(Field("F3"), Field("F4")),
-        Link(Field("F4"), FINAL),
+        Link(INITIAL, Field("F1"), location=Location((1, 1))),
+        Link(Field("F1"), Field("F2"), location=Location((2, 2))),
+        Link(Field("F2"), Field("F3"), first=First("F2"), location=Location((3, 3))),
+        Link(Field("F3"), Field("F4"), location=Location((4, 4))),
+        Link(Field("F4"), FINAL, location=Location((5, 5))),
     ]
     u8 = Integer("P::U8", Number(0), Sub(Pow(Number(2), Number(8)), Number(1)), Number(8))
     u16 = Integer("P::U16", Number(0), Sub(Pow(Number(2), Number(16)), Number(1)), Number(16))
     types = {
-        Field("F1"): u8,
-        Field("F2"): u8,
-        Field("F3"): u16,
-        Field("F4"): u16,
+        Field(ID("F1", location=Location((1, 1)))): u8,
+        Field(ID("F2", location=Location((2, 2)))): u8,
+        Field(ID("F3", location=Location((3, 3)))): u16,
+        Field(ID("F4", location=Location((4, 4)))): u16,
     }
+    regex = (
+        '<stdin>:1:1: error: field "F3" not congruent with overlaid field "F2"\n'
+        "<stdin>:2:2: info: unsatisfied \"F2'Last = (F1'Last + 1 + 8) - 1\"\n"
+        "<stdin>:2:2: info: unsatisfied \"F2'First = F1'Last + 1\"\n"
+        "<stdin>:3:3: info: unsatisfied \"(F2'First + 16) - 1 = F2'Last\""
+    )
     assert_message_model_error(
         structure,
         types,
-        r"^"
-        r'<stdin>:1:1: error: field "F3" not congruent with overlaid field "F2"\n'
-        r'<stdin>:1:1: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'<stdin>:1:1: info: unsatisfied "F2\'First = F1\'Last [+] 1"\n'
-        r'info: unsatisfied "[(]F2\'First [+] 16[)] - 1 = F2\'Last"'
-        r"$",
+        f"^{re.escape(regex)}$",
     )
 
 
 def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), first=Sub(First("Message"), Number(1000))),
-        Link(Field("F2"), FINAL),
+        Link(INITIAL, Field("F1"), location=Location((1, 1))),
+        Link(
+            Field("F1"),
+            Field("F2"),
+            first=Sub(First("Message"), Number(1000)),
+            location=Location((2, 2)),
+        ),
+        Link(Field("F2"), FINAL, location=Location((3, 3))),
     ]
 
-    types = {Field("F1"): models.integer(), Field("F2"): models.integer()}
+    types = {
+        Field(ID("F1", location=Location((1, 1)))): models.integer(),
+        Field(ID("F2", location=Location((1, 1)))): models.integer(),
+    }
     monkeypatch.setattr(Message, "_verify_links", lambda _: None)
     assert_message_model_error(
         structure,
         types,
         r"^"
         r'<stdin>:1:1: error: negative start for field "F2" [(]F1 -> F2[)]\n'
-        r'info: unsatisfied "Message\'First - 1000 >= Message\'First"\n'
+        r'<stdin>:1:1: info: unsatisfied "Message\'First - 1000 >= Message\'First"\n'
         r'<stdin>:1:1: error: negative start for field "Final" [(]F1 -> F2 -> Final[)]\n'
         r'<stdin>:1:1: info: unsatisfied "F2\'Last = [(]Message\'First - 1000 [+] 8[)] - 1"\n'
-        r'info: unsatisfied "F2\'Last [+] 1 >= Message\'First"'
+        r'<stdin>:1:1: info: unsatisfied "F2\'Last [+] 1 >= Message\'First"'
         r"$",
     )
 
 
-@pytest.mark.parametrize("size", [UNDEFINED, Size("Message")])
+@pytest.mark.parametrize("size", [UNDEFINED, Size(ID("Message", location=Location((1, 1))))])
 @pytest.mark.parametrize(
     "condition",
     [
@@ -2161,11 +2362,11 @@ def test_message_with_implicit_size_single_field(
     condition: Expr,
     type_decl: TypeDecl,
 ) -> None:
-    x = Field("X")
+    x = Field(ID("X", location=Location((1, 1))))
 
     structure = [
-        Link(INITIAL, x, size=size),
-        Link(x, FINAL, condition=condition),
+        Link(INITIAL, x, size=size, location=Location((1, 1))),
+        Link(x, FINAL, condition=condition, location=Location((2, 2))),
     ]
 
     types = {x: type_decl}
@@ -2175,7 +2376,10 @@ def test_message_with_implicit_size_single_field(
     assert message.structure[0] == Link(INITIAL, x, size=Size("Message"))
 
 
-@pytest.mark.parametrize("size", [UNDEFINED, Sub(Last("Message"), Last("X"))])
+@pytest.mark.parametrize(
+    "size",
+    [UNDEFINED, Sub(Last("Message"), Last("X"), location=Location((1, 1)))],
+)
 @pytest.mark.parametrize(
     "condition",
     [
@@ -2189,13 +2393,13 @@ def test_message_with_implicit_size_multiple_fields(
     condition: Expr,
     type_decl: TypeDecl,
 ) -> None:
-    x = Field("X")
-    y = Field("Y")
+    x = Field(ID("X", location=Location((1, 1))))
+    y = Field(ID("Y", location=Location((2, 2))))
 
     structure = [
-        Link(INITIAL, x, size=Number(8)),
-        Link(x, y, size=size),
-        Link(y, FINAL, condition=condition),
+        Link(INITIAL, x, size=Number(8, location=Location((1, 1))), location=Location((1, 1))),
+        Link(x, y, size=size, location=Location((2, 2))),
+        Link(y, FINAL, condition=condition, location=Location((3, 3))),
     ]
 
     types = {x: type_decl, y: type_decl}
@@ -2243,17 +2447,19 @@ def test_message_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> No
         Message(
             ID("P::M", Location((1, 1))),
             [
-                Link(INITIAL, Field("F")),
+                Link(INITIAL, Field("F"), location=Location((1, 1))),
                 Link(
                     Field("f"),
                     Field("g"),
                     Equal(Variable(ID("f")), Literal("A"), Location((4, 1))),
-                    Add(Size("f"), Size("p::e")),
+                    Add(Size("f"), Size("p::e"), location=Location((4, 4))),
+                    location=Location((2, 2)),
                 ),
                 Link(
                     Field("F"),
                     FINAL,
                     Equal(Variable("F"), Literal(ID("b")), Location((6, 1))),
+                    location=Location((3, 3)),
                 ),
                 Link(
                     Field("F"),
@@ -2263,17 +2469,18 @@ def test_message_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> No
                         Equal(Size(ID("p::e")), Number(8), Location((7, 1))),
                         location=Location((7, 1)),
                     ),
+                    location=Location((4, 4)),
                 ),
-                Link(Field("G"), FINAL),
+                Link(Field("G"), FINAL, location=Location((4, 4))),
             ],
             {
-                Field("F"): Enumeration(
+                Field(ID("F", location=Location((1, 1)))): Enumeration(
                     "P::E",
                     [("A", Number(0)), ("B", Number(1)), ("C", Number(2))],
                     Number(8),
                     always_valid=False,
                 ),
-                Field("G"): OPAQUE,
+                Field(ID("G", location=Location((2, 2)))): OPAQUE,
             },
         ),
     ) == textwrap.dedent(
@@ -2302,10 +2509,10 @@ def test_message_inconsistent_identifier_casing() -> None:
             r'<stdin>:1:1: error: casing of "b" differs from casing'
             r' in the declaration of "B" at <stdin>:11:11\n'
             r'<stdin>:11:11: info: declaration of "B"\n'
-            r'<stdin>:2:2: error: casing of "c" differs from casing'
+            r'<stdin>:2:3: error: casing of "c" differs from casing'
             r' in the declaration of "C" at <stdin>:12:12\n'
             r'<stdin>:12:12: info: declaration of "C"\n'
-            r'<stdin>:3:3: error: casing of "p::e" differs from cas'
+            r'<stdin>:3:4: error: casing of "p::e" differs from cas'
             r'ing in the declaration of "P::E" at <stdin>:13:13\n'
             r'<stdin>:13:13: info: declaration of "P::E"\n'
             r'<stdin>:4:4: error: casing of "g" differs from casing'
@@ -2326,20 +2533,21 @@ def test_message_inconsistent_identifier_casing() -> None:
         Message(
             ID("P::M", Location((1, 1))),
             [
-                Link(INITIAL, Field("F")),
+                Link(INITIAL, Field("F"), location=Location((1, 2))),
                 Link(
                     Field("F"),
                     Field(ID("g", location=Location((4, 4)))),
                     Equal(
                         Variable(ID("f", location=Location((5, 5)))),
                         Literal("A"),
-                        Location((5, 5)),
+                        Location((5, 6)),
                     ),
                     Add(
                         Size(ID("f", location=Location((6, 6)))),
                         Size(ID("p::e", location=Location((7, 7)))),
                         location=Location((8, 8)),
                     ),
+                    location=Location((2, 2)),
                 ),
                 Link(
                     Field("F"),
@@ -2347,8 +2555,9 @@ def test_message_inconsistent_identifier_casing() -> None:
                     Equal(
                         Variable("F"),
                         Literal(ID("b", location=Location((1, 1)))),
-                        Location((1, 1)),
+                        Location((1, 2)),
                     ),
+                    location=Location((3, 3)),
                 ),
                 Link(
                     Field("F"),
@@ -2356,18 +2565,19 @@ def test_message_inconsistent_identifier_casing() -> None:
                     And(
                         Equal(
                             Variable("F"),
-                            Literal(ID("c", location=Location((2, 2)))),
-                            Location((2, 2)),
+                            Literal(ID("c", location=Location((2, 3)))),
+                            Location((2, 4)),
                         ),
                         Equal(
-                            Size(ID("p::e", location=Location((3, 3)))),
+                            Size(ID("p::e", location=Location((3, 4)))),
                             Number(8),
-                            Location((3, 3)),
+                            Location((3, 5)),
                         ),
-                        location=Location((2, 2)),
+                        location=Location((2, 5)),
                     ),
+                    location=Location((4, 4)),
                 ),
-                Link(Field("G"), FINAL),
+                Link(Field("G"), FINAL, location=Location((5, 5))),
             ],
             {
                 Field(ID("F", location=Location((15, 15)))): Enumeration(
@@ -2439,13 +2649,13 @@ def test_no_path_to_final_transitive() -> None:
 
 def test_unreachable_field_mod_first() -> None:
     structure = [
-        Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 2))))),
         Link(
-            Field(ID("F1", location=Location((1, 1)))),
-            Field(ID("F2", location=Location((1, 1)))),
-            Greater(First(ID("F1", location=Location((1, 1)))), First("Message"), Location((2, 2))),
+            Field(ID("F1", location=Location((1, 3)))),
+            Field(ID("F2", location=Location((1, 4)))),
+            Greater(First(ID("F1", location=Location((1, 5)))), First("Message"), Location((2, 2))),
         ),
-        Link(Field(ID("F2", location=Location((1, 1)))), FINAL),
+        Link(Field(ID("F2", location=Location((1, 6)))), FINAL),
     ]
     types = {
         Field("F1"): models.integer(),
@@ -2456,7 +2666,7 @@ def test_unreachable_field_mod_first() -> None:
         types,
         r"^"
         r'error: unreachable field "F1"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
+        r'<stdin>:1:2: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1\'First = Message\'First"\n'
         r'<stdin>:2:2: info: unsatisfied "F1\'First > Message\'First"'
         r"$",
@@ -2468,15 +2678,15 @@ def test_unreachable_field_mod_last() -> None:
         Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
         Link(
             Field(ID("F1", location=Location((2, 2)))),
-            Field(ID("F2", location=Location((2, 2)))),
+            Field(ID("F2", location=Location((2, 3)))),
         ),
         Link(
             Field(ID("F2", location=Location((3, 3)))),
             FINAL,
             Equal(
-                Last(ID("F1", location=Location((3, 3)))),
-                Last(ID("Message", location=Location((4, 4)))),
-                Location((4, 4)),
+                Last(ID("F1", location=Location((3, 4)))),
+                Last(ID("Message", location=Location((4, 5)))),
+                Location((4, 6)),
             ),
         ),
     ]
@@ -2489,11 +2699,11 @@ def test_unreachable_field_mod_last() -> None:
         types,
         r"^"
         r'error: unreachable field "F2"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
-        r'<stdin>:2:2: info: on path: "F2"\n'
-        r'<stdin>:2:2: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'<stdin>:1:1: note: on path "F1"\n'
+        r'<stdin>:2:3: note: on path "F2"\n'
+        r'<stdin>:2:3: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'<stdin>:1:1: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'<stdin>:4:4: info: unsatisfied "F1\'Last = Message\'Last"'
+        r'<stdin>:4:6: info: unsatisfied "F1\'Last = Message\'Last"'
         r"$",
     )
 
@@ -2503,14 +2713,14 @@ def test_unreachable_field_range_first() -> None:
         Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
         Link(
             Field(ID("F1", location=Location((2, 2)))),
-            Field(ID("F2", location=Location((2, 2)))),
+            Field(ID("F2", location=Location((2, 3)))),
             Greater(
                 First(ID("F1", location=Location((3, 3)))),
-                First(ID("Message", location=Location((3, 3)))),
+                First(ID("Message", location=Location((3, 4)))),
                 Location((3, 3)),
             ),
         ),
-        Link(Field(ID("F2", location=Location((1, 1)))), FINAL),
+        Link(Field(ID("F2", location=Location((4, 1)))), FINAL),
     ]
     types = {
         Field("F1"): models.integer(),
@@ -2521,7 +2731,7 @@ def test_unreachable_field_range_first() -> None:
         types,
         r"^"
         r'error: unreachable field "F1"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
+        r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1\'First = Message\'First"\n'
         r'<stdin>:3:3: info: unsatisfied "F1\'First > Message\'First"'
         r"$",
@@ -2533,12 +2743,12 @@ def test_unreachable_field_range_last() -> None:
         Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
         Link(
             Field(ID("F1", location=Location((2, 2)))),
-            Field(ID("F2", location=Location((2, 2)))),
+            Field(ID("F2", location=Location((2, 3)))),
         ),
         Link(
             Field(ID("F2", location=Location((3, 3)))),
             FINAL,
-            Equal(Last("F1"), Last("Message"), Location((3, 3))),
+            Equal(Last("F1"), Last("Message"), Location((3, 4))),
         ),
     ]
     types = {
@@ -2550,11 +2760,11 @@ def test_unreachable_field_range_last() -> None:
         types,
         r"^"
         r'error: unreachable field "F2"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
-        r'<stdin>:2:2: info: on path: "F2"\n'
-        r'<stdin>:2:2: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'<stdin>:1:1: note: on path "F1"\n'
+        r'<stdin>:2:3: note: on path "F2"\n'
+        r'<stdin>:2:3: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'<stdin>:1:1: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'<stdin>:3:3: info: unsatisfied "F1\'Last = Message\'Last"'
+        r'<stdin>:3:4: info: unsatisfied "F1\'Last = Message\'Last"'
         r"$",
     )
 
@@ -2564,11 +2774,11 @@ def test_unreachable_field_enum_first() -> None:
         Link(INITIAL, Field(ID("F1", Location((1, 1))))),
         Link(
             Field(ID("F1", Location((2, 2)))),
-            Field(ID("F2", location=Location((2, 2)))),
+            Field(ID("F2", location=Location((2, 3)))),
             Greater(
                 First(ID("F1", location=Location((3, 3)))),
-                First(ID("Message", location=Location((3, 3)))),
-                location=Location((3, 3)),
+                First(ID("Message", location=Location((3, 4)))),
+                location=Location((3, 5)),
             ),
         ),
         Link(Field(ID("F2", location=Location((4, 4)))), FINAL),
@@ -2582,9 +2792,9 @@ def test_unreachable_field_enum_first() -> None:
         types,
         r"^"
         r'error: unreachable field "F1"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
+        r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'<stdin>:3:3: info: unsatisfied "F1\'First > Message\'First"'
+        r'<stdin>:3:5: info: unsatisfied "F1\'First > Message\'First"'
         r"$",
     )
 
@@ -2597,9 +2807,9 @@ def test_unreachable_field_enum_last() -> None:
             Field(ID("F2", location=Location((3, 3)))),
             FINAL,
             Equal(
-                Last(ID("F1", location=Location((3, 3)))),
-                Last(ID("Message", location=Location((3, 3)))),
-                location=Location((3, 3)),
+                Last(ID("F1", location=Location((3, 4)))),
+                Last(ID("Message", location=Location((3, 5)))),
+                location=Location((3, 6)),
             ),
         ),
     ]
@@ -2612,11 +2822,11 @@ def test_unreachable_field_enum_last() -> None:
         types,
         r"^"
         r'error: unreachable field "F2"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
-        r'<stdin>:2:2: info: on path: "F2"\n'
+        r'<stdin>:1:1: note: on path "F1"\n'
+        r'<stdin>:2:2: note: on path "F2"\n'
         r'<stdin>:2:2: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
         r'<stdin>:1:1: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'<stdin>:3:3: info: unsatisfied "F1\'Last = Message\'Last"'
+        r'<stdin>:3:6: info: unsatisfied "F1\'Last = Message\'Last"'
         r"$",
     )
 
@@ -2626,11 +2836,11 @@ def test_unreachable_field_outgoing() -> None:
         Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
         Link(
             Field(ID("F1", location=Location((2, 2)))),
-            Field(ID("F2", location=Location((2, 2)))),
+            Field(ID("F2", location=Location((2, 3)))),
             LessEqual(
                 Variable(ID("F1", location=Location((3, 3)))),
                 Number(32),
-                location=Location((3, 3)),
+                location=Location((3, 4)),
             ),
         ),
         Link(
@@ -2639,14 +2849,14 @@ def test_unreachable_field_outgoing() -> None:
             Greater(
                 Variable(ID("F1", location=Location((5, 5)))),
                 Number(32),
-                location=Location((5, 5)),
+                location=Location((5, 6)),
             ),
         ),
         Link(
             Field(ID("F2", location=Location((6, 6)))),
             FINAL,
             Greater(
-                Variable(ID("F1", location=Location((6, 6)))),
+                Variable(ID("F1", location=Location((6, 7)))),
                 Number(32),
                 location=Location((7, 7)),
             ),
@@ -2661,9 +2871,9 @@ def test_unreachable_field_outgoing() -> None:
         types,
         r"^"
         r'error: unreachable field "F2"\n'
-        r'<stdin>:1:1: info: on path: "F1"\n'
-        r'<stdin>:2:2: info: on path: "F2"\n'
-        r'<stdin>:3:3: info: unsatisfied "F1 <= 32"\n'
+        r'<stdin>:1:1: note: on path "F1"\n'
+        r'<stdin>:2:3: note: on path "F2"\n'
+        r'<stdin>:3:4: info: unsatisfied "F1 <= 32"\n'
         r'<stdin>:7:7: info: unsatisfied "F1 > 32"'
         r"$",
     )
@@ -2720,8 +2930,8 @@ def test_unreachable_field_outgoing_multi() -> None:
         types,
         r"^"
         r'<stdin>:90:12: error: unreachable field "F2"\n'
-        r'<stdin>:86:13: info: on path: "F1"\n'
-        r'<stdin>:91:13: info: on path: "F2"\n'
+        r'<stdin>:86:13: note: on path "F1"\n'
+        r'<stdin>:91:13: note: on path "F2"\n'
         r'<stdin>:66:3: info: unsatisfied "F1 <= 32"\n'
         r'<stdin>:22:34: info: unsatisfied "F1 > 32"'
         r"$",
@@ -2732,11 +2942,11 @@ def test_size_aspect_final() -> None:
     structure = [
         Link(INITIAL, Field(ID("F1", location=Location((3, 12))))),
         Link(
-            Field(ID("F1", location=Location((3, 12)))),
-            Field(ID("F2", location=Location((3, 12)))),
+            Field(ID("F1", location=Location((3, 13)))),
+            Field(ID("F2", location=Location((3, 14)))),
         ),
         Link(
-            Field(ID("F2", location=Location((4, 12)))),
+            Field(ID("F2", location=Location((4, 13)))),
             FINAL,
             size=Number(100, location=Location((4, 12))),
         ),
@@ -2754,7 +2964,12 @@ def test_size_aspect_final() -> None:
 
 def test_aggregate_equal_valid_size() -> None:
     structure = [
-        Link(INITIAL, Field(ID("Magic", location=Location((1, 1)))), size=Number(40)),
+        Link(
+            INITIAL,
+            Field(ID("Magic", location=Location((1, 1)))),
+            size=Number(40, location=Location((1, 1))),
+            location=Location((1, 1)),
+        ),
         Link(
             Field(ID("Magic", location=Location((2, 2)))),
             FINAL,
@@ -2763,17 +2978,23 @@ def test_aggregate_equal_valid_size() -> None:
                 Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
                 location=Location((4, 4)),
             ),
+            location=Location((2, 2)),
         ),
     ]
     types = {
-        Field("Magic"): OPAQUE,
+        Field(ID("Magic", location=Location((1, 1)))): OPAQUE,
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
 
 def test_aggregate_equal_invalid_size1() -> None:
     structure = [
-        Link(INITIAL, Field(ID("Magic", location=Location((1, 1)))), size=Number(40)),
+        Link(
+            INITIAL,
+            Field(ID("Magic", location=Location((1, 1)))),
+            size=Number(40, location=Location((1, 2))),
+            location=Location((1, 3)),
+        ),
         Link(
             Field(ID("Magic", location=Location((2, 2)))),
             FINAL,
@@ -2782,18 +3003,19 @@ def test_aggregate_equal_invalid_size1() -> None:
                 Aggregate(Number(1), Number(2)),
                 location=Location((3, 3)),
             ),
+            location=Location((2, 3)),
         ),
     ]
     types = {
-        Field("Magic"): OPAQUE,
+        Field(ID("Magic", location=Location((1, 1)))): OPAQUE,
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: unreachable field "Magic"\n'
-        r'<stdin>:1:1: info: on path: "Magic"\n'
-        r'<stdin>:1:1: info: unsatisfied "Magic\'Size = 40"\n'
+        r'<stdin>:1:1: error: unreachable field "Magic"\n'
+        r'<stdin>:1:1: note: on path "Magic"\n'
+        r'<stdin>:1:2: info: unsatisfied "Magic\'Size = 40"\n'
         r'<stdin>:3:3: info: unsatisfied "2 [*] 8 = Magic\'Size"'
         r"$",
     )
@@ -2801,35 +3023,46 @@ def test_aggregate_equal_invalid_size1() -> None:
 
 def test_aggregate_equal_invalid_size2() -> None:
     structure = [
-        Link(INITIAL, Field(ID("Magic", location=Location((1, 1)))), size=Number(40)),
+        Link(
+            INITIAL,
+            Field(ID("Magic", location=Location((1, 1)))),
+            size=Number(40, location=Location((1, 2))),
+            location=Location((1, 3)),
+        ),
         Link(
             Field(ID("Magic", location=Location((2, 2)))),
             FINAL,
             condition=Equal(
                 Aggregate(Number(1), Number(2)),
                 Variable(ID("Magic", location=Location((3, 3)))),
-                location=Location((3, 3)),
+                location=Location((3, 4)),
             ),
+            location=Location((2, 3)),
         ),
     ]
     types = {
-        Field("Magic"): OPAQUE,
+        Field(ID("Magic", location=Location((1, 1)))): OPAQUE,
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: unreachable field "Magic"\n'
-        r'<stdin>:1:1: info: on path: "Magic"\n'
-        r'<stdin>:1:1: info: unsatisfied "Magic\'Size = 40"\n'
-        r'<stdin>:3:3: info: unsatisfied "2 [*] 8 = Magic\'Size"'
+        r'<stdin>:1:1: error: unreachable field "Magic"\n'
+        r'<stdin>:1:1: note: on path "Magic"\n'
+        r'<stdin>:1:2: info: unsatisfied "Magic\'Size = 40"\n'
+        r'<stdin>:3:4: info: unsatisfied "2 [*] 8 = Magic\'Size"'
         r"$",
     )
 
 
 def test_aggregate_inequal_valid_size() -> None:
     structure = [
-        Link(INITIAL, Field(ID("Magic", location=Location((1, 1)))), size=Number(40)),
+        Link(
+            INITIAL,
+            Field(ID("Magic", location=Location((1, 1)))),
+            size=Number(40, location=Location((1, 2))),
+            location=Location((1, 3)),
+        ),
         Link(
             Field(ID("Magic", location=Location((2, 2)))),
             FINAL,
@@ -2838,38 +3071,45 @@ def test_aggregate_inequal_valid_size() -> None:
                 Aggregate(Number(1), Number(2), Number(3), Number(4), Number(4)),
                 location=Location((3, 3)),
             ),
+            location=Location((2, 3)),
         ),
     ]
     types = {
-        Field("Magic"): OPAQUE,
+        Field(ID("Magic", location=Location((1, 1)))): OPAQUE,
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
 
 def test_aggregate_inequal_invalid_size() -> None:
     structure = [
-        Link(INITIAL, Field(ID("Magic", location=Location((1, 1)))), size=Number(40)),
+        Link(
+            INITIAL,
+            Field(ID("Magic", location=Location((1, 1)))),
+            size=Number(40, location=Location((1, 2))),
+            location=Location((1, 3)),
+        ),
         Link(
             Field(ID("Magic", location=Location((2, 2)))),
             FINAL,
             condition=NotEqual(
                 Variable(ID("Magic", location=Location((3, 3)))),
                 Aggregate(Number(1), Number(2)),
-                location=Location((3, 3)),
+                location=Location((3, 4)),
             ),
+            location=Location((2, 3)),
         ),
     ]
     types = {
-        Field("Magic"): OPAQUE,
+        Field(ID("Magic", location=Location((1, 2)))): OPAQUE,
     }
     assert_message_model_error(
         structure,
         types,
         r"^"
-        r'error: unreachable field "Magic"\n'
-        r'<stdin>:1:1: info: on path: "Magic"\n'
-        r'<stdin>:1:1: info: unsatisfied "Magic\'Size = 40"\n'
-        r'<stdin>:3:3: info: unsatisfied "2 [*] 8 = Magic\'Size"'
+        r'<stdin>:1:2: error: unreachable field "Magic"\n'
+        r'<stdin>:1:1: note: on path "Magic"\n'
+        r'<stdin>:1:2: info: unsatisfied "Magic\'Size = 40"\n'
+        r'<stdin>:3:4: info: unsatisfied "2 [*] 8 = Magic\'Size"'
         r"$",
     )
 
@@ -2921,7 +3161,7 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
         types,
         r"^"
         r'<stdin>:3:5: error: unreachable field "Magic"\n'
-        r'<stdin>:3:5: info: on path: "Magic"\n'
+        r'<stdin>:3:5: note: on path "Magic"\n'
         r'<stdin>:19:17: info: unsatisfied "Magic\'Size = 40"\n'
         r'<stdin>:66:3: info: unsatisfied "Integer\'Size = 8"\n'
         r'<stdin>:17:3: info: unsatisfied "2 [*] Integer\'Size = Magic\'Size"'
@@ -2934,8 +3174,13 @@ def test_aggregate_equal_invalid_size_field() -> None:
     magic = Field(ID("Magic", Location((3, 5))))
 
     structure = [
-        Link(INITIAL, length),
-        Link(length, magic, size=Mul(Number(8), Variable("Length"), location=Location((6, 5)))),
+        Link(INITIAL, length, location=Location((1, 1))),
+        Link(
+            length,
+            magic,
+            size=Mul(Number(8), Variable("Length"), location=Location((6, 5))),
+            location=Location((2, 2)),
+        ),
         Link(
             magic,
             FINAL,
@@ -2944,10 +3189,11 @@ def test_aggregate_equal_invalid_size_field() -> None:
                 Aggregate(Number(1), Number(2)),
                 location=Location((10, 5)),
             ),
+            location=Location((3, 3)),
         ),
     ]
     types = {
-        Field("Length"): Integer(
+        Field(ID("Length", location=Location((16, 3)))): Integer(
             "P::Length_Type",
             Number(10),
             Number(100),
@@ -2961,8 +3207,8 @@ def test_aggregate_equal_invalid_size_field() -> None:
         types,
         r"^"
         r'<stdin>:17:3: error: unreachable field "Magic"\n'
-        r'<stdin>:2:5: info: on path: "Length"\n'
-        r'<stdin>:3:5: info: on path: "Magic"\n'
+        r'<stdin>:2:5: note: on path "Length"\n'
+        r'<stdin>:3:5: note: on path "Magic"\n'
         r'<stdin>:10:5: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
         r'<stdin>:5:10: info: unsatisfied "Length >= 10"\n'
         r'<stdin>:6:5: info: unsatisfied "Magic\'Size = 8 [*] Length"'
@@ -3055,7 +3301,7 @@ def test_no_unreachable_field_multi() -> None:
 )
 def test_discontiguous_optional_fields(condition: Expr) -> None:
     structure = [
-        Link(INITIAL, Field(ID("Flag", location=Location((1, 1))))),
+        Link(INITIAL, Field(ID("Flag", location=Location((1, 1)))), location=Location((1, 1))),
         Link(
             Field(ID("Flag", location=Location((2, 2)))),
             Field(ID("Opt1", location=Location((2, 2)))),
@@ -3064,6 +3310,7 @@ def test_discontiguous_optional_fields(condition: Expr) -> None:
                 Number(1),
                 location=Location((3, 3)),
             ),
+            location=Location((2, 2)),
         ),
         Link(
             Field(ID("Flag", location=Location((4, 4)))),
@@ -3073,16 +3320,23 @@ def test_discontiguous_optional_fields(condition: Expr) -> None:
                 Number(1),
                 location=Location((5, 5)),
             ),
+            location=Location((3, 3)),
         ),
         Link(
             Field(ID("Opt1", location=Location((6, 6)))),
             Field(ID("Data", location=Location((6, 6)))),
+            location=Location((4, 4)),
         ),
         Link(
             Field(ID("Data", location=Location((7, 7)))),
             Field(ID("Opt2", location=Location((7, 7)))),
             condition=condition,
-            size=Mul(Variable(ID("Opt1", location=Location((9, 9)))), Number(8)),
+            size=Mul(
+                Variable(ID("Opt1", location=Location((9, 9)))),
+                Number(8),
+                location=Location((9, 9)),
+            ),
+            location=Location((7, 7)),
         ),
         Link(
             Field(ID("Data", location=Location((10, 10)))),
@@ -3092,17 +3346,19 @@ def test_discontiguous_optional_fields(condition: Expr) -> None:
                 Number(0),
                 location=Location((11, 11)),
             ),
+            location=Location((11, 11)),
         ),
         Link(
             Field(ID("Opt2", location=Location((12, 12)))),
             FINAL,
+            location=Location((12, 12)),
         ),
     ]
     types = {
-        Field("Flag"): models.integer(),
-        Field("Opt1"): models.integer(),
-        Field("Data"): models.integer(),
-        Field("Opt2"): OPAQUE,
+        Field(ID("Flag", location=Location((1, 1)))): models.integer(),
+        Field(ID("Opt1", location=Location((2, 2)))): models.integer(),
+        Field(ID("Data", location=Location((3, 3)))): models.integer(),
+        Field(ID("Opt2", location=Location((4, 4)))): OPAQUE,
     }
     Message(ID("P::M", Location((1, 1))), structure, types)
 
@@ -3110,16 +3366,18 @@ def test_discontiguous_optional_fields(condition: Expr) -> None:
 def test_discontiguous_optional_fields_error() -> None:
     # TODO(eng/recordflux/RecordFlux#499): Enable disjunctions with references to optional fields
     structure = [
-        Link(INITIAL, Field("Flag")),
+        Link(INITIAL, Field("Flag"), location=Location((1, 1))),
         Link(
             Field("Flag"),
             Field("Opt1"),
             condition=Equal(Variable("Flag"), Number(1)),
+            location=Location((2, 2)),
         ),
         Link(
             Field("Flag"),
             Field("Data"),
             condition=NotEqual(Variable("Flag"), Number(1)),
+            location=Location((3, 3)),
         ),
         Link(Field("Opt1"), Field("Data")),
         Link(
@@ -3129,33 +3387,36 @@ def test_discontiguous_optional_fields_error() -> None:
                 And(Equal(Variable("Flag"), Number(1)), Greater(Variable("Opt1"), Number(100))),
                 Greater(Variable("Flag"), Number(1)),
             ),
-            size=Mul(Variable("Opt1"), Number(8)),
+            size=Mul(Variable("Opt1"), Number(8), location=Location((4, 4))),
+            location=Location((4, 4)),
         ),
         Link(
             Field("Data"),
             FINAL,
             condition=Equal(Variable("Flag"), Number(0)),
+            location=Location((5, 5)),
         ),
         Link(
             Field("Opt2"),
             FINAL,
+            location=Location((6, 6)),
         ),
     ]
     types = {
-        Field("Flag"): models.integer(),
-        Field("Opt1"): models.integer(),
-        Field("Data"): models.integer(),
-        Field("Opt2"): OPAQUE,
+        Field(ID("Flag", location=Location((1, 1)))): models.integer(),
+        Field(ID("Opt1", location=Location((2, 2)))): models.integer(),
+        Field(ID("Data", location=Location((3, 3)))): models.integer(),
+        Field(ID("Opt2", location=Location((4, 4)))): OPAQUE,
     }
     assert_message_model_error(
         structure,
         types,
         (
             r"^"
-            r'error: undefined variable "Opt1"\n'
+            r'<stdin>:2:2: error: undefined variable "Opt1"\n'
             r"info: on path Flag -> Data -> Opt2\n"
-            r'error: undefined variable "Opt1"\n'
-            r"info: on path Flag -> Data -> Opt2"
+            r'<stdin>:2:2: error: undefined variable "Opt1"\n'
+            r"<stdin>:4:4: info: on path Flag -> Data -> Opt2"
             r"$"
         ),
     )
@@ -3191,14 +3452,14 @@ def test_discontiguous_optional_fields_error() -> None:
     ],
 )
 def test_checksum(checksums: abc.Mapping[ID, abc.Sequence[Expr]], condition: Expr) -> None:
-    f1 = Field("F1")
-    f2 = Field("F2")
-    f3 = Field("F3")
+    f1 = Field(ID("F1", location=Location((1, 1))))
+    f2 = Field(ID("F2", location=Location((2, 2))))
+    f3 = Field(ID("F3", location=Location((3, 3))))
     structure = [
-        Link(INITIAL, f1),
-        Link(f1, f2),
-        Link(f2, f3),
-        Link(f3, FINAL, condition),
+        Link(INITIAL, f1, location=Location((1, 1))),
+        Link(f1, f2, location=Location((2, 2))),
+        Link(f2, f3, location=Location((3, 3))),
+        Link(f3, FINAL, condition, location=Location((4, 4))),
     ]
     types = {f1: models.integer(), f2: models.integer(), f3: models.integer()}
     message = Message(ID("P::M", Location((1, 1))), structure, types, checksums=checksums)
@@ -3267,12 +3528,21 @@ def test_field_size() -> None:
     message = Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("A")),
-            Link(Field("A"), Field("B"), size=Mul(Size("A"), Number(8))),
-            Link(Field("B"), Field("C")),
-            Link(Field("C"), FINAL),
+            Link(INITIAL, Field("A"), location=Location((1, 1))),
+            Link(
+                Field("A"),
+                Field("B"),
+                size=Mul(Size("A"), Number(8), location=Location((2, 2))),
+                location=Location((2, 2)),
+            ),
+            Link(Field("B"), Field("C"), location=Location((3, 3))),
+            Link(Field("C"), FINAL, location=Location((4, 4))),
         ],
-        {Field("A"): models.integer(), Field("B"): OPAQUE, Field("C"): OPAQUE},
+        {
+            Field(ID("A", location=Location((1, 1)))): models.integer(),
+            Field(ID("B", location=Location((2, 2)))): OPAQUE,
+            Field(ID("C", location=Location((3, 3)))): OPAQUE,
+        },
         location=Location((30, 10)),
     )
 
@@ -3291,13 +3561,22 @@ def test_field_size() -> None:
 
 
 def test_target_last_opt() -> None:
-    link_ia = Link(INITIAL, Field("A"))
-    link_ab = Link(Field("A"), Field("B"), size=Mul(Size("A"), Number(8)))
-    link_bc = Link(Field("B"), Field("C"))
+    link_ia = Link(INITIAL, Field("A"), location=Location((1, 1)))
+    link_ab = Link(
+        Field("A"),
+        Field("B"),
+        size=Mul(Size("A"), Number(8), location=Location((2, 2))),
+        location=Location((2, 2)),
+    )
+    link_bc = Link(Field("B"), Field("C"), location=Location((3, 3)))
     message = Message(
         ID("P::M", Location((1, 1))),
-        [link_ia, link_ab, link_bc, Link(Field("C"), FINAL)],
-        {Field("A"): models.integer(), Field("B"): OPAQUE, Field("C"): OPAQUE},
+        [link_ia, link_ab, link_bc, Link(Field("C"), FINAL, location=Location((4, 4)))],
+        {
+            Field(ID("A", location=Location((1, 1)))): models.integer(),
+            Field(ID("B", location=Location((2, 2)))): OPAQUE,
+            Field(ID("C", location=Location((3, 3)))): OPAQUE,
+        },
         location=Location((30, 10)),
     )
     assert message._target_last_opt(link_ia) == Sub(  # noqa: SLF001
@@ -3314,39 +3593,57 @@ def test_target_last_opt() -> None:
 def test_copy() -> None:
     message = Message(
         ID("P::M", Location((1, 1))),
-        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-        {Field("F"): models.integer()},
+        [
+            Link(INITIAL, Field("F"), location=Location((2, 2))),
+            Link(Field("F"), FINAL, location=Location((3, 3))),
+        ],
+        {Field(ID("F", location=Location((1, 1)))): models.integer()},
     )
     assert_equal(
         message.copy(identifier=ID("A::B", Location((1, 1)))),
         Message(
             ID("A::B", Location((1, 1))),
-            [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
-            {Field("F"): models.integer()},
+            [
+                Link(INITIAL, Field("F"), location=Location((2, 2))),
+                Link(Field("F"), FINAL, location=Location((2, 2))),
+            ],
+            {Field(ID("F", location=Location((1, 1)))): models.integer()},
         ),
     )
     assert_equal(
         message.copy(
-            structure=[Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            types={Field("C"): models.integer()},
+            structure=[
+                Link(INITIAL, Field("C"), location=Location((1, 1))),
+                Link(Field("C"), FINAL, location=Location((2, 2))),
+            ],
+            types={Field(ID("C", location=Location((1, 1)))): models.integer()},
             byte_order={Field("C"): ByteOrder.HIGH_ORDER_FIRST},
         ),
         Message(
             ID("P::M", Location((1, 1))),
-            [Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            {Field("C"): models.integer()},
+            [
+                Link(INITIAL, Field("C"), location=Location((2, 2))),
+                Link(Field("C"), FINAL, location=Location((3, 3))),
+            ],
+            {Field(ID("C", location=Location((1, 1)))): models.integer()},
         ),
     )
     assert_equal(
         message.copy(
-            structure=[Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            types={Field("C"): models.integer()},
+            structure=[
+                Link(INITIAL, Field("C"), location=Location((1, 1))),
+                Link(Field("C"), FINAL, location=Location((2, 2))),
+            ],
+            types={Field(ID("C", location=Location((1, 1)))): models.integer()},
             byte_order={Field("C"): ByteOrder.LOW_ORDER_FIRST},
         ),
         Message(
             ID("P::M", Location((1, 1))),
-            [Link(INITIAL, Field("C")), Link(Field("C"), FINAL)],
-            {Field("C"): models.integer()},
+            [
+                Link(INITIAL, Field("C"), location=Location((2, 2))),
+                Link(Field("C"), FINAL, location=Location((3, 3))),
+            ],
+            {Field(ID("C", location=Location((1, 1)))): models.integer()},
             byte_order=ByteOrder.LOW_ORDER_FIRST,
         ),
     )
@@ -3504,7 +3801,11 @@ def test_size() -> None:
     variable_field_value = Message(
         ID("Test::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("Length", location=Location((2, 2))))),
+            Link(
+                INITIAL,
+                Field(ID("Length", location=Location((2, 2)))),
+                location=Location((2, 2)),
+            ),
             Link(
                 Field(ID("Length", location=Location((2, 2)))),
                 Field(ID("Data", location=Location((2, 2)))),
@@ -3512,7 +3813,12 @@ def test_size() -> None:
                     ID("Has_Data", location=Location((3, 3))),
                     location=Location((3, 3)),
                 ),
-                size=Mul(Variable(ID("Length", location=Location((4, 4)))), Number(8)),
+                size=Mul(
+                    Variable(ID("Length", location=Location((4, 4)))),
+                    Number(8),
+                    location=Location((4, 4)),
+                ),
+                location=Location((2, 2)),
             ),
             Link(
                 Field(ID("Length", location=Location((5, 5)))),
@@ -3521,17 +3827,19 @@ def test_size() -> None:
                     Variable(ID("Has_Data", location=Location((6, 6)))),
                     location=Location((6, 6)),
                 ),
-                size=Number(0),
+                size=Number(0, location=Location((6, 6))),
+                location=Location((5, 5)),
             ),
             Link(
                 Field(ID("Data", location=Location((7, 7)))),
                 FINAL,
+                location=Location((7, 7)),
             ),
         ],
         {
-            Field("Has_Data"): BOOLEAN,
-            Field("Length"): models.tlv_length(),
-            Field("Data"): OPAQUE,
+            Field(ID("Has_Data", location=Location((1, 1)))): BOOLEAN,
+            Field(ID("Length", location=Location((2, 2)))): models.tlv_length(),
+            Field(ID("Data", location=Location((3, 3)))): OPAQUE,
         },
     )
     assert variable_field_value.size(
@@ -3569,7 +3877,7 @@ def test_size() -> None:
     optional_overlayed_field = Message(
         ID("Test::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("A", location=Location((2, 2))))),
+            Link(INITIAL, Field(ID("A", location=Location((2, 2)))), location=Location((2, 2))),
             Link(
                 Field(ID("A", location=Location((3, 3)))),
                 Field(ID("B", location=Location((3, 3)))),
@@ -3579,6 +3887,7 @@ def test_size() -> None:
                     location=Location((4, 4)),
                 ),
                 first=First(Variable(ID("A", location=Location((5, 5))))),
+                location=Location((5, 5)),
             ),
             Link(
                 Field(ID("A", location=Location((6, 6)))),
@@ -3588,15 +3897,17 @@ def test_size() -> None:
                     Number(0),
                     location=Location((7, 7)),
                 ),
+                location=Location((7, 7)),
             ),
             Link(
                 Field(ID("B", location=Location((8, 8)))),
                 FINAL,
+                location=Location((7, 7)),
             ),
         ],
         {
-            Field("A"): models.tlv_length(),
-            Field("B"): models.tlv_length(),
+            Field(ID("A", location=Location((1, 1)))): models.tlv_length(),
+            Field(ID("B", location=Location((2, 2)))): models.tlv_length(),
         },
     )
     assert optional_overlayed_field.size(
@@ -3805,7 +4116,11 @@ def test_size_subpath() -> None:
     variable_field_value = Message(
         ID("Test::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("Length", location=Location((2, 2))))),
+            Link(
+                INITIAL,
+                Field(ID("Length", location=Location((2, 2)))),
+                location=Location((1, 1)),
+            ),
             Link(
                 Field(ID("Length", location=Location((3, 3)))),
                 Field(ID("Data", location=Location((3, 3)))),
@@ -3814,7 +4129,12 @@ def test_size_subpath() -> None:
                     TRUE,
                     location=Location((4, 4)),
                 ),
-                size=Mul(Variable("Length", location=Location((5, 5))), Number(8)),
+                size=Mul(
+                    Variable("Length", location=Location((5, 5))),
+                    Number(8),
+                    location=Location((5, 5)),
+                ),
+                location=Location((2, 2)),
             ),
             Link(
                 Field(ID("Length", location=Location((6, 6)))),
@@ -3824,17 +4144,19 @@ def test_size_subpath() -> None:
                     FALSE,
                     location=Location((7, 7)),
                 ),
-                size=Number(0),
+                size=Number(0, location=Location((7, 7))),
+                location=Location((6, 6)),
             ),
             Link(
                 Field(ID("Data", location=Location((8, 8)))),
                 FINAL,
+                location=Location((8, 8)),
             ),
         ],
         {
-            Field("Has_Data"): BOOLEAN,
-            Field("Length"): models.tlv_length(),
-            Field("Data"): OPAQUE,
+            Field(ID("Has_Data", location=Location((1, 1)))): BOOLEAN,
+            Field(ID("Length", location=Location((2, 2)))): models.tlv_length(),
+            Field(ID("Data", location=Location((3, 3)))): OPAQUE,
         },
     )
     assert variable_field_value.size(
@@ -3885,7 +4207,7 @@ def test_size_subpath() -> None:
     optional_overlayed_field = Message(
         ID("Test::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("A", location=Location((2, 2))))),
+            Link(INITIAL, Field(ID("A", location=Location((2, 2)))), location=Location((1, 1))),
             Link(
                 Field(ID("A", location=Location((3, 3)))),
                 Field(ID("B", location=Location((3, 3)))),
@@ -3895,6 +4217,7 @@ def test_size_subpath() -> None:
                     location=Location((4, 4)),
                 ),
                 first=First(Variable(ID("A", location=Location((5, 5))))),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("A", location=Location((6, 6)))),
@@ -3904,10 +4227,12 @@ def test_size_subpath() -> None:
                     Number(0),
                     location=Location((7, 7)),
                 ),
+                location=Location((6, 6)),
             ),
             Link(
                 Field(ID("B", location=Location((8, 8)))),
                 FINAL,
+                location=Location((8, 8)),
             ),
         ],
         {
@@ -4073,7 +4398,11 @@ def test_prefixed_message() -> None:
         Message(
             ID("P::M", location=Location((1, 1))),
             [
-                Link(INITIAL, Field(ID("F1", location=Location((2, 2))))),
+                Link(
+                    INITIAL,
+                    Field(ID("F1", location=Location((2, 2)))),
+                    location=Location((1, 1)),
+                ),
                 Link(
                     Field(ID("F1", location=Location((3, 3)))),
                     Field(ID("F2", location=Location((3, 3)))),
@@ -4083,6 +4412,7 @@ def test_prefixed_message() -> None:
                         location=Location((4, 4)),
                     ),
                     first=First(ID("F1", location=Location((5, 5)))),
+                    location=Location((3, 3)),
                 ),
                 Link(
                     Field(ID("F1", location=Location((6, 6)))),
@@ -4093,6 +4423,7 @@ def test_prefixed_message() -> None:
                         location=Location((7, 7)),
                     ),
                     first=First(ID("F1", location=Location((8, 8)))),
+                    location=Location((6, 6)),
                 ),
                 Link(
                     Field(ID("F2", location=Location((9, 9)))),
@@ -4102,25 +4433,39 @@ def test_prefixed_message() -> None:
                         Literal(ID("P::One", location=Location((9, 9)))),
                         location=Location((9, 9)),
                     ),
+                    location=Location((9, 9)),
                 ),
                 Link(
                     Field(ID("F3", location=Location((10, 10)))),
                     Field(ID("F4", location=Location((10, 10)))),
-                    size=Mul(Variable(ID("F3", location=Location((11, 11)))), Number(8)),
+                    size=Mul(
+                        Variable(ID("F3", location=Location((11, 11)))),
+                        Number(8),
+                        location=Location((11, 11)),
+                    ),
+                    location=Location((10, 10)),
                 ),
-                Link(Field(ID("F4", location=Location((12, 12)))), FINAL),
+                Link(
+                    Field(ID("F4", location=Location((12, 12)))),
+                    FINAL,
+                    location=Location((12, 12)),
+                ),
             ],
             {
-                Field("F1"): models.integer(),
-                Field("F2"): models.enumeration(),
-                Field("F3"): models.integer(),
-                Field("F4"): OPAQUE,
+                Field(ID("F1", location=Location((1, 1)))): models.integer(),
+                Field(ID("F2", location=Location((2, 2)))): models.enumeration(),
+                Field(ID("F3", location=Location((3, 3)))): models.integer(),
+                Field(ID("F4", location=Location((4, 4)))): OPAQUE,
             },
         ).prefixed("X_"),
         Message(
             ID("P::M", location=Location((1, 1))),
             [
-                Link(INITIAL, Field(ID("X_F1", location=Location((2, 2))))),
+                Link(
+                    INITIAL,
+                    Field(ID("X_F1", location=Location((2, 2)))),
+                    location=Location((2, 2)),
+                ),
                 Link(
                     Field(ID("X_F1", location=Location((3, 3)))),
                     Field(ID("X_F2", location=Location((3, 3)))),
@@ -4130,6 +4475,7 @@ def test_prefixed_message() -> None:
                         location=Location((4, 4)),
                     ),
                     first=First(ID("X_F1", location=Location((5, 5)))),
+                    location=Location((3, 3)),
                 ),
                 Link(
                     Field(ID("X_F1", location=Location((6, 6)))),
@@ -4140,6 +4486,7 @@ def test_prefixed_message() -> None:
                         location=Location((7, 7)),
                     ),
                     first=First(ID("X_F1", location=Location((8, 8)))),
+                    location=Location((6, 6)),
                 ),
                 Link(
                     Field(ID("X_F2", location=Location((9, 9)))),
@@ -4149,19 +4496,29 @@ def test_prefixed_message() -> None:
                         Literal(ID("P::One", location=Location((10, 10)))),
                         location=Location((10, 10)),
                     ),
+                    location=Location((9, 9)),
                 ),
                 Link(
                     Field(ID("X_F3", location=Location((11, 11)))),
                     Field(ID("X_F4", location=Location((11, 11)))),
-                    size=Mul(Variable(ID("X_F3", location=Location((12, 12)))), Number(8)),
+                    size=Mul(
+                        Variable(ID("X_F3", location=Location((12, 12)))),
+                        Number(8),
+                        location=Location((12, 12)),
+                    ),
+                    location=Location((11, 11)),
                 ),
-                Link(Field(ID("X_F4", location=Location((13, 13)))), FINAL),
+                Link(
+                    Field(ID("X_F4", location=Location((13, 13)))),
+                    FINAL,
+                    location=Location((13, 13)),
+                ),
             ],
             {
-                Field("X_F1"): models.integer(),
-                Field("X_F2"): models.enumeration(),
-                Field("X_F3"): models.integer(),
-                Field("X_F4"): OPAQUE,
+                Field(ID("X_F1", location=Location((1, 1)))): models.integer(),
+                Field(ID("X_F2", location=Location((2, 2)))): models.enumeration(),
+                Field(ID("X_F3", location=Location((3, 3)))): models.integer(),
+                Field(ID("X_F4", location=Location((4, 4)))): OPAQUE,
             },
         ),
     )
@@ -4173,10 +4530,16 @@ def test_merge_message_simple() -> None:
     ) == UncheckedMessage(
         ID("P::Smpl_Ref", location=Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("NR_F1", location=Location((2, 2)))), size=Number(16)),
+            Link(
+                INITIAL,
+                Field(ID("NR_F1", location=Location((2, 2)))),
+                size=Number(16, location=Location((1, 1))),
+                location=Location((1, 1)),
+            ),
             Link(
                 Field(ID("NR_F1", location=Location((3, 3)))),
                 Field(ID("NR_F2", location=Location((3, 3)))),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("NR_F2", location=Location((4, 4)))),
@@ -4187,6 +4550,7 @@ def test_merge_message_simple() -> None:
                     location=Location((5, 5)),
                 ),
                 first=First(ID("NR_F2", location=Location((6, 6)))),
+                location=Location((4, 4)),
             ),
             Link(
                 Field(ID("NR_F2", location=Location((7, 7)))),
@@ -4197,6 +4561,7 @@ def test_merge_message_simple() -> None:
                     location=Location((8, 8)),
                 ),
                 first=First(ID("NR_F2", location=Location((9, 9)))),
+                location=Location((7, 7)),
             ),
             Link(
                 Field(ID("NR_F3", location=Location((10, 10)))),
@@ -4206,22 +4571,27 @@ def test_merge_message_simple() -> None:
                     Variable(ID("P::One", location=Location((10, 10)))),
                     location=Location((10, 10)),
                 ),
+                location=Location((7, 7)),
             ),
-            Link(Field(ID("NR_F4", location=Location((11, 11)))), FINAL),
+            Link(
+                Field(ID("NR_F4", location=Location((11, 11)))),
+                FINAL,
+                location=Location((11, 11)),
+            ),
         ],
         [],
         [
-            (Field("NR_F1"), OPAQUE.identifier, []),
-            (Field("NR_F2"), models.integer().identifier, []),
-            (Field("NR_F3"), models.enumeration().identifier, []),
-            (Field("NR_F4"), models.integer().identifier, []),
+            (Field(ID("NR_F1", location=Location((1, 1)))), OPAQUE.identifier, []),
+            (Field(ID("NR_F2", location=Location((2, 2)))), models.integer().identifier, []),
+            (Field(ID("NR_F3", location=Location((3, 3)))), models.enumeration().identifier, []),
+            (Field(ID("NR_F4", location=Location((4, 4)))), models.integer().identifier, []),
         ],
         checksums={},
         byte_order={
-            Field("NR_F1"): ByteOrder.HIGH_ORDER_FIRST,
-            Field("NR_F2"): ByteOrder.HIGH_ORDER_FIRST,
-            Field("NR_F3"): ByteOrder.HIGH_ORDER_FIRST,
-            Field("NR_F4"): ByteOrder.HIGH_ORDER_FIRST,
+            Field(ID("NR_F1", location=Location((1, 1)))): ByteOrder.HIGH_ORDER_FIRST,
+            Field(ID("NR_F2", location=Location((2, 2)))): ByteOrder.HIGH_ORDER_FIRST,
+            Field(ID("NR_F3", location=Location((3, 3)))): ByteOrder.HIGH_ORDER_FIRST,
+            Field(ID("NR_F4", location=Location((4, 4)))): ByteOrder.HIGH_ORDER_FIRST,
         },
     )
 
@@ -4411,7 +4781,12 @@ def test_merge_message_simple_derived() -> None:
             Message(
                 ID("P::Smpl_Ref", Location((1, 1))),
                 [
-                    Link(INITIAL, Field(ID("NR_F1", location=Location((2, 2)))), size=Number(16)),
+                    Link(
+                        INITIAL,
+                        Field(ID("NR_F1", location=Location((2, 2)))),
+                        size=Number(16, location=Location((1, 1))),
+                        location=Location((1, 1)),
+                    ),
                     Link(
                         Field(ID("NR_F3", location=Location((3, 3)))),
                         FINAL,
@@ -4420,11 +4795,17 @@ def test_merge_message_simple_derived() -> None:
                             Variable(ID("P::One", location=Location((4, 4)))),
                             location=Location((4, 4)),
                         ),
+                        location=Location((4, 4)),
                     ),
-                    Link(Field(ID("NR_F4", location=Location((5, 5)))), FINAL),
+                    Link(
+                        Field(ID("NR_F4", location=Location((5, 5)))),
+                        FINAL,
+                        location=Location((5, 5)),
+                    ),
                     Link(
                         Field(ID("NR_F1", location=Location((6, 6)))),
                         Field(ID("NR_F2", location=Location((6, 6)))),
+                        location=Location((6, 6)),
                     ),
                     Link(
                         Field(ID("NR_F2", location=Location((7, 7)))),
@@ -4435,6 +4816,7 @@ def test_merge_message_simple_derived() -> None:
                             location=Location((8, 8)),
                         ),
                         first=First(ID("NR_F2", location=Location((9, 9)))),
+                        location=Location((7, 7)),
                     ),
                     Link(
                         Field(ID("NR_F2", location=Location((10, 10)))),
@@ -4445,13 +4827,14 @@ def test_merge_message_simple_derived() -> None:
                             location=Location((11, 11)),
                         ),
                         first=First(ID("NR_F2", location=Location((12, 12)))),
+                        location=Location((10, 10)),
                     ),
                 ],
                 {
-                    Field("NR_F1"): OPAQUE,
-                    Field("NR_F2"): models.integer(),
-                    Field("NR_F3"): models.enumeration(),
-                    Field("NR_F4"): models.integer(),
+                    Field(ID("NR_F1", location=Location((1, 1)))): OPAQUE,
+                    Field(ID("NR_F2", location=Location((2, 2)))): models.integer(),
+                    Field(ID("NR_F3", location=Location((3, 3)))): models.enumeration(),
+                    Field(ID("NR_F4", location=Location((4, 4)))): models.integer(),
                 },
             ),
         ),
@@ -4525,10 +4908,14 @@ def test_merge_message_checksums() -> None:
 def test_merge_message_byte_order() -> None:
     inner_msg = Message(
         ID("P::Merge_Test_Byte_Order", Location((1, 1))),
-        [Link(INITIAL, Field("F1")), Link(Field("F1"), Field("F2")), Link(Field("F2"), FINAL)],
+        [
+            Link(INITIAL, Field("F1"), location=Location((1, 1))),
+            Link(Field("F1"), Field("F2"), location=Location((2, 2))),
+            Link(Field("F2"), FINAL, location=Location((3, 3))),
+        ],
         {
-            Field("F1"): models.integer(),
-            Field("F2"): models.enumeration(),
+            Field(ID("F1", location=Location((1, 1)))): models.integer(),
+            Field(ID("F2", location=Location((2, 2)))): models.enumeration(),
         },
         byte_order=ByteOrder.LOW_ORDER_FIRST,
     )
@@ -4825,7 +5212,7 @@ def test_merge_message_with_message_attributes() -> None:
     inner = Message(
         ID("P::I", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("I1", location=Location((2, 2))))),
+            Link(INITIAL, Field(ID("I1", location=Location((2, 2)))), location=Location((2, 2))),
             Link(
                 Field(ID("I1", location=Location((3, 3)))),
                 Field(ID("I2", location=Location((3, 3)))),
@@ -4837,8 +5224,10 @@ def test_merge_message_with_message_attributes() -> None:
                 size=Sub(
                     Last(ID("Message", location=Location((5, 10)))),
                     Last(ID("I1", location=Location((5, 10)))),
+                    location=Location((5, 10)),
                 ),
                 first=First(ID("I1", location=Location((6, 14)))),
+                location=Location((6, 6)),
             ),
             Link(
                 Field(ID("I1", location=Location((7, 7)))),
@@ -4849,36 +5238,43 @@ def test_merge_message_with_message_attributes() -> None:
                     location=Location((8, 8)),
                 ),
                 size=Sub(
-                    Mul(Variable(ID("I1", location=Location((9, 9)))), Number(8)),
+                    Mul(
+                        Variable(ID("I1", location=Location((9, 9)))),
+                        Number(8),
+                        location=Location((9, 9)),
+                    ),
                     Add(
                         Sub(
                             Last(ID("I1", location=Location((10, 10)))),
                             First(ID("Message", location=Location((10, 10)))),
+                            location=Location((10, 10)),
                         ),
                         Number(1),
                         location=Location((10, 10)),
                     ),
+                    location=Location((6, 6)),
                 ),
+                location=Location((7, 7)),
             ),
             Link(Field(ID("I2", location=Location((11, 11)))), FINAL),
         ],
         {
-            Field("I1"): models.integer(),
-            Field("I2"): OPAQUE,
+            Field(ID("I1", location=Location((1, 1)))): models.integer(),
+            Field(ID("I2", location=Location((2, 2)))): OPAQUE,
         },
     )
 
     valid_outer = UncheckedMessage(
         ID("P::O", Location((1, 1))),
         [
-            Link(INITIAL, Field("O1")),
-            Link(Field("O1"), Field("O2")),
-            Link(Field("O2"), FINAL),
+            Link(INITIAL, Field("O1"), location=Location((1, 1))),
+            Link(Field("O1"), Field("O2"), location=Location((2, 2))),
+            Link(Field("O2"), FINAL, location=Location((3, 3))),
         ],
         [],
         [
-            (Field("O1"), models.integer().identifier, []),
-            (Field("O2"), inner.identifier, []),
+            (Field(ID("O1", location=Location((1, 1)))), models.integer().identifier, []),
+            (Field(ID("O2", location=Location((2, 2)))), inner.identifier, []),
         ],
     ).checked([OPAQUE, models.integer(), inner])
 
@@ -4887,10 +5283,15 @@ def test_merge_message_with_message_attributes() -> None:
         Message(
             ID("P::O", Location((1, 1))),
             [
-                Link(INITIAL, Field(ID("O1", location=Location((2, 2))))),
+                Link(
+                    INITIAL,
+                    Field(ID("O1", location=Location((2, 2)))),
+                    location=Location((2, 2)),
+                ),
                 Link(
                     Field(ID("O1", location=Location((3, 3)))),
                     Field(ID("O2_I1", location=Location((3, 3)))),
+                    location=Location((3, 3)),
                 ),
                 Link(
                     Field(ID("O2_I1", location=Location((4, 4)))),
@@ -4906,6 +5307,7 @@ def test_merge_message_with_message_attributes() -> None:
                         location=Location((6, 6)),
                     ),
                     first=First(ID("O2_I1", location=Location((7, 7)))),
+                    location=Location((4, 4)),
                 ),
                 Link(
                     Field(ID("O2_I1", location=Location((8, 8)))),
@@ -4916,21 +5318,31 @@ def test_merge_message_with_message_attributes() -> None:
                         location=Location((9, 9)),
                     ),
                     size=Add(
-                        Mul(Variable(ID("O2_I1", location=Location((10, 10)))), Number(8)),
+                        Mul(
+                            Variable(ID("O2_I1", location=Location((10, 10)))),
+                            Number(8, location=Location((10, 10))),
+                            location=Location((10, 10)),
+                        ),
                         Add(
                             -Last(ID("O2_I1", location=Location((11, 11)))),
                             First(ID("O2_I1", location=Location((11, 11)))),
                             -Number(1),
                             location=Location((11, 11)),
                         ),
+                        location=Location((11, 11)),
                     ),
+                    location=Location((4, 4)),
                 ),
-                Link(Field(ID("O2_I2", location=Location((12, 12)))), FINAL),
+                Link(
+                    Field(ID("O2_I2", location=Location((12, 12)))),
+                    FINAL,
+                    location=Location((5, 5)),
+                ),
             ],
             {
-                Field("O1"): models.integer(),
-                Field("O2_I1"): models.integer(),
-                Field("O2_I2"): OPAQUE,
+                Field(ID("O1", location=Location((1, 1)))): models.integer(),
+                Field(ID("O2_I1", location=Location((2, 2)))): models.integer(),
+                Field(ID("O2_I2", location=Location((3, 3)))): OPAQUE,
             },
         ),
     )
@@ -4967,7 +5379,8 @@ def test_merge_message_with_message_size_attribute() -> None:
             Link(
                 INITIAL,
                 Field(ID("I", location=Location((2, 2)))),
-                size=Size("Message"),
+                size=Size(ID("Message", location=Location((2, 2)))),
+                location=Location((2, 2)),
             ),
             Link(
                 Field(ID("I", location=Location((3, 3)))),
@@ -4977,17 +5390,18 @@ def test_merge_message_with_message_size_attribute() -> None:
                     Number(128),
                     location=Location((4, 4)),
                 ),
+                location=Location((3, 3)),
             ),
         ],
         {
-            Field("I"): OPAQUE,
+            Field(ID("I", location=Location((1, 1)))): OPAQUE,
         },
     )
 
     outer = UncheckedMessage(
         ID("P::O", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("O1", location=Location((2, 2))))),
+            Link(INITIAL, Field(ID("O1", location=Location((2, 2)))), location=Location((1, 1))),
             Link(
                 Field(ID("O1", location=Location((3, 3)))),
                 Field(ID("O2", location=Location((3, 3)))),
@@ -4996,6 +5410,7 @@ def test_merge_message_with_message_size_attribute() -> None:
                     Number(100),
                     location=Location((4, 4)),
                 ),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("O1", location=Location((5, 5)))),
@@ -5005,32 +5420,35 @@ def test_merge_message_with_message_size_attribute() -> None:
                     Number(100),
                     location=Location((6, 6)),
                 ),
+                location=Location((5, 5)),
             ),
             Link(
                 Field(ID("O2", location=Location((7, 7)))),
                 Field(ID("A", location=Location((7, 7)))),
+                location=Location((7, 7)),
             ),
             Link(
                 Field(ID("O3", location=Location((8, 8)))),
                 Field(ID("B", location=Location((8, 8)))),
+                location=Location((8, 8)),
             ),
-            Link(Field(ID("A", location=Location((9, 9)))), FINAL),
-            Link(Field(ID("B", location=Location((10, 10)))), FINAL),
+            Link(Field(ID("A", location=Location((9, 9)))), FINAL, location=Location((9, 9))),
+            Link(Field(ID("B", location=Location((10, 10)))), FINAL, location=Location((10, 10))),
         ],
         [],
         [
-            (Field("O1"), models.integer().identifier, []),
-            (Field("O2"), models.integer().identifier, []),
-            (Field("O3"), models.integer().identifier, []),
-            (Field("A"), inner.identifier, []),
-            (Field("B"), inner.identifier, []),
+            (Field(ID("O1", location=Location((1, 1)))), models.integer().identifier, []),
+            (Field(ID("O2", location=Location((2, 2)))), models.integer().identifier, []),
+            (Field(ID("O3", location=Location((3, 3)))), models.integer().identifier, []),
+            (Field(ID("A", location=Location((4, 4)))), inner.identifier, []),
+            (Field(ID("B", location=Location((5, 5)))), inner.identifier, []),
         ],
     )
 
     expected = Message(
         ID("P::O", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("O1", location=Location((2, 2))))),
+            Link(INITIAL, Field(ID("O1", location=Location((2, 2)))), location=Location((1, 1))),
             Link(
                 Field(ID("O1", location=Location((3, 3)))),
                 Field(ID("O2", location=Location((3, 3)))),
@@ -5039,6 +5457,7 @@ def test_merge_message_with_message_size_attribute() -> None:
                     Number(100),
                     location=Location((4, 4)),
                 ),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("O1", location=Location((5, 5)))),
@@ -5048,6 +5467,7 @@ def test_merge_message_with_message_size_attribute() -> None:
                     Number(100),
                     location=Location((6, 6)),
                 ),
+                location=Location((5, 5)),
             ),
             Link(
                 Field(ID("O2", location=Location((7, 7)))),
@@ -5057,6 +5477,7 @@ def test_merge_message_with_message_size_attribute() -> None:
                     Last(ID("O2", location=Location((8, 8)))),
                     location=Location((8, 8)),
                 ),
+                location=Location((7, 7)),
             ),
             Link(
                 Field(ID("A_I", location=Location((8, 8)))),
@@ -5065,11 +5486,12 @@ def test_merge_message_with_message_size_attribute() -> None:
                     Sub(
                         Last(ID("Message", location=Location((9, 9)))),
                         Last(ID("O2", location=Location((9, 9)))),
-                        location=Location((9, 9)),
+                        location=Location((8, 8)),
                     ),
                     Number(128),
                     location=Location((9, 9)),
                 ),
+                location=Location((8, 8)),
             ),
             Link(
                 Field(ID("O3", location=Location((10, 10)))),
@@ -5077,7 +5499,9 @@ def test_merge_message_with_message_size_attribute() -> None:
                 size=Sub(
                     Last(ID("Message", location=Location((11, 11)))),
                     Last(ID("O3", location=Location((11, 11)))),
+                    location=Location((11, 11)),
                 ),
+                location=Location((10, 10)),
             ),
             Link(
                 Field(ID("B_I", location=Location((12, 12)))),
@@ -5090,14 +5514,15 @@ def test_merge_message_with_message_size_attribute() -> None:
                     Number(128),
                     location=Location((13, 13)),
                 ),
+                location=Location((12, 12)),
             ),
         ],
         {
-            Field("O1"): models.integer(),
-            Field("O2"): models.integer(),
-            Field("O3"): models.integer(),
-            Field("A_I"): OPAQUE,
-            Field("B_I"): OPAQUE,
+            Field(ID("O1", location=Location((1, 1)))): models.integer(),
+            Field(ID("O2", location=Location((2, 2)))): models.integer(),
+            Field(ID("O3", location=Location((3, 3)))): models.integer(),
+            Field(ID("A_I", location=Location((4, 4)))): OPAQUE,
+            Field(ID("B_I", location=Location((5, 5)))): OPAQUE,
         },
     )
 
@@ -5111,29 +5536,36 @@ def test_merge_message_type_message_size_attribute_in_outer_message() -> None:
             Link(
                 INITIAL,
                 Field(ID("I", location=Location((2, 2)))),
-                size=Number(128),
+                size=Number(128, location=Location((2, 2))),
+                location=Location((2, 2)),
             ),
             Link(
                 Field(ID("I", location=Location((3, 3)))),
                 FINAL,
+                location=Location((3, 3)),
             ),
         ],
         {
-            Field("I"): OPAQUE,
+            Field(ID("I", location=Location((1, 1)))): OPAQUE,
         },
     )
 
     outer = UncheckedMessage(
         ID("P::O", Location((1, 1))),
         [
-            Link(INITIAL, Field("O1")),
-            Link(Field("O1"), Field("O2"), size=Sub(Last("Message"), Last("O1"))),
-            Link(Field("O2"), FINAL),
+            Link(INITIAL, Field("O1"), location=Location((1, 1))),
+            Link(
+                Field("O1"),
+                Field("O2"),
+                size=Sub(Last("Message"), Last("O1"), location=Location((2, 2))),
+                location=Location((2, 2)),
+            ),
+            Link(Field("O2"), FINAL, location=Location((3, 3))),
         ],
         [],
         [
-            (Field("O1"), inner.identifier, []),
-            (Field("O2"), OPAQUE.identifier, []),
+            (Field(ID("O1", location=Location((1, 1)))), inner.identifier, []),
+            (Field(ID("O2", location=Location((2, 2)))), OPAQUE.identifier, []),
         ],
     )
 
@@ -5143,7 +5575,8 @@ def test_merge_message_type_message_size_attribute_in_outer_message() -> None:
             Link(
                 INITIAL,
                 Field(ID("O1_I", location=Location((2, 2)))),
-                size=Number(128),
+                size=Number(128, location=Location((2, 2))),
+                location=Location((2, 2)),
             ),
             Link(
                 Field(ID("O1_I", location=Location((3, 3)))),
@@ -5151,13 +5584,15 @@ def test_merge_message_type_message_size_attribute_in_outer_message() -> None:
                 size=Sub(
                     Last(ID("Message", location=Location((5, 5)))),
                     Last(ID("O1_I", location=Location((6, 6)))),
+                    location=Location((5, 5)),
                 ),
+                location=Location((3, 3)),
             ),
-            Link(Field(ID("O2", location=Location((7, 7)))), FINAL),
+            Link(Field(ID("O2", location=Location((7, 7)))), FINAL, location=Location((7, 7))),
         ],
         {
-            Field("O1_I"): OPAQUE,
-            Field("O2"): OPAQUE,
+            Field(ID("O1_I", location=Location((1, 1)))): OPAQUE,
+            Field(ID("O2", location=Location((2, 2)))): OPAQUE,
         },
     )
 
@@ -5171,15 +5606,17 @@ def test_merge_message_with_condition_on_message_type_field() -> None:
             Link(
                 INITIAL,
                 Field(ID("I", location=Location((2, 2)))),
-                size=Number(128),
+                size=Number(128, location=Location((2, 2))),
+                location=Location((2, 2)),
             ),
             Link(
                 Field(ID("I", location=Location((3, 3)))),
                 FINAL,
+                location=Location((3, 3)),
             ),
         ],
         {
-            Field("I"): OPAQUE,
+            Field(ID("I", location=Location((1, 1)))): OPAQUE,
         },
     )
 
@@ -5194,9 +5631,9 @@ def test_merge_message_with_condition_on_message_type_field() -> None:
     outer = UncheckedMessage(
         ID("P::O", Location((1, 1))),
         [
-            Link(INITIAL, Field("Flag")),
-            Link(Field("Flag"), Field("Padding")),
-            Link(Field("Padding"), Field("Payload")),
+            Link(INITIAL, Field("Flag"), location=Location((1, 1))),
+            Link(Field("Flag"), Field("Padding"), location=Location((2, 2))),
+            Link(Field("Padding"), Field("Payload"), location=Location((3, 3))),
             Link(
                 Field("Payload"),
                 FINAL,
@@ -5204,30 +5641,33 @@ def test_merge_message_with_condition_on_message_type_field() -> None:
                     Variable("Flag"),
                     Equal(Variable("Parameter"), Variable("E1")),
                 ),
+                location=Location((4, 4)),
             ),
         ],
         [
-            (Field("Parameter"), enumeration.identifier, []),
+            (Field(ID("Parameter", location=Location((1, 1)))), enumeration.identifier, []),
         ],
         [
-            (Field("Flag"), BOOLEAN.identifier, []),
-            (Field("Padding"), padding.identifier, []),
-            (Field("Payload"), inner.identifier, []),
+            (Field(ID("Flag", location=Location((1, 1)))), BOOLEAN.identifier, []),
+            (Field(ID("Padding", location=Location((2, 2)))), padding.identifier, []),
+            (Field(ID("Payload", location=Location((3, 3)))), inner.identifier, []),
         ],
     )
 
     expected = Message(
         ID("P::O", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("Flag", location=Location((2, 2))))),
+            Link(INITIAL, Field(ID("Flag", location=Location((2, 2)))), location=Location((2, 2))),
             Link(
                 Field(ID("Flag", location=Location((3, 3)))),
                 Field(ID("Padding", location=Location((3, 3)))),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("Padding", location=Location((4, 4)))),
                 Field(ID("Payload_I", location=Location((4, 4)))),
-                size=Number(128),
+                size=Number(128, location=Location((4, 4))),
+                location=Location((4, 4)),
             ),
             Link(
                 Field(ID("Payload_I", location=Location((5, 5)))),
@@ -5240,13 +5680,14 @@ def test_merge_message_with_condition_on_message_type_field() -> None:
                     ),
                     location=Location((6, 6)),
                 ),
+                location=Location((6, 6)),
             ),
         ],
         {
-            Field("Parameter"): enumeration,
-            Field("Flag"): BOOLEAN,
-            Field("Padding"): padding,
-            Field("Payload_I"): OPAQUE,
+            Field(ID("Parameter", location=Location((1, 1)))): enumeration,
+            Field(ID("Flag", location=Location((2, 2)))): BOOLEAN,
+            Field(ID("Padding", location=Location((3, 3)))): padding,
+            Field(ID("Payload_I", location=Location((4, 4)))): OPAQUE,
         },
     )
 
@@ -5610,11 +6051,14 @@ def test_refinement_invalid_field() -> None:
 
 
 def test_refinement_undefined_variable_in_condition() -> None:
-    x = Field("X")
+    x = Field(ID("X", location=Location((1, 1))))
 
     message = Message(
         ID("P::M", Location((1, 1))),
-        [Link(INITIAL, x, size=Number(8)), Link(x, FINAL)],
+        [
+            Link(INITIAL, x, size=Number(8, location=Location((1, 1))), location=Location((1, 1))),
+            Link(x, FINAL, location=Location((1, 1))),
+        ],
         {x: OPAQUE},
     )
 
@@ -5639,12 +6083,16 @@ def test_refinement_unqualified_literal_in_condition() -> None:
         always_valid=False,
     )
 
-    x = Field("X")
-    y = Field("Y")
+    x = Field(ID("X", location=Location((1, 1))))
+    y = Field(ID("Y", location=Location((2, 2))))
 
     message = Message(
         ID("P::M", Location((1, 1))),
-        [Link(INITIAL, x), Link(x, y, size=Number(8)), Link(y, FINAL)],
+        [
+            Link(INITIAL, x, location=Location((1, 1))),
+            Link(x, y, size=Number(8, location=Location((2, 2))), location=Location((2, 2))),
+            Link(y, FINAL, location=Location((3, 3))),
+        ],
         {x: e, y: OPAQUE},
     )
 
@@ -5665,17 +6113,23 @@ def test_refinement_type_error_in_condition() -> None:
     message = Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("L", location=Location((2, 2))))),
+            Link(INITIAL, Field(ID("L", location=Location((2, 2)))), location=Location((1, 1))),
             Link(
                 Field(ID("L", location=Location((2, 2)))),
                 Field(ID("P", location=Location((2, 2)))),
-                size=Mul(Variable("L"), Number(8)),
+                size=Mul(Variable("L"), Number(8), location=Location((2, 2))),
+                location=Location((2, 2)),
             ),
-            Link(Field(ID("P", location=Location((3, 3)))), FINAL),
+            Link(Field(ID("P", location=Location((3, 3)))), FINAL, location=Location((3, 3))),
         ],
         {
-            Field("L"): Integer("P::T", Number(0), Number(255), Number(8)),
-            Field("P"): OPAQUE,
+            Field(ID("L", location=Location((1, 1)))): Integer(
+                "P::T",
+                Number(0),
+                Number(255),
+                Number(8),
+            ),
+            Field(ID("P", location=Location((2, 2)))): OPAQUE,
         },
     )
 
@@ -5701,14 +6155,19 @@ def test_boolean_variable_as_condition() -> None:
     Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("Tag_1")),
-            Link(Field("Tag_1"), Field("Tag_2"), condition=Variable("Has_Tag")),
-            Link(Field("Tag_2"), FINAL),
+            Link(INITIAL, Field("Tag_1"), location=Location((1, 1))),
+            Link(
+                Field("Tag_1"),
+                Field("Tag_2"),
+                condition=Variable("Has_Tag"),
+                location=Location((2, 2)),
+            ),
+            Link(Field("Tag_2"), FINAL, location=Location((3, 3))),
         ],
         {
-            Field("Tag_1"): models.integer(),
-            Field("Tag_2"): models.integer(),
-            Field("Has_Tag"): BOOLEAN,
+            Field(ID("Tag_1", location=Location((1, 1)))): models.integer(),
+            Field(ID("Tag_2", location=Location((2, 2)))): models.integer(),
+            Field(ID("Has_Tag", location=Location((3, 3)))): BOOLEAN,
         },
     )
 
@@ -5720,13 +6179,13 @@ def test_boolean_variable_as_condition() -> None:
             lambda: Message(
                 ID("P::M", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("Tag")),
-                    Link(Field("Tag"), Field("Value")),
-                    Link(Field("Value"), FINAL),
+                    Link(INITIAL, Field("Tag"), location=Location((1, 1))),
+                    Link(Field("Tag"), Field("Value"), location=Location((2, 2))),
+                    Link(Field("Value"), FINAL, location=Location((3, 3))),
                 ],
                 {
-                    Field("Tag"): models.tlv_tag(),
-                    Field("Value"): OPAQUE,
+                    Field(ID("Tag", location=Location((1, 1)))): models.tlv_tag(),
+                    Field(ID("Value", location=Location((2, 2)))): OPAQUE,
                 },
             ),
             Or(
@@ -5738,17 +6197,18 @@ def test_boolean_variable_as_condition() -> None:
             lambda: Message(
                 ID("P::M", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("Tag")),
+                    Link(INITIAL, Field("Tag"), location=Location((1, 1))),
                     Link(
                         Field("Tag"),
                         Field("Value"),
                         condition=Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+                        location=Location((2, 2)),
                     ),
-                    Link(Field("Value"), FINAL),
+                    Link(Field("Value"), FINAL, location=Location((3, 3))),
                 ],
                 {
-                    Field("Tag"): models.tlv_tag(),
-                    Field("Value"): OPAQUE,
+                    Field(ID("Tag", location=Location((1, 1)))): models.tlv_tag(),
+                    Field(ID("Value", location=Location((2, 2)))): OPAQUE,
                 },
             ),
             Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
@@ -5779,13 +6239,13 @@ def test_always_true_refinement(message: abc.Callable[[], Message], condition: E
             lambda: Message(
                 ID("P::M", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("Tag")),
-                    Link(Field("Tag"), Field("Value")),
-                    Link(Field("Value"), FINAL),
+                    Link(INITIAL, Field("Tag"), location=Location((1, 1))),
+                    Link(Field("Tag"), Field("Value"), location=Location((2, 2))),
+                    Link(Field("Value"), FINAL, location=Location((3, 3))),
                 ],
                 {
-                    Field("Tag"): models.tlv_tag(),
-                    Field("Value"): OPAQUE,
+                    Field(ID("Tag", location=Location((1, 1)))): models.tlv_tag(),
+                    Field(ID("Value", location=Location((2, 2)))): OPAQUE,
                 },
             ),
             And(
@@ -5797,17 +6257,18 @@ def test_always_true_refinement(message: abc.Callable[[], Message], condition: E
             lambda: Message(
                 ID("P::M", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("Tag")),
+                    Link(INITIAL, Field("Tag"), location=Location((1, 1))),
                     Link(
                         Field("Tag"),
                         Field("Value"),
                         condition=Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+                        location=Location((2, 2)),
                     ),
-                    Link(Field("Value"), FINAL),
+                    Link(Field("Value"), FINAL, location=Location((3, 3))),
                 ],
                 {
-                    Field("Tag"): models.tlv_tag(),
-                    Field("Value"): OPAQUE,
+                    Field(ID("Tag", location=Location((1, 1)))): models.tlv_tag(),
+                    Field(ID("Value", location=Location((2, 2)))): OPAQUE,
                 },
             ),
             Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
@@ -5836,7 +6297,7 @@ def test_always_false_refinement(message: abc.Callable[[], Message], condition: 
     [
         (
             [
-                Link(INITIAL, Field("Tag")),
+                Link(INITIAL, Field("Tag"), location=Location((1, 1))),
                 Link(
                     Field(ID("Tag", location=Location((10, 20)))),
                     FINAL,
@@ -5844,29 +6305,32 @@ def test_always_false_refinement(message: abc.Callable[[], Message], condition: 
                         Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
                         Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
                     ),
+                    location=Location((1, 1)),
                 ),
             ],
             {
-                Field("Tag"): models.tlv_tag(),
+                Field(ID("Tag", location=Location((1, 1)))): models.tlv_tag(),
             },
         ),
         (
             [
-                Link(INITIAL, Field("Tag_1")),
+                Link(INITIAL, Field("Tag_1"), location=Location((1, 1))),
                 Link(
                     Field("Tag_1"),
                     Field("Tag_2"),
                     condition=Equal(Variable("Tag_1"), Variable("TLV::Msg_Data")),
+                    location=Location((2, 2)),
                 ),
                 Link(
                     Field(ID("Tag_2", location=Location((10, 20)))),
                     FINAL,
                     condition=Equal(Variable("Tag_1"), Variable("TLV::Msg_Data")),
+                    location=Location((2, 2)),
                 ),
             ],
             {
-                Field("Tag_1"): models.tlv_tag(),
-                Field("Tag_2"): models.tlv_tag(),
+                Field(ID("Tag_1", location=Location((1, 1)))): models.tlv_tag(),
+                Field(ID("Tag_2", location=Location((2, 2)))): models.tlv_tag(),
             },
         ),
     ],
@@ -5891,11 +6355,21 @@ def test_not_always_true_message_condition_for_always_valid_enum(value: int) -> 
     Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("A")),
-            Link(Field("A"), FINAL, condition=Equal(Variable("A"), Literal("P::E"))),
+            Link(INITIAL, Field("A"), location=Location((1, 1))),
+            Link(
+                Field("A"),
+                FINAL,
+                condition=Equal(Variable("A"), Literal("P::E")),
+                location=Location((2, 2)),
+            ),
         ],
         {
-            Field("A"): Enumeration("P::T", [("E", Number(value))], Number(16), always_valid=True),
+            Field(ID("A", location=Location((1, 1)))): Enumeration(
+                "P::T",
+                [("E", Number(value))],
+                Number(16),
+                always_valid=True,
+            ),
         },
     )
 
@@ -5907,13 +6381,13 @@ def test_possibly_always_true_refinement(
     message = Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("Tag")),
-            Link(Field("Tag"), Field("Value")),
-            Link(Field("Value"), FINAL),
+            Link(INITIAL, Field("Tag"), location=Location((1, 1))),
+            Link(Field("Tag"), Field("Value"), location=Location((2, 2))),
+            Link(Field("Value"), FINAL, location=Location((3, 3))),
         ],
         {
-            Field("Tag"): models.tlv_tag(),
-            Field("Value"): OPAQUE,
+            Field(ID("Tag", location=Location((1, 1)))): models.tlv_tag(),
+            Field(ID("Value", location=Location((2, 2)))): OPAQUE,
         },
     )
     condition = Or(
@@ -5940,10 +6414,16 @@ def test_unchecked_message_checked() -> None:
     unchecked = UncheckedMessage(
         ID("P::No_Ref", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("F1", location=Location((2, 2)))), size=Number(16)),
+            Link(
+                INITIAL,
+                Field(ID("F1", location=Location((2, 2)))),
+                size=Number(16, location=Location((2, 2))),
+                location=Location((2, 2)),
+            ),
             Link(
                 Field(ID("F1", location=Location((3, 3)))),
                 Field(ID("F2", location=Location((3, 3)))),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("F2", location=Location((4, 4)))),
@@ -5954,6 +6434,7 @@ def test_unchecked_message_checked() -> None:
                     location=Location((5, 5)),
                 ),
                 first=First("F2"),
+                location=Location((4, 4)),
             ),
             Link(
                 Field(ID("F2", location=Location((7, 7)))),
@@ -5964,6 +6445,7 @@ def test_unchecked_message_checked() -> None:
                     location=Location((8, 8)),
                 ),
                 first=First("F2"),
+                location=Location((7, 7)),
             ),
             Link(
                 Field(ID("F3", location=Location((9, 9)))),
@@ -5973,24 +6455,31 @@ def test_unchecked_message_checked() -> None:
                     Variable(ID("One", location=Location((10, 10)))),
                     location=Location((10, 10)),
                 ),
+                location=Location((9, 9)),
             ),
-            Link(Field(ID("F4", location=Location((11, 11)))), FINAL),
+            Link(Field(ID("F4", location=Location((11, 11)))), FINAL, location=Location((11, 11))),
         ],
         [],
         [
-            (Field("F1"), OPAQUE.identifier, []),
-            (Field("F2"), models.integer().identifier, []),
-            (Field("F3"), models.enumeration().identifier, []),
-            (Field("F4"), models.integer().identifier, []),
+            (Field(ID("F1", location=Location((1, 1)))), OPAQUE.identifier, []),
+            (Field(ID("F2", location=Location((2, 2)))), models.integer().identifier, []),
+            (Field(ID("F3", location=Location((3, 3)))), models.enumeration().identifier, []),
+            (Field(ID("F4", location=Location((4, 4)))), models.integer().identifier, []),
         ],
     )
     expected = Message(
         ID("P::No_Ref", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("F1", location=Location((2, 2)))), size=Number(16)),
+            Link(
+                INITIAL,
+                Field(ID("F1", location=Location((2, 2)))),
+                size=Number(16, location=Location((1, 1))),
+                location=Location((1, 1)),
+            ),
             Link(
                 Field(ID("F1", location=Location((3, 3)))),
                 Field(ID("F2", location=Location((3, 3)))),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("F2", location=Location((4, 4)))),
@@ -6001,6 +6490,7 @@ def test_unchecked_message_checked() -> None:
                     location=Location((5, 5)),
                 ),
                 first=First(ID("F2", location=Location((5, 5)))),
+                location=Location((4, 4)),
             ),
             Link(
                 Field(ID("F2", location=Location((6, 6)))),
@@ -6011,6 +6501,7 @@ def test_unchecked_message_checked() -> None:
                     location=Location((7, 7)),
                 ),
                 first=First(ID("F2", location=Location((1, 1)))),
+                location=Location((6, 6)),
             ),
             Link(
                 Field(ID("F3", location=Location((9, 9)))),
@@ -6020,14 +6511,15 @@ def test_unchecked_message_checked() -> None:
                     Variable(ID("One", location=Location((10, 10)))),
                     location=Location((10, 10)),
                 ),
+                location=Location((9, 9)),
             ),
-            Link(Field(ID("F4", location=Location((11, 11)))), FINAL),
+            Link(Field(ID("F4", location=Location((11, 11)))), FINAL, location=Location((11, 11))),
         ],
         {
-            Field("F1"): OPAQUE,
-            Field("F2"): models.integer(),
-            Field("F3"): models.enumeration(),
-            Field("F4"): models.integer(),
+            Field(ID("F1", location=Location((1, 1)))): OPAQUE,
+            Field(ID("F2", location=Location((2, 2)))): models.integer(),
+            Field(ID("F3", location=Location((3, 3)))): models.enumeration(),
+            Field(ID("F4", location=Location((4, 4)))): models.integer(),
         },
     )
     assert unchecked.checked([OPAQUE, models.enumeration(), models.integer()]) == expected
@@ -6107,22 +6599,27 @@ def test_message_link_first() -> None:
 
 
 def test_message_link_first_complex() -> None:
-    lnk1 = Link(Field("Payload"), Field("Other"))
-    lnk2 = Link(Field("Other"), Field("Other2"))
+    lnk1 = Link(Field("Payload"), Field("Other"), location=Location((3, 3)))
+    lnk2 = Link(Field("Other"), Field("Other2"), location=Location((4, 4)))
     msg = Message(
         ID("Test::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Size")),
-            Link(Field("Size"), Field("Payload"), size=Mul(Variable("Size"), Number(8))),
+            Link(INITIAL, Field("Size"), location=Location((1, 1))),
+            Link(
+                Field("Size"),
+                Field("Payload"),
+                size=Mul(Variable("Size"), Number(8), location=Location((2, 2))),
+                location=Location((2, 2)),
+            ),
             lnk1,
             lnk2,
-            Link(Field("Other2"), FINAL),
+            Link(Field("Other2"), FINAL, location=Location((5, 5))),
         ],
         {
-            Field("Size"): models.integer(),
-            Field("Payload"): OPAQUE,
-            Field("Other"): models.integer(),
-            Field("Other2"): models.integer(),
+            Field(ID("Size", location=Location((1, 1)))): models.integer(),
+            Field(ID("Payload", location=Location((2, 2)))): OPAQUE,
+            Field(ID("Other", location=Location((3, 3)))): models.integer(),
+            Field(ID("Other2", location=Location((4, 4)))): models.integer(),
         },
     )
     assert msg.link_first(lnk1) == (Field("Payload"), Size(Variable("F_Payload")))
@@ -6177,7 +6674,10 @@ def test_message_refinement_with_scalar() -> None:
 def test_invalid_missing_field() -> None:
     m1 = Message(
         ID("P::M1", Location((1, 1))),
-        [Link(INITIAL, Field("F")), Link(Field("F"), FINAL)],
+        [
+            Link(INITIAL, Field(ID("F", location=Location((1, 1)))), location=Location((1, 1))),
+            Link(Field(ID("F", location=Location((2, 2)))), FINAL, location=Location((2, 2))),
+        ],
         {Field("F"): models.integer()},
     )
 
@@ -6185,21 +6685,21 @@ def test_invalid_missing_field() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'error: unreachable field "F2_F" in "P::M2"\n'
-            r'error: no path to FINAL for field "Initial" in "P::M2"'
+            r'<stdin>:2:2: error: unreachable field "F2_F" in "P::M2"\n'
+            r'<stdin>:1:1: error: no path to FINAL for field "Initial" in "P::M2"'
             "$"
         ),
     ):
         UncheckedMessage(
             ID("P::M2", Location((1, 1))),
             [
-                Link(INITIAL, Field("F1")),
-                Link(Field("F1"), Field("Missing")),
-                Link(Field("F2"), FINAL),
+                Link(INITIAL, Field("F1"), location=Location((1, 1))),
+                Link(Field("F1"), Field("Missing"), location=Location((2, 2))),
+                Link(Field("F2"), FINAL, location=Location((3, 3))),
             ],
             [],
             [
-                (Field("F1"), models.integer().identifier, []),
-                (Field("F2"), m1.identifier, []),
+                (Field(ID("F1", location=Location((1, 1)))), models.integer().identifier, []),
+                (Field(ID("F2", location=Location((2, 2)))), m1.identifier, []),
             ],
         ).checked([OPAQUE, models.integer(), m1])

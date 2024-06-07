@@ -2434,11 +2434,12 @@ def test_create_model_no_messages(spec: str) -> None:
 
 def test_create_model_message_type_message() -> None:
     simple_structure = [
-        model.Link(model.INITIAL, model.Field("Bar")),
+        model.Link(model.INITIAL, model.Field("Bar"), location=Location((1, 1))),
         model.Link(
             model.Field("Bar"),
             model.Field("Baz"),
-            size=expr.Mul(expr.Number(8), expr.Variable("Bar")),
+            size=expr.Mul(expr.Number(8), expr.Variable("Bar"), location=Location((2, 2))),
+            location=Location((2, 2)),
         ),
         model.Link(
             model.Field("Baz"),
@@ -2447,13 +2448,13 @@ def test_create_model_message_type_message() -> None:
     ]
 
     simple_types = {
-        model.Field("Bar"): model.Integer(
+        model.Field(ID("Bar", location=Location((1, 1)))): model.Integer(
             "Message_Type::T",
             expr.Number(0),
             expr.Number(255),
             expr.Number(8),
         ),
-        model.Field("Baz"): model.Opaque(),
+        model.Field(ID("Baz", location=Location((1, 1)))): model.Opaque(),
     }
 
     simple_message = model.Message(
@@ -2463,32 +2464,36 @@ def test_create_model_message_type_message() -> None:
     )
 
     structure = [
-        model.Link(model.INITIAL, model.Field("Foo")),
+        model.Link(model.INITIAL, model.Field("Foo"), location=Location((1, 1))),
         model.Link(
             model.Field("Foo"),
             model.Field("Bar"),
             expr.LessEqual(expr.Variable("Foo"), expr.Number(30, 16), location=Location((3, 3))),
+            location=Location((3, 3)),
         ),
         model.Link(
             model.Field("Foo"),
             model.Field("Baz"),
             expr.Greater(expr.Variable("Foo"), expr.Number(30, 16), location=Location((5, 5))),
-            size=expr.Mul(expr.Number(8), expr.Variable("Foo")),
+            size=expr.Mul(expr.Number(8), expr.Variable("Foo"), location=Location((5, 5))),
+            location=Location((5, 5)),
         ),
         model.Link(
             model.Field("Bar"),
             model.Field("Baz"),
-            size=expr.Mul(expr.Number(8), expr.Variable("Foo")),
+            size=expr.Mul(expr.Number(8), expr.Variable("Foo"), location=Location((6, 6))),
+            location=Location((6, 6)),
         ),
         model.Link(
             model.Field("Baz"),
             model.FINAL,
+            location=Location((7, 7)),
         ),
     ]
 
     types = {
         **simple_types,
-        model.Field("Foo"): model.Integer(
+        model.Field(ID("Foo", location=Location((1, 1)))): model.Integer(
             "Message_Type::T",
             expr.Number(0),
             expr.Number(255),
@@ -2517,15 +2522,19 @@ def test_create_model_message_in_message() -> None:
     length_value = model.Message(
         ID("Message_In_Message::Length_Value", Location((1, 1))),
         [
-            model.Link(model.INITIAL, model.Field("Length")),
+            model.Link(model.INITIAL, model.Field("Length"), location=Location((1, 1))),
             model.Link(
                 model.Field("Length"),
                 model.Field("Value"),
-                size=expr.Mul(expr.Number(8), expr.Variable("Length")),
+                size=expr.Mul(expr.Number(8), expr.Variable("Length"), location=Location((2, 2))),
+                location=Location((2, 2)),
             ),
-            model.Link(model.Field("Value"), model.FINAL),
+            model.Link(model.Field("Value"), model.FINAL, location=Location((3, 3))),
         ],
-        {model.Field("Length"): length, model.Field("Value"): model.Opaque()},
+        {
+            model.Field(ID("Length", location=Location((1, 1)))): length,
+            model.Field(ID("Value", location=Location((2, 2)))): model.Opaque(),
+        },
     )
 
     derived_length_value = model.DerivedMessage(
@@ -2536,25 +2545,39 @@ def test_create_model_message_in_message() -> None:
     message = model.Message(
         ID("Message_In_Message::Message", Location((1, 1))),
         [
-            model.Link(model.INITIAL, model.Field("Foo_Length")),
-            model.Link(model.Field("Foo_Value"), model.Field("Bar_Length")),
-            model.Link(model.Field("Bar_Value"), model.FINAL),
+            model.Link(model.INITIAL, model.Field("Foo_Length"), location=Location((1, 1))),
+            model.Link(
+                model.Field("Foo_Value"),
+                model.Field("Bar_Length"),
+                location=Location((2, 2)),
+            ),
+            model.Link(model.Field("Bar_Value"), model.FINAL, location=Location((3, 3))),
             model.Link(
                 model.Field("Foo_Length"),
                 model.Field("Foo_Value"),
-                size=expr.Mul(expr.Variable("Foo_Length"), expr.Number(8)),
+                size=expr.Mul(
+                    expr.Variable("Foo_Length"),
+                    expr.Number(8),
+                    location=Location((4, 4)),
+                ),
+                location=Location((4, 4)),
             ),
             model.Link(
                 model.Field("Bar_Length"),
                 model.Field("Bar_Value"),
-                size=expr.Mul(expr.Variable("Bar_Length"), expr.Number(8)),
+                size=expr.Mul(
+                    expr.Variable("Bar_Length"),
+                    expr.Number(8),
+                    location=Location((5, 5)),
+                ),
+                location=Location((5, 5)),
             ),
         ],
         {
-            model.Field("Foo_Length"): length,
-            model.Field("Foo_Value"): model.Opaque(),
-            model.Field("Bar_Length"): length,
-            model.Field("Bar_Value"): model.Opaque(),
+            model.Field(ID("Foo_Length", location=Location((1, 1)))): length,
+            model.Field(ID("Foo_Value", location=Location((2, 2)))): model.Opaque(),
+            model.Field(ID("Bar_Length", location=Location((3, 3)))): length,
+            model.Field(ID("Bar_Value", location=Location((4, 4)))): model.Opaque(),
         },
     )
 
@@ -2577,11 +2600,11 @@ def test_create_model_type_derivation_message() -> None:
     t = model.Integer("Test::T", expr.Number(0), expr.Number(255), expr.Number(8))
 
     structure = [
-        model.Link(model.INITIAL, model.Field("Baz")),
-        model.Link(model.Field("Baz"), model.FINAL),
+        model.Link(model.INITIAL, model.Field("Baz"), location=Location((1, 1))),
+        model.Link(model.Field("Baz"), model.FINAL, location=Location((2, 2))),
     ]
 
-    types = {model.Field("Baz"): t}
+    types = {model.Field(ID("Baz", location=Location((1, 1)))): t}
 
     message_foo = model.Message(ID("Test::Foo", Location((1, 1))), structure, types)
     message_bar = model.DerivedMessage(ID("Test::Bar", Location((1, 1))), message_foo)
@@ -2605,10 +2628,15 @@ def test_create_model_type_derivation_refinements() -> None:
     message_foo = model.Message(
         ID("Test::Foo", Location((1, 1))),
         [
-            model.Link(model.INITIAL, model.Field("Baz"), size=expr.Number(48)),
-            model.Link(model.Field("Baz"), model.FINAL),
+            model.Link(
+                model.INITIAL,
+                model.Field("Baz"),
+                size=expr.Number(48, location=Location((1, 1))),
+                location=Location((1, 1)),
+            ),
+            model.Link(model.Field("Baz"), model.FINAL, location=Location((2, 2))),
         ],
-        {model.Field("Baz"): model.Opaque()},
+        {model.Field(ID("Baz", location=Location((1, 1)))): model.Opaque()},
     )
     message_bar = model.DerivedMessage(ID("Test::Bar", Location((1, 1))), message_foo)
 
@@ -2855,7 +2883,7 @@ def test_message_field_condition(spec: str) -> None:
             Message(
                 ID("Test::M", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("A")),
+                    Link(INITIAL, Field("A"), location=Location((1, 1))),
                     Link(
                         Field("A"),
                         Field("B"),
@@ -2863,10 +2891,14 @@ def test_message_field_condition(spec: str) -> None:
                             expr.Greater(expr.Variable("A"), expr.Number(10)),
                             expr.Less(expr.Variable("A"), expr.Number(100)),
                         ),
+                        location=Location((2, 2)),
                     ),
-                    Link(Field("B"), FINAL),
+                    Link(Field("B"), FINAL, location=Location((3, 3))),
                 ],
-                {Field("A"): T, Field("B"): T},
+                {
+                    Field(ID("A", location=Location((1, 1)))): T,
+                    Field(ID("B", location=Location((2, 2)))): T,
+                },
             ),
         ],
     )
@@ -2907,11 +2939,14 @@ def test_message_field_first(spec: str) -> None:
             Message(
                 ID("Test::M", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("A")),
-                    Link(Field("A"), Field("B"), first=expr.First("A")),
-                    Link(Field("B"), FINAL),
+                    Link(INITIAL, Field("A"), location=Location((1, 1))),
+                    Link(Field("A"), Field("B"), first=expr.First("A"), location=Location((2, 2))),
+                    Link(Field("B"), FINAL, location=Location((3, 3))),
                 ],
-                {Field("A"): T, Field("B"): T},
+                {
+                    Field(ID("A", location=Location((1, 1)))): T,
+                    Field(ID("B", location=Location((2, 2)))): T,
+                },
             ),
         ],
     )
@@ -2954,11 +2989,19 @@ def test_message_field_size(spec: str) -> None:
             Message(
                 ID("Test::M", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("A")),
-                    Link(Field("A"), Field("B"), size=expr.Number(8)),
-                    Link(Field("B"), FINAL),
+                    Link(INITIAL, Field("A"), location=Location((1, 1))),
+                    Link(
+                        Field("A"),
+                        Field("B"),
+                        size=expr.Number(8, location=Location((2, 2))),
+                        location=Location((2, 2)),
+                    ),
+                    Link(Field("B"), FINAL, location=Location((3, 3))),
                 ],
-                {Field("A"): T, Field("B"): OPAQUE},
+                {
+                    Field(ID("A", location=Location((1, 1)))): T,
+                    Field(ID("B", location=Location((2, 2)))): OPAQUE,
+                },
             ),
         ],
     )
@@ -2992,20 +3035,24 @@ def test_message_field_condition_and_aspects(link: str, field_b: str) -> None:
             Message(
                 ID("Test::M", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("A")),
+                    Link(INITIAL, Field("A"), location=Location((1, 1))),
                     Link(
                         Field("A"),
                         Field("B"),
                         first=expr.First("A"),
-                        size=expr.Number(8),
+                        size=expr.Number(8, location=Location((2, 2))),
                         condition=expr.And(
                             expr.Greater(expr.Variable("A"), expr.Number(10)),
                             expr.Less(expr.Variable("A"), expr.Number(100)),
                         ),
+                        location=Location((2, 2)),
                     ),
-                    Link(Field("B"), FINAL),
+                    Link(Field("B"), FINAL, location=Location((3, 3))),
                 ],
-                {Field("A"): T, Field("B"): OPAQUE},
+                {
+                    Field(ID("A", location=Location((1, 1)))): T,
+                    Field(ID("B", location=Location((2, 2)))): OPAQUE,
+                },
             ),
         ],
     )
@@ -3043,39 +3090,66 @@ def test_parameterized_messages() -> None:
             Message(
                 ID("Test::M", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("F"), size=expr.Mul(expr.Variable("P"), expr.Number(8))),
+                    Link(
+                        INITIAL,
+                        Field("F"),
+                        size=expr.Mul(
+                            expr.Variable("P"),
+                            expr.Number(8),
+                            location=Location((1, 1)),
+                        ),
+                        location=Location((1, 1)),
+                    ),
                     Link(
                         Field("F"),
                         FINAL,
                         condition=expr.Less(expr.Variable("P"), expr.Number(100)),
+                        location=Location((2, 2)),
                     ),
                 ],
-                {Field("P"): T, Field("F"): OPAQUE},
+                {
+                    Field(ID("P", location=Location((1, 1)))): T,
+                    Field(ID("F", location=Location((2, 2)))): OPAQUE,
+                },
             ),
             Message(
                 ID("Test::M_S", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("F_F"), size=expr.Mul(expr.Number(16), expr.Number(8))),
-                    Link(Field("F_F"), FINAL, condition=expr.TRUE),
+                    Link(
+                        INITIAL,
+                        Field("F_F"),
+                        size=expr.Mul(expr.Number(16), expr.Number(8), location=Location((1, 1))),
+                        location=Location((1, 1)),
+                    ),
+                    Link(Field("F_F"), FINAL, condition=expr.TRUE, location=Location((2, 2))),
                 ],
-                {Field("F_F"): OPAQUE},
+                {Field(ID("F_F", location=Location((1, 1)))): OPAQUE},
             ),
             Message(
                 ID("Test::M_D", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("L")),
+                    Link(INITIAL, Field("L"), location=Location((1, 1))),
                     Link(
                         Field("L"),
                         Field("F_F"),
-                        size=expr.Mul(expr.Variable("L"), expr.Number(8)),
+                        size=expr.Mul(
+                            expr.Variable("L"),
+                            expr.Number(8),
+                            location=Location((2, 2)),
+                        ),
+                        location=Location((2, 2)),
                     ),
                     Link(
                         Field("F_F"),
                         FINAL,
                         condition=expr.Less(expr.Variable("L"), expr.Number(100)),
+                        location=Location((3, 3)),
                     ),
                 ],
-                {Field("L"): T, Field("F_F"): OPAQUE},
+                {
+                    Field(ID("L", location=Location((1, 1)))): T,
+                    Field(ID("F_F", location=Location((2, 2)))): OPAQUE,
+                },
             ),
         ],
     )

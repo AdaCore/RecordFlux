@@ -303,7 +303,7 @@ class BinExpr(Expr):
 
 class AssExpr(Expr):
     def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
-        super().__init__(rty.UNDEFINED, location)
+        super().__init__(rty.UNDEFINED, location=location)
         self.terms = list(terms)
 
     def __repr__(self) -> str:
@@ -379,7 +379,7 @@ class AssExpr(Expr):
             terms = self._simplified_boolean_expressions(terms, total)
         else:
             if not terms:
-                return Number(total)
+                return Number(total, location=self.location)
             if total != self.neutral_element():
                 terms.append(Number(total))
 
@@ -429,6 +429,8 @@ class AssExpr(Expr):
                     and u.condition_expressions[0][1] == t.condition_expressions[0][1]
                     and u.else_expression == t.else_expression
                 ):
+                    t_location = t.condition_expressions[0][0].location
+                    u_location = u.condition_expressions[0][0].location
                     return [
                         IfExpr(
                             [
@@ -436,6 +438,7 @@ class AssExpr(Expr):
                                     Or(
                                         t.condition_expressions[0][0],
                                         u.condition_expressions[0][0],
+                                        location=Location.merge([t_location, u_location]),
                                     ).simplified(),
                                     t.condition_expressions[0][1],
                                 ),
@@ -590,6 +593,9 @@ class Number(Expr):
             raise NotImplementedError(f"unsupported base {self.base}")
         self._str = intern(f"(-{self._str})" if self.value < 0 else self._str)
 
+    def _merge_locations(self, other: Number) -> Location:
+        return Location.merge([self.location, other.location])
+
     def _check_type_subexpr(self) -> RecordFluxError:
         return RecordFluxError()
 
@@ -604,34 +610,34 @@ class Number(Expr):
 
     def __add__(self, other: object) -> Number:
         if isinstance(other, Number):
-            return Number(self.value + other.value)
+            return Number(self.value + other.value, location=self._merge_locations(other))
         return NotImplemented
 
     def __sub__(self, other: object) -> Number:
         if isinstance(other, Number):
-            return Number(self.value - other.value)
+            return Number(self.value - other.value, location=self._merge_locations(other))
         return NotImplemented
 
     def __mul__(self, other: object) -> Number:
         if isinstance(other, Number):
-            return Number(self.value * other.value)
+            return Number(self.value * other.value, location=self._merge_locations(other))
         return NotImplemented
 
     def __floordiv__(self, other: object) -> Expr:
         if isinstance(other, Number):
             if self.value % other.value == 0:
-                return Number(self.value // other.value)
-            return Div(Number(self.value), Number(other.value))
+                return Number(self.value // other.value, location=self._merge_locations(other))
+            return Div(Number(self.value), Number(other.value), self._merge_locations(other))
         return NotImplemented
 
     def __pow__(self, other: object) -> Number:
         if isinstance(other, Number):
-            return Number(self.value**other.value)
+            return Number(self.value**other.value, location=self._merge_locations(other))
         return NotImplemented
 
     def __mod__(self, other: object) -> Number:
         if isinstance(other, Number):
-            return Number(self.value % other.value)
+            return Number(self.value % other.value, location=self._merge_locations(other))
         return NotImplemented
 
     def __eq__(self, other: object) -> bool:
@@ -832,7 +838,11 @@ class Sub(MathBinExpr):
         right = self.right.simplified()
         if isinstance(left, Number) and isinstance(right, Number):
             return left - right
-        return Add(left, -right)
+        return Add(
+            left,
+            -right,
+            location=Location.merge([left.location, right.location]),
+        )
 
     @property
     def symbol(self) -> str:
@@ -1543,7 +1553,7 @@ class UndefinedExpr(Name):
         raise NotImplementedError
 
 
-UNDEFINED = UndefinedExpr()
+UNDEFINED = UndefinedExpr(location=Location((1, 1)))
 
 
 class Aggregate(Expr):

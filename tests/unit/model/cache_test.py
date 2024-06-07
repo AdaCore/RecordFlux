@@ -37,11 +37,11 @@ def test_verified(tmp_path: Path) -> None:
     m1 = model.Message(
         ID("P::M", Location((1, 1))),
         [
-            model.Link(model.INITIAL, model.Field("A")),
-            model.Link(model.Field("A"), model.FINAL),
+            model.Link(model.INITIAL, model.Field("A"), location=Location((1, 1))),
+            model.Link(model.Field("A"), model.FINAL, location=Location((2, 2))),
         ],
         {
-            model.Field("A"): model.Integer(
+            model.Field(ID("A", location=Location((1, 1)))): model.Integer(
                 "P::T",
                 expr.Number(0),
                 expr.Sub(expr.Pow(expr.Number(2), expr.Number(8)), expr.Number(1)),
@@ -53,11 +53,11 @@ def test_verified(tmp_path: Path) -> None:
     m2 = model.Message(
         ID("P::M", Location((1, 1))),
         [
-            model.Link(model.INITIAL, model.Field("B")),
-            model.Link(model.Field("B"), model.FINAL),
+            model.Link(model.INITIAL, model.Field("B"), location=Location((1, 1))),
+            model.Link(model.Field("B"), model.FINAL, location=Location((2, 2))),
         ],
         {
-            model.Field("B"): model.Integer(
+            model.Field(ID("B", location=Location((1, 1)))): model.Integer(
                 "P::T",
                 expr.Number(0),
                 expr.Sub(expr.Pow(expr.Number(2), expr.Number(8)), expr.Number(1)),
@@ -69,11 +69,11 @@ def test_verified(tmp_path: Path) -> None:
     m3 = model.Message(
         ID("P::M", Location((1, 1))),
         [
-            model.Link(model.INITIAL, model.Field("A")),
-            model.Link(model.Field("A"), model.FINAL),
+            model.Link(model.INITIAL, model.Field("A"), location=Location((1, 1))),
+            model.Link(model.Field("A"), model.FINAL, location=Location((2, 2))),
         ],
         {
-            model.Field("A"): model.Integer(
+            model.Field(ID("A", location=Location((1, 1)))): model.Integer(
                 "P::T",
                 expr.Number(0),
                 expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),

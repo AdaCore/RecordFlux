@@ -348,6 +348,21 @@ def test_ass_expr_substituted_location() -> None:
     assert expr.location
 
 
+def test_ass_expr_if_expr_simplified_location() -> None:
+    simplified_if = Add(
+        IfExpr(
+            [(Or(Variable("X"), Variable("Y"), location=Location((1, 1))), Variable("A"))],
+            Number(42),
+        ),
+        IfExpr(
+            [(Or(Variable("X"), Variable("A"), location=Location((1, 2))), Variable("A"))],
+            Number(42),
+        ),
+    ).simplified()
+    assert isinstance(simplified_if, IfExpr)
+    assert simplified_if.condition_expressions[0][0].location == Location((1, 1), end=(1, 2))
+
+
 def test_bool_expr_str() -> None:
     assert_equal(
         str(And(Variable("A"), Or(Variable("B"), Variable("C")), Variable("D"))),
@@ -499,20 +514,56 @@ def test_number_add() -> None:
     assert Number(5) + Number(3) == Number(8)
 
 
+def test_number_add_location() -> None:
+    result = Number(5, location=Location((1, 1))) + Number(3, location=Location((1, 2)))
+    assert isinstance(result, Number)
+    assert result.location == Location((1, 1), end=(1, 2))
+
+
 def test_number_sub() -> None:
     assert Number(5) - Number(3) == Number(2)
+
+
+def test_number_sub_location() -> None:
+    result = Number(5, location=Location((1, 1))) - Number(3, location=Location((1, 2)))
+    assert isinstance(result, Number)
+    assert result.location == Location((1, 1), end=(1, 2))
 
 
 def test_number_mul() -> None:
     assert Number(4) * Number(2) == Number(8)
 
 
+def test_number_mul_location() -> None:
+    result = Number(5, location=Location((1, 1))) * Number(3, location=Location((1, 2)))
+    assert isinstance(result, Number)
+    assert result.location == Location((1, 1), end=(1, 2))
+
+
 def test_number_div() -> None:
     assert Number(4) // Number(2) == Number(2)
 
 
+def test_number_div_location() -> None:
+    result = Number(5, location=Location((1, 1))) // Number(3, location=Location((1, 2)))
+    assert isinstance(result, Div)
+    assert result.location == Location((1, 1), end=(1, 2))
+
+
 def test_number_pow() -> None:
     assert Number(2) ** Number(4) == Number(16)
+
+
+def test_number_pow_location() -> None:
+    result = Number(5, location=Location((1, 1))) ** Number(3, location=Location((1, 2)))
+    assert isinstance(result, Number)
+    assert result.location == Location((1, 1), end=(1, 2))
+
+
+def test_number_mod_location() -> None:
+    result = Number(3, location=Location((1, 1))) % Number(2, location=Location((1, 2)))
+    assert isinstance(result, Number)
+    assert result.location == Location((1, 1), end=(1, 2))
 
 
 def test_number_eq() -> None:
@@ -708,6 +759,18 @@ def test_add_ge() -> None:
     assert not Add(Variable("X"), Number(2)) >= Add(Variable("Y"), Variable("Z"), Number(1))
 
 
+def test_add_simplified_location() -> None:
+    simplified = Add(
+        Number(1),
+        Number(1),
+        Number(1),
+        Number(1),
+        location=Location((1, 1)),
+    ).simplified()
+    assert simplified == Number(4)
+    assert simplified.location == Location((1, 1))
+
+
 def test_mul_neg() -> None:
     assert -Mul(Variable("X"), Number(2)) == Mul(Variable("X"), Number(-2))
 
@@ -741,6 +804,24 @@ def test_sub_simplified() -> None:
         .simplified()
         == TRUE
     )
+
+
+def test_sub_simplified_location() -> None:
+    simplified = Sub(
+        Number(5, location=Location((1, 1))),
+        Number(2, location=Location((1, 2))),
+    ).simplified()
+    assert isinstance(simplified, Number)
+    assert simplified.location == Location((1, 1), end=(1, 2))
+
+
+def test_sub_simplified_to_add() -> None:
+    simplified = Sub(
+        Variable(ID("X", location=Location((1, 1)))),
+        Number(2, location=Location((1, 2))),
+    ).simplified()
+    assert isinstance(simplified, Add)
+    assert simplified.location == Location((1, 1), end=(1, 2))
 
 
 def test_div_neg() -> None:
@@ -1719,6 +1800,10 @@ def test_number_str_neg_oct() -> None:
 
 def test_number_str_bin() -> None:
     assert str(Number(454, 2)) == "2#111000110#"
+
+
+def test_number_simplified_location() -> None:
+    assert Number(42, location=Location((1, 1))).simplified().location == Location((1, 1))
 
 
 def test_string_variables() -> None:

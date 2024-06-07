@@ -192,9 +192,14 @@ def messages(  # noqa: PLR0915
         max_size = 2**29 - 1
         if isinstance(pair.target_type, (Opaque, Sequence)):
             if isinstance(pair.source_type, Integer) and pair.source_type.last.value <= max_size:
-                return expr.Mul(expr.Variable(pair.source.name), expr.Number(8))
+                return expr.Mul(
+                    expr.Variable(pair.source.name),
+                    expr.Number(8),
+                    location=Location((1, 1)),
+                )
             return expr.Number(
                 draw(st.integers(min_value=1, max_value=max_size).map(lambda x: x * 8)),
+                location=Location((1, 1)),
             )
         return expr.UNDEFINED
 
@@ -257,7 +262,15 @@ def messages(  # noqa: PLR0915
                 types_[source] if source != INITIAL else None,
                 types_[target],
             )
-            structure.append(Link(source, target, condition=condition(pair), size=size(pair)))
+            structure.append(
+                Link(
+                    source,
+                    target,
+                    condition=condition(pair),
+                    size=size(pair),
+                    location=Location((1, 1)),
+                ),
+            )
 
         for i, source in enumerate(fields_):
             out = outgoing(source)
@@ -286,6 +299,7 @@ def messages(  # noqa: PLR0915
                             location=Location((1, 1)),
                         ).simplified(),
                         size=size(pair),
+                        location=Location((1, 1)),
                     ),
                 )
 
@@ -295,13 +309,13 @@ def messages(  # noqa: PLR0915
             field_size = int(field_type.size) if isinstance(field_type, Scalar) else 0
             padding = (alignments[field] + field_size) % 8
             if padding == 0:
-                structure.append(Link(field, FINAL))
+                structure.append(Link(field, FINAL, location=Location((1, 1))))
             else:
                 f = draw(fields())
                 t = draw(scalars(unique_identifiers, align_to_8=padding))
                 types_[f] = t
-                structure.append(Link(field, f))
-                structure.append(Link(f, FINAL))
+                structure.append(Link(field, f, location=Location((1, 1))))
+                structure.append(Link(f, FINAL, location=Location((1, 1))))
 
     try:
         message = Message(next(unique_identifiers), structure, types_)
