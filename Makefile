@@ -254,9 +254,9 @@ target/debug/librapidflux.so: $(RAPIDFLUX_SRC)
 
 # --- Setup: Development dependencies ---
 
-.PHONY: install_devel
+.PHONY: install
 
-install_devel: $(RFLX) rapidflux_devel
+install: $(RFLX) rapidflux_devel
 
 $(RFLX):: export PYTHONPATH=
 $(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(RAPIDFLUX) $(PROJECT_MANAGEMENT)
@@ -264,12 +264,6 @@ $(RFLX): $(DEVEL_VENV) $(CONTRIB) $(PARSER) $(RAPIDFLUX) $(PROJECT_MANAGEMENT)
 
 $(DEVEL_VENV):
 	$(PYTHON) -m venv --clear $(DEVEL_VENV)
-
-# --- Optional setup: Installation from source distribution ---
-
-install:: export PYTHONPATH=
-install: $(SDIST) $(PROJECT_MANAGEMENT)
-	$(POETRY) run pip install --force-reinstall $(SDIST)
 
 # --- Optional setup: Installation of FSF GNAT ---
 

@@ -56,11 +56,7 @@ workflow:
     - . .venv$PYTHON_VERSION/bin/activate
 
 .install_recordflux: &install_recordflux
-    - if [ "$SCHEDULE" = "nightly" ]; then
-        make init install;
-      else
-        make init install_devel;
-      fi
+      make install
 
 setup:
   services:
@@ -99,11 +95,7 @@ setup:
     - if [ $CLEAN_RECORDFLUX_SETUP -eq 1 ]; then
         python$PYTHON_VERSION -m venv --clear .venv;
         . .venv/bin/activate;
-        if [ "$SCHEDULE" = "nightly" ]; then
-          make init install;
-        else
-          make init install_devel;
-        fi
+        make install;
       else
         ln -s .venv$PYTHON_VERSION .venv;
         . .venv$PYTHON_VERSION/bin/activate;
