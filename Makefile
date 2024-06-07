@@ -312,6 +312,7 @@ check_code: check_poetry common_check check_rapidflux check_unit_test_file_cover
 check_rapidflux:
 	cargo fmt --check
 	cargo clippy --tests -- -D warnings
+	./tools/check_rust_attributes.py $$(find librapidflux -name '*.rs')
 
 check_poetry: export PYTHONPATH=
 check_poetry: $(RFLX)
