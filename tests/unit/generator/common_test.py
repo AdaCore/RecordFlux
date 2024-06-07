@@ -142,22 +142,24 @@ def test_param_enumeration_condition() -> None:
         Field("A"),
         Field("B"),
         condition=expr.Equal(expr.Variable("Param", type_=type_.type_), expr.Literal("E1")),
+        location=Location((2, 2)),
     )
 
     message = Message(
         ID("P::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("A")),
+            Link(INITIAL, Field("A"), location=Location((1, 1))),
             link,
             Link(
                 Field("B"),
                 FINAL,
+                location=Location((2, 2)),
             ),
         ],
         {
-            Field("A"): type_,
-            Field("B"): models.universal_length(),
-            Field("Param"): type_,
+            Field(ID("A", location=Location((1, 1)))): type_,
+            Field(ID("B", location=Location((2, 2)))): models.universal_length(),
+            Field(ID("Param", location=Location((2, 2)))): type_,
         },
     )
     assert_equal(

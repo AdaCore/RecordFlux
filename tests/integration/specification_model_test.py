@@ -52,6 +52,7 @@ def assert_error_full_message(
     p = parser.Parser()
     try:
         p.parse(filepath)
+        p.create_model()
         assert False, "DID NOT RAISE"
     except RecordFluxError as e:
         e.print_messages()
@@ -585,7 +586,7 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
     message = Message(
         ID("Test::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Tag")),
+            Link(INITIAL, Field("Tag"), location=Location((1, 1))),
             Link(
                 Field("Tag"),
                 Field("Length"),
@@ -594,6 +595,7 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                     expr.Variable("Msg_Data"),
                     location=Location((3, 3)),
                 ),
+                location=Location((2, 2)),
             ),
             Link(
                 Field("Tag"),
@@ -603,15 +605,21 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                     expr.Variable("Msg_Error"),
                     location=Location((5, 5)),
                 ),
+                location=Location((3, 3)),
             ),
             Link(
                 Field("Length"),
                 Field("Value"),
-                size=expr.Mul(expr.Variable("Length"), expr.Number(8)),
+                size=expr.Mul(expr.Variable("Length"), expr.Number(8), location=Location((4, 3))),
+                location=Location((4, 4)),
             ),
-            Link(Field("Value"), FINAL),
+            Link(Field("Value"), FINAL, location=Location((5, 5))),
         ],
-        {Field("Tag"): tag, Field("Length"): length, Field("Value"): OPAQUE},
+        {
+            Field(ID("Tag", location=Location((1, 1)))): tag,
+            Field(ID("Length", location=Location((1, 1)))): length,
+            Field(ID("Value", location=Location((1, 1)))): OPAQUE,
+        },
     )
     session = Session(
         "Test::Session",
@@ -936,6 +944,202 @@ def test_package_bad_package_casing(
                   |         {'-' * len(package_name)}
                   |
             """,
+        ),
+        capfd,
+    )
+
+
+def test_message_size_not_multiple_8_bits(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+        package Test is
+           type I is range 0 .. 2 with Size => 3;
+           type M is
+              message
+                 A : I;
+              end message;
+        end Test;
+        """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+                info: Parsing {file_path}
+                info: Processing Test
+                info: Verifying __BUILTINS__::Boolean
+                info: Verifying __INTERNAL__::Opaque
+                info: Verifying Test::I
+                info: Verifying Test::M
+                error: message size must be multiple of 8 bit
+                 --> {file_path}:3:9
+                  |
+                3 |    type M is
+                  |         ^
+                4 |       message
+                5 |          A : I;
+                  |          - note: on path "A"
+                  |
+          """,
+        ),
+        capfd,
+    )
+
+
+def test_field_size_not_multiple_8_bits_path_annotations(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+                package Test is
+                   type I is range 0 .. 2 with Size => 3;
+                   type M is
+                      message
+                         A : Opaque with Size => 8;
+                         B : Opaque with Size => 8;
+                         C : Opaque with Size => 3;
+                         D : I;
+                      end message;
+                end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+                info: Parsing {file_path}
+                info: Processing Test
+                info: Verifying __BUILTINS__::Boolean
+                info: Verifying __INTERNAL__::Opaque
+                info: Verifying Test::I
+                info: Verifying Test::M
+                error: size of opaque field "C" not multiple of 8 bit
+                 --> {file_path}:7:34
+                  |
+                6 |          B : Opaque with Size => 8;
+                  |          - note: on path "B"
+                7 |          C : Opaque with Size => 3;
+                  |                                  ^
+                  |
+                help: sizes are expressed in bits, not bytes
+                 --> {file_path}:7:34
+                  |
+                7 |          C : Opaque with Size => 3;
+                  |                                  - help: did you mean "3 * 8"?
+                  |
+          """,
+        ),
+        capfd,
+    )
+
+
+def test_field_size_not_multiple_8_bits_opaque_field(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+        package Test is
+           type M is
+              message
+                 A : Opaque
+                    with Size => 3;
+              end message;
+        end Test;
+        """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+                info: Parsing {file_path}
+                info: Processing Test
+                info: Verifying __BUILTINS__::Boolean
+                info: Verifying __INTERNAL__::Opaque
+                info: Verifying Test::M
+                error: size of opaque field "A" not multiple of 8 bit
+                 --> {file_path}:5:26
+                  |
+                5 |             with Size => 3;
+                  |                          ^
+                  |
+                help: sizes are expressed in bits, not bytes
+                 --> {file_path}:5:26
+                  |
+                5 |             with Size => 3;
+                  |                          - help: did you mean "3 * 8"?
+                  |
+            """,
+        ),
+        capfd,
+    )
+
+
+def test_not_aligned_to_8_bits_multiple_fields(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range 0 .. 2 with Size => 3;
+               type I2 is range 0 .. 2 with Size => 5;
+               type M is
+                  message
+                     A : Opaque
+                        with Size => 8;
+                     B : Opaque
+                        with Size => 8;
+                     D : I;
+                     E : Opaque
+                        with Size => 8;
+                     F : I2;
+                  end message;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+                info: Parsing {file_path}
+                info: Processing Test
+                info: Verifying __BUILTINS__::Boolean
+                info: Verifying __INTERNAL__::Opaque
+                info: Verifying Test::I
+                info: Verifying Test::I2
+                info: Verifying Test::M
+                error: opaque field "E" not aligned to 8 bit boundary
+                  --> {file_path}:6:10
+                   |
+                 6 |          A : Opaque
+                   |          - note: on path "A"
+                 7 |             with Size => 8;
+                 8 |          B : Opaque
+                   |          - note: on path "B"
+                 9 |             with Size => 8;
+                10 |          D : I;
+                   |          - note: on path "D"
+                11 |          E : Opaque
+                   |          ^ a previous field in the path may be the cause of this error
+                   |
+              """,
         ),
         capfd,
     )

@@ -92,7 +92,7 @@ def tlv_message() -> Message:
     return Message(
         ID("TLV::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("Tag", location=Location((1, 1))))),
+            Link(INITIAL, Field(ID("Tag", location=Location((1, 1)))), location=Location((1, 1))),
             Link(
                 Field(ID("Tag", location=Location((2, 2)))),
                 Field(ID("Length", location=Location((2, 2)))),
@@ -101,6 +101,7 @@ def tlv_message() -> Message:
                     Variable(ID("Msg_Data", location=Location((3, 3)))),
                     location=Location((3, 1)),
                 ),
+                location=Location((2, 2)),
             ),
             Link(
                 Field(ID("Tag", location=Location((4, 4)))),
@@ -110,17 +111,19 @@ def tlv_message() -> Message:
                     Variable(ID("Msg_Error", location=Location((5, 5)))),
                     location=Location((5, 1)),
                 ),
+                location=Location((4, 4)),
             ),
             Link(
                 Field(ID("Length", location=Location((6, 6)))),
                 Field(ID("Value", location=Location((6, 6)))),
                 size=Mul(
-                    Variable(ID("Length", location=Location((7, 7)))),
+                    Variable(ID("Length", location=Location((7, 7))), location=Location((7, 7))),
                     Number(8),
                     location=Location((7, 7)),
                 ),
+                location=Location((4, 4)),
             ),
-            Link(Field(ID("Value", location=Location((8, 8)))), FINAL),
+            Link(Field(ID("Value", location=Location((8, 8)))), FINAL, location=Location((5, 5))),
         ],
         {
             Field(ID("Tag", location=Location((1, 1)))): tlv_tag(),
@@ -181,7 +184,7 @@ def tlv_with_checksum_message() -> Message:
     return Message(
         ID("TLV_With_Checksum::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("Tag", location=Location((2, 2))))),
+            Link(INITIAL, Field(ID("Tag", location=Location((2, 2)))), location=Location((2, 2))),
             Link(
                 Field(ID("Tag", location=Location((3, 3)))),
                 Field(ID("Length", location=Location((3, 3)))),
@@ -190,6 +193,7 @@ def tlv_with_checksum_message() -> Message:
                     Variable(ID("Msg_Data", location=Location((4, 4)))),
                     location=Location((4, 4)),
                 ),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("Tag", location=Location((5, 5)))),
@@ -199,27 +203,35 @@ def tlv_with_checksum_message() -> Message:
                     Variable(ID("Msg_Error", location=Location((5, 5)))),
                     location=Location((5, 5)),
                 ),
+                location=Location((5, 5)),
             ),
             Link(
                 Field(ID("Length", location=Location((6, 6)))),
                 Field(ID("Value", location=Location((6, 6)))),
-                size=Mul(Variable(ID("Length", location=Location((7, 7)))), Number(8)),
+                size=Mul(
+                    Variable(ID("Length", location=Location((7, 7)))),
+                    Number(8),
+                    location=Location((7, 7)),
+                ),
+                location=Location((6, 6)),
             ),
             Link(
                 Field(ID("Value", location=Location((8, 8)))),
                 Field(ID("Checksum", location=Location((8, 8)))),
+                location=Location((8, 8)),
             ),
             Link(
                 Field(ID("Checksum", location=Location((9, 9)))),
                 FINAL,
                 ValidChecksum(ID("Checksum", location=Location((9, 9)))),
+                location=Location((9, 9)),
             ),
         ],
         {
-            Field("Tag"): tlv_with_checksum_tag(),
-            Field("Length"): tlv_with_checksum_length(),
-            Field("Value"): OPAQUE,
-            Field("Checksum"): tlv_with_checksum_checksum(),
+            Field(ID("Tag", location=Location((1, 1)))): tlv_with_checksum_tag(),
+            Field(ID("Length", location=Location((2, 2)))): tlv_with_checksum_length(),
+            Field(ID("Value", location=Location((3, 3)))): OPAQUE,
+            Field(ID("Checksum", location=Location((4, 4)))): tlv_with_checksum_checksum(),
         },
         checksums={ID("Checksum"): [Variable("Tag"), Size("Value"), Variable("Value")]},
     )
@@ -257,7 +269,7 @@ def ethernet_address() -> Integer:
 @lru_cache
 def ethernet_type_length() -> Integer:
     return Integer(
-        "Ethernet::Type_Length",
+        ID("Ethernet::Type_Length"),
         Number(46),
         Sub(Pow(Number(2), Number(16)), Number(1)),
         Number(16),
@@ -284,51 +296,104 @@ def ethernet_frame() -> Message:
     return Message(
         ID("Ethernet::Frame", Location((1, 1))),
         [
-            Link(INITIAL, Field("Destination")),
-            Link(Field("Destination"), Field("Source")),
-            Link(Field("Source"), Field("Type_Length_TPID")),
             Link(
-                Field("Type_Length_TPID"),
-                Field("TPID"),
-                Equal(Variable("Type_Length_TPID"), Number(0x8100, 16), Location((6, 1))),
-                first=First("Type_Length_TPID"),
+                INITIAL,
+                Field(ID("Destination", location=Location((2, 2)))),
+                location=Location((2, 2)),
             ),
             Link(
-                Field("Type_Length_TPID"),
-                Field("Type_Length"),
-                NotEqual(Variable("Type_Length_TPID"), Number(0x8100, 16), Location((8, 1))),
-                first=First("Type_Length_TPID"),
-            ),
-            Link(Field("TPID"), Field("TCI")),
-            Link(Field("TCI"), Field("Type_Length")),
-            Link(
-                Field("Type_Length"),
-                Field("Payload"),
-                LessEqual(Variable("Type_Length"), Number(1500), Location((10, 1))),
-                Mul(Variable("Type_Length"), Number(8)),
+                Field(ID("Destination", location=Location((3, 3)))),
+                Field(ID("Source", location=Location((3, 3)))),
+                location=Location((6, 6)),
             ),
             Link(
-                Field("Type_Length"),
-                Field("Payload"),
-                GreaterEqual(Variable("Type_Length"), Number(1536), Location((12, 1))),
+                Field(ID("Source", location=Location((4, 4)))),
+                Field(ID("Type_Length_TPID", location=Location((4, 4)))),
+                location=Location((7, 7)),
             ),
             Link(
-                Field("Payload"),
+                Field(ID("Type_Length_TPID", location=Location((5, 5)))),
+                Field(ID("TPID", location=Location((5, 5)))),
+                Equal(
+                    Variable(ID("Type_Length_TPID", location=Location((6, 6)))),
+                    Number(0x8100, 16),
+                    Location((6, 1)),
+                ),
+                first=First(ID("Type_Length_TPID", location=Location((6, 6)))),
+                location=Location((8, 8)),
+            ),
+            Link(
+                Field(ID("Type_Length_TPID", location=Location((7, 7)))),
+                Field(ID("Type_Length", location=Location((7, 7)))),
+                NotEqual(
+                    Variable(ID("Type_Length_TPID", location=Location((8, 8)))),
+                    Number(0x8100, 16),
+                    Location((8, 1)),
+                ),
+                first=First(ID("Type_Length_TPID", location=Location((8, 8)))),
+                location=Location((9, 9)),
+            ),
+            Link(
+                Field(ID("TPID", location=Location((9, 9)))),
+                Field(ID("TCI", location=Location((9, 9)))),
+                location=Location((10, 10)),
+            ),
+            Link(
+                Field(ID("TCI", location=Location((10, 10)))),
+                Field(ID("Type_Length", location=Location((10, 10)))),
+                location=Location((11, 11)),
+            ),
+            Link(
+                Field(ID("Type_Length", location=Location((11, 11)))),
+                Field(ID("Payload", location=Location((11, 11)))),
+                LessEqual(
+                    Variable(ID("Type_Length", location=Location((12, 12)))),
+                    Number(1500),
+                    Location((12, 1)),
+                ),
+                Mul(
+                    Variable(ID("Type_Length", location=Location((12, 12)))),
+                    Number(8),
+                    location=Location((12, 12)),
+                ),
+                location=Location((12, 12)),
+            ),
+            Link(
+                Field(ID("Type_Length", location=Location((13, 13)))),
+                Field(ID("Payload", location=Location((13, 13)))),
+                GreaterEqual(
+                    Variable(ID("Type_Length", location=Location((12, 12)))),
+                    Number(1536),
+                    Location((14, 1)),
+                ),
+                location=Location((13, 13)),
+            ),
+            Link(
+                Field(ID("Payload", location=Location((15, 15)))),
                 FINAL,
                 And(
-                    GreaterEqual(Div(Size("Payload"), Number(8)), Number(46), Location((14, 1))),
-                    LessEqual(Div(Size("Payload"), Number(8)), Number(1500), Location((15, 1))),
+                    GreaterEqual(
+                        Div(Size(ID("Payload", location=Location((16, 16)))), Number(8)),
+                        Number(46),
+                        Location((14, 1)),
+                    ),
+                    LessEqual(
+                        Div(Size(ID("Payload", location=Location((16, 16)))), Number(8)),
+                        Number(1500),
+                        Location((15, 1)),
+                    ),
                 ),
+                location=Location((14, 14)),
             ),
         ],
         {
-            Field("Destination"): ethernet_address(),
-            Field("Source"): ethernet_address(),
-            Field("Type_Length_TPID"): ethernet_type_length(),
-            Field("TPID"): ethernet_tpid(),
-            Field("TCI"): ethernet_tci(),
-            Field("Type_Length"): ethernet_type_length(),
-            Field("Payload"): OPAQUE,
+            Field(ID("Destination", location=Location((1, 1)))): ethernet_address(),
+            Field(ID("Source", location=Location((2, 2)))): ethernet_address(),
+            Field(ID("Type_Length_TPID", location=Location((3, 3)))): ethernet_type_length(),
+            Field(ID("TPID", location=Location((3, 3)))): ethernet_tpid(),
+            Field(ID("TCI", location=Location((4, 4)))): ethernet_tci(),
+            Field(ID("Type_Length", location=Location((5, 5)))): ethernet_type_length(),
+            Field(ID("Payload", location=Location((6, 6)))): OPAQUE,
         },
     )
 
@@ -360,8 +425,11 @@ def enumeration_priority() -> Enumeration:
 def enumeration_message() -> Message:
     return Message(
         ID("Enumeration::Message", Location((1, 1))),
-        [Link(INITIAL, Field("Priority")), Link(Field("Priority"), FINAL)],
-        {Field("Priority"): enumeration_priority()},
+        [
+            Link(INITIAL, Field("Priority"), location=Location((2, 2))),
+            Link(Field("Priority"), FINAL, location=Location((3, 3))),
+        ],
+        {Field(ID("Priority", location=Location((1, 1)))): enumeration_priority()},
     )
 
 
@@ -428,17 +496,36 @@ def sequence_message() -> Message:
     return Message(
         ID("Sequence::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Length")),
-            Link(Field("Length"), Field("Integer_Vector"), size=Mul(Variable("Length"), Number(8))),
-            Link(Field("Integer_Vector"), Field("Enumeration_Vector"), size=Number(16)),
-            Link(Field("Enumeration_Vector"), Field("AV_Enumeration_Vector"), size=Number(16)),
-            Link(Field("AV_Enumeration_Vector"), FINAL),
+            Link(INITIAL, Field("Length"), location=Location((1, 1))),
+            Link(
+                Field("Length"),
+                Field("Integer_Vector"),
+                size=Mul(Variable("Length"), Number(8), location=Location((2, 2))),
+                location=Location((2, 2)),
+            ),
+            Link(
+                Field("Integer_Vector"),
+                Field("Enumeration_Vector"),
+                size=Number(16, location=Location((3, 3))),
+                location=Location((3, 3)),
+            ),
+            Link(
+                Field("Enumeration_Vector"),
+                Field("AV_Enumeration_Vector"),
+                size=Number(16, location=Location((4, 4))),
+                location=Location((4, 4)),
+            ),
+            Link(Field("AV_Enumeration_Vector"), FINAL, location=Location((5, 5))),
         ],
         {
-            Field("Length"): sequence_length(),
-            Field("Integer_Vector"): sequence_integer_vector(),
-            Field("Enumeration_Vector"): sequence_enumeration_vector(),
-            Field("AV_Enumeration_Vector"): sequence_av_enumeration_vector(),
+            Field(ID("Length", location=Location((1, 1)))): sequence_length(),
+            Field(ID("Integer_Vector", location=Location((2, 2)))): sequence_integer_vector(),
+            Field(
+                ID("Enumeration_Vector", location=Location((3, 3))),
+            ): sequence_enumeration_vector(),
+            Field(
+                ID("AV_Enumeration_Vector", location=Location((4, 4))),
+            ): sequence_av_enumeration_vector(),
         },
     )
 
@@ -448,11 +535,27 @@ def sequence_inner_message() -> Message:
     return Message(
         ID("Sequence::Inner_Message", location=Location((1, 1))),
         [
-            Link(INITIAL, Field("Length")),
-            Link(Field("Length"), Field("Payload"), size=Mul(Variable("Length"), Number(8))),
-            Link(Field("Payload"), FINAL),
+            Link(
+                INITIAL,
+                Field(ID("Length", location=Location((2, 2)))),
+                location=Location((2, 2)),
+            ),
+            Link(
+                Field(ID("Length", location=Location((3, 3)))),
+                Field(ID("Payload", location=Location((3, 3)))),
+                size=Mul(
+                    Variable(ID("Length", location=Location((3, 3)))),
+                    Number(8),
+                    location=Location((3, 3)),
+                ),
+                location=Location((3, 3)),
+            ),
+            Link(Field(ID("Payload", location=Location((4, 4)))), FINAL, location=Location((4, 4))),
         ],
-        {Field("Length"): sequence_length(), Field("Payload"): OPAQUE},
+        {
+            Field(ID("Length", location=Location((1, 1)))): sequence_length(),
+            Field(ID("Payload", location=Location((2, 2)))): OPAQUE,
+        },
     )
 
 
@@ -466,11 +569,19 @@ def sequence_messages_message() -> Message:
     return Message(
         ID("Sequence::Messages_Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Length")),
-            Link(Field("Length"), Field("Messages"), size=Mul(Variable("Length"), Number(8))),
-            Link(Field("Messages"), FINAL),
+            Link(INITIAL, Field("Length"), location=Location((1, 1))),
+            Link(
+                Field("Length"),
+                Field("Messages"),
+                size=Mul(Variable("Length"), Number(8), location=Location((2, 2))),
+                location=Location((2, 2)),
+            ),
+            Link(Field("Messages"), FINAL, location=Location((3, 3))),
         ],
-        {Field("Length"): sequence_length(), Field("Messages"): sequence_inner_messages()},
+        {
+            Field(ID("Length", location=Location((1, 1)))): sequence_length(),
+            Field(ID("Messages", location=Location((2, 2)))): sequence_inner_messages(),
+        },
     )
 
 
@@ -479,13 +590,13 @@ def sequence_sequence_size_defined_by_message_size() -> Message:
     return Message(
         ID("Sequence::Sequence_Size_Defined_By_Message_Size", Location((1, 1))),
         [
-            Link(INITIAL, Field("Header")),
-            Link(Field("Header"), Field("Vector")),
-            Link(Field("Vector"), FINAL),
+            Link(INITIAL, Field("Header"), location=Location((1, 1))),
+            Link(Field("Header"), Field("Vector"), location=Location((2, 2))),
+            Link(Field("Vector"), FINAL, location=Location((3, 3))),
         ],
         {
-            Field("Header"): sequence_enumeration(),
-            Field("Vector"): sequence_integer_vector(),
+            Field(ID("Header", location=Location((1, 1)))): sequence_enumeration(),
+            Field(ID("Vector", location=Location((2, 2)))): sequence_integer_vector(),
         },
     )
 
@@ -515,14 +626,20 @@ def expression_message() -> Message:
     return Message(
         ID("Expression::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Payload"), size=Number(16)),
+            Link(
+                INITIAL,
+                Field("Payload"),
+                size=Number(16, location=Location((1, 1))),
+                location=Location((1, 1)),
+            ),
             Link(
                 Field("Payload"),
                 FINAL,
                 Equal(Variable("Payload"), Aggregate(Number(1), Number(2))),
+                location=Location((2, 2)),
             ),
         ],
-        {Field("Payload"): OPAQUE},
+        {Field(ID("Payload", location=Location((1, 1)))): OPAQUE},
     )
 
 
@@ -580,10 +697,15 @@ def message() -> Message:
     return Message(
         ID("P::M", Location((1, 1))),
         [
-            Link(INITIAL, Field("F"), size=Number(16)),
-            Link(Field("F"), FINAL),
+            Link(
+                INITIAL,
+                Field("F"),
+                size=Number(16, location=Location((1, 1))),
+                location=Location((1, 1)),
+            ),
+            Link(Field("F"), FINAL, location=Location((2, 2))),
         ],
-        {Field("F"): OPAQUE},
+        {Field(ID("F", location=Location((1, 1)))): OPAQUE},
     )
 
 
@@ -660,7 +782,11 @@ def universal_option() -> Message:
     return Message(
         ID("Universal::Option", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("Option_Type", location=Location((2, 2))))),
+            Link(
+                INITIAL,
+                Field(ID("Option_Type", location=Location((2, 2)))),
+                location=Location((2, 2)),
+            ),
             Link(
                 Field(ID("Option_Type", location=Location((2, 2)))),
                 FINAL,
@@ -669,6 +795,7 @@ def universal_option() -> Message:
                     Variable(ID("OT_Null", location=Location((3, 3)))),
                     location=Location((3, 3)),
                 ),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("Option_Type", location=Location((4, 4)))),
@@ -678,18 +805,24 @@ def universal_option() -> Message:
                     Variable(ID("OT_Data", location=Location((5, 5)))),
                     location=Location((5, 5)),
                 ),
+                location=Location((5, 5)),
             ),
             Link(
                 Field(ID("Length", location=Location((6, 6)))),
                 Field(ID("Data", location=Location((6, 6)))),
-                size=Mul(Variable(ID("Length", location=Location((6, 6)))), Number(8)),
+                size=Mul(
+                    Variable(ID("Length", location=Location((6, 6)))),
+                    Number(8),
+                    location=Location((6, 6)),
+                ),
+                location=Location((5, 5)),
             ),
-            Link(Field(ID("Data", location=Location((7, 7)))), FINAL),
+            Link(Field(ID("Data", location=Location((7, 7)))), FINAL, location=Location((7, 7))),
         ],
         {
-            Field("Option_Type"): universal_option_type(),
-            Field("Length"): universal_length(),
-            Field("Data"): OPAQUE,
+            Field(ID("Option_Type", location=Location((1, 1)))): universal_option_type(),
+            Field(ID("Length", location=Location((2, 2)))): universal_length(),
+            Field(ID("Data", location=Location((3, 3)))): OPAQUE,
         },
     )
 
@@ -707,7 +840,11 @@ def universal_message() -> Message:
     return Message(
         UNIVERSAL_MESSAGE_ID,
         [
-            Link(INITIAL, Field(ID("Message_Type", location=Location((2, 2))))),
+            Link(
+                INITIAL,
+                Field(ID("Message_Type", location=Location((2, 2)))),
+                location=Location((1, 1)),
+            ),
             Link(
                 Field(ID("Message_Type", location=Location((3, 3)))),
                 FINAL,
@@ -716,6 +853,7 @@ def universal_message() -> Message:
                     Variable(ID("MT_Null", location=Location((4, 4)))),
                     location=Location((4, 4)),
                 ),
+                location=Location((4, 4)),
             ),
             Link(
                 Field(ID("Message_Type", location=Location((5, 5)))),
@@ -725,6 +863,7 @@ def universal_message() -> Message:
                     Variable(ID("MT_Unconstrained_Data", location=Location((1, 1)))),
                     location=Location((1, 1)),
                 ),
+                location=Location((5, 5)),
             ),
             Link(
                 Field(ID("Message_Type", location=Location((7, 7)))),
@@ -734,6 +873,7 @@ def universal_message() -> Message:
                     Variable(ID("MT_Unconstrained_Options", location=Location((8, 8)))),
                     location=Location((8, 8)),
                 ),
+                location=Location((7, 7)),
             ),
             Link(
                 Field(ID("Message_Type", location=Location((9, 9)))),
@@ -756,6 +896,7 @@ def universal_message() -> Message:
                     ),
                     location=Location((12, 12)),
                 ),
+                location=Location((9, 9)),
             ),
             Link(
                 Field(ID("Length", location=Location((13, 13)))),
@@ -765,9 +906,18 @@ def universal_message() -> Message:
                     Variable(ID("MT_Data", location=Location((14, 14)))),
                     location=Location((14, 14)),
                 ),
-                size=Mul(Variable(ID("Length", location=Location((15, 15)))), Number(8)),
+                size=Mul(
+                    Variable(ID("Length", location=Location((15, 15)))),
+                    Number(8),
+                    location=Location((15, 15)),
+                ),
+                location=Location((13, 13)),
             ),
-            Link(Field(ID("Data", location=Location((16, 16)))), FINAL),
+            Link(
+                Field(ID("Data", location=Location((16, 16)))),
+                FINAL,
+                location=Location((16, 16)),
+            ),
             Link(
                 Field(ID("Length", location=Location((17, 17)))),
                 Field(ID("Value", location=Location((18, 18)))),
@@ -785,7 +935,11 @@ def universal_message() -> Message:
                     location=Location((19, 19)),
                 ),
             ),
-            Link(Field(ID("Value", location=Location((21, 21)))), FINAL),
+            Link(
+                Field(ID("Value", location=Location((21, 21)))),
+                FINAL,
+                location=Location((21, 21)),
+            ),
             Link(
                 Field(ID("Length", location=Location((22, 22)))),
                 Field(ID("Values", location=Location((23, 23)))),
@@ -794,9 +948,18 @@ def universal_message() -> Message:
                     Variable(ID("MT_Values", location=Location((24, 24)))),
                     location=Location((24, 24)),
                 ),
-                size=Mul(Variable(ID("Length", location=Location((25, 25)))), Number(8)),
+                size=Mul(
+                    Variable(ID("Length", location=Location((25, 25)))),
+                    Number(8),
+                    location=Location((25, 25)),
+                ),
+                location=Location((22, 22)),
             ),
-            Link(Field(ID("Values", location=Location((26, 26)))), FINAL),
+            Link(
+                Field(ID("Values", location=Location((26, 26)))),
+                FINAL,
+                location=Location((26, 26)),
+            ),
             Link(
                 Field(ID("Length", location=Location((27, 27)))),
                 Field(ID("Option_Types", location=Location((28, 28)))),
@@ -805,9 +968,17 @@ def universal_message() -> Message:
                     Variable(ID("MT_Option_Types", location=Location((29, 29)))),
                     location=Location((29, 29)),
                 ),
-                size=Mul(Variable(ID("Length", location=Location((30, 30)))), Number(8)),
+                size=Mul(
+                    Variable(ID("Length", location=Location((30, 30)))),
+                    Number(8),
+                    location=Location((30, 30)),
+                ),
             ),
-            Link(Field(ID("Option_Types", location=Location((31, 31)))), FINAL),
+            Link(
+                Field(ID("Option_Types", location=Location((31, 31)))),
+                FINAL,
+                location=Location((31, 31)),
+            ),
             Link(
                 Field(ID("Length", location=Location((32, 32)))),
                 Field(ID("Options", location=Location((32, 32)))),
@@ -816,18 +987,27 @@ def universal_message() -> Message:
                     Variable(ID("MT_Options", location=Location((33, 33)))),
                     location=Location((33, 33)),
                 ),
-                size=Mul(Variable(ID("Length", location=Location((34, 34)))), Number(8)),
+                size=Mul(
+                    Variable(ID("Length", location=Location((34, 34)))),
+                    Number(8),
+                    location=Location((34, 34)),
+                ),
+                location=Location((34, 34)),
             ),
-            Link(Field(ID("Options", location=Location((35, 35)))), FINAL),
+            Link(
+                Field(ID("Options", location=Location((35, 35)))),
+                FINAL,
+                location=Location((35, 35)),
+            ),
         ],
         {
-            Field("Message_Type"): universal_message_type(),
-            Field("Length"): universal_length(),
-            Field("Data"): OPAQUE,
-            Field("Value"): universal_value(),
-            Field("Values"): universal_values(),
-            Field("Option_Types"): universal_option_types(),
-            Field("Options"): universal_options(),
+            Field(ID("Message_Type", location=Location((1, 1)))): universal_message_type(),
+            Field(ID("Length", location=Location((2, 2)))): universal_length(),
+            Field(ID("Data", location=Location((3, 3)))): OPAQUE,
+            Field(ID("Value", location=Location((4, 4)))): universal_value(),
+            Field(ID("Values", location=Location((5, 5)))): universal_values(),
+            Field(ID("Option_Types", location=Location((6, 6)))): universal_option_types(),
+            Field(ID("Options", location=Location((7, 7)))): universal_options(),
         },
     )
 
@@ -861,7 +1041,11 @@ def fixed_size_message() -> Message:
     return Message(
         ID("Fixed_Size::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("Message_Type", location=Location((2, 2))))),
+            Link(
+                INITIAL,
+                Field(ID("Message_Type", location=Location((2, 2)))),
+                location=Location((2, 2)),
+            ),
             Link(
                 Field(ID("Message_Type", location=Location((3, 3)))),
                 Field(ID("Data", location=Location((3, 3)))),
@@ -888,28 +1072,36 @@ def fixed_size_message() -> Message:
                     ),
                     location=Location((5, 5)),
                 ),
-                size=Number(64),
+                size=Number(64, location=Location((5, 5))),
+                location=Location((3, 3)),
             ),
             Link(
                 Field(ID("Data", location=Location((5, 5)))),
                 Field(ID("Values", location=Location((5, 5)))),
-                size=Mul(Number(8), Size(ID("Universal::Value", location=Location((5, 5))))),
+                size=Mul(
+                    Number(8),
+                    Size(ID("Universal::Value", location=Location((5, 5)))),
+                    location=Location((5, 5)),
+                ),
+                location=Location((5, 5)),
             ),
             Link(
                 Field(ID("Values", location=Location((6, 6)))),
                 Field(ID("Options", location=Location((6, 6)))),
-                size=Number(64),
+                size=Number(64, location=Location((6, 6))),
+                location=Location((6, 6)),
             ),
             Link(
                 Field(ID("Options", location=Location((7, 7)))),
                 FINAL,
+                location=Location((7, 7)),
             ),
         ],
         {
-            Field("Message_Type"): universal_message_type(),
-            Field("Data"): OPAQUE,
-            Field("Values"): universal_values(),
-            Field("Options"): universal_options(),
+            Field(ID("Message_Type", location=Location((1, 1)))): universal_message_type(),
+            Field(ID("Data", location=Location((2, 2)))): OPAQUE,
+            Field(ID("Values", location=Location((3, 3)))): universal_values(),
+            Field(ID("Options", location=Location((4, 4)))): universal_options(),
         },
     )
 
@@ -919,7 +1111,7 @@ def fixed_size_simple_message() -> Message:
     return Message(
         ID("Fixed_Size::Simple_Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Message_Type")),
+            Link(INITIAL, Field("Message_Type"), location=Location((1, 1))),
             Link(
                 Field("Message_Type"),
                 Field("Data"),
@@ -928,16 +1120,18 @@ def fixed_size_simple_message() -> Message:
                     Variable("Universal::OT_Data"),
                     location=Location((4, 4)),
                 ),
-                size=Number(24),
+                size=Number(24, location=Location((4, 4))),
+                location=Location((2, 2)),
             ),
             Link(
                 Field("Data"),
                 FINAL,
+                location=Location((5, 5)),
             ),
         ],
         {
-            Field("Message_Type"): universal_option_type(),
-            Field("Data"): OPAQUE,
+            Field(ID("Message_Type", location=Location((1, 1)))): universal_option_type(),
+            Field(ID("Data", location=Location((2, 2)))): OPAQUE,
         },
     )
 
@@ -947,20 +1141,22 @@ def definite_message() -> Message:
     return Message(
         ID("Definite::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Length")),
+            Link(INITIAL, Field("Length"), location=Location((1, 1))),
             Link(
                 Field("Length"),
                 Field("Data"),
-                size=Mul(Variable("Length"), Number(8)),
+                size=Mul(Variable("Length"), Number(8), location=Location((2, 2))),
+                location=Location((2, 2)),
             ),
             Link(
                 Field("Data"),
                 FINAL,
+                location=Location((3, 3)),
             ),
         ],
         {
-            Field("Length"): universal_length(),
-            Field("Data"): OPAQUE,
+            Field(ID("Length", location=Location((1, 1)))): universal_length(),
+            Field(ID("Data", location=Location((2, 2)))): OPAQUE,
         },
     )
 

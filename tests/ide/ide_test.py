@@ -78,9 +78,10 @@ def test_multiple_errors() -> None:
             f'{path}:76:9: info: type "E6" has size 4, must be multiple of 8',
             f'{path}:84:30: error: invalid First for field "Final"',
             f"{path}:87:9: error: message size must be multiple of 8 bit",
-            f"{path}:87:9: info: on path Field",
-            f'{path}:94:44: error: size of opaque field "Data" not multiple of 8 bit'
-            " (Length -> Data)",
+            f'{path}:89:10: note: on path "Field"',
+            f'{path}:94:44: error: size of opaque field "Data" not multiple of 8 bit',
+            f"{path}:94:44: help: sizes are expressed in bits, not bytes",
+            f'{path}:94:44: help: did you mean "Length * 8"?',
             f'{path}:97:8: error: undefined type "RFLX_Invalid::PDU1" in refinement',
             f'{path}:97:40: error: undefined type "RFLX_Invalid::SDU2" in refinement '
             'of "RFLX_Invalid::PDU1"',
@@ -111,8 +112,8 @@ def test_multiple_errors() -> None:
             f'{path}:147:9: info: when merging message "RFLX_Invalid::M4"',
             f'{path}:154:10: info: into field "F2"',
             f'{path}:164:10: error: unreachable field "Data1"',
-            f'{path}:161:10: info: on path: "Length"',
-            f'{path}:162:18: info: on path: "Data1"',
+            f'{path}:161:10: note: on path "Length"',
+            f'{path}:162:18: note: on path "Data1"',
             f"{path}:168:19: info: unsatisfied \"3 * R'Size = Data1'Size\"",
             f'{path}:8:9: info: unsatisfied "R\'Size = 16"',
             f'{path}:8:9: info: unsatisfied "Length <= 23"',
@@ -128,7 +129,9 @@ def test_multiple_errors() -> None:
             f'{path}:238:19: error: undefined variable "F1"',
             f"{path}:238:19: info: on path F1",
             f'{path}:247:29: error: negative size for field "F2" (F1 -> F2)',
-            f'{path}:247:29: error: size of opaque field "F2" not multiple of 8 bit (F1 -> F2)',
+            f'{path}:247:29: error: size of opaque field "F2" not multiple of 8 bit',
+            f"{path}:247:29: help: sizes are expressed in bits, not bytes",
+            f'{path}:247:29: help: did you mean "(F1 - 2 ** 33) * 8"?',
             f'{path}:242:9: error: negative start for field "Final" (F1 -> F2 -> Final)',
             f"{path}:245:18: info: unsatisfied \"F2'Last = (F1'Last + 1 + (F1 - 2 ** 33)) - 1\"",
             f"{path}:244:10: info: unsatisfied \"F1'Last = (Message'First + 32) - 1\"",
@@ -179,6 +182,6 @@ def test_parse_error_invalid_location() -> None:
         [
             f'{path}:7:21: error: invalid aspect "Invalid"',
             f"{path}:3:9: error: message size must be multiple of 8 bit",
-            f"{path}:3:9: info: on path Y",
+            f'{path}:5:10: note: on path "Y"',
         ],
     )

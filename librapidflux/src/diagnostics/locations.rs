@@ -81,27 +81,44 @@ impl Location {
     /// This function takes a slice of locations and calculates the smallest starting location
     /// and the largest ending location among them. It then returns a new location that spans
     /// from the smallest starting location to the largest ending location, including
-    /// the source file information from the smallest starting location.
+    /// the source file information from the smallest starting location. In case locations refer
+    /// to different source files, only locations referring to the same source file as the first
+    /// location in the slice are considered.
     ///
     /// # Panics
     ///
     /// This function panics if not all locations refer to the same source file.
     pub fn merge(locations: &[Self]) -> Option<Self> {
         assert!(
-            locations.windows(2).all(|w| w[0].source == w[1].source),
-            "attempted to merge locations from different source files"
+            locations.iter().all(|l| l.source.is_none())
+                || locations.iter().all(|l| l.source.is_some()),
+            "attempted to merge locations with and without source file"
         );
+        let first_location = locations.first()?;
+        let filter_first_path = |l: &&Location| l.source.as_ref() == first_location.source.as_ref();
 
         let min_loc = locations
             .iter()
+            .filter(filter_first_path)
             .map(|l| l.start)
-            .chain(locations.iter().filter_map(|l| l.end))
+            .chain(
+                locations
+                    .iter()
+                    .filter(filter_first_path)
+                    .filter_map(|l| l.end),
+            )
             .min()?;
 
         let max_loc = locations
             .iter()
+            .filter(filter_first_path)
             .map(|l| l.start)
-            .chain(locations.iter().filter_map(|l| l.end))
+            .chain(
+                locations
+                    .iter()
+                    .filter(filter_first_path)
+                    .filter_map(|l| l.end),
+            )
             .max()
             .expect("unreachable");
 
@@ -373,24 +390,44 @@ Third",
             source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
         }),
     )]
+    #[case::location_merge_first_filename(
+        &[
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 17)),
+                source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
+            },
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 10)),
+                source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
+            },
+        ],
+        Some(Location {
+            start: FilePosition::new(1, 1),
+            end: Some(FilePosition::new(1, 17)),
+            source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path"))
+        }),
+    )]
+    #[should_panic(expected = "attempted to merge locations with and without source file")]
+    #[case::location_merge_source_present_and_absent(
+        &[
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 17)),
+                source: None,
+            },
+            Location {
+                start: FilePosition::new(1, 1),
+                end: Some(FilePosition::new(1, 10)),
+                source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path"))
+            },
+        ],
+        None,
+    )]
     #[case::location_no_elements(&[], None)]
     fn test_location_merge(#[case] locations: &[Location], #[case] expected: Option<Location>) {
         assert_eq!(Location::merge(locations), expected);
-    }
-
-    #[test]
-    #[should_panic(expected = "attempted to merge locations from different source files")]
-    fn test_location_merge_with_different_source_files() {
-        Location::merge(&[
-            Location {
-                source: Some(PathBuf::from_str("foo.rflx").expect("failed to create path")),
-                ..Default::default()
-            },
-            Location {
-                source: Some(PathBuf::from_str("bar.rflx").expect("failed to create path")),
-                ..Default::default()
-            },
-        ]);
     }
 
     #[test]

@@ -39,17 +39,18 @@ GENERATOR_TEST_CASES = [
                 Message(
                     ID("P::Message", Location((1, 1))),
                     [
-                        Link(INITIAL, Field("A")),
-                        Link(Field("A"), Field("B")),
+                        Link(INITIAL, Field("A"), location=Location((1, 1))),
+                        Link(Field("A"), Field("B"), location=Location((1, 1))),
                         Link(
                             Field("B"),
                             FINAL,
                             condition=expr.Variable("A"),
+                            location=Location((2, 2)),
                         ),
                     ],
                     {
-                        Field("A"): type_decl.BOOLEAN,
-                        Field("B"): type_decl.Integer(
+                        Field(ID("A", location=Location((1, 1)))): type_decl.BOOLEAN,
+                        Field(ID("B", location=Location((2, 2)))): type_decl.Integer(
                             "P::T",
                             first=expr.Number(0),
                             last=expr.Number(127),
@@ -394,20 +395,26 @@ def test_generate_field_size_optimization() -> None:
     message = Message(
         ID("P::Message", Location((1, 1))),
         [
-            Link(INITIAL, Field("Length")),
+            Link(INITIAL, Field("Length"), location=Location((1, 1))),
             Link(
                 Field("Length"),
                 Field("Data"),
-                size=expr.Add(expr.Size(expr.Variable("Length")), expr.Number(8)),
+                size=expr.Add(
+                    expr.Size(expr.Variable("Length")),
+                    expr.Number(8),
+                    location=Location((2, 2)),
+                ),
+                location=Location((2, 2)),
             ),
             Link(
                 Field("Data"),
                 FINAL,
+                location=Location((3, 3)),
             ),
         ],
         {
-            Field("Length"): models.universal_length(),
-            Field("Data"): type_decl.OPAQUE,
+            Field(ID("Length", location=Location((1, 1)))): models.universal_length(),
+            Field(ID("Data", location=Location((2, 2)))): type_decl.OPAQUE,
         },
     )
     structure = create_structure("", message)
@@ -438,8 +445,9 @@ def test_generate_multiple_initial_conditions(tmp_path: Path) -> None:
                     expr.TRUE,
                     location=Location((3, 3)),
                 ),
+                location=Location((3, 3)),
             ),
-            Link(Field(ID("Tag", location=Location((4, 4)))), FINAL),
+            Link(Field(ID("Tag", location=Location((4, 4)))), FINAL, location=Location((4, 4))),
             Link(
                 INITIAL,
                 Field(ID("Length", location=Location((5, 5)))),
@@ -448,6 +456,7 @@ def test_generate_multiple_initial_conditions(tmp_path: Path) -> None:
                     expr.FALSE,
                     location=Location((6, 6)),
                 ),
+                location=Location((6, 6)),
             ),
             Link(
                 Field(ID("Length", location=Location((7, 7)))),
@@ -455,18 +464,21 @@ def test_generate_multiple_initial_conditions(tmp_path: Path) -> None:
                 size=expr.Add(
                     expr.Size(expr.Variable(ID("Length", location=Location((9, 9))))),
                     expr.Number(8),
+                    location=Location((8, 8)),
                 ),
+                location=Location((7, 7)),
             ),
             Link(
                 Field(ID("Data", location=Location((10, 10)))),
                 FINAL,
+                location=Location((10, 10)),
             ),
         ],
         {
-            Field("Tag"): models.enumeration(),
-            Field("Length"): models.universal_length(),
-            Field("Data"): type_decl.OPAQUE,
-            Field("P"): type_decl.BOOLEAN,
+            Field(ID("Tag", location=Location((1, 1)))): models.enumeration(),
+            Field(ID("Length", location=Location((1, 1)))): models.universal_length(),
+            Field(ID("Data", location=Location((1, 1)))): type_decl.OPAQUE,
+            Field(ID("P", location=Location((1, 1)))): type_decl.BOOLEAN,
         },
     )
     Generator().generate(Model([message]), Integration(), tmp_path)

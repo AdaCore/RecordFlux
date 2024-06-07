@@ -263,8 +263,11 @@ def test_write_specification_files(tmp_path: Path) -> None:
     s = Session("P::S", [State("A", [Transition("null")])], [], [], [])
     m = Message(
         ID("P::M", Location((1, 1))),
-        [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)],
-        {Field("Foo"): t},
+        [
+            Link(INITIAL, Field("Foo"), location=Location((1, 1))),
+            Link(Field("Foo"), FINAL, location=Location((2, 2))),
+        ],
+        {Field(ID("Foo", location=Location((1, 1)))): t},
     )
     Model([t, v, s, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
@@ -302,8 +305,11 @@ def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
     v = type_decl.Sequence("P::V", element_type=t)
     m = Message(
         ID("P::M", Location((1, 1))),
-        [Link(INITIAL, Field("Foo")), Link(Field("Foo"), FINAL)],
-        {Field("Foo"): t},
+        [
+            Link(INITIAL, Field("Foo"), location=Location((1, 1))),
+            Link(Field("Foo"), FINAL, location=Location((2, 2))),
+        ],
+        {Field(ID("Foo", location=Location((1, 1)))): t},
     )
     Model([s, v, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
@@ -333,11 +339,14 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
     u1 = type_decl.Sequence("Q::U1", element_type=t)
     v = Integer("R::V", Number(0), Number(65535), Number(16))
     links = [
-        Link(INITIAL, Field("Victor")),
-        Link(Field("Victor"), Field("Uniform")),
-        Link(Field("Uniform"), FINAL),
+        Link(INITIAL, Field("Victor"), location=Location((1, 1))),
+        Link(Field("Victor"), Field("Uniform"), location=Location((2, 2))),
+        Link(Field("Uniform"), FINAL, location=Location((3, 3))),
     ]
-    fields = {Field("Victor"): v, Field("Uniform"): u}
+    fields = {
+        Field(ID("Victor", location=Location((1, 1)))): v,
+        Field(ID("Uniform", location=Location((2, 2)))): u,
+    }
     m = Message(ID("R::M", Location((1, 1))), links, fields)
     Model([t, v, u1, m, u]).write_specification_files(tmp_path)
     p_path, q_path, r_path = (tmp_path / Path(pkg + ".rflx") for pkg in ("p", "q", "r"))
@@ -388,11 +397,14 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
     u1 = type_decl.Sequence("Q::U1", element_type=t)
     v = Integer("R::V", Number(0), Number(65535), Number(16))
     links = [
-        Link(INITIAL, Field("Victor")),
-        Link(Field("Victor"), Field("Uniform")),
-        Link(Field("Uniform"), FINAL),
+        Link(INITIAL, Field("Victor"), location=Location((1, 1))),
+        Link(Field("Victor"), Field("Uniform"), location=Location((2, 2))),
+        Link(Field("Uniform"), FINAL, location=Location((3, 3))),
     ]
-    fields = {Field("Victor"): v, Field("Uniform"): u}
+    fields = {
+        Field(ID("Victor", location=Location((1, 1)))): v,
+        Field(ID("Uniform", location=Location((2, 2)))): u,
+    }
     m = Message(ID("R::M", Location((1, 1))), links, fields)
     Model([u1, m, u, v]).write_specification_files(tmp_path)
     p_path, q_path, r_path = (tmp_path / Path(pkg + ".rflx") for pkg in ("p", "q", "r"))
@@ -509,12 +521,17 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
                 UncheckedMessage(
                     ID("P::M", Location((1, 1))),
                     [
-                        Link(INITIAL, Field("F"), size=Number(16)),
-                        Link(Field("F"), FINAL),
+                        Link(
+                            INITIAL,
+                            Field("F"),
+                            size=Number(16, location=Location((1, 1))),
+                            location=Location((1, 1)),
+                        ),
+                        Link(Field("F"), FINAL, location=Location((2, 2))),
                     ],
                     [],
                     [
-                        (Field("F"), OPAQUE.identifier, []),
+                        (Field(ID("F", location=Location((1, 1)))), OPAQUE.identifier, []),
                     ],
                     None,
                     None,
@@ -526,11 +543,16 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
                 lambda: Message(
                     ID("P::M", Location((1, 1))),
                     [
-                        Link(INITIAL, Field("F"), size=Number(16)),
-                        Link(Field("F"), FINAL),
+                        Link(
+                            INITIAL,
+                            Field("F"),
+                            size=Number(16, location=Location((1, 1))),
+                            location=Location((1, 1)),
+                        ),
+                        Link(Field("F"), FINAL, location=Location((2, 2))),
                     ],
                     {
-                        Field("F"): OPAQUE,
+                        Field(ID("F", location=Location((1, 1)))): OPAQUE,
                     },
                 ),
             ],
@@ -595,17 +617,23 @@ def test_unchecked_model_checked(
                         Link(
                             INITIAL,
                             Field("F1"),
-                            size=Number(16),
+                            size=Number(16, location=Location((1, 1))),
+                            location=Location((1, 1)),
                         ),
                         Link(
                             Field(ID("F1", Location((5, 6)))),
                             FINAL,
                             condition=Equal(Number(1), Number(1)),
+                            location=Location((5, 5)),
                         ),
                     ],
                     [],
                     [
-                        (Field("F1"), UNCHECKED_OPAQUE.identifier, []),
+                        (
+                            Field(ID("F1", location=Location((1, 1)))),
+                            UNCHECKED_OPAQUE.identifier,
+                            [],
+                        ),
                     ],
                     None,
                     None,
@@ -635,15 +663,21 @@ def test_unchecked_model_checked(
                         Link(
                             INITIAL,
                             Field("F"),
+                            location=Location((1, 1)),
                         ),
                         Link(
                             Field(ID("F", Location((3, 1)))),
                             FINAL,
+                            location=Location((1, 1)),
                         ),
                     ],
                     [],
                     [
-                        (Field("F"), ID("P::T"), []),
+                        (
+                            Field(ID("F", location=Location((1, 1)))),
+                            ID("P::T", location=Location((2, 2))),
+                            [],
+                        ),
                     ],
                     None,
                     None,
@@ -655,15 +689,21 @@ def test_unchecked_model_checked(
                         Link(
                             INITIAL,
                             Field("F"),
+                            location=Location((1, 1)),
                         ),
                         Link(
                             Field(ID("F", Location((5, 1)))),
                             FINAL,
+                            location=Location((2, 2)),
                         ),
                     ],
                     [],
                     [
-                        (Field("F"), ID("P::T"), []),
+                        (
+                            Field(ID("F", location=Location((1, 1)))),
+                            ID("P::T", location=Location((2, 2))),
+                            [],
+                        ),
                     ],
                     None,
                     None,

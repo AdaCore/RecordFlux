@@ -422,8 +422,16 @@ def test_sequence_dependencies() -> None:
         (
             lambda: Message(
                 ID("P::B", Location((1, 1))),
-                [Link(INITIAL, Field("A"), size=Size("Message")), Link(Field("A"), FINAL)],
-                {Field("A"): OPAQUE},
+                [
+                    Link(
+                        INITIAL,
+                        Field("A"),
+                        size=Size(ID("Message", location=Location((1, 1)))),
+                        location=Location((1, 1)),
+                    ),
+                    Link(Field("A"), FINAL, location=Location((2, 2))),
+                ],
+                {Field(ID("A", location=Location((1, 1)))): OPAQUE},
                 location=Location((3, 4)),
             ),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
@@ -434,10 +442,15 @@ def test_sequence_dependencies() -> None:
             lambda: Message(
                 ID("P::B", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("A"), condition=Equal(Size("Message"), Number(8))),
-                    Link(Field("A"), FINAL),
+                    Link(
+                        INITIAL,
+                        Field("A"),
+                        condition=Equal(Size("Message"), Number(8)),
+                        location=Location((1, 1)),
+                    ),
+                    Link(Field("A"), FINAL, location=Location((2, 2))),
                 ],
-                {Field("A"): models.integer()},
+                {Field(ID("A", location=Location((1, 1)))): models.integer()},
                 location=Location((3, 4)),
             ),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
@@ -448,10 +461,13 @@ def test_sequence_dependencies() -> None:
             lambda: Message(
                 ID("P::B", Location((1, 1))),
                 [
-                    Link(INITIAL, Field("A"), condition=Variable("P")),
-                    Link(Field("A"), FINAL),
+                    Link(INITIAL, Field("A"), condition=Variable("P"), location=Location((1, 1))),
+                    Link(Field("A"), FINAL, location=Location((2, 2))),
                 ],
-                {Field("P"): BOOLEAN, Field("A"): models.integer()},
+                {
+                    Field(ID("P", location=Location((1, 1)))): BOOLEAN,
+                    Field(ID("A", location=Location((2, 2)))): models.integer(),
+                },
                 location=Location((3, 4)),
             ),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
