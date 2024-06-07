@@ -29,7 +29,7 @@ Set up the development environment.
 
 .. code:: console
 
-   $ make install_devel
+   $ make install
 
 All other make targets that require an existing development environment (e.g. ``make check``) will automatically download and install all required dependencies as well.
 Some dependencies are managed in other git repositories and will be cloned during the initial setup.
@@ -65,7 +65,7 @@ Make targets for common development tasks are:
 - ``test`` Execute tests for Python, SPARK and Rust code
 - ``prove`` Run GNATprove on SPARK tests and example apps
 - ``format`` Perform automatic code formatting on Python code
-- ``install_devel`` Install project in editable mode
+- ``install`` Install project in editable mode
 - ``doc`` Generate HTML documentation
 - ``dist`` Create Python package
 - ``clean`` Remove build directories and generated files
@@ -211,7 +211,7 @@ Then, make this available to the editable installation of RecordFlux by executin
 
 .. code:: console
 
-   make install_devel
+   make install
 
 Finally, use the dedicated ``rflx install`` sub-command to install the extension into VS Code:
 
