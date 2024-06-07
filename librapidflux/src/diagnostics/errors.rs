@@ -1144,8 +1144,8 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     #[allow(clippy::items_after_statements)]
+    #[serial]
     fn test_rapid_flux_error_print_message_default_annotation() {
         let file_path = PathBuf::from_str("tests/data/sample.rflx").unwrap();
         let mut error: RapidFluxError = vec![ErrorEntry::new(
