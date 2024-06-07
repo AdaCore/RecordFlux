@@ -157,12 +157,12 @@ mod tests {
     use super::set_quiet;
 
     #[rstest]
-    #[parallel]
     #[case::log_error(Severity::Error, "error: Foo bar baz\n")]
     #[case::log_warning(Severity::Warning, "warning: Foo bar baz\n")]
     #[case::log_help(Severity::Help, "help: Foo bar baz\n")]
     #[case::log_note(Severity::Note, "note: Foo bar baz\n")]
     #[case::log_info(Severity::Info, "info: Foo bar baz\n")]
+    #[parallel]
     fn test_log_only_str(#[case] severity: Severity, #[case] expected_str: &str) {
         let mut cursor = Cursor::new(Vec::new());
         let mut output = String::new();
@@ -176,12 +176,12 @@ mod tests {
     }
 
     #[rstest]
-    #[parallel]
     #[case::log_error(Severity::Error, "error: 1 two 3.0\n")]
     #[case::log_warning(Severity::Warning, "warning: 1 two 3.0\n")]
     #[case::log_help(Severity::Help, "help: 1 two 3.0\n")]
     #[case::log_note(Severity::Note, "note: 1 two 3.0\n")]
     #[case::log_info(Severity::Info, "info: 1 two 3.0\n")]
+    #[parallel]
     fn test_log_with_format(#[case] severity: Severity, #[case] expected_str: &str) {
         let mut cursor = Cursor::new(Vec::new());
         let mut output = String::new();
@@ -226,9 +226,9 @@ mod tests {
     }
 
     #[rstest]
-    #[serial]
     #[case::quiet_true(true)]
     #[case::quiet_false(false)]
+    #[serial]
     fn test_is_quiet_true(#[case] quiet: bool) {
         set_quiet(quiet);
         assert_eq!(is_quiet(), quiet);
