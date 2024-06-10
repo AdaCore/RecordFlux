@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for FSF GNAT 14.1 (eng/recordflux/RecordFlux#1679)
+
 ### Changed
 
 - Display message fields involved in a cycle (eng/recordflux/RecordFlux#256)

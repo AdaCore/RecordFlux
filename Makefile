@@ -271,7 +271,7 @@ ALR ?= alr
 
 .PHONY: install_gnat printenv_gnat
 
-install_gnat: FSF_GNAT_VERSION ?= 11.2.4
+install_gnat: FSF_GNAT_VERSION ?= 14.1.3
 install_gnat: GPRBUILD_VERSION ?= 22.0.1
 install_gnat:
 	$(RM) -r build/alire

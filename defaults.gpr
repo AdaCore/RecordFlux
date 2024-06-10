@@ -30,6 +30,8 @@ abstract project Defaults is
       when "fsf13.2.1" =>
          GNATVO := "";  -- Eng/RecordFlux/Workarounds#51
          GNATA  := "";  -- Eng/RecordFlux/Workarounds#52
+      when "fsf14.1.3" =>
+         GNATVO := "";  -- Eng/RecordFlux/Workarounds#53
       when others =>
    end case;
 
