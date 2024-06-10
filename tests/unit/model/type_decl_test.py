@@ -494,7 +494,7 @@ def test_sequence_dependencies() -> None:
                     Link(
                         INITIAL,
                         Field("A"),
-                        condition=Equal(Size("Message"), Number(8)),
+                        condition=Equal(Size("Message"), Number(8), location=Location((1, 2))),
                         location=Location((1, 1)),
                     ),
                     Link(Field("A"), FINAL, location=Location((2, 2))),

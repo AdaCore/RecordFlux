@@ -382,6 +382,7 @@ def ethernet_frame() -> Message:
                         Number(1500),
                         Location((15, 1)),
                     ),
+                    location=Location((16, 17)),
                 ),
                 location=Location((14, 14)),
             ),
@@ -635,7 +636,11 @@ def expression_message() -> Message:
             Link(
                 Field("Payload"),
                 FINAL,
-                Equal(Variable("Payload"), Aggregate(Number(1), Number(2))),
+                Equal(
+                    Variable("Payload"),
+                    Aggregate(Number(1), Number(2)),
+                    location=Location((2, 1)),
+                ),
                 location=Location((2, 2)),
             ),
         ],

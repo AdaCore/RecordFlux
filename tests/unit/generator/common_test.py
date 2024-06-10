@@ -141,7 +141,11 @@ def test_param_enumeration_condition() -> None:
     link = Link(
         Field("A"),
         Field("B"),
-        condition=expr.Equal(expr.Variable("Param", type_=type_.type_), expr.Literal("E1")),
+        condition=expr.Equal(
+            expr.Variable("Param", type_=type_.type_),
+            expr.Literal("E1"),
+            location=Location((2, 1)),
+        ),
         location=Location((2, 2)),
     )
 

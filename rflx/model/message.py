@@ -1798,13 +1798,23 @@ class Message(type_decl.TypeDecl):
                 *self.message_constraints,
                 *self.aggregate_constraints(l.condition),
             ]
+            assert l.source.identifier.location is not None
+            assert l.condition.location is not None
+
             unsat_error = RecordFluxError(
                 [
                     ErrorEntry(
-                        f'condition "{l.condition}" on transition "{l.source.identifier}"'
-                        f' -> "{l.target.identifier}" is always true',
+                        "condition is always true",
                         Severity.ERROR,
-                        l.source.identifier.location,
+                        l.condition.location,
+                        annotations=[
+                            Annotation(
+                                "proven to be always true",
+                                Severity.ERROR,
+                                l.condition.location,
+                            ),
+                        ],
+                        generate_default_annotation=False,
                     ),
                 ],
             )
@@ -1812,18 +1822,25 @@ class Message(type_decl.TypeDecl):
             unknown_error = RecordFluxError(
                 [
                     ErrorEntry(
-                        f'condition "{l.condition}" on transition "{l.source.identifier}"'
-                        f' -> "{l.target.identifier}" might be always true',
+                        "condition might always be true",
                         Severity.WARNING,
-                        l.source.identifier.location,
+                        l.condition.location,
+                        annotations=[
+                            Annotation(
+                                "may be always true",
+                                Severity.WARNING,
+                                l.condition.location,
+                            ),
+                        ],
                     ),
                 ],
             )
             proofs.add(
-                expr.Equal(l.condition, expr.FALSE),
+                expr.Equal(l.condition, expr.FALSE, l.condition.location),
                 facts,
                 unsat_error=unsat_error.entries,
                 unknown_error=unknown_error.entries,
+                add_unsat=True,
             )
 
     def _prove_conflicting_conditions(self, proofs: expr_proof.ParallelProofs) -> None:

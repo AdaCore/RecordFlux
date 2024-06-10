@@ -1697,3 +1697,52 @@ def test_refinement_similar_name(tmp_path: Path, capfd: pytest.CaptureFixture[st
         ),
         capfd,
     )
+
+
+def test_condition_is_always_true(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+                package Test is
+                   type T is range 0 .. 255 with Size => 8;
+                   type M is
+                      message
+                         A : T
+                            then B
+                               if A < 1000;
+                        B : T;
+                      end message;
+                end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::T
+            info: Verifying Test::M
+            error: condition is always true
+             --> {file_path}:7:19
+              |
+            2 |    type T is range 0 .. 255 with Size => 8;
+              |         ---------------------------------- note: unsatisfied "A <= 255"
+            3 |    type M is
+            ...
+            6 |             then B
+            7 |                if A < 1000;
+              |                   ^^^^^^^^ proven to be always true
+              |                   -------- note: unsatisfied "(A < 1000) = False"
+              |
+              """,
+        ),
+        capfd,
+    )

@@ -624,7 +624,7 @@ def test_unchecked_model_checked(
                         Link(
                             Field(ID("F1", Location((5, 6)))),
                             FINAL,
-                            condition=Equal(Number(1), Number(1)),
+                            condition=Equal(Number(1), Number(1), location=Location((5, 7))),
                             location=Location((5, 5)),
                         ),
                     ],
@@ -645,8 +645,9 @@ def test_unchecked_model_checked(
             r'<stdin>:1:2: error: size of "I" too small\n'
             r"<stdin>:1:1: help: at least 8 bits are required to store the upper bound\n"
             r'<stdin>:3:4: error: invalid format for identifier "E"\n'
-            r'<stdin>:5:6: error: condition "1 = 1" on transition "F1" -> "Final"'
-            r" is always true"
+            r"<stdin>:5:7: error: condition is always true\n"
+            r"<stdin>:5:7: error: proven to be always true\n"
+            r'<stdin>:5:7: note: unsatisfied "\(1 = 1\) = False"'
             r"$",
             [],
         ),

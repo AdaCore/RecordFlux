@@ -2890,6 +2890,7 @@ def test_message_field_condition(spec: str) -> None:
                         condition=expr.And(
                             expr.Greater(expr.Variable("A"), expr.Number(10)),
                             expr.Less(expr.Variable("A"), expr.Number(100)),
+                            location=Location((2, 1)),
                         ),
                         location=Location((2, 2)),
                     ),
@@ -3044,6 +3045,7 @@ def test_message_field_condition_and_aspects(link: str, field_b: str) -> None:
                         condition=expr.And(
                             expr.Greater(expr.Variable("A"), expr.Number(10)),
                             expr.Less(expr.Variable("A"), expr.Number(100)),
+                            location=Location((2, 3)),
                         ),
                         location=Location((2, 2)),
                     ),
@@ -3103,7 +3105,11 @@ def test_parameterized_messages() -> None:
                     Link(
                         Field("F"),
                         FINAL,
-                        condition=expr.Less(expr.Variable("P"), expr.Number(100)),
+                        condition=expr.Less(
+                            expr.Variable("P"),
+                            expr.Number(100),
+                            location=Location((2, 1)),
+                        ),
                         location=Location((2, 2)),
                     ),
                 ],
@@ -3142,7 +3148,11 @@ def test_parameterized_messages() -> None:
                     Link(
                         Field("F_F"),
                         FINAL,
-                        condition=expr.Less(expr.Variable("L"), expr.Number(100)),
+                        condition=expr.Less(
+                            expr.Variable("L"),
+                            expr.Number(100),
+                            location=Location((3, 2)),
+                        ),
                         location=Location((3, 3)),
                     ),
                 ],

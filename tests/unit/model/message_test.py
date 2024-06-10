@@ -779,7 +779,11 @@ def test_field_identifier_locations() -> None:
         ID("P::M", Location((1, 1))),
         [
             Link(INITIAL, Field("A")),
-            Link(Field("A"), Field("B"), condition=Less(Variable("A"), Variable("P"))),
+            Link(
+                Field("A"),
+                Field("B"),
+                condition=Less(Variable("A"), Variable("P"), location=Location((2, 2))),
+            ),
             Link(Field("B"), FINAL),
         ],
         {p: models.integer(), a: models.integer(), b: models.integer()},
@@ -1307,7 +1311,11 @@ def test_opaque_not_byte_aligned_dynamic() -> None:
                     Field(ID("L1", location=Location((2, 2)))),
                     Field(ID("O1", location=Location((2, 3)))),
                     size=Variable(ID("L1", location=Location((2, 4)))),
-                    condition=Equal(Mod(Variable("L1"), Number(8)), Number(0)),
+                    condition=Equal(
+                        Mod(Variable("L1"), Number(8)),
+                        Number(0),
+                        location=Location((2, 6)),
+                    ),
                     location=Location((2, 5)),
                 ),
                 Link(
@@ -1366,7 +1374,11 @@ def test_opaque_valid_byte_aligned_dynamic_cond() -> None:
                 Field(ID("L", location=Location((2, 2)))),
                 Field(ID("O1", location=Location((2, 2)))),
                 size=Variable(ID("L", location=Location((3, 3)))),
-                condition=Equal(Mod(Variable("L"), Number(8)), Number(0)),
+                condition=Equal(
+                    Mod(Variable("L"), Number(8)),
+                    Number(0),
+                    location=Location((3, 4)),
+                ),
                 location=Location((2, 2)),
             ),
             Link(
@@ -2014,10 +2026,11 @@ def test_tlv_valid_enum() -> None:
         Link(
             Field("T"),
             Field("V"),
-            size=Mul(Number(8), Variable("L"), location=Location((3, 3))),
+            size=Mul(Number(8), Variable("L"), location=Location((3, 2))),
             condition=And(
                 NotEqual(Variable("T"), Variable("Two")),
                 LessEqual(Variable("L"), Number(8192)),
+                location=Location((3, 4)),
             ),
             location=Location((3, 3)),
         ),
@@ -2237,7 +2250,7 @@ def test_invalid_negative_field_size_3() -> None:
         Link(
             Field("F2"),
             FINAL,
-            condition=Greater(Variable("F1"), Number(1)),
+            condition=Greater(Variable("F1"), Number(1), location=Location((3, 2))),
             location=Location((3, 3)),
         ),
     ]
@@ -2354,8 +2367,12 @@ def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.parametrize(
     "condition",
     [
-        Equal(Size("Message"), Number(64)),
-        Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
+        Equal(Size("Message"), Number(64), location=Location((2, 1))),
+        Equal(
+            Add(Sub(Last("Message"), First("Message")), Number(1)),
+            Number(64),
+            location=Location((2, 1)),
+        ),
     ],
 )
 @pytest.mark.parametrize("type_decl", [OPAQUE, models.sequence_integer_vector()])
@@ -2385,8 +2402,12 @@ def test_message_with_implicit_size_single_field(
 @pytest.mark.parametrize(
     "condition",
     [
-        Equal(Size("Message"), Number(64)),
-        Equal(Add(Sub(Last("Message"), First("Message")), Number(1)), Number(64)),
+        Equal(Size("Message"), Number(64), location=Location((3, 2))),
+        Equal(
+            Add(Sub(Last("Message"), First("Message")), Number(1)),
+            Number(64),
+            location=Location((3, 2)),
+        ),
     ],
 )
 @pytest.mark.parametrize("type_decl", [OPAQUE, models.sequence_integer_vector()])
@@ -3436,11 +3457,11 @@ def test_discontiguous_optional_fields_error() -> None:
                     ValueRange(First("F3"), Last("F3")),
                 ],
             },
-            ValidChecksum("F3"),
+            ValidChecksum(ID("F3", location=Location((4, 3)))),
         ),
         (
             {ID("F2"): [Variable("F1")], ID("F3"): [Variable("F1"), Size("F2")]},
-            And(ValidChecksum("F2"), ValidChecksum("F3")),
+            And(ValidChecksum("F2"), ValidChecksum("F3"), location=Location((4, 3))),
         ),
         (
             {
@@ -3449,7 +3470,7 @@ def test_discontiguous_optional_fields_error() -> None:
                     ValueRange(First("F3"), Last("Message")),
                 ],
             },
-            ValidChecksum("F3"),
+            ValidChecksum(ID("F3", location=Location((4, 3)))),
         ),
     ],
 )
@@ -5047,7 +5068,7 @@ def test_merge_message_constrained_empty() -> None:
     m1 = Message(
         ID("P::M1", Location((1, 1))),
         [
-            Link(INITIAL, Field(ID("F1", location=Location((2, 2))))),
+            Link(INITIAL, Field(ID("F1", location=Location((2, 2)))), location=Location((2, 3))),
             Link(
                 Field(ID("F1", location=Location((3, 3)))),
                 Field(ID("F2", location=Location((3, 3)))),
@@ -5066,7 +5087,12 @@ def test_merge_message_constrained_empty() -> None:
                     location=Location((7, 7)),
                 ),
             ),
-            Link(Field("F2"), FINAL, Equal(Variable("F2"), Number(2))),
+            Link(
+                Field(ID("F2", location=Location((8, 7)))),
+                FINAL,
+                Equal(Variable("F2"), Number(2), location=Location((8, 8))),
+                location=Location((8, 9)),
+            ),
         ],
         {
             Field("F1"): models.integer(),
@@ -5642,6 +5668,7 @@ def test_merge_message_with_condition_on_message_type_field() -> None:
                 condition=And(
                     Variable("Flag"),
                     Equal(Variable("Parameter"), Variable("E1")),
+                    location=Location((4, 3)),
                 ),
                 location=Location((4, 4)),
             ),
@@ -6206,7 +6233,11 @@ def test_boolean_variable_as_condition() -> None:
                     Link(
                         Field("Tag"),
                         Field("Value"),
-                        condition=Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+                        condition=Equal(
+                            Variable("Tag"),
+                            Variable("TLV::Msg_Data"),
+                            location=Location((2, 1)),
+                        ),
                         location=Location((2, 2)),
                     ),
                     Link(Field("Value"), FINAL, location=Location((3, 3))),
@@ -6266,7 +6297,11 @@ def test_always_true_refinement(message: abc.Callable[[], Message], condition: E
                     Link(
                         Field("Tag"),
                         Field("Value"),
-                        condition=Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
+                        condition=Equal(
+                            Variable("Tag"),
+                            Variable("TLV::Msg_Data"),
+                            location=Location((2, 1)),
+                        ),
                         location=Location((2, 2)),
                     ),
                     Link(Field("Value"), FINAL, location=Location((3, 3))),
@@ -6298,7 +6333,7 @@ def test_always_false_refinement(message: abc.Callable[[], Message], condition: 
 
 
 @pytest.mark.parametrize(
-    ("structure", "types"),
+    ("structure", "types", "expected_message"),
     [
         (
             [
@@ -6309,6 +6344,7 @@ def test_always_false_refinement(message: abc.Callable[[], Message], condition: 
                     condition=Or(
                         Equal(Variable("Tag"), Variable("TLV::Msg_Data")),
                         Equal(Variable("Tag"), Variable("TLV::Msg_Error")),
+                        location=Location((10, 20)),
                     ),
                     location=Location((1, 1)),
                 ),
@@ -6316,6 +6352,13 @@ def test_always_false_refinement(message: abc.Callable[[], Message], condition: 
             {
                 Field(ID("Tag", location=Location((1, 1)))): models.tlv_tag(),
             },
+            (
+                "<stdin>:10:20: error: condition is always true\n"
+                "<stdin>:10:20: error: proven to be always true\n"
+                '<stdin>:1:1: note: unsatisfied "Tag = TLV::Msg_Data or Tag = TLV::Msg_Error"\n'
+                r'<stdin>:10:20: note: unsatisfied "\(Tag = TLV::Msg_Data or Tag = TLV::Msg_Error\)'
+                ' = False"'
+            ),
         ),
         (
             [
@@ -6323,13 +6366,21 @@ def test_always_false_refinement(message: abc.Callable[[], Message], condition: 
                 Link(
                     Field("Tag_1"),
                     Field("Tag_2"),
-                    condition=Equal(Variable("Tag_1"), Variable("TLV::Msg_Data")),
+                    condition=Equal(
+                        Variable("Tag_1"),
+                        Variable("TLV::Msg_Data"),
+                        location=Location((2, 3)),
+                    ),
                     location=Location((2, 2)),
                 ),
                 Link(
                     Field(ID("Tag_2", location=Location((10, 20)))),
                     FINAL,
-                    condition=Equal(Variable("Tag_1"), Variable("TLV::Msg_Data")),
+                    condition=Equal(
+                        Variable("Tag_1"),
+                        Variable("TLV::Msg_Data"),
+                        location=Location((10, 21)),
+                    ),
                     location=Location((2, 2)),
                 ),
             ],
@@ -6337,21 +6388,24 @@ def test_always_false_refinement(message: abc.Callable[[], Message], condition: 
                 Field(ID("Tag_1", location=Location((1, 1)))): models.tlv_tag(),
                 Field(ID("Tag_2", location=Location((2, 2)))): models.tlv_tag(),
             },
+            (
+                "<stdin>:10:21: error: condition is always true\n"
+                "<stdin>:10:21: error: proven to be always true\n"
+                '<stdin>:2:3: note: unsatisfied "Tag_1 = TLV::Msg_Data"\n'
+                r'<stdin>:10:21: note: unsatisfied "\(Tag_1 = TLV::Msg_Data\) = False"'
+            ),
         ),
     ],
 )
 def test_always_true_message_condition(
     structure: abc.Sequence[Link],
     types: abc.Mapping[Field, TypeDecl],
+    expected_message: str,
 ) -> None:
-    link_to_final = next(l for l in structure if l.target == FINAL)  # pragma: no branch
     assert_message_model_error(
         structure,
         types,
-        (
-            rf'^<stdin>:10:20: error: condition "{link_to_final.condition}"'
-            rf' on transition "{link_to_final.source.identifier}" -> "Final" is always true$'
-        ),
+        regex=f"^{expected_message}$",
     )
 
 
@@ -6364,7 +6418,7 @@ def test_not_always_true_message_condition_for_always_valid_enum(value: int) -> 
             Link(
                 Field("A"),
                 FINAL,
-                condition=Equal(Variable("A"), Literal("P::E")),
+                condition=Equal(Variable("A"), Literal("P::E"), location=Location((2, 1))),
                 location=Location((2, 2)),
             ),
         ],

@@ -120,7 +120,12 @@ def test_dot_graph_with_condition(tmp_path: Path) -> None:
         ID("P::M", Location((1, 1))),
         structure=[
             Link(INITIAL, Field("X"), location=Location((1, 1))),
-            Link(Field("X"), FINAL, Greater(Variable("X"), Number(100)), location=Location((2, 2))),
+            Link(
+                Field("X"),
+                FINAL,
+                Greater(Variable("X"), Number(100), location=Location((2, 1))),
+                location=Location((2, 2)),
+            ),
         ],
         types={Field(ID("X", location=Location((1, 1)))): f_type},
     )
