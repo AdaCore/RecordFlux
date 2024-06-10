@@ -313,6 +313,8 @@ gnat_fsf_compatibility:
         CLEAN_RECORDFLUX_SETUP: 1
       - GNAT_VERSION: "13.2.1"
         CLEAN_RECORDFLUX_SETUP: 1
+      - GNAT_VERSION: "14.1.3"
+        CLEAN_RECORDFLUX_SETUP: 1
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
