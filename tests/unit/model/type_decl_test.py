@@ -298,6 +298,29 @@ def test_integer_invalid_size_exceeds_limit() -> None:
         )
 
 
+def test_integer_invalid_out_of_bounds() -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=(
+            r"^"
+            r"<stdin>:2:3: error: \(intermediate\) value is out of bounds"
+            r" \(-2 \*\* 127 .. 2 \*\* 127 - 1\)\n"
+            r"<stdin>:3:4: error: \(intermediate\) value is out of bounds"
+            r" \(-2 \*\* 127 .. 2 \*\* 127 - 1\)\n"
+            r"<stdin>:4:5: error: \(intermediate\) value is out of bounds"
+            r" \(-2 \*\* 127 .. 2 \*\* 127 - 1\)"
+            r"$"
+        ),
+    ):
+        Integer(
+            "P::T",
+            Pow(Number(2), Number(256), location=Location((2, 3))),
+            Pow(Number(2), Number(256), location=Location((3, 4))),
+            Pow(Number(2), Number(256), location=Location((4, 5))),
+            Location((1, 2)),
+        )
+
+
 def test_enumeration_size() -> None:
     assert_equal(
         Enumeration(

@@ -18,7 +18,7 @@ from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE, MP_CONTEXT
 from rflx.error import info
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Location
+from rflx.rapidflux import Location, ty
 
 if TYPE_CHECKING:
     from rflx.model import type_decl
@@ -571,7 +571,7 @@ class IntVal(BasicIntExpr):
 
     @property
     def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger(rty.Bounds(self.value, self.value))
+        return rty.UniversalInteger(ty.Bounds(self.value, self.value))
 
     def substituted(self, _mapping: Mapping[ID, ID]) -> IntVal:
         return self
@@ -640,7 +640,7 @@ class Size(IntAttr):
         return (
             rty.BIT_LENGTH
             if isinstance(self.prefix_type, (rty.Composite, rty.Compound))
-            else rty.UniversalInteger()
+            else rty.UNIVERSAL_INTEGER
         )
 
 
@@ -648,21 +648,21 @@ class Size(IntAttr):
 class Length(IntAttr):
     @property
     def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger()
+        return rty.UNIVERSAL_INTEGER
 
 
 @define(eq=False)
 class First(IntAttr):
     @property
     def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger()
+        return rty.UNIVERSAL_INTEGER
 
 
 @define(eq=False)
 class Last(IntAttr):
     @property
     def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger()
+        return rty.UNIVERSAL_INTEGER
 
 
 @define(eq=False)
@@ -889,7 +889,7 @@ class Add(BinaryIntExpr):
         v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
-            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds.upper is not None
+            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds is not None
             else INT_MAX
         )
         return [
@@ -956,7 +956,7 @@ class Mul(BinaryIntExpr):
         v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
-            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds.upper is not None
+            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds is not None
             else INT_MAX
         )
         return [
@@ -1015,7 +1015,7 @@ class Pow(BinaryIntExpr):
         v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
-            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds.upper is not None
+            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds is not None
             else INT_MAX
         )
         return [

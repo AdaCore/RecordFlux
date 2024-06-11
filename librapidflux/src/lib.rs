@@ -5,3 +5,4 @@
 pub mod diagnostics;
 pub mod identifier;
 pub mod source_code;
+pub mod ty;

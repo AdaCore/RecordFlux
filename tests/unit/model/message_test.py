@@ -1135,7 +1135,7 @@ def test_invalid_relation_to_opaque() -> None:
         types,
         r'^<stdin>:10:20: error: expected sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
-        r"<stdin>:10:20: error: found type universal integer \(42\)\n"
+        r"<stdin>:10:20: error: found type universal integer \(42 .. 42\)\n"
         r'<stdin>:1:1: note: on path "Length"\n'
         r'<stdin>:2:3: note: on path "Data"$',
     )
@@ -5872,7 +5872,7 @@ def test_merge_message_with_illegal_condition_on_message_type_field() -> None:
         match=(
             "^"
             '<stdin>:1:2: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:1:2: error: found type universal integer \(1\)"
+            r"<stdin>:1:2: error: found type universal integer \(1 .. 1\)"
             "$"
         ),
     ):

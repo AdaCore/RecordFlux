@@ -3,9 +3,9 @@ import pytest
 from rflx import expr, ir, typing_ as rty
 from rflx.identifier import ID, id_generator
 from rflx.model import statement as stmt
-from rflx.rapidflux import Location, RecordFluxError
+from rflx.rapidflux import Location, RecordFluxError, ty
 
-INT_TY = rty.Integer("I", rty.Bounds(10, 100))
+INT_TY = rty.Integer("I", ty.Bounds(10, 100))
 MSG_TY = rty.Message("M")
 SEQ_TY = rty.Sequence("S", rty.Message("M"))
 

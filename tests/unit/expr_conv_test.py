@@ -58,8 +58,9 @@ from rflx.expr import (
     Variable,
 )
 from rflx.identifier import ID, id_generator
+from rflx.rapidflux import ty
 
-INT_TY = rty.Integer("I", rty.Bounds(10, 100))
+INT_TY = rty.Integer("I", ty.Bounds(10, 100))
 ENUM_TY = rty.Enumeration("E", [ID("E1"), ID("E2")])
 MSG_TY = rty.Message("M")
 SEQ_TY = rty.Sequence("S", rty.Message("M"))

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import typing as ty
+import typing
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Callable, Optional, Sequence
@@ -17,9 +17,10 @@ from rflx.generator.common import Debug
 from rflx.generator.session import EvaluatedDeclaration, ExceptionHandler, SessionGenerator
 from rflx.identifier import ID, id_generator
 from rflx.integration import Integration
-from rflx.rapidflux import Location, RecordFluxError
+from rflx.rapidflux import Location, RecordFluxError, ty
 from tests.data import models
 
+INT_TY = rty.Integer("I", ty.Bounds(10, 100))
 MSG_TY = rty.Message(ID("M", Location((1, 1))))
 SEQ_TY = rty.Sequence("S", rty.Message(ID("M", Location((1, 1)))))
 
@@ -75,7 +76,7 @@ def dummy_session() -> ir.Session:
                         "T3",
                         type_=rty.Enumeration("T4", [ID("E1")], always_valid=True),
                     ),
-                    ir.Argument("P4", "T4", type_=rty.Integer("T2")),
+                    ir.Argument("P4", "T4", type_=INT_TY),
                     ir.Argument("P5", "T5", type_=rty.Message("T5", is_definite=True)),
                 ],
                 "T",
@@ -154,7 +155,7 @@ class UnknownDeclaration(ir.FormalDecl):
                 "F",
                 [],
                 "T",
-                rty.Sequence("A", rty.Integer("B")),
+                rty.Sequence("A", INT_TY),
                 Location((10, 20)),
             ),
             RecordFluxError,
@@ -179,7 +180,7 @@ class UnknownDeclaration(ir.FormalDecl):
                 rty.Message(
                     "M",
                     {("F",)},
-                    {ID("F"): rty.Sequence("A", rty.Integer("B"))},
+                    {ID("F"): rty.Sequence("A", INT_TY)},
                     is_definite=True,
                 ),
                 Location((10, 20)),
@@ -190,7 +191,7 @@ class UnknownDeclaration(ir.FormalDecl):
         (
             ir.FuncDecl(
                 "F",
-                [ir.Argument("P", "T", rty.Sequence("A", rty.Integer("B")))],
+                [ir.Argument("P", "T", rty.Sequence("A", INT_TY))],
                 "T",
                 rty.BOOLEAN,
                 Location((10, 20)),
@@ -229,17 +230,17 @@ def test_session_create_abstract_functions_error(
             EvaluatedDeclaration(global_declarations=[ada.ObjectDeclaration("X", "Boolean")]),
         ),
         (
-            ir.VarDecl("X", rty.Integer("T"), ir.ComplexIntExpr([], ir.IntVal(1))),
+            ir.VarDecl("X", INT_TY, ir.ComplexIntExpr([], ir.IntVal(1))),
             False,
             EvaluatedDeclaration(
-                global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))],
+                global_declarations=[ada.ObjectDeclaration("X", "P.I", ada.Number(1))],
             ),
         ),
         (
-            ir.VarDecl("X", rty.Integer("T"), ir.ComplexIntExpr([], ir.IntVal(1))),
+            ir.VarDecl("X", INT_TY, ir.ComplexIntExpr([], ir.IntVal(1))),
             True,
             EvaluatedDeclaration(
-                global_declarations=[ada.ObjectDeclaration("X", "P.T", ada.Number(1))],
+                global_declarations=[ada.ObjectDeclaration("X", "P.I", ada.Number(1))],
                 initialization=[
                     ada.CallStatement(
                         "P.S_Allocator.Initialize",
@@ -468,40 +469,40 @@ class EvaluatedDeclarationStr:
     ("type_", "expression", "constant", "session_global", "expected"),
     [
         (
-            rty.Integer("T"),
+            INT_TY,
             ir.ComplexExpr([], ir.IntVal(1)),
             False,
             False,
             EvaluatedDeclarationStr(
-                global_declarations="X : P.T := 1;",
+                global_declarations="X : P.I := 1;",
             ),
         ),
         (
-            rty.Integer("T"),
+            INT_TY,
             ir.ComplexExpr([], ir.IntVal(1)),
             False,
             True,
             EvaluatedDeclarationStr(
-                global_declarations="X : P.T := 1;",
+                global_declarations="X : P.I := 1;",
                 initialization="X := 1;",
             ),
         ),
         (
-            rty.Integer("T"),
+            INT_TY,
             ir.ComplexExpr([], ir.IntVal(1)),
             True,
             False,
             EvaluatedDeclarationStr(
-                global_declarations="X : P.T := 1;",
+                global_declarations="X : P.I := 1;",
             ),
         ),
         (
-            rty.Integer("T"),
+            INT_TY,
             None,
             False,
             False,
             EvaluatedDeclarationStr(
-                global_declarations="X : P.T;",
+                global_declarations="X : P.I;",
             ),
         ),
         (
@@ -736,14 +737,14 @@ def test_session_declare(
     ("type_", "expression", "error_type", "error_msg"),
     [
         (
-            rty.Integer("T"),
+            INT_TY,
             ir.ComplexExpr(
                 [],
                 ir.IntCall(
                     "F",
                     [],
                     [],
-                    rty.Integer("T"),
+                    INT_TY,
                     origin=ir.ConstructedOrigin("F", Location((10, 20))),
                 ),
             ),
@@ -753,10 +754,10 @@ def test_session_declare(
         (
             rty.OPAQUE,
             ir.ComplexExpr(
-                [ir.Assign("X", ir.IntVal(0), rty.Integer("T"))],
+                [ir.Assign("X", ir.IntVal(0), INT_TY)],
                 ir.IntVar(
                     "X",
-                    rty.Integer("T"),
+                    INT_TY,
                     origin=ir.ConstructedOrigin("X", Location((10, 20))),
                 ),
             ),
@@ -777,12 +778,12 @@ def test_session_declare(
             r'initialization for message type "T" not yet supported',
         ),
         (
-            rty.Integer("T"),
+            INT_TY,
             ir.ComplexExpr(
-                [ir.Assign("X", ir.IntVal(0), rty.Integer("T"))],
+                [ir.Assign("X", ir.IntVal(0), INT_TY)],
                 ir.IntVar(
                     "X",
-                    rty.Integer("T"),
+                    INT_TY,
                     origin=ir.ConstructedOrigin("X", Location((10, 20))),
                 ),
             ),
@@ -821,7 +822,7 @@ def test_session_declare_error(
 
 @define
 class UnknownStatement(ir.Stmt):
-    def preconditions(self, variable_id: ty.Generator[ID, None, None]) -> list[ir.Cond]:
+    def preconditions(self, variable_id: typing.Generator[ID, None, None]) -> list[ir.Cond]:
         raise NotImplementedError
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -858,7 +859,7 @@ class UnknownStatement(ir.Stmt):
                                 "Universal::Message_Type",
                                 [ID("Universal::MT_Data")],
                             ),
-                            ID("Length"): rty.Integer("Universal::Length"),
+                            ID("Length"): rty.Integer("Universal::Length", ty.Bounds(0, 100)),
                             ID("Data"): rty.OPAQUE,
                         },
                     ),
@@ -972,7 +973,7 @@ end;\
             ir.Reset(
                 "X",
                 {},
-                rty.Sequence("P::S", rty.Integer("A")),
+                rty.Sequence("P::S", INT_TY),
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.S.Reset (X_Ctx);",
@@ -1075,7 +1076,7 @@ class UnknownExpr(ir.Expr):
     def type_(self) -> rty.Any:
         return rty.Message("T")
 
-    def preconditions(self, variable_id: ty.Generator[ID, None, None]) -> list[ir.Cond]:
+    def preconditions(self, variable_id: typing.Generator[ID, None, None]) -> list[ir.Cond]:
         raise NotImplementedError
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -1089,18 +1090,18 @@ class UnknownExpr(ir.Expr):
     ("type_", "expression", "error_type", "error_msg"),
     [
         (
-            rty.Sequence("A", rty.Integer("B")),
+            rty.Sequence("A", INT_TY),
             ir.ObjFieldAccess(
                 "Z",
                 "Z",
-                rty.Message("C", {("Z",)}, {}, {ID("Z"): rty.Sequence("A", rty.Integer("B"))}),
+                rty.Message("C", {("Z",)}, {}, {ID("Z"): rty.Sequence("A", INT_TY)}),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r"copying of sequence not yet supported",
         ),
         (
-            rty.Aggregate(rty.Integer("A")),
+            rty.Aggregate(INT_TY),
             ir.ObjFieldAccess(
                 "Z",
                 "Z",
@@ -1134,7 +1135,7 @@ class UnknownExpr(ir.Expr):
                             "Universal::Message_Type",
                             [ID("Universal::MT_Data")],
                         ),
-                        ID("Length"): rty.Integer("Universal::Length"),
+                        ID("Length"): rty.Integer("Universal::Length", ty.Bounds(0, 100)),
                         ID("Data"): rty.OPAQUE,
                     },
                 ),
@@ -1170,14 +1171,14 @@ class UnknownExpr(ir.Expr):
                             "Universal::Message_Type",
                             [ID("Universal::MT_Data")],
                         ),
-                        ID("Length"): rty.Integer("Universal::Length"),
+                        ID("Length"): rty.Integer("Universal::Length", ty.Bounds(0, 100)),
                         ID("Data"): rty.OPAQUE,
                     },
                 ),
             ),
             RecordFluxError,
-            r"Last with type universal integer \(undefined\) as value of message field"
-            r" not yet supported",
+            r"Last with type universal integer \(0 .. 9223372036854775807\) as value of message"
+            r" field not yet supported",
         ),
         (
             rty.Message("A"),
@@ -1202,7 +1203,7 @@ class UnknownExpr(ir.Expr):
                             "Universal::Message_Type",
                             [ID("Universal::MT_Data")],
                         ),
-                        ID("Length"): rty.Integer("Universal::Length"),
+                        ID("Length"): rty.Integer("Universal::Length", ty.Bounds(0, 100)),
                         ID("Data"): rty.OPAQUE,
                     },
                 ),
@@ -1253,20 +1254,20 @@ class UnknownExpr(ir.Expr):
                 ),
                 ir.ComplexBoolExpr(
                     [
-                        ir.VarDecl("T_0", rty.Integer("I")),
+                        ir.VarDecl("T_0", INT_TY),
                         ir.Assign(
                             "T_0",
                             ir.IntFieldAccess(
                                 "E",
                                 "Z",
-                                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Integer("I")}),
+                                rty.Message("B", {("Z",)}, {}, {ID("Z"): INT_TY}),
                             ),
-                            rty.Integer("I"),
+                            INT_TY,
                             origin=ir.ConstructedOrigin("", Location((20, 30))),
                         ),
                     ],
                     ir.Greater(
-                        ir.IntVar("T_0", rty.Integer("I")),
+                        ir.IntVar("T_0", INT_TY),
                         ir.IntVal(0),
                     ),
                 ),
@@ -1294,20 +1295,20 @@ class UnknownExpr(ir.Expr):
                 ),
                 ir.ComplexBoolExpr(
                     [
-                        ir.VarDecl("T_0", rty.Integer("I")),
+                        ir.VarDecl("T_0", INT_TY),
                         ir.Assign(
                             "T_0",
                             ir.IntFieldAccess(
                                 "E",
                                 "Z",
-                                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Integer("I")}),
+                                rty.Message("B", {("Z",)}, {}, {ID("Z"): INT_TY}),
                             ),
-                            rty.Integer("I"),
+                            INT_TY,
                             origin=ir.ConstructedOrigin("", Location((20, 30))),
                         ),
                     ],
                     ir.Greater(
-                        ir.IntVar("T_0", rty.Integer("I")),
+                        ir.IntVar("T_0", INT_TY),
                         ir.IntVal(0),
                     ),
                 ),
@@ -1316,7 +1317,7 @@ class UnknownExpr(ir.Expr):
             "expressions other than variables not yet supported as selector for message types",
         ),
         (
-            rty.Sequence("A", rty.Integer("B")),
+            rty.Sequence("A", INT_TY),
             ir.Comprehension(
                 "E",
                 ir.ObjVar(
@@ -1324,14 +1325,14 @@ class UnknownExpr(ir.Expr):
                     rty.Sequence("A", rty.BaseInteger()),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
-                ir.ComplexExpr([], ir.ObjVar("E", rty.Integer("B"))),
-                ir.ComplexBoolExpr([], ir.Greater(ir.IntVar("E", rty.Integer("B")), ir.IntVal(0))),
+                ir.ComplexExpr([], ir.ObjVar("E", INT_TY)),
+                ir.ComplexBoolExpr([], ir.Greater(ir.IntVar("E", INT_TY), ir.IntVal(0))),
             ),
             RecordFluxError,
             r"iterating over sequence of integer type in list comprehension not yet supported",
         ),
         (
-            rty.Integer("B"),
+            INT_TY,
             ir.Find(
                 "E",
                 ir.ObjVar(
@@ -1339,17 +1340,17 @@ class UnknownExpr(ir.Expr):
                     rty.Sequence("A", rty.BaseInteger()),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
-                ir.ComplexExpr([], ir.ObjVar("E", rty.Integer("B"))),
+                ir.ComplexExpr([], ir.ObjVar("E", INT_TY)),
                 ir.ComplexBoolExpr(
                     [],
-                    ir.Greater(ir.IntVar("E", rty.Integer("B")), ir.IntVal(0)),
+                    ir.Greater(ir.IntVar("E", INT_TY), ir.IntVal(0)),
                 ),
             ),
             RecordFluxError,
             r"iterating over sequence of integer type in list comprehension not yet supported",
         ),
         (
-            rty.Sequence("A", rty.Integer("B")),
+            rty.Sequence("A", INT_TY),
             ir.BoolCall(
                 "F",
                 [
@@ -1357,14 +1358,14 @@ class UnknownExpr(ir.Expr):
                         "G",
                         [],
                         [],
-                        rty.Integer("C"),
+                        INT_TY,
                         origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ],
-                [rty.Integer("C")],
+                [INT_TY],
             ),
             RecordFluxError,
-            r'IntCall with integer type "C" \(undefined\) as function argument not yet supported',
+            r'IntCall with integer type "I" \(10 \.\. 100\) as function argument not yet supported',
         ),
         (
             rty.Message("A"),
@@ -1485,13 +1486,13 @@ def test_session_assign_error(
                     "X",
                     [],
                     [],
-                    rty.Integer("A"),
+                    INT_TY,
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
-                rty.Sequence("B", rty.Integer("A")),
+                rty.Sequence("B", INT_TY),
             ),
             RecordFluxError,
-            r'IntCall with integer type "A" \(undefined\) in Append statement not yet supported',
+            r'IntCall with integer type "I" \(10 \.\. 100\) in Append statement not yet supported',
         ),
     ],
 )
@@ -1598,9 +1599,9 @@ def test_session_write_error(
         (
             ir.IntIfExpr(
                 ir.BoolVar("X"),
-                ir.ComplexIntExpr([], ir.IntVar("Y", rty.Integer("I"))),
+                ir.ComplexIntExpr([], ir.IntVar("Y", INT_TY)),
                 ir.ComplexIntExpr([], ir.IntVal(1)),
-                rty.Integer("I"),
+                INT_TY,
             ),
             ada.If([(ada.Variable("X"), ada.Variable("Y"))], ada.Number(1)),
         ),

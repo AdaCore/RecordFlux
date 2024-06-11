@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import typing as ty
+import typing
 from abc import abstractmethod
 from collections import abc
 from dataclasses import dataclass
@@ -12,7 +12,7 @@ from rflx import const, expr
 from rflx.common import indent_next, verbose_repr
 from rflx.error import fail
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity, ty
 
 from . import message
 from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
@@ -108,9 +108,24 @@ class Integer(Scalar):
     ) -> None:
         super().__init__(identifier, size, location)
 
-        first_num = first.simplified()
-        last_num = last.simplified()
-        size_num = size.simplified()
+        def simplify(expression: expr.Expr) -> expr.Expr:
+            try:
+                return expression.simplified()
+            except OverflowError:
+                self.error.push(
+                    ErrorEntry(
+                        "(intermediate) value is out of bounds (-2 ** 127 .. 2 ** 127 - 1)",
+                        Severity.ERROR,
+                        expression.location,
+                    ),
+                )
+                return expr.Number(0)
+
+        first_num = simplify(first)
+        last_num = simplify(last)
+        size_num = simplify(size)
+
+        self.error.propagate()
 
         if not isinstance(first_num, expr.Number):
             self._invalid_type_error(first_num, "first")
@@ -204,7 +219,7 @@ class Integer(Scalar):
     def type_(self) -> rty.Type:
         return rty.Integer(
             self.full_name,
-            rty.Bounds(self.first.value, self.last.value),
+            ty.Bounds(self.first.value, self.last.value),
             location=self.location,
         )
 
@@ -637,7 +652,7 @@ class UncheckedTypeDecl(UncheckedTopLevelDeclaration):
     @abstractmethod
     def checked(
         self,
-        declarations: ty.Sequence[TopLevelDeclaration],
+        declarations: typing.Sequence[TopLevelDeclaration],
         skip_verification: bool = False,
         workers: int = 1,
     ) -> TypeDecl:
@@ -654,7 +669,7 @@ class UncheckedInteger(UncheckedTypeDecl):
 
     def checked(
         self,
-        _declarations: ty.Sequence[TopLevelDeclaration],
+        _declarations: typing.Sequence[TopLevelDeclaration],
         skip_verification: bool = False,  # noqa: ARG002
         workers: int = 1,  # noqa: ARG002
     ) -> Integer:
@@ -671,7 +686,7 @@ class UncheckedEnumeration(UncheckedTypeDecl):
 
     def checked(
         self,
-        _declarations: ty.Sequence[TopLevelDeclaration],
+        _declarations: typing.Sequence[TopLevelDeclaration],
         skip_verification: bool = False,  # noqa: ARG002
         workers: int = 1,  # noqa: ARG002
     ) -> Enumeration:
@@ -692,7 +707,7 @@ class UncheckedSequence(UncheckedTypeDecl):
 
     def checked(
         self,
-        declarations: ty.Sequence[TopLevelDeclaration],
+        declarations: typing.Sequence[TopLevelDeclaration],
         skip_verification: bool = False,  # noqa: ARG002
         workers: int = 1,  # noqa: ARG002
     ) -> Sequence:
@@ -720,7 +735,7 @@ class UncheckedOpaque(UncheckedTypeDecl):
 
     def checked(
         self,
-        _declarations: ty.Sequence[TopLevelDeclaration],
+        _declarations: typing.Sequence[TopLevelDeclaration],
         skip_verification: bool = False,  # noqa: ARG002
         workers: int = 1,  # noqa: ARG002
     ) -> Opaque:

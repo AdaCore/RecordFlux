@@ -67,7 +67,7 @@ from rflx.expr import (
 )
 from rflx.identifier import ID, StrID
 from rflx.model import Integer
-from rflx.rapidflux import Location, RecordFluxError
+from rflx.rapidflux import Location, RecordFluxError, ty
 from tests.data import models
 from tests.utils import assert_equal, check_regex
 
@@ -75,7 +75,7 @@ EXPR = Equal(Variable("UNDEFINED_1"), Variable("UNDEFINED_2"))
 TINY_INT = Integer("P::Tiny", Number(1), Number(3), Number(8), location=Location((1, 2)))
 INT = Integer("P::Int", Number(1), Number(100), Number(8), location=Location((3, 2)))
 
-INT_TY = rty.Integer("I", rty.Bounds(10, 100))
+INT_TY = rty.Integer("I", ty.Bounds(10, 100))
 ENUM_TY = rty.Enumeration("E", [ID("E1"), ID("E2")])
 MSG_TY = rty.Message("M")
 SEQ_TY = rty.Sequence("S", rty.Message("M"))
@@ -398,13 +398,13 @@ def test_bool_expr_type(operation: Callable[[Expr, Expr], Expr]) -> None:
 def test_bool_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type_error(
         operation(
-            Variable("X", type_=rty.Integer("A", rty.Bounds(0, 100)), location=Location((10, 20))),
+            Variable("X", type_=rty.Integer("A", ty.Bounds(0, 100)), location=Location((10, 20))),
             Number(1, location=Location((10, 30))),
         ),
         r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
         r'<stdin>:10:20: error: found integer type "A" \(0 .. 100\)\n'
         r'<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:30: error: found type universal integer \(1\)$",
+        r"<stdin>:10:30: error: found type universal integer \(1 .. 1\)$",
     )
 
 
@@ -498,7 +498,7 @@ def test_undefined_str() -> None:
 def test_number_type() -> None:
     assert_type(
         Number(1),
-        rty.UniversalInteger(rty.Bounds(1, 1)),
+        rty.UniversalInteger(ty.Bounds(1, 1)),
     )
 
 
@@ -620,8 +620,8 @@ def test_math_expr_type(operation: Callable[[Expr, Expr], Expr]) -> None:
         rty.BaseInteger(),
     )
     assert_type(
-        operation(Variable("X", type_=rty.Integer("A")), Variable("Y", type_=rty.Integer("A"))),
-        rty.Integer("A"),
+        operation(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY)),
+        INT_TY,
     )
 
 
@@ -886,8 +886,8 @@ def test_variable_type() -> None:
         rty.BOOLEAN,
     )
     assert_type(
-        Variable("X", type_=rty.Integer("A")),
-        rty.Integer("A"),
+        Variable("X", type_=INT_TY),
+        INT_TY,
     )
 
 
@@ -941,32 +941,32 @@ def test_attribute() -> None:
 @pytest.mark.parametrize(
     ("attribute", "expr", "expected"),
     [
-        (Size, Variable("X", type_=rty.BaseInteger()), rty.UniversalInteger()),
-        (Length, Variable("X", type_=rty.BaseInteger()), rty.UniversalInteger()),
-        (First, Variable("X", type_=rty.BaseInteger()), rty.UniversalInteger()),
-        (Last, Variable("X", type_=rty.BaseInteger()), rty.UniversalInteger()),
+        (Size, Variable("X", type_=rty.BaseInteger()), rty.UNIVERSAL_INTEGER),
+        (Length, Variable("X", type_=rty.BaseInteger()), rty.UNIVERSAL_INTEGER),
+        (First, Variable("X", type_=rty.BaseInteger()), rty.UNIVERSAL_INTEGER),
+        (Last, Variable("X", type_=rty.BaseInteger()), rty.UNIVERSAL_INTEGER),
         (ValidChecksum, Variable("X", type_=rty.BaseInteger()), rty.BOOLEAN),
         (Valid, Variable("X", type_=rty.Message("A")), rty.BOOLEAN),
         (
             Present,
             Selected(
-                Variable("X", type_=rty.Message("M", {("F",)}, {ID("F"): rty.Integer("A")})),
+                Variable("X", type_=rty.Message("M", {("F",)}, {ID("F"): INT_TY})),
                 "F",
             ),
             rty.BOOLEAN,
         ),
-        (Head, Variable("X", type_=rty.Sequence("A", rty.Integer("B"))), rty.Integer("B")),
+        (Head, Variable("X", type_=rty.Sequence("A", INT_TY)), INT_TY),
         (Opaque, Variable("X", type_=rty.Message("A")), rty.OPAQUE),
         (
             Head,
             Comprehension(
                 "X",
-                Variable("Y", type_=rty.Sequence("A", rty.Integer("B"))),
-                Variable("X", type_=rty.Integer("B")),
+                Variable("Y", type_=rty.Sequence("A", INT_TY)),
+                Variable("X", type_=INT_TY),
                 TRUE,
                 location=Location((10, 30)),
             ),
-            rty.Integer("B"),
+            INT_TY,
         ),
         (
             Head,
@@ -998,7 +998,7 @@ def test_attribute_type(attribute: Callable[[Expr], Expr], expr: Expr, expected:
                 Opaque(
                     Variable(
                         "X",
-                        type_=rty.Sequence("A", rty.Integer("B")),
+                        type_=rty.Sequence("A", INT_TY),
                         location=Location((10, 30)),
                     ),
                 ),
@@ -1112,7 +1112,7 @@ def test_val_str() -> None:
 def test_aggregate_type() -> None:
     assert_type(
         Aggregate(Number(0), Number(1)),
-        rty.Aggregate(rty.UniversalInteger(rty.Bounds(0, 1))),
+        rty.Aggregate(rty.UniversalInteger(ty.Bounds(0, 1))),
     )
 
 
@@ -1512,7 +1512,7 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
     assert_type(
         expr(
             "X",
-            Variable("Y", type_=rty.Sequence("A", rty.Integer("B"))),
+            Variable("Y", type_=rty.Sequence("A", INT_TY)),
             Variable("Z", type_=rty.BOOLEAN),
         ),
         rty.BOOLEAN,
@@ -1541,7 +1541,7 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
             Variable("Y", type_=rty.Sequence("A", rty.BOOLEAN)),
             Equal(Variable("X"), Number(1, location=Location((10, 30)))),
             r'^<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:30: error: found type universal integer \(1\)$",
+            r"<stdin>:10:30: error: found type universal integer \(1 .. 1\)$",
         ),
     ],
 )
@@ -1831,8 +1831,8 @@ def test_string_str() -> None:
 
 def test_selected_type() -> None:
     assert_type(
-        Selected(Variable("X", type_=rty.Message("M", {("F",)}, {ID("F"): rty.Integer("A")})), "F"),
-        rty.Integer("A"),
+        Selected(Variable("X", type_=rty.Message("M", {("F",)}, {ID("F"): INT_TY})), "F"),
+        INT_TY,
     )
 
 
@@ -1848,7 +1848,7 @@ def test_selected_type() -> None:
             Selected(
                 Variable(
                     "X",
-                    type_=rty.Message("M", {("F",)}, {ID("F"): rty.Integer("A")}),
+                    type_=rty.Message("M", {("F",)}, {ID("F"): INT_TY}),
                 ),
                 "Y",
                 location=Location((10, 20)),
@@ -1862,7 +1862,7 @@ def test_selected_type() -> None:
                     type_=rty.Message(
                         "M",
                         {("F1",), ("F2",)},
-                        {ID("F1"): rty.Integer("A"), ID("F2"): rty.Integer("A")},
+                        {ID("F1"): INT_TY, ID("F2"): INT_TY},
                     ),
                 ),
                 "F",
@@ -1917,8 +1917,8 @@ def test_call_type() -> None:
         Call(
             "X",
             rty.BOOLEAN,
-            [Variable("Y", type_=rty.Integer("A"))],
-            argument_types=[rty.Integer("A")],
+            [Variable("Y", type_=INT_TY)],
+            argument_types=[INT_TY],
         ),
         rty.BOOLEAN,
     )
@@ -2044,11 +2044,11 @@ def test_comprehension_type() -> None:
     assert_type(
         Comprehension(
             "X",
-            Variable("Y", type_=rty.Sequence("A", rty.Integer("B"))),
-            Add(Variable("X"), Variable("Z", type_=rty.Integer("B"))),
+            Variable("Y", type_=rty.Sequence("A", INT_TY)),
+            Add(Variable("X"), Variable("Z", type_=INT_TY)),
             TRUE,
         ),
-        rty.Aggregate(rty.Integer("B")),
+        rty.Aggregate(INT_TY),
     )
     assert_type(
         Comprehension(
@@ -2059,7 +2059,7 @@ def test_comprehension_type() -> None:
                     type_=rty.Message(
                         "M",
                         {("F",)},
-                        {ID("F"): rty.Sequence("A", rty.Integer("B"))},
+                        {ID("F"): rty.Sequence("A", INT_TY)},
                     ),
                 ),
                 "F",
@@ -2067,7 +2067,7 @@ def test_comprehension_type() -> None:
             Variable("X"),
             Equal(Variable("X"), Number(1)),
         ),
-        rty.Aggregate(rty.Integer("B")),
+        rty.Aggregate(INT_TY),
     )
 
 
@@ -2143,7 +2143,7 @@ def test_comprehension_str() -> None:
     ("field_values", "type_"),
     [
         (
-            {"X": Variable("A", type_=rty.Integer("A")), "Y": Variable("B", type_=rty.BOOLEAN)},
+            {"X": Variable("A", type_=INT_TY), "Y": Variable("B", type_=rty.BOOLEAN)},
             rty.Message(
                 "M",
                 {
@@ -2152,7 +2152,7 @@ def test_comprehension_str() -> None:
                     ("X", "Y", "Z"),
                 },
                 {
-                    ID("X"): rty.Integer("A"),
+                    ID("X"): INT_TY,
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
@@ -2201,7 +2201,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y"),
                 },
                 {
-                    ID("X"): rty.Integer("A"),
+                    ID("X"): INT_TY,
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
@@ -2210,9 +2210,9 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
         ),
         (
             {
-                "X": Variable("A", type_=rty.Integer("A")),
+                "X": Variable("A", type_=INT_TY),
                 "Y": Variable("B", type_=rty.BOOLEAN),
-                ID("Z", location=Location((10, 50))): Variable("Z", type_=rty.Integer("A")),
+                ID("Z", location=Location((10, 50))): Variable("Z", type_=INT_TY),
             },
             rty.Message(
                 "M",
@@ -2220,7 +2220,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y"),
                 },
                 {
-                    ID("X"): rty.Integer("A"),
+                    ID("X"): INT_TY,
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
@@ -2229,7 +2229,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
         (
             {
                 ID("Y", location=Location((10, 30))): Variable("B", type_=rty.BOOLEAN),
-                "X": Variable("A", type_=rty.Integer("A")),
+                "X": Variable("A", type_=INT_TY),
             },
             rty.Message(
                 "M",
@@ -2237,7 +2237,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y"),
                 },
                 {
-                    ID("X"): rty.Integer("A"),
+                    ID("X"): INT_TY,
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
@@ -2245,7 +2245,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
         ),
         (
             {
-                "X": Variable("A", type_=rty.Integer("A")),
+                "X": Variable("A", type_=INT_TY),
             },
             rty.Message(
                 "M",
@@ -2254,9 +2254,9 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y", "Z"),
                 },
                 {
-                    ID("X"): rty.Integer("A"),
+                    ID("X"): INT_TY,
                     ID("Y"): rty.BOOLEAN,
-                    ID("Z"): rty.Integer("A"),
+                    ID("Z"): INT_TY,
                 },
             ),
             r'^<stdin>:10:20: error: missing fields for message type "M"\n'
@@ -2273,9 +2273,9 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                     ("X", "Y", "Z"),
                 },
                 {
-                    ID("X"): rty.Integer("A"),
+                    ID("X"): INT_TY,
                     ID("Y"): rty.BOOLEAN,
-                    ID("Z"): rty.Integer("A"),
+                    ID("Z"): INT_TY,
                 },
             ),
             r'^<stdin>:10:40: error: undefined variable "A"\n'
@@ -2350,7 +2350,7 @@ def test_message_aggregate_variables() -> None:
     ("field_values", "type_"),
     [
         (
-            {"Y": Variable("A", type_=rty.Integer("A")), "Z": Variable("B", type_=rty.BOOLEAN)},
+            {"Y": Variable("A", type_=INT_TY), "Z": Variable("B", type_=rty.BOOLEAN)},
             rty.Message(
                 "M",
                 {
@@ -2360,7 +2360,7 @@ def test_message_aggregate_variables() -> None:
                 },
                 {},
                 {
-                    ID("Y"): rty.Integer("A"),
+                    ID("Y"): INT_TY,
                     ID("Z"): rty.BOOLEAN,
                 },
             ),
@@ -2410,7 +2410,7 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
                 },
                 {},
                 {
-                    ID("X"): rty.Integer("A"),
+                    ID("X"): INT_TY,
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
@@ -2419,9 +2419,9 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
         ),
         (
             {
-                "X": Variable("A", type_=rty.Integer("A")),
+                "X": Variable("A", type_=INT_TY),
                 "Y": Variable("B", type_=rty.BOOLEAN),
-                ID("Z", location=Location((10, 50))): Variable("Z", type_=rty.Integer("A")),
+                ID("Z", location=Location((10, 50))): Variable("Z", type_=INT_TY),
             },
             rty.Message(
                 "M",
@@ -2430,7 +2430,7 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
                 },
                 {},
                 {
-                    ID("X"): rty.Integer("A"),
+                    ID("X"): INT_TY,
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
@@ -2439,7 +2439,7 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
         (
             {
                 "Y": Variable("B", type_=rty.BOOLEAN),
-                ID("X", location=Location((10, 30))): Variable("A", type_=rty.Integer("A")),
+                ID("X", location=Location((10, 30))): Variable("A", type_=INT_TY),
             },
             rty.Message(
                 "M",
@@ -2448,7 +2448,7 @@ def test_delta_message_aggregate_type(field_values: Mapping[StrID, Expr], type_:
                 },
                 {},
                 {
-                    ID("X"): rty.Integer("A"),
+                    ID("X"): INT_TY,
                     ID("Y"): rty.BOOLEAN,
                 },
             ),
@@ -2591,7 +2591,7 @@ def test_case_type() -> None:
     assert_type(CaseExpr(c1, [([ID("Zero"), ID("One")], TRUE), ([ID("Two")], FALSE)]), rty.BOOLEAN)
     assert_type(
         CaseExpr(c1, [([ID("Zero"), ID("One")], Number(1)), ([ID("Two")], Number(2))]),
-        rty.UniversalInteger(rty.Bounds(1, 2)),
+        rty.UniversalInteger(ty.Bounds(1, 2)),
     )
 
     c2 = Variable("C", type_=TINY_INT.type_)
@@ -2607,7 +2607,7 @@ def test_case_type() -> None:
         ),
         r'^__BUILTINS__:1:1: error: dependent expression "True" has incompatible enumeration type '
         r'"__BUILTINS__::Boolean"\n'
-        r'<stdin>:1:4: note: conflicting with "1" which has type universal integer \(1\)$',
+        r'<stdin>:1:4: note: conflicting with "1" which has type universal integer \(1 .. 1\)$',
     )
     assert_type_error(
         CaseExpr(

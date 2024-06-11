@@ -16,6 +16,30 @@ macro_rules! impl_states {
 }
 
 #[macro_export]
+macro_rules! register_submodule_classes {
+    ($module_name:ident, [$($class_name:ident),+ $(,)?] $(,)?) => {
+        ::paste::paste! {
+            pub fn [<register_ $module_name _module>]<'py>(
+                py: Python<'py>,
+                m: &Bound<'py, PyModule>
+            ) -> PyResult<()> {
+                const PY_MODULE_PATH: &str = concat!("rflx.rapidflux.", stringify!($module_name));
+
+                $(
+                    m.add_class::<$class_name>()?;
+                 )*
+
+                // Submodules need to be added manually to `sys.modules`.
+                // See: https://github.com/PyO3/pyo3/issues/759#issuecomment-1208179322
+                py.import_bound("sys")?
+                    .getattr("modules")?
+                    .set_item(PY_MODULE_PATH, m)
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! register_submodule_functions {
     ($module_name:ident, [$($fn_name:ident),+ $(,)?] $(,)?) => {
         ::paste::paste! {

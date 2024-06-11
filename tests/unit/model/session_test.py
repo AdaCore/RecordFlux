@@ -19,7 +19,7 @@ from rflx.model import (
     declaration as decl,
     statement as stmt,
 )
-from rflx.rapidflux import Location, RecordFluxError
+from rflx.rapidflux import Location, RecordFluxError, ty
 from tests.data import models
 from tests.utils import assert_equal, assert_session_model_error, get_test_model
 
@@ -1064,7 +1064,7 @@ def test_channel_read_invalid_type() -> None:
             r"<stdin>:10:20: error: expected readable channel\n"
             r'<stdin>:10:20: error: found message type "TLV::Message"\n'
             r"<stdin>:10:30: error: expected message type\n"
-            r"<stdin>:10:30: error: found type universal integer \(0\)"
+            r"<stdin>:10:30: error: found type universal integer \(0 .. 0\)"
             r"$"
         ),
     )
@@ -1770,7 +1770,7 @@ def test_message_field_assignment_with_incompatible_field_type() -> None:
         regex=(
             r"^"
             r'<stdin>:1:2: error: expected enumeration type "TLV::Tag"\n'
-            r"<stdin>:1:2: error: found type universal integer \(42\)"
+            r"<stdin>:1:2: error: found type universal integer \(42 .. 42\)"
             r"$"
         ),
     )
@@ -2081,7 +2081,7 @@ def test_type_error_in_variable_declaration() -> None:
         regex=(
             r"^"
             r'<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:20: error: found type universal integer \(1\)"
+            r"<stdin>:10:20: error: found type universal integer \(1 .. 1\)"
             r"$"
         ),
     )
@@ -2116,7 +2116,7 @@ def test_type_error_in_renaming_declaration() -> None:
         regex=(
             r"^"
             r"<stdin>:10:20: error: expected message type\n"
-            r"<stdin>:10:20: error: found type universal integer \(1\)"
+            r"<stdin>:10:20: error: found type universal integer \(1 .. 1\)"
             r"$"
         ),
     )
@@ -2717,7 +2717,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Int",
                         "Integer",
-                        type_=rty.Integer("Integer", rty.Bounds(0, 255)),
+                        type_=rty.Integer("Integer", ty.Bounds(0, 255)),
                     ),
                 ],
                 transitions=[Transition(target=ID("null"))],
@@ -2728,7 +2728,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Int",
                         "Integer",
-                        type_=rty.Integer("Integer", rty.Bounds(0, 255)),
+                        type_=rty.Integer("Integer", ty.Bounds(0, 255)),
                     ),
                 ],
                 transitions=[Transition(target=ID("null"))],

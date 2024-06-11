@@ -8,9 +8,10 @@ import z3
 from rflx import expr, ir, typing_ as rty
 from rflx.error import Location
 from rflx.identifier import ID, id_generator
+from rflx.rapidflux import ty
 
 PROOF_MANAGER = ir.ProofManager(2)
-INT_TY = rty.Integer("I", rty.Bounds(10, 100))
+INT_TY = rty.Integer("I", ty.Bounds(10, 100))
 ENUM_TY = rty.Enumeration("E", [ID("E1"), ID("E2")])
 MSG_TY = rty.Message("M", {("E", "I")}, {}, {ID("E"): ENUM_TY, ID("I"): INT_TY})
 SEQ_TY = rty.Sequence("S", MSG_TY)
@@ -385,10 +386,10 @@ def test_attr_str(attribute: ir.Attr, expected: str) -> None:
     ("attribute", "expected"),
     [
         (ir.Size("X", MSG_TY), rty.BIT_LENGTH),
-        (ir.Size("X", ENUM_TY), rty.UniversalInteger()),
-        (ir.Length("X", MSG_TY), rty.UniversalInteger()),
-        (ir.First("X", MSG_TY), rty.UniversalInteger()),
-        (ir.Last("X", MSG_TY), rty.UniversalInteger()),
+        (ir.Size("X", ENUM_TY), rty.UNIVERSAL_INTEGER),
+        (ir.Length("X", MSG_TY), rty.UNIVERSAL_INTEGER),
+        (ir.First("X", MSG_TY), rty.UNIVERSAL_INTEGER),
+        (ir.Last("X", MSG_TY), rty.UNIVERSAL_INTEGER),
         (ir.ValidChecksum("X", MSG_TY), rty.BOOLEAN),
         (ir.Valid("X", MSG_TY), rty.BOOLEAN),
         (ir.Present("X", MSG_TY), rty.BOOLEAN),

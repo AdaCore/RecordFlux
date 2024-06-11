@@ -17,7 +17,7 @@ from rflx import const, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.error import are_all_locations_present
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity, ty
 
 if TYPE_CHECKING:
     from _typeshed import SupportsAllComparisons
@@ -573,7 +573,7 @@ class Number(Expr):
     type_: rty.UniversalInteger
 
     def __init__(self, value: int, base: int = 0, location: Optional[Location] = None) -> None:
-        super().__init__(rty.UniversalInteger(rty.Bounds(value, value)), location)
+        super().__init__(rty.UniversalInteger(ty.Bounds(value, value)), location)
         self.value = value
         self.base = base
 
@@ -1160,7 +1160,7 @@ class Attribute(Name):
 class Size(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
         super().__init__(prefix)
-        self.type_ = rty.UniversalInteger()
+        self.type_ = rty.UNIVERSAL_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
@@ -1169,7 +1169,7 @@ class Size(Attribute):
 class Length(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
         super().__init__(prefix)
-        self.type_ = rty.UniversalInteger()
+        self.type_ = rty.UNIVERSAL_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
@@ -1178,7 +1178,7 @@ class Length(Attribute):
 class First(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
         super().__init__(prefix)
-        self.type_ = rty.UniversalInteger()
+        self.type_ = rty.UNIVERSAL_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)
@@ -1187,7 +1187,7 @@ class First(Attribute):
 class Last(Attribute):
     def __init__(self, prefix: Union[StrID, Expr]) -> None:
         super().__init__(prefix)
-        self.type_ = rty.UniversalInteger()
+        self.type_ = rty.UNIVERSAL_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(rty.Any)

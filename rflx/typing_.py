@@ -10,50 +10,7 @@ import attr
 from rflx import const
 from rflx.identifier import ID
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
-
-
-@attr.s(frozen=True)
-class Bounds:
-    lower: Optional[int] = attr.ib()
-    upper: Optional[int] = attr.ib()
-
-    def __attrs_post_init__(self) -> None:
-        assert (self.lower is None and self.upper is None) or (
-            self.lower is not None and self.upper is not None and self.lower <= self.upper
-        )
-
-    def __bool__(self) -> bool:
-        return self.lower is not None and self.upper is not None
-
-    def __contains__(self, item: object) -> bool:
-        if isinstance(item, int):
-            if self.lower is None or self.upper is None:
-                return False
-            return self.lower <= item <= self.upper
-        if isinstance(item, Bounds):
-            if not self and not item:
-                return True
-            if (
-                self.lower is not None
-                and self.upper is not None
-                and item.lower is not None
-                and item.upper is not None
-            ):
-                return self.lower <= item.lower and self.upper >= item.upper
-        return False
-
-    def __str__(self) -> str:
-        if not self:
-            return "undefined"
-        if self.lower == self.upper:
-            return str(self.lower)
-        return f"{self.lower} .. {self.upper}"
-
-    @staticmethod
-    def union(left: Bounds, right: Bounds) -> Bounds:
-        if left.lower is None or left.upper is None or right.lower is None or right.upper is None:
-            return Bounds(None, None)
-        return Bounds(min(left.lower, right.lower), max(left.upper, right.upper))
+from rflx.rapidflux.ty import Bounds
 
 
 class Type:
@@ -132,14 +89,10 @@ class Enumeration(NamedType):
 @attr.s(frozen=True)
 class BaseInteger(Any):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
-    bounds: Bounds = attr.ib(Bounds(None, None))
+    bounds: Optional[Bounds] = attr.ib(default=None)
 
     def __str__(self) -> str:
-        bounds = (
-            f" ({self.bounds})"
-            if self.bounds.lower is not None and self.bounds.upper is not None
-            else ""
-        )
+        bounds = f" ({self.bounds})" if self.bounds else ""
         return f"{self.DESCRIPTIVE_NAME}{bounds}"
 
     def is_compatible(self, other: Type) -> bool:
@@ -154,14 +107,13 @@ class BaseInteger(Any):
 @attr.s(frozen=True)
 class UniversalInteger(BaseInteger):
     DESCRIPTIVE_NAME: ClassVar[str] = "type universal integer"
-    bounds: Bounds = attr.ib(Bounds(None, None))
-
-    def __str__(self) -> str:
-        return f"{self.DESCRIPTIVE_NAME} ({self.bounds})"
+    bounds: Bounds = attr.ib()
 
     def common_type(self, other: Type) -> Type:
         if isinstance(other, UniversalInteger) and self.bounds != other.bounds:
-            return UniversalInteger(Bounds.union(self.bounds, other.bounds))
+            return UniversalInteger(
+                Bounds.merge(self.bounds, other.bounds),
+            )
         if isinstance(other, BaseInteger):
             return other
         if other == Any() or self == other:
@@ -173,11 +125,12 @@ class UniversalInteger(BaseInteger):
 class Integer(BaseInteger, NamedType):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
     identifier: ID = attr.ib(converter=ID)
-    bounds: Bounds = attr.ib(Bounds(None, None))
+    bounds: Bounds = attr.ib()
     location: Optional[Location] = attr.ib(default=None, cmp=False)
 
     def __str__(self) -> str:
-        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}" ({self.bounds})'
+        bounds = f" ({self.bounds})" if self.bounds else ""
+        return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"{bounds}'
 
     def is_compatible_strong(self, other: Type) -> bool:
         return self == other or other == Any() or isinstance(other, UniversalInteger)
@@ -222,7 +175,11 @@ class Aggregate(Composite):
                         isinstance(self.element, BaseInteger)
                         and isinstance(other.element, BaseInteger)
                         and self.element.is_compatible_strong(other.element)
-                        and self.element.bounds in other.element.bounds
+                        and (
+                            self.element.bounds in other.element.bounds
+                            if self.element.bounds and other.element.bounds
+                            else True
+                        )
                     )
                     or (
                         not isinstance(self.element, BaseInteger)
@@ -262,7 +219,11 @@ class Sequence(Composite, NamedType):
                         isinstance(self.element, BaseInteger)
                         and isinstance(other.element, BaseInteger)
                         and other.element.is_compatible_strong(self.element)
-                        and other.element.bounds in self.element.bounds
+                        and (
+                            other.element.bounds in self.element.bounds
+                            if self.element.bounds and other.element.bounds
+                            else True
+                        )
                     )
                     or (
                         not isinstance(self.element, BaseInteger)
@@ -470,11 +431,15 @@ BOOLEAN = Enumeration(
 #
 # Potentially failing range checks will not be detected in the model, if a custom Bit_Length type
 # with different bounds is used (eng/recordflux/RecordFlux#317).
+bit_length_bounds = Bounds(0, (2**31 - 1) * 8)
+
 BIT_LENGTH = Integer(
     const.BUILTINS_PACKAGE * "Bit_Length",
-    Bounds(0, (2**31 - 1) * 8),
+    bit_length_bounds,
     location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
+
+UNIVERSAL_INTEGER = UniversalInteger(Bounds(0, 2**const.MAX_SCALAR_SIZE - 1))
 
 BASE_INTEGER = Integer(
     const.BUILTINS_PACKAGE * "Base_Integer",
@@ -490,6 +455,6 @@ INDEX = Integer(
 
 BIT_INDEX = Integer(
     const.BUILTINS_PACKAGE * "Bit_Index",
-    Bounds(1, BIT_LENGTH.bounds.upper),
+    Bounds(1, bit_length_bounds.upper),
     location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )

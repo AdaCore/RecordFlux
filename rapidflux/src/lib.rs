@@ -12,6 +12,7 @@ mod diagnostics;
 mod identifier;
 mod logging;
 mod source_code;
+mod ty;
 mod utils;
 
 #[pymodule]
@@ -31,6 +32,9 @@ fn rapidflux(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Source code module
     register_submodule!(source_code, py, m);
+
+    // Ty module
+    register_submodule!(ty, py, m);
 
     // Identifier
     m.add_class::<identifier::ID>()?;

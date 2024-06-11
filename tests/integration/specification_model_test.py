@@ -347,7 +347,7 @@ def test_model_errors_in_type_and_session() -> None:
     assert_error_string(
         """\
         package Test is
-           type T is range 0 .. 2 ** 256 - 1 with Size => 256;
+           type T is range 0 .. 2 ** 65 - 1 with Size => 65;
 
            generic
            session S is
@@ -1975,7 +1975,7 @@ def test_incompatible_type_link_condition(
             5 |             with Size => 8
             6 |             then F2
             7 |                if F1 = 32;
-              |                        ^^ found type universal integer (32)
+              |                        ^^ found type universal integer (32 .. 32)
               |
               """,
         ),

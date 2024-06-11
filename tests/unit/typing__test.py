@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from collections import abc
-from typing import Optional, Union
+from typing import Union
 
 import pytest
 
 from rflx.identifier import ID
 from rflx.rapidflux import Location, RecordFluxError
+from rflx.rapidflux.ty import Bounds
 from rflx.typing_ import (
     Aggregate,
     Any,
     BaseInteger,
-    Bounds,
     Channel,
     Enumeration,
     Integer,
@@ -25,42 +25,7 @@ from rflx.typing_ import (
     common_type,
 )
 
-
-def test_bounds_contains() -> None:
-    assert 1 not in Bounds(None, None)
-    assert 1 in Bounds(1, 100)
-    assert 0 not in Bounds(1, 100)
-    assert Bounds(1, 100) in Bounds(1, 100)
-    assert Bounds(1, 10) in Bounds(1, 100)
-    assert Bounds(10, 100) in Bounds(1, 100)
-    assert Bounds(10, 10) in Bounds(1, 100)
-    assert Bounds(1, 200) not in Bounds(1, 100)
-    assert Bounds(0, 100) not in Bounds(1, 100)
-    assert Bounds(1, 100) not in Bounds(None, None)
-    assert Bounds(None, None) not in Bounds(1, 100)
-    assert "invalid" not in Bounds(1, 100)
-
-
-@pytest.mark.parametrize(
-    ("lower", "upper"),
-    [
-        (10, 0),
-        (None, 1),
-        (1, None),
-    ],
-)
-@pytest.mark.skipif(not __debug__, reason="depends on assertion")
-def test_bounds_error(lower: Optional[int], upper: Optional[int]) -> None:
-    with pytest.raises(AssertionError):
-        Bounds(lower, upper)
-
-
-def test_bounds_str() -> None:
-    assert str(Bounds(None, None)) == "undefined"
-    assert str(Bounds(1, 1)) == "1"
-    assert str(Bounds(1, 100)) == "1 .. 100"
-
-
+INTEGER_A = Integer("A", Bounds(10, 100))
 ENUMERATION_A = Enumeration("A", [ID("AE1"), ID("AE2")])
 ENUMERATION_B = Enumeration("B", [ID("BE1"), ID("BE2"), ID("BE3")])
 
@@ -72,7 +37,7 @@ ENUMERATION_B = Enumeration("B", [ID("BE1"), ID("BE2"), ID("BE3")])
         (ENUMERATION_A, ENUMERATION_A, ENUMERATION_A),
         (ENUMERATION_A, Undefined(), Undefined()),
         (ENUMERATION_A, ENUMERATION_B, Undefined()),
-        (ENUMERATION_A, Integer("A"), Undefined()),
+        (ENUMERATION_A, Integer("A", Bounds(10, 100)), Undefined()),
     ],
 )
 def test_enumeration_common_type(enumeration: Type, other: Type, expected: Type) -> None:
@@ -87,7 +52,7 @@ def test_enumeration_common_type(enumeration: Type, other: Type, expected: Type)
         (ENUMERATION_A, ENUMERATION_A, True),
         (ENUMERATION_A, Undefined(), False),
         (ENUMERATION_A, ENUMERATION_B, False),
-        (ENUMERATION_A, Integer("A"), False),
+        (ENUMERATION_A, Integer("A", Bounds(10, 100)), False),
     ],
 )
 def test_enumeration_is_compatible(enumeration: Type, other: Type, expected: bool) -> None:
@@ -146,11 +111,15 @@ def test_base_integer_is_compatible(base_integer: Type, other: Type, expected: b
 @pytest.mark.parametrize(
     ("universal_integer", "other", "expected"),
     [
-        (UniversalInteger(), Any(), UniversalInteger()),
-        (UniversalInteger(), BaseInteger(), BaseInteger()),
-        (UniversalInteger(), UniversalInteger(), UniversalInteger()),
+        (UniversalInteger(Bounds(10, 100)), Any(), UniversalInteger(Bounds(10, 100))),
+        (UniversalInteger(Bounds(10, 100)), BaseInteger(), BaseInteger()),
         (
-            UniversalInteger(),
+            UniversalInteger(Bounds(10, 100)),
+            UniversalInteger(Bounds(10, 100)),
+            UniversalInteger(Bounds(10, 100)),
+        ),
+        (
+            UniversalInteger(Bounds(10, 100)),
             Integer("A", Bounds(10, 100)),
             Integer("A", Bounds(10, 100)),
         ),
@@ -159,13 +128,8 @@ def test_base_integer_is_compatible(base_integer: Type, other: Type, expected: b
             Integer("A", Bounds(10, 100)),
             Integer("A", Bounds(10, 100)),
         ),
-        (
-            UniversalInteger(),
-            UniversalInteger(Bounds(10, 100)),
-            UniversalInteger(),
-        ),
-        (UniversalInteger(), Undefined(), Undefined()),
-        (UniversalInteger(), ENUMERATION_B, Undefined()),
+        (UniversalInteger(Bounds(10, 100)), Undefined(), Undefined()),
+        (UniversalInteger(Bounds(10, 100)), ENUMERATION_B, Undefined()),
     ],
 )
 def test_universal_integer_common_type(
@@ -180,21 +144,16 @@ def test_universal_integer_common_type(
 @pytest.mark.parametrize(
     ("universal_integer", "other", "expected"),
     [
-        (UniversalInteger(), Any(), True),
-        (UniversalInteger(), BaseInteger(), True),
-        (UniversalInteger(), UniversalInteger(), True),
+        (UniversalInteger(Bounds(10, 100)), Any(), True),
+        (UniversalInteger(Bounds(10, 100)), BaseInteger(), True),
+        (UniversalInteger(Bounds(10, 100)), UniversalInteger(Bounds(10, 100)), True),
         (
-            UniversalInteger(),
+            UniversalInteger(Bounds(10, 100)),
             Integer("A", Bounds(10, 100)),
             True,
         ),
-        (
-            UniversalInteger(),
-            UniversalInteger(Bounds(10, 100)),
-            True,
-        ),
-        (UniversalInteger(), Undefined(), False),
-        (UniversalInteger(), ENUMERATION_B, False),
+        (UniversalInteger(Bounds(10, 100)), Undefined(), False),
+        (UniversalInteger(Bounds(10, 100)), ENUMERATION_B, False),
     ],
 )
 def test_universal_integer_is_compatible(
@@ -209,14 +168,15 @@ def test_universal_integer_is_compatible(
 @pytest.mark.parametrize(
     ("integer", "other", "expected"),
     [
-        (Integer("A"), Any(), Integer("A")),
-        (Integer("A"), BaseInteger(), BaseInteger()),
-        (Integer("A"), Integer("A"), Integer("A")),
-        (Integer("A"), UniversalInteger(), Integer("A")),
         (
             Integer("A", Bounds(10, 100)),
             Any(),
             Integer("A", Bounds(10, 100)),
+        ),
+        (
+            Integer("A", Bounds(10, 100)),
+            BaseInteger(),
+            BaseInteger(),
         ),
         (
             Integer("A", Bounds(10, 100)),
@@ -229,11 +189,6 @@ def test_universal_integer_is_compatible(
             Integer("A", Bounds(10, 100)),
         ),
         (
-            Integer("A"),
-            Integer("B"),
-            BaseInteger(),
-        ),
-        (
             Integer("A", Bounds(10, 100)),
             Integer("B", Bounds(10, 100)),
             BaseInteger(),
@@ -243,8 +198,16 @@ def test_universal_integer_is_compatible(
             UniversalInteger(Bounds(0, 200)),
             Integer("A", Bounds(10, 100)),
         ),
-        (Integer("A"), Undefined(), Undefined()),
-        (Integer("A"), ENUMERATION_B, Undefined()),
+        (
+            Integer("A", Bounds(10, 100)),
+            Undefined(),
+            Undefined(),
+        ),
+        (
+            Integer("A", Bounds(10, 100)),
+            ENUMERATION_B,
+            Undefined(),
+        ),
     ],
 )
 def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None:
@@ -255,30 +218,10 @@ def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None
 @pytest.mark.parametrize(
     ("integer", "other", "expected"),
     [
-        (Integer("A"), Any(), True),
-        (Integer("A"), BaseInteger(), True),
-        (Integer("A"), Integer("A"), True),
-        (Integer("A"), UniversalInteger(), True),
-        (
-            Integer("A", Bounds(10, 100)),
-            Any(),
-            True,
-        ),
-        (
-            Integer("A", Bounds(10, 100)),
-            Integer("A", Bounds(10, 100)),
-            True,
-        ),
-        (
-            Integer("A", Bounds(10, 100)),
-            UniversalInteger(Bounds(10, 100)),
-            True,
-        ),
-        (
-            Integer("A"),
-            Integer("B"),
-            True,
-        ),
+        (Integer("A", Bounds(10, 100)), Any(), True),
+        (Integer("A", Bounds(10, 100)), BaseInteger(), True),
+        (Integer("A", Bounds(10, 100)), Integer("A", Bounds(10, 100)), True),
+        (Integer("A", Bounds(10, 100)), UniversalInteger(Bounds(10, 100)), True),
         (
             Integer("A", Bounds(10, 100)),
             Integer("B", Bounds(10, 100)),
@@ -294,8 +237,8 @@ def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None
             UniversalInteger(Bounds(0, 200)),
             True,
         ),
-        (Integer("A"), Undefined(), False),
-        (Integer("A"), ENUMERATION_B, False),
+        (Integer("A", Bounds(10, 100)), Undefined(), False),
+        (Integer("A", Bounds(10, 100)), ENUMERATION_B, False),
     ],
 )
 def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> None:
@@ -306,30 +249,10 @@ def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> No
 @pytest.mark.parametrize(
     ("integer", "other", "expected"),
     [
-        (Integer("A"), Any(), True),
-        (Integer("A"), BaseInteger(), False),
-        (Integer("A"), Integer("A"), True),
-        (Integer("A"), UniversalInteger(), True),
-        (
-            Integer("A", Bounds(10, 100)),
-            Any(),
-            True,
-        ),
-        (
-            Integer("A", Bounds(10, 100)),
-            Integer("A", Bounds(10, 100)),
-            True,
-        ),
-        (
-            Integer("A", Bounds(10, 100)),
-            UniversalInteger(Bounds(10, 100)),
-            True,
-        ),
-        (
-            Integer("A"),
-            Integer("B"),
-            False,
-        ),
+        (Integer("A", Bounds(10, 100)), Any(), True),
+        (Integer("A", Bounds(10, 100)), BaseInteger(), False),
+        (Integer("A", Bounds(10, 100)), Integer("A", Bounds(10, 100)), True),
+        (Integer("A", Bounds(10, 100)), UniversalInteger(Bounds(10, 100)), True),
         (
             Integer("A", Bounds(10, 100)),
             Integer("B", Bounds(10, 100)),
@@ -345,8 +268,8 @@ def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> No
             UniversalInteger(Bounds(0, 200)),
             True,
         ),
-        (Integer("A"), Undefined(), False),
-        (Integer("A"), ENUMERATION_B, False),
+        (Integer("A", Bounds(10, 100)), Undefined(), False),
+        (Integer("A", Bounds(10, 100)), ENUMERATION_B, False),
     ],
 )
 def test_integer_is_compatible_strong(integer: Type, other: Type, expected: bool) -> None:
@@ -358,14 +281,14 @@ def test_integer_is_compatible_strong(integer: Type, other: Type, expected: bool
     ("aggregate", "other", "expected"),
     [
         (
-            Aggregate(Integer("A")),
+            Aggregate(Integer("A", Bounds(10, 100))),
             Any(),
-            Aggregate(Integer("A")),
+            Aggregate(Integer("A", Bounds(10, 100))),
         ),
         (
-            Aggregate(Integer("A")),
-            Aggregate(Integer("A")),
-            Aggregate(Integer("A")),
+            Aggregate(Integer("A", Bounds(10, 100))),
+            Aggregate(Integer("A", Bounds(10, 100))),
+            Aggregate(Integer("A", Bounds(10, 100))),
         ),
         (
             Aggregate(Integer("A", Bounds(10, 100))),
@@ -383,7 +306,7 @@ def test_integer_is_compatible_strong(integer: Type, other: Type, expected: bool
             Aggregate(UniversalInteger(Bounds(10, 200))),
         ),
         (
-            Aggregate(Integer("A")),
+            Aggregate(Integer("A", Bounds(10, 100))),
             Undefined(),
             Undefined(),
         ),
@@ -398,13 +321,13 @@ def test_aggregate_common_type(aggregate: Type, other: Type, expected: Type) -> 
     ("aggregate", "other", "expected"),
     [
         (
-            Aggregate(Integer("A")),
+            Aggregate(Integer("A", Bounds(10, 100))),
             Any(),
             True,
         ),
         (
-            Aggregate(Integer("A")),
-            Aggregate(Integer("A")),
+            Aggregate(Integer("A", Bounds(10, 100))),
+            Aggregate(Integer("A", Bounds(10, 100))),
             True,
         ),
         (
@@ -423,7 +346,7 @@ def test_aggregate_common_type(aggregate: Type, other: Type, expected: Type) -> 
             True,
         ),
         (
-            Aggregate(Integer("A")),
+            Aggregate(Integer("A", Bounds(10, 100))),
             Undefined(),
             False,
         ),
@@ -438,19 +361,14 @@ def test_aggregate_is_compatible(aggregate: Type, other: Type, expected: bool) -
     ("composite", "other", "expected"),
     [
         (
-            Sequence("A", Integer("B")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
             Any(),
-            Sequence("A", Integer("B")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
         ),
         (
-            Sequence("A", Integer("B")),
-            Sequence("A", Integer("B")),
-            Sequence("A", Integer("B")),
-        ),
-        (
-            Sequence("A", Integer("B")),
-            Aggregate(Integer("B")),
-            Sequence("A", Integer("B")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
+            Sequence("A", Integer("B", Bounds(10, 100))),
+            Sequence("A", Integer("B", Bounds(10, 100))),
         ),
         (
             Sequence("A", Integer("B", Bounds(10, 100))),
@@ -463,8 +381,8 @@ def test_aggregate_is_compatible(aggregate: Type, other: Type, expected: bool) -
             Sequence("A", Integer("B", Bounds(10, 100))),
         ),
         (
-            Sequence("A", Integer("B")),
-            Aggregate(Integer("C")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
+            Aggregate(Integer("C", Bounds(10, 100))),
             Undefined(),
         ),
         (
@@ -478,7 +396,7 @@ def test_aggregate_is_compatible(aggregate: Type, other: Type, expected: bool) -
             Undefined(),
         ),
         (
-            Sequence("A", Integer("B")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
             Undefined(),
             Undefined(),
         ),
@@ -493,23 +411,18 @@ def test_composite_common_type(composite: Type, other: Type, expected: Type) -> 
     ("composite", "other", "expected"),
     [
         (
-            Sequence("A", Integer("B")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
             Any(),
             True,
         ),
         (
-            Sequence("A", Integer("B")),
-            Sequence("A", Integer("B")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
+            Sequence("A", Integer("B", Bounds(10, 100))),
             True,
         ),
         (
-            Sequence("A", Integer("B")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
             Aggregate(Any()),
-            True,
-        ),
-        (
-            Sequence("A", Integer("B")),
-            Aggregate(Integer("B")),
             True,
         ),
         (
@@ -523,8 +436,8 @@ def test_composite_common_type(composite: Type, other: Type, expected: Type) -> 
             True,
         ),
         (
-            Sequence("A", Integer("B")),
-            Aggregate(Integer("C")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
+            Aggregate(Integer("C", Bounds(10, 100))),
             False,
         ),
         (
@@ -538,7 +451,7 @@ def test_composite_common_type(composite: Type, other: Type, expected: Type) -> 
             False,
         ),
         (
-            Sequence("A", Integer("B")),
+            Sequence("A", Integer("B", Bounds(10, 100))),
             Undefined(),
             False,
         ),
@@ -685,7 +598,7 @@ def test_common_type(types: abc.Sequence[Type], expected: Type) -> None:
     [
         (
             Any(),
-            Integer("A"),
+            Integer("A", Bounds(10, 100)),
         ),
     ],
 )
@@ -710,7 +623,7 @@ def test_check_type(actual: Type, expected: Type) -> None:
         ),
         (
             Undefined(),
-            Integer("A"),
+            Integer("A", Bounds(10, 100)),
             r'^<stdin>:10:20: error: undefined "A"$',
         ),
     ],
