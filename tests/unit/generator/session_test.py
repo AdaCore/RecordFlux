@@ -20,7 +20,7 @@ from rflx.integration import Integration
 from rflx.rapidflux import Location, RecordFluxError, ty
 from tests.data import models
 
-INT_TY = rty.Integer("I", ty.Bounds(10, 100))
+INT_TY = rty.Integer("I", ty.Bounds(1, 100))
 MSG_TY = rty.Message(ID("M", Location((1, 1))))
 SEQ_TY = rty.Sequence("S", rty.Message(ID("M", Location((1, 1)))))
 
@@ -1365,7 +1365,7 @@ class UnknownExpr(ir.Expr):
                 [INT_TY],
             ),
             RecordFluxError,
-            r'IntCall with integer type "I" \(10 \.\. 100\) as function argument not yet supported',
+            r'IntCall with integer type "I" \(1 \.\. 100\) as function argument not yet supported',
         ),
         (
             rty.Message("A"),
@@ -1492,7 +1492,7 @@ def test_session_assign_error(
                 rty.Sequence("B", INT_TY),
             ),
             RecordFluxError,
-            r'IntCall with integer type "I" \(10 \.\. 100\) in Append statement not yet supported',
+            r'IntCall with integer type "I" \(1 \.\. 100\) in Append statement not yet supported',
         ),
     ],
 )

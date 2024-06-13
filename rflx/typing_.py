@@ -133,7 +133,14 @@ class Integer(BaseInteger, NamedType):
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"{bounds}'
 
     def is_compatible_strong(self, other: Type) -> bool:
-        return self == other or other == Any() or isinstance(other, UniversalInteger)
+        return (
+            self == other
+            or other == Any()
+            or (
+                isinstance(other, UniversalInteger)
+                and (other.bounds in self.bounds if other.bounds and self.bounds else True)
+            )
+        )
 
     def common_type(self, other: Type) -> Type:
         if isinstance(other, UniversalInteger):
@@ -169,23 +176,7 @@ class Aggregate(Composite):
             or isinstance(other, Aggregate)
             or (
                 isinstance(other, Sequence)
-                and (
-                    other.element == Any()
-                    or (
-                        isinstance(self.element, BaseInteger)
-                        and isinstance(other.element, BaseInteger)
-                        and self.element.is_compatible_strong(other.element)
-                        and (
-                            self.element.bounds in other.element.bounds
-                            if self.element.bounds and other.element.bounds
-                            else True
-                        )
-                    )
-                    or (
-                        not isinstance(self.element, BaseInteger)
-                        and self.element.is_compatible_strong(other.element)
-                    )
-                )
+                and (other.element == Any() or self.element.is_compatible_strong(other.element))
             )
         )
 
@@ -213,23 +204,7 @@ class Sequence(Composite, NamedType):
             other == Any()
             or (
                 isinstance(other, Aggregate)
-                and (
-                    other.element == Any()
-                    or (
-                        isinstance(self.element, BaseInteger)
-                        and isinstance(other.element, BaseInteger)
-                        and other.element.is_compatible_strong(self.element)
-                        and (
-                            other.element.bounds in self.element.bounds
-                            if self.element.bounds and other.element.bounds
-                            else True
-                        )
-                    )
-                    or (
-                        not isinstance(self.element, BaseInteger)
-                        and other.element.is_compatible_strong(self.element)
-                    )
-                )
+                and (other.element == Any() or other.element.is_compatible_strong(self.element))
             )
             or (
                 isinstance(other, Sequence)

@@ -266,7 +266,7 @@ def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> No
         (
             Integer("A", Bounds(10, 100)),
             UniversalInteger(Bounds(0, 200)),
-            True,
+            False,
         ),
         (Integer("A", Bounds(10, 100)), Undefined(), False),
         (Integer("A", Bounds(10, 100)), ENUMERATION_B, False),
