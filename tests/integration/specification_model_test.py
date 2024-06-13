@@ -40,6 +40,26 @@ def assert_error_string(string: str, regex: str) -> None:
         p.create_model()
 
 
+def assert_error_full_message(
+    filepath: Path,
+    expected: str,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    assert "error: " in expected
+    regex = f"^{re.escape(expected)}$"
+    check_regex(regex)
+
+    p = parser.Parser()
+    try:
+        p.parse(filepath)
+        assert False, "DID NOT RAISE"
+    except RecordFluxError as e:
+        e.print_messages()
+
+    stderr_content = capfd.readouterr().err
+    assert stderr_content == expected, f'got: "{stderr_content}"'
+
+
 def test_message_undefined_type() -> None:
     assert_error_string(
         """\
@@ -833,4 +853,89 @@ def test_parse_error_negated_variable() -> None:
             end P1;
             """,
         '^<stdin>:2:9: error: size of "Kind" contains variable$',
+    )
+
+
+def test_package_name_not_correct(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    temp_file = tmp_path / "test.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Not_Test is
+
+            end Not_Test;
+            """,
+        ),
+    )
+
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+                info: Parsing {temp_file}
+                error: source file name does not match the package name "Not_Test"
+                 --> {temp_file}:1:9
+                  |
+                1 | package Not_Test is
+                  |         ^^^^^^^^
+                  |
+                help: either rename the file to "not_test.rflx" or change the package name to "Test"
+                 --> {temp_file}:1:9
+                  |
+                1 | package Not_Test is
+                  |         -------- help: rename to "Test"
+                2 |
+                3 | end Not_Test;
+                  |     -------- help: rename to "Test"
+                  |
+            """,
+        ),
+        capfd,
+    )
+
+
+@pytest.mark.parametrize(
+    "package_name",
+    [
+        "Tls",
+        "TLS",
+        "BadCasing",
+    ],
+)
+def test_package_bad_package_casing(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+    package_name: str,
+) -> None:
+    temp_file = tmp_path / f"{package_name}.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            f"""\
+            package {package_name} is
+
+            end {package_name};
+            """,
+        ),
+    )
+
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+                info: Parsing {temp_file}
+                error: source file name "{package_name}.rflx" must be in lower case characters only
+                 --> {temp_file}:1:9
+                  |
+                1 | package {package_name} is
+                  |         {'^' * len(package_name)}
+                  |
+                help: rename the file to "{package_name.lower()}.rflx"
+                 --> {temp_file}:1:9
+                  |
+                1 | package {package_name} is
+                  |         {'-' * len(package_name)}
+                  |
+            """,
+        ),
+        capfd,
     )
