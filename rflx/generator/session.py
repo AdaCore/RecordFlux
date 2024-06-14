@@ -2356,7 +2356,7 @@ class SessionGenerator:
                 ir.CaseExpr,
             ),
         ) and (
-            isinstance(expression.type_, (rty.BaseInteger, rty.Enumeration, rty.Aggregate))
+            isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
             or expression.type_ == rty.OPAQUE
         ):
             assert isinstance(
@@ -2400,7 +2400,7 @@ class SessionGenerator:
         field = field_access.field
 
         if (
-            isinstance(field_access.type_, (rty.BaseInteger, rty.Enumeration))
+            isinstance(field_access.type_, (rty.AnyInteger, rty.Enumeration))
             or field_access.type_ == rty.OPAQUE
         ):
             if field in field_access.message_type.parameter_types:
@@ -3642,10 +3642,10 @@ class SessionGenerator:
     @_to_ada_expr.register
     def _(self, expression: ir.Size, is_global: ty.Callable[[ID], bool]) -> Expr:
         if (
-            isinstance(expression.prefix_type, rty.BaseInteger)
+            isinstance(expression.prefix_type, rty.AnyInteger)
             or (
                 isinstance(expression.prefix_type, rty.Aggregate)
-                and isinstance(expression.prefix_type.element, rty.BaseInteger)
+                and isinstance(expression.prefix_type.element, rty.AnyInteger)
             )
             or (
                 isinstance(expression.prefix_type, (rty.Integer, rty.Enumeration))
@@ -4137,7 +4137,7 @@ class SessionGenerator:
                 value,
                 (ir.Var, ir.EnumLit, ir.BinaryIntExpr, ir.Size),
             )
-            and isinstance(value.type_, (rty.BaseInteger, rty.Enumeration, rty.Aggregate))
+            and isinstance(value.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
         ):
             if isinstance(value, ir.Agg) and len(value.elements) == 0:
                 statements.append(

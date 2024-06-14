@@ -692,7 +692,7 @@ class Neg(Expr):
         self._str = intern(f"-{self.parenthesized(self.expr)}")
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.expr.check_type_instance(rty.BaseInteger)
+        return self.expr.check_type_instance(rty.AnyInteger)
 
     def __neg__(self) -> Expr:
         return self.expr
@@ -736,12 +736,12 @@ class MathAssExpr(AssExpr):
     def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
         super().__init__(*terms, location=location)
         common_type = rty.common_type([t.type_ for t in terms])
-        self.type_ = common_type if common_type != rty.UNDEFINED else rty.BaseInteger()
+        self.type_ = common_type if common_type != rty.UNDEFINED else rty.AnyInteger()
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for t in self.terms:
-            error.extend(t.check_type_instance(rty.BaseInteger).entries)
+            error.extend(t.check_type_instance(rty.AnyInteger).entries)
         return error
 
 
@@ -821,7 +821,7 @@ class MathBinExpr(BinExpr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.BaseInteger).entries)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
 
         self.type_ = rty.common_type([self.left.type_, self.right.type_])
 
@@ -1735,7 +1735,7 @@ class Less(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.BaseInteger).entries)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     @property
@@ -1753,7 +1753,7 @@ class LessEqual(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.BaseInteger).entries)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     @property
@@ -1788,7 +1788,7 @@ class GreaterEqual(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.BaseInteger).entries)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     @property
@@ -1806,7 +1806,7 @@ class Greater(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.BaseInteger).entries)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     @property
@@ -2091,7 +2091,7 @@ class ValueRange(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.lower, self.upper]:
-            error.extend(e.check_type_instance(rty.BaseInteger).entries)
+            error.extend(e.check_type_instance(rty.AnyInteger).entries)
         return error
 
     def __neg__(self) -> Expr:

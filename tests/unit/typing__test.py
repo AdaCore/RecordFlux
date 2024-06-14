@@ -11,7 +11,7 @@ from rflx.rapidflux.ty import Bounds
 from rflx.typing_ import (
     Aggregate,
     Any,
-    BaseInteger,
+    AnyInteger,
     Channel,
     Enumeration,
     Integer,
@@ -63,20 +63,20 @@ def test_enumeration_is_compatible(enumeration: Type, other: Type, expected: boo
 @pytest.mark.parametrize(
     ("base_integer", "other", "expected"),
     [
-        (BaseInteger(), Any(), BaseInteger()),
-        (BaseInteger(), BaseInteger(), BaseInteger()),
+        (AnyInteger(), Any(), AnyInteger()),
+        (AnyInteger(), AnyInteger(), AnyInteger()),
         (
-            BaseInteger(),
+            AnyInteger(),
             Integer("A", Bounds(10, 100)),
-            BaseInteger(),
+            AnyInteger(),
         ),
         (
-            BaseInteger(),
+            AnyInteger(),
             UniversalInteger(Bounds(10, 100)),
-            BaseInteger(),
+            AnyInteger(),
         ),
-        (BaseInteger(), Undefined(), Undefined()),
-        (BaseInteger(), ENUMERATION_B, Undefined()),
+        (AnyInteger(), Undefined(), Undefined()),
+        (AnyInteger(), ENUMERATION_B, Undefined()),
     ],
 )
 def test_base_integer_common_type(base_integer: Type, other: Type, expected: Type) -> None:
@@ -87,20 +87,20 @@ def test_base_integer_common_type(base_integer: Type, other: Type, expected: Typ
 @pytest.mark.parametrize(
     ("base_integer", "other", "expected"),
     [
-        (BaseInteger(), Any(), True),
-        (BaseInteger(), BaseInteger(), True),
+        (AnyInteger(), Any(), True),
+        (AnyInteger(), AnyInteger(), True),
         (
-            BaseInteger(),
+            AnyInteger(),
             Integer("A", Bounds(10, 100)),
             True,
         ),
         (
-            BaseInteger(),
+            AnyInteger(),
             UniversalInteger(Bounds(10, 100)),
             True,
         ),
-        (BaseInteger(), Undefined(), False),
-        (BaseInteger(), ENUMERATION_B, False),
+        (AnyInteger(), Undefined(), False),
+        (AnyInteger(), ENUMERATION_B, False),
     ],
 )
 def test_base_integer_is_compatible(base_integer: Type, other: Type, expected: bool) -> None:
@@ -112,7 +112,7 @@ def test_base_integer_is_compatible(base_integer: Type, other: Type, expected: b
     ("universal_integer", "other", "expected"),
     [
         (UniversalInteger(Bounds(10, 100)), Any(), UniversalInteger(Bounds(10, 100))),
-        (UniversalInteger(Bounds(10, 100)), BaseInteger(), BaseInteger()),
+        (UniversalInteger(Bounds(10, 100)), AnyInteger(), AnyInteger()),
         (
             UniversalInteger(Bounds(10, 100)),
             UniversalInteger(Bounds(10, 100)),
@@ -145,7 +145,7 @@ def test_universal_integer_common_type(
     ("universal_integer", "other", "expected"),
     [
         (UniversalInteger(Bounds(10, 100)), Any(), True),
-        (UniversalInteger(Bounds(10, 100)), BaseInteger(), True),
+        (UniversalInteger(Bounds(10, 100)), AnyInteger(), True),
         (UniversalInteger(Bounds(10, 100)), UniversalInteger(Bounds(10, 100)), True),
         (
             UniversalInteger(Bounds(10, 100)),
@@ -175,8 +175,8 @@ def test_universal_integer_is_compatible(
         ),
         (
             Integer("A", Bounds(10, 100)),
-            BaseInteger(),
-            BaseInteger(),
+            AnyInteger(),
+            AnyInteger(),
         ),
         (
             Integer("A", Bounds(10, 100)),
@@ -191,7 +191,7 @@ def test_universal_integer_is_compatible(
         (
             Integer("A", Bounds(10, 100)),
             Integer("B", Bounds(10, 100)),
-            BaseInteger(),
+            AnyInteger(),
         ),
         (
             Integer("A", Bounds(10, 100)),
@@ -219,7 +219,7 @@ def test_integer_common_type(integer: Type, other: Type, expected: Type) -> None
     ("integer", "other", "expected"),
     [
         (Integer("A", Bounds(10, 100)), Any(), True),
-        (Integer("A", Bounds(10, 100)), BaseInteger(), True),
+        (Integer("A", Bounds(10, 100)), AnyInteger(), True),
         (Integer("A", Bounds(10, 100)), Integer("A", Bounds(10, 100)), True),
         (Integer("A", Bounds(10, 100)), UniversalInteger(Bounds(10, 100)), True),
         (
@@ -250,7 +250,7 @@ def test_integer_is_compatible(integer: Type, other: Type, expected: bool) -> No
     ("integer", "other", "expected"),
     [
         (Integer("A", Bounds(10, 100)), Any(), True),
-        (Integer("A", Bounds(10, 100)), BaseInteger(), False),
+        (Integer("A", Bounds(10, 100)), AnyInteger(), False),
         (Integer("A", Bounds(10, 100)), Integer("A", Bounds(10, 100)), True),
         (Integer("A", Bounds(10, 100)), UniversalInteger(Bounds(10, 100)), True),
         (
@@ -293,12 +293,12 @@ def test_integer_is_compatible_strong(integer: Type, other: Type, expected: bool
         (
             Aggregate(Integer("A", Bounds(10, 100))),
             Aggregate(Integer("B", Bounds(10, 100))),
-            Aggregate(BaseInteger()),
+            Aggregate(AnyInteger()),
         ),
         (
             Aggregate(Integer("A", Bounds(10, 100))),
             Aggregate(Integer("A", Bounds(20, 200))),
-            Aggregate(BaseInteger()),
+            Aggregate(AnyInteger()),
         ),
         (
             Aggregate(UniversalInteger(Bounds(10, 100))),
@@ -576,7 +576,7 @@ def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> No
                 Aggregate(UniversalInteger(Bounds(20, 100))),
                 Aggregate(Integer("B", Bounds(20, 200))),
             ],
-            Aggregate(BaseInteger()),
+            Aggregate(AnyInteger()),
         ),
         (
             [
@@ -616,7 +616,7 @@ def test_check_type(actual: Type, expected: Type) -> None:
             r'<stdin>:10:20: error: found message type "A"$',
         ),
         (
-            BaseInteger(),
+            AnyInteger(),
             Message("A"),
             r'^<stdin>:10:20: error: expected message type "A"\n'
             r"<stdin>:10:20: error: found integer type$",
@@ -659,7 +659,7 @@ def test_check_type_instance(
             r'<stdin>:10:20: error: found message type "M"$',
         ),
         (
-            BaseInteger(),
+            AnyInteger(),
             (Sequence, Message),
             r"^<stdin>:10:20: error: expected sequence type or message type\n"
             r"<stdin>:10:20: error: found integer type$",

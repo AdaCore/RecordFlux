@@ -450,7 +450,7 @@ class BasicExpr(Expr):
 class IntExpr(Expr):
     @property
     @abstractmethod
-    def type_(self) -> rty.BaseInteger:
+    def type_(self) -> rty.AnyInteger:
         raise NotImplementedError
 
     @abstractmethod
@@ -471,7 +471,7 @@ class BoolExpr(Expr):
 class BasicIntExpr(BasicExpr, IntExpr):
     @property
     @abstractmethod
-    def type_(self) -> rty.BaseInteger:
+    def type_(self) -> rty.AnyInteger:
         raise NotImplementedError
 
 
@@ -491,11 +491,11 @@ class Var(BasicExpr):
 @define(eq=False)
 class IntVar(Var, BasicIntExpr):
     identifier: ID = field(converter=ID)
-    var_type: rty.BaseInteger
+    var_type: rty.AnyInteger
     origin: Optional[Origin] = None
 
     @property
-    def type_(self) -> rty.BaseInteger:
+    def type_(self) -> rty.AnyInteger:
         return self.var_type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntVar:
@@ -636,7 +636,7 @@ class IntAttr(Attr, IntExpr):
 @define(eq=False)
 class Size(IntAttr):
     @property
-    def type_(self) -> rty.BaseInteger:
+    def type_(self) -> rty.AnyInteger:
         return (
             rty.BIT_LENGTH
             if isinstance(self.prefix_type, (rty.Composite, rty.Compound))
@@ -805,7 +805,7 @@ class UnaryIntExpr(UnaryExpr, IntExpr):
     origin: Optional[Origin] = None
 
     @property
-    def type_(self) -> rty.BaseInteger:
+    def type_(self) -> rty.AnyInteger:
         return self.expression.type_
 
 
@@ -857,9 +857,9 @@ class BinaryIntExpr(BinaryExpr, IntExpr):
     origin: Optional[Origin] = None
 
     @property
-    def type_(self) -> rty.BaseInteger:
+    def type_(self) -> rty.AnyInteger:
         type_ = self.left.type_.common_type(self.right.type_)
-        assert isinstance(type_, rty.BaseInteger)
+        assert isinstance(type_, rty.AnyInteger)
         return type_
 
 
@@ -889,7 +889,7 @@ class Add(BinaryIntExpr):
         v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
-            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds is not None
+            if isinstance(self.type_, rty.AnyInteger) and self.type_.bounds is not None
             else INT_MAX
         )
         return [
@@ -956,7 +956,7 @@ class Mul(BinaryIntExpr):
         v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
-            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds is not None
+            if isinstance(self.type_, rty.AnyInteger) and self.type_.bounds is not None
             else INT_MAX
         )
         return [
@@ -1015,7 +1015,7 @@ class Pow(BinaryIntExpr):
         v_type = to_integer(self.type_)
         upper_bound = (
             self.type_.bounds.upper
-            if isinstance(self.type_, rty.BaseInteger) and self.type_.bounds is not None
+            if isinstance(self.type_, rty.AnyInteger) and self.type_.bounds is not None
             else INT_MAX
         )
         return [
@@ -1191,7 +1191,7 @@ class IntCall(Call, IntExpr):
     identifier: ID = field(converter=ID)
     arguments: Sequence[Expr]
     argument_types: Sequence[rty.Any]
-    type_: rty.BaseInteger
+    type_: rty.AnyInteger
     origin: Optional[Origin] = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntCall:
@@ -1279,9 +1279,9 @@ class IntFieldAccess(FieldAccess, IntExpr):
     origin: Optional[Origin] = None
 
     @property
-    def type_(self) -> rty.BaseInteger:
+    def type_(self) -> rty.AnyInteger:
         type_ = self.message_type.types[self.field]
-        assert isinstance(type_, rty.BaseInteger)
+        assert isinstance(type_, rty.AnyInteger)
         return type_
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntFieldAccess:
@@ -1362,11 +1362,11 @@ class IntIfExpr(IfExpr, IntExpr):
     condition: BasicBoolExpr
     then_expr: ComplexIntExpr
     else_expr: ComplexIntExpr
-    return_type: rty.BaseInteger
+    return_type: rty.AnyInteger
     origin: Optional[Origin] = None
 
     @property
-    def type_(self) -> rty.BaseInteger:
+    def type_(self) -> rty.AnyInteger:
         return self.return_type
 
     def to_z3_expr(self) -> z3.ArithRef:
@@ -1918,5 +1918,5 @@ def add_required_checks(
     return result
 
 
-def to_integer(type_: rty.BaseInteger) -> rty.Integer:
+def to_integer(type_: rty.AnyInteger) -> rty.Integer:
     return type_ if isinstance(type_, rty.Integer) else rty.BASE_INTEGER
