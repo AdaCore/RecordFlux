@@ -131,9 +131,9 @@ def test_not_type() -> None:
 
 def test_not_type_error() -> None:
     assert_type_error(
-        Not(Variable("X", type_=rty.AnyInteger(), location=Location((10, 20)))),
+        Not(Variable("X", type_=INT_TY, location=Location((10, 20)))),
         r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:20: error: found integer type$",
+        r'<stdin>:10:20: error: found integer type "I" \(10 \.\. 100\)$',
     )
 
 
@@ -616,10 +616,6 @@ def test_number_hashable() -> None:
 @pytest.mark.parametrize("operation", [Add, Mul, Sub, Div, Pow])
 def test_math_expr_type(operation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type(
-        operation(Variable("X", type_=rty.AnyInteger()), Variable("Y", type_=rty.AnyInteger())),
-        rty.AnyInteger(),
-    )
-    assert_type(
         operation(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY)),
         INT_TY,
     )
@@ -941,11 +937,11 @@ def test_attribute() -> None:
 @pytest.mark.parametrize(
     ("attribute", "expr", "expected"),
     [
-        (Size, Variable("X", type_=rty.AnyInteger()), rty.UNIVERSAL_INTEGER),
-        (Length, Variable("X", type_=rty.AnyInteger()), rty.UNIVERSAL_INTEGER),
-        (First, Variable("X", type_=rty.AnyInteger()), rty.UNIVERSAL_INTEGER),
-        (Last, Variable("X", type_=rty.AnyInteger()), rty.UNIVERSAL_INTEGER),
-        (ValidChecksum, Variable("X", type_=rty.AnyInteger()), rty.BOOLEAN),
+        (Size, Variable("X", type_=INT_TY), rty.UNIVERSAL_INTEGER),
+        (Length, Variable("X", type_=INT_TY), rty.UNIVERSAL_INTEGER),
+        (First, Variable("X", type_=INT_TY), rty.UNIVERSAL_INTEGER),
+        (Last, Variable("X", type_=INT_TY), rty.UNIVERSAL_INTEGER),
+        (ValidChecksum, Variable("X", type_=INT_TY), rty.BOOLEAN),
         (Valid, Variable("X", type_=rty.Message("A")), rty.BOOLEAN),
         (
             Present,
@@ -1160,19 +1156,22 @@ def test_aggregate_precedence() -> None:
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
 def test_relation_integer_type(relation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type(
-        relation(Variable("X", type_=rty.AnyInteger()), Variable("Y", type_=rty.AnyInteger())),
+        relation(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY)),
         rty.BOOLEAN,
     )
 
 
 @pytest.mark.parametrize("relation", [Less, LessEqual, Equal, GreaterEqual, Greater, NotEqual])
 def test_relation_integer_type_error(relation: Callable[[Expr, Expr], Expr]) -> None:
+    integer_type = (
+        r'integer type "I" \(10 \.\. 100\)' if relation in [Equal, NotEqual] else r"integer type"
+    )
     assert_type_error(
         relation(
-            Variable("X", type_=rty.AnyInteger()),
+            Variable("X", type_=INT_TY),
             Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
-        r"^<stdin>:10:30: error: expected integer type\n"
+        rf"^<stdin>:10:30: error: expected {integer_type}\n"
         r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
@@ -1181,8 +1180,8 @@ def test_relation_integer_type_error(relation: Callable[[Expr, Expr], Expr]) -> 
 def test_relation_composite_type(relation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type(
         relation(
-            Variable("X", type_=rty.AnyInteger()),
-            Variable("Y", type_=rty.Sequence("A", rty.AnyInteger())),
+            Variable("X", type_=INT_TY),
+            Variable("Y", type_=rty.Sequence("A", INT_TY)),
         ),
         rty.BOOLEAN,
     )
@@ -1192,20 +1191,20 @@ def test_relation_composite_type(relation: Callable[[Expr, Expr], Expr]) -> None
 def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type_error(
         relation(
-            Variable("X", type_=rty.AnyInteger(), location=Location((10, 20))),
+            Variable("X", type_=INT_TY, location=Location((10, 20))),
             Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
         r"^<stdin>:10:30: error: expected aggregate"
-        r" with element integer type\n"
+        r' with element integer type "I" \(10 \.\. 100\)\n'
         r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"$',
     )
     assert_type_error(
         relation(
-            Variable("X", type_=rty.AnyInteger(), location=Location((10, 20))),
+            Variable("X", type_=INT_TY, location=Location((10, 20))),
             Variable("Y", type_=rty.Sequence("A", rty.BOOLEAN), location=Location((10, 30))),
         ),
         r"^<stdin>:10:30: error: expected aggregate"
-        r" with element integer type\n"
+        r' with element integer type "I" \(10 \.\. 100\)\n'
         r'<stdin>:10:30: error: found sequence type "A"'
         r' with element enumeration type "__BUILTINS__::Boolean"$',
     )
@@ -1470,13 +1469,16 @@ def test_value_range_type_error() -> None:
     assert_type_error(
         ValueRange(
             Variable("X", type_=rty.BOOLEAN, location=Location((10, 30))),
-            Variable("Y", type_=rty.Sequence("A", rty.AnyInteger()), location=Location((10, 40))),
+            Variable("Y", type_=rty.Sequence("A", INT_TY), location=Location((10, 40))),
             location=Location((10, 20)),
         ),
-        r"^<stdin>:10:30: error: expected integer type\n"
+        r"^"
+        r"<stdin>:10:30: error: expected integer type\n"
         r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"\n'
         r"<stdin>:10:40: error: expected integer type\n"
-        r'<stdin>:10:40: error: found sequence type "A" with element integer type$',
+        r'<stdin>:10:40: error: found sequence type "A"'
+        r' with element integer type "I" \(10 \.\. 100\)'
+        r"$",
     )
 
 
@@ -1525,11 +1527,12 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
     [
         (
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
-            Variable("Z", type_=rty.Sequence("A", rty.AnyInteger()), location=Location((10, 40))),
+            Variable("Z", type_=rty.Sequence("A", INT_TY), location=Location((10, 40))),
             r"^<stdin>:10:30: error: expected composite type\n"
             r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"\n'
             r'<stdin>:10:40: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r'<stdin>:10:40: error: found sequence type "A" with element integer type$',
+            r'<stdin>:10:40: error: found sequence type "A"'
+            r' with element integer type "I" \(10 \.\. 100\)$',
         ),
         (
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
@@ -1940,17 +1943,17 @@ def test_call_type_error() -> None:
             "X",
             rty.BOOLEAN,
             [
-                Variable("Y", type_=rty.AnyInteger(), location=Location((10, 30))),
+                Variable("Y", type_=INT_TY, location=Location((10, 30))),
                 Variable("Z", type_=rty.BOOLEAN, location=Location((10, 40))),
             ],
             argument_types=[
                 rty.BOOLEAN,
-                rty.AnyInteger(),
+                INT_TY,
             ],
         ),
         r'^<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:30: error: found integer type\n"
-        r"<stdin>:10:40: error: expected integer type\n"
+        r'<stdin>:10:30: error: found integer type "I" \(10 \.\. 100\)\n'
+        r'<stdin>:10:40: error: expected integer type "I" \(10 \.\. 100\)\n'
         r'<stdin>:10:40: error: found enumeration type "__BUILTINS__::Boolean"$',
     )
 

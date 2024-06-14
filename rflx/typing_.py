@@ -89,7 +89,17 @@ class Enumeration(NamedType):
 @attr.s(frozen=True)
 class AnyInteger(Any):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
-    bounds: Optional[Bounds] = attr.ib(default=None)
+    bounds: Bounds = attr.ib()
+
+    @abstractmethod
+    def is_compatible(self, other: Type) -> bool:
+        raise NotImplementedError
+
+
+@attr.s(frozen=True)
+class UniversalInteger(AnyInteger):
+    DESCRIPTIVE_NAME: ClassVar[str] = "type universal integer"
+    bounds: Bounds = attr.ib()
 
     def __str__(self) -> str:
         bounds = f" ({self.bounds})" if self.bounds else ""
@@ -97,17 +107,6 @@ class AnyInteger(Any):
 
     def is_compatible(self, other: Type) -> bool:
         return other == Any() or isinstance(other, AnyInteger)
-
-    def common_type(self, other: Type) -> Type:
-        if other == Any() or isinstance(other, AnyInteger):
-            return self
-        return Undefined()
-
-
-@attr.s(frozen=True)
-class UniversalInteger(AnyInteger):
-    DESCRIPTIVE_NAME: ClassVar[str] = "type universal integer"
-    bounds: Bounds = attr.ib()
 
     def common_type(self, other: Type) -> Type:
         if isinstance(other, UniversalInteger) and self.bounds != other.bounds:
@@ -132,6 +131,9 @@ class Integer(AnyInteger, NamedType):
         bounds = f" ({self.bounds})" if self.bounds else ""
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"{bounds}'
 
+    def is_compatible(self, other: Type) -> bool:
+        return other == Any() or isinstance(other, AnyInteger)
+
     def is_compatible_strong(self, other: Type) -> bool:
         return (
             self == other
@@ -148,7 +150,7 @@ class Integer(AnyInteger, NamedType):
         if isinstance(other, Integer) and (
             self.identifier != other.identifier or self.bounds != other.bounds
         ):
-            return AnyInteger()
+            return BASE_INTEGER
         if isinstance(other, AnyInteger):
             return other
         if other == Any() or self == other:

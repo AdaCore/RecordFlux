@@ -1105,11 +1105,11 @@ class UnknownExpr(ir.Expr):
             ir.ObjFieldAccess(
                 "Z",
                 "Z",
-                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Aggregate(rty.AnyInteger())}),
+                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Aggregate(INT_TY)}),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
-            r'unexpected type \(aggregate with element integer type\) for "Z.Z"'
+            r'unexpected type \(aggregate with element integer type "I" \(1 \.\. 100\)\) for "Z.Z"'
             r' in assignment of "X"',
         ),
         (
@@ -1322,14 +1322,15 @@ class UnknownExpr(ir.Expr):
                 "E",
                 ir.ObjVar(
                     "L",
-                    rty.Sequence("A", rty.AnyInteger()),
+                    rty.Sequence("A", INT_TY),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
                 ir.ComplexExpr([], ir.ObjVar("E", INT_TY)),
                 ir.ComplexBoolExpr([], ir.Greater(ir.IntVar("E", INT_TY), ir.IntVal(0))),
             ),
             RecordFluxError,
-            r"iterating over sequence of integer type in list comprehension not yet supported",
+            r'iterating over sequence of integer type "I" \(1 \.\. 100\) in list comprehension'
+            r" not yet supported",
         ),
         (
             INT_TY,
@@ -1337,7 +1338,7 @@ class UnknownExpr(ir.Expr):
                 "E",
                 ir.ObjVar(
                     "L",
-                    rty.Sequence("A", rty.AnyInteger()),
+                    rty.Sequence("A", INT_TY),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
                 ir.ComplexExpr([], ir.ObjVar("E", INT_TY)),
@@ -1347,7 +1348,8 @@ class UnknownExpr(ir.Expr):
                 ),
             ),
             RecordFluxError,
-            r"iterating over sequence of integer type in list comprehension not yet supported",
+            r'iterating over sequence of integer type "I" \(1 \.\. 100\) in list comprehension'
+            r" not yet supported",
         ),
         (
             rty.Sequence("A", INT_TY),

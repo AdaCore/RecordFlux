@@ -736,7 +736,7 @@ class MathAssExpr(AssExpr):
     def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
         super().__init__(*terms, location=location)
         common_type = rty.common_type([t.type_ for t in terms])
-        self.type_ = common_type if common_type != rty.UNDEFINED else rty.AnyInteger()
+        self.type_ = common_type if common_type != rty.UNDEFINED else rty.BASE_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
