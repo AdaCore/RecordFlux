@@ -1,6 +1,7 @@
 # type: ignore # noqa: PGH003
 
 """RecordFlux support for GNAT Studio."""
+from __future__ import annotations
 
 import json
 import re
@@ -221,24 +222,27 @@ message_re = re.compile(
     r"(?P<filename>[^:]+):"
     r"(?P<line>\d+):"
     r"(?P<column>\d+): "
-    r"(?P<subsystem>\w+): "
-    r"(?P<severity>info|warning|error): "
+    r"(?P<severity>info|warning|error|note|help): "
     r"(?P<message>.*)"
     r"$",
 )
 
 generic_message_re = re.compile(
-    r"^(?P<subsystem>\w+): (?P<severity>info|warning|error): (?P<message>.*)$",
+    r"^(?P<severity>info|warning|error|note|help): (?P<message>.*)$",
 )
 
 
 def to_importance(severity):
+    assert severity != "info"
+
     if severity == "error":
         return GPS.Message.Importance.HIGH
     if severity == "warning":
         return GPS.Message.Importance.MEDIUM
-    if severity == "info":
+    if severity == "help":
         return GPS.Message.Importance.INFORMATIONAL
+    if severity == "note":
+        return GPS.Message.Importance.LOW
 
 
 def parse_output(output):
@@ -249,13 +253,14 @@ def parse_output(output):
         result = message_re.match(l)
         if result:
             data = result.groupdict()
+
             if data["severity"] != "info":
                 message = GPS.Message(
                     category="RecordFlux",
                     file=GPS.File(data["filename"]),
                     line=int(data["line"]),
                     column=int(data["column"]),
-                    text="{subsystem}: {severity}: {message}".format(**data),
+                    text="{severity}: {message}".format(**data),
                     importance=to_importance(data["severity"]),
                 )
             elif message:
@@ -271,12 +276,18 @@ def parse_output(output):
         result = generic_message_re.match(l)
         if result:
             data = result.groupdict()
+
+            # Severity "info" messages are restricted to logging within RecordFlux. Logs are not
+            # diagnostics so we filter them out.
+            if data["severity"] == "info":
+                continue
+
             message = GPS.Message(
                 category="RecordFlux",
-                file=GPS.File(data["subsystem"]),
+                file=GPS.File(data["severity"]),
                 line=1,
                 column=1,
-                text="{subsystem}: {severity}: {message}".format(**data),
+                text="{severity}: {message}".format(**data),
                 importance=to_importance(data["severity"]),
             )
 
@@ -301,7 +312,7 @@ def run(files, mode, skip_verification=False, options=None):
     GPS.MDI.save_all(force=True)
     GPS.Locations.remove_category("RecordFlux")
 
-    return "rflx {skip_verification}{mode} {options} {files}".format(
+    return "rflx --legacy-errors {skip_verification}{mode} {options} {files}".format(
         skip_verification="--unsafe --no-verification " if skip_verification else "",
         mode=mode,
         files=" ".join(files),

@@ -971,12 +971,12 @@ def test_legacy_error_message(
     capfd: pytest.CaptureFixture[str],
     subcommand: str,
 ) -> None:
-    def _patched(*_: object) -> NoReturn:
+    def patched(*_: object) -> NoReturn:
         raise RecordFluxError(
             [ErrorEntry("oops", Severity.ERROR, Location((1, 1), Path("foo.rflx")))],
         )
 
-    monkeypatch.setattr(cli, subcommand, _patched)
+    monkeypatch.setattr(cli, subcommand, patched)
     monkeypatch.setattr(sys, "argv", ["rflx", "--legacy-errors", subcommand, "foo.rflx"])
 
     assert cli.run() == 1
