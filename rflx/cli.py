@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from enum import Enum
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import importlib_resources
 from importlib_resources.abc import Traversable
@@ -122,7 +122,7 @@ class UniqueStore(argparse.Action):
             setattr(namespace, self.dest, values)
 
 
-def run() -> Union[int, str]:
+def run() -> int:
     return main(sys.argv)
 
 
@@ -167,6 +167,11 @@ def main(  # noqa: PLR0915
         "--unsafe",
         action="store_true",
         help="allow unsafe options (WARNING: may lead to erronous behavior)",
+    )
+    parser.add_argument(
+        "--legacy-errors",
+        action="store_true",
+        help="use old error message format",
     )
 
     subparsers = parser.add_subparsers(dest="subcommand")
@@ -468,7 +473,10 @@ def main(  # noqa: PLR0915
         try:
             args.func(args)
         except RecordFluxError as e:
-            e.print_messages()
+            if args.legacy_errors:
+                print(e, file=sys.stderr)  # noqa: T201
+            else:
+                e.print_messages()
             return 1
 
     return 0

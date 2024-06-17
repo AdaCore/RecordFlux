@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 from collections.abc import Callable
 from io import TextIOWrapper
 from pathlib import Path
-from typing import ClassVar, Optional
+from typing import ClassVar, NoReturn, Optional
 
 import pytest
 
@@ -18,7 +18,7 @@ from rflx.converter import iana
 from rflx.error import fail, fatal_fail
 from rflx.ls.server import server
 from rflx.pyrflx import PyRFLXError
-from rflx.rapidflux import ErrorEntry, Location, Severity, logging
+from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity, logging
 from tests.const import DATA_DIR, SPEC_DIR
 from tests.utils import assert_stderr_regex
 
@@ -960,3 +960,24 @@ class TestDuplicateArgs:
         message = "nargs must be '\\?' to supply const"
         with pytest.raises(ValueError, match=f"^{message}$"):
             parser.add_argument("-x", action=cli.UniqueStore, const=0)
+
+
+@pytest.mark.parametrize(
+    "subcommand",
+    ["check", "generate"],
+)
+def test_legacy_error_message(
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+    subcommand: str,
+) -> None:
+    def _patched(*_: object) -> NoReturn:
+        raise RecordFluxError(
+            [ErrorEntry("oops", Severity.ERROR, Location((1, 1), Path("foo.rflx")))],
+        )
+
+    monkeypatch.setattr(cli, subcommand, _patched)
+    monkeypatch.setattr(sys, "argv", ["rflx", "--legacy-errors", subcommand, "foo.rflx"])
+
+    assert cli.run() == 1
+    assert_stderr_regex(r"^foo.rflx:1:1: error: oops\n$", capfd)

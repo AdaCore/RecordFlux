@@ -61,6 +61,36 @@ def test_check_error() -> None:
     )
 
 
+def test_check_error_legacy_error_messages() -> None:
+    p = subprocess.run(
+        [
+            "rflx",
+            "--no-caching",
+            "--legacy-errors",
+            "check",
+            SPEC_DIR / "invalid" / "incorrect_name.rflx",
+        ],
+        capture_output=True,
+        check=False,
+    )
+    assert p.returncode == 1
+    assert p.stdout.decode("utf-8") == ""
+    assert p.stderr.decode("utf-8") == textwrap.dedent(
+        """\
+        info: Parsing tests/data/specs/invalid/incorrect_name.rflx
+        info: Processing Test
+        info: Verifying __BUILTINS__::Boolean
+        info: Verifying __INTERNAL__::Opaque
+        tests/data/specs/invalid/incorrect_name.rflx:1:9: error: source file name does not match \
+the package name "Test"
+        tests/data/specs/invalid/incorrect_name.rflx:1:9: help: either rename the file to \
+"test.rflx" or change the package name to "Incorrect_Name"
+        tests/data/specs/invalid/incorrect_name.rflx:1:9: help: rename to "Incorrect_Name"
+        tests/data/specs/invalid/incorrect_name.rflx:3:5: help: rename to "Incorrect_Name"
+        """,
+    )
+
+
 def test_check_no_verification() -> None:
     p = subprocess.run(
         [
