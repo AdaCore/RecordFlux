@@ -197,7 +197,7 @@ tests_rflx:
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
-    - make test_rflx
+    - make --keep-going test_rflx
   artifacts:
     expose_as: "Distribution archives"
     paths:
@@ -213,7 +213,7 @@ tests_rapidflux:
      - cpu:16
      - mem:16
   script:
-    - make test_rapidflux
+    - make --keep-going test_rapidflux
 
 tests_example_apps:
   extends: .testing
@@ -230,7 +230,7 @@ tests_example_apps:
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
-    - make test_apps
+    - make --keep-going test_apps
 
 tests_example_specs:
   extends: .testing
@@ -247,7 +247,7 @@ tests_example_specs:
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
-    - make test_specs
+    - make --keep-going test_specs
 
 python_compatibility:
   extends: .testing
@@ -267,7 +267,7 @@ python_compatibility:
     - *setup_python_venv
     - *install_recordflux
     - *setup_python
-    - make test_coverage
+    - make --keep-going test_coverage
 
 gnat_pro_compatibility:
   extends: .testing
@@ -294,7 +294,7 @@ gnat_pro_compatibility:
     - *setup_gnat
     - *setup_python
     - export GNAT=pro$GNAT_VERSION
-    - make test_compilation
+    - make --keep-going test_compilation
 
 gnat_fsf_compatibility:
   extends: .testing
@@ -323,7 +323,7 @@ gnat_fsf_compatibility:
     - gnat --version
     - *setup_python
     - export GNAT=fsf$GNAT_VERSION
-    - make test_compilation
+    - make --keep-going test_compilation
 
 gnat_community_compatibility:
   extends: .testing
@@ -353,7 +353,7 @@ gnat_community_compatibility:
     - gnat --version
     - *setup_python
     - export GNAT=community$GNAT_VERSION
-    - make test_compilation
+    - make --keep-going test_compilation
 
 verification_tests:
   extends: .testing
@@ -566,7 +566,7 @@ gnat_wave_compatibility:
     - *setup_python_venv
     - *install_recordflux
     - *setup_python
-    - make test_compilation
+    - make --keep-going test_compilation
 
 spark_wave_compatibility:
   extends: .scheduled_job
