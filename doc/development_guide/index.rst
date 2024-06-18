@@ -180,6 +180,8 @@ The Python binding is tested in the Python test suite (``tests/unit``).
 Classes created by PyO3 cannot be pickled by default (`PyO3/pyo3#100 <https://github.com/PyO3/pyo3/issues/100>`_).
 Pickling of objects can be enabled by defining ``__setstate__``, ``__getstate__``, ``__getnewargs__`` and the module name (``#[pyclass(module = "rflx.rapidflux")]``).
 
+It is advised to `configure <https://rust-analyzer.github.io/manual.html#installation>`_ and use ``rust-analyzer`` with ``clippy`` checks enabled within your IDE.
+
 VS Code extension
 =================
 
@@ -280,11 +282,24 @@ When working on a change, it is a good idea to use the following commands often:
 The first command formats the code, while the second runs various checks, including type checks.
 This should catch a variety of syntax and typing errors.
 
+Test suite
+----------
+
 While developing, it can be useful to test the code on a single example (e.g. a RecordFlux spec that contains the new feature to develop, or triggers the bug to fix, etc).
-Once the desired behavior is achieved, one can test the change on the larger testsuite, e.g., using ``make test``.
+Once the desired behavior is achieved, one can test the change on the larger test suite, e.g., using ``make test``.
 
 If individual tests fail, the code needs to be fixed or the test changed.
 Knowing which action should be done requires checking out the unit test code.
+
+RecordFlux's test suite is composed of both Rust and Python tests.
+``pytest`` is used to test Python code.
+Rust's built-in ``test`` is used in conjunction with ``rstest``, which adds useful features such as fixtures and parameterized tests.
+More information can be found in the `rstest documentation <https://docs.rs/rstest/latest/rstest/>`_.
+
+Python tests
+^^^^^^^^^^^^
+
+Here are some tips to use ``pytest`` efficiently:
 Individual failing tests can be run with a command like this:
 
 .. code:: console
@@ -295,8 +310,59 @@ Other useful options of ``pytest`` include:
 
 - ``--last-failed`` or ``--lf`` runs only the tests that failed during the last run of ``pytest``.
 - ``--exitfirst`` or ``-x`` stops at the first error.
-- ``-n <number>`` speficies the number of tests to run in parallel.
+- ``-n <number>`` specifies the number of tests to run in parallel.
 - The full path to a test can be given using the syntax ``pytest path/to/test.py::test_foo``.
+
+Rust tests
+^^^^^^^^^^
+
+The Rust test suite can be invoked using ``make``:
+
+.. code:: console
+
+    $ make test_rapidflux
+
+This will run the whole test suite, compute code coverage, and finally try to generate some mutations to check that the tests are still able to catch these mistakes.
+
+As generating code mutations (and testing them) can take time, it is possible to only run tests and compute code coverage using the following command:
+
+.. code:: console
+
+    $ make test_rapidflux_coverage
+
+It is possible to run a single test or a subset of them by specifying their module.
+The example below only runs tests related to the module ``diagnostics::errors``:
+
+.. code:: console
+
+    $ cargo nextest run diagnostics::errors
+
+It is also possible to run a single test like this:
+
+.. code:: console
+
+    $ cargo nextest run path::to::module::tests::<test_name>
+
+Note that advanced test filtering can be achieved using cargo-nextest's `DSL <https://nexte.st/docs/filtersets/reference/>`_.
+It is recommended to use ``cargo-nextest`` instead of the default ``cargo-test`` because it brings a lot of additional features.
+
+Tests with side effects
+"""""""""""""""""""""""
+
+Be aware of potential side effects (e.g., registering source code) when authoring tests.
+When side effects can't be avoided, it is possible to prevent a test from being run at the same time as other tests using the ``#[serial]`` attribute.
+The ``#[parallel]`` attribute can be used for tests that may be run in parallel without clashing with tests marked as ``#[serial]``.
+In general, this attribute should be only used to test functionalities that relies on global state to work (e.g source code management, logger...).
+Having a look to the `serial <https://docs.rs/serial_test/latest/serial_test/>`_ documentation before using this attribute is recommended.
+This attribute must always be the **last** attribute of a given test; otherwise, the serial attribute may not work and may cause potential race conditions with other tests.
+
+Doctests
+""""""""
+
+When authoring Rust documentation, try to include examples when it makes sense to do so.
+Rust examples are automatically compiled and all the assertions will be executed.
+This is a good way to make sure that the documentation is always up to date with the current API.
+It is also recommended to have a look at the `rustdoc <https://doc.rust-lang.org/rustdoc/what-is-rustdoc.html>`_ book to use ``rustdoc`` efficiently.
 
 Error messages
 ==============
