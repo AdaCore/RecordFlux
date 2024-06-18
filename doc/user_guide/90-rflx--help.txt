@@ -1,5 +1,5 @@
 usage: rflx [-h] [-q] [--version] [--no-caching] [--no-verification]
-            [--max-errors NUM] [--workers NUM] [--unsafe]
+            [--max-errors NUM] [--workers NUM] [--unsafe] [--legacy-errors]
             {check,generate,optimize,graph,validate,install,convert,run_ls}
             ...
 
@@ -26,3 +26,4 @@ options:
   --workers NUM         parallelize proofs among NUM workers (default: NPROC)
   --unsafe              allow unsafe options (WARNING: may lead to erronous
                         behavior)
+  --legacy-errors       use old error message format
