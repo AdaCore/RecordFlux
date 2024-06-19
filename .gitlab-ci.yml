@@ -1,10 +1,10 @@
 variables:
   DEVUTILS_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
 
-  GNAT_VERSION: "24.0"
-  GNAT_BUILD_DATE: "all"
   GNAT_PLATFORM: "x86_64-linux"
-  SPARK_VERSION: "24.0"
+  GNAT_VERSION: "24.2"
+  GNAT_BUILD_DATE: "all"
+  SPARK_VERSION: "24.2"
   SPARK_BUILD_DATE: "all"
   PYTHON_VERSION: "3.11"
   NODE_VERSION: "20.5.1"
@@ -285,8 +285,6 @@ gnat_pro_compatibility:
       - GNAT_VERSION: "22.2"
         CLEAN_RECORDFLUX_SETUP: 1
       - GNAT_VERSION: "23.2"
-        CLEAN_RECORDFLUX_SETUP: 1
-      - GNAT_VERSION: "24.0"
         CLEAN_RECORDFLUX_SETUP: 1
   script:
     - git fetch --unshallow
