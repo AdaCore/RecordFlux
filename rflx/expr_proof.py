@@ -156,7 +156,7 @@ class ParallelProofs:
                             if proof.result == ProofResult.UNSAT
                             else f"reason: {m}"
                         ),
-                        Severity.INFO,
+                        Severity.NOTE,
                         locn,
                     )
                     for (m, _), locn in zip(proof.error, locations)

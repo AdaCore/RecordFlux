@@ -2439,7 +2439,7 @@ class MessageAggregate(Expr):
                                         for c in sorted(self._field_combinations())
                                     ),
                                 ),
-                                Severity.INFO,
+                                Severity.NOTE,
                                 self.location,
                             ),
                         ]
@@ -2596,7 +2596,7 @@ class CaseExpr(Expr):
                         [
                             Annotation(
                                 f'missing literal "{l.name}"',
-                                Severity.INFO,
+                                Severity.NOTE,
                                 self.expr.type_.location,
                             )
                             for l in missing
@@ -2617,7 +2617,7 @@ class CaseExpr(Expr):
                         [
                             Annotation(
                                 f'literal "{l.name}" not part of "{self.expr.type_.identifier}"',
-                                Severity.INFO,
+                                Severity.NOTE,
                                 self.expr.type_.location,
                             )
                             for l in invalid
@@ -2660,7 +2660,7 @@ class CaseExpr(Expr):
                                     if r[0] != r[1]
                                     else f"missing value {r[0]}"
                                 ),
-                                Severity.INFO,
+                                Severity.NOTE,
                                 self.expr.type_.location,
                             )
                             for r in missing_ranges
@@ -2681,7 +2681,7 @@ class CaseExpr(Expr):
                         [
                             Annotation(
                                 f'value {l} not part of "{self.expr.type_.identifier}"',
-                                Severity.INFO,
+                                Severity.NOTE,
                                 self.expr.type_.location,
                             )
                             for l in invalid
@@ -2713,7 +2713,7 @@ class CaseExpr(Expr):
                             annotations=[
                                 Annotation(
                                     f'conflicting with "{e2}" which has {e2.type_}',
-                                    Severity.INFO,
+                                    Severity.NOTE,
                                     e2.location,
                                 ),
                             ],
@@ -2741,7 +2741,7 @@ class CaseExpr(Expr):
                     annotations=[
                         Annotation(
                             f'duplicate literal "{link}"',
-                            Severity.INFO,
+                            Severity.NOTE,
                             location,
                         )
                         for link, location in zip(duplicates, locations)
@@ -2764,7 +2764,7 @@ class CaseExpr(Expr):
                         [
                             Annotation(
                                 "expected enumeration or integer type",
-                                Severity.INFO,
+                                Severity.NOTE,
                                 self.expr.location,
                             ),
                         ]

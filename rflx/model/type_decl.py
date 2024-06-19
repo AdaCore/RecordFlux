@@ -301,7 +301,7 @@ class Enumeration(Scalar):
                                 [
                                     Annotation(
                                         "previous occurrence",
-                                        Severity.INFO,
+                                        Severity.NOTE,
                                         annotation_location,
                                     ),
                                 ]
@@ -376,7 +376,7 @@ class Enumeration(Scalar):
                             Severity.ERROR,
                             v2.location,
                             annotations=[
-                                Annotation("previous occurrence", Severity.INFO, v1.location),
+                                Annotation("previous occurrence", Severity.NOTE, v1.location),
                             ],
                         ),
                     )
@@ -556,7 +556,7 @@ class Sequence(Composite):
                         error_entry,
                         ErrorEntry(
                             "parameterized messages must not be used as sequence element",
-                            Severity.INFO,
+                            Severity.NOTE,
                             element_type.location,
                         ),
                     ],
@@ -573,7 +573,7 @@ class Sequence(Composite):
                         ErrorEntry(
                             "messages used as sequence element must not depend"
                             ' on "Message\'Size" or "Message\'Last"',
-                            Severity.INFO,
+                            Severity.NOTE,
                             element_type.location,
                         ),
                     ],
@@ -843,7 +843,7 @@ def check_identifier_notation(
                     annotations=[
                         Annotation(
                             f'declaration of "{id_map[expression.identifier]}"',
-                            Severity.INFO,
+                            Severity.NOTE,
                             declaration_location,
                         ),
                     ],

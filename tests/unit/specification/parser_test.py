@@ -2017,7 +2017,7 @@ def test_parse_error_inconsistent_package_identifiers() -> None:
         end B;
         """,
         r'^<stdin>:2:5: error: inconsistent package identifier "B"\n'
-        r'<stdin>:1:9: info: previous identifier was "A"$',
+        r'<stdin>:1:9: note: previous identifier was "A"$',
     )
 
 
@@ -2076,11 +2076,11 @@ def test_parse_error_context_dependency_cycle() -> None:
             f"{SPEC_DIR}/invalid/context_cycle.rflx:1:6: error: dependency cycle when "
             f'including "Context_Cycle_1"\n'
             f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: "
-            'info: when including "Context_Cycle_2"\n'
+            'note: when including "Context_Cycle_2"\n'
             f"{SPEC_DIR}/invalid/context_cycle_2.rflx:1:6: "
-            'info: when including "Context_Cycle_3"\n'
+            'note: when including "Context_Cycle_3"\n'
             f"{SPEC_DIR}/invalid/context_cycle_3.rflx:1:6: "
-            'info: when including "Context_Cycle_1"'
+            'note: when including "Context_Cycle_1"'
             r"$"
         ),
     ):
@@ -2096,9 +2096,9 @@ def test_parse_error_context_dependency_cycle_2() -> None:
         f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: error: dependency cycle when "
         f'including "Context_Cycle_2"\n'
         f"{SPEC_DIR}/invalid/context_cycle_2.rflx:1:6: "
-        'info: when including "Context_Cycle_3"\n'
+        'note: when including "Context_Cycle_3"\n'
         f"{SPEC_DIR}/invalid/context_cycle_3.rflx:1:6: "
-        'info: when including "Context_Cycle_1"'
+        'note: when including "Context_Cycle_1"'
         f"$",
     )
 
@@ -2114,8 +2114,8 @@ def test_parse_string_error_context_dependency_cycle() -> None:
         match=(
             r"^"
             r'<stdin>:1:6: error: dependency cycle when including "Context_Cycle_1"\n'
-            r'<stdin>:1:6: info: when including "Context_Cycle_2"\n'
-            r'<stdin>:1:6: info: when including "Context_Cycle_3"'
+            r'<stdin>:1:6: note: when including "Context_Cycle_2"\n'
+            r'<stdin>:1:6: note: when including "Context_Cycle_3"'
             r"$"
         ),
     ):
@@ -2339,7 +2339,7 @@ def test_parse_error_illegal_identifier_in_type_name(identifier: str) -> None:
         """,
         r"^"
         rf'<stdin>:2:9: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:2:9: info: identifiers starting with "RFLX_"'
+        r'<stdin>:2:9: note: identifiers starting with "RFLX_"'
         r" are reserved for internal use"
         r"$",
     )
@@ -2359,7 +2359,7 @@ def test_parse_error_illegal_identifier_in_message_field(identifier: str) -> Non
         """,
         r"^"
         rf'<stdin>:5:10: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:5:10: info: identifiers starting with "RFLX_"'
+        r'<stdin>:5:10: note: identifiers starting with "RFLX_"'
         r" are reserved for internal use"
         r"$",
     )
@@ -2379,10 +2379,10 @@ def test_parse_error_illegal_identifier_in_refinement_field(identifier: str) -> 
         """,
         r"^"
         rf'<stdin>:4:10: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:4:10: info: identifiers starting with "RFLX_"'
+        r'<stdin>:4:10: note: identifiers starting with "RFLX_"'
         r" are reserved for internal use\n"
         rf'<stdin>:6:17: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:6:17: info: identifiers starting with "RFLX_"'
+        r'<stdin>:6:17: note: identifiers starting with "RFLX_"'
         r" are reserved for internal use"
         r"$",
     )
@@ -2407,7 +2407,7 @@ def test_parse_error_illegal_identifier_in_session_identifier(identifier: str) -
         """,
         r"^"
         rf'<stdin>:3:12: error: illegal identifier "{identifier}"\n'
-        r'<stdin>:3:12: info: identifiers starting with "RFLX_"'
+        r'<stdin>:3:12: note: identifiers starting with "RFLX_"'
         r" are reserved for internal use"
         r"$",
     )
@@ -3321,7 +3321,7 @@ def test_parse_error_name_conflict_between_parameters() -> None:
         """,
         r"^"
         r'<stdin>:3:19: error: name conflict for "P"\n'
-        r"<stdin>:3:12: info: conflicting name"
+        r"<stdin>:3:12: note: conflicting name"
         r"$",
     )
 
@@ -3339,7 +3339,7 @@ def test_parse_error_name_conflict_between_field_and_parameter() -> None:
         """,
         r"^"
         r'<stdin>:5:10: error: name conflict for "P"\n'
-        r"<stdin>:3:12: info: conflicting name"
+        r"<stdin>:3:12: note: conflicting name"
         r"$",
     )
 
@@ -3352,7 +3352,7 @@ def test_parse_error_duplicate_spec_file() -> None:
         match=(
             "^tests/data/specs/subdir/message_type.rflx:1:9: error: duplicate"
             " specification\n"
-            "tests/data/specs/message_type.rflx:1:9: info: previous specification$"
+            "tests/data/specs/message_type.rflx:1:9: note: previous specification$"
         ),
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
@@ -3376,7 +3376,7 @@ def test_parse_error_duplicate_spec_stdin_file() -> None:
         match=(
             "^tests/data/specs/subdir/message_type.rflx:1:9: error: duplicate"
             " specification\n"
-            "<stdin>:1:9: info: previous specification$"
+            "<stdin>:1:9: note: previous specification$"
         ),
     ):
         p.parse(SPEC_DIR / "subdir/message_type.rflx")
@@ -3431,9 +3431,9 @@ def test_parse_error_duplicate_message_aspect() -> None:
         end Test;
         """,
         r'^<stdin>:7:52: error: duplicate aspect "First"\n'
-        "<stdin>:7:18: info: previous location\n"
+        "<stdin>:7:18: note: previous location\n"
         '<stdin>:7:70: error: duplicate aspect "Size"\n'
-        "<stdin>:7:36: info: previous location$",
+        "<stdin>:7:36: note: previous location$",
     )
 
 
@@ -3462,7 +3462,7 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
         end Test;
         """,
         r'^<stdin>:8:44: error: duplicate aspect "Readable"\n'
-        "<stdin>:8:24: info: previous location$",
+        "<stdin>:8:24: note: previous location$",
     )
 
 
@@ -3527,9 +3527,9 @@ def test_parse_error_duplicate_enumeration_aspect() -> None:
         end Test;
         """,
         r'^<stdin>:2:57: error: duplicate aspect "Size"\n'
-        r"<stdin>:2:32: info: previous location\n"
+        r"<stdin>:2:32: note: previous location\n"
         r'<stdin>:2:69: error: duplicate aspect "Always_Valid"\n'
-        r"<stdin>:2:43: info: previous location$",
+        r"<stdin>:2:43: note: previous location$",
     )
 
 
@@ -3566,7 +3566,7 @@ def test_parse_error_duplicate_message_byte_order_aspect() -> None:
         end Test;
         """,
         r'^<stdin>:9:15: error: duplicate aspect "Byte_Order"\n'
-        "<stdin>:8:15: info: previous location$",
+        "<stdin>:8:15: note: previous location$",
     )
 
 

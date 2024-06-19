@@ -401,7 +401,7 @@ def check_type(
                     [
                         Annotation(
                             f"found {actual}",
-                            Severity.INFO,
+                            Severity.NOTE,
                             location,
                         ),
                     ]
@@ -437,7 +437,7 @@ def check_type_instance(
                 f"expected {desc}",
                 Severity.ERROR,
                 location,
-                annotations=([Annotation(f"found {actual}", Severity.INFO, location)]),
+                annotations=([Annotation(f"found {actual}", Severity.NOTE, location)]),
             ),
         )
 

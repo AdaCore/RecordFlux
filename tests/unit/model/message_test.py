@@ -312,7 +312,7 @@ def test_name_conflict_field_enum() -> None:
         structure,
         types,
         '^<stdin>:5:6: error: name conflict for field "X" in "P::M"\n'
-        "<stdin>:3:27: info: conflicting enumeration literal$",
+        "<stdin>:3:27: note: conflicting enumeration literal$",
     )
 
 
@@ -332,8 +332,8 @@ def test_duplicate_link() -> None:
         structure,
         types,
         f'^<stdin>:1:5: error: duplicate link from "X" to "{FINAL.name}"\n'
-        f"<stdin>:4:42: info: duplicate link\n"
-        f"<stdin>:5:42: info: duplicate link"
+        f"<stdin>:4:42: note: duplicate link\n"
+        f"<stdin>:5:42: note: duplicate link"
         r"$",
     )
 
@@ -358,11 +358,11 @@ def test_multiple_duplicate_links() -> None:
         structure,
         types,
         f'^<stdin>:1:5: error: duplicate link from "X" to "{FINAL.name}"\n'
-        f"<stdin>:3:16: info: duplicate link\n"
-        f"<stdin>:4:18: info: duplicate link\n"
+        f"<stdin>:3:16: note: duplicate link\n"
+        f"<stdin>:4:18: note: duplicate link\n"
         f'<stdin>:2:5: error: duplicate link from "Y" to "{FINAL.name}"\n'
-        f"<stdin>:5:20: info: duplicate link\n"
-        f"<stdin>:6:22: info: duplicate link"
+        f"<stdin>:5:20: note: duplicate link\n"
+        f"<stdin>:6:22: note: duplicate link"
         r"$",
     )
 
@@ -392,7 +392,7 @@ def test_unsupported_expression() -> None:
         structure,
         types,
         '^<stdin>:10:19: error: unsupported expression in "P::M"\n'
-        '<stdin>:10:23: info: variable "X" in exponent$',
+        '<stdin>:10:23: note: variable "X" in exponent$',
     )
 
 
@@ -429,9 +429,9 @@ def test_cycle() -> None:
         structure,
         types,
         '^<stdin>:10:8: error: structure of "P::M" contains cycle\n'
-        '<stdin>:4:5: info: field "X" links to "Y"\n'
-        '<stdin>:5:5: info: field "Y" links to "Z"\n'
-        r'<stdin>:6:5: info: field "Z" links to "X"$',
+        '<stdin>:4:5: note: field "X" links to "Y"\n'
+        '<stdin>:5:5: note: field "Y" links to "Z"\n'
+        r'<stdin>:6:5: note: field "Z" links to "X"$',
         location=Location((10, 8)),
     )
 
@@ -453,8 +453,8 @@ def test_direct_cycle() -> None:
         structure,
         types,
         '^<stdin>:10:8: error: structure of "P::M" contains cycle\n'
-        '<stdin>:11:5: info: field "X" links to "Y"\n'
-        '<stdin>:12:5: info: field "Y" links to "X"$',
+        '<stdin>:11:5: note: field "X" links to "Y"\n'
+        '<stdin>:12:5: note: field "Y" links to "X"$',
         location=Location((10, 8)),
     )
 
@@ -494,8 +494,8 @@ def test_nested_cycle() -> None:
         structure,
         types,
         '^<stdin>:10:8: error: structure of "P::M" contains cycle\n'
-        '<stdin>:12:5: info: field "B" links to "C"\n'
-        '<stdin>:13:5: info: field "C" links to "B"$',
+        '<stdin>:12:5: note: field "B" links to "C"\n'
+        '<stdin>:13:5: note: field "C" links to "B"$',
         location=Location((10, 8)),
     )
 
@@ -544,11 +544,11 @@ def test_two_cycles() -> None:
         structure,
         types,
         '^<stdin>:10:8: error: structure of "P::M" contains cycle\n'
-        '<stdin>:12:5: info: field "B" links to "C"\n'
-        '<stdin>:13:5: info: field "C" links to "B"\n'
+        '<stdin>:12:5: note: field "B" links to "C"\n'
+        '<stdin>:13:5: note: field "C" links to "B"\n'
         '<stdin>:10:8: error: structure of "P::M" contains cycle\n'
-        '<stdin>:16:5: info: field "E" links to "F"\n'
-        '<stdin>:17:5: info: field "F" links to "E"$',
+        '<stdin>:16:5: note: field "E" links to "F"\n'
+        '<stdin>:17:5: note: field "F" links to "E"$',
         location=Location((10, 8)),
     )
 
@@ -1004,7 +1004,7 @@ def test_subsequent_variable() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:1024:57: error: undefined variable "F2"\ninfo: on path F1 -> F2$',
+        '^<stdin>:1024:57: error: undefined variable "F2"\nnote: on path F1 -> F2$',
     )
 
 
@@ -1028,7 +1028,7 @@ def test_reference_to_optional_field_1() -> None:
         types,
         r"^"
         r'<stdin>:10:30: error: undefined variable "F2"\n'
-        r"<stdin>:10:20: info: on path F1 -> F3 -> Final"
+        r"<stdin>:10:20: note: on path F1 -> F3 -> Final"
         r"$",
     )
 
@@ -1061,7 +1061,7 @@ def test_reference_to_optional_field_2() -> None:
         types,
         r"^"
         r'<stdin>:10:30: error: undefined variable "Opt"\n'
-        r"<stdin>:10:20: info: on path Flag -> Any -> Data"
+        r"<stdin>:10:20: note: on path Flag -> Any -> Data"
         r"$",
     )
 
@@ -1095,8 +1095,8 @@ def test_invalid_relation_to_opaque() -> None:
         types,
         r'^<stdin>:10:20: error: expected sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
-        r"<stdin>:10:20: info: found type universal integer \(42\)\n"
-        r"info: on path Length -> Data -> Final$",
+        r"<stdin>:10:20: note: found type universal integer \(42\)\n"
+        r"note: on path Length -> Data -> Final$",
     )
 
 
@@ -1117,12 +1117,12 @@ def test_invalid_relation_to_aggregate() -> None:
         structure,
         types,
         r"^<stdin>:10:20: error: expected integer type\n"
-        r'<stdin>:10:20: info: found sequence type "__INTERNAL__::Opaque"'
+        r'<stdin>:10:20: note: found sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r"<stdin>:10:30: error: expected integer type\n"
-        r"<stdin>:10:30: info: found aggregate"
+        r"<stdin>:10:30: note: found aggregate"
         r" with element type universal integer \(1 .. 2\)\n"
-        r"info: on path F1 -> Final$",
+        r"note: on path F1 -> Final$",
     )
 
 
@@ -1144,9 +1144,9 @@ def test_invalid_element_in_relation_to_aggregate(lower: Number) -> None:
         structure,
         types,
         rf'^<stdin>:10:20: error: expected integer type "P::Integer" \({lower} .. 255\)\n'
-        r"<stdin>:10:20: info: found aggregate with element type universal integer"
+        r"<stdin>:10:20: note: found aggregate with element type universal integer"
         r" \(1 .. 2\)\n"
-        r"info: on path F1 -> Final$",
+        r"note: on path F1 -> Final$",
     )
 
 
@@ -1172,9 +1172,9 @@ def test_opaque_aggregate_out_of_range() -> None:
         types,
         r'^<stdin>:10:20: error: expected sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
-        r"<stdin>:10:20: info: found aggregate"
+        r"<stdin>:10:20: note: found aggregate"
         r" with element type universal integer \(1 .. 256\)\n"
-        r"info: on path F -> Final$",
+        r"note: on path F -> Final$",
     )
 
 
@@ -1205,9 +1205,9 @@ def test_sequence_aggregate_out_of_range() -> None:
         types,
         r'^<stdin>:10:20: error: expected sequence type "P::Sequence"'
         r' with element integer type "P::Element" \(0 .. 63\)\n'
-        r"<stdin>:10:20: info: found aggregate"
+        r"<stdin>:10:20: note: found aggregate"
         r" with element type universal integer \(1 .. 64\)\n"
-        r"info: on path F -> Final$",
+        r"note: on path F -> Final$",
     )
 
 
@@ -1242,9 +1242,9 @@ def test_sequence_aggregate_invalid_element_type() -> None:
         types,
         r'^<stdin>:10:20: error: expected sequence type "P::Sequence"'
         r' with element message type "P::I"\n'
-        r"<stdin>:10:20: info: found aggregate with element type universal integer"
+        r"<stdin>:10:20: note: found aggregate with element type universal integer"
         r" \(1 .. 64\)\n"
-        r"info: on path F -> Final$",
+        r"note: on path F -> Final$",
     )
 
 
@@ -1650,8 +1650,8 @@ def test_exclusive_conflict() -> None:
         types,
         r"^"
         r'<stdin>:8:4: error: conflicting conditions for field "F1"\n'
-        r"<stdin>:11:7: info: condition 0 [(]F1 -> F2[)]: F1 < 80\n"
-        r"<stdin>:10:5: info: condition 1 [(]F1 -> Final[)]: F1 > 50"
+        r"<stdin>:11:7: note: condition 0 [(]F1 -> F2[)]: F1 < 80\n"
+        r"<stdin>:10:5: note: condition 1 [(]F1 -> Final[)]: F1 > 50"
         r"$",
     )
 
@@ -1765,8 +1765,8 @@ def test_exclusive_with_size_invalid() -> None:
         types,
         r"^"
         r'<stdin>:98:10: error: conflicting conditions for field "F1"\n'
-        r"<stdin>:12:4: info: condition 0 [(]F1 -> F2[)]: F1\'Size = 32\n"
-        r"<stdin>:10:2: info: condition 1 [(]F1 -> Final[)]: F1\'Size = 32"
+        r"<stdin>:12:4: note: condition 0 [(]F1 -> F2[)]: F1\'Size = 32\n"
+        r"<stdin>:10:2: note: condition 1 [(]F1 -> Final[)]: F1\'Size = 32"
         r"$",
     )
 
@@ -1806,13 +1806,13 @@ def test_no_valid_path() -> None:
         r'<stdin>:11:6: error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:10:8: note: on path "F1"\n'
         r'<stdin>:11:9: note: on path "F2"\n'
-        r'<stdin>:20:2: info: unsatisfied "F1 <= 80"\n'
-        r'<stdin>:22:4: info: unsatisfied "F1 > 80"\n'
+        r'<stdin>:20:2: note: unsatisfied "F1 <= 80"\n'
+        r'<stdin>:22:4: note: unsatisfied "F1 > 80"\n'
         r'<stdin>:12:7: error: field "F3" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:10:8: note: on path "F1"\n'
         r'<stdin>:12:10: note: on path "F3"\n'
-        r'<stdin>:21:3: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:23:5: info: unsatisfied "F1 <= 80"'
+        r'<stdin>:21:3: note: unsatisfied "F1 > 80"\n'
+        r'<stdin>:23:5: note: unsatisfied "F1 <= 80"'
         r"$",
     )
 
@@ -1832,7 +1832,7 @@ def test_invalid_path_1() -> None:
         r"^"
         r'<stdin>:20:10: error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:20:10: note: on path "F1"\n'
-        r'<stdin>:5:10: info: unsatisfied "1 = 2"'
+        r'<stdin>:5:10: note: unsatisfied "1 = 2"'
         r"$",
     )
 
@@ -1857,7 +1857,7 @@ def test_invalid_path_2() -> None:
         r"^"
         r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
-        r'<stdin>:3:5: info: unsatisfied "1 = 2"'
+        r'<stdin>:3:5: note: unsatisfied "1 = 2"'
         r"$",
     )
 
@@ -1893,8 +1893,8 @@ def test_unreachable() -> None:
         r"^"
         r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:2:1: note: on path "F1"\n'
-        r'<stdin>:1:2: info: unsatisfied "F1 <= 100"\n'
-        r'<stdin>:5:15: info: unsatisfied "F1 > 1000"'
+        r'<stdin>:1:2: note: unsatisfied "F1 <= 100"\n'
+        r'<stdin>:5:15: note: unsatisfied "F1 > 1000"'
         r"$",
     )
 
@@ -1923,8 +1923,8 @@ def test_invalid_type_condition_range_low() -> None:
         r"^"
         r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
-        r'<stdin>:1:1: info: unsatisfied "F1 >= 1"\n'
-        r'<stdin>:4:1: info: unsatisfied "F1 < 1"'
+        r'<stdin>:1:1: note: unsatisfied "F1 >= 1"\n'
+        r'<stdin>:4:1: note: unsatisfied "F1 < 1"'
         r"$",
     )
 
@@ -1960,8 +1960,8 @@ def test_invalid_type_condition_range_high() -> None:
         r"^"
         r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:2: note: on path "F1"\n'
-        r'<stdin>:1:1: info: unsatisfied "F1 <= 100"\n'
-        r'<stdin>:4:1: info: unsatisfied "F1 > 200"'
+        r'<stdin>:1:1: note: unsatisfied "F1 <= 100"\n'
+        r'<stdin>:4:1: note: unsatisfied "F1 > 200"'
         r"$",
     )
 
@@ -2002,8 +2002,8 @@ def test_invalid_type_condition_enum() -> None:
         structure,
         types,
         r'^<stdin>:10:20: error: expected enumeration type "P::E1"\n'
-        r'<stdin>:10:20: info: found enumeration type "P::E2"\n'
-        r"<stdin>:10:10: info: on path F1 -> F2$",
+        r'<stdin>:10:20: note: found enumeration type "P::E2"\n'
+        r"<stdin>:10:10: note: on path F1 -> F2$",
     )
 
 
@@ -2169,7 +2169,7 @@ def test_invalid_size_forward_reference() -> None:
         structure,
         types,
         '^<stdin>:10:20: error: undefined variable "F2"\n'
-        r"<stdin>:10:20: info: on path F1 -> F2$",
+        r"<stdin>:10:20: note: on path F1 -> F2$",
     )
 
 
@@ -2308,9 +2308,9 @@ def test_incongruent_overlay() -> None:
     }
     regex = (
         '<stdin>:1:1: error: field "F3" not congruent with overlaid field "F2"\n'
-        "<stdin>:2:2: info: unsatisfied \"F2'Last = (F1'Last + 1 + 8) - 1\"\n"
-        "<stdin>:2:2: info: unsatisfied \"F2'First = F1'Last + 1\"\n"
-        "<stdin>:3:3: info: unsatisfied \"(F2'First + 16) - 1 = F2'Last\""
+        "<stdin>:2:2: note: unsatisfied \"F2'Last = (F1'Last + 1 + 8) - 1\"\n"
+        "<stdin>:2:2: note: unsatisfied \"F2'First = F1'Last + 1\"\n"
+        "<stdin>:3:3: note: unsatisfied \"(F2'First + 16) - 1 = F2'Last\""
     )
     assert_message_model_error(
         structure,
@@ -2341,12 +2341,12 @@ def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
         types,
         r'^<stdin>:1:1: error: negative start for field "F2"\n'
         r'<stdin>:1:1: note: on path "F1"\n'
-        r'<stdin>:1:1: info: unsatisfied "Message\'First - 1000 >= Message\'First"\n'
+        r'<stdin>:1:1: note: unsatisfied "Message\'First - 1000 >= Message\'First"\n'
         r"<stdin>:1:1: error: negative start for end of message\n"
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: note: on path "F2"\n'
-        r'<stdin>:1:1: info: unsatisfied "F2\'Last = \(Message\'First - 1000 \+ 8\) - 1"\n'
-        r'<stdin>:1:1: info: unsatisfied "F2\'Last \+ 1 >= Message\'First"$',
+        r'<stdin>:1:1: note: unsatisfied "F2\'Last = \(Message\'First - 1000 \+ 8\) - 1"\n'
+        r'<stdin>:1:1: note: unsatisfied "F2\'Last \+ 1 >= Message\'First"$',
     )
 
 
@@ -2438,7 +2438,7 @@ def test_invalid_use_of_message_attributes() -> None:
         r"^"
         r'<stdin>:1:2: error: "Message" must not be used in size aspects\n'
         r'<stdin>:5:6: error: invalid use of "Message" in size aspect\n'
-        r"<stdin>:5:6: info: remove size aspect to define field with implicit size"
+        r"<stdin>:5:6: note: remove size aspect to define field with implicit size"
         r"$",
     )
 
@@ -2510,25 +2510,25 @@ def test_message_inconsistent_identifier_casing() -> None:
             r"^"
             r'<stdin>:1:1: error: casing of "b" differs from casing'
             r' in the declaration of "B" at <stdin>:11:11\n'
-            r'<stdin>:11:11: info: declaration of "B"\n'
+            r'<stdin>:11:11: note: declaration of "B"\n'
             r'<stdin>:2:3: error: casing of "c" differs from casing'
             r' in the declaration of "C" at <stdin>:12:12\n'
-            r'<stdin>:12:12: info: declaration of "C"\n'
+            r'<stdin>:12:12: note: declaration of "C"\n'
             r'<stdin>:3:4: error: casing of "p::e" differs from cas'
             r'ing in the declaration of "P::E" at <stdin>:13:13\n'
-            r'<stdin>:13:13: info: declaration of "P::E"\n'
+            r'<stdin>:13:13: note: declaration of "P::E"\n'
             r'<stdin>:4:4: error: casing of "g" differs from casing'
             r' in the declaration of "G" at <stdin>:14:14\n'
-            r'<stdin>:14:14: info: declaration of "G"\n'
+            r'<stdin>:14:14: note: declaration of "G"\n'
             r'<stdin>:5:5: error: casing of "f" differs from casing'
             r' in the declaration of "F" at <stdin>:15:15\n'
-            r'<stdin>:15:15: info: declaration of "F"\n'
+            r'<stdin>:15:15: note: declaration of "F"\n'
             r'<stdin>:6:6: error: casing of "f" differs from casing'
             r' in the declaration of "F" at <stdin>:15:15\n'
-            r'<stdin>:15:15: info: declaration of "F"\n'
+            r'<stdin>:15:15: note: declaration of "F"\n'
             r'<stdin>:7:7: error: casing of "p::e" differs from casing'
             r' in the declaration of "P::E" at <stdin>:13:13\n'
-            r'<stdin>:13:13: info: declaration of "P::E"'
+            r'<stdin>:13:13: note: declaration of "P::E"'
             r"$"
         ),
     ):
@@ -2669,8 +2669,8 @@ def test_unreachable_field_mod_first() -> None:
         r"^"
         r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:2: note: on path "F1"\n'
-        r'<stdin>:1:1: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'<stdin>:2:2: info: unsatisfied "F1\'First > Message\'First"'
+        r'<stdin>:1:1: note: unsatisfied "F1\'First = Message\'First"\n'
+        r'<stdin>:2:2: note: unsatisfied "F1\'First > Message\'First"'
         r"$",
     )
 
@@ -2703,9 +2703,9 @@ def test_unreachable_field_mod_last() -> None:
         r'error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:3: note: on path "F2"\n'
-        r'<stdin>:2:3: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'<stdin>:1:1: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'<stdin>:4:6: info: unsatisfied "F1\'Last = Message\'Last"'
+        r'<stdin>:2:3: note: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'<stdin>:1:1: note: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'<stdin>:4:6: note: unsatisfied "F1\'Last = Message\'Last"'
         r"$",
     )
 
@@ -2734,8 +2734,8 @@ def test_unreachable_field_range_first() -> None:
         r"^"
         r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
-        r'<stdin>:1:1: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'<stdin>:3:3: info: unsatisfied "F1\'First > Message\'First"'
+        r'<stdin>:1:1: note: unsatisfied "F1\'First = Message\'First"\n'
+        r'<stdin>:3:3: note: unsatisfied "F1\'First > Message\'First"'
         r"$",
     )
 
@@ -2764,9 +2764,9 @@ def test_unreachable_field_range_last() -> None:
         r'error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:3: note: on path "F2"\n'
-        r'<stdin>:2:3: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'<stdin>:1:1: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'<stdin>:3:4: info: unsatisfied "F1\'Last = Message\'Last"'
+        r'<stdin>:2:3: note: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'<stdin>:1:1: note: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'<stdin>:3:4: note: unsatisfied "F1\'Last = Message\'Last"'
         r"$",
     )
 
@@ -2795,8 +2795,8 @@ def test_unreachable_field_enum_first() -> None:
         r"^"
         r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
-        r'<stdin>:1:1: info: unsatisfied "F1\'First = Message\'First"\n'
-        r'<stdin>:3:5: info: unsatisfied "F1\'First > Message\'First"'
+        r'<stdin>:1:1: note: unsatisfied "F1\'First = Message\'First"\n'
+        r'<stdin>:3:5: note: unsatisfied "F1\'First > Message\'First"'
         r"$",
     )
 
@@ -2826,9 +2826,9 @@ def test_unreachable_field_enum_last() -> None:
         r'error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:2: note: on path "F2"\n'
-        r'<stdin>:2:2: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
-        r'<stdin>:1:1: info: unsatisfied "Message\'Last >= F2\'Last"\n'
-        r'<stdin>:3:6: info: unsatisfied "F1\'Last = Message\'Last"'
+        r'<stdin>:2:2: note: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
+        r'<stdin>:1:1: note: unsatisfied "Message\'Last >= F2\'Last"\n'
+        r'<stdin>:3:6: note: unsatisfied "F1\'Last = Message\'Last"'
         r"$",
     )
 
@@ -2875,8 +2875,8 @@ def test_unreachable_field_outgoing() -> None:
         r'error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:3: note: on path "F2"\n'
-        r'<stdin>:3:4: info: unsatisfied "F1 <= 32"\n'
-        r'<stdin>:7:7: info: unsatisfied "F1 > 32"'
+        r'<stdin>:3:4: note: unsatisfied "F1 <= 32"\n'
+        r'<stdin>:7:7: note: unsatisfied "F1 > 32"'
         r"$",
     )
 
@@ -2934,8 +2934,8 @@ def test_unreachable_field_outgoing_multi() -> None:
         r'<stdin>:90:12: error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:86:13: note: on path "F1"\n'
         r'<stdin>:91:13: note: on path "F2"\n'
-        r'<stdin>:66:3: info: unsatisfied "F1 <= 32"\n'
-        r'<stdin>:22:34: info: unsatisfied "F1 > 32"'
+        r'<stdin>:66:3: note: unsatisfied "F1 <= 32"\n'
+        r'<stdin>:22:34: note: unsatisfied "F1 > 32"'
         r"$",
     )
 
@@ -3017,8 +3017,8 @@ def test_aggregate_equal_invalid_size1() -> None:
         r"^"
         r'<stdin>:1:1: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "Magic"\n'
-        r'<stdin>:1:2: info: unsatisfied "Magic\'Size = 40"\n'
-        r'<stdin>:3:3: info: unsatisfied "2 [*] 8 = Magic\'Size"'
+        r'<stdin>:1:2: note: unsatisfied "Magic\'Size = 40"\n'
+        r'<stdin>:3:3: note: unsatisfied "2 [*] 8 = Magic\'Size"'
         r"$",
     )
 
@@ -3051,8 +3051,8 @@ def test_aggregate_equal_invalid_size2() -> None:
         r"^"
         r'<stdin>:1:1: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "Magic"\n'
-        r'<stdin>:1:2: info: unsatisfied "Magic\'Size = 40"\n'
-        r'<stdin>:3:4: info: unsatisfied "2 [*] 8 = Magic\'Size"'
+        r'<stdin>:1:2: note: unsatisfied "Magic\'Size = 40"\n'
+        r'<stdin>:3:4: note: unsatisfied "2 [*] 8 = Magic\'Size"'
         r"$",
     )
 
@@ -3110,8 +3110,8 @@ def test_aggregate_inequal_invalid_size() -> None:
         r"^"
         r'<stdin>:1:2: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "Magic"\n'
-        r'<stdin>:1:2: info: unsatisfied "Magic\'Size = 40"\n'
-        r'<stdin>:3:4: info: unsatisfied "2 [*] 8 = Magic\'Size"'
+        r'<stdin>:1:2: note: unsatisfied "Magic\'Size = 40"\n'
+        r'<stdin>:3:4: note: unsatisfied "2 [*] 8 = Magic\'Size"'
         r"$",
     )
 
@@ -3164,9 +3164,9 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
         r"^"
         r'<stdin>:3:5: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:3:5: note: on path "Magic"\n'
-        r'<stdin>:19:17: info: unsatisfied "Magic\'Size = 40"\n'
-        r'<stdin>:66:3: info: unsatisfied "Integer\'Size = 8"\n'
-        r'<stdin>:17:3: info: unsatisfied "2 [*] Integer\'Size = Magic\'Size"'
+        r'<stdin>:19:17: note: unsatisfied "Magic\'Size = 40"\n'
+        r'<stdin>:66:3: note: unsatisfied "Integer\'Size = 8"\n'
+        r'<stdin>:17:3: note: unsatisfied "2 [*] Integer\'Size = Magic\'Size"'
         r"$",
     )
 
@@ -3211,9 +3211,9 @@ def test_aggregate_equal_invalid_size_field() -> None:
         r'<stdin>:17:3: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:2:5: note: on path "Length"\n'
         r'<stdin>:3:5: note: on path "Magic"\n'
-        r'<stdin>:10:5: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'
-        r'<stdin>:5:10: info: unsatisfied "Length >= 10"\n'
-        r'<stdin>:6:5: info: unsatisfied "Magic\'Size = 8 [*] Length"'
+        r'<stdin>:10:5: note: unsatisfied "2 [*] 8 = Magic\'Size"\n'
+        r'<stdin>:5:10: note: unsatisfied "Length >= 10"\n'
+        r'<stdin>:6:5: note: unsatisfied "Magic\'Size = 8 [*] Length"'
         r"$",
     )
 
@@ -3416,9 +3416,9 @@ def test_discontiguous_optional_fields_error() -> None:
         (
             r"^"
             r'<stdin>:2:2: error: undefined variable "Opt1"\n'
-            r"info: on path Flag -> Data -> Opt2\n"
+            r"note: on path Flag -> Data -> Opt2\n"
             r'<stdin>:2:2: error: undefined variable "Opt1"\n'
-            r"<stdin>:4:4: info: on path Flag -> Data -> Opt2"
+            r"<stdin>:4:4: note: on path Flag -> Data -> Opt2"
             r"$"
         ),
     )
@@ -5130,8 +5130,8 @@ def test_merge_message_error_name_conflict() -> None:
         match=(
             r"^"
             r'<stdin>:30:5: error: name conflict for "F1_F2" in "P::M1"\n'
-            r'<stdin>:15:3: info: when merging message "P::M2"\n'
-            r'<stdin>:20:8: info: into field "F1"$'
+            r'<stdin>:15:3: note: when merging message "P::M2"\n'
+            r'<stdin>:20:8: note: into field "F1"$'
         ),
     ):
         m1.merged([models.integer(), m2])
@@ -5355,7 +5355,7 @@ def test_merge_message_with_message_attributes() -> None:
             "^"
             "<stdin>:2:10: error: messages with implicit size may only be used for"
             " last fields\n"
-            '<stdin>:5:10: info: message field with implicit size in "P::I"'
+            '<stdin>:5:10: note: message field with implicit size in "P::I"'
             "$"
         ),
     ):
@@ -5725,7 +5725,7 @@ def test_merge_message_with_illegal_condition_on_message_type_field() -> None:
         match=(
             "^"
             '<stdin>:1:2: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:1:2: info: found type universal integer \(1\)"
+            r"<stdin>:1:2: note: found type universal integer \(1\)"
             "$"
         ),
     ):
@@ -5948,19 +5948,19 @@ def test_refinement_inconsistent_identifier_casing() -> None:
             "^"
             '<stdin>:1:1: error: casing of "value" differs from casing in the declaration of '
             '"Value" at <stdin>:3:3\n'
-            '<stdin>:3:3: info: declaration of "Value"\n'
+            '<stdin>:3:3: note: declaration of "Value"\n'
             '<stdin>:2:2: error: casing of "tag" differs from casing in the declaration of '
             '"Tag" at <stdin>:1:1\n'
-            '<stdin>:1:1: info: declaration of "Tag"\n'
+            '<stdin>:1:1: note: declaration of "Tag"\n'
             '<stdin>:3:3: error: casing of "tlv::msg_data" differs from casing in the declaration '
             'of "TLV::Msg_Data" at <stdin>:1:1\n'
-            '<stdin>:1:1: info: declaration of "TLV::Msg_Data"\n'
+            '<stdin>:1:1: note: declaration of "TLV::Msg_Data"\n'
             '<stdin>:4:4: error: casing of "length" differs from casing in the declaration of '
             '"Length" at <stdin>:2:2\n'
-            '<stdin>:2:2: info: declaration of "Length"\n'
+            '<stdin>:2:2: note: declaration of "Length"\n'
             '<stdin>:5:5: error: casing of "tlv::length" differs from casing in the declaration '
             'of "TLV::Length" at <stdin>:1:1\n'
-            '<stdin>:1:1: info: declaration of "TLV::Length"'
+            '<stdin>:1:1: note: declaration of "TLV::Length"'
             "$"
         ),
     ):
@@ -6036,7 +6036,7 @@ def test_refinement_invalid_field_type() -> None:
         RecordFluxError,
         match=(
             r'^<stdin>:33:22: error: invalid type of field "X" in refinement of "P::M"\n'
-            r"<stdin>:20:10: info: expected field of type Opaque$"
+            r"<stdin>:20:10: note: expected field of type Opaque$"
         ),
     ):
         Refinement("P", message, Field(ID("X", Location((33, 22)))), message)
@@ -6143,7 +6143,7 @@ def test_refinement_type_error_in_condition() -> None:
         match=(
             r"^"
             r'<stdin>:10:20: error: expected integer type "P::T" \(0 \.\. 255\)\n'
-            r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"'
+            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"'
             r"$"
         ),
     ):

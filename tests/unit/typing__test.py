@@ -700,13 +700,13 @@ def test_check_type(actual: Type, expected: Type) -> None:
             Message("A"),
             Channel(readable=False, writable=True),
             r"^<stdin>:10:20: error: expected writable channel\n"
-            r'<stdin>:10:20: info: found message type "A"$',
+            r'<stdin>:10:20: note: found message type "A"$',
         ),
         (
             BaseInteger(),
             Message("A"),
             r'^<stdin>:10:20: error: expected message type "A"\n'
-            r"<stdin>:10:20: info: found integer type$",
+            r"<stdin>:10:20: note: found integer type$",
         ),
         (
             Undefined(),
@@ -743,13 +743,13 @@ def test_check_type_instance(
             Message("M"),
             Channel,
             r"^<stdin>:10:20: error: expected channel\n"
-            r'<stdin>:10:20: info: found message type "M"$',
+            r'<stdin>:10:20: note: found message type "M"$',
         ),
         (
             BaseInteger(),
             (Sequence, Message),
             r"^<stdin>:10:20: error: expected sequence type or message type\n"
-            r"<stdin>:10:20: info: found integer type$",
+            r"<stdin>:10:20: note: found integer type$",
         ),
         (
             Undefined(),

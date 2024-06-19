@@ -75,7 +75,7 @@ def test_name_conflict_types() -> None:
         match=(
             r"^"
             r'<stdin>:11:30: error: name conflict for type "P::T"\n'
-            r'<stdin>:10:20: info: previous occurrence of "P::T"'
+            r'<stdin>:10:20: note: previous occurrence of "P::T"'
             r"$"
         ),
     ):
@@ -98,7 +98,7 @@ def test_conflicting_refinements() -> None:
         match=(
             r"^"
             r'<stdin>:10:30: error: conflicting refinement of "P::M" with "P::M"\n'
-            r"<stdin>:10:20: info: previous occurrence of refinement"
+            r"<stdin>:10:20: note: previous occurrence of refinement"
             r"$"
         ),
     ):
@@ -116,7 +116,7 @@ def test_name_conflict_sessions() -> None:
         match=(
             r"^"
             r'<stdin>:10:30: error: name conflict for session "P::S"\n'
-            r'<stdin>:10:20: info: previous occurrence of "P::S"'
+            r'<stdin>:10:20: note: previous occurrence of "P::S"'
             r"$"
         ),
     ):
@@ -129,7 +129,7 @@ def test_conflicting_literal_builtin_type() -> None:
         match=(
             r"^"
             r'<stdin>:3:31: error: literal "Boolean" conflicts with type declaration\n'
-            r'__BUILTINS__:1:1: info: conflicting type "__BUILTINS__::Boolean"'
+            r'__BUILTINS__:1:1: note: conflicting type "__BUILTINS__::Boolean"'
             r"$"
         ),
     ):
@@ -155,9 +155,9 @@ def test_name_conflict_between_literal_and_type() -> None:
         match=(
             r"^"
             r'<stdin>:3:27: error: literal "FOO" conflicts with type declaration\n'
-            r'<stdin>:4:16: info: conflicting type "P::Foo"\n'
+            r'<stdin>:4:16: note: conflicting type "P::Foo"\n'
             r'<stdin>:3:32: error: literal "BAR" conflicts with type declaration\n'
-            r'<stdin>:5:16: info: conflicting type "P::Bar"'
+            r'<stdin>:5:16: note: conflicting type "P::Bar"'
             r"$"
         ),
     ):
@@ -184,8 +184,8 @@ def test_invalid_enumeration_type_builtin_literals() -> None:
         match=(
             r"^"
             r"<stdin>:3:16: error: conflicting literals: False, True\n"
-            r'__BUILTINS__:1:1: info: previous occurrence of "False"\n'
-            r'__BUILTINS__:1:1: info: previous occurrence of "True"'
+            r'__BUILTINS__:1:1: note: previous occurrence of "False"\n'
+            r'__BUILTINS__:1:1: note: previous occurrence of "True"'
             r"$"
         ),
     ):
@@ -234,7 +234,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
         match=(
             r"^"
             r"<stdin>:4:16: error: conflicting literals: Bar\n"
-            r'<stdin>:3:33: info: previous occurrence of "Bar"'
+            r'<stdin>:3:33: note: previous occurrence of "Bar"'
             r"$"
         ),
     ):
@@ -714,7 +714,7 @@ def test_unchecked_model_checked(
             ],
             r"^"
             r'<stdin>:2:1: error: duplicate declaration of "P::T"\n'
-            r'<stdin>:1:2: info: previous occurrence of "P::T"'
+            r'<stdin>:1:2: note: previous occurrence of "P::T"'
             r"$",
             ["P::M"],
         ),

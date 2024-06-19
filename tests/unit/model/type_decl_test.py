@@ -362,7 +362,7 @@ def test_enumeration_invalid_duplicate_elements() -> None:
         match=(
             r"^"
             r'<stdin>:3:32: error: duplicate literal "Foo"\n'
-            r"<stdin>:3:27: info: previous occurrence"
+            r"<stdin>:3:27: note: previous occurrence"
             r"$"
         ),
     ):
@@ -380,9 +380,9 @@ def test_enumeration_invalid_multiple_duplicate_elements() -> None:
         match=(
             r"^"
             r'<stdin>:3:37: error: duplicate literal "Foo"\n'
-            r"<stdin>:3:27: info: previous occurrence\n"
+            r"<stdin>:3:27: note: previous occurrence\n"
             r'<stdin>:3:42: error: duplicate literal "Bar"\n'
-            r"<stdin>:3:32: info: previous occurrence"
+            r"<stdin>:3:32: note: previous occurrence"
             r"$"
         ),
     ):
@@ -484,7 +484,7 @@ def test_sequence_dependencies() -> None:
                 location=Location((3, 4)),
             ),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
-            r"<stdin>:3:4: info: messages used as sequence element must not depend"
+            r"<stdin>:3:4: note: messages used as sequence element must not depend"
             ' on "Message\'Size" or "Message\'Last"',
         ),
         (
@@ -503,7 +503,7 @@ def test_sequence_dependencies() -> None:
                 location=Location((3, 4)),
             ),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
-            r"<stdin>:3:4: info: messages used as sequence element must not depend"
+            r"<stdin>:3:4: note: messages used as sequence element must not depend"
             ' on "Message\'Size" or "Message\'Last"',
         ),
         (
@@ -520,7 +520,7 @@ def test_sequence_dependencies() -> None:
                 location=Location((3, 4)),
             ),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
-            r"<stdin>:3:4: info: parameterized messages must not be used"
+            r"<stdin>:3:4: note: parameterized messages must not be used"
             r" as sequence element",
         ),
     ],

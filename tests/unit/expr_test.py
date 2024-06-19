@@ -133,7 +133,7 @@ def test_not_type_error() -> None:
     assert_type_error(
         Not(Variable("X", type_=rty.BaseInteger(), location=Location((10, 20)))),
         r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:20: info: found integer type$",
+        r"<stdin>:10:20: note: found integer type$",
     )
 
 
@@ -402,9 +402,9 @@ def test_bool_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
             Number(1, location=Location((10, 30))),
         ),
         r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r'<stdin>:10:20: info: found integer type "A" \(0 .. 100\)\n'
+        r'<stdin>:10:20: note: found integer type "A" \(0 .. 100\)\n'
         r'<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:30: info: found type universal integer \(1\)$",
+        r"<stdin>:10:30: note: found type universal integer \(1\)$",
     )
 
 
@@ -633,9 +633,9 @@ def test_math_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
             Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
         r"^<stdin>:10:20: error: expected integer type\n"
-        r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"\n'
+        r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"\n'
         r"<stdin>:10:30: error: expected integer type\n"
-        r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -655,7 +655,7 @@ def test_neg_type_error() -> None:
     assert_type_error(
         Neg(Variable("X", type_=rty.BOOLEAN, location=Location((10, 20)))),
         r"^<stdin>:10:20: error: expected integer type\n"
-        r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -1173,7 +1173,7 @@ def test_relation_integer_type_error(relation: Callable[[Expr, Expr], Expr]) -> 
             Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
         r"^<stdin>:10:30: error: expected integer type\n"
-        r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -1197,7 +1197,7 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
         ),
         r"^<stdin>:10:30: error: expected aggregate"
         r" with element integer type\n"
-        r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"$',
     )
     assert_type_error(
         relation(
@@ -1206,7 +1206,7 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
         ),
         r"^<stdin>:10:30: error: expected aggregate"
         r" with element integer type\n"
-        r'<stdin>:10:30: info: found sequence type "A"'
+        r'<stdin>:10:30: note: found sequence type "A"'
         r' with element enumeration type "__BUILTINS__::Boolean"$',
     )
 
@@ -1474,9 +1474,9 @@ def test_value_range_type_error() -> None:
             location=Location((10, 20)),
         ),
         r"^<stdin>:10:30: error: expected integer type\n"
-        r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"\n'
+        r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"\n'
         r"<stdin>:10:40: error: expected integer type\n"
-        r'<stdin>:10:40: info: found sequence type "A" with element integer type$',
+        r'<stdin>:10:40: note: found sequence type "A" with element integer type$',
     )
 
 
@@ -1527,21 +1527,21 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
             Variable("Z", type_=rty.Sequence("A", rty.BaseInteger()), location=Location((10, 40))),
             r"^<stdin>:10:30: error: expected composite type\n"
-            r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"\n'
+            r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"\n'
             r'<stdin>:10:40: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r'<stdin>:10:40: info: found sequence type "A" with element integer type$',
+            r'<stdin>:10:40: note: found sequence type "A" with element integer type$',
         ),
         (
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
             Equal(Variable("X"), Number(1)),
             r"^<stdin>:10:30: error: expected composite type\n"
-            r'<stdin>:10:30: info: found enumeration type "__BUILTINS__::Boolean"$',
+            r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"$',
         ),
         (
             Variable("Y", type_=rty.Sequence("A", rty.BOOLEAN)),
             Equal(Variable("X"), Number(1, location=Location((10, 30)))),
             r'^<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:30: info: found type universal integer \(1\)$",
+            r"<stdin>:10:30: note: found type universal integer \(1\)$",
         ),
     ],
 )
@@ -1842,7 +1842,7 @@ def test_selected_type() -> None:
         (
             Selected(Variable("X", type_=rty.BOOLEAN, location=Location((10, 20))), "Y"),
             r"^<stdin>:10:20: error: expected message type\n"
-            r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$',
+            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$',
         ),
         (
             Selected(
@@ -1949,9 +1949,9 @@ def test_call_type_error() -> None:
             ],
         ),
         r'^<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:30: info: found integer type\n"
+        r"<stdin>:10:30: note: found integer type\n"
         r"<stdin>:10:40: error: expected integer type\n"
-        r'<stdin>:10:40: info: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:40: note: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -2260,7 +2260,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
                 },
             ),
             r'^<stdin>:10:20: error: missing fields for message type "M"\n'
-            r"<stdin>:10:20: info: possible next fields: Y$",
+            r"<stdin>:10:20: note: possible next fields: Y$",
         ),
         (
             {
@@ -2281,7 +2281,7 @@ def test_message_aggregate_type(field_values: Mapping[StrID, Expr], type_: rty.T
             r'^<stdin>:10:40: error: undefined variable "A"\n'
             r'<stdin>:10:30: error: undefined variable "B"\n'
             r'<stdin>:10:20: error: missing fields for message type "M"\n'
-            r"<stdin>:10:20: info: possible next fields: Z$",
+            r"<stdin>:10:20: note: possible next fields: Z$",
         ),
         (
             {
@@ -2607,7 +2607,7 @@ def test_case_type() -> None:
         ),
         r'^__BUILTINS__:1:1: error: dependent expression "True" has incompatible enumeration type '
         r'"__BUILTINS__::Boolean"\n'
-        r'<stdin>:1:4: info: conflicting with "1" which has type universal integer \(1\)$',
+        r'<stdin>:1:4: note: conflicting with "1" which has type universal integer \(1\)$',
     )
     assert_type_error(
         CaseExpr(
@@ -2622,7 +2622,7 @@ def test_case_type() -> None:
         ),
         r'^<stdin>:1:3: error: invalid discrete choice with sequence type "__INTERNAL__::Opaque" '
         r'with element integer type "Byte" \(0 .. 255\)\n'
-        r"<stdin>:1:3: info: expected enumeration or integer type$",
+        r"<stdin>:1:3: note: expected enumeration or integer type$",
     )
 
 
@@ -2644,7 +2644,7 @@ def test_case_invalid() -> None:
             location=Location((1, 2)),
         ),
         "^<stdin>:1:2: error: not all enumeration literals covered by case expression\n"
-        '<stdin>:10:2: info: missing literal "Two"$',
+        '<stdin>:10:2: note: missing literal "Two"$',
     )
     assert_type_error(
         CaseExpr(
@@ -2653,7 +2653,7 @@ def test_case_invalid() -> None:
             location=Location((1, 2)),
         ),
         "^<stdin>:1:2: error: invalid literals used in case expression\n"
-        '<stdin>:10:2: info: literal "Invalid" not part of "P::Enumeration"$',
+        '<stdin>:10:2: note: literal "Invalid" not part of "P::Enumeration"$',
     )
     assert_type_error(
         CaseExpr(
@@ -2665,7 +2665,7 @@ def test_case_invalid() -> None:
             location=Location((1, 2)),
         ),
         "^<stdin>:1:2: error: duplicate literals used in case expression\n"
-        '<stdin>:3:2: info: duplicate literal "One"$',
+        '<stdin>:3:2: note: duplicate literal "One"$',
     )
 
     assert_type_error(
@@ -2675,7 +2675,7 @@ def test_case_invalid() -> None:
             location=Location((2, 2)),
         ),
         '^<stdin>:2:2: error: case expression does not cover full range of "P::Tiny"\n'
-        "<stdin>:1:2: info: missing value 3$",
+        "<stdin>:1:2: note: missing value 3$",
     )
     assert_type_error(
         CaseExpr(
@@ -2684,7 +2684,7 @@ def test_case_invalid() -> None:
             location=Location((2, 2)),
         ),
         '^<stdin>:2:2: error: case expression does not cover full range of "P::Tiny"\n'
-        "<stdin>:1:2: info: missing range 2 .. 3$",
+        "<stdin>:1:2: note: missing range 2 .. 3$",
     )
     assert_type_error(
         CaseExpr(
@@ -2693,9 +2693,9 @@ def test_case_invalid() -> None:
             location=Location((5, 2)),
         ),
         '^<stdin>:5:2: error: case expression does not cover full range of "P::Int"\n'
-        "<stdin>:3:2: info: missing range 3 .. 50\n"
-        "<stdin>:3:2: info: missing value 52\n"
-        "<stdin>:3:2: info: missing range 54 .. 100$",
+        "<stdin>:3:2: note: missing range 3 .. 50\n"
+        "<stdin>:3:2: note: missing value 52\n"
+        "<stdin>:3:2: note: missing range 54 .. 100$",
     )
     assert_type_error(
         CaseExpr(
@@ -2704,7 +2704,7 @@ def test_case_invalid() -> None:
             location=Location((2, 2)),
         ),
         "^<stdin>:2:2: error: invalid literals used in case expression\n"
-        '<stdin>:1:2: info: value 4 not part of "P::Tiny"$',
+        '<stdin>:1:2: note: value 4 not part of "P::Tiny"$',
     )
     assert_type_error(
         CaseExpr(
@@ -2716,7 +2716,7 @@ def test_case_invalid() -> None:
             location=Location((1, 2)),
         ),
         "^<stdin>:1:2: error: duplicate literals used in case expression\n"
-        '<stdin>:1:14: info: duplicate literal "2"$',
+        '<stdin>:1:14: note: duplicate literal "2"$',
     )
 
 

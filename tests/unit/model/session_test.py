@@ -198,31 +198,31 @@ def test_inconsistent_identifier_casing() -> None:
             r"^"
             r'<stdin>:1:1: error: casing of "tlv::message" differs from casing'
             r' in the declaration of "TLV::Message" at <stdin>:1:1\n'
-            r'<stdin>:1:1: info: declaration of "TLV::Message"\n'
+            r'<stdin>:1:1: note: declaration of "TLV::Message"\n'
             r'<stdin>:2:2: error: casing of "x" differs from casing'
             r' in the declaration of "X" at <stdin>:12:12\n'
-            r'<stdin>:12:12: info: declaration of "X"\n'
+            r'<stdin>:12:12: note: declaration of "X"\n'
             r'<stdin>:3:3: error: casing of "m" differs from casing'
             r' in the declaration of "M" at <stdin>:13:13\n'
-            r'<stdin>:13:13: info: declaration of "M"\n'
+            r'<stdin>:13:13: note: declaration of "M"\n'
             r'<stdin>:4:4: error: casing of "b" differs from casing'
             r' in the declaration of "B" at <stdin>:14:14\n'
-            r'<stdin>:14:14: info: declaration of "B"\n'
+            r'<stdin>:14:14: note: declaration of "B"\n'
             r'<stdin>:5:5: error: casing of "y" differs from casing'
             r' in the declaration of "Y" at <stdin>:15:15\n'
-            r'<stdin>:15:15: info: declaration of "Y"\n'
+            r'<stdin>:15:15: note: declaration of "Y"\n'
             r'<stdin>:6:6: error: casing of "z" differs from casing'
             r' in the declaration of "Z" at <stdin>:16:16\n'
-            r'<stdin>:16:16: info: declaration of "Z"\n'
+            r'<stdin>:16:16: note: declaration of "Z"\n'
             r'<stdin>:7:7: error: casing of "g" differs from casing'
             r' in the declaration of "G" at <stdin>:17:17\n'
-            r'<stdin>:17:17: info: declaration of "G"\n'
+            r'<stdin>:17:17: note: declaration of "G"\n'
             r'<stdin>:8:8: error: casing of "f" differs from casing'
             r' in the declaration of "F" at <stdin>:18:18\n'
-            r'<stdin>:18:18: info: declaration of "F"\n'
+            r'<stdin>:18:18: note: declaration of "F"\n'
             r'<stdin>:9:9: error: casing of "a" differs from casing'
             r' in the declaration of "A" at <stdin>:19:19\n'
-            r'<stdin>:19:19: info: declaration of "A"'
+            r'<stdin>:19:19: note: declaration of "A"'
             r"$"
         ),
     ):
@@ -374,7 +374,7 @@ def test_duplicate_state() -> None:
         regex=(
             r"^"
             r'<stdin>:10:30: error: duplicate state "Start"\n'
-            r'<stdin>:10:20: info: previous definition of state "Start"'
+            r'<stdin>:10:20: note: previous definition of state "Start"'
             r"$"
         ),
     )
@@ -425,13 +425,13 @@ def test_multiple_duplicate_states() -> None:
         regex=(
             r"^"
             r'<stdin>:10:30: error: duplicate state "Start"\n'
-            r'<stdin>:10:20: info: previous definition of state "Start"\n'
+            r'<stdin>:10:20: note: previous definition of state "Start"\n'
             r'<stdin>:10:60: error: duplicate state "Foo"\n'
-            r'<stdin>:10:40: info: previous definition of state "Foo"\n'
+            r'<stdin>:10:40: note: previous definition of state "Foo"\n'
             r'<stdin>:10:80: error: duplicate state "Foo"\n'
-            r'<stdin>:10:40: info: previous definition of state "Foo"\n'
+            r'<stdin>:10:40: note: previous definition of state "Foo"\n'
             r'<stdin>:10:70: error: duplicate state "Bar"\n'
-            r'<stdin>:10:50: info: previous definition of state "Bar"'
+            r'<stdin>:10:50: note: previous definition of state "Bar"'
             r"$"
         ),
     )
@@ -811,7 +811,7 @@ def test_reset_incompatible() -> None:
         types=[BOOLEAN],
         regex=(
             r"^<stdin>:10:20: error: expected sequence type or message type\n"
-            r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$'
+            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
 
@@ -911,7 +911,7 @@ def test_call_invalid_argument_type() -> None:
         regex=(
             r"^"
             r'<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:20: info: found readable channel"
+            r"<stdin>:10:20: note: found readable channel"
             "$"
         ),
     )
@@ -1062,9 +1062,9 @@ def test_channel_read_invalid_type() -> None:
             r"^"
             r"<stdin>:10:20: error: channel parameter must be a variable\n"
             r"<stdin>:10:20: error: expected readable channel\n"
-            r'<stdin>:10:20: info: found message type "TLV::Message"\n'
+            r'<stdin>:10:20: note: found message type "TLV::Message"\n'
             r"<stdin>:10:30: error: expected message type\n"
-            r"<stdin>:10:30: info: found type universal integer \(0\)"
+            r"<stdin>:10:30: note: found type universal integer \(0\)"
             r"$"
         ),
     )
@@ -1092,7 +1092,7 @@ def test_channel_read_invalid_mode() -> None:
         regex=(
             r"^"
             r"<stdin>:10:20: error: expected readable channel\n"
-            r"<stdin>:10:20: info: found writable channel"
+            r"<stdin>:10:20: note: found writable channel"
             r"$"
         ),
     )
@@ -1120,7 +1120,7 @@ def test_channel_write_invalid_mode() -> None:
         regex=(
             r"^"
             r"<stdin>:10:20: error: expected writable channel\n"
-            r"<stdin>:10:20: info: found readable channel"
+            r"<stdin>:10:20: note: found readable channel"
             r"$"
         ),
     )
@@ -1209,7 +1209,7 @@ def test_local_variable_shadows_global() -> None:
         regex=(
             r"^"
             r'<stdin>:10:20: error: local variable "Global" shadows previous declaration\n'
-            r'<stdin>:10:30: info: previous declaration of variable "Global"\n'
+            r'<stdin>:10:30: note: previous declaration of variable "Global"\n'
             r'<stdin>:10:30: error: unused variable "Global"'
             r"$"
         ),
@@ -1463,7 +1463,7 @@ def test_append_incompatible() -> None:
         types=[BOOLEAN],
         regex=(
             r"^<stdin>:10:20: error: expected sequence type\n"
-            r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$'
+            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
 
@@ -1533,7 +1533,7 @@ def test_extend_incompatible() -> None:
         types=[BOOLEAN],
         regex=(
             r"^<stdin>:10:20: error: expected sequence type\n"
-            r'<stdin>:10:20: info: found enumeration type "__BUILTINS__::Boolean"$'
+            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
 
@@ -1770,7 +1770,7 @@ def test_message_field_assignment_with_incompatible_field_type() -> None:
         regex=(
             r"^"
             r'<stdin>:1:2: error: expected enumeration type "TLV::Tag"\n'
-            r"<stdin>:1:2: info: found type universal integer \(42\)"
+            r"<stdin>:1:2: note: found type universal integer \(42\)"
             r"$"
         ),
     )
@@ -1801,7 +1801,7 @@ def test_message_field_assignment_with_incompatible_variable_type() -> None:
         regex=(
             r"^"
             r"<stdin>:1:2: error: expected message type\n"
-            r'<stdin>:1:2: info: found enumeration type "TLV::Tag"'
+            r'<stdin>:1:2: note: found enumeration type "TLV::Tag"'
             r"$"
         ),
     )
@@ -2081,7 +2081,7 @@ def test_type_error_in_variable_declaration() -> None:
         regex=(
             r"^"
             r'<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:20: info: found type universal integer \(1\)"
+            r"<stdin>:10:20: note: found type universal integer \(1\)"
             r"$"
         ),
     )
@@ -2116,7 +2116,7 @@ def test_type_error_in_renaming_declaration() -> None:
         regex=(
             r"^"
             r"<stdin>:10:20: error: expected message type\n"
-            r"<stdin>:10:20: info: found type universal integer \(1\)"
+            r"<stdin>:10:20: note: found type universal integer \(1\)"
             r"$"
         ),
     )
@@ -2182,7 +2182,7 @@ def test_type_error_in_renaming_declaration() -> None:
             ],
             '<stdin>:1:1: error: channel "C1" may be read or written'
             " at most once per state\n"
-            "<stdin>:2:1: info: conflicting read/write",
+            "<stdin>:2:1: note: conflicting read/write",
         ),
         (
             [],
@@ -2198,7 +2198,7 @@ def test_type_error_in_renaming_declaration() -> None:
             ],
             '<stdin>:1:1: error: message "M1" may be read or written'
             " at most once per state\n"
-            "<stdin>:2:1: info: conflicting read/write",
+            "<stdin>:2:1: note: conflicting read/write",
         ),
     ],
 )

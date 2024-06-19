@@ -54,7 +54,7 @@ def write_graph(graph: Dot, filename: Path, fmt: str = "svg") -> None:
                     ErrorEntry(str(e), Severity.ERROR, None),
                     ErrorEntry(
                         "GraphViz is required for creating graphs",
-                        Severity.INFO,
+                        Severity.NOTE,
                         None,
                     ),
                 ],

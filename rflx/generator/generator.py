@@ -172,12 +172,12 @@ class Generator:
                     ErrorEntry(
                         "files not generated in the current run could lead to unexpected behavior: "
                         + ", ".join(str(f.name) for f in non_updated_files),
-                        Severity.INFO,
+                        Severity.NOTE,
                         None,
                     ),
                     ErrorEntry(
                         "remove the affected files or choose another directory and retry",
-                        Severity.INFO,
+                        Severity.NOTE,
                         None,
                     ),
                 ],

@@ -96,7 +96,7 @@ def test_message_field_first_conflict() -> None:
         r"^"
         r'<stdin>:11:27: error: first aspect of field "B" conflicts with previous'
         r" specification\n"
-        r"<stdin>:9:30: info: previous specification of first"
+        r"<stdin>:9:30: note: previous specification of first"
         r"$",
     )
 
@@ -122,7 +122,7 @@ def test_message_field_size_conflict() -> None:
         r"^"
         r'<stdin>:11:26: error: size aspect of field "B" conflicts with previous'
         r" specification\n"
-        r"<stdin>:9:29: info: previous specification of size"
+        r"<stdin>:9:29: note: previous specification of size"
         r"$",
     )
 
@@ -171,7 +171,7 @@ def test_invalid_enumeration_type_duplicate_values() -> None:
         end Test;
         """,
         r'^<stdin>:2:32: error: duplicate enumeration value "0" in "T"\n'
-        r"<stdin>:2:22: info: previous occurrence$",
+        r"<stdin>:2:22: note: previous occurrence$",
     )
 
 
@@ -184,9 +184,9 @@ def test_invalid_enumeration_type_multiple_duplicate_values() -> None:
         """,
         r"^"
         r'<stdin>:2:44: error: duplicate enumeration value "0" in "T"\n'
-        r"<stdin>:2:22: info: previous occurrence\n"
+        r"<stdin>:2:22: note: previous occurrence\n"
         r'<stdin>:2:56: error: duplicate enumeration value "1" in "T"\n'
-        r"<stdin>:2:34: info: previous occurrence"
+        r"<stdin>:2:34: note: previous occurrence"
         r"$",
     )
 
@@ -200,7 +200,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
         end Test;
         """,
         r"^<stdin>:3:9: error: conflicting literals: Bar\n"
-        r'<stdin>:2:21: info: previous occurrence of "Bar"$',
+        r'<stdin>:2:21: note: previous occurrence of "Bar"$',
     )
 
 
@@ -259,7 +259,7 @@ def test_model_name_conflict_messages() -> None:
         end Test;
         """,
         r'^<stdin>:7:9: error: duplicate declaration of "Test::PDU"\n'
-        r'<stdin>:3:9: info: previous occurrence of "Test::PDU"$',
+        r'<stdin>:3:9: note: previous occurrence of "Test::PDU"$',
     )
 
 
@@ -280,7 +280,7 @@ def test_model_conflicting_refinements() -> None:
         """,
         r"^"
         r'^<stdin>:10:4: error: conflicting refinement of "Test::PDU" with "Test::PDU"\n'
-        r"<stdin>:9:4: info: previous occurrence of refinement"
+        r"<stdin>:9:4: note: previous occurrence of refinement"
         r"$",
     )
 
@@ -299,7 +299,7 @@ def test_model_name_conflict_derivations() -> None:
         end Test;
         """,
         r'^<stdin>:8:9: error: name conflict for type "Test::Bar"\n'
-        r'<stdin>:7:9: info: previous occurrence of "Test::Bar"$',
+        r'<stdin>:7:9: note: previous occurrence of "Test::Bar"$',
     )
 
 
@@ -321,7 +321,7 @@ def test_model_name_conflict_sessions() -> None:
         end Test;
         """,
         r'^<stdin>:4:4: error: name conflict for session "Test::X"\n'
-        r'<stdin>:2:9: info: previous occurrence of "Test::X"$',
+        r'<stdin>:2:9: note: previous occurrence of "Test::X"$',
     )
 
 
@@ -426,7 +426,7 @@ def test_invalid_implicit_size() -> None:
         """,
         r"^"
         r'<stdin>:14:26: error: invalid use of "Message" in size aspect\n'
-        r"<stdin>:14:26: info: remove size aspect to define field with implicit size"
+        r"<stdin>:14:26: note: remove size aspect to define field with implicit size"
         r"$",
     )
 
@@ -455,7 +455,7 @@ def test_invalid_use_of_message_type_with_implicit_size() -> None:
         r"^"
         r"<stdin>:13:10: error: messages with implicit size may only be used"
         " for last fields\n"
-        r'<stdin>:7:10: info: message field with implicit size in "Test::Inner"'
+        r'<stdin>:7:10: note: message field with implicit size in "Test::Inner"'
         r"$",
     )
 
@@ -477,7 +477,7 @@ def test_invalid_message_with_multiple_fields_with_implicit_size() -> None:
         """,
         r"^"
         r'<stdin>:8:26: error: invalid use of "Message" in size aspect\n'
-        r"<stdin>:8:26: info: remove size aspect to define field with implicit size\n"
+        r"<stdin>:8:26: note: remove size aspect to define field with implicit size\n"
         r'<stdin>:6:26: error: "Message" must not be used in size aspects'
         r"$",
     )
@@ -556,11 +556,11 @@ def test_dependency_order_after_dependency_cycle() -> None:
             f"{SPEC_DIR}/invalid/context_cycle.rflx:1:6: error: dependency cycle when "
             f'including "Context_Cycle_1"\n'
             f"{SPEC_DIR}/invalid/context_cycle_1.rflx:1:6: "
-            'info: when including "Context_Cycle_2"\n'
+            'note: when including "Context_Cycle_2"\n'
             f"{SPEC_DIR}/invalid/context_cycle_2.rflx:1:6: "
-            'info: when including "Context_Cycle_3"\n'
+            'note: when including "Context_Cycle_3"\n'
             f"{SPEC_DIR}/invalid/context_cycle_3.rflx:1:6: "
-            'info: when including "Context_Cycle_1"'
+            'note: when including "Context_Cycle_1"'
             r"$"
         ),
     ):
@@ -1226,8 +1226,8 @@ def test_message_negative_field_start(tmp_path: Path, capfd: pytest.CaptureFixtu
                     3 |       message
                     4 |          F1 : Opaque
                       |          -- note: on path "F1"
-                      |          -- info: unsatisfied "F1'Last = (Message'First + (0 - 8)) - 1"
-                      |          -- info: unsatisfied "F1'Last + 1 >= Message'First"
+                      |          -- note: unsatisfied "F1'Last = (Message'First + (0 - 8)) - 1"
+                      |          -- note: unsatisfied "F1'Last + 1 >= Message'First"
                       |
                """,
         ),

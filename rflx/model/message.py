@@ -986,7 +986,7 @@ class Message(type_decl.TypeDecl):
                         [
                             Annotation(
                                 "conflicting enumeration literal",
-                                Severity.INFO,
+                                Severity.NOTE,
                                 conflicting_literal.location,
                             ),
                         ]
@@ -1056,7 +1056,7 @@ class Message(type_decl.TypeDecl):
                         annotations=[
                             Annotation(
                                 "duplicate link",
-                                Severity.INFO,
+                                Severity.NOTE,
                                 location,
                             )
                             for location in locations
@@ -1086,7 +1086,7 @@ class Message(type_decl.TypeDecl):
                             annotations=[
                                 Annotation(
                                     f'variable "{v}" in exponent',
-                                    Severity.INFO,
+                                    Severity.NOTE,
                                     l,
                                 )
                                 for v, l in zip(variables, locations)
@@ -1141,7 +1141,7 @@ class Message(type_decl.TypeDecl):
                                         Annotation(
                                             "remove size aspect to define field with implicit "
                                             "size",
-                                            Severity.INFO,
+                                            Severity.NOTE,
                                             link.size.location,
                                         ),
                                     ]
@@ -1246,7 +1246,7 @@ class Message(type_decl.TypeDecl):
                         annotations=[
                             Annotation(
                                 f'field "{link.source.name}" links to "{link.target.name}"',
-                                Severity.INFO,
+                                Severity.NOTE,
                                 location,
                             )
                             for link, location in zip(cycle, locations)
@@ -1580,7 +1580,7 @@ class Message(type_decl.TypeDecl):
                         self.error.push(
                             ErrorEntry(
                                 "on path " + " -> ".join(f.name for f in path),
-                                Severity.INFO,
+                                Severity.NOTE,
                                 expression.location,
                             ),
                         )
@@ -1852,13 +1852,13 @@ class Message(type_decl.TypeDecl):
                                         Annotation(
                                             f"condition {i1} ({f.identifier} ->"
                                             f" {c1.target.identifier}): {c1_message}",
-                                            Severity.INFO,
+                                            Severity.NOTE,
                                             c1.condition.location,
                                         ),
                                         Annotation(
                                             f"condition {i2} ({f.identifier} ->"
                                             f" {c2.target.identifier}): {c2_message}",
-                                            Severity.INFO,
+                                            Severity.NOTE,
                                             c2.condition.location,
                                         ),
                                     ],
@@ -1937,7 +1937,7 @@ class Message(type_decl.TypeDecl):
                             [
                                 Annotation(
                                     f'unsatisfied "{m}"',
-                                    Severity.INFO,
+                                    Severity.NOTE,
                                     l,
                                 )
                                 for (m, _), l in zip(errors, unsatisfied_locations)
@@ -2497,7 +2497,7 @@ class Refinement(type_decl.TypeDecl):
                                 [
                                     Annotation(
                                         "expected field of type Opaque",
-                                        Severity.INFO,
+                                        Severity.NOTE,
                                         f.identifier.location,
                                     ),
                                 ]
@@ -2698,7 +2698,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                     [
                         Annotation(
                             f'previous occurrence of "{self.identifier}"',
-                            Severity.INFO,
+                            Severity.NOTE,
                             previous_location,
                         ),
                     ],
@@ -2738,7 +2738,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                                 [
                                     Annotation(
                                         "conflicting name",
-                                        Severity.INFO,
+                                        Severity.NOTE,
                                         previous_location,
                                     ),
                                 ]
@@ -3096,7 +3096,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                                 Annotation(
                                     f"message field with {issue} in "
                                     f'"{inner_message.identifier}"',
-                                    Severity.INFO,
+                                    Severity.NOTE,
                                     loc,
                                 )
                                 for loc in locations
@@ -3130,12 +3130,12 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                         [
                             Annotation(
                                 f'when merging message "{inner_message.identifier}"',
-                                Severity.INFO,
+                                Severity.NOTE,
                                 inner_message.location,
                             ),
                             Annotation(
                                 f'into field "{field.name}"',
-                                Severity.INFO,
+                                Severity.NOTE,
                                 field.identifier.location,
                             ),
                         ]

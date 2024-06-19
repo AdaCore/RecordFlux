@@ -320,7 +320,7 @@ def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Pat
                     ),
                     ErrorEntry(
                         'identifiers starting with "RFLX_" are reserved for internal use',
-                        Severity.INFO,
+                        Severity.NOTE,
                         node_location(identifier, filename),
                     ),
                 ],
@@ -1354,7 +1354,7 @@ def merge_field_aspects(
                             ),
                             ErrorEntry(
                                 "previous specification of first",
-                                Severity.INFO,
+                                Severity.NOTE,
                                 l.first.location,
                             ),
                         ],
@@ -1374,7 +1374,7 @@ def merge_field_aspects(
                             ),
                             ErrorEntry(
                                 "previous specification of size",
-                                Severity.INFO,
+                                Severity.NOTE,
                                 l.size.location,
                             ),
                         ],
@@ -1397,7 +1397,7 @@ def check_duplicate_aspect(
                 *[
                     ErrorEntry(
                         "previous location",
-                        Severity.INFO,
+                        Severity.NOTE,
                         l,
                     )
                     for l in locations[:-1]
@@ -1609,7 +1609,7 @@ def check_naming(error: RecordFluxError, package: lang.PackageNode, name: Path) 
                 annotations=[
                     Annotation(
                         f'previous identifier was "{identifier}"',
-                        Severity.INFO,
+                        Severity.NOTE,
                         node_location(package.f_identifier, name),
                     ),
                 ],
@@ -1965,7 +1965,7 @@ def _check_for_duplicate_specifications(
                         ),
                         ErrorEntry(
                             "previous specification",
-                            Severity.INFO,
+                            Severity.NOTE,
                             node_location(n1.spec.f_package_declaration.f_identifier, n1.filename),
                         ),
                     ],
@@ -2019,7 +2019,7 @@ def _check_for_dependency_cycle(
                 *[
                     ErrorEntry(
                         f'when including "{c.name}"',
-                        Severity.INFO,
+                        Severity.NOTE,
                         c.location,
                     )
                     for c in cycle[1:]

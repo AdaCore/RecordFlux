@@ -180,7 +180,7 @@ def _check_duplicates(
                                     if isinstance(d, message.Refinement)
                                     else f'previous occurrence of "{d.identifier}"'
                                 ),
-                                Severity.INFO,
+                                Severity.NOTE,
                                 location,
                             ),
                         ]
@@ -225,7 +225,7 @@ def _check_conflicts(
                     annotations=[
                         Annotation(
                             f'previous occurrence of "{link}"',
-                            Severity.INFO,
+                            Severity.NOTE,
                             location,
                         )
                         for link, location in zip(sorted(identical_literals), locations)
@@ -260,7 +260,7 @@ def _check_conflicts(
                         [
                             Annotation(
                                 f'conflicting type "{conflicting_type.identifier}"',
-                                Severity.INFO,
+                                Severity.NOTE,
                                 conflicting_type.location,
                             ),
                         ]

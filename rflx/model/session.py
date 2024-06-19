@@ -634,7 +634,7 @@ class Session(TopLevelDeclaration):
                                 [
                                     Annotation(
                                         f'previous definition of state "{identifier}"',
-                                        Severity.INFO,
+                                        Severity.NOTE,
                                         states[0].location,
                                     ),
                                 ]
@@ -701,7 +701,7 @@ class Session(TopLevelDeclaration):
                             [
                                 Annotation(
                                     f'previous declaration of variable "{k}"',
-                                    Severity.INFO,
+                                    Severity.NOTE,
                                     location,
                                 ),
                             ]
@@ -823,7 +823,7 @@ class Session(TopLevelDeclaration):
                                 [
                                     Annotation(
                                         "conflicting read/write",
-                                        Severity.INFO,
+                                        Severity.NOTE,
                                         s2.identifier.location,
                                     ),
                                 ]
@@ -847,7 +847,7 @@ class Session(TopLevelDeclaration):
                                 [
                                     Annotation(
                                         "conflicting read/write",
-                                        Severity.INFO,
+                                        Severity.NOTE,
                                         s2.parameter.location,
                                     ),
                                 ]

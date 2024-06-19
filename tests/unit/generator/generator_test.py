@@ -181,9 +181,9 @@ def test_generate_partial_update(tmp_path: Path) -> None:
         match=(
             "^"
             "error: partial update of generated files\n"
-            "info: files not generated in the current run could lead to unexpected"
+            "note: files not generated in the current run could lead to unexpected"
             " behavior: tlv-message.adb, tlv-message.ads, tlv.ads\n"
-            "info: remove the affected files or choose another directory and retry"
+            "note: remove the affected files or choose another directory and retry"
             "$"
         ),
     ):

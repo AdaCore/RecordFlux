@@ -275,7 +275,7 @@ def test_missing_graphviz(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> No
         match=(
             r"^"
             r"error: GraphViz not found\n"
-            r"info: GraphViz is required for creating graphs"
+            r"note: GraphViz is required for creating graphs"
             r"$"
         ),
     ):
