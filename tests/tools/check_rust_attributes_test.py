@@ -25,8 +25,9 @@ from tools.check_rust_attributes import check_file, get_line_col, main
                 """\
             error: invalid order of attributes; "parallel" and "serial" must always be the last \
 attribute
-             --> {}/temp.rs:1:1
+             --> {}/temp.rs:2:1
               |
+            2 | / #[serial]
             3 | | #[bar]
               | |__^
               |
@@ -46,6 +47,7 @@ attribute
 attribute
              --> {}/temp.rs:1:1
               |
+            1 | / #[serial]
             2 | | #[foo]
               | |__^
               |
@@ -68,15 +70,17 @@ attribute
                 """\
             error: invalid order of attributes; "parallel" and "serial" must always be the last \
 attribute
-             --> {}/temp.rs:1:1
+             --> {}/temp.rs:2:1
               |
+            2 | / #[serial]
             3 | | #[bar]
               | |__^
               |
             error: invalid order of attributes; "parallel" and "serial" must always be the last \
 attribute
-             --> {}/temp.rs:1:1
+             --> {}/temp.rs:5:1
               |
+            5 | / #[serial]
             6 | | #[bar]
               | |__^
               |
@@ -116,6 +120,7 @@ attribute
 attribute
              --> {}/temp.rs:1:1
               |
+            1 | / #[parallel]
             2 | | #[foo]
               | |__^
               |
@@ -134,8 +139,9 @@ attribute
                 """\
             error: invalid order of attributes; "parallel" and "serial" must always be the last \
 attribute
-             --> {}/temp.rs:1:1
+             --> {}/temp.rs:2:1
               |
+            2 | / #[parallel]
             3 | | #[bar]
               | |__^
               |
