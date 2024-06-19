@@ -96,15 +96,16 @@ System requirements
 RecordFlux is supported on 64-bit Linux systems and should work on a variety of Linux distributions.
 The officially supported distributions are:
 
--  Ubuntu 20.04 LTS
--  Ubuntu 22.04 LTS
+- Red Hat Enterprise Linux 7, 8, and 9
+- SuSE Linux Enterprise Server 12 and 15
+- Ubuntu 20.04 LTS and 22.04 LTS
 
 The software has successfully been used on various other versions of Linux, including Arch Linux and Debian.
 
 For installing RecordFlux itself, a *native* GNAT compiler for the host system must be installed.
 The following versions of GNAT are supported:
 
--  GNAT Pro 22.2, 23.2 or 24.0
+-  GNAT Pro 22.2, 23.2 or 24.2
 -  GNAT Community 2021
 -  FSF GNAT 11.2, 12.2, 13.2 or 14.1
 
@@ -113,7 +114,7 @@ The latest release of GNAT Pro for Rust is also supported.
 
 For compiling the generated code, one of the following versions of GNAT is required:
 
--  GNAT Pro 21.2, 22.2, 23.2 or 24.0
+-  GNAT Pro 21.2, 22.2, 23.2 or 24.2
 -  GNAT Community 2021
 -  FSF GNAT 11.2, 12.2, 13.2 or 14.1
 
@@ -145,7 +146,7 @@ The tool can be installed using either the system package manager (`python3-pip`
 
 For the formal verification of the generated code, the following SPARK Pro version is required:
 
--  SPARK Pro 24.0
+-  SPARK Pro 24.2
 
 If you plan to use the RecordFlux Modeller, GNAT Studio needs to be installed and set up.
 
