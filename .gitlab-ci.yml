@@ -376,8 +376,9 @@ verification_tests:
     paths:
       - build/gnatprove_cache
     fallback_keys:
-      - verification_tests-main
-      - verification_tests-main-$SPARK_VERSION
+      # TODO(eng/recordflux/RecordFlux#1643): Replace "devel" by "main"
+      - verification_tests-devel
+      - verification_tests-devel-$SPARK_VERSION
     unprotect: true
     when: always
 
@@ -403,8 +404,9 @@ verification_python_tests:
     paths:
       - build/gnatprove_cache
     fallback_keys:
-      - verification_python_tests-main
-      - verification_python_tests-main-$SPARK_VERSION
+      # TODO(eng/recordflux/RecordFlux#1643): Replace "devel" by "main"
+      - verification_python_tests-devel
+      - verification_python_tests-devel-$SPARK_VERSION
     unprotect: true
     when: always
 
@@ -436,7 +438,8 @@ verification_apps:
     paths:
       - build/gnatprove_cache
     fallback_keys:
-      - verification_apps-$APP-main
+      # TODO(eng/recordflux/RecordFlux#1643): Replace "devel" by "main"
+      - verification_apps-$APP-devel
     unprotect: true
     when: always
 
@@ -455,7 +458,8 @@ verification_documentation:
     paths:
       - build/gnatprove_cache
     fallback_keys:
-      - verification_documentation-main
+      # TODO(eng/recordflux/RecordFlux#1643): Replace "devel" by "main"
+      - verification_documentation-devel
     unprotect: true
     when: always
 
