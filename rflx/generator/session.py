@@ -5193,7 +5193,10 @@ class SessionGenerator:
         expression: ir.Expr,
         target_type: rty.Type,
     ) -> ir.Expr:
-        if target_type.is_compatible_strong(expression.type_):
+        if target_type.is_compatible_strong(expression.type_) and not isinstance(
+            expression,
+            ir.BinaryIntExpr,
+        ):
             return expression
 
         assert isinstance(target_type, (rty.Integer, rty.Enumeration)), target_type
@@ -5202,18 +5205,25 @@ class SessionGenerator:
 
         if isinstance(expression, ir.BinaryIntExpr):
             assert isinstance(target_type, rty.Integer)
-            return expression.__class__(
-                ir.IntConversion(
+            left = (
+                expression.left
+                if target_type.is_compatible_strong(expression.left.type_)
+                else ir.IntConversion(
                     self._ada_type(target_type.identifier),
                     expression.left,
                     target_type,
-                ),
-                ir.IntConversion(
+                )
+            )
+            right = (
+                expression.right
+                if target_type.is_compatible_strong(expression.right.type_)
+                else ir.IntConversion(
                     self._ada_type(target_type.identifier),
                     expression.right,
                     target_type,
-                ),
+                )
             )
+            return expression.__class__(left, right)
 
         return ir.Conversion(self._ada_type(target_type.identifier), expression, target_type)
 

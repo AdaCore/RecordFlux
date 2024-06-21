@@ -63,8 +63,8 @@ is
    is
       Local : Universal.Value := 2;
       T_0 : Universal.Value;
-      T_2 : Universal.Value;
-      T_3 : Universal.Value;
+      T_2 : RFLX.RFLX_Types.Base_Integer;
+      T_3 : RFLX.RFLX_Types.Base_Integer;
       T_1 : RFLX.RFLX_Types.Base_Integer;
       function Process_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null)
@@ -82,9 +82,9 @@ is
       end if;
       T_0 := Universal.Message.Get_Value (Ctx.P.Message_Ctx);
       -- tests/feature/session_variable_initialization/test.rflx:22:19
-      T_2 := 255 - T_0;
+      T_2 := 255 - RFLX.RFLX_Types.Base_Integer (T_0);
       -- tests/feature/session_variable_initialization/test.rflx:22:19
-      if not (RFLX.RFLX_Types.Base_Integer (Local) <= RFLX.RFLX_Types.Base_Integer (T_2)) then
+      if not (RFLX.RFLX_Types.Base_Integer (Local) <= T_2) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
@@ -96,7 +96,7 @@ is
       -- tests/feature/session_variable_initialization/test.rflx:24:20
       T_3 := 255 - 20;
       -- tests/feature/session_variable_initialization/test.rflx:24:20
-      if not (RFLX.RFLX_Types.Base_Integer (Ctx.P.Uninitialized_Global) <= RFLX.RFLX_Types.Base_Integer (T_3)) then
+      if not (RFLX.RFLX_Types.Base_Integer (Ctx.P.Uninitialized_Global) <= T_3) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
@@ -110,7 +110,7 @@ is
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
-      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (T_1) / Universal.Length (8));
+      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (T_1) / 8);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value));
       Universal.Message.Set_Value (Ctx.P.Message_Ctx, Ctx.P.Global);
       if RFLX.RFLX_Types.Base_Integer (Local) < RFLX.RFLX_Types.Base_Integer (Ctx.P.Global) then

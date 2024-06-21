@@ -123,7 +123,7 @@ is
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Ctx.P.M_S_Ctx, Universal.MT_Data);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Length));
-      Universal.Message.Set_Length (Ctx.P.M_S_Ctx, Universal.Length (T_11) / Universal.Length (8));
+      Universal.Message.Set_Length (Ctx.P.M_S_Ctx, Universal.Length (T_11) / 8);
       declare
          function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
            (Universal.Message.Has_Buffer (Ctx.P.M_R_Ctx)

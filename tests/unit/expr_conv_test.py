@@ -227,14 +227,14 @@ def test_to_ir_neg() -> None:
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
-            ir.VarDecl("T_0", INT_TY),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
             ir.Assign(
                 "T_0",
                 ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
-                INT_TY,
+                rty.BASE_INTEGER,
             ),
         ],
-        ir.Neg(ir.IntVar("T_0", INT_TY)),
+        ir.Neg(ir.IntVar("T_0", rty.BASE_INTEGER)),
     )
 
 
@@ -260,10 +260,14 @@ def test_to_ir_add_mul(  # type: ignore[misc]
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign("T_0", ir_op(ir.IntVar("Y", INT_TY), ir.IntVar("Z", INT_TY)), INT_TY),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
+            ir.Assign(
+                "T_0",
+                ir_op(ir.IntVar("Y", INT_TY), ir.IntVar("Z", INT_TY)),
+                rty.BASE_INTEGER,
+            ),
         ],
-        ir_op(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
+        ir_op(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
     )
     assert expr_conv.to_ir(
         op(
@@ -276,10 +280,14 @@ def test_to_ir_add_mul(  # type: ignore[misc]
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign("T_0", ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), INT_TY),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
+            ir.Assign(
+                "T_0",
+                ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
+                rty.BASE_INTEGER,
+            ),
         ],
-        ir_op(ir.IntVar("T_0", INT_TY), ir.IntVar("Z", INT_TY)),
+        ir_op(ir.IntVar("T_0", rty.BASE_INTEGER), ir.IntVar("Z", INT_TY)),
     )
 
 
@@ -312,10 +320,14 @@ def test_to_ir_sub_div_pow_mod(  # type: ignore[misc]
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign("T_0", ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), INT_TY),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
+            ir.Assign(
+                "T_0",
+                ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
+                rty.BASE_INTEGER,
+            ),
         ],
-        ir_op(ir.IntVar("T_0", INT_TY), ir.IntVar("Z", INT_TY)),
+        ir_op(ir.IntVar("T_0", rty.BASE_INTEGER), ir.IntVar("Z", INT_TY)),
     )
 
 
@@ -575,7 +587,7 @@ def test_to_ir_comprehension() -> None:
             "X",
             Selected(Variable("M", type_=rty.Message("M")), "Y", type_=rty.Sequence("S", INT_TY)),
             Add(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY), Number(1)),
-            Less(Sub(Variable("X", type_=INT_TY), Number(1)), Number(100)),
+            Less(Sub(Variable("X", type_=INT_TY), Number(1)), Number(ir.INT_MAX)),
         ),
         id_generator(),
     ) == ir.ComplexExpr(
@@ -585,17 +597,21 @@ def test_to_ir_comprehension() -> None:
             ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
             ir.ComplexExpr(
                 [
-                    ir.VarDecl("T_0", INT_TY),
-                    ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
+                    ir.VarDecl("T_0", rty.BASE_INTEGER),
+                    ir.Assign(
+                        "T_0",
+                        ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)),
+                        rty.BASE_INTEGER,
+                    ),
                 ],
-                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
+                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
             ),
             ir.ComplexBoolExpr(
                 [
-                    ir.VarDecl("T_1", INT_TY),
+                    ir.VarDecl("T_1", rty.BASE_INTEGER),
                     ir.Assign("T_1", ir.Sub(ir.IntVar("X", INT_TY), ir.IntVal(1)), rty.BOOLEAN),
                 ],
-                ir.Less(ir.IntVar("T_1", INT_TY), ir.IntVal(100)),
+                ir.Less(ir.IntVar("T_1", rty.BASE_INTEGER), ir.IntVal(ir.INT_MAX)),
             ),
         ),
     )
@@ -625,14 +641,14 @@ def test_to_ir_message_aggregate(  # type: ignore[misc]
         id_generator(),
     ) == ir.ComplexExpr(
         [
-            ir.VarDecl("T_0", INT_TY),
-            ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
+            ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
         ],
         ir_agg(
             "X",
             {
                 ID("Y"): ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
-                ID("Z"): ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
+                ID("Z"): ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
             },
             MSG_TY,
         ),

@@ -626,15 +626,15 @@ def test_add_to_z3_expr() -> None:
 
 def test_add_preconditions() -> None:
     assert ir.Add(
-        ir.IntVar("X", INT_TY),
+        ir.IntVar("X", rty.BASE_INTEGER),
         ir.IntVal(1),
         origin=expr.Add(expr.Variable("X"), expr.Number(1)),
     ).preconditions(id_generator()) == [
         ir.Cond(
             ir.LessEqual(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
             [
-                ir.VarDecl("T_0", INT_TY),
-                ir.Assign("T_0", ir.Sub(ir.IntVal(100), ir.IntVal(1)), INT_TY),
+                ir.VarDecl("T_0", rty.BASE_INTEGER),
+                ir.Assign("T_0", ir.Sub(ir.IntVal(ir.INT_MAX), ir.IntVal(1)), rty.BASE_INTEGER),
             ],
         ),
     ]
@@ -669,8 +669,8 @@ def test_mul_preconditions() -> None:
         ir.Cond(
             ir.LessEqual(ir.IntVar("X", INT_TY), ir.IntVar("T_0", INT_TY)),
             [
-                ir.VarDecl("T_0", INT_TY),
-                ir.Assign("T_0", ir.Div(ir.IntVal(100), ir.IntVal(1)), INT_TY),
+                ir.VarDecl("T_0", rty.BASE_INTEGER),
+                ir.Assign("T_0", ir.Div(ir.IntVal(ir.INT_MAX), ir.IntVal(1)), rty.BASE_INTEGER),
             ],
         ),
     ]
@@ -703,10 +703,10 @@ def test_pow_to_z3_expr() -> None:
 def test_pow_preconditions() -> None:
     assert ir.Pow(ir.IntVar("X", INT_TY), ir.IntVal(1)).preconditions(id_generator()) == [
         ir.Cond(
-            ir.LessEqual(ir.IntVar("T_0", INT_TY), ir.IntVal(100)),
+            ir.LessEqual(ir.IntVar("T_0", INT_TY), ir.IntVal(ir.INT_MAX)),
             [
-                ir.VarDecl("T_0", INT_TY),
-                ir.Assign("T_0", ir.Pow(ir.IntVar("X", INT_TY), ir.IntVal(1)), INT_TY),
+                ir.VarDecl("T_0", rty.BASE_INTEGER),
+                ir.Assign("T_0", ir.Pow(ir.IntVar("X", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
             ],
         ),
     ]
@@ -1253,7 +1253,7 @@ def test_agg_str() -> None:
 
 
 def test_agg_type() -> None:
-    assert ir.Agg([ir.IntVar("X", INT_TY), ir.IntVal(10)]).type_ == rty.Aggregate(INT_TY)
+    assert ir.Agg([ir.IntVar("X", INT_TY), ir.IntVal(10)]).type_ == rty.Aggregate(rty.BASE_INTEGER)
 
 
 def test_agg_substituted() -> None:
@@ -1462,17 +1462,17 @@ def test_add_required_checks() -> None:
         PROOF_MANAGER,
         id_generator(),
     ) == [
-        ir.VarDecl("T_0", INT_TY),
-        ir.Assign("T_0", ir.Sub(ir.IntVal(100), ir.IntVal(1)), INT_TY),
-        ir.Check(ir.LessEqual(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", INT_TY))),
+        ir.VarDecl("T_0", rty.BASE_INTEGER),
+        ir.Assign("T_0", ir.Sub(ir.IntVal(100), ir.IntVal(1)), rty.BASE_INTEGER),
+        ir.Check(ir.LessEqual(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER))),
         ir.Assign("A", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
         ir.Check(ir.NotEqual(ir.IntVar("Z", INT_TY), ir.IntVal(0))),
         ir.Assign("B", ir.Div(ir.IntVar("A", INT_TY), ir.IntVar("Z", INT_TY)), INT_TY),
         ir.Check(ir.GreaterEqual(ir.IntVar("B", INT_TY), ir.IntVal(1))),
         ir.Assign("X", ir.Sub(ir.IntVar("B", INT_TY), ir.IntVal(1)), INT_TY),
         ir.Assign("Z", ir.IntVal(0), INT_TY),
-        ir.VarDecl("T_1", INT_TY),
-        ir.Assign("T_1", ir.Sub(ir.IntVal(100), ir.IntVal(1)), INT_TY),
-        ir.Check(ir.LessEqual(ir.IntVar("Z", INT_TY), ir.IntVar("T_1", INT_TY))),
+        ir.VarDecl("T_1", rty.BASE_INTEGER),
+        ir.Assign("T_1", ir.Sub(ir.IntVal(100), ir.IntVal(1)), rty.BASE_INTEGER),
+        ir.Check(ir.LessEqual(ir.IntVar("Z", INT_TY), ir.IntVar("T_1", rty.BASE_INTEGER))),
         ir.Assign("C", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), INT_TY),
     ]

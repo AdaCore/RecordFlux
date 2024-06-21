@@ -297,7 +297,7 @@ is
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Option_Types);
       pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
-      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (T_5) / Universal.Length (8));
+      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (T_5) / 8);
       if not Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types, Universal.Option_Types.Byte_Size (Option_Types_Ctx)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);

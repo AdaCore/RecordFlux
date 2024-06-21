@@ -143,7 +143,7 @@ is
       pragma Assert (Universal.Message.Sufficient_Space (Local_Message_Ctx, Universal.Message.F_Message_Type));
       Universal.Message.Set_Message_Type (Local_Message_Ctx, Universal.MT_Data);
       pragma Assert (Universal.Message.Sufficient_Space (Local_Message_Ctx, Universal.Message.F_Length));
-      Universal.Message.Set_Length (Local_Message_Ctx, Universal.Length (T_7) / Universal.Length (8));
+      Universal.Message.Set_Length (Local_Message_Ctx, Universal.Length (T_7) / 8);
       declare
          pragma Warnings (Off, "is not modified, could be declared constant");
          RFLX_Ctx_P_Message_Ctx_Tmp : Universal.Message.Context := Ctx.P.Message_Ctx;

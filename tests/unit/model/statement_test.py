@@ -16,7 +16,7 @@ def test_variable_assignment_to_ir() -> None:
         expr.Add(expr.Variable("Y", type_=INT_TY), expr.Number(1)),
         INT_TY,
     ).to_ir(id_generator()) == [
-        ir.Assign("X", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
+        ir.Assign("X", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
     ]
     assert stmt.VariableAssignment(
         "X",
@@ -26,9 +26,13 @@ def test_variable_assignment_to_ir() -> None:
         ),
         INT_TY,
     ).to_ir(id_generator()) == [
-        ir.VarDecl("T_0", INT_TY),
+        ir.VarDecl("T_0", rty.BASE_INTEGER),
         ir.Assign("T_0", ir.Sub(ir.IntVar("Z", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
-        ir.Assign("X", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)), INT_TY),
+        ir.Assign(
+            "X",
+            ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
+            rty.BASE_INTEGER,
+        ),
     ]
 
 
@@ -46,7 +50,7 @@ def test_message_field_assignment_to_ir() -> None:
         ),
         MSG_TY,
     ).to_ir(id_generator()) == [
-        ir.VarDecl("T_0", INT_TY),
+        ir.VarDecl("T_0", rty.BASE_INTEGER),
         ir.Assign("T_0", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
         ir.FieldAssign(
             "X",
@@ -70,7 +74,7 @@ def test_append_to_ir() -> None:
         ),
         SEQ_TY,
     ).to_ir(id_generator()) == [
-        ir.VarDecl("T_0", INT_TY),
+        ir.VarDecl("T_0", rty.BASE_INTEGER),
         ir.Assign("T_0", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
         ir.Append("X", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)), SEQ_TY),
     ]

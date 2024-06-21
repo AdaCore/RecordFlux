@@ -111,8 +111,16 @@ def test_base_integer_is_compatible(base_integer: Type, other: Type, expected: b
 @pytest.mark.parametrize(
     ("universal_integer", "other", "expected"),
     [
-        (UniversalInteger(Bounds(10, 100)), Any(), UniversalInteger(Bounds(10, 100))),
-        (UniversalInteger(Bounds(10, 100)), BASE_INTEGER, BASE_INTEGER),
+        (
+            UniversalInteger(Bounds(10, 100)),
+            Any(),
+            UniversalInteger(Bounds(10, 100)),
+        ),
+        (
+            UniversalInteger(Bounds(10, 100)),
+            BASE_INTEGER,
+            BASE_INTEGER,
+        ),
         (
             UniversalInteger(Bounds(10, 100)),
             UniversalInteger(Bounds(10, 100)),
@@ -121,15 +129,23 @@ def test_base_integer_is_compatible(base_integer: Type, other: Type, expected: b
         (
             UniversalInteger(Bounds(10, 100)),
             Integer("A", Bounds(10, 100)),
-            Integer("A", Bounds(10, 100)),
+            BASE_INTEGER,
         ),
         (
             UniversalInteger(Bounds(20, 80)),
             Integer("A", Bounds(10, 100)),
-            Integer("A", Bounds(10, 100)),
+            BASE_INTEGER,
         ),
-        (UniversalInteger(Bounds(10, 100)), Undefined(), Undefined()),
-        (UniversalInteger(Bounds(10, 100)), ENUMERATION_B, Undefined()),
+        (
+            UniversalInteger(Bounds(10, 100)),
+            Undefined(),
+            Undefined(),
+        ),
+        (
+            UniversalInteger(Bounds(10, 100)),
+            ENUMERATION_B,
+            Undefined(),
+        ),
     ],
 )
 def test_universal_integer_common_type(
@@ -181,12 +197,12 @@ def test_universal_integer_is_compatible(
         (
             Integer("A", Bounds(10, 100)),
             Integer("A", Bounds(10, 100)),
-            Integer("A", Bounds(10, 100)),
+            BASE_INTEGER,
         ),
         (
             Integer("A", Bounds(10, 100)),
             UniversalInteger(Bounds(10, 100)),
-            Integer("A", Bounds(10, 100)),
+            BASE_INTEGER,
         ),
         (
             Integer("A", Bounds(10, 100)),
@@ -196,7 +212,7 @@ def test_universal_integer_is_compatible(
         (
             Integer("A", Bounds(10, 100)),
             UniversalInteger(Bounds(0, 200)),
-            Integer("A", Bounds(10, 100)),
+            BASE_INTEGER,
         ),
         (
             Integer("A", Bounds(10, 100)),
@@ -550,9 +566,8 @@ def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> No
             [
                 Integer("A", Bounds(10, 100)),
                 Integer("A", Bounds(10, 100)),
-                Integer("A", Bounds(10, 100)),
             ],
-            Integer("A", Bounds(10, 100)),
+            BASE_INTEGER,
         ),
         (
             [
@@ -560,7 +575,7 @@ def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> No
                 Integer("A", Bounds(10, 100)),
                 UniversalInteger(Bounds(50, 100)),
             ],
-            Integer("A", Bounds(10, 100)),
+            BASE_INTEGER,
         ),
         (
             [
@@ -568,7 +583,7 @@ def test_channel_is_compatible(channel: Type, other: Type, expected: bool) -> No
                 Integer("A", Bounds(10, 100)),
                 UniversalInteger(Bounds(20, 200)),
             ],
-            Integer("A", Bounds(10, 100)),
+            BASE_INTEGER,
         ),
         (
             [

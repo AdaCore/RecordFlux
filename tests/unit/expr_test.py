@@ -617,7 +617,7 @@ def test_number_hashable() -> None:
 def test_math_expr_type(operation: Callable[[Expr, Expr], Expr]) -> None:
     assert_type(
         operation(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY)),
-        INT_TY,
+        rty.BASE_INTEGER,
     )
 
 
@@ -2051,7 +2051,7 @@ def test_comprehension_type() -> None:
             Add(Variable("X"), Variable("Z", type_=INT_TY)),
             TRUE,
         ),
-        rty.Aggregate(INT_TY),
+        rty.Aggregate(rty.BASE_INTEGER),
     )
     assert_type(
         Comprehension(

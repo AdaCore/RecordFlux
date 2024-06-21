@@ -195,7 +195,11 @@ class Assign(Stmt):
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self.expression.preconditions(variable_id)
+        return (
+            self.expression.preconditions(variable_id, self.type_)
+            if isinstance(self.expression, BinaryIntExpr)
+            else self.expression.preconditions(variable_id)
+        )
 
     def to_z3_expr(self) -> z3.BoolRef:
         target: Var
@@ -856,6 +860,14 @@ class BinaryIntExpr(BinaryExpr, IntExpr):
     right: BasicIntExpr
     origin: Optional[Origin] = None
 
+    @abstractmethod
+    def preconditions(
+        self,
+        variable_id: Generator[ID, None, None],
+        target_type: rty.Type | None = None,
+    ) -> list[Cond]:
+        raise NotImplementedError
+
     @property
     def type_(self) -> rty.AnyInteger:
         type_ = self.left.type_.common_type(self.right.type_)
@@ -884,12 +896,17 @@ class Add(BinaryIntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return self.left.to_z3_expr() + self.right.to_z3_expr()
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(
+        self,
+        variable_id: Generator[ID, None, None],
+        target_type: rty.Type | None = None,
+    ) -> list[Cond]:
+        target_type = target_type or self.type_
         v_id = next(variable_id)
-        v_type = to_integer(self.type_)
+        v_type = rty.BASE_INTEGER
         upper_bound = (
-            self.type_.bounds.upper
-            if isinstance(self.type_, rty.AnyInteger) and self.type_.bounds is not None
+            target_type.bounds.upper
+            if isinstance(target_type, rty.AnyInteger) and target_type.bounds is not None
             else INT_MAX
         )
         return [
@@ -935,7 +952,11 @@ class Sub(BinaryIntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return self.left.to_z3_expr() - self.right.to_z3_expr()
 
-    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(
+        self,
+        _variable_id: Generator[ID, None, None],
+        _target_type: rty.Type | None = None,
+    ) -> list[Cond]:
         return [
             # Left >= Right
             Cond(GreaterEqual(self.left, self.right)),
@@ -951,12 +972,17 @@ class Mul(BinaryIntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return self.left.to_z3_expr() * self.right.to_z3_expr()
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(
+        self,
+        variable_id: Generator[ID, None, None],
+        target_type: rty.Type | None = None,
+    ) -> list[Cond]:
+        target_type = target_type or self.type_
         v_id = next(variable_id)
-        v_type = to_integer(self.type_)
+        v_type = rty.BASE_INTEGER
         upper_bound = (
-            self.type_.bounds.upper
-            if isinstance(self.type_, rty.AnyInteger) and self.type_.bounds is not None
+            target_type.bounds.upper
+            if isinstance(target_type, rty.AnyInteger) and target_type.bounds is not None
             else INT_MAX
         )
         return [
@@ -994,7 +1020,11 @@ class Div(BinaryIntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return self.left.to_z3_expr() / self.right.to_z3_expr()
 
-    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(
+        self,
+        _variable_id: Generator[ID, None, None],
+        _target_type: rty.Type | None = None,
+    ) -> list[Cond]:
         return [
             # Right /= 0
             Cond(NotEqual(self.right, IntVal(0))),
@@ -1010,12 +1040,17 @@ class Pow(BinaryIntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return self.left.to_z3_expr() ** self.right.to_z3_expr()
 
-    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(
+        self,
+        variable_id: Generator[ID, None, None],
+        target_type: rty.Type | None = None,
+    ) -> list[Cond]:
+        target_type = target_type or self.type_
         v_id = next(variable_id)
-        v_type = to_integer(self.type_)
+        v_type = rty.BASE_INTEGER
         upper_bound = (
-            self.type_.bounds.upper
-            if isinstance(self.type_, rty.AnyInteger) and self.type_.bounds is not None
+            target_type.bounds.upper
+            if isinstance(target_type, rty.AnyInteger) and target_type.bounds is not None
             else INT_MAX
         )
         return [
@@ -1027,7 +1062,7 @@ class Pow(BinaryIntExpr):
                 ),
                 [
                     VarDecl(v_id, v_type, None, origin=self.origin),
-                    Assign(v_id, self, to_integer(self.type_), origin=self.origin),
+                    Assign(v_id, self, v_type, origin=self.origin),
                 ],
             ),
         ]
@@ -1042,7 +1077,11 @@ class Mod(BinaryIntExpr):
     def to_z3_expr(self) -> z3.ArithRef:
         return self.left.to_z3_expr() % self.right.to_z3_expr()
 
-    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
+    def preconditions(
+        self,
+        _variable_id: Generator[ID, None, None],
+        _target_type: rty.Type | None = None,
+    ) -> list[Cond]:
         return [
             # Right /= 0
             Cond(NotEqual(self.right, IntVal(0))),

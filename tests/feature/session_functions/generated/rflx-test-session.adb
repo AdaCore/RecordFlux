@@ -118,7 +118,7 @@ is
          goto Finalize_Process;
       end if;
       -- tests/feature/session_functions/test.rflx:58:10
-      Length := Test.Length (T_6) / Test.Length (T_7);
+      Length := Test.Length (T_6) / T_7;
       -- tests/feature/session_functions/test.rflx:60:10
       declare
          Definite_Message : Test.Definite_Message.Structure;
@@ -188,7 +188,7 @@ is
       -- tests/feature/session_functions/test.rflx:79:20
       T_8 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Size (Ctx.P.Message_Ctx));
       -- tests/feature/session_functions/test.rflx:79:10
-      Length := Test.Length (T_8) / Test.Length (8);
+      Length := Test.Length (T_8) / 8;
       -- tests/feature/session_functions/test.rflx:81:10
       declare
          Definite_Message : Test.Definite_Message.Structure;

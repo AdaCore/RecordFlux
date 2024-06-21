@@ -113,10 +113,10 @@ class UniversalInteger(AnyInteger):
             return UniversalInteger(
                 Bounds.merge(self.bounds, other.bounds),
             )
-        if isinstance(other, AnyInteger):
-            return other
         if other == Any() or self == other:
             return self
+        if isinstance(other, AnyInteger):
+            return BASE_INTEGER
         return Undefined()
 
 
@@ -145,16 +145,10 @@ class Integer(AnyInteger, NamedType):
         )
 
     def common_type(self, other: Type) -> Type:
-        if isinstance(other, UniversalInteger):
+        if other == Any():
             return self
-        if isinstance(other, Integer) and (
-            self.identifier != other.identifier or self.bounds != other.bounds
-        ):
-            return BASE_INTEGER
         if isinstance(other, AnyInteger):
-            return other
-        if other == Any() or self == other:
-            return self
+            return BASE_INTEGER
         return Undefined()
 
 
