@@ -13,6 +13,15 @@ ADA_GRAMMAR = lark.Lark(
         # 2.3 (2/2)
         identifier:                 /[a-zA-Z][a-zA-Z0-9_]*/
 
+        # 2.4 (2)
+        numeric_literal:            decimal_literal
+
+        # 2.4.1 (2)
+        decimal_literal:            numeral
+
+        # 2.4.1 (3)
+        numeral:                    /\d(_?\d)*/
+
         # 2.6 (2)
         string_literal:             /"(""|[^"])*"/
 
@@ -30,11 +39,39 @@ ADA_GRAMMAR = lark.Lark(
                                      name
                                    | expression
 
+        # 3.1 (3/3)
+        basic_declaration: \
+                                    type_declaration
+
         # 3.1 (4)
         defining_identifier:        identifier
 
+        # 3.2.1 (2)
+        type_declaration:           full_type_declaration
+
+        # 3.2.1 (3/3)
+        full_type_declaration: \
+                                    "type" defining_identifier "is" type_definition \
+                                        full_type_decl_aspects ";"
+
+        full_type_decl_aspects:     aspect_specification?
+
+        # 3.2.1 (4/2)
+        type_definition: \
+                                    integer_type_definition
+
         # 3.2.2 (4)
         subtype_mark:               name
+
+        # 3.5.1 (2)
+        integer_type_definition:    modular_type_definition
+
+        # 3.5.1 (4)
+        modular_type_definition:    "mod" expression
+
+        # 3.11 (4/1)
+        basic_declarative_item: \
+                                    basic_declaration
 
         # 4.1 (2/3)
         name:                       direct_name
@@ -61,6 +98,7 @@ ADA_GRAMMAR = lark.Lark(
         primary: \
                                     true
                |                    false
+               |                    numeric_literal
                |                    string_literal
 
         true:                       "True"
@@ -74,10 +112,12 @@ ADA_GRAMMAR = lark.Lark(
 
         # 7.1 (3/3)
         package_specification:      "package" defining_program_unit_name \
-                                    package_specification_aspect "is" \
+                                    package_spec_aspects "is" \
+                                    package_spec_declarations \
                                     "end" defining_program_unit_name
 
-        package_specification_aspect: aspect_specification?
+        package_spec_aspects:       aspect_specification?
+        package_spec_declarations:  basic_declarative_item?
 
         # 8.4 (2)
         use_clause:                 use_package_clause | use_type_clause
@@ -142,6 +182,15 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def identifier(self, data: list[lark.lexer.Token]) -> ID:
         return ID(data[0])
 
+    def numeric_literal(self, data: list[ada.Number]) -> ada.Number:
+        return data[0]
+
+    def decimal_literal(self, data: list[ada.Number]) -> ada.Number:
+        return data[0]
+
+    def numeral(self, data) -> ada.Number:
+        return ada.Number(int(data[0]))
+
     def string_literal(self, data: list[lark.lexer.Token]) -> ada.String:
         return ada.String(data[0][1:-1])
 
@@ -151,7 +200,44 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def pragma_argument_association(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
 
+    def basic_declaration(self, data: list[ada.Declaration]) -> ada.Declaration:
+        return data[0]
+
     def defining_identifier(self, data: list[ID]) -> ID:
+        return data[0]
+
+    def type_declaration(self, data: list[ada.Declaration]) -> ID:
+        return data[0]
+
+    def full_type_declaration(
+        self,
+        data: tuple[ID, Union[ada.ModularType], list[ada.Aspect]],
+    ) -> ada.TypeDeclaration:
+        identifier, definition, aspects = data
+        if isinstance(definition, ada.ModularType):
+            return ada.ModularType(
+                identifier=identifier, modulus=definition.modulus, aspects=aspects,
+            )
+        return []
+
+    def full_type_decl_aspects(
+        self,
+        data: list[ada.Aspect],
+    ) -> list[ada.Aspect]:
+        if len(data) == 0:
+            return []
+        return data[1]
+
+    def type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
+        return data[0]
+
+    def integer_type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
+        return data[0]
+
+    def modular_type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
+        return ada.ModularType(identifier="__INVALID__", modulus=data[0])
+
+    def basic_declarative_item(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
         return data[0]
 
     def name(self, data: list[ID]) -> ID:
@@ -192,15 +278,23 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def package_specification(
         self,
-        data: tuple[ID, list[ada.Aspect], ID],
+        data: tuple[ID, list[ada.Aspect], list[ada.Declaration], ID],
     ) -> ada.PackageDeclaration:
-        assert data[0] == data[2]
-        return ada.PackageDeclaration(identifier=data[0], aspects=data[1])
+        identifier, aspects, declarations, end_identifier = data
+        assert identifier == end_identifier
+        return ada.PackageDeclaration(
+            identifier=identifier,
+            declarations=declarations,
+            aspects=aspects,
+        )
 
-    def package_specification_aspect(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
+    def package_spec_aspects(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
         if len(data) > 0:
             return data[0]
         return []
+
+    def package_spec_declarations(self, data: list[list[ada.Declaration]]) -> list[ada.Declaration]:
+        return data
 
     def use_clause(
         self,
