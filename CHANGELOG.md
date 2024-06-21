@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Software license from AGPL-3.0 to Apache-2.0 (eng/recordflux/RecordFlux#1671)
 - LLVM exception in addition to Apache-2.0 for generated code (eng/recordflux/RecordFlux#1671)
 - Improve suggestions when a package name is not correct (eng/recordflux/RecordFlux#1611)
+- Severities of error messages (eng/recordflux/RecordFlux#1698, eng/recordflux/RecordFlux#1685)
 
 ### Fixed
 
