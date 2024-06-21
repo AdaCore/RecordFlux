@@ -1321,7 +1321,7 @@ def create_message_structure(
                     ErrorEntry(
                         "add condition to all outgoing links of "
                         f'field "{field_identifiers[i]}" instead',
-                        Severity.INFO,
+                        Severity.HELP,
                         node_location(field.f_condition, filename),
                     ),
                 ],
