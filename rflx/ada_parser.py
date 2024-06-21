@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import reduce
-from typing import Union
+from typing import Optional, Union
 
 import lark.grammar
 
@@ -59,7 +59,12 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.4 (7/3)
         primary: \
-                                    string_literal
+                                    true
+               |                    false
+               |                    string_literal
+
+        true:                       "True"
+        false:                      "False"
 
         # 6.1 (7)
         defining_program_unit_name: ( parent_unit_name "." )* defining_identifier
@@ -69,8 +74,10 @@ ADA_GRAMMAR = lark.Lark(
 
         # 7.1 (3/3)
         package_specification:      "package" defining_program_unit_name \
-                                    "is"                                 \
+                                    package_specification_aspect "is" \
                                     "end" defining_program_unit_name
+
+        package_specification_aspect: aspect_specification?
 
         # 8.4 (2)
         use_clause:                 use_package_clause | use_type_clause
@@ -110,12 +117,22 @@ ADA_GRAMMAR = lark.Lark(
         # 10.1.2 (4.2/2)
         nonlimited_with_clause:     "private"? "with" name ("," name)* ";"
 
+        # 13.1.1 (2/3)
+        aspect_specification:       "with"  aspect_part ( "," aspect_part )*
+
+        aspect_part:                aspect_mark ( "=>" aspect_definition )?
+
+        # 13.1.1 (3/3)
+        aspect_mark:                identifier
+
+        # 13.1.1 (4/3)
+        aspect_definition:          name | expression
+
         # Skip whitespace
         %import common.WS
         %ignore WS
     """,
     start="compilation_unit",
-    strict=False,
     parser="lalr",
 )
 
@@ -161,15 +178,29 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def primary(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
 
+    def true(self, _) -> ada.Expr:
+        return ada.TRUE
+
+    def false(self, _) -> ada.Expr:
+        return ada.FALSE
+
     def defining_program_unit_name(self, data: list[ID]) -> ID:
         return reduce(lambda l, r: l * r, data)
 
     def package_declaration(self, data: list[ada.PackageDeclaration]) -> ada.PackageDeclaration:
         return data[0]
 
-    def package_specification(self, data: tuple[ID, ID]) -> ada.PackageDeclaration:
-        assert data[0] == data[1]
-        return ada.PackageDeclaration(identifier=data[0])
+    def package_specification(
+        self,
+        data: tuple[ID, list[ada.Aspect], ID],
+    ) -> ada.PackageDeclaration:
+        assert data[0] == data[2]
+        return ada.PackageDeclaration(identifier=data[0], aspects=data[1])
+
+    def package_specification_aspect(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
+        if len(data) > 0:
+            return data[0]
+        return []
 
     def use_clause(
         self,
@@ -216,6 +247,23 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         return data[0]
 
     def with_clause(self, data: list[ada.WithClause]) -> ada.WithClause:
+        return data[0]
+
+    def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
+        return data
+
+    def aspect_part(self, data: tuple[ID, Optional[ID]]) -> ada.Aspect:
+        argument = data[1] if len(data) > 1 else None
+        if data[0].parts == ["SPARK_Mode"]:
+            return ada.SparkMode(off=argument and argument.name == "off")
+        if data[0].parts == ["Always_Terminates"]:
+            return ada.AlwaysTerminates(expression=argument)
+        raise NotImplementedError(data[0].name)
+
+    def aspect_mark(self, data: list[ID]) -> ID:
+        return data[0]
+
+    def aspect_definition(self, data: list[ID]) -> Union[ID, ada.Expr]:
         return data[0]
 
 
