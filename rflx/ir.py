@@ -172,7 +172,12 @@ class VarDecl(Stmt):
         return []
 
     def to_z3_expr(self) -> z3.BoolRef:
-        raise NotImplementedError
+        if isinstance(self.type_, rty.AnyInteger):
+            return z3.And(
+                z3.Int(str(self.identifier)) >= z3.IntVal(self.type_.bounds.lower),
+                z3.Int(str(self.identifier)) <= z3.IntVal(self.type_.bounds.upper),
+            )
+        return z3.BoolVal(val=True)
 
     def _update_str(self) -> None:
         initialization = f" = {self.expression}" if self.expression else ""
@@ -1914,7 +1919,7 @@ def remove_unnecessary_checks(statements: Sequence[Stmt], manager: ProofManager)
                     ),
                 ],
             )
-            facts.append(s)
+        facts.append(s)
 
     results = manager.check()
 

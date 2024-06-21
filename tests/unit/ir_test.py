@@ -1473,6 +1473,5 @@ def test_add_required_checks() -> None:
         ir.Assign("Z", ir.IntVal(0), INT_TY),
         ir.VarDecl("T_1", rty.BASE_INTEGER),
         ir.Assign("T_1", ir.Sub(ir.IntVal(100), ir.IntVal(1)), rty.BASE_INTEGER),
-        ir.Check(ir.LessEqual(ir.IntVar("Z", INT_TY), ir.IntVar("T_1", rty.BASE_INTEGER))),
         ir.Assign("C", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), INT_TY),
     ]
