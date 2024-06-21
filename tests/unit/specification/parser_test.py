@@ -3735,7 +3735,7 @@ def test_parse_error_short_form_condition() -> None:
         end Test;
         """,
         r"^<stdin>:6:16: error: short form condition is not supported anymore\n"
-        r'<stdin>:6:16: info: add condition to all outgoing links of field "A" instead$',
+        r'<stdin>:6:16: help: add condition to all outgoing links of field "A" instead$',
     )
 
 
