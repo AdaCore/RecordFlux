@@ -2008,25 +2008,35 @@ class Message(type_decl.TypeDecl):
                     *self.aggregate_constraints(start),
                 ]
 
-                path_message = " -> ".join([l.target.name for l in path])
                 error = RecordFluxError(
                     [
                         ErrorEntry(
-                            f'negative size for field "{f.name}" ({path_message})',
+                            f'negative size for field "{f.name}"',
                             Severity.ERROR,
                             field_size.location,
+                            annotations=annotate_path(
+                                path,
+                                partial(filter_builtins_and_current_field, field=f),
+                            ),
                         ),
                     ],
                 )
                 proofs.add(negative, facts, sat_error=error.entries, unknown_error=error.entries)
 
-                path_message = " -> ".join([last.target.name for last in path])
                 error = RecordFluxError(
                     [
                         ErrorEntry(
-                            f'negative start for field "{f.name}" ({path_message})',
+                            (
+                                f'negative start for field "{f.name}"'
+                                if f != FINAL
+                                else "negative start for end of message"
+                            ),
                             Severity.ERROR,
                             self.identifier.location,
+                            annotations=annotate_path(
+                                path,
+                                partial(filter_builtins_and_current_field, field=f),
+                            ),
                         ),
                     ],
                 )
@@ -3511,3 +3521,7 @@ def annotate_path(
             )
 
     return result
+
+
+def filter_builtins_and_current_field(link: Link, field: Field) -> bool:
+    return link.target not in (INITIAL, FINAL, field)
