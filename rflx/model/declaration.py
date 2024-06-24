@@ -186,7 +186,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
                                     "refinement for message "
                                     f'"{self.expression.prefix.type_.identifier}"'
                                     " would make operation legal",
-                                    Severity.INFO,
+                                    Severity.HELP,
                                     self.location,
                                 ),
                             ]

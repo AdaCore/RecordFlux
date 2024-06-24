@@ -3162,37 +3162,37 @@ def test_parameterized_messages() -> None:
             "",
             r"^"
             r"<stdin>:15:14: error: missing argument\n"
-            r'<stdin>:5:14: info: expected argument for parameter "P"'
+            r'<stdin>:5:14: help: expected argument for parameter "P"'
             r"$",
         ),
         (
             " (Q => 16)",
             r"^"
             r'<stdin>:15:19: error: unexpected argument "Q"\n'
-            r'<stdin>:15:19: info: expected argument for parameter "P"'
+            r'<stdin>:15:19: help: expected argument for parameter "P"'
             r"$",
         ),
         (
             " (P => 16, Q => 16)",
             r"^"
             r'<stdin>:15:28: error: unexpected argument "Q"\n'
-            r"<stdin>:15:28: info: expected no argument"
+            r"<stdin>:15:28: help: expected no argument"
             r"$",
         ),
         (
             " (Q => 16, P => 16)",
             r"^"
             r'<stdin>:15:19: error: unexpected argument "Q"\n'
-            r'<stdin>:15:19: info: expected argument for parameter "P"\n'
+            r'<stdin>:15:19: help: expected argument for parameter "P"\n'
             r'<stdin>:15:28: error: unexpected argument "P"\n'
-            r"<stdin>:15:28: info: expected no argument"
+            r"<stdin>:15:28: help: expected no argument"
             r"$",
         ),
         (
             " (P => 16, P => 16)",
             r"^"
             r'<stdin>:15:28: error: unexpected argument "P"\n'
-            r"<stdin>:15:28: info: expected no argument"
+            r"<stdin>:15:28: help: expected no argument"
             r"$",
         ),
     ],
@@ -3503,7 +3503,7 @@ def test_parse_error_unsupported_modular_integer_type() -> None:
         """,
         r"^"
         r"<stdin>:2:9: error: modular integer types are not supported\n"
-        r'<stdin>:2:9: info: use "type T is range 0 .. 65535 with Size => 16" instead'
+        r'<stdin>:2:9: help: use "type T is range 0 .. 65535 with Size => 16" instead'
         r"$",
     )
 

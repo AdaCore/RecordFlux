@@ -1869,7 +1869,7 @@ def test_selected_type() -> None:
                 location=Location((10, 20)),
             ),
             r'^<stdin>:10:20: error: invalid field "F" for message type "M"\n'
-            r"<stdin>:10:20: info: similar field names: F1, F2$",
+            r"<stdin>:10:20: help: similar field names: F1, F2$",
         ),
     ],
 )

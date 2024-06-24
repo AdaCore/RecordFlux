@@ -119,7 +119,7 @@ class MessageFieldAssignment(Assignment):
                             [
                                 Annotation(
                                     "use a Reset statement to change the message parameters",
-                                    Severity.INFO,
+                                    Severity.HELP,
                                     self.field.location,
                                 ),
                             ]
@@ -229,7 +229,7 @@ class Append(ListAttributeStatement):
                             [
                                 Annotation(
                                     "message aggregate should be used instead",
-                                    Severity.INFO,
+                                    Severity.HELP,
                                     self.parameter.location,
                                 ),
                             ]

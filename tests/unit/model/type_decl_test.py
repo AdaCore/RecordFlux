@@ -407,17 +407,17 @@ def test_sequence_dependencies() -> None:
         (
             lambda: Sequence("P::B", models.integer(), Location((3, 4))),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
-            r'<stdin>:3:4: info: type "B" must be scalar or message',
+            r'<stdin>:3:4: help: type "B" must be scalar or message',
         ),
         (
             lambda: OPAQUE,
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
-            r'__BUILTINS__:1:1: info: type "Opaque" must be scalar or message',
+            r'__BUILTINS__:1:1: help: type "Opaque" must be scalar or message',
         ),
         (
             lambda: Message("P::B", [], {}, location=Location((3, 4))),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
-            r"<stdin>:3:4: info: null messages must not be used as sequence element",
+            r"<stdin>:3:4: help: null messages must not be used as sequence element",
         ),
         (
             lambda: Message(
@@ -486,7 +486,7 @@ def test_sequence_unsupported_element_type() -> None:
         RecordFluxError,
         match=(
             r'^<stdin>:5:4: error: unsupported element type size of sequence "A"\n'
-            r'<stdin>:3:4: info: type "B" has size 4, must be multiple of 8$'
+            r'<stdin>:3:4: help: type "B" has size 4, must be multiple of 8$'
         ),
     ):
         Sequence(
@@ -504,7 +504,7 @@ def test_sequence_unsupported_element_type() -> None:
         RecordFluxError,
         match=(
             r'^<stdin>:5:4: error: unsupported element type size of sequence "A"\n'
-            r'__BUILTINS__:1:1: info: type "Boolean" has size 1, must be multiple of 8$'
+            r'__BUILTINS__:1:1: help: type "Boolean" has size 1, must be multiple of 8$'
         ),
     ):
         Sequence("P::A", BOOLEAN, Location((5, 4)))

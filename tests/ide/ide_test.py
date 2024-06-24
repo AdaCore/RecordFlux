@@ -75,7 +75,7 @@ def test_multiple_errors() -> None:
             f"{path}:64:26: info: duplicate link",
             f'{path}:70:14: error: undefined type "RFLX_Invalid::Undef_Type"',
             f'{path}:77:9: error: unsupported element type size of sequence "A3"',
-            f'{path}:76:9: info: type "E6" has size 4, must be multiple of 8',
+            f'{path}:76:9: help: type "E6" has size 4, must be multiple of 8',
             f'{path}:84:30: error: invalid First for field "Final"',
             f"{path}:87:9: error: message size must be multiple of 8 bit",
             f'{path}:89:10: note: on path "Field"',
