@@ -2156,7 +2156,7 @@ class Conversion(Expr):
                                     "refinement for message "
                                     f'"{self.argument.prefix.type_.identifier}"'
                                     " would make operation legal",
-                                    Severity.INFO,
+                                    Severity.HELP,
                                     self.location,
                                 ),
                             ]
@@ -2840,7 +2840,7 @@ def _similar_field_names(
         return [
             ErrorEntry(
                 "similar field names: " + ", ".join(str(f) for f in similar_fields),
-                Severity.INFO,
+                Severity.HELP,
                 location,
             ),
         ]

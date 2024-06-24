@@ -1024,7 +1024,7 @@ def create_modular(
             ErrorEntry(
                 f'use "type {identifier.name} is range 0 .. {upper}'
                 f' with Size => {upper.bit_length()}" instead',
-                Severity.INFO,
+                Severity.HELP,
                 type_location(identifier, modular),
             ),
         ],

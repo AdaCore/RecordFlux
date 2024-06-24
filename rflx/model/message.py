@@ -2790,7 +2790,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                                             else "expected argument for parameter "
                                             f'"{param.identifier}"'
                                         ),
-                                        Severity.INFO,
+                                        Severity.HELP,
                                         arg_id.location,
                                     ),
                                 ]
@@ -2808,7 +2808,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                             [
                                 Annotation(
                                     f'expected argument for parameter "{param.identifier}"',
-                                    Severity.INFO,
+                                    Severity.HELP,
                                     param.identifier.location,
                                 ),
                             ]

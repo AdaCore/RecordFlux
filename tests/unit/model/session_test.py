@@ -1351,7 +1351,7 @@ def test_renaming_invalid() -> None:
         regex=(
             r"^"
             r'<stdin>:10:20: error: invalid renaming to "Universal_Message"\n'
-            r'<stdin>:10:20: info: refinement for message "TLV::Message"'
+            r'<stdin>:10:20: help: refinement for message "TLV::Message"'
             r" would make operation legal"
             r"$"
         ),
@@ -1489,7 +1489,7 @@ def test_append_message_unsupported() -> None:
         types=[models.tlv_message(), models.tlv_messages()],
         regex=(
             r"^<stdin>:10:20: error: appending independently created message not supported\n"
-            r"<stdin>:10:20: info: message aggregate should be used instead$"
+            r"<stdin>:10:20: help: message aggregate should be used instead$"
         ),
     )
 
@@ -1740,7 +1740,7 @@ def test_message_field_assignment_to_message_parameter() -> None:
             r"^"
             r'<stdin>:1:2: error: message parameter "Length" cannot be set using an'
             r" assignment\n"
-            r"<stdin>:1:2: info: use a Reset statement to change the message parameters"
+            r"<stdin>:1:2: help: use a Reset statement to change the message parameters"
             r"$"
         ),
     )
@@ -1863,7 +1863,7 @@ def test_conversion_undefined() -> None:
         regex=(
             r'^<stdin>:10:20: error: undefined type "P::Undef"\n'
             r'<stdin>:10:30: error: invalid conversion to "P::Undef"\n'
-            r'<stdin>:10:30: info: refinement for message "TLV::Message"'
+            r'<stdin>:10:30: help: refinement for message "TLV::Message"'
             r" would make operation legal\n"
             r'<stdin>:10:30: error: undefined type "P::Undef"$'
         ),
@@ -1926,7 +1926,7 @@ def test_conversion_invalid() -> None:
         regex=(
             r"^"
             r'<stdin>:10:20: error: invalid conversion to "Null_Msg::Message"\n'
-            r'<stdin>:10:20: info: refinement for message "TLV::Message"'
+            r'<stdin>:10:20: help: refinement for message "TLV::Message"'
             r" would make operation legal"
             r"$"
         ),

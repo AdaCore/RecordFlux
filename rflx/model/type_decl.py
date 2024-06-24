@@ -483,7 +483,7 @@ class Sequence(Composite):
                         [
                             Annotation(
                                 f'type "{element_type.name}" must be scalar or message',
-                                Severity.INFO,
+                                Severity.HELP,
                                 element_type.location,
                             ),
                         ]
@@ -505,7 +505,7 @@ class Sequence(Composite):
                                 Annotation(
                                     f'type "{element_type.name}" has size {element_type_size},'
                                     r" must be multiple of 8",
-                                    Severity.INFO,
+                                    Severity.HELP,
                                     element_type.location,
                                 ),
                             ]
@@ -526,7 +526,7 @@ class Sequence(Composite):
                         error_entry,
                         ErrorEntry(
                             "null messages must not be used as sequence element",
-                            Severity.INFO,
+                            Severity.HELP,
                             element_type.location,
                         ),
                     ],
