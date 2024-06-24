@@ -2189,10 +2189,11 @@ def test_invalid_negative_field_size_1() -> None:
         Field(ID("F2", location=Location((2, 2)))): OPAQUE,
     }
     regex = (
-        '<stdin>:2:2: error: negative size for field "F2" (F1 -> F2)\n'
+        '<stdin>:2:2: error: negative size for field "F2"\n'
+        '<stdin>:1:1: note: on path "F1"\n'
         '<stdin>:2:2: error: size of opaque field "F2" not multiple of 8 bit\n'
         "<stdin>:2:2: help: sizes are expressed in bits, not bytes\n"
-        '<stdin>:2:2: help: did you mean "(F1 - 2) * 8"?'
+        r'<stdin>:2:2: help: did you mean "(F1 - 2) * 8"?'
     )
     assert_message_model_error(
         structure,
@@ -2220,7 +2221,7 @@ def test_invalid_negative_field_size_2() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:44:3: error: negative size for field "O" [(]L -> O[)]$',
+        r'^<stdin>:44:3: error: negative size for field "O"\n<stdin>:1:1: note: on path "L"$',
     )
 
 
@@ -2247,7 +2248,7 @@ def test_invalid_negative_field_size_3() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^<stdin>:1:2: error: negative size for field "F2" [(]F1 -> F2[)]$',
+        r'^<stdin>:1:2: error: negative size for field "F2"\n<stdin>:1:1: note: on path "F1"$',
     )
 
 
@@ -2338,13 +2339,14 @@ def test_field_after_message_start(monkeypatch: pytest.MonkeyPatch) -> None:
     assert_message_model_error(
         structure,
         types,
-        r"^"
-        r'<stdin>:1:1: error: negative start for field "F2" [(]F1 -> F2[)]\n'
+        r'^<stdin>:1:1: error: negative start for field "F2"\n'
+        r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "Message\'First - 1000 >= Message\'First"\n'
-        r'<stdin>:1:1: error: negative start for field "Final" [(]F1 -> F2 -> Final[)]\n'
-        r'<stdin>:1:1: info: unsatisfied "F2\'Last = [(]Message\'First - 1000 [+] 8[)] - 1"\n'
-        r'<stdin>:1:1: info: unsatisfied "F2\'Last [+] 1 >= Message\'First"'
-        r"$",
+        r"<stdin>:1:1: error: negative start for end of message\n"
+        r'<stdin>:1:1: note: on path "F1"\n'
+        r'<stdin>:1:1: note: on path "F2"\n'
+        r'<stdin>:1:1: info: unsatisfied "F2\'Last = \(Message\'First - 1000 \+ 8\) - 1"\n'
+        r'<stdin>:1:1: info: unsatisfied "F2\'Last \+ 1 >= Message\'First"$',
     )
 
 

@@ -991,6 +991,49 @@ def test_message_size_not_multiple_8_bits(
     )
 
 
+def test_message_negative_field_size(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    temp_file = tmp_path / "test.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            """\
+        package Test is
+           type I is range 0 .. 2 ** 32 - 1 with Size => 32;
+           type M is
+              message
+                 F1 : I
+                    then F2
+                       with Size => 0 - 8;
+                 F2 : Opaque;
+              end message;
+        end Test;
+     """,
+        ),
+    )
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+                    info: Parsing {temp_file}
+                    info: Processing Test
+                    info: Verifying __BUILTINS__::Boolean
+                    info: Verifying __INTERNAL__::Opaque
+                    info: Verifying Test::I
+                    info: Verifying Test::M
+                    error: negative size for field "F2"
+                     --> {temp_file}:7:29
+                      |
+                    5 |          F1 : I
+                      |          -- note: on path "F1"
+                    6 |             then F2
+                    7 |                with Size => 0 - 8;
+                      |                             ^^^^^
+                      |
+               """,
+        ),
+        capfd,
+    )
+
+
 def test_field_size_not_multiple_8_bits_path_annotations(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
@@ -1139,6 +1182,63 @@ def test_not_aligned_to_8_bits_multiple_fields(
                    |          ^ a previous field in the path may be the cause of this error
                    |
               """,
+        ),
+        capfd,
+    )
+
+
+def test_message_negative_field_start(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    temp_file = tmp_path / "test.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            """\
+        package Test is
+           type M14 is
+              message
+                 F1 : Opaque
+                    with Size => 0 - 8;
+              end message;
+        end Test;
+     """,
+        ),
+    )
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+                    info: Parsing {temp_file}
+                    info: Processing Test
+                    info: Verifying __BUILTINS__::Boolean
+                    info: Verifying __INTERNAL__::Opaque
+                    info: Verifying Test::M14
+                    error: negative size for field "F1"
+                     --> {temp_file}:5:26
+                      |
+                    5 |             with Size => 0 - 8;
+                      |                          ^^^^^
+                      |
+                    error: negative start for end of message
+                     --> {temp_file}:2:9
+                      |
+                    2 |    type M14 is
+                      |         ^^^
+                    3 |       message
+                    4 |          F1 : Opaque
+                      |          -- note: on path "F1"
+                      |
+                    info: unsatisfied "F1'Last = (Message'First + (0 - 8)) - 1"
+                     --> {temp_file}:4:10
+                      |
+                    4 |          F1 : Opaque
+                      |          --
+                      |
+                    info: unsatisfied "F1'Last + 1 >= Message'First"
+                     --> {temp_file}:4:10
+                      |
+                    4 |          F1 : Opaque
+                      |          --
+                      |
+               """,
         ),
         capfd,
     )
