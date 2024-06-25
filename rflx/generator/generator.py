@@ -330,6 +330,7 @@ class Generator:
 
         session_generator = SessionGenerator(
             session.to_ir(),
+            integration,
             allocator_generator,
             self._prefix,
             debug=self._debug,
@@ -534,6 +535,11 @@ class Generator:
             executor.submit(message_generator.create_has_buffer_function),
             executor.submit(
                 message_generator.create_buffer_length_function,
+                prefix,
+                message,
+            ),
+            executor.submit(
+                message_generator.create_buffer_size_function,
                 prefix,
                 message,
             ),
@@ -810,21 +816,16 @@ class Generator:
                 ],
             )
 
-        condition_fields = {
-            f: t
-            for f, t in refinement.pdu.types.items()
-            if expr.Variable(f.name) in refinement.condition
-        }
-
-        unit += self._create_contains_function(refinement, condition_fields, null_sdu)
+        unit += self._create_contains_function(refinement, null_sdu)
         if not null_sdu:
             unit += UnitPart(
                 [
                     UseTypeClause(f"{pdu_identifier}.Field_Cursors"),
                 ],
             )
-            unit += self._create_switch_procedure(refinement, condition_fields)
-            unit += self._create_copy_refined_field_procedure(refinement, condition_fields)
+            unit += self._create_switch_procedure(refinement)
+            unit += self._create_sufficient_space_for_refined_field_function(refinement)
+            unit += self._create_copy_refined_field_procedure(refinement)
 
         return result
 
@@ -1102,11 +1103,13 @@ class Generator:
     def _create_contains_function(
         self,
         refinement: Refinement,
-        condition_fields: abc.Mapping[Field, TypeDecl],
         null_sdu: bool,
     ) -> SubprogramUnitPart:
         pdu_identifier = self._prefix * refinement.pdu.identifier
         condition = refinement.condition
+        condition_fields = {
+            f: t for f, t in refinement.pdu.types.items() if expr.Variable(f.name) in condition
+        }
         for f, t in condition_fields.items():
             if isinstance(t, Enumeration) and t.always_valid:
                 condition = expr.AndThen(
@@ -1180,7 +1183,6 @@ class Generator:
     def _create_switch_procedure(
         self,
         refinement: Refinement,
-        condition_fields: abc.Mapping[Field, TypeDecl],
     ) -> UnitPart:
         pdu_identifier = self._prefix * refinement.pdu.identifier
         sdu_identifier = self._prefix * refinement.sdu.identifier
@@ -1205,15 +1207,6 @@ class Generator:
                             And(
                                 Not(Constrained(pdu_context)),
                                 Not(Constrained(sdu_context)),
-                                *[
-                                    expr_conv.to_ada(c)
-                                    for c in self._refinement_conditions(
-                                        refinement,
-                                        pdu_context,
-                                        condition_fields,
-                                        null_sdu=False,
-                                    )
-                                ],
                                 Call(
                                     self._prefix
                                     * refinement.package
@@ -1331,10 +1324,79 @@ class Generator:
             ],
         )
 
+    def _create_sufficient_space_for_refined_field_function(
+        self,
+        refinement: Refinement,
+    ) -> UnitPart:
+        pdu_identifier = self._prefix * refinement.pdu.identifier
+        sdu_identifier = self._prefix * refinement.sdu.identifier
+        pdu_context = ID(refinement.pdu.identifier.flat + "_PDU_Context")
+        sdu_context = ID(refinement.sdu.identifier.flat + "_SDU_Context")
+        refined_field_affixed_name = pdu_identifier * refinement.field.affixed_name
+
+        specification = FunctionSpecification(
+            f"Sufficient_Space_For_{refinement.field.name}",
+            "Boolean",
+            [
+                Parameter([pdu_context], pdu_identifier * "Context"),
+                Parameter([sdu_context], sdu_identifier * "Context"),
+            ],
+        )
+
+        return UnitPart(
+            [
+                ExpressionFunctionDeclaration(
+                    specification,
+                    AndThen(
+                        GreaterEqual(
+                            Call(sdu_identifier * "Buffer_Size", [Variable(sdu_context)]),
+                            Call(
+                                pdu_identifier * "Field_Size",
+                                [
+                                    Variable(pdu_context),
+                                    Variable(refined_field_affixed_name),
+                                ],
+                            ),
+                        ),
+                        Less(
+                            Add(
+                                Call(
+                                    const.TYPES_TO_FIRST_BIT_INDEX,
+                                    [Variable(sdu_context * "Buffer_First")],
+                                ),
+                                Call(
+                                    pdu_identifier * "Field_Size",
+                                    [
+                                        Variable(pdu_context),
+                                        Variable(refined_field_affixed_name),
+                                    ],
+                                ),
+                                -Number(1),
+                            ),
+                            Last(const.TYPES_BIT_INDEX),
+                        ),
+                    ),
+                    [
+                        Precondition(
+                            AndThen(
+                                Call(sdu_identifier * "Has_Buffer", [Variable(sdu_context)]),
+                                Call(
+                                    self._prefix
+                                    * refinement.package
+                                    * const.REFINEMENT_PACKAGE
+                                    * contains_function_name(refinement),
+                                    [Variable(pdu_context)],
+                                ),
+                            ),
+                        ),
+                    ],
+                ),
+            ],
+        )
+
     def _create_copy_refined_field_procedure(
         self,
         refinement: Refinement,
-        condition_fields: abc.Mapping[Field, TypeDecl],
     ) -> UnitPart:
         pdu_identifier = self._prefix * refinement.pdu.identifier
         sdu_identifier = self._prefix * refinement.sdu.identifier
@@ -1359,15 +1421,6 @@ class Generator:
                             AndThen(
                                 Not(Constrained(sdu_context)),
                                 Call(sdu_identifier * "Has_Buffer", [Variable(sdu_context)]),
-                                *[
-                                    expr_conv.to_ada(c)
-                                    for c in self._refinement_conditions(
-                                        refinement,
-                                        pdu_context,
-                                        condition_fields,
-                                        null_sdu=False,
-                                    )
-                                ],
                                 Call(
                                     self._prefix
                                     * refinement.package
@@ -1375,42 +1428,9 @@ class Generator:
                                     * contains_function_name(refinement),
                                     [Variable(pdu_context)],
                                 ),
-                                GreaterEqual(
-                                    Add(
-                                        Call(
-                                            const.TYPES_TO_LAST_BIT_INDEX,
-                                            [Variable(sdu_context * "Buffer_Last")],
-                                        ),
-                                        -Call(
-                                            const.TYPES_TO_FIRST_BIT_INDEX,
-                                            [Variable(sdu_context * "Buffer_First")],
-                                        ),
-                                        Number(1),
-                                    ),
-                                    Call(
-                                        pdu_identifier * "Field_Size",
-                                        [
-                                            Variable(pdu_context),
-                                            Variable(refined_field_affixed_name),
-                                        ],
-                                    ),
-                                ),
-                                Less(
-                                    Add(
-                                        Call(
-                                            const.TYPES_TO_FIRST_BIT_INDEX,
-                                            [Variable(sdu_context * "Buffer_First")],
-                                        ),
-                                        Call(
-                                            pdu_identifier * "Field_Size",
-                                            [
-                                                Variable(pdu_context),
-                                                Variable(refined_field_affixed_name),
-                                            ],
-                                        ),
-                                        -Number(1),
-                                    ),
-                                    Last(const.TYPES_BIT_INDEX),
+                                Call(
+                                    f"Sufficient_Space_For_{refinement.field.name}",
+                                    [Variable(pdu_context), Variable(sdu_context)],
                                 ),
                             ),
                         ),

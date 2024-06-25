@@ -46,7 +46,7 @@ from rflx.error import Location
 from rflx.identifier import ID
 from rflx.integration import Integration
 
-from . import const
+from . import common, const
 
 
 @dataclass
@@ -71,7 +71,13 @@ class AllocatorGenerator:
         self._unit_part = UnitPart()
         self._integration = integration
 
-        global_slots: list[SlotInfo] = self._allocate_global_slots()
+        global_slots, self._externally_managed_buffers = self._allocate_global_slots(
+            (
+                common.external_io_buffers(session)
+                if integration.use_external_io_buffers(session.identifier)
+                else []
+            ),
+        )
         local_slots: list[SlotInfo] = self._allocate_local_slots()
         numbered_slots: list[NumberedSlotInfo] = []
         count = 1
@@ -123,6 +129,10 @@ class AllocatorGenerator:
 
     def get_size(self, variable: Optional[ID] = None, state: Optional[ID] = None) -> int:
         return self._integration.get_size(self._session.identifier, variable, state)
+
+    def is_externally_managed(self, location: Optional[Location]) -> bool:
+        assert location is not None
+        return location in self._externally_managed_buffers
 
     @staticmethod
     def _slot_name(slot_id: int) -> ID:
@@ -339,13 +349,23 @@ class AllocatorGenerator:
     def _needs_allocation(type_: rty.Type) -> bool:
         return isinstance(type_, (rty.Message, rty.Sequence))
 
-    def _allocate_global_slots(self) -> list[SlotInfo]:
+    def _allocate_global_slots(
+        self,
+        external_io_buffers: Sequence[common.Message],
+    ) -> tuple[list[SlotInfo], list[Location]]:
         slots = []
+        externally_managed_buffers = []
+
         for d in self._session.declarations:
             if self._needs_allocation(d.type_):
-                assert d.location is not None
-                slots.append(SlotInfo(self.get_size(d.identifier), [d.location]))
-        return slots
+                if all(d.identifier != b.identifier for b in external_io_buffers):
+                    assert d.location is not None
+                    slots.append(SlotInfo(self.get_size(d.identifier), [d.location]))
+                else:
+                    assert d.location is not None
+                    externally_managed_buffers.append(d.location)
+
+        return (slots, externally_managed_buffers)
 
     @staticmethod
     def _scope(state: ir.State, var_id: ID) -> Optional[ID]:

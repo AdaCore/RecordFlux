@@ -36,7 +36,8 @@ class SessionSize(BaseModel):  # type: ignore[misc]
 
 
 class SessionIntegration(BaseModel):  # type: ignore[misc]
-    buffer_size: SessionSize = Field(alias="Buffer_Size")
+    buffer_size: Optional[SessionSize] = Field(alias="Buffer_Size", default=None)
+    external_io_buffers: bool = Field(alias="External_IO_Buffers", default=False)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -120,6 +121,9 @@ class Integration:
             return self.defaultsize
 
         buffer_size = self._packages[integration_package].session[session_name].buffer_size
+        if buffer_size is None:
+            return self.defaultsize
+
         default_size = self.defaultsize if buffer_size.default is None else buffer_size.default
 
         if variable is None:
@@ -144,9 +148,23 @@ class Integration:
 
         return default_size
 
+    def use_external_io_buffers(self, session: ID) -> bool:
+        integration_package = str(session.parent).lower()
+        if integration_package not in self._packages:
+            return False
+
+        session_name = str(session.name)
+        if session_name not in self._packages[integration_package].session:
+            return False
+
+        return self._packages[integration_package].session[session_name].external_io_buffers
+
+    def add_integration_file(self, package_name: str, integration_file: IntegrationFile) -> None:
+        self._packages[package_name] = integration_file
+
     def _add_integration_object(self, filename: Path, file: object, error: RecordFluxError) -> None:
         try:
-            self._packages[filename.stem] = IntegrationFile.model_validate(file)
+            self.add_integration_file(filename.stem, IntegrationFile.model_validate(file))
         except ValidationError as e:
             error.push(ErrorEntry(f"{e}", Severity.ERROR, self._to_location(filename.stem)))
 
@@ -161,7 +179,7 @@ class Integration:
         session: Session,
         error: RecordFluxError,
     ) -> None:
-        if integration.buffer_size.global_ is None:
+        if integration.buffer_size is None or integration.buffer_size.global_ is None:
             return
         session_decl_vars = [str(x.name) for x in session.declarations]
         for var_name in integration.buffer_size.global_:
@@ -184,7 +202,7 @@ class Integration:
         session: Session,
         error: RecordFluxError,
     ) -> None:
-        if integration.buffer_size.local_ is None:
+        if integration.buffer_size is None or integration.buffer_size.local_ is None:
             return
         for state_name, state_entry in integration.buffer_size.local_.items():
             state = None

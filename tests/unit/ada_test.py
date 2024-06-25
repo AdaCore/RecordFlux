@@ -124,6 +124,10 @@ def test_add_str() -> None:
     assert str(ada.Add(ada.Number(1), -ada.Call("Test", []))) == "1 - Test"
 
 
+def test_new_str() -> None:
+    assert str(ada.New(ada.Variable("Test"))) == "new Test"
+
+
 def test_attribute() -> None:
     assert isinstance(ada.Range("X"), ada.Attribute)
     assert isinstance(ada.Old("X"), ada.Attribute)

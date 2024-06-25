@@ -4,9 +4,10 @@ import enum
 import math
 import textwrap
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Optional
 
-from rflx import expr, expr_conv, model, typing_ as rty
+from rflx import expr, expr_conv, ir, model, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,
@@ -22,12 +23,14 @@ from rflx.ada import (
     First,
     ForAllIn,
     GenericPackageInstantiation,
+    Greater,
     GreaterEqual,
     If,
     IfExpr,
     IfThenElse,
     Indexed,
     Last,
+    Length,
     Less,
     LessEqual,
     LoopEntry,
@@ -64,6 +67,21 @@ class Debug(enum.Enum):
     NONE = enum.auto()
     BUILTIN = enum.auto()
     EXTERNAL = enum.auto()
+
+
+@dataclass(frozen=True, order=True)
+class Message:
+    identifier: ID
+    type_identifier: ID
+    parameters: tuple[ID, ...]
+
+    @property
+    def external_buffer_id(self) -> ID:
+        return ID(f"B_{self.identifier}")
+
+    @property
+    def buffer_id(self) -> ID:
+        return ID(f"{self.identifier}_Buffer")
 
 
 def type_to_id(type_: rty.NamedType) -> ID:
@@ -507,6 +525,7 @@ def context_predicate(
         IfThenElse(
             NotEqual(Variable("Buffer"), Variable("null")),
             And(
+                Greater(Length("Buffer"), Number(0)),
                 Equal(First("Buffer"), Variable("Buffer_First")),
                 Equal(Last("Buffer"), Variable("Buffer_Last")),
             ),
@@ -1054,6 +1073,25 @@ def byte_aligned_field(prefix: str, message: model.Message, field: model.Field) 
             Size(const.TYPES_BYTE),
         ),
         Number(1),
+    )
+
+
+def external_io_buffers(session: ir.Session) -> list[Message]:
+    return sorted(
+        {
+            Message(
+                action.expression.identifier,
+                action.expression.type_.identifier,
+                tuple(action.expression.type_.parameter_types),
+            )
+            for state in session.states
+            for action in state.actions
+            if (
+                isinstance(action, ir.ChannelStmt)
+                and isinstance(action.expression, ir.Var)
+                and isinstance(action.expression.type_, rty.Message)
+            )
+        },
     )
 
 

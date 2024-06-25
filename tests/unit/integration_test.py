@@ -26,12 +26,6 @@ from rflx.rapidflux import RecordFluxError
         ),
         (
             """Session:
-                Session: {}
-          """,
-            "Session.Session.Buffer_Size.*Field required",
-        ),
-        (
-            """Session:
                 Session:
                     Buffer_Size:
                         Default: -1024
@@ -116,28 +110,47 @@ def test_rfi_add_integration(rfi_content: str, match_error: str) -> None:
 
 def test_rfi_get_size() -> None:
     integration = Integration()
-    session_object = {
-        "Session": {
-            "S": {
-                "Buffer_Size": {
-                    "Default": 1024,
-                    "Global": {
-                        "Y": 2048,
-                        "Z": 512,
-                    },
-                    "Local": {
-                        "S": {
-                            "Y": 8192,
+    error = RecordFluxError()
+    integration._add_integration_object(  # noqa: SLF001
+        Path("p.rfi"),
+        {
+            "Session": {
+                "S": {},
+            },
+        },
+        error,
+    )
+    error.propagate()
+
+    assert integration.get_size(ID("P::S"), None, None) == 4096
+    assert integration.get_size(ID("P::S"), ID("X"), ID("S")) == 4096
+
+    integration = Integration()
+    error = RecordFluxError()
+    integration._add_integration_object(  # noqa: SLF001
+        Path("p.rfi"),
+        {
+            "Session": {
+                "S": {
+                    "Buffer_Size": {
+                        "Default": 1024,
+                        "Global": {
+                            "Y": 2048,
+                            "Z": 512,
+                        },
+                        "Local": {
+                            "S": {
+                                "Y": 8192,
+                            },
                         },
                     },
                 },
             },
         },
-    }
-    error = RecordFluxError()
-
-    integration._add_integration_object(Path("p.rfi"), session_object, error)  # noqa: SLF001
+        error,
+    )
     error.propagate()
+
     assert integration.get_size(ID("P::S"), None, None) == 1024
     assert integration.get_size(ID("P::S"), ID("X"), ID("S")) == 1024
     assert integration.get_size(ID("P::S"), ID("X"), ID("S")) == 1024
@@ -147,6 +160,61 @@ def test_rfi_get_size() -> None:
     assert integration.get_size(ID("P::S"), ID("Y"), ID("S")) == 8192
     assert integration.get_size(ID("P::S"), ID("Z"), None) == 512
     assert integration.get_size(ID("P::S"), ID("Z"), ID("S")) == 512
+
+
+@pytest.mark.parametrize(
+    ("session_object", "result"),
+    [
+        (
+            {
+                "Session": {},
+            },
+            False,
+        ),
+        (
+            {
+                "Session": {
+                    "S": {},
+                },
+            },
+            False,
+        ),
+        (
+            {
+                "Session": {
+                    "S": {
+                        "External_IO_Buffers": False,
+                    },
+                },
+            },
+            False,
+        ),
+        (
+            {
+                "Session": {
+                    "S": {
+                        "External_IO_Buffers": True,
+                    },
+                },
+            },
+            True,
+        ),
+    ],
+)
+def test_rfi_use_external_io_buffers(session_object: dict[object, object], result: bool) -> None:
+    integration = Integration()
+
+    assert not integration.use_external_io_buffers(ID("P::S"))
+
+    error = RecordFluxError()
+    integration._add_integration_object(  # noqa: SLF001
+        Path("p.rfi"),
+        session_object,
+        error,
+    )
+    error.propagate()
+
+    assert integration.use_external_io_buffers(ID("P::S")) == result
 
 
 @pytest.mark.parametrize(

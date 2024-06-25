@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,8 +13,17 @@ from rflx.generator import Generator, const
 from rflx.generator.common import Debug
 from rflx.generator.message import create_structure
 from rflx.identifier import ID
-from rflx.integration import Integration
-from rflx.model import Model, type_decl
+from rflx.integration import Integration, IntegrationFile, SessionIntegration
+from rflx.model import (
+    BOOLEAN,
+    Model,
+    Session,
+    State,
+    Transition,
+    declaration as decl,
+    statement as stmt,
+    type_decl,
+)
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
 from rflx.rapidflux import Location, RecordFluxError
 from tests.const import DATA_DIR, GENERATED_DIR
@@ -63,7 +72,61 @@ GENERATOR_TEST_CASES = [
         ),
         lambda: Integration(),
     ),
+    TC(
+        "external_io_buffers",
+        lambda: Model(
+            [
+                models.tlv_message(),
+                Session(
+                    "P::S",
+                    [
+                        State(
+                            "A",
+                            declarations=[],
+                            actions=[stmt.Read("X", expr.Variable("M"))],
+                            transitions=[
+                                Transition("B"),
+                            ],
+                        ),
+                        State(
+                            "B",
+                            declarations=[],
+                            actions=[stmt.Write("X", expr.Variable("M"))],
+                            transitions=[
+                                Transition("A"),
+                            ],
+                        ),
+                    ],
+                    [
+                        decl.VariableDeclaration(
+                            "M",
+                            "TLV::Message",
+                            location=Location((1, 1)),
+                        ),
+                    ],
+                    [
+                        decl.ChannelDeclaration("X", readable=True, writable=True),
+                    ],
+                    [BOOLEAN, models.tlv_message()],
+                ),
+            ],
+        ),
+        lambda: create_integration(
+            {
+                "p": IntegrationFile(
+                    Session={"S": SessionIntegration(Buffer_Size=None, External_IO_Buffers=True)},
+                ),
+            },
+        ),
+    ),
 ]
+
+
+def create_integration(integration_files: Mapping[str, IntegrationFile]) -> Integration:
+    integration = Integration()
+    for package, integration_file in integration_files.items():
+        integration.add_integration_file(package, integration_file)
+    return integration
 
 
 @pytest.mark.parametrize(("tc"), GENERATOR_TEST_CASES)

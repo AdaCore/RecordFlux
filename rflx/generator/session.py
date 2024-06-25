@@ -38,12 +38,14 @@ from rflx.ada import (
     Expr,
     ExpressionFunctionDeclaration,
     First,
+    ForSomeIn,
     FunctionSpecification,
     GenericProcedureInstantiation,
     Ghost,
     GotoStatement,
     Greater,
     GreaterEqual,
+    If,
     IfStatement,
     In,
     Indexed,
@@ -56,6 +58,7 @@ from rflx.ada import (
     Literal,
     LoopEntry,
     Min,
+    Mod,
     Mul,
     NamedAggregate,
     Not,
@@ -63,6 +66,7 @@ from rflx.ada import (
     NullStatement,
     Number,
     ObjectDeclaration,
+    Old,
     Or,
     OutParameter,
     Parameter,
@@ -93,6 +97,7 @@ from rflx.ada import (
 from rflx.const import BUILTINS_PACKAGE, INTERNAL_PACKAGE
 from rflx.error import fail, fatal_fail
 from rflx.identifier import ID
+from rflx.integration import Integration
 from rflx.rapidflux import Location
 
 from . import common, const
@@ -165,14 +170,20 @@ class SessionGenerator:
     def __init__(
         self,
         session: ir.Session,
+        integration: Integration,
         allocator: AllocatorGenerator,
         prefix: str = "",
         debug: common.Debug = common.Debug.NONE,
     ) -> None:
         self._session = session
+        self._allocator = allocator
+        self._external_io_buffers = (
+            common.external_io_buffers(session)
+            if integration.use_external_io_buffers(session.identifier)
+            else []
+        )
         self._prefix = prefix
         self._debug = debug
-        self._allocator = allocator
 
         self._session_context = SessionContext()
         self._declaration_context: list[ContextItem] = []
@@ -374,10 +385,24 @@ class SessionGenerator:
             if isinstance(d, ir.VarDecl) and isinstance(d.type_, (rty.Message, rty.Sequence))
         ]
 
+        channel_reads = self._channel_io(self._session, read=True)
+        channel_writes = self._channel_io(self._session, write=True)
+        has_reads = bool([read for reads in channel_reads.values() for read in reads])
+        has_writes = bool([write for writes in channel_writes.values() for write in writes])
+
         unit = UnitPart()
+
+        if has_reads or has_writes or self._external_io_buffers:
+            unit += self._create_allow_unevaluated_use_of_old()
+
         unit += self._create_abstract_functions(self._session.parameters)
         unit += self._create_uninitialized_function(composite_globals, is_global)
-        unit += self._create_global_initialized_function(composite_globals, is_global)
+        unit += self._create_global_initialized_function(
+            composite_globals,
+            self._external_io_buffers,
+            is_global,
+        )
+        unit += self._create_global_allocated_function()
         unit += self._create_initialized_function(composite_globals)
         unit += self._create_states(self._session, composite_globals, is_global)
         unit += self._create_active_function(self._session)
@@ -385,16 +410,13 @@ class SessionGenerator:
             self._session,
             evaluated_declarations.initialization_declarations,
             evaluated_declarations.initialization,
+            self._external_io_buffers,
         )
         unit += self._create_finalize_procedure(
             evaluated_declarations.initialization_declarations,
             evaluated_declarations.finalization,
+            self._external_io_buffers,
         )
-
-        channel_reads = self._channel_io(self._session, read=True)
-        channel_writes = self._channel_io(self._session, write=True)
-        has_reads = bool([read for reads in channel_reads.values() for read in reads])
-        has_writes = bool([write for writes in channel_writes.values() for write in writes])
 
         if has_reads:
             unit += self._create_reset_messages_before_write_procedure(self._session, is_global)
@@ -403,6 +425,26 @@ class SessionGenerator:
         unit += self._create_in_io_state_function(self._session)
         unit += self._create_run_procedure()
         unit += self._create_state_function()
+
+        if self._external_io_buffers:
+            self._session_context.used_types.append(const.TYPES_BIT_LENGTH)
+            self._session_context.used_types.append(const.TYPES_BYTES_PTR)
+
+            channel_io = self._channel_io(self._session, read=True, write=True)
+            unit += self._create_buffer_accessible_function(self._external_io_buffers)
+            unit += self._create_channel_accessible_function(channel_io)
+            unit += self._create_unreachable_external_buffer_function(self._external_io_buffers)
+            unit += self._create_accessible_buffer_function(channel_io)
+            unit += self._create_has_buffer_function(self._external_io_buffers)
+            unit += self._create_written_last_function(self._external_io_buffers)
+            unit += self._create_add_buffer_procedure(
+                self._external_io_buffers,
+                self.unit_identifier,
+            )
+            unit += self._create_remove_buffer_procedure(
+                self._external_io_buffers,
+                self.unit_identifier,
+            )
 
         if has_writes:
             unit += self._create_has_data_function(channel_writes, is_global)
@@ -417,6 +459,7 @@ class SessionGenerator:
         return (
             self._create_use_clauses(self._session_context.used_types)
             + self._create_channel_and_state_types(self._session)
+            + self._create_external_buffer_type(self._external_io_buffers)
             + self._create_context_type(self._session.initial_state.identifier, global_variables)
             + unit
         )
@@ -427,8 +470,6 @@ class SessionGenerator:
         read: bool = False,
         write: bool = False,
     ) -> dict[ID, list[ChannelAccess]]:
-        assert (read and not write) or (not read and write)
-
         channels: dict[ID, list[ChannelAccess]] = {
             parameter.identifier: []
             for parameter in session.parameters
@@ -438,7 +479,10 @@ class SessionGenerator:
             for action in state.actions:
                 if (
                     isinstance(action, ir.ChannelStmt)
-                    and isinstance(action, ir.Read if read else ir.Write)
+                    and (
+                        (isinstance(action, ir.Read) and read)
+                        or (isinstance(action, ir.Write) and write)
+                    )
                     and isinstance(action.expression, ir.Var)
                     and isinstance(action.expression.type_, rty.Message)
                 ):
@@ -452,7 +496,10 @@ class SessionGenerator:
 
         return channels
 
-    def _create_use_clauses(self, used_types: Sequence[ID]) -> UnitPart:
+    def _create_use_clauses(
+        self,
+        used_types: Sequence[ID],
+    ) -> UnitPart:
         return UnitPart(
             [
                 UseTypeClause(self._prefix * t)
@@ -479,6 +526,22 @@ class SessionGenerator:
                 EnumerationType(
                     "State",
                     {state_id(s.identifier): None for s in [*session.states, ir.FINAL_STATE]},
+                ),
+            ],
+        )
+
+    @staticmethod
+    def _create_external_buffer_type(
+        external_io_buffers: Sequence[common.Message],
+    ) -> UnitPart:
+        if not external_io_buffers:
+            return UnitPart()
+
+        return UnitPart(
+            [
+                EnumerationType(
+                    "External_Buffer",
+                    {b.external_buffer_id: None for b in external_io_buffers},
                 ),
             ],
         )
@@ -533,6 +596,12 @@ class SessionGenerator:
                     ],
                 ),
             ],
+        )
+
+    @staticmethod
+    def _create_allow_unevaluated_use_of_old() -> UnitPart:
+        return UnitPart(
+            [Pragma("Unevaluated_Use_Of_Old", [Variable("Allow")])],
         )
 
     def _create_abstract_functions(
@@ -686,7 +755,7 @@ class SessionGenerator:
                                     [Variable("Ctx.P.Slots")],
                                 ),
                             ]
-                            if composite_globals
+                            if composite_globals and self._allocator.required
                             else []
                         ),
                     ),
@@ -694,9 +763,36 @@ class SessionGenerator:
             ],
         )
 
+    def _create_global_allocated_function(self) -> UnitPart:
+        if not self._allocator.required:
+            return UnitPart()
+
+        specification = FunctionSpecification(
+            "Global_Allocated",
+            "Boolean",
+            [Parameter(["Ctx"], "Context'Class")],
+        )
+
+        return UnitPart(
+            [SubprogramDeclaration(specification)],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Call(
+                        self._allocator.unit_identifier * "Global_Allocated",
+                        [Variable("Ctx.P.Slots")],
+                    ),
+                ),
+            ],
+        )
+
+    def _call_global_allocated(self) -> list[Expr]:
+        return [Call("Global_Allocated", [Variable("Ctx")])] if self._allocator.required else []
+
     def _create_global_initialized_function(
         self,
         composite_globals: Sequence[ir.VarDecl],
+        external_io_buffers: Sequence[common.Message],
         is_global: Callable[[ID], bool],
     ) -> UnitPart:
         if not composite_globals:
@@ -723,16 +819,29 @@ class SessionGenerator:
                                     d.type_.identifier * "Has_Buffer",
                                     [Variable(context_id(d.identifier, is_global))],
                                 ),
-                                Equal(
-                                    Variable(context_id(d.identifier, is_global) * "Buffer_First"),
-                                    First(const.TYPES_INDEX),
-                                ),
-                                Equal(
-                                    Variable(context_id(d.identifier, is_global) * "Buffer_Last"),
-                                    Add(
-                                        First(const.TYPES_INDEX),
-                                        Number(self._allocator.get_size(d.identifier) - 1),
-                                    ),
+                                *(
+                                    [
+                                        Equal(
+                                            Variable(
+                                                context_id(d.identifier, is_global)
+                                                * "Buffer_First",
+                                            ),
+                                            First(const.TYPES_INDEX),
+                                        ),
+                                        Equal(
+                                            Variable(
+                                                context_id(d.identifier, is_global) * "Buffer_Last",
+                                            ),
+                                            Add(
+                                                First(const.TYPES_INDEX),
+                                                Number(self._allocator.get_size(d.identifier) - 1),
+                                            ),
+                                        ),
+                                    ]
+                                    if all(
+                                        b.identifier != d.identifier for b in external_io_buffers
+                                    )
+                                    else []
                                 ),
                             ]
                         ],
@@ -771,16 +880,7 @@ class SessionGenerator:
                                 if composite_globals
                                 else []
                             ),
-                            *(
-                                [
-                                    Call(
-                                        self._allocator.unit_identifier * "Global_Allocated",
-                                        [Variable("Ctx.P.Slots")],
-                                    ),
-                                ]
-                                if self._allocator.required
-                                else []
-                            ),
+                            *self._call_global_allocated(),
                         ],
                     ),
                 ),
@@ -1028,21 +1128,52 @@ class SessionGenerator:
         session: ir.Session,
         declarations: Sequence[Declaration],
         initialization: Sequence[Statement],
+        external_io_buffers: Sequence[common.Message],
     ) -> UnitPart:
         specification = ProcedureSpecification(
             "Initialize",
-            [InOutParameter(["Ctx"], "Context'Class")],
+            [
+                InOutParameter(["Ctx"], "Context'Class"),
+                *[
+                    InOutParameter([b.buffer_id], const.TYPES_BYTES_PTR)
+                    for b in external_io_buffers
+                ],
+            ],
         )
         return UnitPart(
             [
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(Call("Uninitialized", [Variable("Ctx")])),
+                        Precondition(
+                            AndThen(
+                                Call("Uninitialized", [Variable("Ctx")]),
+                                *[
+                                    c
+                                    for b in external_io_buffers
+                                    for c in [
+                                        NotEqual(Variable(b.buffer_id), Literal("null")),
+                                        Greater(Length(b.buffer_id), Number(0)),
+                                        Less(Last(b.buffer_id), Last(const.TYPES_INDEX)),
+                                    ]
+                                ],
+                            ),
+                        ),
                         Postcondition(
                             And(
                                 Call("Initialized", [Variable("Ctx")]),
                                 Call("Active", [Variable("Ctx")]),
+                                *[
+                                    c
+                                    for b in external_io_buffers
+                                    for c in [
+                                        Call(
+                                            "Has_Buffer",
+                                            [Variable("Ctx"), Literal(b.external_buffer_id)],
+                                        ),
+                                        Equal(Variable(b.buffer_id), Literal("null")),
+                                    ]
+                                ],
                             ),
                         ),
                     ],
@@ -1067,21 +1198,40 @@ class SessionGenerator:
     def _create_finalize_procedure(
         declarations: Sequence[Declaration],
         finalization: Sequence[Statement],
+        external_io_buffers: Sequence[common.Message],
     ) -> UnitPart:
         specification = ProcedureSpecification(
             "Finalize",
-            [InOutParameter(["Ctx"], "Context'Class")],
+            [
+                InOutParameter(["Ctx"], "Context'Class"),
+                *[
+                    InOutParameter([b.buffer_id], const.TYPES_BYTES_PTR)
+                    for b in external_io_buffers
+                ],
+            ],
         )
         return UnitPart(
             [
                 SubprogramDeclaration(
                     specification,
                     [
-                        Precondition(Call("Initialized", [Variable("Ctx")])),
+                        Precondition(
+                            AndThen(
+                                Call("Initialized", [Variable("Ctx")]),
+                                *[
+                                    Equal(Variable(b.buffer_id), Literal("null"))
+                                    for b in external_io_buffers
+                                ],
+                            ),
+                        ),
                         Postcondition(
                             And(
                                 Call("Uninitialized", [Variable("Ctx")]),
                                 Not(Call("Active", [Variable("Ctx")])),
+                                *[
+                                    NotEqual(Variable(b.buffer_id), Literal("null"))
+                                    for b in external_io_buffers
+                                ],
                             ),
                         ),
                     ],
@@ -1327,6 +1477,526 @@ class SessionGenerator:
                 ),
             ],
         )
+
+    @staticmethod
+    def _create_buffer_accessible_function(
+        external_io_buffers: Sequence[common.Message],
+    ) -> UnitPart:
+        specification = FunctionSpecification(
+            "Buffer_Accessible",
+            "Boolean",
+            [
+                Parameter(["Ctx"], "Context'Class"),
+                Parameter(
+                    ["Ext_Buf" if len(external_io_buffers) > 1 else "Unused_Ext_Buf"],
+                    "External_Buffer",
+                ),
+            ],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                ),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    ForSomeIn(
+                        "C",
+                        Variable("Channel"),
+                        AndThen(
+                            Call("Channel_Accessible", [Variable("Ctx"), Variable("C")]),
+                            *(
+                                [
+                                    Equal(
+                                        Call("Accessible_Buffer", [Variable("Ctx"), Variable("C")]),
+                                        Variable("Ext_Buf"),
+                                    ),
+                                ]
+                                if len(external_io_buffers) > 1
+                                else []
+                            ),
+                        ),
+                    ),
+                ),
+            ],
+        )
+
+    @staticmethod
+    def _create_channel_accessible_function(
+        channel_accesses: dict[ID, list[ChannelAccess]],
+    ) -> UnitPart:
+        specification = FunctionSpecification(
+            "Channel_Accessible",
+            "Boolean",
+            [Parameter(["Ctx"], "Context'Class"), Parameter(["Chan"], "Channel")],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                ),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Chan"),
+                        [
+                            (
+                                Variable(f"C_{channel}"),
+                                Case(
+                                    Variable("Ctx.P.Next_State"),
+                                    [
+                                        *[
+                                            (Variable(state_id(access.state)), TRUE)
+                                            for access in accesses
+                                        ],
+                                        (Variable("others"), FALSE),
+                                    ],
+                                ),
+                            )
+                            for channel, accesses in channel_accesses.items()
+                        ],
+                    ),
+                ),
+            ],
+        )
+
+    @staticmethod
+    def _create_unreachable_external_buffer_function(
+        external_io_buffers: Sequence[common.Message],
+    ) -> UnitPart:
+        specification = FunctionSpecification(
+            "Unreachable_External_Buffer",
+            "External_Buffer",
+        )
+
+        return UnitPart(
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Literal(external_io_buffers[0].external_buffer_id),
+                    [
+                        Precondition(
+                            FALSE,
+                        ),
+                    ],
+                ),
+            ],
+        )
+
+    @staticmethod
+    def _create_accessible_buffer_function(
+        channel_accesses: dict[ID, list[ChannelAccess]],
+    ) -> UnitPart:
+        specification = FunctionSpecification(
+            "Accessible_Buffer",
+            "External_Buffer",
+            [Parameter(["Ctx"], "Context'Class"), Parameter(["Chan"], "Channel")],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            Call("Channel_Accessible", [Variable("Ctx"), Variable("Chan")]),
+                        ),
+                    ],
+                ),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Chan"),
+                        [
+                            (
+                                Variable(f"C_{channel}"),
+                                Case(
+                                    Variable("Ctx.P.Next_State"),
+                                    [
+                                        *[
+                                            (
+                                                Variable(state_id(access.state)),
+                                                Literal(f"B_{access.message}"),
+                                            )
+                                            for access in accesses
+                                        ],
+                                        (Variable("others"), Call("Unreachable_External_Buffer")),
+                                    ],
+                                ),
+                            )
+                            for channel, accesses in channel_accesses.items()
+                        ],
+                    ),
+                ),
+            ],
+        )
+
+    @staticmethod
+    def _create_has_buffer_function(external_io_buffers: Sequence[common.Message]) -> UnitPart:
+        specification = FunctionSpecification(
+            "Has_Buffer",
+            "Boolean",
+            [Parameter(["Ctx"], "Context'Class"), Parameter(["Ext_Buf"], "External_Buffer")],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                ),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Ext_Buf"),
+                        [
+                            (
+                                Literal(b.external_buffer_id),
+                                Call(
+                                    b.type_identifier * "Has_Buffer",
+                                    [Variable(context_id(b.identifier, lambda _: True))],
+                                ),
+                            )
+                            for b in external_io_buffers
+                        ],
+                    ),
+                ),
+            ],
+        )
+
+    @staticmethod
+    def _create_written_last_function(external_io_buffers: Sequence[common.Message]) -> UnitPart:
+        specification = FunctionSpecification(
+            "Written_Last",
+            const.TYPES_BIT_LENGTH,
+            [Parameter(["Ctx"], "Context'Class"), Parameter(["Ext_Buf"], "External_Buffer")],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                ),
+            ],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    Case(
+                        Variable("Ext_Buf"),
+                        [
+                            (
+                                Literal(b.external_buffer_id),
+                                Call(
+                                    b.type_identifier * "Written_Last",
+                                    [Variable(context_id(b.identifier, lambda _: True))],
+                                ),
+                            )
+                            for b in external_io_buffers
+                        ],
+                    ),
+                ),
+            ],
+        )
+
+    def _create_add_buffer_procedure(
+        self,
+        external_io_buffers: Sequence[common.Message],
+        unit_id: ID,
+    ) -> UnitPart:
+        specification = ProcedureSpecification(
+            "Add_Buffer",
+            [
+                InOutParameter(["Ctx"], "Context'Class"),
+                Parameter(["Ext_Buf"], "External_Buffer"),
+                InOutParameter(["Buffer"], const.TYPES_BYTES_PTR),
+                Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
+            ],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            AndThen(
+                                *self._call_global_allocated(),
+                                Call("Buffer_Accessible", [Variable("Ctx"), Variable("Ext_Buf")]),
+                                Not(Call("Has_Buffer", [Variable("Ctx"), Variable("Ext_Buf")])),
+                                NotEqual(Variable("Buffer"), Literal("null")),
+                                Greater(Length("Buffer"), Number(0)),
+                                Less(Last("Buffer"), Last(const.TYPES_INDEX)),
+                                Or(
+                                    Equal(Variable("Written_Last"), Number(0)),
+                                    And(
+                                        GreaterEqual(
+                                            Variable("Written_Last"),
+                                            Sub(
+                                                Call(
+                                                    const.TYPES_TO_FIRST_BIT_INDEX,
+                                                    [First("Buffer")],
+                                                ),
+                                                Number(1),
+                                            ),
+                                        ),
+                                        LessEqual(
+                                            Variable("Written_Last"),
+                                            Call(
+                                                const.TYPES_TO_LAST_BIT_INDEX,
+                                                [Last("Buffer")],
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                                Equal(
+                                    Mod(Variable("Written_Last"), Size(const.TYPES_BYTE)),
+                                    Number(0),
+                                ),
+                            ),
+                        ),
+                        Postcondition(
+                            AndThen(
+                                *self._call_global_allocated(),
+                                Call("Buffer_Accessible", [Variable("Ctx"), Variable("Ext_Buf")]),
+                                Call("Has_Buffer", [Variable("Ctx"), Variable("Ext_Buf")]),
+                                Equal(Variable("Buffer"), Literal("null")),
+                                *self._external_buffer_invariant(external_io_buffers, unit_id),
+                            ),
+                        ),
+                    ],
+                ),
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [],
+                    [
+                        CaseStatement(
+                            Variable("Ext_Buf"),
+                            [
+                                (
+                                    Variable(b.external_buffer_id),
+                                    [
+                                        self._initialize_context(
+                                            b.identifier,
+                                            b.type_identifier,
+                                            lambda _: True,
+                                            parameters=(
+                                                {
+                                                    n: Variable(
+                                                        context_id(b.identifier, lambda _: True)
+                                                        * n,
+                                                    )
+                                                    for n in b.parameters
+                                                }
+                                            ),
+                                            written_last=Variable("Written_Last"),
+                                            buffer=Variable("Buffer"),
+                                        ),
+                                    ],
+                                )
+                                for b in external_io_buffers
+                            ],
+                        ),
+                        Assignment(
+                            Variable("Buffer"),
+                            Literal("null"),
+                        ),
+                    ],
+                ),
+            ],
+        )
+
+    def _create_remove_buffer_procedure(
+        self,
+        external_io_buffers: Sequence[common.Message],
+        unit_id: ID,
+    ) -> UnitPart:
+        specification = ProcedureSpecification(
+            "Remove_Buffer",
+            [
+                InOutParameter(["Ctx"], "Context'Class"),
+                Parameter(["Ext_Buf"], "External_Buffer"),
+                OutParameter(["Buffer"], const.TYPES_BYTES_PTR),
+            ],
+        )
+
+        return UnitPart(
+            [
+                SubprogramDeclaration(
+                    specification,
+                    [
+                        Precondition(
+                            And(
+                                *self._call_global_allocated(),
+                                Call("Buffer_Accessible", [Variable("Ctx"), Variable("Ext_Buf")]),
+                                Call("Has_Buffer", [Variable("Ctx"), Variable("Ext_Buf")]),
+                            ),
+                        ),
+                        Postcondition(
+                            AndThen(
+                                *self._call_global_allocated(),
+                                Call("Buffer_Accessible", [Variable("Ctx"), Variable("Ext_Buf")]),
+                                Not(Call("Has_Buffer", [Variable("Ctx"), Variable("Ext_Buf")])),
+                                NotEqual(Variable("Buffer"), Literal("null")),
+                                Greater(Length("Buffer"), Number(0)),
+                                Less(Last("Buffer"), Last(const.TYPES_INDEX)),
+                                Or(
+                                    Equal(
+                                        Call(
+                                            "Written_Last",
+                                            [Variable("Ctx"), Variable("Ext_Buf")],
+                                        ),
+                                        Number(0),
+                                    ),
+                                    And(
+                                        GreaterEqual(
+                                            Call(
+                                                "Written_Last",
+                                                [Variable("Ctx"), Variable("Ext_Buf")],
+                                            ),
+                                            Sub(
+                                                Call(
+                                                    const.TYPES_TO_FIRST_BIT_INDEX,
+                                                    [First("Buffer")],
+                                                ),
+                                                Number(1),
+                                            ),
+                                        ),
+                                        LessEqual(
+                                            Call(
+                                                "Written_Last",
+                                                [Variable("Ctx"), Variable("Ext_Buf")],
+                                            ),
+                                            Call(
+                                                const.TYPES_TO_LAST_BIT_INDEX,
+                                                [Last("Buffer")],
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                                Equal(
+                                    Mod(
+                                        Call(
+                                            "Written_Last",
+                                            [Variable("Ctx"), Variable("Ext_Buf")],
+                                        ),
+                                        Size(const.TYPES_BYTE),
+                                    ),
+                                    Number(0),
+                                ),
+                                *self._external_buffer_invariant(external_io_buffers, unit_id),
+                            ),
+                        ),
+                    ],
+                ),
+            ],
+            [
+                SubprogramBody(
+                    specification,
+                    [],
+                    [
+                        CaseStatement(
+                            Variable("Ext_Buf"),
+                            [
+                                (
+                                    Variable(b.external_buffer_id),
+                                    [
+                                        *self._take_buffer(
+                                            b.identifier,
+                                            b.type_identifier,
+                                            lambda _: True,
+                                            ID("Buffer"),
+                                        ),
+                                        # Improve provability of postcondition
+                                        PragmaStatement(
+                                            "Assert",
+                                            [
+                                                Call(
+                                                    "Buffer_Accessible",
+                                                    [Variable("Ctx"), Variable("Ext_Buf")],
+                                                ),
+                                            ],
+                                        ),
+                                    ],
+                                )
+                                for b in external_io_buffers
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        )
+
+    @staticmethod
+    def _external_buffer_invariant(
+        external_io_buffers: Sequence[common.Message],
+        unit_id: ID,
+    ) -> list[Expr]:
+        return [
+            *[
+                If(
+                    [
+                        (
+                            NotEqual(
+                                Variable("Ext_Buf"),
+                                Literal(b.external_buffer_id),
+                            ),
+                            And(
+                                *(
+                                    Equal(c, Old(c))
+                                    for f in ["Has_Buffer", f"{unit_id}.Written_Last"]
+                                    for c in [
+                                        Call(
+                                            f,
+                                            [
+                                                Variable("Ctx"),
+                                                Literal(b.external_buffer_id),
+                                            ],
+                                        ),
+                                    ]
+                                ),
+                            ),
+                        ),
+                    ],
+                )
+                for b in external_io_buffers
+            ],
+            *[
+                Equal(
+                    Call(
+                        "Buffer_Accessible",
+                        [
+                            Variable("Ctx"),
+                            Literal(b.external_buffer_id),
+                        ],
+                    ),
+                    Old(
+                        Call(
+                            "Buffer_Accessible",
+                            [
+                                Variable("Ctx"),
+                                Literal(b.external_buffer_id),
+                            ],
+                        ),
+                    ),
+                )
+                for b in external_io_buffers
+            ],
+            Equal(
+                Call("Next_State", [Variable("Ctx")]),
+                Old(Call("Next_State", [Variable("Ctx")])),
+            ),
+        ]
 
     @staticmethod
     def _create_has_data_function(
@@ -1607,7 +2277,13 @@ class SessionGenerator:
                             ),
                         ),
                         Postcondition(
-                            Call("Initialized", [Variable("Ctx")]),
+                            AndThen(
+                                Call("Initialized", [Variable("Ctx")]),
+                                Equal(
+                                    Call("Next_State", [Variable("Ctx")]),
+                                    Old(Call("Next_State", [Variable("Ctx")])),
+                                ),
+                            ),
                         ),
                     ],
                 ),
@@ -1812,7 +2488,13 @@ class SessionGenerator:
                             ),
                         ),
                         Postcondition(
-                            Call("Initialized", [Variable("Ctx")]),
+                            AndThen(
+                                Call("Initialized", [Variable("Ctx")]),
+                                Equal(
+                                    Call("Next_State", [Variable("Ctx")]),
+                                    Old(Call("Next_State", [Variable("Ctx")])),
+                                ),
+                            ),
                         ),
                     ],
                 ),
@@ -2089,7 +2771,7 @@ class SessionGenerator:
             result = self._read(action, is_global)
 
         elif isinstance(action, ir.Write):
-            result = self._write(action)
+            result = self._write(action, self._external_io_buffers, is_global)
 
         elif isinstance(action, ir.Check):
             result = self._check(action.expression, action.origin, exception_handler, is_global)
@@ -2100,8 +2782,10 @@ class SessionGenerator:
                 location=action.location,
             )
 
-        assert action.location is not None
-        return [CommentStatement(str(action.location)), *result]
+        return [
+            *([CommentStatement(str(action.location))] if action.location is not None else []),
+            *result,
+        ]
 
     def _declare(  # noqa: PLR0912, PLR0913
         self,
@@ -2207,7 +2891,8 @@ class SessionGenerator:
                     (lambda _: False) if session_global else is_global,
                 ),
             )
-            result.initialization_declarations.append(self._declare_buffer(identifier))
+            if not self._allocator.is_externally_managed(alloc_id):
+                result.initialization_declarations.append(self._declare_buffer(identifier))
             result.initialization.extend(
                 [
                     *self._allocate_buffer(identifier, alloc_id),
@@ -2227,6 +2912,8 @@ class SessionGenerator:
                     ),
                 ],
             )
+            if self._allocator.is_externally_managed(alloc_id):
+                result.initialization.append(Assignment(buffer_id(identifier), Variable("null")))
             result.finalization.extend(
                 self._free_context_buffer(identifier, type_identifier, is_global, alloc_id),
             )
@@ -3285,6 +3972,32 @@ class SessionGenerator:
                 f'invalid conversion "{conversion}"',
                 exception_handler,
             ),
+            self._raise_exception_if(
+                Not(
+                    Call(
+                        contains_package * f"Sufficient_Space_For_{field}",
+                        [
+                            Variable(context_id(conversion.argument.message, is_global)),
+                            Variable(context_id(target, is_global)),
+                        ],
+                    ),
+                ),
+                f'insufficient space for "{field}" in "{target}"',
+                exception_handler,
+            ),
+            CallStatement(
+                contains_package * f"Copy_{field}",
+                [
+                    Variable(context_id(conversion.argument.message, is_global)),
+                    Variable(context_id(target, is_global)),
+                ],
+            ),
+            CallStatement(
+                sdu.identifier * "Verify_Message",
+                [
+                    Variable(context_id(target, is_global)),
+                ],
+            ),
             CallStatement(
                 contains_package * f"Copy_{field}",
                 [
@@ -3479,12 +4192,22 @@ class SessionGenerator:
     @staticmethod
     def _write(
         write: ir.Write,
+        external_io_buffers: Sequence[common.Message],
+        is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
         if not isinstance(write.expression, ir.Var) or not isinstance(
             write.expression.type_,
             rty.Message,
         ):
             _unsupported_expression(write.expression, "in Write statement")
+
+        if external_io_buffers:
+            # The context state is lost if the buffer is removed for reading.
+            target_type = write.expression.type_.identifier
+            target_context = context_id(write.expression.identifier, is_global)
+            return [
+                CallStatement(target_type * "Verify_Message", [Variable(target_context)]),
+            ]
 
         return []
 
@@ -4119,17 +4842,23 @@ class SessionGenerator:
                     ),
                 )
 
-        assert_sufficient_space = PragmaStatement(
-            "Assert",
+        sufficient_space = Call(
+            message_type_id * "Sufficient_Space",
             [
-                Call(
-                    message_type_id * "Sufficient_Space",
-                    [
-                        Variable(message_context),
-                        Variable(message_type_id * model.Field(field).affixed_name),
-                    ],
-                ),
+                Variable(message_context),
+                Variable(message_type_id * model.Field(field).affixed_name),
             ],
+        )
+        assert_sufficient_space = (
+            self._raise_exception_if(
+                Not(sufficient_space),
+                f'insufficient space in message "{message_context}" to set field "{field.name}"'
+                f' to "{value}"',
+                exception_handler,
+            )
+            if message_context
+            in (context_id(b.identifier, is_global) for b in self._external_io_buffers)
+            else PragmaStatement("Assert", [sufficient_space])
         )
 
         if isinstance(value, (ir.IntVal, ir.BoolVal, ir.FieldAccess, ir.Agg, ir.CaseExpr)) or (
@@ -4996,6 +5725,9 @@ class SessionGenerator:
         is_global: Callable[[ID], bool],
         alloc_id: Optional[Location],
     ) -> Sequence[Statement]:
+        if self._allocator.is_externally_managed(alloc_id):
+            return self._take_buffer(identifier, type_, is_global)
+
         return [
             *self._take_buffer(identifier, type_, is_global),
             *self._free_buffer(identifier, alloc_id),
@@ -5092,6 +5824,9 @@ class SessionGenerator:
         ]
 
     def _allocate_buffer(self, identifier: ID, alloc_id: Optional[Location]) -> Sequence[Statement]:
+        if self._allocator.is_externally_managed(alloc_id):
+            return []
+
         self._session_context.used_types_body.append(const.TYPES_INDEX)
         slot_id = Variable("Ctx.P.Slots" * self._allocator.get_slot_ptr(alloc_id))
         return [
@@ -5110,12 +5845,13 @@ class SessionGenerator:
         last: Optional[Expr] = None,
         parameters: Optional[Mapping[ID, Expr]] = None,
         written_last: Optional[Expr] = None,
+        buffer: Optional[Expr] = None,
     ) -> CallStatement:
         return CallStatement(
             type_ * "Initialize",
             [
                 Variable(context_id(identifier, is_global)),
-                Variable(buffer_id(identifier)),
+                Variable(buffer_id(identifier)) if buffer is None else buffer,
                 *(
                     [
                         first
@@ -5125,9 +5861,11 @@ class SessionGenerator:
                     if first or last
                     else []
                 ),
-                *([written_last] if written_last else []),
             ],
-            parameters,
+            {
+                **(parameters if parameters else {}),
+                **({ID("Written_Last"): written_last} if written_last else {}),
+            },
         )
 
     def _copy_to_buffer(

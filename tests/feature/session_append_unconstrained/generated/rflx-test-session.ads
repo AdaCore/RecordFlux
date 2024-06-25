@@ -36,7 +36,11 @@ is
          P : Private_Context;
       end record;
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+
    function Uninitialized (Ctx : Context'Class) return Boolean;
+
+   function Global_Allocated (Ctx : Context'Class) return Boolean;
 
    function Initialized (Ctx : Context'Class) return Boolean;
 
@@ -97,7 +101,8 @@ is
        and then Offset <= RFLX_Types.Length'Last - Buffer'Length
        and then Buffer'Length + Offset <= Read_Buffer_Size (Ctx, Chan),
      Post =>
-       Initialized (Ctx);
+       Initialized (Ctx)
+       and then Next_State (Ctx) = Next_State (Ctx)'Old;
 
 private
 
@@ -118,9 +123,12 @@ private
       and then Ctx.P.Message_Ctx.Buffer_First = RFLX_Types.Index'First
       and then Ctx.P.Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
 
+   function Global_Allocated (Ctx : Context'Class) return Boolean is
+     (Test.Session_Allocator.Global_Allocated (Ctx.P.Slots));
+
    function Initialized (Ctx : Context'Class) return Boolean is
      (Global_Initialized (Ctx)
-      and then Test.Session_Allocator.Global_Allocated (Ctx.P.Slots));
+      and then Global_Allocated (Ctx));
 
    function Active (Ctx : Context'Class) return Boolean is
      (Ctx.P.Next_State /= S_Final);

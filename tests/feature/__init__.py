@@ -32,6 +32,7 @@ class ConfigFile(BaseModel):  # type: ignore[misc]
     output: Optional[ty.Sequence[str]] = None
     sequence: Optional[str] = None
     prove: Optional[ty.Sequence[str]] = None
+    external_io_buffers: Optional[int] = None
 
     @field_validator("input")
     def initialize_input_if_present(
@@ -54,13 +55,21 @@ class ConfigFile(BaseModel):  # type: ignore[misc]
     ) -> ty.Sequence[str]:
         return value if value is not None else []
 
+    @field_validator("external_io_buffers")
+    def initialize_external_io_buffers_if_present(
+        cls,  # noqa: N805
+        value: Optional[int],
+    ) -> int:
+        return value if value is not None else 0
 
-@dataclass(frozen=True)
+
+@dataclass
 class Config:
     inp: dict[str, Sequence[tuple[int, ...]]] = dataclass_field(default_factory=dict)
     out: Sequence[str] = dataclass_field(default_factory=list)
     sequence: str = dataclass_field(default="")
     prove: Optional[Sequence[str]] = dataclass_field(default=None)
+    external_io_buffers: int = dataclass_field(default=0)
 
 
 def get_config(feature: str) -> Config:
@@ -82,6 +91,7 @@ def get_config(feature: str) -> Config:
             cfg.output if cfg.output is not None else [],
             cfg.sequence if cfg.sequence else "",
             cfg.prove,
+            cfg.external_io_buffers if cfg.external_io_buffers is not None else 0,
         )
 
     return Config()
@@ -98,6 +108,7 @@ def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
         config.inp,
         config.out,
         session_package="RFLX.Test.Session",
+        external_io_buffers=config.external_io_buffers,
     )
 
     assert MAIN in complement

@@ -88,6 +88,13 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      if not Universal.Contains.Sufficient_Space_For_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      Universal.Contains.Copy_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx);
+      Universal.Option.Verify_Message (Ctx.P.Inner_Message_Ctx);
       Universal.Contains.Copy_Data (Ctx.P.Message_Ctx, Ctx.P.Inner_Message_Ctx);
       Universal.Option.Verify_Message (Ctx.P.Inner_Message_Ctx);
       Ctx.P.Next_State := S_Reply;

@@ -297,7 +297,7 @@ def _create_files(
 
                package Prove is
                   for Proof_Switches ("Ada") use
-                     Defaults.Proof_Switches & ("--steps=0", "--timeout=150");
+                     Defaults.Proof_Switches & ("--steps=0", "--timeout=60");
                end Prove;
             end Test;""",
         ),
@@ -322,6 +322,7 @@ def session_main(
     context: Optional[Sequence[ada.ContextItem]] = None,
     subprograms: Optional[Sequence[ada.SubprogramBody]] = None,
     session_package: StrID = "RFLX.Test.Session",
+    external_io_buffers: int = 0,
 ) -> Mapping[str, str]:
     input_channels = input_channels or {}
     output_channels = output_channels or []
@@ -335,15 +336,74 @@ def session_main(
         run_procedure_spec,
         [
             ada.ObjectDeclaration(["Ctx"], "Session.Context"),
+            *(
+                [
+                    ada.UseTypeClause("RFLX" * const.TYPES_INDEX),
+                    ada.UseTypeClause("RFLX" * const.TYPES_BYTES_PTR),
+                    ada.ArrayType(
+                        "Bytes_Ptrs",
+                        session_package * "External_Buffer",
+                        "RFLX" * const.TYPES_BYTES_PTR,
+                    ),
+                    ada.ObjectDeclaration(["Buffers"], "Bytes_Ptrs"),
+                ]
+                if external_io_buffers
+                else []
+            ),
         ],
         [
-            ada.CallStatement(session_package * "Initialize", [ada.Variable("Ctx")]),
+            *(
+                [
+                    ada.ForIn(
+                        "B",
+                        ada.Variable(session_package * "External_Buffer"),
+                        [
+                            ada.Assignment(
+                                ada.Indexed(ada.Variable("Buffers"), ada.Variable("B")),
+                                ada.New(
+                                    ada.QualifiedExpr(
+                                        "RFLX" * const.TYPES_BYTES,
+                                        ada.NamedAggregate(
+                                            (
+                                                ada.ValueRange(
+                                                    ada.First("RFLX" * const.TYPES_INDEX),
+                                                    ada.Add(
+                                                        ada.First("RFLX" * const.TYPES_INDEX),
+                                                        ada.Number(4095),
+                                                    ),
+                                                ),
+                                                ada.Number(0),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ],
+                    ),
+                ]
+                if external_io_buffers
+                else []
+            ),
+            ada.CallStatement(
+                session_package * "Initialize",
+                [
+                    ada.Variable("Ctx"),
+                    *_external_io_buffer_arguments(session_package, external_io_buffers),
+                ],
+            ),
             ada.While(
                 ada.Call(session_package * "Active", [ada.Variable("Ctx")]),
                 [
                     ada.PragmaStatement(
                         "Loop_Invariant",
                         [ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])],
+                    ),
+                    *(
+                        [
+                            ada.PragmaStatement("Loop_Invariant", [_buffer_invariant()]),
+                        ]
+                        if external_io_buffers
+                        else []
                     ),
                     *(
                         [
@@ -359,6 +419,16 @@ def session_main(
                                                 [ada.Variable("Ctx")],
                                             ),
                                         ],
+                                    ),
+                                    *(
+                                        [
+                                            ada.PragmaStatement(
+                                                "Loop_Invariant",
+                                                [_buffer_invariant()],
+                                            ),
+                                        ]
+                                        if external_io_buffers
+                                        else []
                                     ),
                                     *(
                                         [
@@ -379,6 +449,18 @@ def session_main(
                                                                     ada.Variable("Ctx"),
                                                                     ada.Variable("C"),
                                                                 ],
+                                                            ),
+                                                            *(
+                                                                [
+                                                                    _remove_buffer_call(
+                                                                        session_package,
+                                                                    ),
+                                                                    _add_buffer_call(
+                                                                        session_package,
+                                                                    ),
+                                                                ]
+                                                                if external_io_buffers
+                                                                else []
                                                             ),
                                                         ],
                                                     ),
@@ -408,6 +490,18 @@ def session_main(
                                                                     ada.Variable("C"),
                                                                 ],
                                                             ),
+                                                            *(
+                                                                [
+                                                                    _remove_buffer_call(
+                                                                        session_package,
+                                                                    ),
+                                                                    _add_buffer_call(
+                                                                        session_package,
+                                                                    ),
+                                                                ]
+                                                                if external_io_buffers
+                                                                else []
+                                                            ),
                                                         ],
                                                     ),
                                                 ],
@@ -416,10 +510,94 @@ def session_main(
                                         if input_channels
                                         else []
                                     ),
+                                    *(
+                                        [ada.PragmaStatement("Assert", [_buffer_invariant()])]
+                                        if external_io_buffers
+                                        else []
+                                    ),
                                 ],
                             ),
                         ]
                         if input_channels or output_channels
+                        else []
+                    ),
+                    *(
+                        [
+                            ada.PragmaStatement("Assert", [_buffer_invariant()]),
+                            ada.ForIn(
+                                "B",
+                                ada.Variable(session_package * "External_Buffer"),
+                                [
+                                    ada.IfStatement(
+                                        [
+                                            (
+                                                ada.Call(
+                                                    session_package * "Buffer_Accessible",
+                                                    [
+                                                        ada.Variable("Ctx"),
+                                                        ada.Variable("B"),
+                                                    ],
+                                                ),
+                                                [
+                                                    ada.CallStatement(
+                                                        session_package * "Remove_Buffer",
+                                                        [
+                                                            ada.Variable("Ctx"),
+                                                            ada.Variable("B"),
+                                                            ada.Indexed(
+                                                                ada.Variable("Buffers"),
+                                                                ada.Variable("B"),
+                                                            ),
+                                                        ],
+                                                    ),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            ada.ForIn(
+                                "B",
+                                ada.Variable(session_package * "External_Buffer"),
+                                [
+                                    ada.IfStatement(
+                                        [
+                                            (
+                                                ada.Call(
+                                                    session_package * "Buffer_Accessible",
+                                                    [
+                                                        ada.Variable("Ctx"),
+                                                        ada.Variable("B"),
+                                                    ],
+                                                ),
+                                                [
+                                                    ada.CallStatement(
+                                                        session_package * "Add_Buffer",
+                                                        [
+                                                            ada.Variable("Ctx"),
+                                                            ada.Variable("B"),
+                                                            ada.Indexed(
+                                                                ada.Variable("Buffers"),
+                                                                ada.Variable("B"),
+                                                            ),
+                                                            ada.Call(
+                                                                session_package * "Written_Last",
+                                                                [
+                                                                    ada.Variable("Ctx"),
+                                                                    ada.Variable("B"),
+                                                                ],
+                                                            ),
+                                                        ],
+                                                    ),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            ada.PragmaStatement("Assert", [_buffer_invariant()]),
+                        ]
+                        if external_io_buffers
                         else []
                     ),
                     ada.CallStatement(session_package * "Run", [ada.Variable("Ctx")]),
@@ -436,7 +614,13 @@ def session_main(
                     ada.String('"Ctx" is set by "Finalize" but not used after the call'),
                 ],
             ),
-            ada.CallStatement(session_package * "Finalize", [ada.Variable("Ctx")]),
+            ada.CallStatement(
+                session_package * "Finalize",
+                [
+                    ada.Variable("Ctx"),
+                    *_external_io_buffer_arguments(session_package, external_io_buffers),
+                ],
+            ),
             ada.PragmaStatement(
                 "Warnings",
                 [ada.Variable("On"), ada.String("statement has no effect")],
@@ -447,6 +631,42 @@ def session_main(
                     ada.Variable("On"),
                     ada.String('"Ctx" is set by "Finalize" but not used after the call'),
                 ],
+            ),
+            *(
+                [
+                    ada.ForIn(
+                        "B",
+                        ada.Variable(session_package * "External_Buffer"),
+                        [
+                            ada.PragmaStatement(
+                                "Warnings",
+                                [
+                                    ada.Variable("Off"),
+                                    ada.String(
+                                        '"Buffers" is set by "Free" but not used after the call',
+                                    ),
+                                ],
+                            ),
+                            ada.CallStatement(
+                                "RFLX" * const.TYPES_FREE,
+                                [
+                                    ada.Indexed(ada.Variable("Buffers"), ada.Variable("B")),
+                                ],
+                            ),
+                            ada.PragmaStatement(
+                                "Warnings",
+                                [
+                                    ada.Variable("On"),
+                                    ada.String(
+                                        '"Buffers" is set by "Free" but not used after the call',
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ]
+                if external_io_buffers
+                else []
             ),
         ],
     )
@@ -604,7 +824,15 @@ def session_main(
                     ),
                 ),
             ),
-            ada.Postcondition(ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])),
+            ada.Postcondition(
+                ada.AndThen(
+                    ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
+                    ada.Call(
+                        session_package * "Has_Data",
+                        [ada.Variable("Ctx"), ada.Variable("Chan")],
+                    ),
+                ),
+            ),
         ],
     )
 
@@ -746,7 +974,15 @@ def session_main(
                     ),
                 ),
             ),
-            ada.Postcondition(ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])),
+            ada.Postcondition(
+                ada.AndThen(
+                    ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
+                    ada.Call(
+                        session_package * "Needs_Data",
+                        [ada.Variable("Ctx"), ada.Variable("Chan")],
+                    ),
+                ),
+            ),
         ],
     )
 
@@ -835,6 +1071,90 @@ begin
 end Main;
 """,
     }
+
+
+def _external_io_buffer_arguments(session_package: ID, count: int) -> list[ada.Indexed]:
+    result = []
+    e: ada.Expr = ada.First("Buffers")
+
+    for _ in range(count):
+        result.append(ada.Indexed(ada.Variable("Buffers"), e))
+        e = ada.Succ(session_package * "External_Buffer", e)
+
+    return result
+
+
+def _add_buffer_call(session_package: ID) -> ada.Statement:
+    return ada.CallStatement(
+        session_package * "Add_Buffer",
+        [
+            ada.Variable("Ctx"),
+            ada.Call(
+                session_package * "Accessible_Buffer",
+                [
+                    ada.Variable("Ctx"),
+                    ada.Variable("C"),
+                ],
+            ),
+            ada.Indexed(
+                ada.Variable("Buffers"),
+                ada.Call(
+                    session_package * "Accessible_Buffer",
+                    [
+                        ada.Variable("Ctx"),
+                        ada.Variable("C"),
+                    ],
+                ),
+            ),
+            ada.Call(
+                session_package * "Written_Last",
+                [
+                    ada.Variable("Ctx"),
+                    ada.Call(
+                        session_package * "Accessible_Buffer",
+                        [
+                            ada.Variable("Ctx"),
+                            ada.Variable("C"),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+
+
+def _remove_buffer_call(session_package: ID) -> ada.Statement:
+    return ada.CallStatement(
+        session_package * "Remove_Buffer",
+        [
+            ada.Variable("Ctx"),
+            ada.Call(
+                session_package * "Accessible_Buffer",
+                [
+                    ada.Variable("Ctx"),
+                    ada.Variable("C"),
+                ],
+            ),
+            ada.Indexed(
+                ada.Variable("Buffers"),
+                ada.Call(
+                    session_package * "Accessible_Buffer",
+                    [
+                        ada.Variable("Ctx"),
+                        ada.Variable("C"),
+                    ],
+                ),
+            ),
+        ],
+    )
+
+
+def _buffer_invariant() -> ada.Expr:
+    return ada.ForAllOf(
+        "B",
+        ada.Variable("Buffers"),
+        ada.Equal(ada.Variable("B"), ada.NULL),
+    )
 
 
 def parse(

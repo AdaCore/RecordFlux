@@ -40,9 +40,6 @@ is
      Pre =>
        not IPv4_Packet_PDU_Context'Constrained
        and not UDP_Datagram_SDU_Context'Constrained
-       and RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_PDU_Context)
-       and RFLX.IPv4.Packet.Present (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
-       and RFLX.IPv4.Packet.Valid (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Protocol)
        and RFLX.In_IPv4.Contains.UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context),
      Post =>
        not RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_PDU_Context)
@@ -57,16 +54,20 @@ is
        and IPv4_Packet_PDU_Context.First = IPv4_Packet_PDU_Context.First'Old
        and RFLX.IPv4.Packet.Context_Cursors (IPv4_Packet_PDU_Context) = RFLX.IPv4.Packet.Context_Cursors (IPv4_Packet_PDU_Context)'Old;
 
+   function Sufficient_Space_For_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; UDP_Datagram_SDU_Context : RFLX.UDP.Datagram.Context) return Boolean is
+     (RFLX.UDP.Datagram.Buffer_Size (UDP_Datagram_SDU_Context) >= RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
+      and then RFLX_Types.To_First_Bit_Index (UDP_Datagram_SDU_Context.Buffer_First) + RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload) - 1 < RFLX_Types.Bit_Index'Last)
+    with
+     Pre =>
+       RFLX.UDP.Datagram.Has_Buffer (UDP_Datagram_SDU_Context)
+       and then RFLX.In_IPv4.Contains.UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context);
+
    procedure Copy_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; UDP_Datagram_SDU_Context : in out RFLX.UDP.Datagram.Context) with
      Pre =>
        not UDP_Datagram_SDU_Context'Constrained
        and then RFLX.UDP.Datagram.Has_Buffer (UDP_Datagram_SDU_Context)
-       and then RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_PDU_Context)
-       and then RFLX.IPv4.Packet.Present (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
-       and then RFLX.IPv4.Packet.Valid (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Protocol)
        and then RFLX.In_IPv4.Contains.UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context)
-       and then RFLX_Types.To_Last_Bit_Index (UDP_Datagram_SDU_Context.Buffer_Last) - RFLX_Types.To_First_Bit_Index (UDP_Datagram_SDU_Context.Buffer_First) + 1 >= RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
-       and then RFLX_Types.To_First_Bit_Index (UDP_Datagram_SDU_Context.Buffer_First) + RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload) - 1 < RFLX_Types.Bit_Index'Last,
+       and then Sufficient_Space_For_Payload (IPv4_Packet_PDU_Context, UDP_Datagram_SDU_Context),
      Post =>
        RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_PDU_Context)
        and RFLX.UDP.Datagram.Has_Buffer (UDP_Datagram_SDU_Context)
@@ -85,9 +86,6 @@ is
      Pre =>
        not IPv4_Packet_PDU_Context'Constrained
        and not ICMP_Message_SDU_Context'Constrained
-       and RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_PDU_Context)
-       and RFLX.IPv4.Packet.Present (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
-       and RFLX.IPv4.Packet.Valid (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Protocol)
        and RFLX.In_IPv4.Contains.ICMP_Message_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context),
      Post =>
        not RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_PDU_Context)
@@ -102,16 +100,20 @@ is
        and IPv4_Packet_PDU_Context.First = IPv4_Packet_PDU_Context.First'Old
        and RFLX.IPv4.Packet.Context_Cursors (IPv4_Packet_PDU_Context) = RFLX.IPv4.Packet.Context_Cursors (IPv4_Packet_PDU_Context)'Old;
 
+   function Sufficient_Space_For_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : RFLX.ICMP.Message.Context) return Boolean is
+     (RFLX.ICMP.Message.Buffer_Size (ICMP_Message_SDU_Context) >= RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
+      and then RFLX_Types.To_First_Bit_Index (ICMP_Message_SDU_Context.Buffer_First) + RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload) - 1 < RFLX_Types.Bit_Index'Last)
+    with
+     Pre =>
+       RFLX.ICMP.Message.Has_Buffer (ICMP_Message_SDU_Context)
+       and then RFLX.In_IPv4.Contains.ICMP_Message_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context);
+
    procedure Copy_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : in out RFLX.ICMP.Message.Context) with
      Pre =>
        not ICMP_Message_SDU_Context'Constrained
        and then RFLX.ICMP.Message.Has_Buffer (ICMP_Message_SDU_Context)
-       and then RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_PDU_Context)
-       and then RFLX.IPv4.Packet.Present (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
-       and then RFLX.IPv4.Packet.Valid (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Protocol)
        and then RFLX.In_IPv4.Contains.ICMP_Message_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context)
-       and then RFLX_Types.To_Last_Bit_Index (ICMP_Message_SDU_Context.Buffer_Last) - RFLX_Types.To_First_Bit_Index (ICMP_Message_SDU_Context.Buffer_First) + 1 >= RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
-       and then RFLX_Types.To_First_Bit_Index (ICMP_Message_SDU_Context.Buffer_First) + RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload) - 1 < RFLX_Types.Bit_Index'Last,
+       and then Sufficient_Space_For_Payload (IPv4_Packet_PDU_Context, ICMP_Message_SDU_Context),
      Post =>
        RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_PDU_Context)
        and RFLX.ICMP.Message.Has_Buffer (ICMP_Message_SDU_Context)

@@ -51,6 +51,7 @@ from rflx.ada import (
     LoopEntry,
     Max,
     Mod,
+    Mul,
     NamedAggregate,
     Not,
     NotEqual,
@@ -1416,9 +1417,11 @@ def create_take_buffer_procedure(prefix: str, message: Message) -> UnitPart:
                         Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
                     ),
                     Postcondition(
-                        And(
+                        AndThen(
                             Not(Call("Has_Buffer", [Variable("Ctx")])),
                             NotEqual(Variable("Buffer"), NULL),
+                            Greater(Length("Buffer"), Number(0)),
+                            Less(Last("Buffer"), Last(const.TYPES_INDEX)),
                             Equal(Variable("Ctx.Buffer_First"), First("Buffer")),
                             Equal(Variable("Ctx.Buffer_Last"), Last("Buffer")),
                             *common.context_invariant(message),
@@ -2310,6 +2313,29 @@ def create_buffer_length_function(prefix: str, message: Message) -> UnitPart:
             ),
         ],
         private=[ExpressionFunctionDeclaration(specification, Length("Ctx.Buffer"))],
+    )
+
+
+def create_buffer_size_function(prefix: str, message: Message) -> UnitPart:
+    specification = FunctionSpecification(
+        "Buffer_Size",
+        const.TYPES_BIT_LENGTH,
+        [Parameter(["Ctx"], "Context")],
+    )
+
+    return UnitPart(
+        [
+            SubprogramDeclaration(
+                specification,
+                [Precondition(Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]))],
+            ),
+        ],
+        private=[
+            ExpressionFunctionDeclaration(
+                specification,
+                Mul(Length("Ctx.Buffer"), Size(const.TYPES_BYTE)),
+            ),
+        ],
     )
 
 

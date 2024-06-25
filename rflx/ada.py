@@ -330,6 +330,22 @@ class Rem(BinExpr):
         return " rem "
 
 
+class New(Expr):
+    def __init__(self, expr: Expr) -> None:
+        super().__init__()
+        self.expr = expr
+
+    def _update_str(self) -> None:
+        self._str = intern(f"new {self.expr}")
+
+    @property
+    def precedence(self) -> Precedence:
+        raise NotImplementedError
+
+    def rflx_expr(self) -> expr.Expr:
+        raise NotImplementedError
+
+
 class Name(Expr):
     def __init__(self) -> None:
         super().__init__()

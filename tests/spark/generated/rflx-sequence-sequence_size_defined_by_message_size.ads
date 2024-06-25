@@ -162,14 +162,16 @@ is
        RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx),
      Post =>
        not Has_Buffer (Ctx)
-       and Buffer /= null
-       and Ctx.Buffer_First = Buffer'First
-       and Ctx.Buffer_Last = Buffer'Last
-       and Ctx.Buffer_First = Ctx.Buffer_First'Old
-       and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
-       and Ctx.First = Ctx.First'Old
-       and Ctx.Last = Ctx.Last'Old
-       and Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old,
+       and then Buffer /= null
+       and then Buffer'Length > 0
+       and then Buffer'Last < RFLX_Types.Index'Last
+       and then Ctx.Buffer_First = Buffer'First
+       and then Ctx.Buffer_Last = Buffer'Last
+       and then Ctx.Buffer_First = Ctx.Buffer_First'Old
+       and then Ctx.Buffer_Last = Ctx.Buffer_Last'Old
+       and then Ctx.First = Ctx.First'Old
+       and then Ctx.Last = Ctx.Last'Old
+       and then Context_Cursors (Ctx) = Context_Cursors (Ctx)'Old,
      Depends =>
        (Ctx => Ctx, Buffer => Ctx);
 
@@ -235,6 +237,10 @@ is
    function Has_Buffer (Ctx : Context) return Boolean;
 
    function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
+     Pre =>
+       RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx);
+
+   function Buffer_Size (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
        RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx);
 
@@ -701,7 +707,12 @@ private
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Context (Buffer_First, Buffer_Last : RFLX_Types.Index; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Cursors : Field_Cursors) return Boolean is
-     ((if Buffer /= null then Buffer'First = Buffer_First and Buffer'Last = Buffer_Last)
+     ((if
+          Buffer /= null
+       then
+          Buffer'Length > 0
+          and Buffer'First = Buffer_First
+          and Buffer'Last = Buffer_Last)
       and then (RFLX_Types.To_Index (First) >= Buffer_First
                 and RFLX_Types.To_Index (Last) <= Buffer_Last
                 and Buffer_Last < RFLX_Types.Index'Last
@@ -764,6 +775,9 @@ private
 
    function Buffer_Length (Ctx : Context) return RFLX_Types.Length is
      (Ctx.Buffer'Length);
+
+   function Buffer_Size (Ctx : Context) return RFLX_Types.Bit_Length is
+     (Ctx.Buffer'Length * RFLX_Types.Byte'Size);
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length is
      (Ctx.Verified_Last - Ctx.First + 1);
