@@ -129,7 +129,6 @@ is
             pragma Warnings (Off, """Ctx.P.M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             TLV.Message.Take_Buffer (Ctx.P.M_Ctx, Buffer);
             pragma Warnings (On, """Ctx.P.M_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-            pragma Assert (Buffer_Accessible (Ctx, Ext_Buf));
       end case;
    end Remove_Buffer;
 

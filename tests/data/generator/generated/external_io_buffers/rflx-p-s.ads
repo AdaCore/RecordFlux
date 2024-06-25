@@ -94,13 +94,13 @@ is
 
    function Next_State (Ctx : Context'Class) return State;
 
-   function Buffer_Accessible (Ctx : Context'Class; Unused_Ext_Buf : External_Buffer) return Boolean;
+   function Buffer_Accessible (St : State; Unused_Ext_Buf : External_Buffer) return Boolean;
 
-   function Channel_Accessible (Ctx : Context'Class; Chan : Channel) return Boolean;
+   function Channel_Accessible (St : State; Chan : Channel) return Boolean;
 
-   function Accessible_Buffer (Ctx : Context'Class; Chan : Channel) return External_Buffer with
+   function Accessible_Buffer (St : State; Chan : Channel) return External_Buffer with
      Pre =>
-       Channel_Accessible (Ctx, Chan);
+       Channel_Accessible (St, Chan);
 
    function Has_Buffer (Ctx : Context'Class; Ext_Buf : External_Buffer) return Boolean;
 
@@ -108,7 +108,7 @@ is
 
    procedure Add_Buffer (Ctx : in out Context'Class; Ext_Buf : External_Buffer; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length) with
      Pre =>
-       Buffer_Accessible (Ctx, Ext_Buf)
+       Buffer_Accessible (Next_State (Ctx), Ext_Buf)
        and then not Has_Buffer (Ctx, Ext_Buf)
        and then Buffer /= null
        and then Buffer'Length > 0
@@ -118,7 +118,7 @@ is
                      and Written_Last <= RFLX_Types.To_Last_Bit_Index (Buffer'Last)))
        and then Written_Last mod RFLX_Types.Byte'Size = 0,
      Post =>
-       Buffer_Accessible (Ctx, Ext_Buf)
+       Buffer_Accessible (Next_State (Ctx), Ext_Buf)
        and then Has_Buffer (Ctx, Ext_Buf)
        and then Buffer = null
        and then (if
@@ -126,15 +126,15 @@ is
                  then
                     Has_Buffer (Ctx, B_M) = Has_Buffer (Ctx, B_M)'Old
                     and P.S.Written_Last (Ctx, B_M) = P.S.Written_Last (Ctx, B_M)'Old)
-       and then Buffer_Accessible (Ctx, B_M) = Buffer_Accessible (Ctx, B_M)'Old
+       and then Buffer_Accessible (Next_State (Ctx), B_M) = Buffer_Accessible (Next_State (Ctx), B_M)'Old
        and then Next_State (Ctx) = Next_State (Ctx)'Old;
 
    procedure Remove_Buffer (Ctx : in out Context'Class; Ext_Buf : External_Buffer; Buffer : out RFLX_Types.Bytes_Ptr) with
      Pre =>
-       Buffer_Accessible (Ctx, Ext_Buf)
+       Buffer_Accessible (Next_State (Ctx), Ext_Buf)
        and Has_Buffer (Ctx, Ext_Buf),
      Post =>
-       Buffer_Accessible (Ctx, Ext_Buf)
+       Buffer_Accessible (Next_State (Ctx), Ext_Buf)
        and then not Has_Buffer (Ctx, Ext_Buf)
        and then Buffer /= null
        and then Buffer'Length > 0
@@ -148,7 +148,7 @@ is
                  then
                     Has_Buffer (Ctx, B_M) = Has_Buffer (Ctx, B_M)'Old
                     and P.S.Written_Last (Ctx, B_M) = P.S.Written_Last (Ctx, B_M)'Old)
-       and then Buffer_Accessible (Ctx, B_M) = Buffer_Accessible (Ctx, B_M)'Old
+       and then Buffer_Accessible (Next_State (Ctx), B_M) = Buffer_Accessible (Next_State (Ctx), B_M)'Old
        and then Next_State (Ctx) = Next_State (Ctx)'Old;
 
    function Has_Data (Ctx : Context'Class; Chan : Channel) return Boolean with
@@ -214,14 +214,14 @@ private
    function Next_State (Ctx : Context'Class) return State is
      (Ctx.P.Next_State);
 
-   function Buffer_Accessible (Ctx : Context'Class; Unused_Ext_Buf : External_Buffer) return Boolean is
+   function Buffer_Accessible (St : State; Unused_Ext_Buf : External_Buffer) return Boolean is
      ((for some C in Channel =>
-          Channel_Accessible (Ctx, C)));
+          Channel_Accessible (St, C)));
 
-   function Channel_Accessible (Ctx : Context'Class; Chan : Channel) return Boolean is
+   function Channel_Accessible (St : State; Chan : Channel) return Boolean is
      ((case Chan is
           when C_X =>
-             (case Ctx.P.Next_State is
+             (case St is
                  when S_A | S_B =>
                     True,
                  when others =>
@@ -233,10 +233,10 @@ private
      Pre =>
        False;
 
-   function Accessible_Buffer (Ctx : Context'Class; Chan : Channel) return External_Buffer is
+   function Accessible_Buffer (St : State; Chan : Channel) return External_Buffer is
      ((case Chan is
           when C_X =>
-             (case Ctx.P.Next_State is
+             (case St is
                  when S_A | S_B =>
                     B_M,
                  when others =>

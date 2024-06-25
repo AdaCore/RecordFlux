@@ -1486,7 +1486,7 @@ class SessionGenerator:
             "Buffer_Accessible",
             "Boolean",
             [
-                Parameter(["Ctx"], "Context'Class"),
+                Parameter(["St"], "State"),
                 Parameter(
                     ["Ext_Buf" if len(external_io_buffers) > 1 else "Unused_Ext_Buf"],
                     "External_Buffer",
@@ -1507,11 +1507,11 @@ class SessionGenerator:
                         "C",
                         Variable("Channel"),
                         AndThen(
-                            Call("Channel_Accessible", [Variable("Ctx"), Variable("C")]),
+                            Call("Channel_Accessible", [Variable("St"), Variable("C")]),
                             *(
                                 [
                                     Equal(
-                                        Call("Accessible_Buffer", [Variable("Ctx"), Variable("C")]),
+                                        Call("Accessible_Buffer", [Variable("St"), Variable("C")]),
                                         Variable("Ext_Buf"),
                                     ),
                                 ]
@@ -1531,7 +1531,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Channel_Accessible",
             "Boolean",
-            [Parameter(["Ctx"], "Context'Class"), Parameter(["Chan"], "Channel")],
+            [Parameter(["St"], "State"), Parameter(["Chan"], "Channel")],
         )
 
         return UnitPart(
@@ -1549,7 +1549,7 @@ class SessionGenerator:
                             (
                                 Variable(f"C_{channel}"),
                                 Case(
-                                    Variable("Ctx.P.Next_State"),
+                                    Variable("St"),
                                     [
                                         *[
                                             (Variable(state_id(access.state)), TRUE)
@@ -1596,7 +1596,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Accessible_Buffer",
             "External_Buffer",
-            [Parameter(["Ctx"], "Context'Class"), Parameter(["Chan"], "Channel")],
+            [Parameter(["St"], "State"), Parameter(["Chan"], "Channel")],
         )
 
         return UnitPart(
@@ -1605,7 +1605,7 @@ class SessionGenerator:
                     specification,
                     [
                         Precondition(
-                            Call("Channel_Accessible", [Variable("Ctx"), Variable("Chan")]),
+                            Call("Channel_Accessible", [Variable("St"), Variable("Chan")]),
                         ),
                     ],
                 ),
@@ -1619,7 +1619,7 @@ class SessionGenerator:
                             (
                                 Variable(f"C_{channel}"),
                                 Case(
-                                    Variable("Ctx.P.Next_State"),
+                                    Variable("St"),
                                     [
                                         *[
                                             (
@@ -1730,7 +1730,10 @@ class SessionGenerator:
                         Precondition(
                             AndThen(
                                 *self._call_global_allocated(),
-                                Call("Buffer_Accessible", [Variable("Ctx"), Variable("Ext_Buf")]),
+                                Call(
+                                    "Buffer_Accessible",
+                                    [Call("Next_State", [Variable("Ctx")]), Variable("Ext_Buf")],
+                                ),
                                 Not(Call("Has_Buffer", [Variable("Ctx"), Variable("Ext_Buf")])),
                                 NotEqual(Variable("Buffer"), Literal("null")),
                                 Greater(Length("Buffer"), Number(0)),
@@ -1766,7 +1769,10 @@ class SessionGenerator:
                         Postcondition(
                             AndThen(
                                 *self._call_global_allocated(),
-                                Call("Buffer_Accessible", [Variable("Ctx"), Variable("Ext_Buf")]),
+                                Call(
+                                    "Buffer_Accessible",
+                                    [Call("Next_State", [Variable("Ctx")]), Variable("Ext_Buf")],
+                                ),
                                 Call("Has_Buffer", [Variable("Ctx"), Variable("Ext_Buf")]),
                                 Equal(Variable("Buffer"), Literal("null")),
                                 *self._external_buffer_invariant(external_io_buffers, unit_id),
@@ -1838,14 +1844,20 @@ class SessionGenerator:
                         Precondition(
                             And(
                                 *self._call_global_allocated(),
-                                Call("Buffer_Accessible", [Variable("Ctx"), Variable("Ext_Buf")]),
+                                Call(
+                                    "Buffer_Accessible",
+                                    [Call("Next_State", [Variable("Ctx")]), Variable("Ext_Buf")],
+                                ),
                                 Call("Has_Buffer", [Variable("Ctx"), Variable("Ext_Buf")]),
                             ),
                         ),
                         Postcondition(
                             AndThen(
                                 *self._call_global_allocated(),
-                                Call("Buffer_Accessible", [Variable("Ctx"), Variable("Ext_Buf")]),
+                                Call(
+                                    "Buffer_Accessible",
+                                    [Call("Next_State", [Variable("Ctx")]), Variable("Ext_Buf")],
+                                ),
                                 Not(Call("Has_Buffer", [Variable("Ctx"), Variable("Ext_Buf")])),
                                 NotEqual(Variable("Buffer"), Literal("null")),
                                 Greater(Length("Buffer"), Number(0)),
@@ -1917,16 +1929,6 @@ class SessionGenerator:
                                             lambda _: True,
                                             ID("Buffer"),
                                         ),
-                                        # Improve provability of postcondition
-                                        PragmaStatement(
-                                            "Assert",
-                                            [
-                                                Call(
-                                                    "Buffer_Accessible",
-                                                    [Variable("Ctx"), Variable("Ext_Buf")],
-                                                ),
-                                            ],
-                                        ),
                                     ],
                                 )
                                 for b in external_io_buffers
@@ -1976,7 +1978,7 @@ class SessionGenerator:
                     Call(
                         "Buffer_Accessible",
                         [
-                            Variable("Ctx"),
+                            Call("Next_State", [Variable("Ctx")]),
                             Literal(b.external_buffer_id),
                         ],
                     ),
@@ -1984,7 +1986,7 @@ class SessionGenerator:
                         Call(
                             "Buffer_Accessible",
                             [
-                                Variable("Ctx"),
+                                Call("Next_State", [Variable("Ctx")]),
                                 Literal(b.external_buffer_id),
                             ],
                         ),

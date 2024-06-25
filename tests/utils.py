@@ -534,7 +534,12 @@ def session_main(
                                                 ada.Call(
                                                     session_package * "Buffer_Accessible",
                                                     [
-                                                        ada.Variable("Ctx"),
+                                                        ada.Call(
+                                                            session_package * "Next_State",
+                                                            [
+                                                                ada.Variable("Ctx"),
+                                                            ],
+                                                        ),
                                                         ada.Variable("B"),
                                                     ],
                                                 ),
@@ -566,7 +571,12 @@ def session_main(
                                                 ada.Call(
                                                     session_package * "Buffer_Accessible",
                                                     [
-                                                        ada.Variable("Ctx"),
+                                                        ada.Call(
+                                                            session_package * "Next_State",
+                                                            [
+                                                                ada.Variable("Ctx"),
+                                                            ],
+                                                        ),
                                                         ada.Variable("B"),
                                                     ],
                                                 ),
@@ -981,6 +991,10 @@ def session_main(
                         session_package * "Needs_Data",
                         [ada.Variable("Ctx"), ada.Variable("Chan")],
                     ),
+                    ada.Equal(
+                        ada.Call(session_package * "Next_State", [ada.Variable("Ctx")]),
+                        ada.Old(ada.Call(session_package * "Next_State", [ada.Variable("Ctx")])),
+                    ),
                 ),
             ),
         ],
@@ -1024,6 +1038,8 @@ def session_main(
                             "Number_Per_Channel",
                             ada.NamedAggregate(("others", ada.Number(0))),
                         ),
+                        ada.Pragma("Unevaluated_Use_Of_Old", [ada.Literal("Allow")]),
+                        ada.UseTypeClause(session_package * "State"),
                         write_procedure,
                     ]
                     if input_channels
@@ -1092,7 +1108,12 @@ def _add_buffer_call(session_package: ID) -> ada.Statement:
             ada.Call(
                 session_package * "Accessible_Buffer",
                 [
-                    ada.Variable("Ctx"),
+                    ada.Call(
+                        session_package * "Next_State",
+                        [
+                            ada.Variable("Ctx"),
+                        ],
+                    ),
                     ada.Variable("C"),
                 ],
             ),
@@ -1101,7 +1122,12 @@ def _add_buffer_call(session_package: ID) -> ada.Statement:
                 ada.Call(
                     session_package * "Accessible_Buffer",
                     [
-                        ada.Variable("Ctx"),
+                        ada.Call(
+                            session_package * "Next_State",
+                            [
+                                ada.Variable("Ctx"),
+                            ],
+                        ),
                         ada.Variable("C"),
                     ],
                 ),
@@ -1113,7 +1139,12 @@ def _add_buffer_call(session_package: ID) -> ada.Statement:
                     ada.Call(
                         session_package * "Accessible_Buffer",
                         [
-                            ada.Variable("Ctx"),
+                            ada.Call(
+                                session_package * "Next_State",
+                                [
+                                    ada.Variable("Ctx"),
+                                ],
+                            ),
                             ada.Variable("C"),
                         ],
                     ),
@@ -1131,7 +1162,12 @@ def _remove_buffer_call(session_package: ID) -> ada.Statement:
             ada.Call(
                 session_package * "Accessible_Buffer",
                 [
-                    ada.Variable("Ctx"),
+                    ada.Call(
+                        session_package * "Next_State",
+                        [
+                            ada.Variable("Ctx"),
+                        ],
+                    ),
                     ada.Variable("C"),
                 ],
             ),
@@ -1140,7 +1176,12 @@ def _remove_buffer_call(session_package: ID) -> ada.Statement:
                 ada.Call(
                     session_package * "Accessible_Buffer",
                     [
-                        ada.Variable("Ctx"),
+                        ada.Call(
+                            session_package * "Next_State",
+                            [
+                                ada.Variable("Ctx"),
+                            ],
+                        ),
                         ada.Variable("C"),
                     ],
                 ),
