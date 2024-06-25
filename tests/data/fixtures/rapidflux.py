@@ -13,6 +13,7 @@ def _clear_quiet_logging() -> None:
     logging.set_quiet(False)
 
 
-@pytest.fixture()
-def _cleared_error_count() -> None:
+@pytest.fixture(autouse=True)
+def _reset_errors() -> None:
+    RecordFluxError.set_max_error(0)
     RecordFluxError.reset_errors()
