@@ -12,8 +12,9 @@ import z3
 
 from rflx import expr, typing_ as rty
 from rflx.const import MP_CONTEXT
+from rflx.error import are_all_locations_present
 from rflx.identifier import ID
-from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 PROVER_TIMEOUT: Final = 1800000
 
@@ -138,16 +139,18 @@ class ParallelProofs:
         )
 
     @staticmethod
-    def check_proof(job: ProofJob) -> list[ErrorEntry]:
-        result: list[ErrorEntry] = []
+    def check_proof(job: ProofJob) -> tuple[Sequence[ErrorEntry], Sequence[Annotation]]:
+        result: list[Annotation] = []
         proof = Proof(job.goal, job.facts)
-        result.extend(job.results[proof.result])
+
         if (
             job.add_unsat and proof.result == ProofResult.UNSAT
         ) or proof.result == ProofResult.UNKNOWN:
+            locations = [locn for (_, locn) in proof.error]
+            assert are_all_locations_present(locations)
             result.extend(
                 [
-                    ErrorEntry(
+                    Annotation(
                         (
                             f'unsatisfied "{m}"'
                             if proof.result == ProofResult.UNSAT
@@ -156,15 +159,21 @@ class ParallelProofs:
                         Severity.INFO,
                         locn,
                     )
-                    for m, locn in proof.error
+                    for (m, _), locn in zip(proof.error, locations)
                 ],
             )
-        return result
+        return job.results[proof.result], result
 
     def check(self, error: RecordFluxError) -> None:
         with ProcessPoolExecutor(max_workers=self._workers, mp_context=MP_CONTEXT) as executor:
-            for e in executor.map(ParallelProofs.check_proof, self._proofs):
-                error.extend(e)
+            for entries, unsatcore_annotations in executor.map(
+                ParallelProofs.check_proof,
+                self._proofs,
+            ):
+                assert (entries and unsatcore_annotations) or not unsatcore_annotations
+                if unsatcore_annotations:
+                    entries[0].extend(unsatcore_annotations)
+                error.extend(entries)
 
 
 class Z3TypeError(TypeError):

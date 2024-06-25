@@ -1225,18 +1225,8 @@ def test_message_negative_field_start(tmp_path: Path, capfd: pytest.CaptureFixtu
                     3 |       message
                     4 |          F1 : Opaque
                       |          -- note: on path "F1"
-                      |
-                    info: unsatisfied "F1'Last = (Message'First + (0 - 8)) - 1"
-                     --> {temp_file}:4:10
-                      |
-                    4 |          F1 : Opaque
-                      |          --
-                      |
-                    info: unsatisfied "F1'Last + 1 >= Message'First"
-                     --> {temp_file}:4:10
-                      |
-                    4 |          F1 : Opaque
-                      |          --
+                      |          -- info: unsatisfied "F1'Last = (Message'First + (0 - 8)) - 1"
+                      |          -- info: unsatisfied "F1'Last + 1 >= Message'First"
                       |
                """,
         ),

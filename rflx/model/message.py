@@ -2021,7 +2021,12 @@ class Message(type_decl.TypeDecl):
                         ),
                     ],
                 )
-                proofs.add(negative, facts, sat_error=error.entries, unknown_error=error.entries)
+                proofs.add(
+                    negative,
+                    facts,
+                    sat_error=error.entries,
+                    unknown_error=error.entries,
+                )
 
                 error = RecordFluxError(
                     [

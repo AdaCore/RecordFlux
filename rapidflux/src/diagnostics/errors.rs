@@ -240,6 +240,10 @@ impl ErrorEntry {
         ))
     }
 
+    fn extend(&mut self, annotations: Vec<Annotation>) {
+        self.0.extend(annotations.into_iter().map(|a| a.0));
+    }
+
     fn __str__(&self) -> String {
         anstream::adapter::strip_str(&self.0.to_string()).to_string()
     }

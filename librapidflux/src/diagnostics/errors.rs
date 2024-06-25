@@ -247,6 +247,10 @@ impl ErrorEntry {
         }
     }
 
+    pub fn extend<T: IntoIterator<Item = Annotation>>(&mut self, annotations: T) {
+        self.annotations.extend(annotations);
+    }
+
     pub fn message(&self) -> &str {
         &self.message
     }
@@ -625,6 +629,52 @@ mod tests {
             )]
         );
         assert!(error_entry.generate_default_annotation());
+    }
+
+    #[test]
+    fn test_error_entry_extend_one() {
+        let mut entry = ErrorEntry::new(
+            "entry".to_string(),
+            Severity::Error,
+            None,
+            Vec::new(),
+            false,
+        );
+        let annotation =
+            Annotation::new(Some("a".to_string()), Severity::Error, Location::default());
+        assert!(entry.annotations.is_empty());
+        entry.extend([annotation.clone()]);
+        assert_eq!(entry.annotations, &[annotation.clone()]);
+    }
+
+    #[test]
+    fn test_error_entry_extend_empty() {
+        let mut entry = ErrorEntry::new(
+            "entry".to_string(),
+            Severity::Error,
+            None,
+            Vec::new(),
+            false,
+        );
+        assert!(entry.annotations.is_empty());
+        entry.extend([]);
+        assert!(entry.annotations.is_empty());
+    }
+
+    #[test]
+    fn test_error_entry_extend_multiple() {
+        let mut entry = ErrorEntry::new(
+            "entry".to_string(),
+            Severity::Error,
+            None,
+            Vec::new(),
+            false,
+        );
+        let annotation =
+            Annotation::new(Some("a".to_string()), Severity::Error, Location::default());
+        assert!(entry.annotations.is_empty());
+        entry.extend([annotation.clone(), annotation.clone()]);
+        assert_eq!(entry.annotations, &[annotation.clone(), annotation.clone()]);
     }
 
     #[rstest]
