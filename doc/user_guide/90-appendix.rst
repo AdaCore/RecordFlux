@@ -90,6 +90,53 @@ The following example of an integration file defines, for the session ``My_Sessi
            My_State:
              My_State_Variable: 1024
 
+External IO Buffers
+-------------------
+
+By default, all message buffers of a state machine are stored inside the session's ``Context`` type.
+The ``Read`` and ``Write`` primitives give access to a message buffer when the state machine reaches an IO state.
+An alternative is to use externally defined buffers.
+This approach can save memory and prevent copy operations, but it removes some safety guarantees (see the notes at the end of the section).
+
+External IO buffers can be enabled for a session by setting the ``External_IO_Buffers`` option in the integration file.
+
+.. code:: yaml
+
+   Session:
+     My_Session:
+       External_IO_Buffers: True
+
+If external IO buffers are enabled, the buffer for all messages that are accessed in any IO state must be allocated externally and provided during the initialization of the session context as arguments to the ``Initialize`` procedure.
+When an IO state is reached, the corresponding buffer of the accessed message can be removed from the session context.
+The buffer must be added again before the state machine can be continued.
+
+.. doc-check: ignore
+.. code:: ada
+
+   if Buffer_Accessible (Next_State (Ctx), B_Request) then
+      Remove_Buffer (Ctx, B_Request, Request_Buffer);
+
+      ...
+
+      Add_Buffer (Ctx, B_Request, Request_Buffer, Written_Last (Ctx, B_Request));
+   end if;
+
+   Run (Ctx);
+
+Before a buffer can be removed or added, it must be checked that the buffer is accessible.
+The buffer is accessible if the next state of the state machine will perform either a read or write operation on the given buffer.
+The function ``Buffer_Accessible`` can be used to check this condition.
+If all read or write operations on a given channel are used with a single message buffer, then the function ``Needs_Data`` or ``Has_Data``, respectively, is sufficient to determine this condition.
+Each external buffer is uniquely identified by an enumeration literal of the ``External_Buffer`` type.
+In the example shown above, ``B_Request`` identifies the buffer of a message called ``Request``.
+When adding a buffer, the index of the last written byte has to be provided.
+If the buffer has not been changed, ``Written_Last`` can be used to set it to the same value as before.
+
+**CAUTION:**
+The message buffer must only be modified if the state machine expects data, i.e., ``Needs_Data`` is true.
+Changing the contents of the buffer at other times may cause the state machine to behave unexpectedly.
+This property cannot be guaranteed by the generated SPARK contracts.
+
 Reporting Errors
 ----------------
 
