@@ -668,7 +668,6 @@ def test_main_unexpected_exception(
     )
 
 
-@pytest.mark.usefixtures("_cleared_error_count")
 def test_fail_fast(capfd: pytest.CaptureFixture[str]) -> None:
     assert (
         cli.main(

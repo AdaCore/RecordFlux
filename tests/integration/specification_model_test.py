@@ -531,7 +531,6 @@ def test_invalid_message_with_unreachable_field_after_merging() -> None:
     )
 
 
-@pytest.mark.usefixtures("_cleared_error_count")
 def test_fail_after_value() -> None:
     RecordFluxError.set_max_error(1)
     p = parser.Parser()
