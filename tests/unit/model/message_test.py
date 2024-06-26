@@ -1803,12 +1803,12 @@ def test_no_valid_path() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:11:6: error: unreachable field "F2"\n'
+        r'<stdin>:11:6: error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:10:8: note: on path "F1"\n'
         r'<stdin>:11:9: note: on path "F2"\n'
         r'<stdin>:20:2: info: unsatisfied "F1 <= 80"\n'
         r'<stdin>:22:4: info: unsatisfied "F1 > 80"\n'
-        r'<stdin>:12:7: error: unreachable field "F3"\n'
+        r'<stdin>:12:7: error: field "F3" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:10:8: note: on path "F1"\n'
         r'<stdin>:12:10: note: on path "F3"\n'
         r'<stdin>:21:3: info: unsatisfied "F1 > 80"\n'
@@ -1830,7 +1830,7 @@ def test_invalid_path_1() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:20:10: error: unreachable field "F1"\n'
+        r'<stdin>:20:10: error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:20:10: note: on path "F1"\n'
         r'<stdin>:5:10: info: unsatisfied "1 = 2"'
         r"$",
@@ -1855,7 +1855,7 @@ def test_invalid_path_2() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F1"\n'
+        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:3:5: info: unsatisfied "1 = 2"'
         r"$",
@@ -1891,7 +1891,7 @@ def test_unreachable() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F1"\n'
+        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:2:1: note: on path "F1"\n'
         r'<stdin>:1:2: info: unsatisfied "F1 <= 100"\n'
         r'<stdin>:5:15: info: unsatisfied "F1 > 1000"'
@@ -1921,7 +1921,7 @@ def test_invalid_type_condition_range_low() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F1"\n'
+        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1 >= 1"\n'
         r'<stdin>:4:1: info: unsatisfied "F1 < 1"'
@@ -1958,7 +1958,7 @@ def test_invalid_type_condition_range_high() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F1"\n'
+        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:2: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1 <= 100"\n'
         r'<stdin>:4:1: info: unsatisfied "F1 > 200"'
@@ -2665,7 +2665,7 @@ def test_unreachable_field_mod_first() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F1"\n'
+        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:2: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1\'First = Message\'First"\n'
         r'<stdin>:2:2: info: unsatisfied "F1\'First > Message\'First"'
@@ -2698,7 +2698,7 @@ def test_unreachable_field_mod_last() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F2"\n'
+        r'error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:3: note: on path "F2"\n'
         r'<stdin>:2:3: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
@@ -2730,7 +2730,7 @@ def test_unreachable_field_range_first() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F1"\n'
+        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1\'First = Message\'First"\n'
         r'<stdin>:3:3: info: unsatisfied "F1\'First > Message\'First"'
@@ -2759,7 +2759,7 @@ def test_unreachable_field_range_last() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F2"\n'
+        r'error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:3: note: on path "F2"\n'
         r'<stdin>:2:3: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
@@ -2791,7 +2791,7 @@ def test_unreachable_field_enum_first() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F1"\n'
+        r'error: field "F1" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:1:1: info: unsatisfied "F1\'First = Message\'First"\n'
         r'<stdin>:3:5: info: unsatisfied "F1\'First > Message\'First"'
@@ -2821,7 +2821,7 @@ def test_unreachable_field_enum_last() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F2"\n'
+        r'error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:2: note: on path "F2"\n'
         r'<stdin>:2:2: info: unsatisfied "F2\'Last = [(]F1\'Last [+] 1 [+] 8[)] - 1"\n'
@@ -2870,7 +2870,7 @@ def test_unreachable_field_outgoing() -> None:
         structure,
         types,
         r"^"
-        r'error: unreachable field "F2"\n'
+        r'error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r'<stdin>:2:3: note: on path "F2"\n'
         r'<stdin>:3:4: info: unsatisfied "F1 <= 32"\n'
@@ -2929,7 +2929,7 @@ def test_unreachable_field_outgoing_multi() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:90:12: error: unreachable field "F2"\n'
+        r'<stdin>:90:12: error: field "F2" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:86:13: note: on path "F1"\n'
         r'<stdin>:91:13: note: on path "F2"\n'
         r'<stdin>:66:3: info: unsatisfied "F1 <= 32"\n'
@@ -3013,7 +3013,7 @@ def test_aggregate_equal_invalid_size1() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:1:1: error: unreachable field "Magic"\n'
+        r'<stdin>:1:1: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "Magic"\n'
         r'<stdin>:1:2: info: unsatisfied "Magic\'Size = 40"\n'
         r'<stdin>:3:3: info: unsatisfied "2 [*] 8 = Magic\'Size"'
@@ -3047,7 +3047,7 @@ def test_aggregate_equal_invalid_size2() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:1:1: error: unreachable field "Magic"\n'
+        r'<stdin>:1:1: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "Magic"\n'
         r'<stdin>:1:2: info: unsatisfied "Magic\'Size = 40"\n'
         r'<stdin>:3:4: info: unsatisfied "2 [*] 8 = Magic\'Size"'
@@ -3106,7 +3106,7 @@ def test_aggregate_inequal_invalid_size() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:1:2: error: unreachable field "Magic"\n'
+        r'<stdin>:1:2: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:1:1: note: on path "Magic"\n'
         r'<stdin>:1:2: info: unsatisfied "Magic\'Size = 40"\n'
         r'<stdin>:3:4: info: unsatisfied "2 [*] 8 = Magic\'Size"'
@@ -3160,7 +3160,7 @@ def test_aggregate_equal_sequence_invalid_size() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:3:5: error: unreachable field "Magic"\n'
+        r'<stdin>:3:5: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:3:5: note: on path "Magic"\n'
         r'<stdin>:19:17: info: unsatisfied "Magic\'Size = 40"\n'
         r'<stdin>:66:3: info: unsatisfied "Integer\'Size = 8"\n'
@@ -3206,7 +3206,7 @@ def test_aggregate_equal_invalid_size_field() -> None:
         structure,
         types,
         r"^"
-        r'<stdin>:17:3: error: unreachable field "Magic"\n'
+        r'<stdin>:17:3: error: field "Magic" has no satisfiable condition at any outgoing link\n'
         r'<stdin>:2:5: note: on path "Length"\n'
         r'<stdin>:3:5: note: on path "Magic"\n'
         r'<stdin>:10:5: info: unsatisfied "2 [*] 8 = Magic\'Size"\n'

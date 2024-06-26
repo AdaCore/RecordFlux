@@ -1382,7 +1382,7 @@ class Message(type_decl.TypeDecl):
 
             proofs.check(self.error)
 
-            self._prove_reachability(valid_paths)
+            self._prove_conditions_at_outgoing_links(valid_paths)
 
     def _determine_valid_paths(self) -> set[tuple[Link, ...]]:
         """Return all paths without contradictions."""
@@ -1877,12 +1877,12 @@ class Message(type_decl.TypeDecl):
                                 unknown_error=error.entries,
                             )
 
-    def _prove_reachability(self, valid_paths: set[tuple[Link, ...]]) -> None:
+    def _prove_conditions_at_outgoing_links(self, valid_paths: set[tuple[Link, ...]]) -> None:
         """
-        Find all fields that are unreachable due to contradictions on all paths to the field.
+        Find all fields that have no satisfiable condition at any outgoing link.
 
-        Fields that can only be reached via an unreachable field, and are therefore unreachable due
-        to the same problem, are not mentioned in the resulting error message.
+        Fields that can only be reached via an affected field, and are therefore unreachable, are
+        not mentioned in the resulting error message.
         """
 
         def starts_with(path: tuple[Link, ...], paths: set[tuple[Link, ...]]) -> bool:
@@ -1945,7 +1945,8 @@ class Message(type_decl.TypeDecl):
 
                         error.append(
                             ErrorEntry(
-                                f'unreachable field "{f.identifier}"',
+                                f'field "{f.name}" has no satisfiable condition at any '
+                                "outgoing link",
                                 Severity.ERROR,
                                 f.identifier.location,
                                 annotations=annotations,
