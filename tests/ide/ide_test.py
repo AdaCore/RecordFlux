@@ -111,7 +111,8 @@ def test_multiple_errors() -> None:
             f'{path}:156:10: error: name conflict for "F2_F1" in "RFLX_Invalid::M5"',
             f'{path}:147:9: info: when merging message "RFLX_Invalid::M4"',
             f'{path}:154:10: info: into field "F2"',
-            f'{path}:164:10: error: unreachable field "Data1"',
+            f'{path}:164:10: error: field "Data1" has no satisfiable condition at any outgoing '
+            "link",
             f'{path}:161:10: note: on path "Length"',
             f'{path}:162:18: note: on path "Data1"',
             f"{path}:168:19: info: unsatisfied \"3 * R'Size = Data1'Size\"",
