@@ -351,11 +351,11 @@ fmt: format
 
 # --- Tests ---
 
-.PHONY: test test_rflx test_rapidflux test_rapidflux_coverage test_rapidflux_mutation test_rapidflux_doc test_examples test_coverage test_unit_coverage test_per_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation test_specs test_apps
+.PHONY: test test_rflx test_rapidflux test_rapidflux_coverage test_rapidflux_mutation test_rapidflux_doc test_examples test_coverage test_unit_coverage test_per_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_specs test_apps test_package
 
 test: test_rflx test_rapidflux test_examples
 
-test_rflx: test_coverage test_unit_coverage test_per_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size test_installation
+test_rflx: test_coverage test_unit_coverage test_per_unit_coverage test_language_coverage test_end_to_end test_property test_tools test_ide test_optimized test_compilation test_binary_size
 
 
 test_rapidflux_coverage: rapidflux_devel
@@ -464,15 +464,18 @@ test_binary_size: $(RFLX)
 test_specs: $(RFLX)
 	$(PYTEST) tests/examples/specs_test.py
 
-test_installation: export PYTHONPATH=
-test_installation: $(SDIST)
-	rm -rf $(BUILD_DIR)/venv $(BUILD_DIR)/test_installation
-	mkdir -p $(BUILD_DIR)/test_installation
-	python3 -m venv $(BUILD_DIR)/venv
-	$(BUILD_DIR)/venv/bin/pip install $(SDIST)
+test_package: export PYTHONPATH=
+test_package:
+ifndef PACKAGE
+	$(error PACKAGE is undefined, set PACKAGE to the name or path of the package to be tested)
+endif
+	$(POETRY) run python -m venv --clear $(BUILD_DIR)/venv
+	$(BUILD_DIR)/venv/bin/pip install $(PIP_ARGS) $(PACKAGE) pytest
 	$(BUILD_DIR)/venv/bin/rflx --version
-	HOME=$(BUILD_DIR)/test_installation $(BUILD_DIR)/venv/bin/rflx install gnatstudio
-	test -f $(BUILD_DIR)/test_installation/.gnatstudio/plug-ins/recordflux.py
+	mkdir -p $(BUILD_DIR)/tests
+	cp -r tests/{__init__.py,const.py,end_to_end,data} $(BUILD_DIR)/tests/
+	cd $(BUILD_DIR) && source venv/bin/activate && rflx --version && venv/bin/pytest -vv tests/end_to_end
+	$(RM) -r $(BUILD_DIR)/{venv,tests}
 
 # --- Tests: SPARK proofs ---
 
@@ -579,9 +582,10 @@ PACKAGE_SRC := $(shell find rflx -type f)
 dist: sdist wheel
 
 sdist: $(SDIST)
+	$(MAKE) test_package PACKAGE=$(SDIST)
 
 $(SDIST): $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
-	$(POETRY) build -vv --no-cache -f sdist
+	POETRY_DYNAMIC_VERSIONING_BYPASS=$(VERSION) $(POETRY) build -vv --no-cache -f sdist
 
 # The build directory and RapidFlux libraries are removed to ensure a deterministic result.
 # Otherwise, Poetry will reuse files in build/lib, even with the `--no-cache` option, and the
@@ -595,20 +599,15 @@ wheel: clean_build $(BUILD_DEPS) $(PARSER) $(VSIX) pyproject.toml $(PACKAGE_SRC)
 	PYO3_PYTHON=$(DEVEL_VENV)/bin/python cargo build --release
 	cp target/release/librapidflux.so $(RAPIDFLUX_PLATFORM)
 	@# Build wheel
-	$(POETRY) build -vv --no-cache -f wheel
+	POETRY_DYNAMIC_VERSIONING_BYPASS=$(VERSION) $(POETRY) build -vv --no-cache -f wheel
 	$(RM) $(RAPIDFLUX_PLATFORM)
 	@# Test wheel
-	$(POETRY) run python -m venv --clear $(BUILD_DIR)/venv
-	$(BUILD_DIR)/venv/bin/pip install dist/recordflux-$$($(POETRY) version -s)-$(PYTHON_TAG)-$(PYTHON_TAG)-manylinux_*_x86_64.whl pytest
-	mkdir -p $(BUILD_DIR)/tests
-	cp -r tests/{__init__.py,const.py,end_to_end,data} $(BUILD_DIR)/tests/
-	cd $(BUILD_DIR) && source venv/bin/activate && rflx --version && venv/bin/pytest -vv tests/end_to_end
-	$(RM) -r $(BUILD_DIR)/{venv,tests}
+	$(MAKE) test_package PACKAGE=dist/recordflux-$(VERSION)-$(PYTHON_TAG)-$(PYTHON_TAG)-manylinux_*_x86_64.whl
 
 # Build distributions for all defined Python versions without local version identifier.
 pypi_dist: $(PROJECT_MANAGEMENT)
-	$(MAKE) sdist POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//')
-	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(POETRY) env info && $(MAKE) wheel POETRY_DYNAMIC_VERSIONING_BYPASS=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
+	$(MAKE) sdist VERSION=$$(echo $(VERSION) | sed 's/+.*//')
+	$(foreach version,$(PYTHON_VERSIONS),$(POETRY) env use $(version) && $(POETRY) env info && $(MAKE) wheel VERSION=$$(echo $(VERSION) | sed 's/+.*//') || exit;)
 
 anod_dist: $(BUILD_DEPS) $(PARSER) $(RAPIDFLUX) pyproject.toml $(PACKAGE_SRC)
 	$(POETRY) build -vv --no-cache

@@ -605,11 +605,7 @@ installation_from_pypi:
     - git checkout $(git describe --tags --abbrev=0 --match "v*.*.*")
     - *setup_gnat
     - *setup_python_venv
-    - rm -rf rflx
-    - pip install RecordFlux
-    - rflx --version
-    - pip install pytest hypothesis
-    - pytest -vv tests/end_to_end
+    - make test_package PACKAGE=RecordFlux
 
 installation_from_testpypi:
   rules:
@@ -628,8 +624,4 @@ installation_from_testpypi:
   script:
     - *setup_gnat
     - *setup_python_venv
-    - rm -rf rflx
-    - pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --pre RecordFlux
-    - rflx --version
-    - pip install pytest hypothesis
-    - pytest -vv tests/end_to_end
+    - make test_package PIP_ARGS="--index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --pre" PACKAGE=RecordFlux
