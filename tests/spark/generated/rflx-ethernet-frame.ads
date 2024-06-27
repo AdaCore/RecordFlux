@@ -883,18 +883,7 @@ private
               else
                  RFLX_Types.Unreachable),
           when F_Payload =>
-             (if
-                 Well_Formed (Cursors (F_Type_Length))
-                 and then Cursors (F_Type_Length).Value <= 1500
-              then
-                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Type_Length) + 16
-              elsif
-                 Well_Formed (Cursors (F_Type_Length))
-                 and then Cursors (F_Type_Length).Value >= 1536
-              then
-                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Type_Length) + 16
-              else
-                 RFLX_Types.Unreachable)))
+             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Type_Length) + 16))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
