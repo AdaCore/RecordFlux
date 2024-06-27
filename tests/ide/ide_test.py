@@ -129,7 +129,6 @@ def test_multiple_errors() -> None:
             f'{path}:219:18: error: fixed size field "F1" with size aspect',
             f"{path}:229:30: error: illegal first aspect on initial link",
             f'{path}:238:19: error: undefined variable "F1"',
-            f"{path}:238:19: note: on path F1",
             f'{path}:247:29: error: negative size for field "F2"',
             f'{path}:244:10: note: on path "F1"',
             f'{path}:247:29: error: size of opaque field "F2" not multiple of 8 bit',

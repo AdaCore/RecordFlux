@@ -620,6 +620,7 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
             Field(ID("Length", location=Location((1, 1)))): length,
             Field(ID("Value", location=Location((1, 1)))): OPAQUE,
         },
+        location=Location((1, 1), end=(1, 2)),
     )
     session = Session(
         "Test::Session",
@@ -1193,14 +1194,14 @@ def test_message_negative_field_start(tmp_path: Path, capfd: pytest.CaptureFixtu
     temp_file.write_text(
         textwrap.dedent(
             """\
-        package Test is
-           type M14 is
-              message
-                 F1 : Opaque
-                    with Size => 0 - 8;
-              end message;
-        end Test;
-     """,
+            package Test is
+               type M14 is
+                  message
+                     F1 : Opaque
+                        with Size => 0 - 8;
+                  end message;
+            end Test;
+             """,
         ),
     )
     assert_error_full_message(
@@ -1741,6 +1742,55 @@ def test_condition_is_always_true(
             7 |                if A < 1000;
               |                   ^^^^^^^^ proven to be always true
               |                   -------- note: unsatisfied "(A < 1000) = False"
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_incompatible_type_link_condition(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type M14 is
+                  message
+                     F1 : Opaque
+                        with Size => 8
+                        then F2
+                           if F1 = 32;
+                     F2 : Opaque
+                        with Size => 8;
+                  end message;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::M14
+            error: expected sequence type "__INTERNAL__::Opaque" with element integer type "Byte" \
+(0 .. 255)
+             --> {file_path}:7:24
+              |
+            4 |          F1 : Opaque
+              |          -- note: on path "F1"
+            5 |             with Size => 8
+            6 |             then F2
+            7 |                if F1 = 32;
+              |                        ^^
+              |                        -- note: found type universal integer (32)
               |
               """,
         ),

@@ -165,6 +165,7 @@ def test_param_enumeration_condition() -> None:
             Field(ID("B", location=Location((2, 2)))): models.universal_length(),
             Field(ID("Param", location=Location((2, 2)))): type_,
         },
+        location=Location((1, 1), end=(1, 2)),
     )
     assert_equal(
         link.condition.substituted(common.substitution(message, "", embedded=True)),

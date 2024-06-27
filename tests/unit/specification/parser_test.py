@@ -2461,6 +2461,7 @@ def test_create_model_message_type_message() -> None:
         ID("Message_Type::Simple_PDU", Location((1, 1))),
         simple_structure,
         simple_types,
+        location=Location((1, 1), end=(1, 2)),
     )
 
     structure = [
@@ -2501,9 +2502,19 @@ def test_create_model_message_type_message() -> None:
         ),
     }
 
-    message = model.Message(ID("Message_Type::PDU", Location((1, 1))), structure, types)
+    message = model.Message(
+        ID("Message_Type::PDU", Location((1, 1))),
+        structure,
+        types,
+        location=Location((1, 1), end=(1, 2)),
+    )
 
-    empty_message = model.Message(ID("Message_Type::Empty_PDU", Location((1, 1))), [], {})
+    empty_message = model.Message(
+        ID("Message_Type::Empty_PDU", Location((1, 1))),
+        [],
+        {},
+        location=Location((1, 1), end=(1, 2)),
+    )
 
     assert_messages_files(
         [f"{SPEC_DIR}/message_type.rflx"],
@@ -2535,6 +2546,7 @@ def test_create_model_message_in_message() -> None:
             model.Field(ID("Length", location=Location((1, 1)))): length,
             model.Field(ID("Value", location=Location((2, 2)))): model.Opaque(),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
     derived_length_value = model.DerivedMessage(
@@ -2579,6 +2591,7 @@ def test_create_model_message_in_message() -> None:
             model.Field(ID("Bar_Length", location=Location((3, 3)))): length,
             model.Field(ID("Bar_Value", location=Location((4, 4)))): model.Opaque(),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
     derived_message = model.DerivedMessage(
@@ -2606,7 +2619,12 @@ def test_create_model_type_derivation_message() -> None:
 
     types = {model.Field(ID("Baz", location=Location((1, 1)))): t}
 
-    message_foo = model.Message(ID("Test::Foo", Location((1, 1))), structure, types)
+    message_foo = model.Message(
+        ID("Test::Foo", Location((1, 1))),
+        structure,
+        types,
+        location=Location((1, 1), end=(1, 2)),
+    )
     message_bar = model.DerivedMessage(ID("Test::Bar", Location((1, 1))), message_foo)
 
     assert_messages_string(
@@ -2637,6 +2655,7 @@ def test_create_model_type_derivation_refinements() -> None:
             model.Link(model.Field("Baz"), model.FINAL, location=Location((2, 2))),
         ],
         {model.Field(ID("Baz", location=Location((1, 1)))): model.Opaque()},
+        location=Location((1, 1), end=(1, 2)),
     )
     message_bar = model.DerivedMessage(ID("Test::Bar", Location((1, 1))), message_foo)
 
@@ -2900,6 +2919,7 @@ def test_message_field_condition(spec: str) -> None:
                     Field(ID("A", location=Location((1, 1)))): T,
                     Field(ID("B", location=Location((2, 2)))): T,
                 },
+                location=Location((1, 1), end=(1, 2)),
             ),
         ],
     )
@@ -2948,6 +2968,7 @@ def test_message_field_first(spec: str) -> None:
                     Field(ID("A", location=Location((1, 1)))): T,
                     Field(ID("B", location=Location((2, 2)))): T,
                 },
+                location=Location((1, 1), end=(1, 2)),
             ),
         ],
     )
@@ -3003,6 +3024,7 @@ def test_message_field_size(spec: str) -> None:
                     Field(ID("A", location=Location((1, 1)))): T,
                     Field(ID("B", location=Location((2, 2)))): OPAQUE,
                 },
+                location=Location((1, 1), end=(1, 2)),
             ),
         ],
     )
@@ -3055,6 +3077,7 @@ def test_message_field_condition_and_aspects(link: str, field_b: str) -> None:
                     Field(ID("A", location=Location((1, 1)))): T,
                     Field(ID("B", location=Location((2, 2)))): OPAQUE,
                 },
+                location=Location((1, 1), end=(1, 2)),
             ),
         ],
     )
@@ -3117,6 +3140,7 @@ def test_parameterized_messages() -> None:
                     Field(ID("P", location=Location((1, 1)))): T,
                     Field(ID("F", location=Location((2, 2)))): OPAQUE,
                 },
+                location=Location((1, 1), end=(1, 2)),
             ),
             Message(
                 ID("Test::M_S", Location((1, 1))),
@@ -3130,6 +3154,7 @@ def test_parameterized_messages() -> None:
                     Link(Field("F_F"), FINAL, condition=expr.TRUE, location=Location((2, 2))),
                 ],
                 {Field(ID("F_F", location=Location((1, 1)))): OPAQUE},
+                location=Location((1, 1), end=(1, 2)),
             ),
             Message(
                 ID("Test::M_D", Location((1, 1))),
@@ -3160,6 +3185,7 @@ def test_parameterized_messages() -> None:
                     Field(ID("L", location=Location((1, 1)))): T,
                     Field(ID("F_F", location=Location((2, 2)))): OPAQUE,
                 },
+                location=Location((1, 1), end=(1, 2)),
             ),
         ],
     )

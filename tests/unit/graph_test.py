@@ -39,6 +39,7 @@ def test_graph_object() -> None:
             Link(Field("X"), FINAL, location=Location((3, 3))),
         ],
         types={Field(ID("X", location=Location((4, 4)))): f_type},
+        location=Location((1, 1), end=(1, 2)),
     )
     g = create_message_graph(m)
     assert [(e.get_source(), e.get_destination()) for e in g.get_edges()] == [
@@ -60,7 +61,7 @@ def test_graph_object() -> None:
 
 
 def test_empty_message_graph(tmp_path: Path) -> None:
-    m = Message(ID("P::M", Location((1, 1))), [], {})
+    m = Message(ID("P::M", Location((1, 1))), [], {}, location=Location((1, 1), end=(1, 2)))
     expected = """
         digraph "P::M" {
             graph [bgcolor="#00000000", pad="0.1", ranksep="0.1 equally", splines=true,
@@ -89,6 +90,7 @@ def test_dot_graph(tmp_path: Path) -> None:
             Link(Field("X"), FINAL, location=Location((2, 2))),
         ],
         types={Field(ID("X", location=Location((1, 1)))): f_type},
+        location=Location((1, 1), end=(1, 2)),
     )
     expected = """
         digraph "P::M" {
@@ -128,6 +130,7 @@ def test_dot_graph_with_condition(tmp_path: Path) -> None:
             ),
         ],
         types={Field(ID("X", location=Location((1, 1)))): f_type},
+        location=Location((1, 1), end=(1, 2)),
     )
     expected = """
         digraph "P::M" {
@@ -173,6 +176,7 @@ def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
             ),
         ],
         types={Field(ID("X", location=Location((1, 1)))): f_type},
+        location=Location((1, 1), end=(1, 2)),
     )
     expected = """
         digraph "P::M" {

@@ -493,6 +493,7 @@ def test_tlv_message_with_not_operator() -> None:
             Field(ID("Length", location=Location((2, 2)))): models.tlv_length(),
             Field(ID("Value", location=Location((3, 3)))): OPAQUE,
         },
+        location=Location((1, 1), end=(9, 9)),
     )
 
     model = PyRFLX(model=Model([models.tlv_tag(), models.tlv_length(), message]))
@@ -578,6 +579,7 @@ def test_tlv_message_with_not_operator_exhausting() -> None:
             Field(ID("Length", location=Location((2, 2)))): models.tlv_length(),
             Field(ID("Value", location=Location((3, 3)))): OPAQUE,
         },
+        location=Location((1, 1), end=(10, 10)),
     )
 
     with pytest.raises(

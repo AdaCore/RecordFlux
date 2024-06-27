@@ -57,6 +57,7 @@ GENERATOR_TEST_CASES = [
                             size=expr.Number(7),
                         ),
                     },
+                    location=Location((1, 1), end=(1, 2)),
                 ),
             ],
         ),
@@ -416,6 +417,7 @@ def test_generate_field_size_optimization() -> None:
             Field(ID("Length", location=Location((1, 1)))): models.universal_length(),
             Field(ID("Data", location=Location((2, 2)))): type_decl.OPAQUE,
         },
+        location=Location((1, 1), end=(1, 2)),
     )
     structure = create_structure("", message)
     assert (
@@ -480,5 +482,6 @@ def test_generate_multiple_initial_conditions(tmp_path: Path) -> None:
             Field(ID("Data", location=Location((1, 1)))): type_decl.OPAQUE,
             Field(ID("P", location=Location((1, 1)))): type_decl.BOOLEAN,
         },
+        location=Location((1, 1), end=(1, 2)),
     )
     Generator().generate(Model([message]), Integration(), tmp_path)

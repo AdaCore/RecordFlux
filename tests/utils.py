@@ -47,7 +47,7 @@ def assert_message_model_error(
     checksums: Optional[Mapping[ID, Sequence[Expr]]] = None,
     location: Optional[Location] = None,
 ) -> None:
-    location = location or Location((1, 1))
+    location = location or Location((1, 1), end=(1, 2))
     check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
         Message(

@@ -318,7 +318,12 @@ def messages(  # noqa: PLR0915
                 structure.append(Link(f, FINAL, location=Location((1, 1))))
 
     try:
-        message = Message(next(unique_identifiers), structure, types_)
+        message = Message(
+            next(unique_identifiers),
+            structure,
+            types_,
+            location=Location((1, 1), end=(1, 2)),
+        )
     except RecordFluxError as e:
         e.push(
             ErrorEntry(

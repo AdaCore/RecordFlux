@@ -130,7 +130,7 @@ def tlv_message() -> Message:
             Field(ID("Length", location=Location((2, 2)))): tlv_length(),
             Field(ID("Value", location=Location((3, 3)))): OPAQUE,
         },
-        location=Location((1, 1)),
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -234,6 +234,7 @@ def tlv_with_checksum_message() -> Message:
             Field(ID("Checksum", location=Location((4, 4)))): tlv_with_checksum_checksum(),
         },
         checksums={ID("Checksum"): [Variable("Tag"), Size("Value"), Variable("Value")]},
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -396,6 +397,7 @@ def ethernet_frame() -> Message:
             Field(ID("Type_Length", location=Location((5, 5)))): ethernet_type_length(),
             Field(ID("Payload", location=Location((6, 6)))): OPAQUE,
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -431,6 +433,7 @@ def enumeration_message() -> Message:
             Link(Field("Priority"), FINAL, location=Location((3, 3))),
         ],
         {Field(ID("Priority", location=Location((1, 1)))): enumeration_priority()},
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -528,6 +531,7 @@ def sequence_message() -> Message:
                 ID("AV_Enumeration_Vector", location=Location((4, 4))),
             ): sequence_av_enumeration_vector(),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -557,6 +561,7 @@ def sequence_inner_message() -> Message:
             Field(ID("Length", location=Location((1, 1)))): sequence_length(),
             Field(ID("Payload", location=Location((2, 2)))): OPAQUE,
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -583,6 +588,7 @@ def sequence_messages_message() -> Message:
             Field(ID("Length", location=Location((1, 1)))): sequence_length(),
             Field(ID("Messages", location=Location((2, 2)))): sequence_inner_messages(),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -599,6 +605,7 @@ def sequence_sequence_size_defined_by_message_size() -> Message:
             Field(ID("Header", location=Location((1, 1)))): sequence_enumeration(),
             Field(ID("Vector", location=Location((2, 2)))): sequence_integer_vector(),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -645,6 +652,7 @@ def expression_message() -> Message:
             ),
         ],
         {Field(ID("Payload", location=Location((1, 1)))): OPAQUE},
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -711,6 +719,7 @@ def message() -> Message:
             Link(Field("F"), FINAL, location=Location((2, 2))),
         ],
         {Field(ID("F", location=Location((1, 1)))): OPAQUE},
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -829,6 +838,7 @@ def universal_option() -> Message:
             Field(ID("Length", location=Location((2, 2)))): universal_length(),
             Field(ID("Data", location=Location((3, 3)))): OPAQUE,
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -1014,6 +1024,7 @@ def universal_message() -> Message:
             Field(ID("Option_Types", location=Location((6, 6)))): universal_option_types(),
             Field(ID("Options", location=Location((7, 7)))): universal_options(),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -1108,6 +1119,7 @@ def fixed_size_message() -> Message:
             Field(ID("Values", location=Location((3, 3)))): universal_values(),
             Field(ID("Options", location=Location((4, 4)))): universal_options(),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -1138,6 +1150,7 @@ def fixed_size_simple_message() -> Message:
             Field(ID("Message_Type", location=Location((1, 1)))): universal_option_type(),
             Field(ID("Data", location=Location((2, 2)))): OPAQUE,
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 
@@ -1163,6 +1176,7 @@ def definite_message() -> Message:
             Field(ID("Length", location=Location((1, 1)))): universal_length(),
             Field(ID("Data", location=Location((2, 2)))): OPAQUE,
         },
+        location=Location((1, 1), end=(1, 2)),
     )
 
 

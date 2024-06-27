@@ -1559,7 +1559,7 @@ class Message(type_decl.TypeDecl):
                 )
                 for l in p
             ]:
-                path.append(l.target)
+                path.append(l)
 
                 if l.source in self.types:
                     types[l.source] = self.types[l.source]
@@ -1572,18 +1572,18 @@ class Message(type_decl.TypeDecl):
                     if expression == expr.UNDEFINED:
                         continue
 
-                    error = expression.check_type(rty.Any())
-
-                    self.error.extend(error.entries)
-
-                    if error.has_errors():
-                        self.error.push(
-                            ErrorEntry(
-                                "on path " + " -> ".join(f.name for f in path),
-                                Severity.NOTE,
-                                expression.location,
+                    entries = expression.check_type(rty.Any()).entries
+                    assert self.location is not None
+                    for e in entries:
+                        e.extend(
+                            annotate_path(
+                                path,
+                                self.location,
+                                partial(filter_builtins_and_current_field, field=l.target),
                             ),
                         )
+
+                    self.error.extend(entries)
 
     def _verify_links(self) -> None:
         for link in self.structure:
@@ -1945,11 +1945,12 @@ class Message(type_decl.TypeDecl):
                 if paths:
                     error = []
                     annotations: list[Annotation] = []
+                    assert self.location is not None
                     for path, errors in sorted(paths):
                         unsatisfied_locations = [t[1] for t in errors]
                         assert are_all_locations_present(unsatisfied_locations)
 
-                        annotations.extend(annotate_path(path))
+                        annotations.extend(annotate_path(path, self.location))
                         annotations.extend(
                             [
                                 Annotation(
@@ -2026,6 +2027,7 @@ class Message(type_decl.TypeDecl):
                     *self.aggregate_constraints(start),
                 ]
 
+                assert self.location is not None
                 error = RecordFluxError(
                     [
                         ErrorEntry(
@@ -2034,6 +2036,7 @@ class Message(type_decl.TypeDecl):
                             field_size.location,
                             annotations=annotate_path(
                                 path,
+                                self.location,
                                 partial(filter_builtins_and_current_field, field=f),
                             ),
                         ),
@@ -2058,6 +2061,7 @@ class Message(type_decl.TypeDecl):
                             self.identifier.location,
                             annotations=annotate_path(
                                 path,
+                                self.location,
                                 partial(filter_builtins_and_current_field, field=f),
                             ),
                         ),
@@ -2090,6 +2094,7 @@ class Message(type_decl.TypeDecl):
                         path_locations = [p.target.identifier.location for p in path]
                         assert are_all_locations_present(path_locations)
                         assert f.identifier.location is not None
+                        assert self.location is not None
                         error = RecordFluxError(
                             [
                                 ErrorEntry(
@@ -2100,6 +2105,7 @@ class Message(type_decl.TypeDecl):
                                     annotations=[
                                         *annotate_path(
                                             path[:-1],
+                                            self.location,
                                             partial(lambda p, f: p.target.name != f.name, f=f),
                                         ),
                                         Annotation(
@@ -2136,6 +2142,7 @@ class Message(type_decl.TypeDecl):
                         assert field_size.location is not None
                         path_locations = [p.location for p in path]
                         assert are_all_locations_present(path_locations)
+                        assert self.location is not None
                         error = RecordFluxError(
                             [
                                 ErrorEntry(
@@ -2145,6 +2152,7 @@ class Message(type_decl.TypeDecl):
                                     field_size.location,
                                     annotations=annotate_path(
                                         path[:-1],
+                                        self.location,
                                         lambda p: p.source != INITIAL,
                                     ),
                                 ),
@@ -2198,13 +2206,14 @@ class Message(type_decl.TypeDecl):
                 *field_size_constraints,
             ]
             assert self.identifier.location is not None, self.identifier
+            assert self.location is not None
             error = RecordFluxError(
                 [
                     ErrorEntry(
                         "message size must be multiple of 8 bit",
                         Severity.ERROR,
                         self.identifier.location,
-                        annotations=annotate_path(path),
+                        annotations=annotate_path(path, self.location),
                     ),
                 ],
             )
@@ -3544,9 +3553,11 @@ def prove(
 
 def annotate_path(
     path: Sequence[Link],
+    message_location: Location,
     link_filter: Optional[Callable[[Link], bool]] = None,
 ) -> Sequence[Annotation]:
     link_filter = link_filter or (lambda _: True)
+    assert message_location.end is not None
     result = []
 
     for link in path:
@@ -3555,9 +3566,17 @@ def annotate_path(
         if link_filter(link):
             result.append(
                 Annotation(
-                    f'on path "{link.target.name}"',
+                    (
+                        f'on path "{link.target.name}"'
+                        if link.target != FINAL
+                        else "on path to end of message"
+                    ),
                     Severity.NOTE,
-                    link.target.identifier.location,
+                    (
+                        link.target.identifier.location
+                        if link.target != FINAL
+                        else Location(message_location.end, message_location.source)
+                    ),
                 ),
             )
 

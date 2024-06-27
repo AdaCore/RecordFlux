@@ -268,6 +268,7 @@ def test_write_specification_files(tmp_path: Path) -> None:
             Link(Field("Foo"), FINAL, location=Location((2, 2))),
         ],
         {Field(ID("Foo", location=Location((1, 1)))): t},
+        location=Location((1, 1), end=(1, 2)),
     )
     Model([t, v, s, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
@@ -310,6 +311,7 @@ def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
             Link(Field("Foo"), FINAL, location=Location((2, 2))),
         ],
         {Field(ID("Foo", location=Location((1, 1)))): t},
+        location=Location((1, 1), end=(1, 2)),
     )
     Model([s, v, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
@@ -347,7 +349,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
         Field(ID("Victor", location=Location((1, 1)))): v,
         Field(ID("Uniform", location=Location((2, 2)))): u,
     }
-    m = Message(ID("R::M", Location((1, 1))), links, fields)
+    m = Message(ID("R::M", Location((1, 1))), links, fields, location=Location((1, 1), end=(1, 2)))
     Model([t, v, u1, m, u]).write_specification_files(tmp_path)
     p_path, q_path, r_path = (tmp_path / Path(pkg + ".rflx") for pkg in ("p", "q", "r"))
     assert set(tmp_path.glob("*.rflx")) == {p_path, q_path, r_path}
@@ -405,7 +407,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
         Field(ID("Victor", location=Location((1, 1)))): v,
         Field(ID("Uniform", location=Location((2, 2)))): u,
     }
-    m = Message(ID("R::M", Location((1, 1))), links, fields)
+    m = Message(ID("R::M", Location((1, 1))), links, fields, location=Location((1, 1), end=(1, 2)))
     Model([u1, m, u, v]).write_specification_files(tmp_path)
     p_path, q_path, r_path = (tmp_path / Path(pkg + ".rflx") for pkg in ("p", "q", "r"))
     assert set(tmp_path.glob("*.rflx")) == {p_path, q_path, r_path}
@@ -535,7 +537,7 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
                     ],
                     None,
                     None,
-                    None,
+                    location=Location((1, 1), end=(1, 2)),
                 ),
             ],
             [
@@ -554,6 +556,7 @@ def test_write_specification_files_line_too_long(tmp_path: Path) -> None:
                     {
                         Field(ID("F", location=Location((1, 1)))): OPAQUE,
                     },
+                    location=Location((1, 1), end=(1, 2)),
                 ),
             ],
         ),
@@ -638,7 +641,7 @@ def test_unchecked_model_checked(
                     ],
                     None,
                     None,
-                    None,
+                    location=Location((1, 1), end=(1, 2)),
                 ),
             ],
             r"^"
@@ -684,7 +687,7 @@ def test_unchecked_model_checked(
                     ],
                     None,
                     None,
-                    location=((2, 10)),
+                    location=Location((2, 10), end=(2, 11)),
                 ),
                 UncheckedMessage(
                     ID("P::M", Location((4, 1))),
@@ -710,7 +713,7 @@ def test_unchecked_model_checked(
                     ],
                     None,
                     None,
-                    None,
+                    location=Location((1, 1), end=(1, 2)),
                 ),
             ],
             r"^"

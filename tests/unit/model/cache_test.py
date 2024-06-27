@@ -52,6 +52,7 @@ def test_verified(tmp_path: Path) -> None:
                 expr.Number(8),
             ),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
     d1 = cache.Digest(m1)
     m2 = model.Message(
@@ -68,6 +69,7 @@ def test_verified(tmp_path: Path) -> None:
                 expr.Number(8),
             ),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
     d2 = cache.Digest(m2)
     m3 = model.Message(
@@ -84,6 +86,7 @@ def test_verified(tmp_path: Path) -> None:
                 expr.Number(16),
             ),
         },
+        location=Location((1, 1), end=(1, 2)),
     )
     d3 = cache.Digest(m3)
     c = cache.Cache(tmp_path / "test.json")

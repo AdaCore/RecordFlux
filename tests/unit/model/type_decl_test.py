@@ -481,7 +481,7 @@ def test_sequence_dependencies() -> None:
                     Link(Field("A"), FINAL, location=Location((2, 2))),
                 ],
                 {Field(ID("A", location=Location((1, 1)))): OPAQUE},
-                location=Location((3, 4)),
+                location=Location((3, 4), end=(3, 5)),
             ),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
             r"<stdin>:3:4: note: messages used as sequence element must not depend"
@@ -500,7 +500,7 @@ def test_sequence_dependencies() -> None:
                     Link(Field("A"), FINAL, location=Location((2, 2))),
                 ],
                 {Field(ID("A", location=Location((1, 1)))): models.integer()},
-                location=Location((3, 4)),
+                location=Location((3, 4), end=(3, 5)),
             ),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
             r"<stdin>:3:4: note: messages used as sequence element must not depend"
@@ -517,7 +517,7 @@ def test_sequence_dependencies() -> None:
                     Field(ID("P", location=Location((1, 1)))): BOOLEAN,
                     Field(ID("A", location=Location((2, 2)))): models.integer(),
                 },
-                location=Location((3, 4)),
+                location=Location((3, 4), end=(3, 5)),
             ),
             r'<stdin>:1:2: error: invalid element type of sequence "A"\n'
             r"<stdin>:3:4: note: parameterized messages must not be used"

@@ -287,10 +287,6 @@ impl ErrorEntry {
         )
     }
 
-    pub fn extend(&mut self, entries: Vec<Annotation>) {
-        self.0.extend(entries.into_iter().map(|a| a.0));
-    }
-
     #[getter]
     fn message(&self) -> &str {
         self.0.message()
