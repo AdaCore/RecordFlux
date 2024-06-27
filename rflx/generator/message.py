@@ -702,6 +702,8 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
         if first_node == fld and dist == expr.Number(0) and first_node != INITIAL:
             incoming = message.incoming(fld)
             first_expr = [link_first_expr(fld) for fld in incoming]
+            if len(first_expr) == 1 or all(x[1] == first_expr[0][1] for x in first_expr):
+                return first_expr[0][1]
             return expr.IfExpr(
                 first_expr,
                 expr.Call("RFLX_Types.Unreachable", rty.BOOLEAN),

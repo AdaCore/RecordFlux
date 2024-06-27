@@ -1435,60 +1435,15 @@ private
           when F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
              First + 8,
           when F_Checksum =>
-             (if
-                 Well_Formed (Cursors (F_Code_Destination_Unreachable))
-                 and then True
-              then
-                 First + 16
-              elsif
-                 Well_Formed (Cursors (F_Code_Redirect))
-                 and then True
-              then
-                 First + 16
-              elsif
-                 Well_Formed (Cursors (F_Code_Time_Exceeded))
-                 and then True
-              then
-                 First + 16
-              elsif
-                 Well_Formed (Cursors (F_Code_Zero))
-                 and then True
-              then
-                 First + 16
-              else
-                 RFLX_Types.Unreachable),
+             First + 16,
           when F_Gateway_Internet_Address | F_Identifier | F_Pointer | F_Unused_32 =>
              Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 16,
           when F_Sequence_Number =>
              Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 32,
           when F_Unused_24 =>
              Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 24,
-          when F_Originate_Timestamp =>
+          when F_Originate_Timestamp | F_Data =>
              Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48,
-          when F_Data =>
-             (if
-                 Well_Formed (Cursors (F_Gateway_Internet_Address))
-                 and then True
-              then
-                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48
-              elsif
-                 Well_Formed (Cursors (F_Sequence_Number))
-                 and then (RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Reply))
-                           or else RFLX_Types.Base_Integer (Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Echo_Request)))
-              then
-                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48
-              elsif
-                 Well_Formed (Cursors (F_Unused_24))
-                 and then True
-              then
-                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48
-              elsif
-                 Well_Formed (Cursors (F_Unused_32))
-                 and then True
-              then
-                 Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 48
-              else
-                 RFLX_Types.Unreachable),
           when F_Receive_Timestamp =>
              Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Checksum) + 80,
           when F_Transmit_Timestamp =>
