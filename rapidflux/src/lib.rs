@@ -4,6 +4,7 @@
     clippy::unsafe_derive_deserialize,
     clippy::unused_self
 )]
+#![forbid(unsafe_code)]
 
 use pyo3::prelude::*;
 
