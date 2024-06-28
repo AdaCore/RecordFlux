@@ -17,7 +17,7 @@ from rflx import typing_ as rty
 from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE, MP_CONTEXT
 from rflx.error import info
-from rflx.identifier import ID, StrID
+from rflx.identifier import ID, ID_PREFIX, StrID
 from rflx.rapidflux import Location, ty
 
 if TYPE_CHECKING:
@@ -142,6 +142,11 @@ class Stmt(Base):
     def location(self) -> Optional[Location]:
         return self.origin.location if self.origin else None
 
+    @property
+    @abstractmethod
+    def accessed_vars(self) -> list[ID]:
+        raise NotImplementedError
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Stmt:
         raise NotImplementedError
 
@@ -168,6 +173,10 @@ class VarDecl(Stmt):
     expression: Optional[ComplexExpr] = None
     origin: Optional[Origin] = None
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return []
+
     def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return []
 
@@ -190,6 +199,10 @@ class Assign(Stmt):
     expression: Expr
     type_: rty.NamedType
     origin: Optional[Origin] = None
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return self.expression.accessed_vars
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Assign:
         return Assign(
@@ -237,6 +250,10 @@ class FieldAssign(Stmt):
     type_: rty.Message
     origin: Optional[Origin] = None
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [self.message, *self.expression.accessed_vars]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> FieldAssign:
         return FieldAssign(
             mapping.get(self.message, self.message),
@@ -270,6 +287,10 @@ class Append(Stmt):
     type_: rty.Sequence
     origin: Optional[Origin] = None
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [self.sequence, *self.expression.accessed_vars]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Append:
         return Append(
             mapping.get(self.sequence, self.sequence),
@@ -295,6 +316,10 @@ class Extend(Stmt):
     type_: rty.Sequence
     origin: Optional[Origin] = None
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [self.sequence, *self.expression.accessed_vars]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Extend:
         return Extend(
             mapping.get(self.sequence, self.sequence),
@@ -319,6 +344,13 @@ class Reset(Stmt):
     parameter_values: Mapping[ID, Expr]
     type_: rty.Any
     origin: Optional[Origin] = None
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [
+            self.identifier,
+            *[i for p in self.parameter_values.values() for i in p.accessed_vars],
+        ]
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Reset:
         return Reset(
@@ -346,6 +378,10 @@ class ChannelStmt(Stmt):
     channel: ID = field(converter=ID)
     expression: BasicExpr
     origin: Optional[Origin] = None
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [*self.expression.accessed_vars]
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ChannelStmt:
         return self.__class__(
@@ -382,6 +418,10 @@ class Check(Stmt):
     @property
     def location(self) -> Optional[Location]:
         return self.expression.location
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return self.expression.accessed_vars
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Check:
         return Check(
@@ -436,6 +476,11 @@ class Expr(Base):
     @property
     def location(self) -> Optional[Location]:
         return self.origin.location if self.origin else None
+
+    @property
+    @abstractmethod
+    def accessed_vars(self) -> list[ID]:
+        raise NotImplementedError
 
     def substituted(self: Self, mapping: Mapping[ID, ID]) -> Self:
         raise NotImplementedError
@@ -492,6 +537,10 @@ class BasicBoolExpr(BasicExpr, BoolExpr):
 class Var(BasicExpr):
     identifier: ID = field(converter=ID)
     origin: Optional[Origin] = None
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [self.identifier]
 
     def _update_str(self) -> None:
         self._str = intern(str(self.identifier))
@@ -550,7 +599,7 @@ class ObjVar(Var):
         return self
 
     def to_z3_expr(self) -> z3.ExprRef:
-        raise NotImplementedError
+        return z3.BoolVal(val=True)
 
 
 @define(eq=False)
@@ -562,6 +611,10 @@ class EnumLit(BasicExpr):
     @property
     def type_(self) -> rty.Enumeration:
         return self.enum_type
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return []
 
     def substituted(self, _mapping: Mapping[ID, ID]) -> EnumLit:
         return self
@@ -582,6 +635,10 @@ class IntVal(BasicIntExpr):
     def type_(self) -> rty.UniversalInteger:
         return rty.UniversalInteger(ty.Bounds(self.value, self.value))
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return []
+
     def substituted(self, _mapping: Mapping[ID, ID]) -> IntVal:
         return self
 
@@ -596,6 +653,10 @@ class IntVal(BasicIntExpr):
 class BoolVal(BasicBoolExpr):
     value: bool
     origin: Optional[Origin] = None
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return []
 
     def substituted(self, _mapping: Mapping[ID, ID]) -> BoolVal:
         return self
@@ -612,6 +673,10 @@ class Attr(Expr):
     prefix: ID = field(converter=ID)
     prefix_type: rty.Any
     origin: Optional[Origin] = None
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [self.prefix]
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Attr:
         return self.__class__(
@@ -751,6 +816,10 @@ class FieldAccessAttr(Expr):
     origin: Optional[Origin] = None
 
     @property
+    def accessed_vars(self) -> list[ID]:
+        return [self.message]
+
+    @property
     def field_type(self) -> rty.Any:
         type_ = self.message_type.field_types[self.field]
         assert isinstance(type_, rty.Any)
@@ -804,6 +873,10 @@ class UnaryExpr(Expr):
     expression: BasicExpr
     origin: Optional[Origin] = None
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return self.expression.accessed_vars
+
     def substituted(self, mapping: Mapping[ID, ID]) -> UnaryExpr:
         return self.__class__(self.expression.substituted(mapping), self.origin)
 
@@ -829,6 +902,10 @@ class BinaryExpr(Expr):
     left: BasicExpr
     right: BasicExpr
     origin: Optional[Origin] = None
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [*self.left.accessed_vars, *self.right.accessed_vars]
 
     def substituted(self, mapping: Mapping[ID, ID]) -> BinaryExpr:
         return self.__class__(
@@ -1217,6 +1294,10 @@ class Call(Expr):
     origin: Optional[Origin] = None
     _preconditions: list[Cond] = field(init=False, factory=list)
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [i for a in self.arguments for i in a.accessed_vars]
+
     def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return self._preconditions
 
@@ -1303,6 +1384,10 @@ class FieldAccess(Expr):
     message_type: rty.Compound
     origin: Optional[Origin] = None
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [self.message]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> FieldAccess:
         return self.__class__(
             mapping.get(self.message, self.message),
@@ -1381,6 +1466,14 @@ class IfExpr(Expr):
     else_expr: ComplexExpr
     origin: Optional[Origin] = None
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [
+            *self.condition.accessed_vars,
+            *self.then_expr.accessed_vars,
+            *self.else_expr.accessed_vars,
+        ]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> IfExpr:
         return self.__class__(
             self.condition.substituted(mapping),
@@ -1447,6 +1540,10 @@ class Conversion(Expr):
     def type_(self) -> rty.Any:
         return self.target_type
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return self.argument.accessed_vars
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Conversion:
         return self.__class__(
             self.identifier,
@@ -1489,6 +1586,14 @@ class Comprehension(Expr):
     def type_(self) -> rty.Aggregate:
         return rty.Aggregate(self.selector.expr.type_)
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [
+            *self.sequence.accessed_vars,
+            *self.selector.accessed_vars,
+            *self.condition.accessed_vars,
+        ]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Comprehension:
         return self.__class__(
             mapping.get(self.iterator, self.iterator),
@@ -1528,6 +1633,14 @@ class Find(Expr):
     def type_(self) -> rty.Any:
         return self.selector.expr.type_
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [
+            *self.sequence.accessed_vars,
+            *self.selector.accessed_vars,
+            *self.condition.accessed_vars,
+        ]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Find:
         return self.__class__(
             mapping.get(self.iterator, self.iterator),
@@ -1564,6 +1677,10 @@ class Agg(Expr):
     def type_(self) -> rty.Aggregate:
         return rty.Aggregate(rty.common_type([e.type_ for e in self.elements]))
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [i for e in self.elements for i in e.accessed_vars]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> Agg:
         return self.__class__(
             [e.substituted(mapping) for e in self.elements],
@@ -1599,6 +1716,10 @@ class NamedAgg(Expr):
     def type_(self) -> rty.Any:
         raise NotImplementedError
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [i for (_, e) in self.elements for i in e.accessed_vars]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> NamedAgg:
         raise NotImplementedError
 
@@ -1621,6 +1742,10 @@ class Str(Expr):
     def type_(self) -> rty.Sequence:
         return rty.OPAQUE
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return []
+
     def substituted(self, _mapping: Mapping[ID, ID]) -> Str:
         return self
 
@@ -1640,6 +1765,10 @@ class MsgAgg(Expr):
     field_values: Mapping[ID, Expr]
     type_: rty.Message
     origin: Optional[Origin] = None
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [i for v in self.field_values.values() for i in v.accessed_vars]
 
     def substituted(self, mapping: Mapping[ID, ID]) -> MsgAgg:
         return self.__class__(
@@ -1671,6 +1800,10 @@ class DeltaMsgAgg(Expr):
     type_: rty.Message
     origin: Optional[Origin] = None
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [i for v in self.field_values.values() for i in v.accessed_vars]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> DeltaMsgAgg:
         return self.__class__(
             self.identifier,
@@ -1700,6 +1833,13 @@ class CaseExpr(Expr):
     choices: Sequence[tuple[Sequence[BasicExpr], BasicExpr]]
     type_: rty.Any
     origin: Optional[Origin] = None
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [
+            *self.expression.accessed_vars,
+            *[i for (_, e) in self.choices for i in e.accessed_vars],
+        ]
 
     def substituted(self, mapping: Mapping[ID, ID]) -> CaseExpr:
         return self.__class__(
@@ -1776,6 +1916,13 @@ class ComplexExpr(Base):
     def is_basic_expr(self) -> bool:
         return self.is_expr() and isinstance(self.expr, BasicExpr)
 
+    @property
+    def accessed_vars(self) -> list[ID]:
+        return [
+            *[i for s in self.stmts for i in s.accessed_vars],
+            *self.expr.accessed_vars,
+        ]
+
     def substituted(self, mapping: Mapping[ID, ID]) -> ComplexExpr:
         return self.__class__(
             [s.substituted(mapping) for s in self.stmts],
@@ -1848,7 +1995,12 @@ class Session:
                     Transition(
                         t.target,
                         ComplexExpr(
-                            add_required_checks(t.condition.stmts, manager, variable_id),
+                            add_required_checks(
+                                t.condition.stmts,
+                                manager,
+                                variable_id,
+                                t.condition.expr.accessed_vars,
+                            ),
                             t.condition.expr,
                         ),
                         t.description,
@@ -1857,7 +2009,7 @@ class Session:
                     for t in s.transitions
                 ],
                 s.exception_transition,
-                add_required_checks(s.actions, manager, variable_id),
+                add_required_checks(s.actions, manager, variable_id, []),
                 s.description,
                 s.location,
             )
@@ -1894,7 +2046,11 @@ def add_checks(statements: Sequence[Stmt], variable_id: Generator[ID, None, None
     return result
 
 
-def remove_unnecessary_checks(statements: Sequence[Stmt], manager: ProofManager) -> list[Stmt]:
+def remove_unnecessary_checks(
+    statements: Sequence[Stmt],
+    manager: ProofManager,
+    accessed_vars: Sequence[ID],
+) -> list[Stmt]:
     """Remove all checks that are always true."""
 
     always_true: list[int] = []
@@ -1930,18 +2086,46 @@ def remove_unnecessary_checks(statements: Sequence[Stmt], manager: ProofManager)
     for i in reversed(always_true):
         result = [*result[:i], *result[i + 1 :]]
 
-    return remove_unused_assignments(result)
+    return remove_unused_temporary_variables(result, accessed_vars)
 
 
-def remove_unused_assignments(statements: Sequence[Stmt]) -> list[Stmt]:
-    # TODO(eng/recordflux/RecordFlux#1339): Add removal of unused assignments
-    return list(statements)
+def remove_unused_temporary_variables(
+    statements: Sequence[Stmt],
+    accessed_vars: Sequence[ID],
+) -> list[Stmt]:
+    """Remove all unused temporary variable declarations and assignments."""
+
+    used_vars = set(accessed_vars)
+    unused_statements = []
+
+    for i, s in reversed(list(enumerate(statements))):
+        used_vars.update(s.accessed_vars)
+        if (
+            isinstance(s, VarDecl)
+            and str(s.identifier).startswith(ID_PREFIX)
+            and s.identifier not in used_vars
+        ):
+            unused_statements.append(i)
+        if (
+            isinstance(s, Assign)
+            and str(s.target).startswith(ID_PREFIX)
+            and s.target not in used_vars
+        ):
+            unused_statements.append(i)
+
+    statements = list(statements)
+
+    for i in unused_statements:
+        statements.pop(i)
+
+    return statements
 
 
 def add_required_checks(
     statements: Sequence[Stmt],
     manager: ProofManager,
     variable_id: Generator[ID, None, None],
+    accessed_vars: Sequence[ID],
 ) -> list[Stmt]:
     """
     Add check statements in places where preconditions are not always true.
@@ -1950,7 +2134,8 @@ def add_required_checks(
     case, a check statement is added in front of the respective statement. The check statements
     in the resulting list mark the places where the code generator must insert explicit checks.
     """
-    result = remove_unnecessary_checks(add_checks(statements, variable_id), manager)
+
+    result = remove_unnecessary_checks(add_checks(statements, variable_id), manager, accessed_vars)
 
     for s in result:
         if isinstance(s, Check):

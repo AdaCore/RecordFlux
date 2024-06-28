@@ -822,6 +822,10 @@ def test_session_declare_error(
 
 @define
 class UnknownStatement(ir.Stmt):
+    @property
+    def accessed_vars(self) -> list[ID]:
+        raise NotImplementedError
+
     def preconditions(self, variable_id: typing.Generator[ID, None, None]) -> list[ir.Cond]:
         raise NotImplementedError
 
@@ -1075,6 +1079,10 @@ class UnknownExpr(ir.Expr):
     @property
     def type_(self) -> rty.Any:
         return rty.Message("T")
+
+    @property
+    def accessed_vars(self) -> list[ID]:
+        raise NotImplementedError
 
     def preconditions(self, variable_id: typing.Generator[ID, None, None]) -> list[ir.Cond]:
         raise NotImplementedError

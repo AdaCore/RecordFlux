@@ -3,7 +3,7 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 
 #[must_use]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct Bounds {
     lower: i128,
     upper: i128,
@@ -112,5 +112,18 @@ mod tests {
         let result = bounds.merge(&other);
         assert_eq!(result.lower, expected.lower);
         assert_eq!(result.upper, expected.upper);
+    }
+
+    #[test]
+    fn test_bounds_serde() {
+        let bounds = Bounds::new(1, 2);
+        let bytes = bincode::serialize(&bounds).expect("failed to serialize");
+        let deserialized_bounds = bincode::deserialize(&bytes).expect("failed to deserialize");
+        assert_eq!(bounds, deserialized_bounds);
+    }
+
+    #[test]
+    fn test_bounds_display() {
+        assert_eq!(Bounds::new(1, 2).to_string(), "1 .. 2");
     }
 }

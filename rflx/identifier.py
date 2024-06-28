@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from typing import Union
+from typing import Final, Union
 
 from rflx.rapidflux import ID as ID
 
 StrID = Union[str, ID]
 
+ID_PREFIX: Final = "T_"
+
 
 def id_generator() -> Generator[ID, None, None]:
     i = 0
     while True:
-        yield ID(f"T_{i}")
+        yield ID(f"{ID_PREFIX}{i}")
         i += 1
