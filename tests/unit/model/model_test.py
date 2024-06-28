@@ -586,12 +586,13 @@ def test_unchecked_model_checked(
                 type_decl.UncheckedInteger(
                     ID("P::T"),
                     Number(0),
-                    Number(128),
-                    Number(2),
-                    Location((1, 2)),
+                    Number(128, location=Location((1, 1))),
+                    Number(2, location=Location((1, 2))),
+                    Location((1, 3)),
                 ),
             ],
-            r'^<stdin>:1:2: error: size of "T" too small$',
+            r'^<stdin>:1:2: error: size of "T" too small\n'
+            r"<stdin>:1:1: help: at least 8 bits are required to store the upper bound$",
             [],
         ),
         (
@@ -600,9 +601,9 @@ def test_unchecked_model_checked(
                 type_decl.UncheckedInteger(
                     ID("P::I"),
                     Number(0),
-                    Number(128),
-                    Number(2),
-                    Location((1, 2)),
+                    Number(128, location=Location((1, 1))),
+                    Number(2, location=Location((1, 2))),
+                    Location((1, 3)),
                 ),
                 type_decl.UncheckedEnumeration(
                     ID("E", Location((3, 4))),
@@ -642,6 +643,7 @@ def test_unchecked_model_checked(
             ],
             r"^"
             r'<stdin>:1:2: error: size of "I" too small\n'
+            r"<stdin>:1:1: help: at least 8 bits are required to store the upper bound\n"
             r'<stdin>:3:4: error: invalid format for identifier "E"\n'
             r'<stdin>:5:6: error: condition "1 = 1" on transition "F1" -> "Final"'
             r" is always true"

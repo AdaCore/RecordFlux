@@ -268,7 +268,7 @@ def test_verify(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             document.absolute().as_uri(),
             [
                 Diagnostic(
-                    Range(Position(0, 21), Position(0, 64)),
+                    Range(Position(0, 37), Position(0, 48)),
                     'last of "T" exceeds limit (2**63 - 1)',
                     DiagnosticSeverity.Error,
                 ),

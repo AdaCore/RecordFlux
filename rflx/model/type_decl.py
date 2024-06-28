@@ -113,21 +113,27 @@ class Integer(Scalar):
         size_num = size.simplified()
 
         if not isinstance(first_num, expr.Number):
-            self.error.push(
-                ErrorEntry(
-                    f'first of "{self.name}" contains variable',
-                    Severity.ERROR,
-                    self.location,
-                ),
+            self.error.extend(
+                [
+                    ErrorEntry(
+                        f'first of "{self.name}" contains variable',
+                        Severity.ERROR,
+                        v.location,
+                    )
+                    for v in first_num.variables()
+                ],
             )
 
         if not isinstance(last_num, expr.Number):
-            self.error.push(
-                ErrorEntry(
-                    f'last of "{self.name}" contains variable',
-                    Severity.ERROR,
-                    self.location,
-                ),
+            self.error.extend(
+                [
+                    ErrorEntry(
+                        f'last of "{self.name}" contains variable',
+                        Severity.ERROR,
+                        v.location,
+                    )
+                    for v in last_num.variables()
+                ],
             )
             raise self.error
 
@@ -136,17 +142,20 @@ class Integer(Scalar):
                 ErrorEntry(
                     f'last of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE} - 1)',
                     Severity.ERROR,
-                    self.location,
+                    last_num.location,
                 ),
             )
 
         if not isinstance(size_num, expr.Number):
-            self.error.push(
-                ErrorEntry(
-                    f'size of "{self.name}" contains variable',
-                    Severity.ERROR,
-                    self.location,
-                ),
+            self.error.extend(
+                [
+                    ErrorEntry(
+                        f'size of "{self.name}" contains variable',
+                        Severity.ERROR,
+                        v.location,
+                    )
+                    for v in size_num.variables()
+                ],
             )
 
         self.error.propagate()
@@ -160,7 +169,7 @@ class Integer(Scalar):
                 ErrorEntry(
                     f'first of "{self.name}" negative',
                     Severity.ERROR,
-                    self.location,
+                    first_num.location,
                 ),
             )
         if first_num > last_num:
@@ -168,16 +177,25 @@ class Integer(Scalar):
                 ErrorEntry(
                     f'range of "{self.name}" negative',
                     Severity.ERROR,
-                    self.location,
+                    Location.merge([first_num.location, last_num.location]),
                 ),
             )
 
         if int(last_num).bit_length() > int(size_num):
+            assert last_num.location is not None
             self.error.push(
                 ErrorEntry(
                     f'size of "{self.name}" too small',
                     Severity.ERROR,
-                    self.location,
+                    size_num.location,
+                    annotations=[
+                        Annotation(
+                            f"at least {int(last_num).bit_length()} bits are required to store the "
+                            "upper bound",
+                            Severity.HELP,
+                            last_num.location,
+                        ),
+                    ],
                 ),
             )
 
@@ -189,7 +207,7 @@ class Integer(Scalar):
                 ErrorEntry(
                     f'size of "{self.name}" exceeds limit (2**{const.MAX_SCALAR_SIZE})',
                     Severity.ERROR,
-                    self.location,
+                    size_num.location,
                 ),
             )
 

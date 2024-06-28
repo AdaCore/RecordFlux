@@ -355,7 +355,7 @@ def test_model_errors_in_type_and_session() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:2:9: error: last of "T" exceeds limit \(2\*\*63 - 1\)\n'
+        r'<stdin>:2:25: error: last of "T" exceeds limit \(2\*\*63 - 1\)\n'
         r"<stdin>:4:4: error: empty states"
         r"$",
     )
@@ -859,7 +859,7 @@ def test_parse_error_negated_variable() -> None:
                type Kind is range 0 .. 2 ** 16 - 1 with Size => - Cobra16;
             end P1;
             """,
-        '^<stdin>:2:9: error: size of "Kind" contains variable$',
+        r'^<stdin>:2:55: error: size of "Kind" contains variable$',
     )
 
 
@@ -1239,6 +1239,332 @@ def test_message_negative_field_start(tmp_path: Path, capfd: pytest.CaptureFixtu
                       |          --
                       |
                """,
+        ),
+        capfd,
+    )
+
+
+def test_first_contains_variable(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range X + 1 .. 100 with Size => 8;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: first of "T" contains variable
+             --> {file_path}:2:20
+              |
+            2 |    type T is range X + 1 .. 100 with Size => 8;
+              |                    ^
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_first_contains_multiple_variables(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range X + Y + 1 .. 100 with Size => 8;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: first of "T" contains variable
+             --> {file_path}:2:20
+              |
+            2 |    type T is range X + Y + 1 .. 100 with Size => 8;
+              |                    ^
+              |
+            error: first of "T" contains variable
+             --> {file_path}:2:24
+              |
+            2 |    type T is range X + Y + 1 .. 100 with Size => 8;
+              |                        ^
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_last_contains_variable(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range 0 .. X + 1 with Size => 8;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: last of "T" contains variable
+             --> {file_path}:2:25
+              |
+            2 |    type T is range 0 .. X + 1 with Size => 8;
+              |                         ^
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_last_contains_multiple_variables(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range 0 .. X + Y + 1 with Size => 8;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: last of "T" contains variable
+             --> {file_path}:2:25
+              |
+            2 |    type T is range 0 .. X + Y + 1 with Size => 8;
+              |                         ^
+              |
+            error: last of "T" contains variable
+             --> {file_path}:2:29
+              |
+            2 |    type T is range 0 .. X + Y + 1 with Size => 8;
+              |                             ^
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_last_exceeds_limit(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range 0 .. 2 ** 64 - 1 with Size => 64;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: last of "T" exceeds limit (2**63 - 1)
+             --> {file_path}:2:25
+              |
+            2 |    type T is range 0 .. 2 ** 64 - 1 with Size => 64;
+              |                         ^^^^^^^^^^^
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_size_contains_variable(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range 0 .. 255 with Size => X;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: size of "T" contains variable
+             --> {file_path}:2:42
+              |
+            2 |    type T is range 0 .. 255 with Size => X;
+              |                                          ^
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_size_contains_mutiple_variables(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range 0 .. 255 with Size => X + Y;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: size of "T" contains variable
+             --> {file_path}:2:42
+              |
+            2 |    type T is range 0 .. 255 with Size => X + Y;
+              |                                          ^
+              |
+            error: size of "T" contains variable
+             --> {file_path}:2:46
+              |
+            2 |    type T is range 0 .. 255 with Size => X + Y;
+              |                                              ^
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_type_size_too_small(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range 0 .. 47 with Size => 2;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: size of "T" too small
+             --> {file_path}:2:41
+              |
+            2 |    type T is range 0 .. 47 with Size => 2;
+              |                                         ^
+              |                         -- help: at least 6 bits are required to store the upper \
+bound
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_type_negative_range(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range 255 .. 0 with Size => 8;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: range of "T" negative
+             --> {file_path}:2:20
+              |
+            2 |    type T is range 255 .. 0 with Size => 8;
+              |                    ^^^^^^^^
+              |
+              """,
         ),
         capfd,
     )

@@ -101,66 +101,115 @@ def test_integer_last() -> None:
 def test_integer_invalid_first_variable() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:5:3: error: first of "T" contains variable$',
+        match=r'^<stdin>:5:4: error: first of "T" contains variable$',
     ):
-        Integer("P::T", Add(Number(1), Variable("X")), Number(15), Number(4), Location((5, 3)))
+        Integer(
+            "P::T",
+            Add(Number(1), Variable("X", location=Location((5, 4))), location=Location((5, 3))),
+            Number(15),
+            Number(4),
+            Location((5, 3)),
+        )
 
 
 def test_integer_invalid_last_variable() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:80:6: error: last of "T" contains variable$',
+        match=r'^<stdin>:80:4: error: last of "T" contains variable$',
     ):
-        Integer("P::T", Number(1), Add(Number(1), Variable("X")), Number(4), Location((80, 6)))
+        Integer(
+            "P::T",
+            Number(1),
+            Add(Number(1), Variable("X", location=Location((80, 4))), location=Location((80, 5))),
+            Number(4),
+            Location((80, 6)),
+        )
 
 
 def test_integer_invalid_last_exceeds_limit() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^error: last of "T" exceeds limit \(2\*\*63 - 1\)$',
+        match=r'^<stdin>:1:1: error: last of "T" exceeds limit \(2\*\*63 - 1\)$',
     ):
-        Integer("P::T", Number(1), Pow(Number(2), Number(63)), Number(64))
+        Integer(
+            "P::T",
+            Number(1),
+            Pow(Number(2, location=Location((1, 1))), Number(63, location=Location((1, 2)))),
+            Number(64),
+            location=Location((2, 2)),
+        )
 
 
 def test_integer_invalid_first_negative() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:6:4: error: first of "T" negative$',
+        match=r'^<stdin>:6:3: error: first of "T" negative$',
     ):
-        Integer("P::T", Number(-1), Number(0), Number(1), Location((6, 4)))
+        Integer(
+            "P::T",
+            Number(-1, location=Location((6, 3))),
+            Number(0),
+            Number(1),
+            Location((6, 4)),
+        )
 
 
 def test_integer_invalid_range() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:10:5: error: range of "T" negative$',
+        match=r'^<stdin>:10:3: error: range of "T" negative$',
     ):
-        Integer("P::T", Number(1), Number(0), Number(1), Location((10, 5)))
+        Integer(
+            "P::T",
+            Number(1, location=Location((10, 3))),
+            Number(0, location=Location((10, 4))),
+            Number(1, location=Location((10, 6))),
+            Location((10, 5)),
+        )
 
 
 def test_integer_invalid_size_variable() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:22:4: error: size of "T" contains variable$',
+        match=r'^<stdin>:22:5: error: size of "T" contains variable$',
     ):
-        Integer("P::T", Number(0), Number(256), Add(Number(8), Variable("X")), Location((22, 4)))
+        Integer(
+            "P::T",
+            Number(0, location=Location((22, 2))),
+            Number(256, location=Location((22, 3))),
+            Add(Number(8), Variable("X", location=Location((22, 5))), location=Location((22, 4))),
+            Location((22, 4)),
+        )
 
 
 def test_integer_invalid_size_too_small() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:10:4: error: size of "T" too small$',
+        match=r'^<stdin>:10:3: error: size of "T" too small\n'
+        r"<stdin>:10:2: help: at least 9 bits are required to store the upper bound$",
     ):
-        Integer("P::T", Number(0), Number(256), Number(8), Location((10, 4)))
+        Integer(
+            "P::T",
+            Number(0),
+            Number(256, location=Location((10, 2))),
+            Number(8, location=Location((10, 3))),
+            Location((10, 4)),
+        )
 
 
 def test_integer_invalid_size_exceeds_limit() -> None:
     # Eng/RecordFlux/RecordFlux#238
     with pytest.raises(
         RecordFluxError,
-        match=r'^<stdin>:50:3: error: size of "T" exceeds limit \(2\*\*63\)$',
+        match=r'^<stdin>:50:4: error: size of "T" exceeds limit \(2\*\*63\)$',
     ):
-        Integer("P::T", Number(0), Number(256), Number(128), Location((50, 3)))
+        Integer(
+            "P::T",
+            Number(0),
+            Number(256),
+            Number(128, location=Location((50, 4))),
+            Location((50, 3)),
+        )
 
 
 def test_enumeration_size() -> None:
