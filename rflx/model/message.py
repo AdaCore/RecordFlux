@@ -15,6 +15,7 @@ from rflx import expr, expr_proof
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.const import MP_CONTEXT
 from rflx.error import are_all_locations_present, fail, fatal_fail
+from rflx.expr import similar_fields
 from rflx.identifier import ID, StrID
 from rflx.model.top_level_declaration import TopLevelDeclaration
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
@@ -2362,14 +2363,14 @@ class DerivedMessage(Message):
             RecordFluxError(
                 [
                     ErrorEntry(
-                        f'illegal derivation "{self.identifier}"',
+                        "invalid derivation",
                         Severity.ERROR,
                         self.location,
                         annotations=(
                             [
                                 Annotation(
-                                    f'illegal base message type "{base.identifier}"',
-                                    Severity.INFO,
+                                    "base type must be a message",
+                                    Severity.NOTE,
                                     base.location,
                                 ),
                             ]
@@ -2505,12 +2506,30 @@ class Refinement(type_decl.TypeDecl):
                     )
                 break
         else:
+            assert self.field.identifier.location is not None
+            assert self.pdu.identifier.location is not None
+            similar_flds = similar_fields(
+                self.field.identifier,
+                [f.identifier for f in self.pdu.fields],
+            )
+            similar_fields_location = [f.location for f in similar_flds]
+            assert are_all_locations_present(similar_fields_location)
             self.error.push(
                 ErrorEntry(
-                    f'invalid field "{self.field.name}" in refinement of'
-                    f' "{self.pdu.identifier}"',
+                    f'field "{self.field.name}" does not exist in "{self.pdu.identifier}"',
                     Severity.ERROR,
                     self.field.identifier.location,
+                    annotations=[
+                        Annotation(
+                            f'type "{self.pdu.identifier}" declared here',
+                            Severity.NOTE,
+                            self.pdu.identifier.location,
+                        ),
+                        *[
+                            Annotation("field with similar name", Severity.HELP, l)
+                            for f, l in zip(similar_flds, similar_fields_location)
+                        ],
+                    ],
                 ),
             )
 
@@ -3186,14 +3205,14 @@ class UncheckedDerivedMessage(type_decl.UncheckedTypeDecl):
             RecordFluxError(
                 [
                     ErrorEntry(
-                        f'illegal derivation "{self.identifier}"',
+                        "invalid derivation",
                         Severity.ERROR,
                         self.identifier.location,
                         annotations=(
                             [
                                 Annotation(
-                                    f'invalid base message type "{self.base_identifier}"',
-                                    Severity.INFO,
+                                    "base type must be a message",
+                                    Severity.NOTE,
                                     base_types[0].identifier.location,
                                 ),
                             ]

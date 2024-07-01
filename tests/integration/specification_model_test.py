@@ -136,8 +136,8 @@ def test_message_derivation_of_derived_type() -> None:
            type Baz is new Bar;
         end Test;
         """,
-        r'^<stdin>:4:9: error: illegal derivation "Test::Baz"\n'
-        r'<stdin>:3:9: info: illegal base message type "Test::Bar"$',
+        r"^<stdin>:4:9: error: invalid derivation\n"
+        r"<stdin>:3:9: note: base type must be a message$",
     )
 
 
@@ -216,7 +216,8 @@ def test_refinement_invalid_field() -> None:
            for PDU use (Bar => PDU);
         end Test;
         """,
-        r'^<stdin>:7:17: error: invalid field "Bar" in refinement of "Test::PDU"$',
+        r'^<stdin>:7:17: error: field "Bar" does not exist in "Test::PDU"\n'
+        r'<stdin>:3:9: note: type "Test::PDU" declared here$',
     )
 
 
@@ -1554,6 +1555,144 @@ def test_type_negative_range(
             2 |    type T is range 255 .. 0 with Size => 8;
               |                    ^^^^^^^^
               |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_invalid_refinement_base(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    tmp_file = tmp_path / "test.rflx"
+    tmp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range 0 .. 255 with Size => 8;
+               type I2 is new I;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        tmp_file,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {tmp_file}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::I
+            error: invalid derivation
+             --> {tmp_file}:3:9
+              |
+            2 |    type I is range 0 .. 255 with Size => 8;
+              |         - note: base type must be a message
+            3 |    type I2 is new I;
+              |         ^^
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_refinement_undefined_field(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    tmp_file = tmp_path / "test.rflx"
+    tmp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type M is
+                  message
+                     F : Opaque
+                        with Size => 8;
+                  end message;
+               type N is
+                  message
+                     G : Opaque
+                        with Size => 16;
+                  end message;
+
+               for M use (Undef_Field => N);
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        tmp_file,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {tmp_file}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::M
+            info: Verifying Test::N
+            info: Verifying Test::__REFINEMENT__Test_N__Test_M__Undef_Field__
+            error: field "Undef_Field" does not exist in "Test::M"
+              --> {tmp_file}:13:15
+               |
+             2 |    type M is
+               |         - note: type "Test::M" declared here
+             3 |       message
+            ...
+            12 |
+            13 |    for M use (Undef_Field => N);
+               |               ^^^^^^^^^^^
+               |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_refinement_similar_name(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    tmp_file = tmp_path / "test.rflx"
+    tmp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type M is
+                  message
+                     My_Field : Opaque
+                        with Size => 8;
+                  end message;
+               type N is
+                  message
+                     G : Opaque
+                        with Size => 16;
+                  end message;
+
+               for M use (My_Feld => N);
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        tmp_file,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {tmp_file}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::M
+            info: Verifying Test::N
+            info: Verifying Test::__REFINEMENT__Test_N__Test_M__My_Feld__
+            error: field "My_Feld" does not exist in "Test::M"
+              --> {tmp_file}:13:15
+               |
+             2 |    type M is
+               |         - note: type "Test::M" declared here
+             3 |       message
+             4 |          My_Field : Opaque
+               |          -------- help: field with similar name
+             5 |             with Size => 8;
+            ...
+            12 |
+            13 |    for M use (My_Feld => N);
+               |               ^^^^^^^
+               |
               """,
         ),
         capfd,

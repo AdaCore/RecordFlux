@@ -104,8 +104,8 @@ def test_multiple_errors() -> None:
             " in derived message",
             f'{path}:119:21: error: undefined base message "RFLX_Invalid::Undef_Type"'
             " in derived message",
-            f'{path}:122:9: error: illegal derivation "RFLX_Invalid::Ref3"',
-            f'{path}:8:9: info: invalid base message type "RFLX_Invalid::R"',
+            f"{path}:122:9: error: invalid derivation",
+            f"{path}:8:9: note: base type must be a message",
             f'{path}:125:21: error: undefined base message "RFLX_Invalid::Ref1"'
             " in derived message",
             f'{path}:140:19: error: invalid use of size attribute for "1"',

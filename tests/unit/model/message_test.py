@@ -6047,7 +6047,10 @@ def test_refinement_invalid_field() -> None:
 
     with pytest.raises(
         RecordFluxError,
-        match=(r'^<stdin>:33:22: error: invalid field "X" in refinement of "P::M"$'),
+        match=(
+            r'^<stdin>:33:22: error: field "X" does not exist in "P::M"\n'
+            r'<stdin>:1:1: note: type "P::M" declared here$'
+        ),
     ):
         Refinement("P", message, Field(ID("X", Location((33, 22)))), message)
 

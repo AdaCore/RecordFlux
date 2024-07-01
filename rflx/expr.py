@@ -2825,21 +2825,28 @@ class CaseExpr(Expr):
         )
 
 
-def _similar_field_names(
+def similar_fields(
     field: ID,
     fields: Iterable[ID],
-    location: Optional[Location],
-) -> list[ErrorEntry]:
+) -> list[ID]:
     field_similarity = sorted(
         ((f, difflib.SequenceMatcher(None, str(f), str(field)).ratio()) for f in sorted(fields)),
         key=lambda x: x[1],
         reverse=True,
     )
-    similar_fields = [f for f, s in field_similarity if s >= 0.5]
-    if similar_fields:
+    return [f for f, s in field_similarity if s >= 0.5]
+
+
+def _similar_field_names(
+    field: ID,
+    fields: Iterable[ID],
+    location: Optional[Location],
+) -> list[ErrorEntry]:
+    similar_flds = similar_fields(field, fields)
+    if similar_flds:
         return [
             ErrorEntry(
-                "similar field names: " + ", ".join(str(f) for f in similar_fields),
+                "similar field names: " + ", ".join(str(f) for f in similar_flds),
                 Severity.HELP,
                 location,
             ),

@@ -2218,8 +2218,8 @@ def test_parse_error_derivation_unsupported_type() -> None:
         end Test;
         """,
         r"^"
-        r'^<stdin>:3:9: error: illegal derivation "Test::Bar"\n'
-        r'<stdin>:2:9: info: invalid base message type "Test::Foo"'
+        r"<stdin>:3:9: error: invalid derivation\n"
+        r"<stdin>:2:9: note: base type must be a message"
         r"$",
     )
 
