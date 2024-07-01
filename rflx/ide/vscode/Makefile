@@ -24,8 +24,8 @@ install: $(VSIX)
 
 build: node_modules out/extension.js
 
-node_modules: package.json
-	npm install
+node_modules: package.json package-lock.json
+	npm ci
 
 out/extension.js: src/extension.ts $(wildcard tests/*.ts)
 	npm run compile
