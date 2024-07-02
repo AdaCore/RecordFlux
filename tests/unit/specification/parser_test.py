@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 from rflx import common, expr, lang, model
+from rflx.const import RESERVED_WORDS
 from rflx.error import fail
 from rflx.identifier import ID
 from rflx.model import (
@@ -3450,6 +3451,30 @@ def test_parse_reserved_word_as_channel_name() -> None:
            end Session;
         end Test;
         """,
+    )
+
+
+@pytest.mark.parametrize(
+    "keyword",
+    RESERVED_WORDS,
+)
+def test_parse_reserved_word_in_link_condition(keyword: str) -> None:
+    assert_error_string(
+        f"""\
+        package Test is
+           type I is range 0 .. 255 with Size => 8;
+           type M (A : Boolean) is
+              message
+                 X : Boolean
+                    then Z
+                       if A and {keyword};
+                 Z : Opaque
+                    with Size => 8;
+              end message;
+        end Test;
+        """,
+        rf'^<stdin>:7:25: error: reserved word "{keyword}" used as identifier\n'
+        rf'<stdin>:7:25: error: undefined variable "{keyword}"$',
     )
 
 

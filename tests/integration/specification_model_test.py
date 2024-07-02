@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from rflx import expr, typing_ as rty
+from rflx.const import RESERVED_WORDS
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -2146,6 +2147,61 @@ def test_parameter_non_scalar_and_builtin_type(
             2 |    type M (x : Opaque) is
               |            ^ found sequence type "__INTERNAL__::Opaque" with element integer type \
 "Byte" (0 .. 255)
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+@pytest.mark.parametrize(
+    "keyword",
+    RESERVED_WORDS,
+)
+def test_reserved_word_link_condition(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+    keyword: str,
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            f"""\
+            package Test is
+               type I is range 0 .. 255 with Size => 8;
+               type M (A : Boolean) is
+                  message
+                     X : Boolean
+                        then Z
+                           if A and {keyword};
+                     Z : Opaque
+                        with Size => 8;
+                  end message;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::I
+            info: Verifying Test::M
+            error: reserved word "{keyword}" used as identifier
+             --> {file_path}:7:25
+              |
+            7 |                if A and {keyword};
+              |                         {"^".rjust(len(keyword), "^")}
+              |
+            error: undefined variable "{keyword}"
+             --> {file_path}:7:25
+              |
+            7 |                if A and {keyword};
+              |                         {"^".rjust(len(keyword), "^")}
               |
               """,
         ),

@@ -63,6 +63,10 @@ impl ID {
             PyBool::new_bound(py, self.0 == other_id.0)
                 .to_owned()
                 .into()
+        } else if let Ok(other_str) = other.extract::<&str>() {
+            PyBool::new_bound(py, self.0.as_ref() == other_str)
+                .to_owned()
+                .into()
         } else {
             PyNotImplemented::get_bound(py).to_owned().into()
         }

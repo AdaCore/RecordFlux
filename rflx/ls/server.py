@@ -158,7 +158,6 @@ class RecordFluxLanguageServer(LanguageServer):
                 self._error.extend(e.entries)
 
         unchecked_model = parser.create_unchecked_model()
-
         self._error.extend(unchecked_model.error.entries)
 
         self._publish_errors_as_diagnostics(self._error)

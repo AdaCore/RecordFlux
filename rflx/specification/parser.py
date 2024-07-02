@@ -10,6 +10,7 @@ from typing import Iterable, Optional, Union
 import rflx.typing_ as rty
 from rflx import expr, lang, model
 from rflx.common import STDIN, unique
+from rflx.const import RESERVED_WORDS
 from rflx.error import fail
 from rflx.identifier import ID, StrID
 from rflx.integration import Integration
@@ -23,7 +24,6 @@ from rflx.rapidflux import (
     logging,
     source_code,
 )
-from rflx.specification.const import RESERVED_WORDS
 
 from . import style
 
@@ -336,6 +336,16 @@ def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Pat
                 )
                 * name
             )
+
+        if name.parts[0].lower() in RESERVED_WORDS:
+            error.push(
+                ErrorEntry(
+                    f'reserved word "{name}" used as identifier',
+                    Severity.ERROR,
+                    node_location(identifier, filename),
+                ),
+            )
+
         return name
 
     raise NotImplementedError(f"Invalid ID: {identifier.text} {type(identifier)}")

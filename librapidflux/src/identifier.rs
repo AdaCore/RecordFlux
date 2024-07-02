@@ -163,6 +163,12 @@ impl std::cmp::PartialEq for ID {
     }
 }
 
+impl AsRef<str> for ID {
+    fn as_ref(&self) -> &str {
+        &self.identifier
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct IDRef<'a> {
     identifier: &'a str,
@@ -376,6 +382,11 @@ mod tests {
     #[case::not_equal("A::B", "A::A", false)]
     fn test_id_eq(#[case] left: &str, #[case] right: &str, #[case] expected: bool) {
         assert_eq!(id(left, None) == id(right, None), expected);
+    }
+
+    #[test]
+    fn test_id_as_ref() {
+        assert_eq!(id("foo", None).as_ref(), "foo");
     }
 
     #[test]

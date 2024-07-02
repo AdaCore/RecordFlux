@@ -7,7 +7,7 @@ from typing import Optional, Protocol, TypeVar, Union
 
 from hypothesis import assume, strategies as st
 
-from rflx import expr, typing_ as rty
+from rflx import const, expr, typing_ as rty
 from rflx.identifier import ID
 from rflx.model import (
     BUILTIN_TYPES,
@@ -28,7 +28,6 @@ from rflx.model import (
     TypeDecl,
 )
 from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
-from rflx.specification import const
 
 T = TypeVar("T")
 

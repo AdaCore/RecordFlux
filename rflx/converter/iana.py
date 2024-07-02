@@ -12,13 +12,13 @@ from xml.etree.ElementTree import Element, ParseError
 
 from defusedxml import ElementTree
 
-import rflx.specification.const
+import rflx.const
 from rflx.common import file_name
 from rflx.error import fail, warn
 from rflx.rapidflux import Location, RecordFluxError
 
 NAMESPACE = {"iana": "http://www.iana.org/assignments"}
-RESERVED_WORDS = "|".join(rflx.specification.const.RESERVED_WORDS)
+RESERVED_WORDS = "|".join(rflx.const.RESERVED_WORDS)
 OUTPUT_INDENT_CHAR = " "
 OUTPUT_INDENT = OUTPUT_INDENT_CHAR * 3
 OUTPUT_WIDTH = 80

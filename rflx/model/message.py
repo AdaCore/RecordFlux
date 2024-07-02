@@ -1533,14 +1533,12 @@ class Message(type_decl.TypeDecl):
                     continue
                 for var in expression.variables():
                     if var.type_ == rty.Undefined():
-                        self.error.extend(
-                            [
-                                ErrorEntry(
-                                    f'undefined variable "{var.identifier}"',
-                                    Severity.ERROR,
-                                    var.location,
-                                ),
-                            ],
+                        self.error.push(
+                            ErrorEntry(
+                                f'undefined variable "{var.identifier}"',
+                                Severity.ERROR,
+                                var.location,
+                            ),
                         )
 
     def _verify_expression_types(self, valid_paths: set[tuple[Link, ...]]) -> None:
