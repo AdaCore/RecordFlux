@@ -27,7 +27,6 @@ from rflx.generator import Debug, Generator, optimizer
 from rflx.graph import create_message_graph, create_session_graph, write_graph
 from rflx.identifier import ID
 from rflx.integration import Integration
-from rflx.ls.server import server
 from rflx.model import AlwaysVerify, Cache, Message, Model, NeverVerify, Session
 from rflx.pyrflx import PyRFLXError
 from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
@@ -654,6 +653,8 @@ def convert_iana(args: argparse.Namespace) -> None:
 
 
 def run_language_server(args: argparse.Namespace) -> None:
+    from rflx.ls.server import server
+
     server.workers = args.workers
     server.start_io()
 

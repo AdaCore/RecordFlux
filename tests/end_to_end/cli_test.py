@@ -249,8 +249,29 @@ def test_run_ls() -> None:
     assert p.stdout.decode("utf-8") == ""
     assert p.stderr.decode("utf-8") == textwrap.dedent(
         """\
+        Registered builtin feature exit
+        Registered builtin feature initialize
+        Registered builtin feature initialized
+        Registered builtin feature notebookDocument/didChange
+        Registered builtin feature notebookDocument/didClose
+        Registered builtin feature notebookDocument/didOpen
+        Registered builtin feature $/setTrace
+        Registered builtin feature shutdown
+        Registered builtin feature textDocument/didChange
+        Registered builtin feature textDocument/didClose
+        Registered builtin feature textDocument/didOpen
+        Registered builtin feature window/workDoneProgress/cancel
+        Registered builtin feature workspace/didChangeWorkspaceFolders
+        Registered builtin feature workspace/executeCommand
+        Registered "textDocument/didOpen" with options "None"
+        Registered "textDocument/didSave" with options "None"
+        Registered "textDocument/didChange" with options "None"
+        Registered "textDocument/definition" with options "None"
+        Registered "textDocument/semanticTokens/full" with options "SemanticTokensLegend(token_types=['type', 'enum', 'enumMember', 'struct', 'property', 'keyword', 'class', 'namespace', 'event', 'method', 'parameter', 'variable'], token_modifiers=[])"
+        Command "showMessageGraph" is successfully registered.
+        Registered "textDocument/codeLens" with options "None"
         Starting IO server
         Shutting down the server
         Closing the event loop.
-        """,
+        """,  # noqa: E501
     )
