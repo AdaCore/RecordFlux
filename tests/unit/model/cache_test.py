@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -28,7 +29,10 @@ def test_init_invalid(content: str, tmp_path: Path, capfd: pytest.CaptureFixture
     file.write_text(content)
     cache.Cache(file)
     assert_stderr_regex(
-        r"^warning: verification cache will be ignored due to invalid format$",
+        r"^"
+        r"warning: verification cache will be ignored due to invalid format:\n"
+        rf"{re.escape(content)}"
+        r"$",
         capfd,
     )
 

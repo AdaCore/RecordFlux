@@ -102,7 +102,8 @@ class Cache:
     def _load_cache(self) -> None:
         try:
             with FileLock(self._file, "r") as f:
-                cache = json.load(f)
+                cache_content = f.read().strip()
+                cache = json.loads(cache_content)
             if isinstance(cache, dict) and all(
                 isinstance(i, str) and isinstance(l, list) and all(isinstance(h, str) for h in l)
                 for i, l in cache.items()
@@ -111,7 +112,9 @@ class Cache:
             else:
                 raise TypeError  # noqa: TRY301
         except (json.JSONDecodeError, TypeError):
-            warn("verification cache will be ignored due to invalid format")
+            warn(
+                f"verification cache will be ignored due to invalid format:\n{cache_content}",
+            )
         except FileNotFoundError:
             pass
 
