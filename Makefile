@@ -465,7 +465,7 @@ test_specs: $(RFLX)
 	$(PYTEST) tests/examples/specs_test.py
 
 test_package: export PYTHONPATH=
-test_package:
+test_package: $(PROJECT_MANAGEMENT)
 ifndef PACKAGE
 	$(error PACKAGE is undefined, set PACKAGE to the name or path of the package to be tested)
 endif
