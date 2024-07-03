@@ -19,7 +19,6 @@ def test_spec(tmp_path: Path) -> None:
     subprocess.run(
         [
             "rflx",
-            "--no-caching",
             "generate",
             "--ignore-unsupported-checksum",
             "-d",

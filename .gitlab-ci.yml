@@ -195,6 +195,14 @@ code_generation:
   artifacts:
     paths:
       - examples/apps/*/generated
+  cache:
+    key: $CI_JOB_NAME_SLUG-$CI_COMMIT_REF_SLUG
+    paths:
+      - "**/.rflx_cache"
+    fallback_keys:
+      - $CI_JOB_NAME_SLUG-main
+    unprotect: true
+    when: always
 
 .update_timestamps_of_generated_code: &update_timestamps_of_generated_code
     - touch examples/apps/*/generated/*
@@ -248,6 +256,14 @@ tests_example_apps:
     - *setup_gnat_cross
     - *setup_python
     - make --keep-going test_apps
+  cache:
+    key: $CI_JOB_NAME_SLUG-$CI_COMMIT_REF_SLUG
+    paths:
+      - "**/.rflx_cache"
+    fallback_keys:
+      - $CI_JOB_NAME_SLUG-main
+    unprotect: true
+    when: always
 
 tests_example_specs:
   extends: .testing
@@ -265,6 +281,14 @@ tests_example_specs:
     - *setup_gnat_cross
     - *setup_python
     - make --keep-going test_specs
+  cache:
+    key: $CI_JOB_NAME_SLUG-$CI_COMMIT_REF_SLUG
+    paths:
+      - "**/.rflx_cache"
+    fallback_keys:
+      - $CI_JOB_NAME_SLUG-main
+    unprotect: true
+    when: always
 
 python_compatibility:
   extends: .testing
