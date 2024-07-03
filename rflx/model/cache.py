@@ -5,16 +5,18 @@ import json
 import os
 import time
 import typing as ty
-from functools import singledispatch
+from functools import lru_cache, singledispatch
 from pathlib import Path
 from typing import Literal, Optional, TextIO
 
-from rflx import __version__
+import importlib_resources
+
 from rflx.const import CACHE_PATH
 from rflx.error import warn
 from rflx.model.message import Message, Refinement
 from rflx.model.top_level_declaration import TopLevelDeclaration
 from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity
+from rflx.version import dependencies
 
 DEFAULT_FILE = CACHE_PATH / "verification.json"
 
@@ -161,7 +163,7 @@ class Digest:
         self._full_name = declaration.full_name
         self._value = (
             hashlib.blake2b(
-                "|".join([__version__, *components]).encode(),
+                "|".join([fingerprint(), *components]).encode(),
             ).hexdigest()
             if components
             else None
@@ -174,6 +176,34 @@ class Digest:
     @property
     def value(self) -> Optional[str]:
         return self._value
+
+
+@lru_cache
+def fingerprint() -> str:
+    """Return a fingerprint for any code or dependency that could affect the verification result."""
+    m = hashlib.blake2b()
+
+    for d in dependencies():
+        m.update(d.encode("utf-8"))
+
+    # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
+    for f in importlib_resources.files("rflx").rglob("*"):
+        if not f.is_file() or any(
+            p in str(f)
+            for p in [
+                "__pycache__",
+                "rflx/converter",
+                "rflx/generator",
+                "rflx/ide",
+                "rflx/ls",
+                "rflx/pyrflx",
+                "rflx/templates",
+            ]
+        ):
+            continue
+        m.update(f.read_bytes())
+
+    return m.hexdigest()
 
 
 @singledispatch

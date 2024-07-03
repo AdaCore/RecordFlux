@@ -9,17 +9,20 @@ from rflx.error import fatal_fail
 
 
 def version() -> str:
-    dependencies = [
+    return "\n".join(
+        [
+            f"RecordFlux {__version__}",
+            *dependencies(),
+        ],
+    )
+
+
+def dependencies() -> list[str]:
+    return [
         f"{r.name} {metadata.version(r.name)}"
         for r in (Requirement(r) for r in metadata.requires("RecordFlux") or [])
         if r.extra != "devel"
     ]
-    return "\n".join(
-        [
-            f"RecordFlux {__version__}",
-            *dependencies,
-        ],
-    )
 
 
 class Requirement:
