@@ -131,6 +131,11 @@ class Cache:
 
     def _write_cache(self) -> None:
         self._file.parent.mkdir(parents=True, exist_ok=True)
+        (self._file.parent / "CACHEDIR.TAG").write_text(
+            "Signature: 8a477f597d28d172789f06886806bc55\n"
+            "# This file is a cache directory tag created by rflx.\n"
+            "# For information about cache directory tags see https://bford.info/cachedir/",
+        )
         with FileLock(self._file, "w") as f:
             json.dump(self._verified, f)
 

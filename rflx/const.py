@@ -10,7 +10,7 @@ INTERNAL_PACKAGE: Final = ID("__INTERNAL__")
 # TODO(eng/recordflux/RecordFlux#1077): Size of integers is limited to 63 bits
 MAX_SCALAR_SIZE: Final = 63
 
-CACHE_PATH: Final = Path.home() / ".cache" / "RecordFlux"
+CACHE_PATH: Final = Path.cwd() / ".rflx_cache"
 
 # The use of "forkserver" or "spawn" as start method for starting processes prevents deadlocks when
 # RecordFlux is executed by another process, e.g., when the language server is started by VS Code.
