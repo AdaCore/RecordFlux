@@ -3,7 +3,7 @@ from typing import Callable
 import pytest
 
 import rflx.typing_ as rty
-from rflx.expr import Add, Equal, Number, Pow, Size, Sub, Variable
+from rflx.expr import Add, Aggregate, Equal, Mul, Number, Pow, Size, Sub, Variable
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -180,6 +180,92 @@ def test_integer_invalid_size_variable() -> None:
             Add(Number(8), Variable("X", location=Location((22, 5))), location=Location((22, 4))),
             Location((22, 4)),
         )
+
+
+@pytest.mark.parametrize(
+    ("integer", "position"),
+    [
+        (
+            lambda: Integer(
+                "P::T",
+                Aggregate(Number(1), location=Location((2, 3))),
+                Number(256, location=Location((22, 4))),
+                Number(8),
+                Location((22, 7)),
+            ),
+            "first",
+        ),
+        (
+            lambda: Integer(
+                "P::T",
+                Number(0, location=Location((22, 4))),
+                Aggregate(Number(1), location=Location((2, 3))),
+                Number(8),
+                Location((22, 7)),
+            ),
+            "last",
+        ),
+        (
+            lambda: Integer(
+                "P::T",
+                Number(0, location=Location((22, 2))),
+                Number(256, location=Location((22, 4))),
+                Aggregate(Number(1), location=Location((2, 3))),
+                Location((22, 7)),
+            ),
+            "size",
+        ),
+    ],
+)
+def test_integer_contains_aggregate(integer: Callable[[], Integer], position: str) -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=rf'^<stdin>:2:3: error: {position} of "T" contains aggregate$',
+    ):
+        integer()
+
+
+@pytest.mark.parametrize(
+    ("integer", "position"),
+    [
+        (
+            lambda: Integer(
+                "P::T",
+                Mul(Aggregate(Number(1)), Number(2), location=Location((2, 3))),
+                Number(256, location=Location((22, 4))),
+                Number(8),
+                Location((22, 7)),
+            ),
+            "first",
+        ),
+        (
+            lambda: Integer(
+                "P::T",
+                Number(0, location=Location((22, 4))),
+                Mul(Aggregate(Number(1)), Number(2), location=Location((2, 3))),
+                Number(8),
+                Location((22, 7)),
+            ),
+            "last",
+        ),
+        (
+            lambda: Integer(
+                "P::T",
+                Number(0, location=Location((22, 2))),
+                Number(256, location=Location((22, 4))),
+                Mul(Aggregate(Number(1)), Number(2), location=Location((2, 3))),
+                Location((22, 7)),
+            ),
+            "size",
+        ),
+    ],
+)
+def test_integer_contains_non_integer(integer: Callable[[], Integer], position: str) -> None:
+    with pytest.raises(
+        RecordFluxError,
+        match=rf'^<stdin>:2:3: error: {position} of "T" is not an integer$',
+    ):
+        integer()
 
 
 def test_integer_invalid_size_too_small() -> None:

@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import abc
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import rflx.typing_ as rty
 from rflx import const, expr
@@ -113,28 +113,10 @@ class Integer(Scalar):
         size_num = size.simplified()
 
         if not isinstance(first_num, expr.Number):
-            self.error.extend(
-                [
-                    ErrorEntry(
-                        f'first of "{self.name}" contains variable',
-                        Severity.ERROR,
-                        v.location,
-                    )
-                    for v in first_num.variables()
-                ],
-            )
+            self._invalid_type_error(first_num, "first")
 
         if not isinstance(last_num, expr.Number):
-            self.error.extend(
-                [
-                    ErrorEntry(
-                        f'last of "{self.name}" contains variable',
-                        Severity.ERROR,
-                        v.location,
-                    )
-                    for v in last_num.variables()
-                ],
-            )
+            self._invalid_type_error(last_num, "last")
             raise self.error
 
         if int(last_num) >= 2**const.MAX_SCALAR_SIZE:
@@ -147,16 +129,7 @@ class Integer(Scalar):
             )
 
         if not isinstance(size_num, expr.Number):
-            self.error.extend(
-                [
-                    ErrorEntry(
-                        f'size of "{self.name}" contains variable',
-                        Severity.ERROR,
-                        v.location,
-                    )
-                    for v in size_num.variables()
-                ],
-            )
+            self._invalid_type_error(size_num, "size")
 
         self.error.propagate()
 
@@ -274,6 +247,40 @@ class Integer(Scalar):
             ),
             expr.Equal(expr.Size(name), self.size, location=self.location),
         ]
+
+    def _invalid_type_error(
+        self,
+        invalid_expr: expr.Expr,
+        position: Literal["first", "last", "size"],
+    ) -> None:
+        if invalid_expr.variables():
+            self.error.extend(
+                [
+                    ErrorEntry(
+                        f'{position} of "{self.name}" contains variable',
+                        Severity.ERROR,
+                        v.location,
+                    )
+                    for v in invalid_expr.variables()
+                ],
+            )
+        elif isinstance(invalid_expr, expr.Aggregate):
+            self.error.push(
+                ErrorEntry(
+                    f'{position} of "{self.name}" contains aggregate',
+                    Severity.ERROR,
+                    invalid_expr.location,
+                ),
+            )
+        else:
+            assert invalid_expr.location is not None
+            self.error.push(
+                ErrorEntry(
+                    f'{position} of "{self.name}" is not an integer',
+                    Severity.ERROR,
+                    invalid_expr.location,
+                ),
+            )
 
 
 class Enumeration(Scalar):

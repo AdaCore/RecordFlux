@@ -1236,7 +1236,7 @@ def test_message_negative_field_start(tmp_path: Path, capfd: pytest.CaptureFixtu
     )
 
 
-def test_first_contains_variable(
+def test_type_range_first_has_variable(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
 ) -> None:
@@ -1270,7 +1270,7 @@ def test_first_contains_variable(
     )
 
 
-def test_first_contains_multiple_variables(
+def test_type_range_first_has_multiple_variables(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
 ) -> None:
@@ -1310,7 +1310,7 @@ def test_first_contains_multiple_variables(
     )
 
 
-def test_last_contains_variable(
+def test_type_range_last_has_variable(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
 ) -> None:
@@ -1344,7 +1344,7 @@ def test_last_contains_variable(
     )
 
 
-def test_last_contains_multiple_variables(
+def test_type_range_last_has_multiple_variables(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
 ) -> None:
@@ -1384,41 +1384,7 @@ def test_last_contains_multiple_variables(
     )
 
 
-def test_last_exceeds_limit(
-    tmp_path: Path,
-    capfd: pytest.CaptureFixture[str],
-) -> None:
-    file_path = tmp_path / "test.rflx"
-    file_path.write_text(
-        textwrap.dedent(
-            """\
-            package Test is
-               type T is range 0 .. 2 ** 64 - 1 with Size => 64;
-            end Test;
-            """,
-        ),
-    )
-    assert_error_full_message(
-        file_path,
-        textwrap.dedent(
-            f"""\
-            info: Parsing {file_path}
-            info: Processing Test
-            info: Verifying __BUILTINS__::Boolean
-            info: Verifying __INTERNAL__::Opaque
-            error: last of "T" exceeds limit (2**63 - 1)
-             --> {file_path}:2:25
-              |
-            2 |    type T is range 0 .. 2 ** 64 - 1 with Size => 64;
-              |                         ^^^^^^^^^^^
-              |
-              """,
-        ),
-        capfd,
-    )
-
-
-def test_size_contains_variable(
+def test_type_range_size_has_variable(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
 ) -> None:
@@ -1452,7 +1418,7 @@ def test_size_contains_variable(
     )
 
 
-def test_size_contains_mutiple_variables(
+def test_type_range_size_has_multiple_variables(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
 ) -> None:
@@ -1492,7 +1458,103 @@ def test_size_contains_mutiple_variables(
     )
 
 
-def test_type_size_too_small(
+def test_type_range_last_is_aggregate(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    temp_file = tmp_path / "test.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range 0 .. [1, 2, 3] with Size => 8;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {temp_file}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: last of "I" contains aggregate
+             --> {temp_file}:2:25
+              |
+            2 |    type I is range 0 .. [1, 2, 3] with Size => 8;
+              |                         ^^^^^^^^^
+              |
+               """,
+        ),
+        capfd,
+    )
+
+
+def test_type_range_first_is_aggregate(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    temp_file = tmp_path / "test.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range [1, 2, 3] .. 255 with Size => 8;
+            end Test;
+             """,
+        ),
+    )
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {temp_file}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: first of "I" contains aggregate
+             --> {temp_file}:2:20
+              |
+            2 |    type I is range [1, 2, 3] .. 255 with Size => 8;
+              |                    ^^^^^^^^^
+              |
+               """,
+        ),
+        capfd,
+    )
+
+
+def test_type_range_last_exceeds_limit(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type T is range 0 .. 2 ** 64 - 1 with Size => 64;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: last of "T" exceeds limit (2**63 - 1)
+             --> {file_path}:2:25
+              |
+            2 |    type T is range 0 .. 2 ** 64 - 1 with Size => 64;
+              |                         ^^^^^^^^^^^
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_type_range_size_too_small(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
 ) -> None:
@@ -1528,7 +1590,7 @@ bound
     )
 
 
-def test_type_negative_range(
+def test_type_range_negative_range(
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
 ) -> None:
@@ -1557,6 +1619,130 @@ def test_type_negative_range(
               |                    ^^^^^^^^
               |
               """,
+        ),
+        capfd,
+    )
+
+
+def test_type_range_size_is_aggregate(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    temp_file = tmp_path / "test.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range 0 .. 255 with Size => [1, 2, 3];
+            end Test;
+             """,
+        ),
+    )
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {temp_file}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: size of "I" contains aggregate
+             --> {temp_file}:2:42
+              |
+            2 |    type I is range 0 .. 255 with Size => [1, 2, 3];
+              |                                          ^^^^^^^^^
+              |
+               """,
+        ),
+        capfd,
+    )
+
+
+def test_type_range_first_not_integer(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    temp_file = tmp_path / "test.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range [1, 2, 3] * 2 .. 255 with Size => 8;
+            end Test;
+             """,
+        ),
+    )
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {temp_file}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: first of "I" is not an integer
+             --> {temp_file}:2:20
+              |
+            2 |    type I is range [1, 2, 3] * 2 .. 255 with Size => 8;
+              |                    ^^^^^^^^^^^^^
+              |
+               """,
+        ),
+        capfd,
+    )
+
+
+def test_type_range_last_not_integer(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    temp_file = tmp_path / "test.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range 1 .. [1, 2, 3] with Size => 8;
+            end Test;
+             """,
+        ),
+    )
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {temp_file}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: last of "I" contains aggregate
+             --> {temp_file}:2:25
+              |
+            2 |    type I is range 1 .. [1, 2, 3] with Size => 8;
+              |                         ^^^^^^^^^
+              |
+               """,
+        ),
+        capfd,
+    )
+
+
+def test_type_range_size_not_integer(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    temp_file = tmp_path / "test.rflx"
+    temp_file.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range 1 .. 255 with Size => [1, 2, 3] * 2;
+            end Test;
+             """,
+        ),
+    )
+    assert_error_full_message(
+        temp_file,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {temp_file}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: size of "I" is not an integer
+             --> {temp_file}:2:42
+              |
+            2 |    type I is range 1 .. 255 with Size => [1, 2, 3] * 2;
+              |                                          ^^^^^^^^^^^^^
+              |
+               """,
         ),
         capfd,
     )
