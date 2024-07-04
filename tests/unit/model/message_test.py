@@ -1135,7 +1135,7 @@ def test_invalid_relation_to_opaque() -> None:
         types,
         r'^<stdin>:10:20: error: expected sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
-        r"<stdin>:10:20: note: found type universal integer \(42\)\n"
+        r"<stdin>:10:20: error: found type universal integer \(42\)\n"
         r'<stdin>:1:1: note: on path "Length"\n'
         r'<stdin>:2:3: note: on path "Data"$',
     )
@@ -1158,11 +1158,11 @@ def test_invalid_relation_to_aggregate() -> None:
         structure,
         types,
         r"^<stdin>:10:20: error: expected integer type\n"
-        r'<stdin>:10:20: note: found sequence type "__INTERNAL__::Opaque"'
+        r'<stdin>:10:20: error: found sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r"<stdin>:10:30: error: expected integer type\n"
-        r"<stdin>:10:30: note: found aggregate"
+        r"<stdin>:10:30: error: found aggregate"
         r" with element type universal integer \(1 .. 2\)\n"
         r'<stdin>:1:1: note: on path "F1"$',
     )
@@ -1186,7 +1186,7 @@ def test_invalid_element_in_relation_to_aggregate(lower: Number) -> None:
         structure,
         types,
         rf'^<stdin>:10:20: error: expected integer type "P::Integer" \({lower} .. 255\)\n'
-        r"<stdin>:10:20: note: found aggregate with element type universal integer"
+        r"<stdin>:10:20: error: found aggregate with element type universal integer"
         r" \(1 .. 2\)\n"
         r'<stdin>:1:2: note: on path "F1"$',
     )
@@ -1214,7 +1214,7 @@ def test_opaque_aggregate_out_of_range() -> None:
         types,
         r'^<stdin>:10:20: error: expected sequence type "__INTERNAL__::Opaque"'
         r' with element integer type "Byte" \(0 .. 255\)\n'
-        r"<stdin>:10:20: note: found aggregate"
+        r"<stdin>:10:20: error: found aggregate"
         r" with element type universal integer \(1 .. 256\)\n"
         r'<stdin>:1:2: note: on path "F"$',
     )
@@ -1247,7 +1247,7 @@ def test_sequence_aggregate_out_of_range() -> None:
         types,
         r'^<stdin>:10:20: error: expected sequence type "P::Sequence"'
         r' with element integer type "P::Element" \(0 .. 63\)\n'
-        r"<stdin>:10:20: note: found aggregate"
+        r"<stdin>:10:20: error: found aggregate"
         r" with element type universal integer \(1 .. 64\)\n"
         r'<stdin>:1:2: note: on path "F"$',
     )
@@ -1285,7 +1285,7 @@ def test_sequence_aggregate_invalid_element_type() -> None:
         types,
         r'^<stdin>:10:20: error: expected sequence type "P::Sequence"'
         r' with element message type "P::I"\n'
-        r"<stdin>:10:20: note: found aggregate with element type universal integer"
+        r"<stdin>:10:20: error: found aggregate with element type universal integer"
         r" \(1 .. 64\)\n"
         r'<stdin>:1:2: note: on path "F"$',
     )
@@ -2062,7 +2062,7 @@ def test_invalid_type_condition_enum() -> None:
         structure,
         types,
         r'^<stdin>:10:20: error: expected enumeration type "P::E1"\n'
-        r'<stdin>:10:20: note: found enumeration type "P::E2"\n'
+        r'<stdin>:10:20: error: found enumeration type "P::E2"\n'
         r'<stdin>:1:1: note: on path "F1"$',
     )
 
@@ -5872,7 +5872,7 @@ def test_merge_message_with_illegal_condition_on_message_type_field() -> None:
         match=(
             "^"
             '<stdin>:1:2: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:1:2: note: found type universal integer \(1\)"
+            r"<stdin>:1:2: error: found type universal integer \(1\)"
             "$"
         ),
     ):
@@ -6296,7 +6296,7 @@ def test_refinement_type_error_in_condition() -> None:
         match=(
             r"^"
             r'<stdin>:10:20: error: expected integer type "P::T" \(0 \.\. 255\)\n'
-            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"'
+            r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"'
             r"$"
         ),
     ):

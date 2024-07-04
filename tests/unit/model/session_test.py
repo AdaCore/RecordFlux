@@ -811,7 +811,7 @@ def test_reset_incompatible() -> None:
         types=[BOOLEAN],
         regex=(
             r"^<stdin>:10:20: error: expected sequence type or message type\n"
-            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$'
+            r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
 
@@ -911,7 +911,7 @@ def test_call_invalid_argument_type() -> None:
         regex=(
             r"^"
             r'<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:20: note: found readable channel"
+            r"<stdin>:10:20: error: found readable channel"
             "$"
         ),
     )
@@ -1062,9 +1062,9 @@ def test_channel_read_invalid_type() -> None:
             r"^"
             r"<stdin>:10:20: error: channel parameter must be a variable\n"
             r"<stdin>:10:20: error: expected readable channel\n"
-            r'<stdin>:10:20: note: found message type "TLV::Message"\n'
+            r'<stdin>:10:20: error: found message type "TLV::Message"\n'
             r"<stdin>:10:30: error: expected message type\n"
-            r"<stdin>:10:30: note: found type universal integer \(0\)"
+            r"<stdin>:10:30: error: found type universal integer \(0\)"
             r"$"
         ),
     )
@@ -1092,7 +1092,7 @@ def test_channel_read_invalid_mode() -> None:
         regex=(
             r"^"
             r"<stdin>:10:20: error: expected readable channel\n"
-            r"<stdin>:10:20: note: found writable channel"
+            r"<stdin>:10:20: error: found writable channel"
             r"$"
         ),
     )
@@ -1120,7 +1120,7 @@ def test_channel_write_invalid_mode() -> None:
         regex=(
             r"^"
             r"<stdin>:10:20: error: expected writable channel\n"
-            r"<stdin>:10:20: note: found readable channel"
+            r"<stdin>:10:20: error: found readable channel"
             r"$"
         ),
     )
@@ -1463,7 +1463,7 @@ def test_append_incompatible() -> None:
         types=[BOOLEAN],
         regex=(
             r"^<stdin>:10:20: error: expected sequence type\n"
-            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$'
+            r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
 
@@ -1533,7 +1533,7 @@ def test_extend_incompatible() -> None:
         types=[BOOLEAN],
         regex=(
             r"^<stdin>:10:20: error: expected sequence type\n"
-            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$'
+            r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"$'
         ),
     )
 
@@ -1770,7 +1770,7 @@ def test_message_field_assignment_with_incompatible_field_type() -> None:
         regex=(
             r"^"
             r'<stdin>:1:2: error: expected enumeration type "TLV::Tag"\n'
-            r"<stdin>:1:2: note: found type universal integer \(42\)"
+            r"<stdin>:1:2: error: found type universal integer \(42\)"
             r"$"
         ),
     )
@@ -1801,7 +1801,7 @@ def test_message_field_assignment_with_incompatible_variable_type() -> None:
         regex=(
             r"^"
             r"<stdin>:1:2: error: expected message type\n"
-            r'<stdin>:1:2: note: found enumeration type "TLV::Tag"'
+            r'<stdin>:1:2: error: found enumeration type "TLV::Tag"'
             r"$"
         ),
     )
@@ -2081,7 +2081,7 @@ def test_type_error_in_variable_declaration() -> None:
         regex=(
             r"^"
             r'<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:20: note: found type universal integer \(1\)"
+            r"<stdin>:10:20: error: found type universal integer \(1\)"
             r"$"
         ),
     )
@@ -2116,7 +2116,7 @@ def test_type_error_in_renaming_declaration() -> None:
         regex=(
             r"^"
             r"<stdin>:10:20: error: expected message type\n"
-            r"<stdin>:10:20: note: found type universal integer \(1\)"
+            r"<stdin>:10:20: error: found type universal integer \(1\)"
             r"$"
         ),
     )

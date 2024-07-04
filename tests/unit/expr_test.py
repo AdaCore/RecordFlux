@@ -133,7 +133,7 @@ def test_not_type_error() -> None:
     assert_type_error(
         Not(Variable("X", type_=rty.BaseInteger(), location=Location((10, 20)))),
         r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:20: note: found integer type$",
+        r"<stdin>:10:20: error: found integer type$",
     )
 
 
@@ -402,9 +402,9 @@ def test_bool_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
             Number(1, location=Location((10, 30))),
         ),
         r'^<stdin>:10:20: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r'<stdin>:10:20: note: found integer type "A" \(0 .. 100\)\n'
+        r'<stdin>:10:20: error: found integer type "A" \(0 .. 100\)\n'
         r'<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:30: note: found type universal integer \(1\)$",
+        r"<stdin>:10:30: error: found type universal integer \(1\)$",
     )
 
 
@@ -633,9 +633,9 @@ def test_math_expr_type_error(operation: Callable[[Expr, Expr], Expr]) -> None:
             Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
         r"^<stdin>:10:20: error: expected integer type\n"
-        r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"\n'
+        r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"\n'
         r"<stdin>:10:30: error: expected integer type\n"
-        r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -655,7 +655,7 @@ def test_neg_type_error() -> None:
     assert_type_error(
         Neg(Variable("X", type_=rty.BOOLEAN, location=Location((10, 20)))),
         r"^<stdin>:10:20: error: expected integer type\n"
-        r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -1173,7 +1173,7 @@ def test_relation_integer_type_error(relation: Callable[[Expr, Expr], Expr]) -> 
             Variable("True", type_=rty.BOOLEAN, location=Location((10, 30))),
         ),
         r"^<stdin>:10:30: error: expected integer type\n"
-        r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 
@@ -1197,7 +1197,7 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
         ),
         r"^<stdin>:10:30: error: expected aggregate"
         r" with element integer type\n"
-        r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"$',
     )
     assert_type_error(
         relation(
@@ -1206,7 +1206,7 @@ def test_relation_composite_type_error(relation: Callable[[Expr, Expr], Expr]) -
         ),
         r"^<stdin>:10:30: error: expected aggregate"
         r" with element integer type\n"
-        r'<stdin>:10:30: note: found sequence type "A"'
+        r'<stdin>:10:30: error: found sequence type "A"'
         r' with element enumeration type "__BUILTINS__::Boolean"$',
     )
 
@@ -1474,9 +1474,9 @@ def test_value_range_type_error() -> None:
             location=Location((10, 20)),
         ),
         r"^<stdin>:10:30: error: expected integer type\n"
-        r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"\n'
+        r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"\n'
         r"<stdin>:10:40: error: expected integer type\n"
-        r'<stdin>:10:40: note: found sequence type "A" with element integer type$',
+        r'<stdin>:10:40: error: found sequence type "A" with element integer type$',
     )
 
 
@@ -1527,21 +1527,21 @@ def test_quantified_expression_type(expr: Callable[[str, Expr, Expr], Expr]) -> 
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
             Variable("Z", type_=rty.Sequence("A", rty.BaseInteger()), location=Location((10, 40))),
             r"^<stdin>:10:30: error: expected composite type\n"
-            r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"\n'
+            r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"\n'
             r'<stdin>:10:40: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r'<stdin>:10:40: note: found sequence type "A" with element integer type$',
+            r'<stdin>:10:40: error: found sequence type "A" with element integer type$',
         ),
         (
             Variable("Y", type_=rty.BOOLEAN, location=Location((10, 30))),
             Equal(Variable("X"), Number(1)),
             r"^<stdin>:10:30: error: expected composite type\n"
-            r'<stdin>:10:30: note: found enumeration type "__BUILTINS__::Boolean"$',
+            r'<stdin>:10:30: error: found enumeration type "__BUILTINS__::Boolean"$',
         ),
         (
             Variable("Y", type_=rty.Sequence("A", rty.BOOLEAN)),
             Equal(Variable("X"), Number(1, location=Location((10, 30)))),
             r'^<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-            r"<stdin>:10:30: note: found type universal integer \(1\)$",
+            r"<stdin>:10:30: error: found type universal integer \(1\)$",
         ),
     ],
 )
@@ -1842,7 +1842,7 @@ def test_selected_type() -> None:
         (
             Selected(Variable("X", type_=rty.BOOLEAN, location=Location((10, 20))), "Y"),
             r"^<stdin>:10:20: error: expected message type\n"
-            r'<stdin>:10:20: note: found enumeration type "__BUILTINS__::Boolean"$',
+            r'<stdin>:10:20: error: found enumeration type "__BUILTINS__::Boolean"$',
         ),
         (
             Selected(
@@ -1949,9 +1949,9 @@ def test_call_type_error() -> None:
             ],
         ),
         r'^<stdin>:10:30: error: expected enumeration type "__BUILTINS__::Boolean"\n'
-        r"<stdin>:10:30: note: found integer type\n"
+        r"<stdin>:10:30: error: found integer type\n"
         r"<stdin>:10:40: error: expected integer type\n"
-        r'<stdin>:10:40: note: found enumeration type "__BUILTINS__::Boolean"$',
+        r'<stdin>:10:40: error: found enumeration type "__BUILTINS__::Boolean"$',
     )
 
 

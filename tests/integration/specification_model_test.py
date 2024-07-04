@@ -1975,8 +1975,96 @@ def test_incompatible_type_link_condition(
             5 |             with Size => 8
             6 |             then F2
             7 |                if F1 = 32;
-              |                        ^^
-              |                        -- note: found type universal integer (32)
+              |                        ^^ found type universal integer (32)
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_aggregate_type_in_condition(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range 0 .. 255 with Size => 8;
+               type M (A : I) is
+                  message
+                     X : Boolean
+                        then Z
+                           if [1, 2, 3] = A;
+                     Z : Opaque
+                        with Size => 8;
+                  end message;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::I
+            info: Verifying Test::M
+            error: expected aggregate with element type universal integer (1 .. 3)
+             --> {file_path}:7:31
+              |
+            5 |          X : Boolean
+              |          - note: on path "X"
+            6 |             then Z
+            7 |                if [1, 2, 3] = A;
+              |                               ^ found integer type "Test::I" (0 .. 255)
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_aggregate_type_in_size(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range 0 .. 255 with Size => 8;
+               type M is
+                  message
+                     Z : Opaque
+                        with Size => 1 + [1, 2, 3];
+                  end message;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::I
+            info: Verifying Test::M
+            error: expected integer type
+             --> {file_path}:6:30
+              |
+            6 |             with Size => 1 + [1, 2, 3];
+              |                              ^^^^^^^^^ found aggregate with element type universal \
+integer (1 .. 3)
               |
               """,
         ),
