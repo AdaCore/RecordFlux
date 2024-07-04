@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for FSF GNAT 14.1 (eng/recordflux/RecordFlux#1679)
 - CLI flag `--legacy-errors` to restore previous error message format (eng/recordflux/RecordFlux#1685)
+- Info message for skipped verifications (eng/recordflux/RecordFlux#1723)
 
 ### Changed
 

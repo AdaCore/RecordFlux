@@ -97,6 +97,10 @@ class Cache:
 
         self._load_cache()
 
+    @property
+    def is_verified_reason(self) -> str:
+        return "cached"
+
     def is_verified(self, digest: Digest) -> bool:
         return digest.key in self._verified and digest.value in self._verified[digest.key]
 
@@ -160,6 +164,10 @@ class NeverVerify(Cache):
 
     def add_verified(self, digest: Digest) -> None:
         pass
+
+    @property
+    def is_verified_reason(self) -> str:
+        return "verification disabled"
 
 
 class Digest:

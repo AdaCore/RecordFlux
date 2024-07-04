@@ -35,6 +35,11 @@ class UncheckedModel(Base):
                 unverified = d.checked(declarations, skip_verification=True)
                 digest = Digest(unverified)
                 if cache.is_verified(digest):
+                    logging.info(
+                        "Skipping verification of {identifier} ({reason})",
+                        identifier=d.identifier,
+                        reason=cache.is_verified_reason,
+                    )
                     checked = unverified
                 else:
                     logging.info("Verifying {identifier}", identifier=d.identifier)

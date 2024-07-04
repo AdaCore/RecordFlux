@@ -111,6 +111,13 @@ def test_check_no_verification() -> None:
         warning: model verification skipped
         info: Parsing tests/data/specs/ethernet.rflx
         info: Processing Ethernet
+        info: Skipping verification of __BUILTINS__::Boolean (verification disabled)
+        info: Skipping verification of __INTERNAL__::Opaque (verification disabled)
+        info: Skipping verification of Ethernet::Address (verification disabled)
+        info: Skipping verification of Ethernet::Type_Length (verification disabled)
+        info: Skipping verification of Ethernet::TPID (verification disabled)
+        info: Skipping verification of Ethernet::TCI (verification disabled)
+        info: Skipping verification of Ethernet::Frame (verification disabled)
         """,
     )
 
