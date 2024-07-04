@@ -37,30 +37,39 @@ class FileLock:
 
     def __enter__(self) -> TextIO:
         begin_time = time.time()
-        while (time.time() - begin_time) < self.LOCK_TIMEOUT and self._lock_file.exists():
-            time.sleep(0.1)
-
-        if (time.time() - begin_time) >= self.LOCK_TIMEOUT and self._lock_file.exists():
-            cache_locked_pid = Path.read_text(self._lock_file)
-            raise RecordFluxError(
-                [
-                    ErrorEntry(
-                        f"failed to acquire cache lock after {FileLock.LOCK_TIMEOUT} seconds",
-                        Severity.ERROR,
-                    ),
-                    ErrorEntry(
-                        f'the cache is locked by a process with a PID of "{cache_locked_pid}"',
-                        Severity.NOTE,
-                    ),
-                    ErrorEntry(
-                        f"if the process that owns the lock isn't active anymore, deleting "
-                        f'"{self._lock_file}" will solve this issue',
-                        Severity.HELP,
-                    ),
-                ],
-            )
+        while True:
+            try:
+                self._lock_file.touch(exist_ok=False)
+            except FileExistsError:  # noqa: PERF203
+                if (time.time() - begin_time) < self.LOCK_TIMEOUT:
+                    time.sleep(0.1)
+                else:
+                    cache_locked_pid = Path.read_text(self._lock_file)
+                    raise RecordFluxError(
+                        [
+                            ErrorEntry(
+                                f"failed to acquire cache lock"
+                                f" after {FileLock.LOCK_TIMEOUT} seconds",
+                                Severity.ERROR,
+                            ),
+                            ErrorEntry(
+                                f"the cache is locked by a process"
+                                f' with a PID of "{cache_locked_pid}"',
+                                Severity.NOTE,
+                            ),
+                            ErrorEntry(
+                                f"if the process that owns the lock isn't active anymore, deleting "
+                                f'"{self._lock_file}" will solve this issue',
+                                Severity.HELP,
+                            ),
+                        ],
+                    ) from None
+            else:
+                # TODO(eng/recordflux/RecordFlux#1424): Remove no cover pragma
+                break  # pragma: no cover
 
         self._lock_file.write_text(str(os.getpid()), encoding="utf-8")
+
         try:
             return self._cache_file.open(self._mode, encoding=self._encoding)
         except Exception as e:

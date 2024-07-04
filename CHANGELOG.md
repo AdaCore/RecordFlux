@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bug box for link to missing field (eng/recordflux/RecordFlux#1566)
 - Show bug box on fatal errors in the language server (eng/recordflux/RecordFlux#1666)
 - Infinite recursion for duplicate declaration (eng/recordflux/RecordFlux#1557)
+- Corruption of verification cache (eng/recordflux/RecordFlux#1655, eng/recordflux/RecordFlux#1718)
 
 ## [0.21.0] - 2024-04-23
 
