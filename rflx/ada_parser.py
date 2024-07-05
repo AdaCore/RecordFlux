@@ -36,8 +36,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 2.8 (3/3)
         pragma_argument_association: \
-                                     name
-                                   | expression
+                                    expression
 
         # 3.1 (3/3)
         basic_declaration: \
@@ -79,6 +78,17 @@ ADA_GRAMMAR = lark.Lark(
         # 4.1 (3)
         direct_name:                identifier
 
+        # 4.3 (2)
+        aggregate:                  array_aggregate
+
+        # 4.3.3 (2)
+        array_aggregate: \
+                                    positional_array_aggregate
+
+        # 4.3.3 (3/2)
+        positional_array_aggregate: \
+                                    "(" expression "," expression ("," expression)* ")"
+
         # 4.4 (2)
         expression:                 relation
 
@@ -100,6 +110,8 @@ ADA_GRAMMAR = lark.Lark(
                |                    false
                |                    numeric_literal
                |                    string_literal
+               |                    aggregate
+               |                    name
 
         true:                       "True"
         false:                      "False"
@@ -166,7 +178,7 @@ ADA_GRAMMAR = lark.Lark(
         aspect_mark:                identifier
 
         # 13.1.1 (4/3)
-        aspect_definition:          name | expression
+        aspect_definition:          expression
 
         # Skip whitespace
         %import common.WS
@@ -226,7 +238,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     ) -> list[ada.Aspect]:
         if len(data) == 0:
             return []
-        return data[1]
+        return data[0]
 
     def type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
@@ -245,6 +257,15 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def direct_name(self, data: list[ID]) -> ID:
         return data[0]
+
+    def aggregate(self, data: tuple[list[ID]]) -> list[ID]:
+        return data[0]
+
+    def array_aggregate(self, data: tuple[list[ID]]) -> list[ID]:
+        return data[0]
+
+    def positional_array_aggregate(self, data: list[ID]) -> list[ID]:
+        return data
 
     def expression(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
@@ -346,8 +367,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
 
-    def aspect_part(self, data: tuple[ID, Optional[ID]]) -> ada.Aspect:
-        argument = data[1] if len(data) > 1 else None
+    def aspect_part(self, data: tuple[ID, list[ID]]) -> ada.Aspect:
+        if data[0].parts == ["Annotate"]:
+            return ada.Annotate(*[d.flat for d in data[1]])
+
+        argument = data[1] if len(data) == 2 else None
         if data[0].parts == ["SPARK_Mode"]:
             return ada.SparkMode(off=argument and argument.name == "off")
         if data[0].parts == ["Always_Terminates"]:

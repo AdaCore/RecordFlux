@@ -45,7 +45,23 @@ from rflx import ada, ada_parser
         ada.PackageUnit(
             declaration_context=[],
             declaration=ada.PackageDeclaration(
-                "P", declarations=[ada.ModularType("T", ada.Number(8))]
+                "P",
+                declarations=[ada.ModularType("T", ada.Number(8))],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.ModularType(
+                        "T",
+                        ada.Number(8),
+                        aspects=[ada.Annotate("GNATprove", "No_Wrap_Around")],
+                    ),
+                ],
             ),
             body_context=[],
             body=ada.PackageBody("P"),
