@@ -63,7 +63,10 @@ ADA_GRAMMAR = lark.Lark(
         subtype_mark:               name
 
         # 3.5.1 (2)
-        integer_type_definition:    modular_type_definition
+        integer_type_definition:    signed_integer_type_definition | modular_type_definition
+
+        # 3.5.1 (3)
+        signed_integer_type_definition: "range" expression ".." expression
 
         # 3.5.1 (4)
         modular_type_definition:    "mod" expression
@@ -223,12 +226,23 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def full_type_declaration(
         self,
-        data: tuple[ID, Union[ada.ModularType], list[ada.Aspect]],
+        data: tuple[ID, Union[ada.ModularType, ada.RangeType], list[ada.Aspect]],
     ) -> ada.TypeDeclaration:
         identifier, definition, aspects = data
         if isinstance(definition, ada.ModularType):
+            assert definition.identifier == ID("__INVALID__")
             return ada.ModularType(
-                identifier=identifier, modulus=definition.modulus, aspects=aspects,
+                identifier=identifier,
+                modulus=definition.modulus,
+                aspects=aspects,
+            )
+        if isinstance(definition, ada.RangeType):
+            assert definition.identifier == ID("__INVALID__")
+            return ada.RangeType(
+                identifier=identifier,
+                first=definition.first,
+                last=definition.last,
+                aspects=aspects,
             )
         return []
 
@@ -246,7 +260,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def integer_type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
 
-    def modular_type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
+    def signed_integer_type_definition(
+        self,
+        data: tuple[ada.Number, ada.Number],
+    ) -> ada.Declaration:
+        assert isinstance(data[0], ada.Number)
+        assert isinstance(data[1], ada.Number)
+        return ada.RangeType(identifier="__INVALID__", first=data[0], last=data[1])
+
+    def modular_type_definition(self, data: list[ada.Expr]) -> ada.Declaration:
+        assert isinstance(data[0], ada.Number)
         return ada.ModularType(identifier="__INVALID__", modulus=data[0])
 
     def basic_declarative_item(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
