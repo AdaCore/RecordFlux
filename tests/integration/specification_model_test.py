@@ -2030,40 +2030,35 @@ def test_aggregate_type_in_condition(
     )
 
 
-def test_aggregate_type_in_size(
-    tmp_path: Path,
-    capfd: pytest.CaptureFixture[str],
-) -> None:
-    file_path = tmp_path / "test.rflx"
-    file_path.write_text(
+def test_opaque_field_size_is_aggregate(tmp_path: Path, capfd: pytest.CaptureFixture[str]) -> None:
+    tmp_file = tmp_path / "test.rflx"
+    tmp_file.write_text(
         textwrap.dedent(
             """\
             package Test is
-               type I is range 0 .. 255 with Size => 8;
                type M is
                   message
                      Z : Opaque
-                        with Size => 1 + [1, 2, 3];
+                        with Size => [1, 2, 3];
                   end message;
             end Test;
             """,
         ),
     )
     assert_error_full_message(
-        file_path,
+        tmp_file,
         textwrap.dedent(
             f"""\
-            info: Parsing {file_path}
+            info: Parsing {tmp_file}
             info: Processing Test
             info: Verifying __BUILTINS__::Boolean
             info: Verifying __INTERNAL__::Opaque
-            info: Verifying Test::I
             info: Verifying Test::M
-            error: expected integer type
-             --> {file_path}:6:30
+            error: expected integer type "__BUILTINS__::Base_Integer" (0 .. 9223372036854775807)
+             --> {tmp_file}:5:26
               |
-            6 |             with Size => 1 + [1, 2, 3];
-              |                              ^^^^^^^^^ found aggregate with element type universal \
+            5 |             with Size => [1, 2, 3];
+              |                          ^^^^^^^^^ found aggregate with element type universal \
 integer (1 .. 3)
               |
               """,

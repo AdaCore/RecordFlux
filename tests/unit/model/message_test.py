@@ -1301,6 +1301,31 @@ def test_sequence_aggregate_invalid_element_type() -> None:
     )
 
 
+def test_field_size_is_aggregate() -> None:
+    structure = [
+        Link(INITIAL, Field(ID("F", location=Location((1, 1)))), location=Location((2, 2))),
+        Link(
+            Field(ID("F", location=Location((3, 3)))),
+            Field(ID("G", location=Location((3, 5)))),
+            size=Aggregate(Number(1), Number(2), location=Location((3, 4))),
+            location=Location((3, 1)),
+        ),
+        Link(Field(ID("G", location=Location((4, 1)))), FINAL, location=Location((4, 2))),
+    ]
+
+    i = Integer("P::I", Number(0), Number(1), Number(1))
+    types = {Field("F"): i, Field("G"): OPAQUE}
+
+    assert_message_model_error(
+        structure,
+        types,
+        r'^<stdin>:3:4: error: expected integer type "__BUILTINS__::Base_Integer" '
+        r"\(0 .. 9223372036854775807\)\n"
+        r"<stdin>:3:4: error: found aggregate with element type universal integer \(1 .. 2\)\n"
+        r'<stdin>:1:1: note: on path "F"$',
+    )
+
+
 def test_opaque_not_byte_aligned() -> None:
     t = Integer("P::T", Number(0), Number(3), Number(4))
     o = Field(ID("O", location=Location((44, 3))))

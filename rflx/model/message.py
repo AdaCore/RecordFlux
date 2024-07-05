@@ -1555,6 +1555,21 @@ class Message(type_decl.TypeDecl):
                 expression.type_ = rty.Undefined()
             return expression
 
+        def check_expr_type(expression: expr.Expr, ty: rty.Type, path: Sequence[Link]) -> None:
+            entries = expression.check_type(ty).entries
+            assert self.location is not None
+
+            for e in entries:
+                e.extend(
+                    annotate_path(
+                        path,
+                        self.location,
+                        partial(filter_builtins_and_current_field, field=l.target),
+                    ),
+                )
+
+            self.error.extend(entries)
+
         for p in self.paths(FINAL):
             if p not in valid_paths:
                 # Skip type checking on paths with contradictions to prevent false positives about
@@ -1580,26 +1595,17 @@ class Message(type_decl.TypeDecl):
                 if l.source in self.types:
                     types[l.source] = self.types[l.source]
 
-                for expression in [
-                    l.condition.substituted(typed_variable),
+                substituted_condition = l.condition.substituted(typed_variable)
+                check_expr_type(substituted_condition, rty.BOOLEAN, path)
+
+                for expression in (
                     l.size.substituted(typed_variable),
                     l.first.substituted(typed_variable),
-                ]:
+                ):
                     if expression == expr.UNDEFINED:
                         continue
 
-                    entries = expression.check_type(rty.Any()).entries
-                    assert self.location is not None
-                    for e in entries:
-                        e.extend(
-                            annotate_path(
-                                path,
-                                self.location,
-                                partial(filter_builtins_and_current_field, field=l.target),
-                            ),
-                        )
-
-                    self.error.extend(entries)
+                    check_expr_type(expression, rty.BASE_INTEGER, path)
 
     def _verify_links(self) -> None:
         for link in self.structure:
