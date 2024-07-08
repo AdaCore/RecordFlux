@@ -237,7 +237,7 @@ RAPIDFLUX_DEV_BINS := $(addprefix $(CARGO_HOME)/bin/,$(shell tr '\n' ' ' < rust-
 # for upgrades, downgrades, or in case of package deletion.
 $(CARGO_HOME)/bin/%:
 	mkdir -p $(CARGO_HOME)
-	cargo install $(notdir $@)
+	cargo install --locked $(notdir $@)
 	$(RM) $(word 1,$(subst @, ,$@))@* $@
 	ln -s $(word 1,$(subst @, ,$@)) $@
 
