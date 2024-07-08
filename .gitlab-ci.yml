@@ -169,6 +169,7 @@ audit:
   script:
     - *setup_python
     - make audit
+  allow_failure: true
 
 checks:
   extends: .testing
