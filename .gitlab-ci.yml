@@ -142,6 +142,10 @@ anod_main:
     - anod build recordflux $ACI_TRACK_QUALIFIER
     - eval `anod printenv recordflux`
     - rflx --version
+    - cp -r /tmp/it/wave/log .
+  artifacts:
+    paths:
+      - log/*
 
 anod_doc:
   services:
@@ -156,6 +160,10 @@ anod_doc:
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
     - anod build recordflux-doc $ACI_TRACK_QUALIFIER
+    - cp -r /tmp/it/wave/log .
+  artifacts:
+    paths:
+      - log/*
 
 commit_messages:
   extends: .testing
