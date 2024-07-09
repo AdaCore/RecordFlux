@@ -75,9 +75,38 @@ from rflx import ada, ada_parser
             body_context=[],
             body=ada.PackageBody("P"),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.ExpressionFunctionDeclaration(
+                        specification=ada.FunctionSpecification(
+                            identifier="Expr_Function",
+                            return_type="T",
+                            parameters=[
+                                ada.Parameter(["A"], "T1"),
+                                ada.Parameter(["B"], "T2"),
+                            ],
+                        ),
+                        expression=ada.IfExpr(
+                            condition_expressions=[
+                                (
+                                    ada.Less(ada.Variable("A"), ada.Number(1000)),
+                                    ada.Number(42),
+                                ),
+                            ],
+                        ),
+                        aspects=[ada.Postcondition(ada.TRUE)],
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
-def test_roundtrip(unit: ada.Unit):
+def test_roundtrip(unit: ada.Unit) -> None:
     result = ada_parser.parse(unit.ads + unit.adb)
     assert result.ads == unit.ads
     assert result.adb == unit.adb

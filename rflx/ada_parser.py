@@ -27,12 +27,13 @@ ADA_GRAMMAR = lark.Lark(
 
         # 2.8 (2)
         pragma:                     "pragma" identifier \
-                                        ( "(" \
-                                            pragma_argument_association \
-                                            ( "," pragma_argument_association )* \
-                                          ")" \
-                                        )? \
+                                        pragma_arguments? \
                                         ";"
+
+        pragma_arguments:           "(" \
+                                        pragma_argument_association \
+                                        ( "," pragma_argument_association )* \
+                                    ")"
 
         # 2.8 (3/3)
         pragma_argument_association: \
@@ -40,7 +41,8 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.1 (3/3)
         basic_declaration: \
-                                    type_declaration
+                                    type_declaration \
+                         |          expression_function_declaration
 
         # 3.1 (4)
         defining_identifier:        identifier
@@ -61,6 +63,10 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.2.2 (4)
         subtype_mark:               name
+
+        # 3.3.1 (3)
+        defining_identifier_list: \
+                                    defining_identifier ("," defining_identifier)*
 
         # 3.5.1 (2)
         integer_type_definition:    signed_integer_type_definition | modular_type_definition
@@ -96,7 +102,8 @@ ADA_GRAMMAR = lark.Lark(
         expression:                 relation
 
         # 4.4 (3/3)
-        relation:                   simple_expression
+        relation: \
+                                    simple_expression (relational_operator simple_expression)?
 
         # 4.4 (4)
         simple_expression:          term
@@ -115,12 +122,60 @@ ADA_GRAMMAR = lark.Lark(
                |                    string_literal
                |                    aggregate
                |                    name
+               |                    "(" conditional_expression ")"
 
         true:                       "True"
         false:                      "False"
 
+        # 4.5 (3)
+        !relational_operator:       "=" | "/=" | "<" | "<=" | ">" | ">="
+
+        # 4.5.7 (2/3)
+        conditional_expression:     if_expression
+
+        # 4.5.7 (3/3)
+        if_expression: \
+                                    "if" condition "then" expression \
+                                    if_expr_elsif \
+                                    if_expr_else
+
+        if_expr_elsif:              ("elsif" condition "then" expression)*
+        if_expr_else:               ("else" expression)?
+
+        # 4.5.7 (4/3)
+        condition:                  expression
+
+        # 6.1 (4.2/2)
+        function_specification:     "function" defining_designator parameter_and_result_profile
+
+        # 6.1 (6)
+        defining_designator:        defining_program_unit_name
+
         # 6.1 (7)
         defining_program_unit_name: ( parent_unit_name "." )* defining_identifier
+
+        # 6.1 (13/2)
+        parameter_and_result_profile: \
+                                    formal_part? "return" subtype_mark
+
+        # 6.1 (14)
+        formal_part: \
+                                    "(" parameter_specification (";" parameter_specification)* ")"
+
+        # 6.1 (15/3)
+        parameter_specification: \
+                                    defining_identifier_list ":" mode subtype_mark
+
+        # 6.1 (16)
+        mode:                       "in"? | "in" "out" | "out"
+
+        # 6.8 (2/3)
+        expression_function_declaration: \
+                                    function_specification "is" \
+                                    "(" expression ")" \
+                                    expression_function_aspects ";"
+
+        expression_function_aspects:    aspect_specification?
 
         # 7.1 (2)
         package_declaration:        package_specification ";"
@@ -203,14 +258,18 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def decimal_literal(self, data: list[ada.Number]) -> ada.Number:
         return data[0]
 
-    def numeral(self, data) -> ada.Number:
-        return ada.Number(int(data[0]))
+    def numeral(self, data: list[lark.Token]) -> ada.Number:
+        assert isinstance(data[0].value, str)
+        return ada.Number(int(data[0].value))
 
     def string_literal(self, data: list[lark.lexer.Token]) -> ada.String:
         return ada.String(data[0][1:-1])
 
-    def pragma(self, data: list[lark.lexer.Token]) -> ada.Pragma:
-        return ada.Pragma(identifier=data[0], parameters=data[1:])
+    def pragma(self, data: tuple[ID, list[ada.Expr]]) -> ada.Pragma:
+        return ada.Pragma(identifier=data[0], parameters=data[1])
+
+    def pragma_arguments(self, data: list[ada.Expr]) -> list[ada.Expr]:
+        return data
 
     def pragma_argument_association(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
@@ -221,7 +280,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def defining_identifier(self, data: list[ID]) -> ID:
         return data[0]
 
-    def type_declaration(self, data: list[ada.Declaration]) -> ID:
+    def type_declaration(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
 
     def full_type_declaration(
@@ -244,18 +303,20 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
                 last=definition.last,
                 aspects=aspects,
             )
-        return []
 
-    def full_type_decl_aspects(
-        self,
-        data: list[ada.Aspect],
-    ) -> list[ada.Aspect]:
+    def full_type_decl_aspects(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
         if len(data) == 0:
             return []
         return data[0]
 
     def type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
+
+    def subtype_mark(self, data: list[ID]) -> ID:
+        return data[0]
+
+    def defining_identifier_list(self, data: list[ID]) -> list[ID]:
+        return data
 
     def integer_type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
@@ -272,7 +333,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         assert isinstance(data[0], ada.Number)
         return ada.ModularType(identifier="__INVALID__", modulus=data[0])
 
-    def basic_declarative_item(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
+    def basic_declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
 
     def name(self, data: list[ID]) -> ID:
@@ -281,8 +342,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def direct_name(self, data: list[ID]) -> ID:
         return data[0]
 
-    def aggregate(self, data: tuple[list[ID]]) -> list[ID]:
-        return data[0]
+    def aggregate(self, data: list[list[ada.Expr]]) -> ada.Aggregate:
+        return ada.Aggregate(*data[0])
 
     def array_aggregate(self, data: tuple[list[ID]]) -> list[ID]:
         return data[0]
@@ -293,8 +354,24 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def expression(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
 
-    def relation(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
+    def relation(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+        if len(data) == 1:
+            assert isinstance(data[0], ada.Expr)
+            return data[0]
+
+        relations: dict[str, type[ada.Relation]] = {
+            "=": ada.Equal,
+            "/=": ada.NotEqual,
+            "<": ada.Less,
+            "<=": ada.LessEqual,
+            ">": ada.Greater,
+            ">=": ada.GreaterEqual,
+        }
+        left, operator, right = data
+        assert isinstance(left, ada.Expr)
+        assert isinstance(operator, str)
+        assert isinstance(right, ada.Expr)
+        return relations[operator](left, right)
 
     def simple_expression(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
@@ -306,16 +383,117 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         return data[0]
 
     def primary(self, data: list[ada.Expr]) -> ada.Expr:
+        # TODO(senier): How exactly do we distinguish ID and Variable?
+        if isinstance(data[0], ID):
+            return ada.Variable(data[0])
         return data[0]
 
-    def true(self, _) -> ada.Expr:
+    def true(self, _: lark.Token) -> ada.Expr:
         return ada.TRUE
 
-    def false(self, _) -> ada.Expr:
+    def false(self, _: lark.Token) -> ada.Expr:
         return ada.FALSE
+
+    def relational_operator(self, data: list[lark.Token]) -> Optional[str]:
+        if not data:
+            return None
+        assert isinstance(data[0].value, str)
+        return data[0].value
+
+    def conditional_expression(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def if_expression(
+        self,
+        data: tuple[
+            ada.Expr,
+            ada.Expr,
+            Optional[list[tuple[ada.Expr, ada.Expr]]],
+            Optional[ada.Expr],
+        ],
+    ) -> ada.IfExpr:
+        condition, expression, elif_expressions, else_expression = data
+        condition_expressions = [(condition, expression)]
+        if elif_expressions:
+            condition_expressions.extend(elif_expressions)
+        return ada.IfExpr(
+            condition_expressions=condition_expressions,
+            else_expression=else_expression,
+        )
+
+    def if_expr_elsif(
+        self,
+        data: list[tuple[ada.Expr, ada.Expr]],
+    ) -> Optional[list[tuple[ada.Expr, ada.Expr]]]:
+        if not data:
+            return None
+        return data
+
+    def if_expr_else(self, data: list[ada.Expr]) -> Optional[ada.Expr]:
+        if not data:
+            return None
+        return data[0]
+
+    def condition(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def function_specification(
+        self,
+        data: tuple[ID, tuple[ID, list[ada.Parameter]]],
+    ) -> ada.FunctionSpecification:
+        identifier, (return_type, parameters) = data
+        return ada.FunctionSpecification(
+            identifier=identifier,
+            return_type=return_type,
+            parameters=parameters,
+        )
+
+    def defining_designator(self, data: list[ID]) -> ID:
+        return data[0]
 
     def defining_program_unit_name(self, data: list[ID]) -> ID:
         return reduce(lambda l, r: l * r, data)
+
+    def parameter_and_result_profile(
+        self,
+        data: tuple[Optional[list[ada.Parameter]], ID],
+    ) -> tuple[ID, list[ada.Parameter]]:
+        return data[1], data[0] or []
+
+    def formal_part(self, data: list[ada.Parameter]) -> list[ada.Parameter]:
+        return data
+
+    def parameter_specification(self, data: tuple[list[ID], str, ID]) -> ada.Parameter:
+        identifiers, mode, type_identifier = data
+
+        if mode == "in out":
+            return ada.InOutParameter(identifiers=identifiers, type_identifier=type_identifier)
+
+        if mode == "out":
+            return ada.OutParameter(identifiers=identifiers, type_identifier=type_identifier)
+
+        if mode == "in":
+            return ada.Parameter(identifiers=identifiers, type_identifier=type_identifier)
+
+        assert False, f"Unexpected mode {mode}"
+
+    def mode(self, data: list[lark.Token]) -> str:
+        if not data:
+            return "in"
+        assert False, f"mode: {data}"
+
+    def expression_function_declaration(
+        self,
+        data: tuple[ada.FunctionSpecification, ada.Expr, Optional[list[ada.Aspect]]],
+    ) -> ada.ExpressionFunctionDeclaration:
+        return ada.ExpressionFunctionDeclaration(
+            specification=data[0],
+            expression=data[1],
+            aspects=data[2],
+        )
+
+    def expression_function_aspects(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
+        return data[0]
 
     def package_declaration(self, data: list[ada.PackageDeclaration]) -> ada.PackageDeclaration:
         return data[0]
@@ -337,7 +515,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
             return data[0]
         return []
 
-    def package_spec_declarations(self, data: list[list[ada.Declaration]]) -> list[ada.Declaration]:
+    def package_spec_declarations(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
         return data
 
     def use_clause(
@@ -350,7 +528,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         assert len(data) == 1
         return ada.UsePackageClause(identifier=data[0])
 
-    def use_type_clause(self, data: list[ID]) -> ada.UsePackageClause:
+    def use_type_clause(self, data: list[ID]) -> ada.UseTypeClause:
         assert len(data) == 1
         return ada.UseTypeClause(identifier=data[0])
 
@@ -390,15 +568,31 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
 
-    def aspect_part(self, data: tuple[ID, list[ID]]) -> ada.Aspect:
-        if data[0].parts == ["Annotate"]:
-            return ada.Annotate(*[d.flat for d in data[1]])
+    def aspect_part(self, data: list[Union[ID, ada.Expr]]) -> ada.Aspect:
+        assert isinstance(data[0], ID)
+        name = data[0].parts[0]
+        definition = data[1] if len(data) > 1 and isinstance(data[1], ada.Expr) else None
 
-        argument = data[1] if len(data) == 2 else None
-        if data[0].parts == ["SPARK_Mode"]:
-            return ada.SparkMode(off=argument and argument.name == "off")
-        if data[0].parts == ["Always_Terminates"]:
-            return ada.AlwaysTerminates(expression=argument)
+        if name == "Annotate":
+            assert isinstance(definition, ada.Aggregate), definition
+            return ada.Annotate(
+                *[e.name for e in definition.elements if isinstance(e, ada.Variable)],
+            )
+
+        if name == "SPARK_Mode":
+            if definition is None:
+                return ada.SparkMode()
+            assert isinstance(definition, ada.Variable)
+            return ada.SparkMode(off=definition.name == "off")
+
+        if name == "Always_Terminates":
+            return ada.AlwaysTerminates(expression=definition)
+
+        assert definition is not None
+
+        if name == "Post":
+            return ada.Postcondition(definition)
+
         raise NotImplementedError(data[0].name)
 
     def aspect_mark(self, data: list[ID]) -> ID:
