@@ -126,6 +126,7 @@ anod_main:
      - image:recordflux
      - cpu:16
      - mem:16
+     - security_group:GitLabRunnerTasksExecDefaultSG
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
@@ -141,6 +142,7 @@ anod_doc:
      - image:recordflux
      - cpu:16
      - mem:16
+     - security_group:GitLabRunnerTasksExecDefaultSG
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
