@@ -1,5 +1,8 @@
 variables:
   DEVUTILS_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/recordflux
+  GNATCOLL_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/toolchain
+  LANGKIT_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/libadalang
+  ADASAT_ORIGIN: https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/eng/libadalang
 
   GNAT_PLATFORM: "x86_64-linux"
   GNAT_VERSION: "24.2"
@@ -63,6 +66,7 @@ setup:
     - image:recordflux
     - cpu:16
     - mem:16
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   artifacts:
     paths:
       - .venv$PYTHON_VERSION
@@ -111,6 +115,8 @@ setup:
     - find librapidflux rapidflux -type f -exec touch {} \;
     - touch target/debug/librapidflux.so
     - touch rflx/rapidflux.so
+    # Prevent reinstallation of RecordFlux
+    - touch .venv$PYTHON_VERSION/bin/rflx
 
 changelog:
   rules:
@@ -123,10 +129,10 @@ changelog:
 
 anod_main:
   services:
-     - image:recordflux
-     - cpu:16
-     - mem:16
-     - security_group:GitLabRunnerTasksExecDefaultSG
+    - image:recordflux
+    - cpu:16
+    - mem:16
+    - security_group:GitLabRunnerTasksExecDefaultSG
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
@@ -139,10 +145,10 @@ anod_main:
 
 anod_doc:
   services:
-     - image:recordflux
-     - cpu:16
-     - mem:16
-     - security_group:GitLabRunnerTasksExecDefaultSG
+    - image:recordflux
+    - cpu:16
+    - mem:16
+    - security_group:GitLabRunnerTasksExecDefaultSG
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
@@ -154,7 +160,8 @@ anod_doc:
 commit_messages:
   extends: .testing
   services:
-     - image:recordflux
+    - image:recordflux
+    - security_group:GitLabRunnerTasksExecDefaultSG
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
@@ -168,6 +175,7 @@ audit:
     - image:recordflux
     - cpu:2
     - mem:8
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   script:
     - *setup_python
     - make audit
@@ -176,9 +184,10 @@ audit:
 checks:
   extends: .testing
   services:
-     - image:recordflux
-     - cpu:2
-     - mem:8
+    - image:recordflux
+    - cpu:2
+    - mem:8
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   script:
     - *setup_gnat
     - *setup_python
@@ -188,9 +197,10 @@ checks:
 code_generation:
   extends: .testing
   services:
-     - image:recordflux
-     - cpu:16
-     - mem:16
+    - image:recordflux
+    - cpu:16
+    - mem:16
+    - security_group:GitLabRunnerTasksExecDefaultSG
   script:
     - *setup_python
     - make generate_apps
@@ -215,9 +225,10 @@ tests_rflx:
     - setup
     - code_generation
   services:
-     - image:recordflux
-     - cpu:16
-     - mem:32
+    - image:recordflux
+    - cpu:16
+    - mem:32
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
@@ -236,9 +247,10 @@ tests_rapidflux:
   needs:
     - setup
   services:
-     - image:recordflux
-     - cpu:16
-     - mem:16
+    - image:recordflux
+    - cpu:16
+    - mem:16
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   script:
     - make --keep-going test_rapidflux
 
@@ -248,9 +260,10 @@ tests_example_apps:
     - setup
     - code_generation
   services:
-     - image:recordflux
-     - cpu:4
-     - mem:8
+    - image:recordflux
+    - cpu:4
+    - mem:8
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
@@ -273,9 +286,10 @@ tests_example_specs:
     - setup
     - code_generation
   services:
-     - image:recordflux
-     - cpu:16
-     - mem:32
+    - image:recordflux
+    - cpu:16
+    - mem:32
+    - security_group:GitLabRunnerTasksExecDefaultSG
   script:
     - git fetch --unshallow
     - *update_timestamps_of_generated_code
@@ -295,9 +309,10 @@ tests_example_specs:
 python_compatibility:
   extends: .testing
   services:
-     - image:recordflux
-     - cpu:2
-     - mem:4
+    - image:recordflux
+    - cpu:2
+    - mem:4
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   parallel:
     matrix:
       - PYTHON_VERSION:
@@ -318,9 +333,10 @@ gnat_pro_compatibility:
     - setup
     - code_generation
   services:
-     - image:recordflux
-     - cpu:2
-     - mem:4
+    - image:recordflux
+    - cpu:2
+    - mem:4
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   parallel:
     matrix:
       - GNAT_VERSION: "21.2"
@@ -343,9 +359,10 @@ gnat_fsf_compatibility:
     - setup
     - code_generation
   services:
-     - image:recordflux
-     - cpu:2
-     - mem:4
+    - image:recordflux
+    - cpu:2
+    - mem:4
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   parallel:
     matrix:
       - GNAT_VERSION: "11.2.4"
@@ -372,9 +389,10 @@ gnat_community_compatibility:
     - setup
     - code_generation
   services:
-     - image:recordflux
-     - cpu:2
-     - mem:4
+    - image:recordflux
+    - cpu:2
+    - mem:4
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   parallel:
     matrix:
       - GNAT_VERSION: "2021"
@@ -399,9 +417,10 @@ gnat_community_compatibility:
 verification_tests:
   extends: .testing
   services:
-     - image:recordflux
-     - cpu:8
-     - mem:16
+    - image:recordflux
+    - cpu:8
+    - mem:16
+    - security_group:GitLabRunnerTasksExecDefaultSG
   parallel:
     matrix:
       - SPARK_VERSION: "24.0"
@@ -425,9 +444,10 @@ verification_tests:
 verification_python_tests:
   extends: .testing
   services:
-     - image:recordflux
-     - cpu:8
-     - mem:16
+    - image:recordflux
+    - cpu:8
+    - mem:16
+    - security_group:GitLabRunnerTasksExecDefaultSG
   parallel:
     matrix:
       - SPARK_VERSION: "24.0"
@@ -455,9 +475,10 @@ verification_apps:
     - setup
     - code_generation
   services:
-     - image:recordflux
-     - cpu:4
-     - mem:30
+    - image:recordflux
+    - cpu:4
+    - mem:30
+    - security_group:GitLabRunnerTasksExecDefaultSG
   parallel:
     matrix:
       - APP:
@@ -484,9 +505,10 @@ verification_apps:
 verification_documentation:
   extends: .testing
   services:
-     - image:recordflux
-     - cpu:8
-     - mem:16
+    - image:recordflux
+    - cpu:8
+    - mem:16
+    - security_group:GitLabRunnerTasksExecDefaultSG
   script:
     - *setup_spark
     - *setup_python
@@ -503,8 +525,9 @@ verification_documentation:
 html_documentation:
   extends: .testing
   services:
-     - image:recordflux
-     - mem:8
+    - image:recordflux
+    - mem:8
+    - security_group:GitLabRunnerTasksExecDefaultSG
   script:
     - *setup_gnat
     - *setup_python
@@ -518,8 +541,9 @@ html_documentation:
 pdf_documentation:
   extends: .testing
   services:
-     - image:recordflux
-     - mem:8
+    - image:recordflux
+    - mem:8
+    - security_group:GitLabRunnerTasksExecDefaultSG
   script:
     - *setup_gnat
     - *setup_python
@@ -536,6 +560,7 @@ packaging:
     - image:recordflux
     - cpu:8
     - mem:16
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   script:
     - git fetch --unshallow
     - *setup_gnat
@@ -547,6 +572,7 @@ packaging:
 publishing_to_pypi:
   services:
     - image:recordflux
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   needs:
     - packaging
   rules:
@@ -563,6 +589,7 @@ publishing_to_pypi:
 publishing_to_test_pypi:
   services:
     - image:recordflux
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   needs:
     - packaging
   rules:
@@ -589,9 +616,10 @@ gnat_wave_compatibility:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE == "gnat-wave"
   services:
-     - image:recordflux
-     - cpu:2
-     - mem:4
+    - image:recordflux
+    - cpu:2
+    - mem:4
+    - security_group:GitLabRunnerTasksExecDefaultSG
   script:
     - git fetch --unshallow
     - generic_anod_ci --continuous-builder-mode
@@ -610,9 +638,10 @@ spark_wave_compatibility:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE == "spark-wave"
   services:
-     - image:recordflux
-     - cpu:8
-     - mem:16
+    - image:recordflux
+    - cpu:8
+    - mem:16
+    - security_group:GitLabRunnerTasksExecDefaultSG
   script:
     - git fetch --unshallow
     - generic_anod_ci --continuous-builder-mode
@@ -632,6 +661,7 @@ installation_from_pypi:
     - image:recordflux
     - cpu:2
     - mem:4
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   parallel:
     matrix:
       - PYTHON_VERSION:
@@ -653,6 +683,7 @@ installation_from_testpypi:
     - image:recordflux
     - cpu:2
     - mem:4
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   parallel:
     matrix:
       - PYTHON_VERSION:
