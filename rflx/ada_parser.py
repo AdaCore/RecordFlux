@@ -187,7 +187,7 @@ ADA_GRAMMAR = lark.Lark(
                                     "end" defining_program_unit_name
 
         package_spec_aspects:       aspect_specification?
-        package_spec_declarations:  basic_declarative_item?
+        package_spec_declarations:  basic_declarative_item*
 
         # 8.4 (2)
         use_clause:                 use_package_clause | use_type_clause
