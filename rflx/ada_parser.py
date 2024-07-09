@@ -112,7 +112,7 @@ ADA_GRAMMAR = lark.Lark(
         term:                       factor
 
         # 4.4 (6)
-        factor:                     primary
+        factor:                     primary ("**" primary)?
 
         # 4.4 (7/3)
         primary: \
@@ -330,7 +330,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         return ada.RangeType(identifier="__INVALID__", first=data[0], last=data[1])
 
     def modular_type_definition(self, data: list[ada.Expr]) -> ada.Declaration:
-        assert isinstance(data[0], ada.Number)
         return ada.ModularType(identifier="__INVALID__", modulus=data[0])
 
     def basic_declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
@@ -380,7 +379,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         return data[0]
 
     def factor(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
+        if len(data) == 1:
+            return data[0]
+        return ada.Pow(data[0], data[1])
 
     def primary(self, data: list[ada.Expr]) -> ada.Expr:
         # TODO(senier): How exactly do we distinguish ID and Variable?
