@@ -113,7 +113,7 @@ from rflx import ada, ada_parser
                         expression=ada.IfExpr(
                             condition_expressions=[
                                 (
-                                    ada.Less(ada.Variable("A"), ada.Number(1000)),
+                                    ada.Less(ada.Variable("A"), ada.Size(ada.Variable("B"))),
                                     ada.Number(42),
                                 ),
                             ],

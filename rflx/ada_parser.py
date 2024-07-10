@@ -84,9 +84,20 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.1 (2/3)
         name:                       direct_name
+                                  | attribute_reference
 
         # 4.1 (3)
         direct_name:                identifier
+
+        # 4.1 (4)
+        prefix:                     name
+
+        # 4.1.4 (2)
+        attribute_reference:        prefix "'" attribute_designator
+
+        # 4.1.4 (3/2)
+        attribute_designator: \
+                                    identifier
 
         # 4.3 (2)
         aggregate:                  array_aggregate
@@ -345,6 +356,32 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def direct_name(self, data: list[ID]) -> ID:
         return data[0]
 
+    def prefix(self, data: list[ID]) -> ID:
+        return data[0]
+
+    def attribute_reference(self, data: tuple[ada.Expr, str]) -> ada.Attribute:
+        attributes: dict[str, type[ada.Attribute]] = {
+            "Size": ada.Size,
+            "Length": ada.Length,
+            "First": ada.First,
+            "Last": ada.Last,
+            "LoopEntry": ada.LoopEntry,
+            "Range": ada.Range,
+            "Old": ada.Old,
+            "Result": ada.Result,
+            "Constrained": ada.Constrained,
+            "Valid": ada.Valid,
+            "Access": ada.Access,
+            "Initialized": ada.Initialized,
+            "Image": ada.Image,
+            "Class": ada.Class,
+            "UnrestrictedAccess": ada.UnrestrictedAccess,
+        }
+        return attributes[data[1]](data[0])
+
+    def attribute_designator(self, data: tuple[ID]) -> str:
+        return data[0].ada_str
+
     def aggregate(self, data: list[list[ada.Expr]]) -> ada.Aggregate:
         return ada.Aggregate(*data[0])
 
@@ -379,12 +416,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def simple_expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
 
         assert isinstance(data[0], ada.Expr)
-        assert isinstance(data[1], str)
 
         if len(data) == 1:
             return data[0]
 
         assert len(data) > 2
+        assert isinstance(data[1], str)
 
         if data[1] == "-":
             return ada.Sub(data[0], self.simple_expression(data[2:]))
