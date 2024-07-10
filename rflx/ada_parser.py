@@ -106,7 +106,7 @@ ADA_GRAMMAR = lark.Lark(
                                     simple_expression (relational_operator simple_expression)?
 
         # 4.4 (4)
-        simple_expression:          term
+        simple_expression:          term (binary_adding_operator term)*
 
         # 4.4 (5)
         term:                       factor
@@ -116,19 +116,19 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.4 (7/3)
         primary: \
-                                    true
-               |                    false
-               |                    numeric_literal
-               |                    string_literal
-               |                    aggregate
-               |                    name
-               |                    "(" conditional_expression ")"
+                                    true | false
+                                  | numeric_literal | string_literal | aggregate
+                                  | name | "(" expression ")"
+                                  | "(" conditional_expression ")"
 
         true:                       "True"
         false:                      "False"
 
         # 4.5 (3)
         !relational_operator:       "=" | "/=" | "<" | "<=" | ">" | ">="
+
+        # 4.5 (4)
+        !binary_adding_operator:    "+" | "-" | "&"
 
         # 4.5.7 (2/3)
         conditional_expression:     if_expression
@@ -241,6 +241,9 @@ ADA_GRAMMAR = lark.Lark(
         # Skip whitespace
         %import common.WS
         %ignore WS
+
+        # Skip comments
+        %ignore /--.*/
     """,
     start="compilation_unit",
     parser="lalr",
@@ -372,8 +375,30 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         assert isinstance(right, ada.Expr)
         return relations[operator](left, right)
 
-    def simple_expression(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
+    def simple_expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+
+        assert isinstance(data[0], ada.Expr)
+        assert isinstance(data[1], str)
+
+        if len(data) == 1:
+            return data[0]
+
+        assert len(data) > 2
+
+        if data[1] == "-":
+            return ada.Sub(data[0], self.simple_expression(data[2:]))
+
+        remainder = self.simple_expression(data[2:])
+
+        if data[1] == "+":
+            terms = remainder.terms if isinstance(remainder, ada.Add) else [remainder]
+            return ada.Add(data[0], *terms)
+
+        if data[1] == "&":
+            terms = remainder.terms if isinstance(remainder, ada.Concatenation) else [remainder]
+            return ada.Concatenation(data[0], *terms)
+
+        raise NotImplementedError(f"simple expression with operator {data[1]}")
 
     def term(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
@@ -395,9 +420,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def false(self, _: lark.Token) -> ada.Expr:
         return ada.FALSE
 
-    def relational_operator(self, data: list[lark.Token]) -> Optional[str]:
-        if not data:
-            return None
+    def relational_operator(self, data: list[lark.Token]) -> str:
+        assert isinstance(data[0].value, str)
+        return data[0].value
+
+    def binary_adding_operator(self, data: list[lark.Token]) -> str:
         assert isinstance(data[0].value, str)
         return data[0].value
 

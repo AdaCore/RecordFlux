@@ -49,6 +49,24 @@ from rflx import ada, ada_parser
                 declarations=[
                     ada.ModularType("T1", ada.Number(8)),
                     ada.ModularType("T2", ada.Pow(ada.Number(2), ada.Number(8))),
+                    ada.ModularType(
+                        "T3",
+                        ada.Sub(ada.Pow(ada.Number(2), ada.Number(8)), ada.Number(1)),
+                    ),
+                    ada.ModularType(
+                        "T4",
+                        ada.Add(ada.Number(1), ada.Number(2), ada.Number(3), ada.Number(4)),
+                    ),
+                    ada.ModularType(
+                        "T5",
+                        ada.Sub(
+                            ada.Sub(
+                                ada.Add(ada.Number(1), ada.Number(2), ada.Number(3), ada.Number(4)),
+                                ada.Number(1),
+                            ),
+                            ada.Number(1),
+                        ),
+                    ),
                 ],
             ),
             body_context=[],
