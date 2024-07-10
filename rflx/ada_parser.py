@@ -42,7 +42,8 @@ ADA_GRAMMAR = lark.Lark(
         # 3.1 (3/3)
         basic_declaration: \
                                     type_declaration \
-                         |          expression_function_declaration
+                                  | expression_function_declaration \
+                                  | pragma
 
         # 3.1 (4)
         defining_identifier:        identifier
