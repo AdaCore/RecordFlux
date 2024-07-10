@@ -131,7 +131,7 @@ ADA_GRAMMAR = lark.Lark(
                                     true | false
                                   | numeric_literal | string_literal | aggregate
                                   | name | "(" expression ")"
-                                  | "(" conditional_expression ")"
+                                  | conditional_expression
 
         true:                       "True"
         false:                      "False"

@@ -113,8 +113,14 @@ from rflx import ada, ada_parser
                         expression=ada.IfExpr(
                             condition_expressions=[
                                 (
-                                    ada.Less(ada.Variable("A"), ada.Size(ada.Variable("B"))),
-                                    ada.Number(42),
+                                    ada.Less(
+                                        ada.Variable("Bits"),
+                                        ada.Size(ada.Variable("U64")),
+                                    ),
+                                    ada.Less(
+                                        ada.Variable("V"),
+                                        ada.Pow(ada.Number(2), ada.Variable("Bits")),
+                                    ),
                                 ),
                             ],
                         ),
