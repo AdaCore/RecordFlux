@@ -111,7 +111,9 @@ ADA_GRAMMAR = lark.Lark(
                                     "(" expression "," expression ("," expression)* ")"
 
         # 4.4 (2)
-        expression:                 relation
+        expression:                 relation (relation_operator relation)?
+
+        !relation_operator:         "and" | "and then" | "or" | "or else"
 
         # 4.4 (3/3)
         relation: \
@@ -391,8 +393,25 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def positional_array_aggregate(self, data: list[ID]) -> list[ID]:
         return data
 
-    def expression(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
+    def expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+
+        if len(data) == 1:
+            assert isinstance(data[0], ada.Expr)
+            return data[0]
+
+        operator: dict[str, type[ada.BoolAssExpr]] = {
+            "and": ada.And,
+            "and then": ada.AndThen,
+            "or": ada.Or,
+            "or else": ada.OrElse,
+        }
+        assert isinstance(data[1], str), data
+        return operator[data[1]](data[0], data[2])
+
+    def relation_operator(self, data: list[lark.Token]) -> str:
+        print(data)
+        assert isinstance(data[0].value, str)
+        return data[0].value
 
     def relation(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
         if len(data) == 1:
