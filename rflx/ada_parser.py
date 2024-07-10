@@ -42,6 +42,7 @@ ADA_GRAMMAR = lark.Lark(
         # 3.1 (3/3)
         basic_declaration: \
                                     type_declaration \
+                                  | subprogram_declaration \
                                   | expression_function_declaration \
                                   | pragma
 
@@ -159,6 +160,18 @@ ADA_GRAMMAR = lark.Lark(
         # 4.5.7 (4/3)
         condition:                  expression
 
+        # 6.1 (2/3)
+        subprogram_declaration: \
+                                    subprogram_specification \
+                                    subprogram_declaration_aspects ";"
+
+        subprogram_declaration_aspects: \
+                                    aspect_specification?
+
+        # 6.1 (4/2)
+        subprogram_specification: \
+                                    function_specification
+
         # 6.1 (4.2/2)
         function_specification:     "function" defining_designator parameter_and_result_profile
 
@@ -170,7 +183,9 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (13/2)
         parameter_and_result_profile: \
-                                    formal_part? "return" subtype_mark
+                                    parameter_and_result_profile_formal_part "return" subtype_mark
+
+        parameter_and_result_profile_formal_part: formal_part?
 
         # 6.1 (14)
         formal_part: \
@@ -405,11 +420,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
             "or": ada.Or,
             "or else": ada.OrElse,
         }
-        assert isinstance(data[1], str), data
+        assert isinstance(data[1], str)
+        assert isinstance(data[0], ada.Expr)
+        assert isinstance(data[2], ada.Expr)
         return operator[data[1]](data[0], data[2])
 
     def relation_operator(self, data: list[lark.Token]) -> str:
-        print(data)
         assert isinstance(data[0].value, str)
         return data[0].value
 
@@ -522,9 +538,28 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def condition(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
 
+    def subprogram_declaration(
+        self,
+        data: tuple[ada.SubprogramSpecification, list[ada.Aspect]],
+    ) -> ada.SubprogramDeclaration:
+        specification, aspects = data
+        return ada.SubprogramDeclaration(specification=specification, aspects=aspects)
+
+    def subprogram_declaration_aspects(
+        self,
+        data: list[list[ada.Aspect]],
+    ) -> Optional[list[ada.Aspect]]:
+        return data[0]
+
+    def subprogram_specification(
+        self,
+        data: list[ada.FunctionSpecification],
+    ) -> ada.FunctionSpecification:
+        return data[0]
+
     def function_specification(
         self,
-        data: tuple[ID, tuple[ID, list[ada.Parameter]]],
+        data: tuple[ID, tuple[ID, Optional[list[ada.Parameter]]]],
     ) -> ada.FunctionSpecification:
         identifier, (return_type, parameters) = data
         return ada.FunctionSpecification(
@@ -542,8 +577,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def parameter_and_result_profile(
         self,
         data: tuple[Optional[list[ada.Parameter]], ID],
-    ) -> tuple[ID, list[ada.Parameter]]:
-        return data[1], data[0] or []
+    ) -> tuple[ID, Optional[list[ada.Parameter]]]:
+        return data[1], data[0]
+
+    def parameter_and_result_profile_formal_part(
+        self,
+        data: list[list[ada.Parameter]],
+    ) -> Optional[list[ada.Parameter]]:
+        if not data:
+            return None
+        return data[0]
 
     def formal_part(self, data: list[ada.Parameter]) -> list[ada.Parameter]:
         return data
@@ -677,6 +720,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
         if name == "Post":
             return ada.Postcondition(definition)
+
+        if name == "Pre":
+            return ada.Precondition(definition)
 
         raise NotImplementedError(data[0].name)
 
