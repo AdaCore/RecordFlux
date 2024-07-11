@@ -70,6 +70,10 @@ ADA_GRAMMAR = lark.Lark(
         defining_identifier_list: \
                                     defining_identifier ("," defining_identifier)*
 
+        # 3.5 (3)
+        range: \
+                                    simple_expression ".." simple_expression
+
         # 3.5.1 (2)
         integer_type_definition:    signed_integer_type_definition | modular_type_definition
 
@@ -122,6 +126,15 @@ ADA_GRAMMAR = lark.Lark(
         # 4.4 (3/3)
         relation: \
                                     simple_expression (relational_operator simple_expression)?
+                                  | simple_expression in_operator membership_choice_list
+
+        !in_operator:               "in"
+
+        # 4.4 (3.1/3)
+        membership_choice_list:     membership_choice
+
+        # 4.4 (3.2/3)
+        membership_choice:          range
 
         # 4.4 (4)
         simple_expression:          term (binary_adding_operator term)*
@@ -378,6 +391,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def defining_identifier_list(self, data: list[ID]) -> list[ID]:
         return data
 
+    def range(self, data: tuple[ada.Number, ada.Number]) -> ada.ValueRange:
+        return ada.ValueRange(lower=data[0], upper=data[1])
+
     def integer_type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
 
@@ -472,6 +488,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
             "<=": ada.LessEqual,
             ">": ada.Greater,
             ">=": ada.GreaterEqual,
+            "in": ada.In,
         }
 
         if len(data) == 1:
@@ -483,6 +500,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         assert isinstance(operator, str)
         assert isinstance(right, ada.Expr)
         return operators[operator](left, right)
+
+    def in_operator(self, data: list[lark.Token]) -> str:
+        assert isinstance(data[0].value, str)
+        return data[0].value
+
+    def membership_choice_list(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def membership_choice(self, data: list[ada.ValueRange]) -> ada.Expr:
+        return data[0]
 
     def simple_expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
 
