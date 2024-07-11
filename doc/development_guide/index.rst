@@ -155,7 +155,8 @@ In addition, if the dependencies in ``devutils`` have changed, the lock file mus
 
 .. code:: console
 
-   $ poetry add --group=dev "./devutils[devel]"
+   $ pip install "./devutils[devel]"
+   $ poetry lock --no-update
 
 When building RecordFlux through ``make`` the ``poetry install`` command is executed to install any missing dependencies and set the versions of all the dependencies specified in ``pyproject.toml`` to the versions selected in ``poetry.lock``.
 
