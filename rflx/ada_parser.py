@@ -174,7 +174,11 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (4/2)
         subprogram_specification: \
-                                    function_specification
+                                    procedure_specification
+                                  | function_specification
+
+        # 6.1 (4.1/2)
+        procedure_specification:    "procedure" defining_program_unit_name parameter_profile
 
         # 6.1 (4.2/2)
         function_specification:     "function" defining_designator parameter_and_result_profile
@@ -184,6 +188,11 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (7)
         defining_program_unit_name: ( parent_unit_name "." )* defining_identifier
+
+        # 6.1 (12)
+        parameter_profile:          parameter_profile_formal_part
+
+        parameter_profile_formal_part: formal_part?
 
         # 6.1 (13/2)
         parameter_and_result_profile: \
@@ -200,7 +209,7 @@ ADA_GRAMMAR = lark.Lark(
                                     defining_identifier_list ":" mode subtype_mark
 
         # 6.1 (16)
-        mode:                       "in"? | "in" "out" | "out"
+        !mode:                       "in"? | "in" "out" | "out"
 
         # 6.4 (3)
         function_call: \
@@ -580,9 +589,19 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def subprogram_specification(
         self,
-        data: list[ada.FunctionSpecification],
-    ) -> ada.FunctionSpecification:
+        data: tuple[ada.SubprogramSpecification],
+    ) -> ada.SubprogramSpecification:
         return data[0]
+
+    def procedure_specification(
+        self,
+        data: tuple[ID, Optional[list[ada.Parameter]]],
+    ) -> ada.ProcedureSpecification:
+        identifier, parameters = data
+        return ada.ProcedureSpecification(
+            identifier=identifier,
+            parameters=parameters,
+        )
 
     def function_specification(
         self,
@@ -600,6 +619,20 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def defining_program_unit_name(self, data: list[ID]) -> ID:
         return reduce(lambda l, r: l * r, data)
+
+    def parameter_profile(
+        self,
+        data: tuple[Optional[list[ada.Parameter]]],
+    ) -> Optional[list[ada.Parameter]]:
+        return data[0]
+
+    def parameter_profile_formal_part(
+        self,
+        data: list[list[ada.Parameter]],
+    ) -> Optional[list[ada.Parameter]]:
+        if not data:
+            return None
+        return data[0]
 
     def parameter_and_result_profile(
         self,
@@ -635,7 +668,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def mode(self, data: list[lark.Token]) -> str:
         if not data:
             return "in"
-        assert False, f"mode: {data}"
+        if "in" in data:
+            if "out" in data:
+                return "in out"
+            return "in"
+        assert data == ["out"]
+        return "out"
 
     def function_call(
         self,
