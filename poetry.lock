@@ -1778,7 +1778,7 @@ files = [
 
 [[package]]
 name = "RecordFlux-devutils"
-version = "0.1.dev69+gcabe20a"
+version = "0.1.dev72+g7d5514c"
 description = "Linter configs and custom checkers"
 optional = false
 python-versions = ">=3.8"
