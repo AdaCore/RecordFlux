@@ -115,7 +115,7 @@ ADA_GRAMMAR = lark.Lark(
                                     "(" expression "," expression ("," expression)* ")"
 
         # 4.4 (2)
-        expression:                 relation (relation_operator relation)?
+        expression:                 relation (relation_operator relation)*
 
         !relation_operator:         "and" | "and then" | "or" | "or else"
 
@@ -429,31 +429,34 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
 
-        if len(data) == 1:
-            assert isinstance(data[0], ada.Expr)
-            return data[0]
-
-        operator: dict[str, type[ada.BoolAssExpr]] = {
+        operators: dict[str, type[ada.BoolAssExpr]] = {
             "and": ada.And,
             "and then": ada.AndThen,
             "or": ada.Or,
             "or else": ada.OrElse,
         }
-        assert isinstance(data[1], str)
+
         assert isinstance(data[0], ada.Expr)
-        assert isinstance(data[2], ada.Expr)
-        return operator[data[1]](data[0], data[2])
+
+        if len(data) == 1:
+            return data[0]
+
+        assert len(data) > 2
+        assert isinstance(data[1], str)
+
+        remainder = self.expression(data[2:])
+        operation = operators[data[1]]
+
+        terms = remainder.terms if isinstance(remainder, operation) else [remainder]
+        return operation(data[0], *terms)
 
     def relation_operator(self, data: list[lark.Token]) -> str:
         assert isinstance(data[0].value, str)
         return data[0].value
 
     def relation(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
-        if len(data) == 1:
-            assert isinstance(data[0], ada.Expr)
-            return data[0]
 
-        relations: dict[str, type[ada.Relation]] = {
+        operators: dict[str, type[ada.Relation]] = {
             "=": ada.Equal,
             "/=": ada.NotEqual,
             "<": ada.Less,
@@ -461,11 +464,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
             ">": ada.Greater,
             ">=": ada.GreaterEqual,
         }
+
+        if len(data) == 1:
+            assert isinstance(data[0], ada.Expr)
+            return data[0]
+
         left, operator, right = data
         assert isinstance(left, ada.Expr)
         assert isinstance(operator, str)
         assert isinstance(right, ada.Expr)
-        return relations[operator](left, right)
+        return operators[operator](left, right)
 
     def simple_expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
 
