@@ -93,6 +93,9 @@ ADA_GRAMMAR = lark.Lark(
         # 4.1 (4)
         prefix:                     name
 
+        # 4.1.3 (3)
+        selector_name:              identifier
+
         # 4.1.4 (2)
         attribute_reference:        prefix "'" attribute_designator
 
@@ -133,6 +136,7 @@ ADA_GRAMMAR = lark.Lark(
         primary: \
                                     true | false
                                   | numeric_literal | string_literal | aggregate
+                                  | function_call
                                   | name | "(" expression ")"
                                   | conditional_expression
 
@@ -197,6 +201,21 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (16)
         mode:                       "in"? | "in" "out" | "out"
+
+        # 6.4 (3)
+        function_call: \
+                                    prefix actual_parameter_part
+
+        # 6.4 (4)
+        actual_parameter_part: \
+                                    "(" parameter_association ("," parameter_association)* ")"
+
+        # 6.4 (5)
+        parameter_association: \
+                                    (selector_name "=>")? explicit_actual_parameter
+
+        # 6.4 (6)
+        explicit_actual_parameter:  expression
 
         # 6.8 (2/3)
         expression_function_declaration: \
@@ -450,7 +469,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def simple_expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
 
-        assert isinstance(data[0], ada.Expr)
+        assert isinstance(data[0], ada.Expr), data
 
         if len(data) == 1:
             return data[0]
@@ -609,6 +628,30 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         if not data:
             return "in"
         assert False, f"mode: {data}"
+
+    def function_call(
+        self,
+        data: tuple[ID, tuple[Optional[list[ada.Expr]], Optional[dict[ID, ada.Expr]]]],
+    ) -> ada.Call:
+        identifier, (arguments, named_arguments) = data
+        return ada.Call(identifier=identifier, arguments=arguments, named_arguments=named_arguments)
+
+    def actual_parameter_part(
+        self,
+        data: list[tuple[Optional[ID], ada.Expr]],
+    ) -> tuple[Optional[list[ada.Expr]], Optional[list[tuple[ID, ada.Expr]]]]:
+        arguments = [e for i, e in data if not i]
+        named_arguments = [(i, e) for i, e in data if i]
+        return arguments or None, named_arguments or None
+
+    def parameter_association(
+        self,
+        data: list[tuple[Optional[ID], ada.Expr]],
+    ) -> tuple[Optional[ID], ada.Expr]:
+        return data[0]
+
+    def explicit_actual_parameter(self, data: list[ada.Expr]) -> tuple[Optional[ID], ada.Expr]:
+        return None, data[0]
 
     def expression_function_declaration(
         self,
