@@ -83,9 +83,23 @@ ADA_GRAMMAR = lark.Lark(
         # 3.5.1 (4)
         modular_type_definition:    "mod" expression
 
+        # 3.11 (2)
+        declarative_part:           declarative_item*
+
+        # 3.11 (3)
+        declarative_item: \
+                                    basic_declarative_item | body
+
         # 3.11 (4/1)
         basic_declarative_item: \
                                     basic_declaration
+
+        # 3.11 (5)
+        body:                       proper_body
+
+        # 3.11 (6)
+        proper_body: \
+                                    subprogram_body
 
         # 4.1 (2/3)
         name:                       direct_name
@@ -177,6 +191,16 @@ ADA_GRAMMAR = lark.Lark(
         # 4.5.7 (4/3)
         condition:                  expression
 
+        # 5.1 (2/3)
+        sequence_of_statements:     statement
+
+        # 5.1 (3)
+        statement: \
+                                    simple_statement
+
+        # 5.1 (4/2)
+        simple_statement:           pragma_statement
+
         # 6.1 (2/3)
         subprogram_declaration: \
                                     subprogram_specification \
@@ -195,6 +219,9 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (4.2/2)
         function_specification:     "function" defining_designator parameter_and_result_profile
+
+        # 6.1 (5)
+        designator:                 ( parent_unit_name "." )* identifier
 
         # 6.1 (6)
         defining_designator:        defining_program_unit_name
@@ -223,6 +250,17 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (16)
         !mode:                       "in"? | "in" "out" | "out"
+
+        # 6.3 (2/3)
+        subprogram_body: \
+                                    subprogram_specification \
+                                        subprogram_body_aspect_specification "is" \
+                                        declarative_part \
+                                    "begin" \
+                                        handled_sequence_of_statements \
+                                    "end" designator ";"
+
+        subprogram_body_aspect_specification: aspect_specification?
 
         # 6.4 (3)
         function_call: \
@@ -270,14 +308,18 @@ ADA_GRAMMAR = lark.Lark(
 
         # 10.1.1 (3)
         compilation_unit: \
-                                    context_clause library_item /\0/
+                                    context_clause library_item
 
         # 10.1.1 (4)
         library_item:               "private"? library_unit_declaration
+                                  | library_unit_body
 
         # 10.1.1 (5)
         library_unit_declaration:   \
                                     package_declaration
+
+        # 10.1.1 (7)
+        library_unit_body:          package_body
 
         # 10.1.1 (8)
         parent_unit_name:           name
@@ -297,6 +339,19 @@ ADA_GRAMMAR = lark.Lark(
         # 10.1.2 (4.2/2)
         nonlimited_with_clause:     "private"? "with" name ("," name)* ";"
 
+        # 11.2 (2)
+        handled_sequence_of_statements: \
+                                    sequence_of_statements
+
+        # 12 (2/3)
+        package_body: \
+                                    "package" "body" defining_program_unit_name \
+                                    package_body_aspects "is" \
+                                    declarative_part \
+                                    "end" defining_program_unit_name ";"
+
+        package_body_aspects:       aspect_specification?
+
         # 13.1.1 (2/3)
         aspect_specification:       "with"  aspect_part ( "," aspect_part )*
 
@@ -308,6 +363,13 @@ ADA_GRAMMAR = lark.Lark(
         # 13.1.1 (4/3)
         aspect_definition:          expression
 
+        # Custom rules
+        pragma_statement:           "pragma" identifier \
+                                        pragma_arguments? \
+                                        ";"
+
+        file:                       compilation_unit* /\0/
+
         # Skip whitespace
         %import common.WS
         %ignore WS
@@ -315,12 +377,12 @@ ADA_GRAMMAR = lark.Lark(
         # Skip comments
         %ignore /--.*/
     """,
-    start="compilation_unit",
+    start="file",
     parser="lalr",
 )
 
 
-class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
+class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def identifier(self, data: list[lark.lexer.Token]) -> ID:
         return ID(data[0])
@@ -407,6 +469,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def modular_type_definition(self, data: list[ada.Expr]) -> ada.Declaration:
         return ada.ModularType(identifier="__INVALID__", modulus=data[0])
+
+    def declarative_part(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
+        return data
+
+    def declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
+        return data[0]
 
     def basic_declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
@@ -778,23 +846,26 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def compilation_unit(
         self,
-        data: tuple[list[ada.ContextItem], ada.PackageDeclaration],
-    ) -> ada.Unit:
-        package_declaration = data[1]
-        return ada.PackageUnit(
-            declaration_context=data[0],
-            declaration=package_declaration,
-            body_context=[],
-            body=ada.PackageBody(identifier=package_declaration.identifier),
-        )
+        data: tuple[list[ada.ContextItem], Union[ada.PackageDeclaration, ada.PackageBody]],
+    ) -> tuple[list[ada.ContextItem], Union[ada.PackageDeclaration, ada.PackageBody]]:
+        return (data[0], data[1])
 
-    def library_item(self, data: list[ada.PackageDeclaration]) -> ada.PackageDeclaration:
+    def library_item(
+        self,
+        data: list[Union[ada.PackageDeclaration, ada.PackageBody]],
+    ) -> Union[ada.PackageDeclaration, ada.PackageBody]:
         return data[0]
 
     def library_unit_declaration(
         self,
         data: list[ada.PackageDeclaration],
     ) -> ada.PackageDeclaration:
+        return data[0]
+
+    def library_unit_body(
+        self,
+        data: list[ada.PackageBody],
+    ) -> ada.PackageBody:
         return data[0]
 
     def parent_unit_name(self, data: list[ID]) -> ID:
@@ -808,6 +879,29 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
 
     def with_clause(self, data: list[ada.WithClause]) -> ada.WithClause:
         return data[0]
+
+    def package_body(
+        self,
+        data: tuple[
+            ID,
+            Optional[list[ada.Aspect]],
+            Optional[list[ada.Declaration]],
+            ID,
+        ],
+    ) -> ada.PackageBody:
+        identifier, aspects, declarations, end_identifier = data
+        assert identifier == end_identifier
+        return ada.PackageBody(
+            identifier=identifier,
+            declarations=declarations,
+            statements=None,
+            aspects=aspects,
+        )
+
+    def package_body_aspects(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
+        if len(data) > 0:
+            return data[0]
+        return []
 
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
@@ -848,6 +942,31 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def aspect_definition(self, data: list[ID]) -> Union[ID, ada.Expr]:
         return data[0]
 
+    def file(
+        self,
+        data: list[tuple[list[ada.ContextItem], Union[ada.PackageDeclaration, ada.PackageBody]]],
+    ) -> ada.PackageUnit:
+        data_len = len(data[:-1])
+        assert data_len in [1, 2], data
 
-def parse(text: str) -> ada.Unit:
+        declaration_context, declaration = data[0]
+        assert isinstance(declaration, ada.PackageDeclaration)
+
+        if data_len == 1:
+            body_context: list[ada.ContextItem] = []
+            body = ada.PackageBody(identifier=declaration.identifier)
+        elif data_len == 2:
+            body_context, tmp = data[1]
+            assert isinstance(tmp, ada.PackageBody)
+            body = tmp
+
+        return ada.PackageUnit(
+            declaration_context=declaration_context,
+            declaration=declaration,
+            body_context=body_context,
+            body=body,
+        )
+
+
+def parse(text: str) -> ada.PackageUnit:
     return TreeToAda().transform(ADA_GRAMMAR.parse(f"{text}\0"))
