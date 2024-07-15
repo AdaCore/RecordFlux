@@ -633,7 +633,7 @@ gnat_wave_compatibility:
     - image:recordflux
     - cpu:2
     - mem:4
-    - security_group:GitLabRunnerTasksExecDefaultSG
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
   script:
     - git fetch --unshallow
     - generic_anod_ci --continuous-builder-mode
