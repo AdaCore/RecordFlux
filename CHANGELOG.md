@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LLVM exception in addition to Apache-2.0 for generated code (eng/recordflux/RecordFlux#1671)
 - Improve suggestions when a package name is not correct (eng/recordflux/RecordFlux#1611)
 - Severities of error messages (eng/recordflux/RecordFlux#1698, eng/recordflux/RecordFlux#1685)
-- Improve implementation of `Field_First_Internal` function (eng/recordflux/RecordFlux#1707)
+- Improve implementation of `Field_First_Internal` function (eng/recordflux/RecordFlux#1707, eng/recordflux/RecordFlux#1706)
 - Cache directory from `$HOME/.cache/RecordFlux` to `$PWD/.rflx_cache` (eng/recordflux/RecordFlux#1723)
 
 ### Fixed

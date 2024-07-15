@@ -710,22 +710,35 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
+   function Field_First_Data (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean) return RFLX_Types.Bit_Index'Base is
+     (First)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, F_Data);
+
+   function Field_First_Extension (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean) return RFLX_Types.Bit_Index'Base is
+     (Field_First_Data (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, F_Data))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, F_Extension);
+
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Length : Test.Length; Extended : Boolean; Fld : Field) return RFLX_Types.Bit_Index'Base is
      ((case Fld is
           when F_Data =>
-             First,
+             Field_First_Data (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended),
           when F_Extension =>
-             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, F_Data) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, F_Data)))
+             Field_First_Extension (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Length, Extended, Fld),
      Post =>
-       True,
-     Subprogram_Variant =>
-       (Decreases =>
-         Fld);
+       True;
 
    pragma Warnings (On, "postcondition does not mention function result");
 

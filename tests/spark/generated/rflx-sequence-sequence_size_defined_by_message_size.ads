@@ -677,22 +677,35 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
+   function Field_First_Header (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Header);
+
+   function Field_First_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First + 8)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Vector);
+
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
      ((case Fld is
           when F_Header =>
-             First,
+             Field_First_Header (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_Vector =>
-             First + 8))
+             Field_First_Vector (Cursors, First, Verified_Last, Written_Last, Buffer)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld),
      Post =>
-       True,
-     Subprogram_Variant =>
-       (Decreases =>
-         Fld);
+       True;
 
    pragma Warnings (On, "postcondition does not mention function result");
 

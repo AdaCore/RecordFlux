@@ -626,24 +626,45 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
+   function Field_First_X_A (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_X_A);
+
+   function Field_First_X_B (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First + 32)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_X_B);
+
+   function Field_First_Y (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First + 64)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Y);
+
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
      ((case Fld is
           when F_X_A =>
-             First,
+             Field_First_X_A (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_X_B =>
-             First + 32,
+             Field_First_X_B (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_Y =>
-             First + 64))
+             Field_First_Y (Cursors, First, Verified_Last, Written_Last, Buffer)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld),
      Post =>
-       True,
-     Subprogram_Variant =>
-       (Decreases =>
-         Fld);
+       True;
 
    pragma Warnings (On, "postcondition does not mention function result");
 

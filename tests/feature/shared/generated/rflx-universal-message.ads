@@ -1305,52 +1305,107 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
+   function Field_First_Message_Type (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Message_Type);
+
+   function Field_First_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First + 8)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length);
+
+   function Field_First_Data (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     ((if
+          Well_Formed (Cursors (F_Length))
+          and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
+       then
+          First + 24
+       elsif
+          Well_Formed (Cursors (F_Message_Type))
+          and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
+       then
+          First + 8
+       else
+          RFLX_Types.Unreachable))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Data);
+
+   function Field_First_Option_Types (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First + 24)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Option_Types);
+
+   function Field_First_Options (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     ((if
+          Well_Formed (Cursors (F_Length))
+          and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
+       then
+          First + 24
+       elsif
+          Well_Formed (Cursors (F_Message_Type))
+          and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
+       then
+          First + 8
+       else
+          RFLX_Types.Unreachable))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Options);
+
+   function Field_First_Value (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First + 24)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Value);
+
+   function Field_First_Values (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First + 24)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Values);
+
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
      ((case Fld is
           when F_Message_Type =>
-             First,
+             Field_First_Message_Type (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_Length =>
-             First + 8,
+             Field_First_Length (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_Data =>
-             (if
-                 Well_Formed (Cursors (F_Length))
-                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
-              then
-                 First + 24
-              elsif
-                 Well_Formed (Cursors (F_Message_Type))
-                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
-              then
-                 First + 8
-              else
-                 RFLX_Types.Unreachable),
+             Field_First_Data (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_Option_Types =>
-             First + 24,
+             Field_First_Option_Types (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_Options =>
-             (if
-                 Well_Formed (Cursors (F_Length))
-                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
-              then
-                 First + 24
-              elsif
-                 Well_Formed (Cursors (F_Message_Type))
-                 and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Options))
-              then
-                 First + 8
-              else
-                 RFLX_Types.Unreachable),
-          when F_Value | F_Values =>
-             First + 24))
+             Field_First_Options (Cursors, First, Verified_Last, Written_Last, Buffer),
+          when F_Value =>
+             Field_First_Value (Cursors, First, Verified_Last, Written_Last, Buffer),
+          when F_Values =>
+             Field_First_Values (Cursors, First, Verified_Last, Written_Last, Buffer)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld),
      Post =>
-       True,
-     Subprogram_Variant =>
-       (Decreases =>
-         Fld);
+       True;
 
    pragma Warnings (On, "postcondition does not mention function result");
 

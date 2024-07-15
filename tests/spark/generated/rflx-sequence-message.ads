@@ -931,26 +931,55 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
+   function Field_First_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Length);
+
+   function Field_First_Integer_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (First + 8)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Integer_Vector);
+
+   function Field_First_Enumeration_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (Field_First_Integer_Vector (Cursors, First, Verified_Last, Written_Last, Buffer) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Integer_Vector))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Enumeration_Vector);
+
+   function Field_First_AV_Enumeration_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return RFLX_Types.Bit_Index'Base is
+     (Field_First_Integer_Vector (Cursors, First, Verified_Last, Written_Last, Buffer) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Integer_Vector) + 16)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_AV_Enumeration_Vector);
+
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
      ((case Fld is
           when F_Length =>
-             First,
+             Field_First_Length (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_Integer_Vector =>
-             First + 8,
+             Field_First_Integer_Vector (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_Enumeration_Vector =>
-             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Integer_Vector) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Integer_Vector),
+             Field_First_Enumeration_Vector (Cursors, First, Verified_Last, Written_Last, Buffer),
           when F_AV_Enumeration_Vector =>
-             Field_First_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Integer_Vector) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Integer_Vector) + 16))
+             Field_First_AV_Enumeration_Vector (Cursors, First, Verified_Last, Written_Last, Buffer)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, Fld),
      Post =>
-       True,
-     Subprogram_Variant =>
-       (Decreases =>
-         Fld);
+       True;
 
    pragma Warnings (On, "postcondition does not mention function result");
 

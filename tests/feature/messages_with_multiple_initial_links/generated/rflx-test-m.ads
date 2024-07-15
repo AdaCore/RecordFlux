@@ -560,32 +560,45 @@ private
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
+   function Field_First_F1 (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; P : Boolean) return RFLX_Types.Bit_Index'Base is
+     (First)
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer, P)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, P, F_F1);
+
+   function Field_First_F2 (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; P : Boolean) return RFLX_Types.Bit_Index'Base is
+     ((if
+          Well_Formed (Cursors (F_F1))
+          and then True
+       then
+          First + 8
+       elsif
+          True
+       then
+          First + 0
+       else
+          RFLX_Types.Unreachable))
+    with
+     Pre =>
+       Cursors_Invariant (Cursors, First, Verified_Last)
+       and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer, P)
+       and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, P, F_F2);
+
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; P : Boolean; Fld : Field) return RFLX_Types.Bit_Index'Base is
      ((case Fld is
           when F_F1 =>
-             First,
+             Field_First_F1 (Cursors, First, Verified_Last, Written_Last, Buffer, P),
           when F_F2 =>
-             (if
-                 Well_Formed (Cursors (F_F1))
-                 and then True
-              then
-                 First + 8
-              elsif
-                 True
-              then
-                 First + 0
-              else
-                 RFLX_Types.Unreachable)))
+             Field_First_F2 (Cursors, First, Verified_Last, Written_Last, Buffer, P)))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer, P)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, P, Fld),
      Post =>
-       True,
-     Subprogram_Variant =>
-       (Decreases =>
-         Fld);
+       True;
 
    pragma Warnings (On, "postcondition does not mention function result");
 
