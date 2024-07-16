@@ -72,11 +72,12 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.3.1 (2/3)
         object_declaration: \
-                                    defining_identifier_list ":" subtype_indication \
+                                    defining_identifier_list ":" constant_opt subtype_indication \
                                         object_declaration_expr \
                                     ";"
 
         object_declaration_expr:    (":=" expression)?
+        !constant_opt:              "constant"?
 
         # 3.3.1 (3)
         defining_identifier_list: \
@@ -517,18 +518,22 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def object_declaration(
         self,
-        data: tuple[list[ID], ID, Optional[ada.Expr]],
+        data: tuple[list[ID], bool, ID, Optional[ada.Expr]],
     ) -> ada.ObjectDeclaration:
         return ada.ObjectDeclaration(
             identifiers=data[0],
-            type_identifier=data[1],
-            expression=data[2],
+            type_identifier=data[2],
+            expression=data[3],
+            constant=data[1],
         )
 
     def object_declaration_expr(self, data: list[ada.Expr]) -> Optional[ada.Expr]:
         if not data:
             return None
         return data[0]
+
+    def constant_opt(self, data: list[lark.Token]) -> bool:
+        return len(data) > 0 and data[0] == "constant"
 
     def defining_identifier_list(self, data: list[ID]) -> list[ID]:
         return data

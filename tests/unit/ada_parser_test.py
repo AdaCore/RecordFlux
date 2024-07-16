@@ -333,6 +333,7 @@ from rflx import ada, ada_parser
                         identifiers=["X"],
                         type_identifier="T",
                         expression=ada.Call("F", [ada.Number(32)]),
+                        constant=True,
                     ),
                 ],
             ),
