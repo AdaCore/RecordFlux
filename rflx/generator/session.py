@@ -848,7 +848,12 @@ class FSMGenerator:
         specification = FunctionSpecification(
             "Uninitialized",
             "Boolean",
-            [Parameter(["Ctx" if composite_globals else "Unused_Ctx"], "Context")],
+            [
+                Parameter(
+                    ["Ctx" if composite_globals or self._allocator.required else "Unused_Ctx"],
+                    "Context",
+                ),
+            ],
         )
         return UnitPart(
             [
@@ -876,7 +881,7 @@ class FSMGenerator:
                                     [Variable("Ctx.P.Slots")],
                                 ),
                             ]
-                            if composite_globals and self._allocator.required
+                            if self._allocator.required
                             else []
                         ),
                     ),
