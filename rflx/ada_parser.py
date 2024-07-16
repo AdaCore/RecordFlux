@@ -56,9 +56,7 @@ ADA_GRAMMAR = lark.Lark(
         # 3.2.1 (3/3)
         full_type_declaration: \
                                     "type" defining_identifier "is" type_definition \
-                                        full_type_decl_aspects ";"
-
-        full_type_decl_aspects:     aspect_specification?
+                                        optional_aspect_specification ";"
 
         # 3.2.1 (4/2)
         type_definition: \
@@ -212,10 +210,7 @@ ADA_GRAMMAR = lark.Lark(
         # Function specifications is special-cased in unified_function_declaration
         subprogram_declaration: \
                                     subprogram_specification \
-                                    subprogram_declaration_aspects ";"
-
-        subprogram_declaration_aspects: \
-                                    aspect_specification?
+                                    optional_aspect_specification ";"
 
         # 6.1 (4/2)
         subprogram_specification: \
@@ -287,11 +282,10 @@ ADA_GRAMMAR = lark.Lark(
 
         # 7.1 (3/3)
         package_specification:      "package" defining_program_unit_name \
-                                    package_spec_aspects "is" \
+                                    optional_aspect_specification "is" \
                                     package_spec_declarations \
                                     "end" defining_program_unit_name
 
-        package_spec_aspects:       aspect_specification?
         package_spec_declarations:  basic_declarative_item*
 
         # 8.4 (2)
@@ -343,11 +337,9 @@ ADA_GRAMMAR = lark.Lark(
         # 12 (2/3)
         package_body: \
                                     "package" "body" defining_program_unit_name \
-                                    package_body_aspects "is" \
+                                    optional_aspect_specification "is" \
                                     declarative_part \
                                     "end" defining_program_unit_name ";"
-
-        package_body_aspects:       aspect_specification?
 
         # 13.1.1 (2/3)
         aspect_specification:       "with"  aspect_part ( "," aspect_part )*
@@ -501,11 +493,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 last=definition.last,
                 aspects=aspects,
             )
-
-    def full_type_decl_aspects(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
-        if len(data) == 0:
-            return []
-        return data[0]
 
     def type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
@@ -771,12 +758,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         specification, aspects = data
         return ada.SubprogramDeclaration(specification=specification, aspects=aspects)
 
-    def subprogram_declaration_aspects(
-        self,
-        data: list[list[ada.Aspect]],
-    ) -> Optional[list[ada.Aspect]]:
-        return data[0]
-
     def subprogram_specification(
         self,
         data: list[ada.ProcedureSpecification],
@@ -910,11 +891,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             aspects=aspects,
         )
 
-    def package_spec_aspects(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
-        if len(data) > 0:
-            return data[0]
-        return []
-
     def package_spec_declarations(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
         return data
 
@@ -987,11 +963,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             statements=None,
             aspects=aspects,
         )
-
-    def package_body_aspects(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
-        if len(data) > 0:
-            return data[0]
-        return []
 
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
