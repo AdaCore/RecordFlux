@@ -927,6 +927,11 @@ Exception transitions are currently also used for other cases.
 
 A local declaration must not hide a global declaration.
 
+The states where the actions include either ``Read`` or ``Write`` operations are referred to as **IO states**.
+See the sections `Read Attribute Statements`_ and `Write Attribute Statements`_ for more information about those operations.
+IO states cannot contain any declarations and they must not contain any other operations than channel IO.
+Each channel and each message can be read or written at most once in a given IO state.
+
 ..
     Types [§S-S-D-V-T]:
 
