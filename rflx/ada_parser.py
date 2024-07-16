@@ -8,7 +8,6 @@ import lark.grammar
 from rflx import ada
 from rflx.identifier import ID
 
-
 ADA_GRAMMAR = lark.Lark(
     r"""
         # 2.3 (2/2)
@@ -44,7 +43,7 @@ ADA_GRAMMAR = lark.Lark(
         basic_declaration: \
                                     type_declaration \
                                   | subprogram_declaration \
-                                  | expression_function_declaration \
+                                  | unified_function_declaration \
                                   | pragma
 
         # 3.1 (4)
@@ -89,18 +88,11 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.11 (3)
         declarative_item: \
-                                    basic_declarative_item | body
+                                    basic_declarative_item
 
         # 3.11 (4/1)
         basic_declarative_item: \
                                     basic_declaration
-
-        # 3.11 (5)
-        body:                       proper_body
-
-        # 3.11 (6)
-        proper_body: \
-                                    subprogram_body
 
         # 4.1 (2/3)
         name:                       direct_name
@@ -204,6 +196,7 @@ ADA_GRAMMAR = lark.Lark(
                                   | simple_return_statement
 
         # 6.1 (2/3)
+        # Function specifications is special-cased in unified_function_declaration
         subprogram_declaration: \
                                     subprogram_specification \
                                     subprogram_declaration_aspects ";"
@@ -214,7 +207,6 @@ ADA_GRAMMAR = lark.Lark(
         # 6.1 (4/2)
         subprogram_specification: \
                                     procedure_specification
-                                  | function_specification
 
         # 6.1 (4.1/2)
         procedure_specification:    "procedure" defining_program_unit_name parameter_profile
@@ -254,15 +246,7 @@ ADA_GRAMMAR = lark.Lark(
         !mode:                       "in"? | "in" "out" | "out"
 
         # 6.3 (2/3)
-        subprogram_body: \
-                                    subprogram_specification \
-                                        subprogram_body_aspect_specification "is" \
-                                        declarative_part \
-                                    "begin" \
-                                        handled_sequence_of_statements \
-                                    "end" designator ";"
-
-        subprogram_body_aspect_specification: aspect_specification?
+        # subprogram_body is special-cased in unified_function_declaration.
 
         # 6.4 (3)
         function_call: \
@@ -283,12 +267,7 @@ ADA_GRAMMAR = lark.Lark(
         simple_return_statement:    "return" expression? ";"
 
         # 6.8 (2/3)
-        expression_function_declaration: \
-                                    function_specification "is" \
-                                    "(" expression ")" \
-                                    expression_function_aspects ";"
-
-        expression_function_aspects:    aspect_specification?
+        # expression_function_declaration is special-cased in unified_function_declaration.
 
         # 7.1 (2)
         package_declaration:        package_specification ";"
@@ -375,6 +354,26 @@ ADA_GRAMMAR = lark.Lark(
 
         file:                       compilation_unit* /\0/
 
+        unified_function_declaration: \
+                                    function_specification \
+                                        ( function_declaration_part \
+                                        | function_body_part  \
+                                        | expression_function_part ) \
+                                    ";"
+
+        optional_aspect_specification: aspect_specification?
+
+        function_declaration_part: optional_aspect_specification
+
+        function_body_part:         optional_aspect_specification \
+                                    "is" \
+                                        declarative_part \
+                                    "begin" \
+                                        handled_sequence_of_statements \
+                                    "end" designator
+
+        expression_function_part:   /is\s*\(/ expression ")" optional_aspect_specification
+
         # Skip whitespace
         %import common.WS
         %ignore WS
@@ -385,6 +384,52 @@ ADA_GRAMMAR = lark.Lark(
     start="file",
     parser="lalr",
 )
+
+
+class FunctionPart:
+    def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
+        raise NotImplementedError
+
+
+class FunctionDeclPart(FunctionPart):
+    def __init__(self, aspects: Optional[list[ada.Aspect]]):
+        self.aspects = aspects
+
+    def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
+        return ada.SubprogramDeclaration(specification=specification, aspects=self.aspects)
+
+
+class FunctionBodyPart(FunctionPart):
+    def __init__(
+        self,
+        aspects: Optional[list[ada.Aspect]],
+        declarations: list[ada.Declaration],
+        statements: list[ada.Statement],
+    ):
+        self.aspects = aspects
+        self.declarations = declarations
+        self.statements = statements
+
+    def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
+        return ada.SubprogramBody(
+            specification=specification,
+            declarations=self.declarations,
+            statements=self.statements,
+            aspects=self.aspects,
+        )
+
+
+class ExpressionFunctionPart(FunctionPart):
+    def __init__(self, expression: ada.Expr, aspects: Optional[list[ada.Aspect]]):
+        self.expression = expression
+        self.aspects = aspects
+
+    def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
+        return ada.ExpressionFunctionDeclaration(
+            specification=specification,
+            expression=self.expression,
+            aspects=self.aspects,
+        )
 
 
 class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
@@ -483,12 +528,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0]
 
     def basic_declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
-        return data[0]
-
-    def body(self, data: list[ada.SubprogramBody]) -> ada.SubprogramBody:
-        return data[0]
-
-    def proper_body(self, data: list[ada.SubprogramBody]) -> ada.SubprogramBody:
         return data[0]
 
     def name(self, data: list[Union[ID, ada.Attribute]]) -> Union[ID, ada.Attribute]:
@@ -705,8 +744,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def subprogram_specification(
         self,
-        data: list[ada.SubprogramSpecification],
-    ) -> ada.SubprogramSpecification:
+        data: list[ada.ProcedureSpecification],
+    ) -> ada.ProcedureSpecification:
         return data[0]
 
     def procedure_specification(
@@ -794,31 +833,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert data == ["out"]
         return "out"
 
-    def subprogram_body(
-        self,
-        data: tuple[
-            ada.SubprogramSpecification,
-            Optional[list[ada.Aspect]],
-            list[ada.Declaration],
-            list[ada.Statement],
-            ID,
-        ],
-    ) -> ada.SubprogramBody:
-        specification, aspects, declarations, statements, designator = data
-        assert specification.identifier == designator
-        return ada.SubprogramBody(
-            specification=specification,
-            declarations=declarations,
-            statements=statements,
-            aspects=aspects,
-        )
-
-    def subprogram_body_aspect_specification(
-        self,
-        data: Optional[list[ada.Aspect]],
-    ) -> Optional[list[ada.Aspect]]:
-        return data
-
     def function_call(
         self,
         data: tuple[ID, tuple[Optional[list[ada.Expr]], Optional[dict[ID, ada.Expr]]]],
@@ -845,19 +859,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def simple_return_statement(self, data: list[ada.Expr]) -> ada.ReturnStatement:
         return ada.ReturnStatement(data[0] if data else None)
-
-    def expression_function_declaration(
-        self,
-        data: tuple[ada.FunctionSpecification, ada.Expr, Optional[list[ada.Aspect]]],
-    ) -> ada.ExpressionFunctionDeclaration:
-        return ada.ExpressionFunctionDeclaration(
-            specification=data[0],
-            expression=data[1],
-            aspects=data[2],
-        )
-
-    def expression_function_aspects(self, data: list[list[ada.Aspect]]) -> list[ada.Aspect]:
-        return data[0]
 
     def package_declaration(self, data: list[ada.PackageDeclaration]) -> ada.PackageDeclaration:
         return data[0]
@@ -995,6 +996,35 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def aspect_definition(self, data: list[Union[ID, ada.Expr]]) -> Union[ID, ada.Expr]:
         return data[0]
+
+    def optional_aspect_specification(
+        self,
+        data: list[list[ada.Aspect]],
+    ) -> Optional[list[ada.Aspect]]:
+        if len(data) == 0:
+            return None
+        return data[0]
+
+    def unified_function_declaration(
+        self,
+        data: tuple[ada.FunctionSpecification, FunctionPart],
+    ) -> ada.Declaration:
+        return data[1].declaration(data[0])
+
+    def function_declaration_part(self, data: list[Optional[list[ada.Aspect]]]) -> FunctionDeclPart:
+        return FunctionDeclPart(aspects=data[0])
+
+    def function_body_part(
+        self,
+        data: tuple[Optional[list[ada.Aspect]], list[ada.Declaration], list[ada.Statement]],
+    ) -> FunctionBodyPart:
+        return FunctionBodyPart(declarations=data[1], statements=data[2], aspects=data[0])
+
+    def expression_function_part(
+        self,
+        data: tuple[lark.Token, ada.Expr, Optional[list[ada.Aspect]]],
+    ) -> ExpressionFunctionPart:
+        return ExpressionFunctionPart(expression=data[1], aspects=data[2])
 
     def file(
         self,
