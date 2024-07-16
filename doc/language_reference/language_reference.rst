@@ -23,7 +23,7 @@ A simple variant of Backus-Naur Form is used to describe the syntax.
 To convey some semantic information regarding the usage of the non-terminal in a given context its name can be prefixed by an identifier when referencing it.
 Non-terminals with prefixes are equivalent to the respective non-terminals without the prefix.
 
-See the section :ref:`variable-declaration` for an example.
+See the section `Variable Declaration`_ for an example.
 
 Basic Elements
 ==============
@@ -208,7 +208,7 @@ Standard boolean expressions are used in then-clauses and refinements of message
 
 **Static Semantics**
 
-The semantics of the ``Valid_Checksum`` attribute is explained in the section :ref:`message-types`.
+The semantics of the ``Valid_Checksum`` attribute is explained in the section `Message Types`_.
 
 **Example**
 
@@ -422,8 +422,6 @@ Named arguments associate a parameter with an expression.
    named_argument: parameter_`name` "=>" `expression`
    named_argument_list: `named_argument`
                       : { "," `named_argument` }
-
-.. _message-types:
 
 Message Types
 =============
@@ -813,8 +811,6 @@ Variables and renamings can be globally declared (i.e. for the scope of the com
    session_declaration: ( `variable_declaration`
                       : | `renaming_declaration`
                       : ) ";"
-
-.. _variable-declaration:
 
 Variable Declaration
 ^^^^^^^^^^^^^^^^^^^^
