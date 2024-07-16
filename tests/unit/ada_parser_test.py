@@ -338,6 +338,21 @@ from rflx import ada, ada_parser
                 ],
             ),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration("P", declarations=[]),
+            body_context=[],
+            body=ada.PackageBody(
+                "P",
+                declarations=[
+                    ada.SubprogramBody(
+                        specification=ada.ProcedureSpecification("F", [ada.Parameter(["P"], "T")]),
+                        declarations=[],
+                        statements=[ada.PragmaStatement("Unreferenced", [ada.Variable("P")])],
+                    ),
+                ],
+            ),
+        ),
     ],
 )
 def test_roundtrip(unit: ada.Unit) -> None:

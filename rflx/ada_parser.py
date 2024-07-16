@@ -27,8 +27,10 @@ ADA_GRAMMAR = lark.Lark(
 
         # 2.8 (2)
         pragma:                     "pragma" identifier \
-                                        pragma_arguments? \
+                                        optional_pragma_arguments \
                                         ";"
+
+        optional_pragma_arguments:  pragma_arguments?
 
         pragma_arguments:           "(" \
                                         pragma_argument_association \
@@ -99,11 +101,18 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.11 (3)
         declarative_item: \
-                                    basic_declarative_item
+                                    basic_declarative_item | body
 
         # 3.11 (4/1)
         basic_declarative_item: \
                                     basic_declaration
+
+        # 3.11 (5)
+        body:                       proper_body
+
+        # 3.11 (5)
+        proper_body: \
+                                    subprogram_body
 
         # 4.1 (2/3)
         name:                       direct_name
@@ -254,7 +263,14 @@ ADA_GRAMMAR = lark.Lark(
         !mode:                       "in"? | "in" "out" | "out"
 
         # 6.3 (2/3)
-        # subprogram_body is special-cased in unified_function_declaration.
+        # function subprogram_body is special-cased in unified_function_declaration.
+        subprogram_body: \
+                                    procedure_specification \
+                                        optional_aspect_specification "is" \
+                                        declarative_part \
+                                    "begin" \
+                                        handled_sequence_of_statements \
+                                    "end" designator ";"
 
         # 6.4 (3)
         function_call: \
@@ -354,7 +370,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # Custom rules
         pragma_statement:           "pragma" identifier \
-                                        pragma_arguments? \
+                                        optional_pragma_arguments \
                                         ";"
 
         file:                       compilation_unit* /\0/
@@ -458,6 +474,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def pragma(self, data: tuple[ID, list[ada.Expr]]) -> ada.Pragma:
         return ada.Pragma(identifier=data[0], parameters=data[1])
 
+    def optional_pragma_arguments(self, data: list[list[ada.Expr]]) -> list[ada.Expr]:
+        if len(data) == 0:
+            return []
+        return data[0]
+
     def pragma_arguments(self, data: list[ada.Expr]) -> list[ada.Expr]:
         return data
 
@@ -550,6 +571,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0]
 
     def basic_declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
+        return data[0]
+
+    def body(self, data: list[ada.SubprogramBody]) -> ada.SubprogramBody:
+        return data[0]
+
+    def proper_body(self, data: list[ada.SubprogramBody]) -> ada.SubprogramBody:
         return data[0]
 
     def name(self, data: list[Union[ID, ada.Attribute]]) -> Union[ID, ada.Attribute]:
@@ -849,6 +876,22 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert data == ["out"]
         return "out"
 
+    def subprogram_body(
+        self,
+        data: tuple[
+            ada.ProcedureSpecification,
+            Optional[list[ada.Aspect]],
+            list[ada.Declaration],
+            list[ada.Statement],
+        ],
+    ) -> ada.SubprogramBody:
+        return ada.SubprogramBody(
+            specification=data[0],
+            declarations=data[2],
+            statements=data[3],
+            aspects=data[1],
+        )
+
     def function_call(
         self,
         data: tuple[ID, tuple[Optional[list[ada.Expr]], Optional[dict[ID, ada.Expr]]]],
@@ -1002,6 +1045,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def aspect_definition(self, data: list[Union[ID, ada.Expr]]) -> Union[ID, ada.Expr]:
         return data[0]
+
+    def pragma_statement(self, data: tuple[ID, list[ada.Expr]]) -> ada.Statement:
+        return ada.PragmaStatement(identifier=data[0], parameters=data[1])
 
     def optional_aspect_specification(
         self,
