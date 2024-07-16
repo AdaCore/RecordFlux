@@ -8,6 +8,7 @@ import lark.grammar
 from rflx import ada
 from rflx.identifier import ID
 
+
 ADA_GRAMMAR = lark.Lark(
     r"""
         # 2.3 (2/2)
@@ -192,7 +193,7 @@ ADA_GRAMMAR = lark.Lark(
         condition:                  expression
 
         # 5.1 (2/3)
-        sequence_of_statements:     statement
+        sequence_of_statements:     statement statement*
 
         # 5.1 (3)
         statement: \
@@ -200,6 +201,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 5.1 (4/2)
         simple_statement:           pragma_statement
+                                  | simple_return_statement
 
         # 6.1 (2/3)
         subprogram_declaration: \
@@ -276,6 +278,9 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.4 (6)
         explicit_actual_parameter:  expression
+
+        # 6.5 (2/2)
+        simple_return_statement:    "return" expression? ";"
 
         # 6.8 (2/3)
         expression_function_declaration: \
@@ -463,8 +468,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: tuple[ada.Number, ada.Number],
     ) -> ada.Declaration:
-        assert isinstance(data[0], ada.Number)
-        assert isinstance(data[1], ada.Number)
         return ada.RangeType(identifier="__INVALID__", first=data[0], last=data[1])
 
     def modular_type_definition(self, data: list[ada.Expr]) -> ada.Declaration:
@@ -473,13 +476,22 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def declarative_part(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
         return data
 
-    def declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
+    def declarative_item(
+        self,
+        data: list[Union[ada.Declaration, ada.SubprogramBody]],
+    ) -> Union[ada.Declaration, ada.SubprogramBody]:
         return data[0]
 
     def basic_declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
 
-    def name(self, data: list[ID]) -> ID:
+    def body(self, data: list[ada.SubprogramBody]) -> ada.SubprogramBody:
+        return data[0]
+
+    def proper_body(self, data: list[ada.SubprogramBody]) -> ada.SubprogramBody:
+        return data[0]
+
+    def name(self, data: list[Union[ID, ada.Attribute]]) -> Union[ID, ada.Attribute]:
         return data[0]
 
     def direct_name(self, data: list[ID]) -> ID:
@@ -488,7 +500,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def prefix(self, data: list[ID]) -> ID:
         return data[0]
 
-    def attribute_reference(self, data: tuple[ada.Expr, str]) -> ada.Attribute:
+    def attribute_reference(self, data: tuple[ID, str]) -> ada.Attribute:
         attributes: dict[str, type[ada.Attribute]] = {
             "Size": ada.Size,
             "Length": ada.Length,
@@ -508,16 +520,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         }
         return attributes[data[1]](data[0])
 
-    def attribute_designator(self, data: tuple[ID]) -> str:
+    def attribute_designator(self, data: list[ID]) -> str:
         return data[0].ada_str
 
     def aggregate(self, data: list[list[ada.Expr]]) -> ada.Aggregate:
         return ada.Aggregate(*data[0])
 
-    def array_aggregate(self, data: tuple[list[ID]]) -> list[ID]:
+    def array_aggregate(self, data: list[list[ada.Expr]]) -> list[ada.Expr]:
         return data[0]
 
-    def positional_array_aggregate(self, data: list[ID]) -> list[ID]:
+    def positional_array_aggregate(self, data: list[ada.Expr]) -> list[ada.Expr]:
         return data
 
     def expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
@@ -612,16 +624,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             return data[0]
         return ada.Pow(data[0], data[1])
 
-    def primary(self, data: list[ada.Expr]) -> ada.Expr:
+    def primary(self, data: list[Union[ada.Expr, ID]]) -> ada.Expr:
         # TODO(senier): How exactly do we distinguish ID and Variable?
         if isinstance(data[0], ID):
             return ada.Variable(data[0])
         return data[0]
 
-    def true(self, _: lark.Token) -> ada.Expr:
+    def true(self, _: list[lark.Token]) -> ada.Expr:
         return ada.TRUE
 
-    def false(self, _: lark.Token) -> ada.Expr:
+    def false(self, _: list[lark.Token]) -> ada.Expr:
         return ada.FALSE
 
     def relational_operator(self, data: list[lark.Token]) -> str:
@@ -669,6 +681,15 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def condition(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
 
+    def sequence_of_statements(self, data: list[ada.Statement]) -> list[ada.Statement]:
+        return data
+
+    def statement(self, data: list[ada.Statement]) -> ada.Statement:
+        return data[0]
+
+    def simple_statement(self, data: list[ada.Statement]) -> ada.Statement:
+        return data[0]
+
     def subprogram_declaration(
         self,
         data: tuple[ada.SubprogramSpecification, list[ada.Aspect]],
@@ -684,7 +705,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def subprogram_specification(
         self,
-        data: tuple[ada.SubprogramSpecification],
+        data: list[ada.SubprogramSpecification],
     ) -> ada.SubprogramSpecification:
         return data[0]
 
@@ -709,6 +730,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             parameters=parameters,
         )
 
+    def designator(self, data: list[ID]) -> ID:
+        return reduce(lambda l, r: l * r, data)
+
     def defining_designator(self, data: list[ID]) -> ID:
         return data[0]
 
@@ -717,7 +741,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def parameter_profile(
         self,
-        data: tuple[Optional[list[ada.Parameter]]],
+        data: list[Optional[list[ada.Parameter]]],
     ) -> Optional[list[ada.Parameter]]:
         return data[0]
 
@@ -770,6 +794,31 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert data == ["out"]
         return "out"
 
+    def subprogram_body(
+        self,
+        data: tuple[
+            ada.SubprogramSpecification,
+            Optional[list[ada.Aspect]],
+            list[ada.Declaration],
+            list[ada.Statement],
+            ID,
+        ],
+    ) -> ada.SubprogramBody:
+        specification, aspects, declarations, statements, designator = data
+        assert specification.identifier == designator
+        return ada.SubprogramBody(
+            specification=specification,
+            declarations=declarations,
+            statements=statements,
+            aspects=aspects,
+        )
+
+    def subprogram_body_aspect_specification(
+        self,
+        data: Optional[list[ada.Aspect]],
+    ) -> Optional[list[ada.Aspect]]:
+        return data
+
     def function_call(
         self,
         data: tuple[ID, tuple[Optional[list[ada.Expr]], Optional[dict[ID, ada.Expr]]]],
@@ -793,6 +842,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def explicit_actual_parameter(self, data: list[ada.Expr]) -> tuple[Optional[ID], ada.Expr]:
         return None, data[0]
+
+    def simple_return_statement(self, data: list[ada.Expr]) -> ada.ReturnStatement:
+        return ada.ReturnStatement(data[0] if data else None)
 
     def expression_function_declaration(
         self,
@@ -880,17 +932,19 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def with_clause(self, data: list[ada.WithClause]) -> ada.WithClause:
         return data[0]
 
+    def handled_sequence_of_statements(
+        self,
+        data: list[list[ada.Statement]],
+    ) -> list[ada.Statement]:
+        return data[0]
+
     def package_body(
         self,
-        data: tuple[
-            ID,
-            Optional[list[ada.Aspect]],
-            Optional[list[ada.Declaration]],
-            ID,
-        ],
+        data: tuple[ID, Optional[list[ada.Aspect]], Optional[list[ada.Declaration]], ID],
     ) -> ada.PackageBody:
         identifier, aspects, declarations, end_identifier = data
         assert identifier == end_identifier
+
         return ada.PackageBody(
             identifier=identifier,
             declarations=declarations,
@@ -939,7 +993,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def aspect_mark(self, data: list[ID]) -> ID:
         return data[0]
 
-    def aspect_definition(self, data: list[ID]) -> Union[ID, ada.Expr]:
+    def aspect_definition(self, data: list[Union[ID, ada.Expr]]) -> Union[ID, ada.Expr]:
         return data[0]
 
     def file(
