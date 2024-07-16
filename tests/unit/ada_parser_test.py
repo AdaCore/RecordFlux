@@ -329,6 +329,11 @@ from rflx import ada, ada_parser
                         declarations=[ada.Pragma("Unreferenced", [ada.Variable("X")])],
                         statements=[ada.ReturnStatement(ada.Variable("Y"))],
                     ),
+                    ada.ObjectDeclaration(
+                        identifiers=["X"],
+                        type_identifier="T",
+                        expression=ada.Call("F", [ada.Number(32)]),
+                    ),
                 ],
             ),
         ),

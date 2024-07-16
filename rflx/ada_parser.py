@@ -42,6 +42,7 @@ ADA_GRAMMAR = lark.Lark(
         # 3.1 (3/3)
         basic_declaration: \
                                     type_declaration \
+                                  | object_declaration \
                                   | subprogram_declaration \
                                   | unified_function_declaration \
                                   | pragma
@@ -63,8 +64,19 @@ ADA_GRAMMAR = lark.Lark(
         type_definition: \
                                     integer_type_definition
 
+        # 3.2.2 (3/2)
+        subtype_indication:         subtype_mark
+
         # 3.2.2 (4)
         subtype_mark:               name
+
+        # 3.3.1 (2/3)
+        object_declaration: \
+                                    defining_identifier_list ":" subtype_indication \
+                                        object_declaration_expr \
+                                    ";"
+
+        object_declaration_expr:    (":=" expression)?
 
         # 3.3.1 (3)
         defining_identifier_list: \
@@ -497,7 +509,25 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
 
+    def subtype_indication(self, data: list[ID]) -> ID:
+        return data[0]
+
     def subtype_mark(self, data: list[ID]) -> ID:
+        return data[0]
+
+    def object_declaration(
+        self,
+        data: tuple[list[ID], ID, Optional[ada.Expr]],
+    ) -> ada.ObjectDeclaration:
+        return ada.ObjectDeclaration(
+            identifiers=data[0],
+            type_identifier=data[1],
+            expression=data[2],
+        )
+
+    def object_declaration_expr(self, data: list[ada.Expr]) -> Optional[ada.Expr]:
+        if not data:
+            return None
         return data[0]
 
     def defining_identifier_list(self, data: list[ID]) -> list[ID]:
