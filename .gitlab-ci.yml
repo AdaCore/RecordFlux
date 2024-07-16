@@ -139,7 +139,10 @@ anod_main:
     - generic_anod_ci
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
-    - anod build recordflux $ACI_TRACK_QUALIFIER
+    # Build recordflux with the latest available dependencies (but not
+    # necessarily from the same day) to avoid getting blocked by transient
+    # issues with GNAT etc.
+    - anod build recordflux $ACI_TRACK_QUALIFIER --latest
     - eval `anod printenv recordflux`
     - rflx --version
     - cp -r /tmp/it/wave/log .
@@ -159,7 +162,10 @@ anod_doc:
     - generic_anod_ci
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
-    - anod build recordflux-doc $ACI_TRACK_QUALIFIER
+    # Build recordflux with the latest available dependencies (but not
+    # necessarily from the same day) to avoid getting blocked by transient
+    # issues with GNAT etc.
+    - anod build recordflux-doc $ACI_TRACK_QUALIFIER --latest
     - cp -r /tmp/it/wave/log .
   artifacts:
     paths:
