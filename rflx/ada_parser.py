@@ -195,10 +195,11 @@ ADA_GRAMMAR = lark.Lark(
         # 4.5.7 (3/3)
         if_expression: \
                                     "if" condition "then" expression \
-                                    if_expr_elsif \
+                                    if_expr_elsifs \
                                     if_expr_else
 
-        if_expr_elsif:              ("elsif" condition "then" expression)*
+        if_expr_elsifs:             if_expr_elsif*
+        if_expr_elsif:              ("elsif" condition "then" expression)
         if_expr_else:               ("else" expression)?
 
         # 4.5.7 (4/3)
@@ -209,11 +210,28 @@ ADA_GRAMMAR = lark.Lark(
 
         # 5.1 (3)
         statement: \
-                                    simple_statement
+                                    simple_statement | compound_statement
 
         # 5.1 (4/2)
         simple_statement:           pragma_statement
                                   | simple_return_statement
+
+        # 5.1 (4/2)
+        compound_statement: \
+                                    if_statement
+
+        # 5.3 (2)
+        if_statement: \
+                                    "if" condition "then" \
+                                        sequence_of_statements \
+                                    optional_elsifs \
+                                    optional_else \
+                                    "end" "if" ";"
+
+        optional_elsifs:            elsif*
+        elsif:                      "elsif" condition "then" sequence_of_statements
+        optional_else:              elsebranch?
+        elsebranch:                 "else" sequence_of_statements
 
         # 6.1 (2/3)
         # Function specifications is special-cased in unified_function_declaration
@@ -753,12 +771,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             else_expression=else_expression,
         )
 
-    def if_expr_elsif(
+    def if_expr_elsifs(
         self,
         data: list[tuple[ada.Expr, ada.Expr]],
-    ) -> Optional[list[tuple[ada.Expr, ada.Expr]]]:
-        if not data:
-            return None
+    ) -> list[tuple[ada.Expr, ada.Expr]]:
+        return data
+
+    def if_expr_elsif(
+        self,
+        data: tuple[ada.Expr, ada.Expr],
+    ) -> tuple[ada.Expr, ada.Expr]:
         return data
 
     def if_expr_else(self, data: list[ada.Expr]) -> Optional[ada.Expr]:
@@ -776,6 +798,51 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0]
 
     def simple_statement(self, data: list[ada.Statement]) -> ada.Statement:
+        return data[0]
+
+    def compound_statement(self, data: list[ada.Statement]) -> ada.Statement:
+        return data[0]
+
+    def if_statement(
+        self,
+        data: tuple[
+            ada.Expr,
+            list[ada.Statement],
+            Optional[list[tuple[ada.Expr, list[ada.Statement]]]],
+            Optional[list[ada.Statement]],
+        ],
+    ) -> ada.IfStatement:
+        condition_statements = [(data[0], data[1])]
+        if data[2]:
+            condition_statements.extend(data[2])
+        return ada.IfStatement(condition_statements=condition_statements, else_statements=data[3])
+
+    def optional_elsifs(
+        self,
+        data: list[tuple[ada.Expr, list[ada.Statement]]],
+    ) -> Optional[list[tuple[ada.Expr, list[ada.Statement]]]]:
+        if not data:
+            return None
+        return data
+
+    def elsif(
+        self,
+        data: tuple[ada.Expr, list[ada.Statement]],
+    ) -> tuple[ada.Expr, list[ada.Statement]]:
+        return data
+
+    def optional_else(
+        self,
+        data: list[list[ada.Statement]],
+    ) -> Optional[list[ada.Statement]]:
+        if not data:
+            return None
+        return data[0]
+
+    def elsebranch(
+        self,
+        data: tuple[list[ada.Statement]],
+    ) -> list[ada.Statement]:
         return data[0]
 
     def subprogram_declaration(
