@@ -5,28 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.22.0] - 2024-07-17
 
 ### Added
 
 - Support for FSF GNAT 14.1 (eng/recordflux/RecordFlux#1679)
+- New error message format (eng/recordflux/RecordFlux#1582)
 - CLI flag `--legacy-errors` to restore previous error message format (eng/recordflux/RecordFlux#1685)
 - Info message for skipped verifications (eng/recordflux/RecordFlux#1723)
 - Possibility to use externally defined IO buffers in state machines (eng/recordflux/RecordFlux#1496)
 
 ### Changed
 
-- Display message fields involved in a cycle (eng/recordflux/RecordFlux#256)
+- Display message fields involved in a cycle (AdaCore/RecordFlux#256, eng/recordflux/RecordFlux#256)
 - Software license from AGPL-3.0 to Apache-2.0 (eng/recordflux/RecordFlux#1671)
 - LLVM exception in addition to Apache-2.0 for generated code (eng/recordflux/RecordFlux#1671)
-- Improve suggestions when a package name is not correct (eng/recordflux/RecordFlux#1611)
-- Severities of error messages (eng/recordflux/RecordFlux#1698, eng/recordflux/RecordFlux#1685)
-- Improve implementation of `Field_First_Internal` function (eng/recordflux/RecordFlux#1707, eng/recordflux/RecordFlux#1706)
 - Cache directory from `$HOME/.cache/RecordFlux` to `$PWD/.rflx_cache` (eng/recordflux/RecordFlux#1723)
+- Severities of error messages (eng/recordflux/RecordFlux#1698, eng/recordflux/RecordFlux#1685, eng/recordflux/RecordFlux#1701)
+- Improve suggestions when a package name is not correct (eng/recordflux/RecordFlux#1611)
+- Improve several error messages (eng/recordflux/RecordFlux#1638, eng/recordflux/RecordFlux#1648, eng/recordflux/RecordFlux#1660, eng/recordflux/RecordFlux#1661, eng/recordflux/RecordFlux#1662, eng/recordflux/RecordFlux#1663, eng/recordflux/RecordFlux#1681, eng/recordflux/RecordFlux#1703, eng/recordflux/RecordFlux#1708, eng/recordflux/RecordFlux#1713, eng/recordflux/RecordFlux#1720, eng/recordflux/RecordFlux#1721)
+- Improve implementation of `Field_First_Internal` function (eng/recordflux/RecordFlux#1707, eng/recordflux/RecordFlux#1706)
 
 ### Fixed
 
-- Bug box for aspect without expression  (eng/recordflux/RecordFlux#1555, eng/recordflux/RecordFlux#1559)
+- Bug box for aspect without expression (eng/recordflux/RecordFlux#1555, eng/recordflux/RecordFlux#1559)
 - Bug box for division and modulo by 0 in numeric expression (eng/recordflux/RecordFlux#1556)
 - Bug box for unary - preceding unary + in expression (eng/recordflux/RecordFlux#1558)
 - Bug box for missing operand (eng/recordflux/RecordFlux#1560)
@@ -538,7 +540,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2019-05-14
 
-[Unreleased]: https://github.com/AdaCore/RecordFlux/compare/v0.21.0...HEAD
+[0.22.0]: https://github.com/AdaCore/RecordFlux/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/AdaCore/RecordFlux/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/AdaCore/RecordFlux/compare/v0.19.0...0.20.0
 [0.19.0]: https://github.com/AdaCore/RecordFlux/compare/v0.18.0...v0.19.0
