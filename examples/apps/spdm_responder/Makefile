@@ -1,6 +1,4 @@
-SHELL := /bin/bash
-
-BUILD_DIR = build
+include ../../../Makefile.common
 
 GENERATED = generated/rflx-spdm.ads
 
@@ -73,7 +71,7 @@ libriscv64: $(BUILD_DIR)/riscv64/lib/libspdm.a
 
 .PHONY: prove
 
-prove: $(GENERATED)
+prove: $(GNATPROVE_CACHE_DIR) $(GENERATED)
 	gnatprove -P build_lib.gpr -j0 -XTARGET=riscv64 -u responder
 	gnatprove -P build.gpr -j0 -XTARGET=riscv64 -u main
 
