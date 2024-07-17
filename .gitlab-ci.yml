@@ -154,7 +154,7 @@ changelog:
         git diff --name-only origin/main..HEAD | sed -n '/CHANGELOG.md/{:a $q0; n; ba}; ${s/.*/No entry added to CHANGELOG.md/p;q1}';
       fi
 
-anod_main:
+anod_build_and_test:
   services:
     - image:recordflux
     - cpu:16
@@ -163,19 +163,27 @@ anod_main:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
+    # Setup anod
     - generic_anod_ci
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
-    # Build recordflux with the latest available dependencies (but not
+    # Build and test recordflux with the latest available dependencies (but not
     # necessarily from the same day) to avoid getting blocked by transient
     # issues with GNAT etc.
     - anod build recordflux $ACI_TRACK_QUALIFIER --latest
-    - eval `anod printenv recordflux`
-    - rflx --version
-    - cp -r /tmp/it/wave/log .
+    # Execute RecordFlux
+    - (eval `anod printenv recordflux` && rflx --version)
+    # Test with anod
+    - anod test recordflux $ACI_TRACK_QUALIFIER --latest
+    # Convert the testsuite results and fail the job if there were test failures
+    - testsuite_reports
+    # Move logs so that they can be stored as artifacts
+    - cp -r $ANOD_DEFAULT_SANDBOX_DIR/log .
   artifacts:
     paths:
       - log/*
+      - __results-recordflux_test/*
+    when: always
 
 anod_doc:
   services:
@@ -186,6 +194,7 @@ anod_doc:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
+    # Setup anod
     - generic_anod_ci
     - cat /tmp/ci_env.sh
     - . /tmp/ci_env.sh
@@ -193,10 +202,12 @@ anod_doc:
     # necessarily from the same day) to avoid getting blocked by transient
     # issues with GNAT etc.
     - anod build recordflux-doc $ACI_TRACK_QUALIFIER --latest
-    - cp -r /tmp/it/wave/log .
+     # Move logs so that they can be stored as artifacts
+    - cp -r $ANOD_DEFAULT_SANDBOX_DIR/log .
   artifacts:
     paths:
       - log/*
+    when: always
 
 commit_messages:
   extends: .testing
