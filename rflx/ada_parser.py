@@ -647,19 +647,19 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             "or else": ada.OrElse,
         }
 
-        assert isinstance(data[0], ada.Expr)
+        assert isinstance(data[-1], ada.Expr)
 
         if len(data) == 1:
-            return data[0]
+            return data[-1]
 
         assert len(data) > 2
-        assert isinstance(data[1], str)
+        assert isinstance(data[-2], str)
 
-        remainder = self.expression(data[2:])
-        operation = operators[data[1]]
+        left = self.expression(data[:-2])
+        operation = operators[data[-2]]
 
-        terms = remainder.terms if isinstance(remainder, operation) else [remainder]
-        return operation(data[0], *terms)
+        terms = left.terms if isinstance(left, operation) else [left]
+        return operation(*terms, data[-1])
 
     def relation_operator(self, data: list[lark.Token]) -> str:
         assert isinstance(data[0].value, str)
@@ -699,28 +699,28 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def simple_expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
 
-        assert isinstance(data[0], ada.Expr), data
+        assert isinstance(data[-1], ada.Expr), data
 
         if len(data) == 1:
-            return data[0]
+            return data[-1]
 
-        assert len(data) > 2
-        assert isinstance(data[1], str)
+        assert len(data) > 2, data
+        assert isinstance(data[-2], str)
 
-        if data[1] == "-":
-            return ada.Sub(data[0], self.simple_expression(data[2:]))
+        left = self.simple_expression(data[:-2])
 
-        remainder = self.simple_expression(data[2:])
+        if data[-2] == "-":
+            return ada.Sub(left, data[-1])
 
-        if data[1] == "+":
-            terms = remainder.terms if isinstance(remainder, ada.Add) else [remainder]
-            return ada.Add(data[0], *terms)
+        if data[-2] == "+":
+            terms = left.terms if isinstance(left, ada.Add) else [left]
+            return ada.Add(*terms, data[-1])
 
-        if data[1] == "&":
-            terms = remainder.terms if isinstance(remainder, ada.Concatenation) else [remainder]
-            return ada.Concatenation(data[0], *terms)
+        if data[-2] == "&":
+            terms = left.terms if isinstance(left, ada.Concatenation) else [left]
+            return ada.Concatenation(*terms, data[-1])
 
-        raise NotImplementedError(f"simple expression with operator {data[1]}")
+        raise NotImplementedError(f"simple expression with operator {data[:-2]}")
 
     def term(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]

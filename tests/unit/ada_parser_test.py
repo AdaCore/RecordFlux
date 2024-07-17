@@ -1,3 +1,4 @@
+import textwrap
 import pytest
 
 from rflx import ada, ada_parser
@@ -404,9 +405,111 @@ from rflx import ada, ada_parser
             body_context=[],
             body=ada.PackageBody("P"),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.ExpressionFunctionDeclaration(
+                        specification=ada.FunctionSpecification(
+                            identifier="Fits_Into_Upper",
+                            return_type="Boolean",
+                            parameters=[
+                                ada.Parameter(["V"], "U64"),
+                                ada.Parameter(["Bits", "Lower"], "Natural"),
+                            ],
+                        ),
+                        expression=ada.IfExpr(
+                            condition_expressions=[
+                                (
+                                    ada.Less(ada.Variable("Bits"), ada.Size("U64")),
+                                    ada.LessEqual(
+                                        ada.Variable("V"),
+                                        ada.Sub(
+                                            ada.Pow(ada.Number(2), ada.Variable("Bits")),
+                                            ada.Pow(ada.Number(2), ada.Variable("Lower")),
+                                        ),
+                                    ),
+                                ),
+                                (
+                                    ada.AndThen(
+                                        ada.Greater(ada.Variable("Lower"), ada.Number(0)),
+                                        ada.Less(ada.Variable("Lower"), ada.Size("U64")),
+                                    ),
+                                    ada.LessEqual(
+                                        ada.Variable("V"),
+                                        ada.Sub(
+                                            ada.Last("U64"),
+                                            ada.Add(
+                                                ada.Pow(ada.Number(2), ada.Variable("Lower")),
+                                                ada.Number(1),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ],
+                        ),
+                        aspects=[ada.Postcondition(ada.TRUE)],
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
-def test_roundtrip(unit: ada.Unit) -> None:
+def test_roundtrip_model(unit: ada.Unit) -> None:
     result = ada_parser.parse(unit.ads + unit.adb)
     assert result.ads == unit.ads
     assert result.adb == unit.adb
+
+
+@pytest.mark.parametrize(
+    ("data"),
+    [
+        """\
+        package P
+        is
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           function F (P : Boolean) return Natural is
+             (if P then 0 else 42);
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           pragma Assert (if X > 5 then True else False);
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           function Fits_Into_Upper (V : U64; Bits, Lower : Natural) return Boolean is
+             (if
+                  Bits < U64'Size
+               then
+                  V <= 2**Bits - 2**Lower
+               elsif
+                  Lower > 0
+                  and then Lower < U64'Size
+               then
+                  V <= U64'Last - 2**Lower + 1);
+
+        end P;
+        """,
+    ],
+)
+def test_roundtrip_text(data: str) -> None:
+    data = textwrap.dedent(data)
+    result = ada_parser.parse(data)
+    assert result.ads + result.adb == data
