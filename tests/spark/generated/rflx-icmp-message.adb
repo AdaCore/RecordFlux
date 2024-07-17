@@ -77,7 +77,7 @@ is
    end Data;
 
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Tag =>
              Invalid (Ctx.Cursors (F_Code_Destination_Unreachable))
              and Invalid (Ctx.Cursors (F_Code_Redirect))
@@ -110,7 +110,7 @@ is
           when F_Receive_Timestamp =>
              Invalid (Ctx.Cursors (F_Transmit_Timestamp)),
           when F_Transmit_Timestamp =>
-             True));
+             True);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -211,12 +211,12 @@ is
                Valid_Value (Fld, Value)
                and then Field_Condition (Ctx, Fld, Value)
             then
-               pragma Assert ((if
+               pragma Assert (if
                                   Fld = F_Data
                                   or Fld = F_Sequence_Number
                                   or Fld = F_Transmit_Timestamp
                                then
-                                  Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
+                                  Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0);
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
                Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);

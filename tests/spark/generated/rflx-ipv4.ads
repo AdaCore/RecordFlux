@@ -167,32 +167,32 @@ is
      (Val < 2**8);
 
    function Valid_Protocol (Val : Protocol) return Boolean is
-     ((if Val.Known then True else Valid_Protocol (Val.Raw) and Val.Raw not in 1 | 17));
+     (if Val.Known then True else Valid_Protocol (Val.Raw) and Val.Raw not in 1 | 17);
 
    function To_Base_Integer (Enum : RFLX.IPv4.Protocol_Enum) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when P_ICMP =>
              1,
           when P_UDP =>
-             17));
+             17);
 
    function To_Actual (Enum : Protocol_Enum) return RFLX.IPv4.Protocol is
      ((True, Enum));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Protocol is
-     ((case Val is
+     (case Val is
           when 1 =>
              (True, P_ICMP),
           when 17 =>
              (True, P_UDP),
           when others =>
-             (False, Val)))
+             (False, Val))
     with
      Pre =>
        Valid_Protocol (Val);
 
    function To_Base_Integer (Val : RFLX.IPv4.Protocol) return RFLX.RFLX_Types.Base_Integer is
-     ((if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw));
+     (if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw);
 
    type Header_Checksum is range 0 .. 2**16 - 1 with
      Size =>
@@ -235,22 +235,22 @@ is
      (Val in 0 | 2);
 
    function To_Base_Integer (Enum : RFLX.IPv4.Option_Class) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when Control =>
              0,
           when Debugging_And_Measurement =>
-             2));
+             2);
 
    pragma Warnings (Off, "unreachable branch");
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Option_Class is
-     ((case Val is
+     (case Val is
           when 0 =>
              Control,
           when 2 =>
              Debugging_And_Measurement,
           when others =>
-             RFLX.IPv4.Option_Class'Last))
+             RFLX.IPv4.Option_Class'Last)
     with
      Pre =>
        Valid_Option_Class (Val);

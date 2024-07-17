@@ -61,18 +61,18 @@ is
      (Val in 0 | 1 | 2);
 
    function To_Base_Integer (Enum : RFLX.Sequence.Enumeration) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when Zero =>
              0,
           when One =>
              1,
           when Two =>
-             2));
+             2);
 
    pragma Warnings (Off, "unreachable branch");
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Enumeration is
-     ((case Val is
+     (case Val is
           when 0 =>
              Zero,
           when 1 =>
@@ -80,7 +80,7 @@ is
           when 2 =>
              Two,
           when others =>
-             RFLX.Sequence.Enumeration'Last))
+             RFLX.Sequence.Enumeration'Last)
     with
      Pre =>
        Valid_Enumeration (Val);
@@ -106,22 +106,22 @@ is
      (Val < 2**8);
 
    function Valid_AV_Enumeration (Val : AV_Enumeration) return Boolean is
-     ((if Val.Known then True else Valid_AV_Enumeration (Val.Raw) and Val.Raw not in 0 | 1 | 2));
+     (if Val.Known then True else Valid_AV_Enumeration (Val.Raw) and Val.Raw not in 0 | 1 | 2);
 
    function To_Base_Integer (Enum : RFLX.Sequence.AV_Enumeration_Enum) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when AV_Zero =>
              0,
           when AV_One =>
              1,
           when AV_Two =>
-             2));
+             2);
 
    function To_Actual (Enum : AV_Enumeration_Enum) return RFLX.Sequence.AV_Enumeration is
      ((True, Enum));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.AV_Enumeration is
-     ((case Val is
+     (case Val is
           when 0 =>
              (True, AV_Zero),
           when 1 =>
@@ -129,12 +129,12 @@ is
           when 2 =>
              (True, AV_Two),
           when others =>
-             (False, Val)))
+             (False, Val))
     with
      Pre =>
        Valid_AV_Enumeration (Val);
 
    function To_Base_Integer (Val : RFLX.Sequence.AV_Enumeration) return RFLX.RFLX_Types.Base_Integer is
-     ((if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw));
+     (if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw);
 
 end RFLX.Sequence;

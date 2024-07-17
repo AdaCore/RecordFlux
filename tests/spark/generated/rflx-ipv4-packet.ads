@@ -1481,7 +1481,7 @@ private
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Version =>
              True,
           when F_IHL =>
@@ -1531,7 +1531,7 @@ private
               and then True),
           when F_Payload =>
              (Well_Formed (Cursors (F_Options))
-              and then True)))
+              and then True))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1546,7 +1546,7 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Length'Base is
-     ((case Fld is
+     (case Fld is
           when F_Version | F_IHL =>
              4,
           when F_DSCP =>
@@ -1568,7 +1568,7 @@ private
           when F_Options =>
              (RFLX_Types.Bit_Length (Cursors (F_IHL).Value) - 5) * 32,
           when F_Payload =>
-             RFLX_Types.Bit_Length (Cursors (F_Total_Length).Value) * 8 + RFLX_Types.Bit_Length (Cursors (F_IHL).Value) * (-32)))
+             RFLX_Types.Bit_Length (Cursors (F_Total_Length).Value) * 8 + RFLX_Types.Bit_Length (Cursors (F_IHL).Value) * (-32))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1724,7 +1724,7 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Payload);
 
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Index'Base is
-     ((case Fld is
+     (case Fld is
           when F_Version =>
              Field_First_Version (Cursors, First, Verified_Last, Written_Last),
           when F_IHL =>
@@ -1758,7 +1758,7 @@ private
           when F_Options =>
              Field_First_Options (Cursors, First, Verified_Last, Written_Last),
           when F_Payload =>
-             Field_First_Payload (Cursors, First, Verified_Last, Written_Last)))
+             Field_First_Payload (Cursors, First, Verified_Last, Written_Last))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1939,7 +1939,7 @@ private
      (Ctx.Written_Last);
 
    function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Version =>
              RFLX.IPv4.Valid_Version (Val),
           when F_IHL =>
@@ -1965,10 +1965,10 @@ private
           when F_Source | F_Destination =>
              RFLX.IPv4.Valid_Address (Val),
           when F_Options | F_Payload =>
-             True));
+             True);
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Version | F_IHL | F_DSCP | F_ECN =>
              True,
           when F_Total_Length =>
@@ -1978,7 +1978,7 @@ private
           when F_Flag_R =>
              not To_Actual (Val),
           when F_Flag_DF | F_Flag_MF | F_Fragment_Offset | F_TTL | F_Protocol | F_Header_Checksum | F_Source | F_Destination | F_Options | F_Payload =>
-             True));
+             True);
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));

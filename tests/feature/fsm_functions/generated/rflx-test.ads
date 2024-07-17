@@ -28,22 +28,22 @@ is
      (Val in 0 | 1);
 
    function To_Base_Integer (Enum : RFLX.Test.Result) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when M_Valid =>
              0,
           when M_Invalid =>
-             1));
+             1);
 
    pragma Warnings (Off, "unreachable branch");
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Result is
-     ((case Val is
+     (case Val is
           when 0 =>
              M_Valid,
           when 1 =>
              M_Invalid,
           when others =>
-             RFLX.Test.Result'Last))
+             RFLX.Test.Result'Last)
     with
      Pre =>
        Valid_Result (Val);

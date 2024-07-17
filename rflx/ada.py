@@ -980,7 +980,7 @@ class QualifiedExpr(Expr):
     def _update_str(self) -> None:
         operand = (
             str(self.expression)
-            if isinstance(self.expression, (Aggregate, NamedAggregate))
+            if isinstance(self.expression, (Aggregate, NamedAggregate, IfExpr))
             else f"({self.expression})"
         )
         self._str = intern(f"{self.type_identifier.ada_str}'{operand}")
@@ -1958,9 +1958,15 @@ class PragmaStatement(Statement):
         parameters = ""
         if self.pragma_parameters:
             parameters = ", ".join(map(str, self.pragma_parameters))
-            parameters = (
-                " (" + indent_next(str(parameters), len(str(self.identifier.ada_str)) + 9) + ")"
-            )
+            parameters = indent_next(str(parameters), len(str(self.identifier.ada_str)) + 9)
+            if (
+                self.identifier.ada_str == "Assert"
+                and len(self.pragma_parameters) == 1
+                and isinstance(self.pragma_parameters[0], (IfExpr, CaseExpr))
+            ):
+                parameters = f" {parameters}"
+            else:
+                parameters = f" ({parameters})"
         return f"pragma {self.identifier.ada_str}{parameters};"
 
 
@@ -2328,7 +2334,10 @@ class ExpressionFunctionDeclaration(Subprogram):
 
     def __str__(self) -> str:
         aspects = f"\n{aspect_specification(self.aspects)}" if self.aspects else ""
-        return f"{self.specification} is\n  ({indent_next(str(self.expression), 3)}){aspects};"
+        expression = indent_next(str(self.expression), 3)
+        if not isinstance(self.expression, (IfExpr, CaseExpr)):
+            expression = f"({expression})"
+        return f"{self.specification} is\n  {expression}{aspects};"
 
 
 class GenericProcedureInstantiation(Subprogram):
@@ -2405,7 +2414,14 @@ class Pragma(Declaration, ContextItem):
         parameters = ""
         if self.pragma_parameters:
             parameters = ", ".join(map(str, self.pragma_parameters))
-            parameters = f" ({parameters})"
+            if (
+                self.identifier.ada_str == "Assert"
+                and len(self.pragma_parameters) == 1
+                and isinstance(self.pragma_parameters[0], (IfExpr, CaseExpr))
+            ):
+                parameters = f" {parameters}"
+            else:
+                parameters = f" ({parameters})"
         return f"pragma {self.identifier.ada_str}{parameters};"
 
 

@@ -133,7 +133,7 @@ is
                Valid_Value (Fld, Value)
                and then Field_Condition (Ctx, Fld)
             then
-               pragma Assert ((if Fld = F_Data or Fld = F_Extension then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
+               pragma Assert (if Fld = F_Data or Fld = F_Extension then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0);
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
                Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);

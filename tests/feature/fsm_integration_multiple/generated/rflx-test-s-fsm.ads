@@ -139,21 +139,21 @@ private
      (Ctx.P.Next_State);
 
    function Needs_Data (Ctx : Context; Chan : Channel) return Boolean is
-     ((case Chan is
+     (case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Start =>
                     True,
                  when others =>
-                    False)));
+                    False));
 
    function Write_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length is
-     ((case Chan is
+     (case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Start =>
                     Universal.Message.Buffer_Length (Ctx.P.M_Ctx),
                  when others =>
-                    RFLX_Types.Unreachable)));
+                    RFLX_Types.Unreachable));
 
 end RFLX.Test.S.FSM;

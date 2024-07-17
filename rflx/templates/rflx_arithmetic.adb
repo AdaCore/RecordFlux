@@ -52,7 +52,7 @@ is
    function Mask_Upper (V : U64; Mask : Natural) return U64
    is
    begin
-      return V and (2 ** Mask - 1);
+      return V and 2 ** Mask - 1;
    end Mask_Upper;
 
    function Add (A : U64; B : U64; Total_Bits, Lower_Bits : Natural) return U64

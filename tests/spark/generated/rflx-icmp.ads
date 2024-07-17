@@ -28,7 +28,7 @@ is
      (Val in 0 | 8 | 3 | 11 | 12 | 4 | 5 | 13 | 14 | 15 | 16);
 
    function To_Base_Integer (Enum : RFLX.ICMP.Tag) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when Echo_Reply =>
              0,
           when Echo_Request =>
@@ -50,12 +50,12 @@ is
           when Information_Request =>
              15,
           when Information_Reply =>
-             16));
+             16);
 
    pragma Warnings (Off, "unreachable branch");
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Tag is
-     ((case Val is
+     (case Val is
           when 0 =>
              Echo_Reply,
           when 8 =>
@@ -79,7 +79,7 @@ is
           when 16 =>
              Information_Reply,
           when others =>
-             RFLX.ICMP.Tag'Last))
+             RFLX.ICMP.Tag'Last)
     with
      Pre =>
        Valid_Tag (Val);
@@ -95,7 +95,7 @@ is
      (Val in 0 | 1 | 2 | 3 | 4 | 5);
 
    function To_Base_Integer (Enum : RFLX.ICMP.Code_Destination_Unreachable) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when Net_Unreachable =>
              0,
           when Host_Unreachable =>
@@ -107,12 +107,12 @@ is
           when Fragmentation_Needed_DF_Set =>
              4,
           when Source_Route_Failed =>
-             5));
+             5);
 
    pragma Warnings (Off, "unreachable branch");
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Code_Destination_Unreachable is
-     ((case Val is
+     (case Val is
           when 0 =>
              Net_Unreachable,
           when 1 =>
@@ -126,7 +126,7 @@ is
           when 5 =>
              Source_Route_Failed,
           when others =>
-             RFLX.ICMP.Code_Destination_Unreachable'Last))
+             RFLX.ICMP.Code_Destination_Unreachable'Last)
     with
      Pre =>
        Valid_Code_Destination_Unreachable (Val);
@@ -142,22 +142,22 @@ is
      (Val in 0 | 1);
 
    function To_Base_Integer (Enum : RFLX.ICMP.Code_Time_Exceeded) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when TTL_Exceeded =>
              0,
           when Fragment_Reassembly_Time_Exceeded =>
-             1));
+             1);
 
    pragma Warnings (Off, "unreachable branch");
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Code_Time_Exceeded is
-     ((case Val is
+     (case Val is
           when 0 =>
              TTL_Exceeded,
           when 1 =>
              Fragment_Reassembly_Time_Exceeded,
           when others =>
-             RFLX.ICMP.Code_Time_Exceeded'Last))
+             RFLX.ICMP.Code_Time_Exceeded'Last)
     with
      Pre =>
        Valid_Code_Time_Exceeded (Val);
@@ -173,7 +173,7 @@ is
      (Val in 0 | 1 | 2 | 3);
 
    function To_Base_Integer (Enum : RFLX.ICMP.Code_Redirect) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when Redirect_for_Network =>
              0,
           when Redirect_for_Host =>
@@ -181,12 +181,12 @@ is
           when Redirect_for_Service_Network =>
              2,
           when Redirect_for_Service_Host =>
-             3));
+             3);
 
    pragma Warnings (Off, "unreachable branch");
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Code_Redirect is
-     ((case Val is
+     (case Val is
           when 0 =>
              Redirect_for_Network,
           when 1 =>
@@ -196,7 +196,7 @@ is
           when 3 =>
              Redirect_for_Service_Host,
           when others =>
-             RFLX.ICMP.Code_Redirect'Last))
+             RFLX.ICMP.Code_Redirect'Last)
     with
      Pre =>
        Valid_Code_Redirect (Val);

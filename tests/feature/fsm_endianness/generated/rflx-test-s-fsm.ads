@@ -176,7 +176,7 @@ private
      (Ctx.P.Next_State);
 
    function Has_Data (Ctx : Context; Chan : Channel) return Boolean is
-     ((case Chan is
+     (case Chan is
           when C_I =>
              False,
           when C_O =>
@@ -188,10 +188,10 @@ private
                     Messages.Msg.Well_Formed_Message (Ctx.P.Out_Msg2_Ctx)
                     and Messages.Msg.Byte_Size (Ctx.P.Out_Msg2_Ctx) > 0,
                  when others =>
-                    False)));
+                    False));
 
    function Read_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length is
-     ((case Chan is
+     (case Chan is
           when C_I =>
              RFLX_Types.Unreachable,
           when C_O =>
@@ -201,10 +201,10 @@ private
                  when S_Reply2 =>
                     Messages.Msg.Byte_Size (Ctx.P.Out_Msg2_Ctx),
                  when others =>
-                    RFLX_Types.Unreachable)));
+                    RFLX_Types.Unreachable));
 
    function Needs_Data (Ctx : Context; Chan : Channel) return Boolean is
-     ((case Chan is
+     (case Chan is
           when C_I =>
              (case Ctx.P.Next_State is
                  when S_Start | S_Read2 =>
@@ -212,10 +212,10 @@ private
                  when others =>
                     False),
           when C_O =>
-             False));
+             False);
 
    function Write_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length is
-     ((case Chan is
+     (case Chan is
           when C_I =>
              (case Ctx.P.Next_State is
                  when S_Start =>
@@ -225,6 +225,6 @@ private
                  when others =>
                     RFLX_Types.Unreachable),
           when C_O =>
-             0));
+             0);
 
 end RFLX.Test.S.FSM;

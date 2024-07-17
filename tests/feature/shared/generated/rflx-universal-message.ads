@@ -1205,7 +1205,7 @@ private
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Message_Type =>
              True,
           when F_Length =>
@@ -1232,7 +1232,7 @@ private
                         and then RFLX_Types.Base_Integer (Cursors (F_Length).Value) = Universal.Value'Size / 8)),
           when F_Values =>
              (Valid (Cursors (F_Length))
-              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values)))))
+              and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1247,7 +1247,7 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Length'Base is
-     ((case Fld is
+     (case Fld is
           when F_Message_Type =>
              8,
           when F_Length =>
@@ -1283,7 +1283,7 @@ private
           when F_Value =>
              8,
           when F_Values =>
-             RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8))
+             RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1319,7 +1319,7 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Length);
 
    function Field_First_Data (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     ((if
+     (if
           Well_Formed (Cursors (F_Length))
           and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Data))
        then
@@ -1330,7 +1330,7 @@ private
        then
           First + 8
        else
-          RFLX_Types.Unreachable))
+          RFLX_Types.Unreachable)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1346,7 +1346,7 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Option_Types);
 
    function Field_First_Options (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     ((if
+     (if
           Well_Formed (Cursors (F_Length))
           and then RFLX_Types.Base_Integer (Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Options))
        then
@@ -1357,7 +1357,7 @@ private
        then
           First + 8
        else
-          RFLX_Types.Unreachable))
+          RFLX_Types.Unreachable)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1381,7 +1381,7 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Values);
 
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Index'Base is
-     ((case Fld is
+     (case Fld is
           when F_Message_Type =>
              Field_First_Message_Type (Cursors, First, Verified_Last, Written_Last),
           when F_Length =>
@@ -1395,7 +1395,7 @@ private
           when F_Value =>
              Field_First_Value (Cursors, First, Verified_Last, Written_Last),
           when F_Values =>
-             Field_First_Values (Cursors, First, Verified_Last, Written_Last)))
+             Field_First_Values (Cursors, First, Verified_Last, Written_Last))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1546,7 +1546,7 @@ private
      (Ctx.Written_Last);
 
    function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Message_Type =>
              RFLX.Universal.Valid_Message_Type (Val),
           when F_Length =>
@@ -1556,10 +1556,10 @@ private
           when F_Value =>
              RFLX.Universal.Valid_Value (Val),
           when F_Values =>
-             True));
+             True);
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Message_Type =>
              Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
              or else Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Null))
@@ -1575,7 +1575,7 @@ private
                       and then Val = Universal.Value'Size / 8)
              or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.Universal.MT_Values)),
           when F_Data | F_Option_Types | F_Options | F_Value | F_Values =>
-             True));
+             True);
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));
@@ -1646,7 +1646,7 @@ private
      (To_Actual (Ctx.Cursors (F_Value).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     ((if
+     (if
           Fld = F_Data
           and then RFLX_Types.Bit_Length (Ctx.Cursors (F_Message_Type).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.Universal.MT_Unconstrained_Data))
        then
@@ -1657,7 +1657,7 @@ private
        then
           Size <= Available_Space (Ctx, Fld)
        else
-          Size = Field_Size (Ctx, Fld)))
+          Size = Field_Size (Ctx, Fld))
     with
      Pre =>
        RFLX.Universal.Message.Valid_Next (Ctx, Fld);

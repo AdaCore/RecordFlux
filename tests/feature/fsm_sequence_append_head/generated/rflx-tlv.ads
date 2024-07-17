@@ -28,22 +28,22 @@ is
      (Val in 1 | 3);
 
    function To_Base_Integer (Enum : RFLX.TLV.Tag) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when Msg_Data =>
              1,
           when Msg_Error =>
-             3));
+             3);
 
    pragma Warnings (Off, "unreachable branch");
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.TLV.Tag is
-     ((case Val is
+     (case Val is
           when 1 =>
              Msg_Data,
           when 3 =>
              Msg_Error,
           when others =>
-             RFLX.TLV.Tag'Last))
+             RFLX.TLV.Tag'Last)
     with
      Pre =>
        Valid_Tag (Val);

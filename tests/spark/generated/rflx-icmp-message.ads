@@ -1281,7 +1281,7 @@ private
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Tag =>
              True,
           when F_Code_Destination_Unreachable =>
@@ -1356,7 +1356,7 @@ private
               and then True),
           when F_Transmit_Timestamp =>
              (Valid (Cursors (F_Receive_Timestamp))
-              and then True)))
+              and then True))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1371,7 +1371,7 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Length'Base is
-     ((case Fld is
+     (case Fld is
           when F_Tag | F_Code_Destination_Unreachable | F_Code_Redirect | F_Code_Time_Exceeded | F_Code_Zero =>
              8,
           when F_Checksum =>
@@ -1412,7 +1412,7 @@ private
               else
                  RFLX_Types.Unreachable),
           when F_Receive_Timestamp | F_Transmit_Timestamp =>
-             32))
+             32)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1560,7 +1560,7 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Transmit_Timestamp);
 
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Index'Base is
-     ((case Fld is
+     (case Fld is
           when F_Tag =>
              Field_First_Tag (Cursors, First, Verified_Last, Written_Last),
           when F_Code_Destination_Unreachable =>
@@ -1592,7 +1592,7 @@ private
           when F_Receive_Timestamp =>
              Field_First_Receive_Timestamp (Cursors, First, Verified_Last, Written_Last),
           when F_Transmit_Timestamp =>
-             Field_First_Transmit_Timestamp (Cursors, First, Verified_Last, Written_Last)))
+             Field_First_Transmit_Timestamp (Cursors, First, Verified_Last, Written_Last))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1813,7 +1813,7 @@ private
      (Ctx.Written_Last);
 
    function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Tag =>
              RFLX.ICMP.Valid_Tag (Val),
           when F_Code_Destination_Unreachable =>
@@ -1843,10 +1843,10 @@ private
           when F_Data =>
              True,
           when F_Receive_Timestamp | F_Transmit_Timestamp =>
-             RFLX.ICMP.Valid_Timestamp (Val)));
+             RFLX.ICMP.Valid_Timestamp (Val));
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Tag =>
              Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Destination_Unreachable))
              or else Val = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Redirect))
@@ -1883,7 +1883,7 @@ private
              or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Msg))
              or else RFLX_Types.Base_Integer (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.ICMP.Timestamp_Reply)),
           when F_Unused_24 | F_Originate_Timestamp | F_Data | F_Receive_Timestamp | F_Transmit_Timestamp =>
-             True));
+             True);
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));
@@ -1986,14 +1986,14 @@ private
      (To_Actual (Ctx.Cursors (F_Transmit_Timestamp).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     ((if
+     (if
           Fld = F_Data
           and then (RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.ICMP.Echo_Reply))
                     or else RFLX_Types.Bit_Length (Ctx.Cursors (F_Tag).Value) = RFLX_Types.Bit_Length (To_Base_Integer (RFLX.ICMP.Echo_Request)))
        then
           Size <= Available_Space (Ctx, Fld)
        else
-          Size = Field_Size (Ctx, Fld)))
+          Size = Field_Size (Ctx, Fld))
     with
      Pre =>
        RFLX.ICMP.Message.Valid_Next (Ctx, Fld);

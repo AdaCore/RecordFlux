@@ -44,7 +44,7 @@ is
      (Val in 0 | 1 | 2 | 4 | 8 | 16 | 32);
 
    function To_Base_Integer (Enum : RFLX.Messages.Enum_T) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when Enum_A =>
              0,
           when Enum_B =>
@@ -58,12 +58,12 @@ is
           when Enum_F =>
              16,
           when Enum_G =>
-             32));
+             32);
 
    pragma Warnings (Off, "unreachable branch");
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Messages.Enum_T is
-     ((case Val is
+     (case Val is
           when 0 =>
              Enum_A,
           when 1 =>
@@ -79,7 +79,7 @@ is
           when 32 =>
              Enum_G,
           when others =>
-             RFLX.Messages.Enum_T'Last))
+             RFLX.Messages.Enum_T'Last)
     with
      Pre =>
        Valid_Enum_T (Val);

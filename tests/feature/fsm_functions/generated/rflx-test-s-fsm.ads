@@ -166,40 +166,40 @@ private
      (Ctx.P.Next_State);
 
    function Has_Data (Ctx : Context; Chan : Channel) return Boolean is
-     ((case Chan is
+     (case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Reply | S_Reply_2 | S_Reply_3 =>
                     Test.Definite_Message.Well_Formed_Message (Ctx.P.Definite_Message_Ctx)
                     and Test.Definite_Message.Byte_Size (Ctx.P.Definite_Message_Ctx) > 0,
                  when others =>
-                    False)));
+                    False));
 
    function Read_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length is
-     ((case Chan is
+     (case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Reply | S_Reply_2 | S_Reply_3 =>
                     Test.Definite_Message.Byte_Size (Ctx.P.Definite_Message_Ctx),
                  when others =>
-                    RFLX_Types.Unreachable)));
+                    RFLX_Types.Unreachable));
 
    function Needs_Data (Ctx : Context; Chan : Channel) return Boolean is
-     ((case Chan is
+     (case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Start =>
                     True,
                  when others =>
-                    False)));
+                    False));
 
    function Write_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length is
-     ((case Chan is
+     (case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Start =>
                     Universal.Message.Buffer_Length (Ctx.P.Message_Ctx),
                  when others =>
-                    RFLX_Types.Unreachable)));
+                    RFLX_Types.Unreachable));
 
 end RFLX.Test.S.FSM;

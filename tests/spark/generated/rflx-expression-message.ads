@@ -579,9 +579,9 @@ private
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Payload =>
-             True))
+             True)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -596,9 +596,9 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Length'Base is
-     ((case Fld is
+     (case Fld is
           when F_Payload =>
-             16))
+             16)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -626,9 +626,9 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, F_Payload);
 
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr; Fld : Field) return RFLX_Types.Bit_Index'Base is
-     ((case Fld is
+     (case Fld is
           when F_Payload =>
-             Field_First_Payload (Cursors, First, Verified_Last, Written_Last, Buffer)))
+             Field_First_Payload (Cursors, First, Verified_Last, Written_Last, Buffer))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -731,9 +731,9 @@ private
      (True);
 
    function Field_Condition (Ctx : Context; Fld : Field; Agg : RFLX_Types.Bytes) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Payload =>
-             Agg = (1, 2)));
+             Agg = (1, 2));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));

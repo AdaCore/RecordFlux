@@ -77,13 +77,13 @@ is
    end Data;
 
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Option_Type =>
              Invalid (Ctx.Cursors (F_Length)),
           when F_Length =>
              Invalid (Ctx.Cursors (F_Data)),
           when F_Data =>
-             True));
+             True);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -170,7 +170,7 @@ is
                Valid_Value (Fld, Value)
                and then Field_Condition (Ctx, Fld, Value)
             then
-               pragma Assert ((if Fld = F_Data or Fld = F_Option_Type then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
+               pragma Assert (if Fld = F_Data or Fld = F_Option_Type then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0);
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
                Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);

@@ -787,7 +787,7 @@ private
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Destination =>
              True,
           when F_Source =>
@@ -811,7 +811,7 @@ private
              (Valid (Cursors (F_Type_Length))
               and then Cursors (F_Type_Length).Value <= 1500)
              or (Valid (Cursors (F_Type_Length))
-                 and then Cursors (F_Type_Length).Value >= 1536)))
+                 and then Cursors (F_Type_Length).Value >= 1536))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -826,7 +826,7 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Length'Base is
-     ((case Fld is
+     (case Fld is
           when F_Destination | F_Source =>
              48,
           when F_Type_Length_TPID | F_TPID | F_TCI | F_Type_Length =>
@@ -843,7 +843,7 @@ private
               then
                  RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Type_Length).Last)
               else
-                 RFLX_Types.Unreachable)))
+                 RFLX_Types.Unreachable))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -903,7 +903,7 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_TCI);
 
    function Field_First_Type_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     ((if
+     (if
           Well_Formed (Cursors (F_TCI))
           and then True
        then
@@ -914,7 +914,7 @@ private
        then
           First + 96
        else
-          RFLX_Types.Unreachable))
+          RFLX_Types.Unreachable)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -930,7 +930,7 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Payload);
 
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Fld : Field) return RFLX_Types.Bit_Index'Base is
-     ((case Fld is
+     (case Fld is
           when F_Destination =>
              Field_First_Destination (Cursors, First, Verified_Last, Written_Last),
           when F_Source =>
@@ -944,7 +944,7 @@ private
           when F_Type_Length =>
              Field_First_Type_Length (Cursors, First, Verified_Last, Written_Last),
           when F_Payload =>
-             Field_First_Payload (Cursors, First, Verified_Last, Written_Last)))
+             Field_First_Payload (Cursors, First, Verified_Last, Written_Last))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -1095,7 +1095,7 @@ private
      (Ctx.Written_Last);
 
    function Valid_Value (Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Destination | F_Source =>
              RFLX.Ethernet.Valid_Address (Val),
           when F_Type_Length_TPID =>
@@ -1107,10 +1107,10 @@ private
           when F_Type_Length =>
              RFLX.Ethernet.Valid_Type_Length (Val),
           when F_Payload =>
-             True));
+             True);
 
    function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length := 0) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Destination | F_Source | F_Type_Length_TPID | F_TPID | F_TCI =>
              True,
           when F_Type_Length =>
@@ -1118,7 +1118,7 @@ private
              or else Val >= 1536,
           when F_Payload =>
              RFLX_Types.Base_Integer (Size) / 8 >= 46
-             and then RFLX_Types.Base_Integer (Size) / 8 <= 1500));
+             and then RFLX_Types.Base_Integer (Size) / 8 <= 1500);
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Fld));
@@ -1190,13 +1190,13 @@ private
      (To_Actual (Ctx.Cursors (F_Type_Length).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     ((if
+     (if
           Fld = F_Payload
           and then Ctx.Cursors (F_Type_Length).Value >= 1536
        then
           Size <= Available_Space (Ctx, Fld)
        else
-          Size = Field_Size (Ctx, Fld)))
+          Size = Field_Size (Ctx, Fld))
     with
      Pre =>
        RFLX.Ethernet.Frame.Valid_Next (Ctx, Fld);

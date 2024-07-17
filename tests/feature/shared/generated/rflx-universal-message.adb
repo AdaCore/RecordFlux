@@ -77,7 +77,7 @@ is
    end Data;
 
    function Invalid_Successor (Ctx : Context; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Message_Type =>
              Invalid (Ctx.Cursors (F_Data))
              and Invalid (Ctx.Cursors (F_Length))
@@ -89,7 +89,7 @@ is
              and Invalid (Ctx.Cursors (F_Value))
              and Invalid (Ctx.Cursors (F_Values)),
           when F_Data | F_Option_Types | F_Options | F_Value | F_Values =>
-             True));
+             True);
 
    function Sufficient_Buffer_Length (Ctx : Context; Fld : Field) return Boolean is
      (Ctx.Buffer /= null
@@ -178,7 +178,7 @@ is
                Valid_Value (Fld, Value)
                and then Field_Condition (Ctx, Fld, Value)
             then
-               pragma Assert ((if
+               pragma Assert (if
                                   Fld = F_Data
                                   or Fld = F_Message_Type
                                   or Fld = F_Option_Types
@@ -186,7 +186,7 @@ is
                                   or Fld = F_Value
                                   or Fld = F_Values
                                then
-                                  Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
+                                  Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0);
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
                Ctx.Verified_Last := ((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size;
                pragma Assert (Field_Last (Ctx, Fld) <= Ctx.Verified_Last);

@@ -666,12 +666,12 @@ private
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Valid_Next_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Length : Test.Length; Extended : Boolean; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Data =>
              True,
           when F_Extension =>
              (Well_Formed (Cursors (F_Data))
-              and then Extended)))
+              and then Extended))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -686,9 +686,9 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_Size_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Length : Test.Length; Extended : Boolean; Fld : Field) return RFLX_Types.Bit_Length'Base is
-     ((case Fld is
+     (case Fld is
           when F_Data | F_Extension =>
-             RFLX_Types.Bit_Length (Length) * 8))
+             RFLX_Types.Bit_Length (Length) * 8)
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -724,11 +724,11 @@ private
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Length, Extended, F_Extension);
 
    function Field_First_Internal (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Length : Test.Length; Extended : Boolean; Fld : Field) return RFLX_Types.Bit_Index'Base is
-     ((case Fld is
+     (case Fld is
           when F_Data =>
              Field_First_Data (Cursors, First, Verified_Last, Written_Last, Length, Extended),
           when F_Extension =>
-             Field_First_Extension (Cursors, First, Verified_Last, Written_Last, Length, Extended)))
+             Field_First_Extension (Cursors, First, Verified_Last, Written_Last, Length, Extended))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -837,12 +837,12 @@ private
      (True);
 
    function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
-     ((case Fld is
+     (case Fld is
           when F_Data =>
              Ctx.Extended
              or else not Ctx.Extended,
           when F_Extension =>
-             True));
+             True);
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Length, Ctx.Extended, Fld));

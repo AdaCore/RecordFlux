@@ -151,22 +151,22 @@ private
      (Ctx.P.Next_State);
 
    function Has_Data (Ctx : Context; Chan : Channel) return Boolean is
-     ((case Chan is
+     (case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Reply_1 | S_Reply_2 =>
                     TLV.Message.Well_Formed_Message (Ctx.P.Message_Ctx)
                     and TLV.Message.Byte_Size (Ctx.P.Message_Ctx) > 0,
                  when others =>
-                    False)));
+                    False));
 
    function Read_Buffer_Size (Ctx : Context; Chan : Channel) return RFLX_Types.Length is
-     ((case Chan is
+     (case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Reply_1 | S_Reply_2 =>
                     TLV.Message.Byte_Size (Ctx.P.Message_Ctx),
                  when others =>
-                    RFLX_Types.Unreachable)));
+                    RFLX_Types.Unreachable));
 
 end RFLX.Test.S.FSM;

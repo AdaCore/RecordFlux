@@ -38,22 +38,22 @@ is
      (Val < 2**8);
 
    function Valid_Priority (Val : Priority) return Boolean is
-     ((if Val.Known then True else Valid_Priority (Val.Raw) and Val.Raw not in 1 | 4 | 7));
+     (if Val.Known then True else Valid_Priority (Val.Raw) and Val.Raw not in 1 | 4 | 7);
 
    function To_Base_Integer (Enum : RFLX.Enumeration.Priority_Enum) return RFLX.RFLX_Types.Base_Integer is
-     ((case Enum is
+     (case Enum is
           when Low =>
              1,
           when Medium =>
              4,
           when High =>
-             7));
+             7);
 
    function To_Actual (Enum : Priority_Enum) return RFLX.Enumeration.Priority is
      ((True, Enum));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Enumeration.Priority is
-     ((case Val is
+     (case Val is
           when 1 =>
              (True, Low),
           when 4 =>
@@ -61,12 +61,12 @@ is
           when 7 =>
              (True, High),
           when others =>
-             (False, Val)))
+             (False, Val))
     with
      Pre =>
        Valid_Priority (Val);
 
    function To_Base_Integer (Val : RFLX.Enumeration.Priority) return RFLX.RFLX_Types.Base_Integer is
-     ((if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw));
+     (if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw);
 
 end RFLX.Enumeration;
