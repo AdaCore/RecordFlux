@@ -428,6 +428,9 @@ gnat_community_compatibility:
     - export GNAT=community$GNAT_VERSION
     - make --keep-going test_compilation
 
+.show_gnatprove_cache_stats: &show_gnatprove_cache_stats
+    - 'echo "GNATprove cache: $(ls -U build/gnatprove_cache | wc -l) files"'
+
 verification_tests:
   extends: .testing
   services:
@@ -442,6 +445,7 @@ verification_tests:
       - SPARK_VERSION: "wave"
         SPARK_BUILD_DATE: "20240303"
   script:
+    - *show_gnatprove_cache_stats
     - *setup_spark
     - *setup_python
     - make prove_tests
@@ -469,6 +473,7 @@ verification_python_tests:
       - SPARK_VERSION: "wave"
         SPARK_BUILD_DATE: "20240522"
   script:
+    - *show_gnatprove_cache_stats
     - *setup_gnat
     - *setup_spark
     - *setup_python
@@ -501,6 +506,7 @@ verification_apps:
         - "spdm_responder"
         - "dccp"
   script:
+    - *show_gnatprove_cache_stats
     - *update_timestamps_of_generated_code
     - *setup_gnat
     - *setup_spark
@@ -524,6 +530,7 @@ verification_documentation:
     - mem:16
     - security_group:GitLabRunnerTasksExecDefaultSG
   script:
+    - *show_gnatprove_cache_stats
     - *setup_spark
     - *setup_python
     - make prove_doc
