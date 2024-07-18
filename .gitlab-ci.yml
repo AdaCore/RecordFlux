@@ -25,6 +25,29 @@ workflow:
     - if: $CI_COMMIT_BRANCH
     - if: $CI_COMMIT_TAG
 
+##########
+# Caches #
+##########
+
+.rflx-cache: &rflx-cache
+    key: $CI_JOB_NAME_SLUG-$CI_COMMIT_REF_SLUG
+    paths:
+      - "**/.rflx_cache"
+    fallback_keys:
+      - $CI_JOB_NAME_SLUG-main
+    unprotect: true
+    when: always
+
+.spark-cache: &spark-cache
+    key: $CI_JOB_NAME_SLUG-$CI_COMMIT_REF_SLUG-$SPARK_VERSION
+    paths:
+      - build/gnatprove_cache
+    fallback_keys:
+      - $CI_JOB_NAME_SLUG-main
+      - $CI_JOB_NAME_SLUG-main-$SPARK_VERSION
+    unprotect: true
+    when: always
+
 ##################
 # Initialization #
 ##################
@@ -222,13 +245,7 @@ code_generation:
     paths:
       - examples/apps/*/generated
   cache:
-    key: $CI_JOB_NAME_SLUG-$CI_COMMIT_REF_SLUG
-    paths:
-      - "**/.rflx_cache"
-    fallback_keys:
-      - $CI_JOB_NAME_SLUG-main
-    unprotect: true
-    when: always
+    - *rflx-cache
 
 .update_timestamps_of_generated_code: &update_timestamps_of_generated_code
     - touch examples/apps/*/generated/*
@@ -286,13 +303,7 @@ tests_example_apps:
     - *setup_python
     - make --keep-going test_apps
   cache:
-    key: $CI_JOB_NAME_SLUG-$CI_COMMIT_REF_SLUG
-    paths:
-      - "**/.rflx_cache"
-    fallback_keys:
-      - $CI_JOB_NAME_SLUG-main
-    unprotect: true
-    when: always
+    - *rflx-cache
 
 tests_example_specs:
   extends: .testing
@@ -312,13 +323,7 @@ tests_example_specs:
     - *setup_python
     - make --keep-going test_specs
   cache:
-    key: $CI_JOB_NAME_SLUG-$CI_COMMIT_REF_SLUG
-    paths:
-      - "**/.rflx_cache"
-    fallback_keys:
-      - $CI_JOB_NAME_SLUG-main
-    unprotect: true
-    when: always
+    - *rflx-cache
 
 python_compatibility:
   extends: .testing
@@ -450,14 +455,7 @@ verification_tests:
     - *setup_python
     - make prove_tests
   cache:
-    key: verification_tests-$CI_COMMIT_REF_SLUG-$SPARK_VERSION
-    paths:
-      - build/gnatprove_cache
-    fallback_keys:
-      - verification_tests-main
-      - verification_tests-main-$SPARK_VERSION
-    unprotect: true
-    when: always
+    - *spark-cache
 
 verification_python_tests:
   extends: .testing
@@ -479,14 +477,7 @@ verification_python_tests:
     - *setup_python
     - make prove_python_tests
   cache:
-    key: verification_python_tests-$CI_COMMIT_REF_SLUG-$SPARK_VERSION
-    paths:
-      - build/gnatprove_cache
-    fallback_keys:
-      - verification_python_tests-main
-      - verification_python_tests-main-$SPARK_VERSION
-    unprotect: true
-    when: always
+    - *spark-cache
 
 verification_apps:
   extends: .testing
@@ -514,13 +505,7 @@ verification_apps:
     - *setup_python
     - timeout -k 60 27600 make -C examples/apps/${APP} prove
   cache:
-    key: verification_apps-$APP-$CI_COMMIT_REF_SLUG
-    paths:
-      - build/gnatprove_cache
-    fallback_keys:
-      - verification_apps-$APP-main
-    unprotect: true
-    when: always
+    - *spark-cache
 
 verification_documentation:
   extends: .testing
@@ -535,13 +520,7 @@ verification_documentation:
     - *setup_python
     - make prove_doc
   cache:
-    key: verification_documentation-$CI_COMMIT_REF_SLUG
-    paths:
-      - build/gnatprove_cache
-    fallback_keys:
-      - verification_documentation-main
-    unprotect: true
-    when: always
+    - *spark-cache
 
 html_documentation:
   extends: .testing
