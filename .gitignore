@@ -3,13 +3,13 @@
 *.egg-info
 *.o
 *.pyc
+.*_cache
 .bin
 .cargo-home
 .coverage
 .coverage.*
 .env
 .hypothesis
-.mypy_cache
 .venv*
 .vscode/configurationCache.log
 /contrib

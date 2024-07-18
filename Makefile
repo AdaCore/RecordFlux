@@ -635,7 +635,8 @@ audit: $(RFLX) rapidflux_devel
 .PHONY: clean clean_build clean_all
 
 clean:
-	rm -rf $(BUILD_DIR) .coverage .coverage.* .hypothesis .mypy_cache .pytest_cache .ruff_cache doc/language_reference/build doc/user_guide/build
+	rm -rf $(BUILD_DIR) .coverage .coverage.* .hypothesis doc/language_reference/build doc/user_guide/build
+	find -name ".*_cache" -exec rm -vrf {} \;
 	$(MAKE) -C examples/apps/wireguard clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
