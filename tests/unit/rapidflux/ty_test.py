@@ -30,9 +30,17 @@ def test_bounds_error() -> None:
         Bounds(1, 0)
 
 
-def test_bounds_str() -> None:
-    assert str(Bounds(1, 1)) == "1 .. 1"
-    assert str(Bounds(1, 100)) == "1 .. 100"
+@pytest.mark.parametrize(
+    ("bound", "expected"),
+    [
+        (Bounds(1, 1), "1 .. 1"),
+        (Bounds(1, 100), "1 .. 100"),
+        (Bounds(1, 2**64 - 1), "1 .. 2**64 - 1"),
+        (Bounds(2**32 - 1, 2**64 - 1), "2**32 - 1 .. 2**64 - 1"),
+    ],
+)
+def test_bounds_str(bound: Bounds, expected: str) -> None:
+    assert str(bound) == expected
 
 
 def test_bounds_pickle(tmp_path: Path) -> None:

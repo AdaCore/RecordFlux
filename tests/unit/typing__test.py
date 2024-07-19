@@ -636,7 +636,7 @@ def test_check_type(actual: Type, expected: Type) -> None:
             r"^"
             r'<stdin>:10:20: error: expected message type "A"\n'
             r'<stdin>:10:20: error: found integer type "__BUILTINS__::Base_Integer"'
-            r" \(0 \.\. 9223372036854775807\)"
+            r" \(0 \.\. 2\*\*63 - 1\)"
             r"$",
         ),
         (
@@ -682,7 +682,7 @@ def test_check_type_instance(
             r"^"
             r"<stdin>:10:20: error: expected sequence type or message type\n"
             r'<stdin>:10:20: error: found integer type "__BUILTINS__::Base_Integer"'
-            r" \(0 \.\. 9223372036854775807\)"
+            r" \(0 \.\. 2\*\*63 - 1\)"
             r"$",
         ),
         (

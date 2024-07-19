@@ -42,11 +42,32 @@ impl Bounds {
             upper: self.upper.max(bounds.upper),
         }
     }
+
+    fn write_with_exponent(f: &mut impl std::fmt::Write, number: i128) -> std::fmt::Result {
+        if number > u16::MAX.into() {
+            let bits: u32 = i128::BITS - number.leading_zeros();
+            let remaining = 2i128.checked_pow(bits).unwrap_or(i128::MAX) - number;
+            debug_assert_eq!(
+                2i128.checked_pow(bits).unwrap_or(i128::MAX) - remaining,
+                number
+            );
+
+            if remaining > 0 {
+                write!(f, "2**{bits} - {remaining}")
+            } else {
+                write!(f, "2**{bits}")
+            }
+        } else {
+            write!(f, "{number}")
+        }
+    }
 }
 
 impl Display for Bounds {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} .. {}", self.lower, self.upper)
+        Self::write_with_exponent(f, self.lower)?;
+        write!(f, " .. ")?;
+        Self::write_with_exponent(f, self.upper)
     }
 }
 
@@ -122,8 +143,21 @@ mod tests {
         assert_eq!(bounds, deserialized_bounds);
     }
 
-    #[test]
-    fn test_bounds_display() {
-        assert_eq!(Bounds::new(1, 2).to_string(), "1 .. 2");
+    #[rstest]
+    #[case::small_bound(Bounds::new(1, 2), "1 .. 2")]
+    #[case::limit_bounds(
+            Bounds::new((u64::MAX - 16).into(), (u64::MAX - 1).into()),
+            "2**64 - 17 .. 2**64 - 2"
+        )
+    ]
+    #[case::limit_upper_bound(
+            Bounds::new(0, (u64::MAX - 1).into()),
+            "0 .. 2**64 - 2"
+        )
+    ]
+    #[case::bound_close_to_max_value(Bounds::new(0, i128::MAX - 1), "0 .. 2**127 - 1")]
+    #[case::upper_bound_i128_max_value(Bounds::new(0, i128::MAX), "0 .. 2**127")]
+    fn test_bounds_display(#[case] bound: Bounds, #[case] expected: &str) {
+        assert_eq!(bound.to_string(), expected);
     }
 }

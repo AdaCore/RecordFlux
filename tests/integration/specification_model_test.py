@@ -2054,7 +2054,7 @@ def test_opaque_field_size_is_aggregate(tmp_path: Path, capfd: pytest.CaptureFix
             info: Verifying __BUILTINS__::Boolean
             info: Verifying __INTERNAL__::Opaque
             info: Verifying Test::M
-            error: expected integer type "__BUILTINS__::Base_Integer" (0 .. 9223372036854775807)
+            error: expected integer type "__BUILTINS__::Base_Integer" (0 .. 2**63 - 1)
              --> {tmp_file}:5:26
               |
             5 |             with Size => [1, 2, 3];

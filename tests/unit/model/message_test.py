@@ -1320,7 +1320,7 @@ def test_field_size_is_aggregate() -> None:
         structure,
         types,
         r'^<stdin>:3:4: error: expected integer type "__BUILTINS__::Base_Integer" '
-        r"\(0 .. 9223372036854775807\)\n"
+        r"\(0 .. 2\*\*63 - 1\)\n"
         r"<stdin>:3:4: error: found aggregate with element type universal integer \(1 .. 2\)\n"
         r'<stdin>:1:1: note: on path "F"$',
     )

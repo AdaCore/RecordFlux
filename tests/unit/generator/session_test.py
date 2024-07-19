@@ -1204,7 +1204,7 @@ class UnknownExpr(ir.Expr):
                 ),
             ),
             RecordFluxError,
-            r"Last with type universal integer \(0 .. 9223372036854775807\) as value of message"
+            r"Last with type universal integer \(0 .. 2\*\*63 - 1\) as value of message"
             r" field not yet supported",
         ),
         (
