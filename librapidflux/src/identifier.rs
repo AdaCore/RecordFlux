@@ -11,7 +11,7 @@ const ALT_ID_SEP: &str = ".";
 pub type IDResult<T> = Result<T, IDError>;
 
 #[must_use]
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Eq, Debug)]
 pub struct ID {
     identifier: String,
     location: Option<Location>,
@@ -169,6 +169,12 @@ impl AsRef<str> for ID {
     }
 }
 
+impl std::hash::Hash for ID {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.identifier.hash(state);
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct IDRef<'a> {
     identifier: &'a str,
@@ -190,8 +196,36 @@ pub enum IDError {
     InvalidIdentifier,
 }
 
+/// Create an ID.
+///
+/// The parts are joined by the identifier separator `::`.
+///
+/// # Panics
+///
+/// The ID creation will panic if the given parts lead to an invalid ID.
+///
+/// # Examples
+///
+/// ```rust
+/// use librapidflux::identifier::ID;
+/// use librapidflux::create_id;
+///
+/// let id = create_id!(["A", "B"], None);
+///
+/// assert_eq!(id.identifier(), "A::B");
+/// assert_eq!(id.location(), None);
+/// ```
+#[macro_export]
+macro_rules! create_id {
+    ([$($part:expr),* $(,)?], $location:expr $(,)?) => {
+        ID::new(&[$( $part, )*].join("::"), $location).unwrap()
+    };
+}
+
 #[cfg(test)]
 mod tests {
+    use std::hash::{DefaultHasher, Hash, Hasher};
+
     use pretty_assertions::assert_eq;
     use rstest::rstest;
 
@@ -376,12 +410,36 @@ mod tests {
         assert_eq!(id(identifier, None).to_string(), identifier);
     }
 
+    #[test]
+    fn test_id_hash() {
+        let mut a1_hasher = DefaultHasher::new();
+        id("A", None).hash(&mut a1_hasher);
+        let mut a2_hasher = DefaultHasher::new();
+        id("A", None).hash(&mut a2_hasher);
+        assert_eq!(a1_hasher.finish(), a2_hasher.finish(),);
+
+        let mut b_hasher = DefaultHasher::new();
+        id("B", None).hash(&mut b_hasher);
+        assert_ne!(a1_hasher.finish(), b_hasher.finish(),);
+    }
+
     #[rstest]
     #[case::equal_same_casing("A::B", "A::B", true)]
     #[case::equal_different_casing("A::B", "a::b", true)]
     #[case::not_equal("A::B", "A::A", false)]
     fn test_id_eq(#[case] left: &str, #[case] right: &str, #[case] expected: bool) {
-        assert_eq!(id(left, None) == id(right, None), expected);
+        assert_eq!(
+            id(left, None)
+                == id(
+                    right,
+                    Some(Location {
+                        source: None,
+                        start: FilePosition::new(1, 1),
+                        end: None
+                    })
+                ),
+            expected
+        );
     }
 
     #[test]
@@ -405,6 +463,17 @@ mod tests {
     #[test]
     fn test_iderror_display() {
         assert_eq!(IDError::InvalidIdentifier.to_string(), "invalid identifier");
+    }
+
+    #[test]
+    fn test_create_id() {
+        assert_eq!(
+            create_id!(["A", "B"], Some(location(1))),
+            ID {
+                identifier: "A::B".to_string(),
+                location: Some(location(1))
+            }
+        );
     }
 
     fn id(identifier: &str, location: Option<Location>) -> ID {

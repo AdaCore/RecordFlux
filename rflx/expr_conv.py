@@ -787,7 +787,7 @@ def _(
 
 @to_ir.register
 def _(expression: expr.Conversion, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, rty.NamedType)
+    assert isinstance(expression.type_, rty.NamedTypeClass)
     argument = to_ir(expression.argument, variable_id)
     return ir.ComplexExpr(
         argument.stmts,
@@ -964,7 +964,7 @@ def to_ir_basic_expr(
         else:
             result_type = result_expr.type_
 
-            assert isinstance(result_type, rty.NamedType)
+            assert isinstance(result_type, rty.NamedTypeClass)
 
             result_stmts = [
                 *result.stmts,

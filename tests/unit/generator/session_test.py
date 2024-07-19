@@ -1471,7 +1471,7 @@ class UnknownExpr(ir.Expr):
             ),
             FatalError,
             r'unexpected sequence element type sequence type "__INTERNAL__::Opaque" with element'
-            r' integer type "Byte" \(0 .. 255\) for "X\'Head" in assignment of "X"',
+            r' integer type "__INTERNAL__::Byte" \(0 .. 255\) for "X\'Head" in assignment of "X"',
         ),
     ],
 )

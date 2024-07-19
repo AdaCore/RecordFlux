@@ -1144,7 +1144,7 @@ def test_invalid_relation_to_opaque() -> None:
         structure,
         types,
         r'^<stdin>:10:20: error: expected sequence type "__INTERNAL__::Opaque"'
-        r' with element integer type "Byte" \(0 .. 255\)\n'
+        r' with element integer type "__INTERNAL__::Byte" \(0 .. 255\)\n'
         r"<stdin>:10:20: error: found type universal integer \(42 .. 42\)\n"
         r'<stdin>:1:1: note: on path "Length"\n'
         r'<stdin>:2:3: note: on path "Data"$',
@@ -1169,7 +1169,7 @@ def test_invalid_relation_to_aggregate() -> None:
         types,
         r"^<stdin>:10:20: error: expected integer type\n"
         r'<stdin>:10:20: error: found sequence type "__INTERNAL__::Opaque"'
-        r' with element integer type "Byte" \(0 .. 255\)\n'
+        r' with element integer type "__INTERNAL__::Byte" \(0 .. 255\)\n'
         r'<stdin>:1:1: note: on path "F1"\n'
         r"<stdin>:10:30: error: expected integer type\n"
         r"<stdin>:10:30: error: found aggregate"
@@ -1223,7 +1223,7 @@ def test_opaque_aggregate_out_of_range() -> None:
         structure,
         types,
         r'^<stdin>:10:20: error: expected sequence type "__INTERNAL__::Opaque"'
-        r' with element integer type "Byte" \(0 .. 255\)\n'
+        r' with element integer type "__INTERNAL__::Byte" \(0 .. 255\)\n'
         r"<stdin>:10:20: error: found aggregate"
         r" with element type universal integer \(1 .. 256\)\n"
         r'<stdin>:1:2: note: on path "F"$',

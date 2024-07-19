@@ -2624,7 +2624,7 @@ def test_case_type() -> None:
             [([ID("V", location=Location((1, 4)))], Number(1, location=Location((1, 5))))],
         ),
         r'^<stdin>:1:3: error: invalid discrete choice with sequence type "__INTERNAL__::Opaque" '
-        r'with element integer type "Byte" \(0 .. 255\)\n'
+        r'with element integer type "__INTERNAL__::Byte" \(0 .. 255\)\n'
         r"<stdin>:1:3: note: expected enumeration or integer type$",
     )
 

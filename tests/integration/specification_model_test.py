@@ -1967,8 +1967,8 @@ def test_incompatible_type_link_condition(
             info: Verifying __BUILTINS__::Boolean
             info: Verifying __INTERNAL__::Opaque
             info: Verifying Test::M14
-            error: expected sequence type "__INTERNAL__::Opaque" with element integer type "Byte" \
-(0 .. 255)
+            error: expected sequence type "__INTERNAL__::Opaque" with element integer type \
+"__INTERNAL__::Byte" (0 .. 255)
              --> {file_path}:7:24
               |
             4 |          F1 : Opaque
@@ -2146,7 +2146,7 @@ def test_parameter_non_scalar_and_builtin_type(
               |
             2 |    type M (x : Opaque) is
               |            ^ found sequence type "__INTERNAL__::Opaque" with element integer type \
-"Byte" (0 .. 255)
+"__INTERNAL__::Byte" (0 .. 255)
               |
               """,
         ),

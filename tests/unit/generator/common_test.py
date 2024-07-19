@@ -10,14 +10,14 @@ from rflx.generator import common, const
 from rflx.identifier import ID
 from rflx.model import BUILTIN_TYPES, type_decl
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
-from rflx.rapidflux import Location
+from rflx.rapidflux import Location, ty
 from tests.data import models
 from tests.utils import assert_equal
 
 
 def test_type_translation() -> None:
     assert (common.type_to_id(rty.BASE_INTEGER)) == const.TYPES_BASE_INT
-    assert (common.type_to_id(rty.NamedType("P::mytype"))) == ID("P::mytype")
+    assert (common.type_to_id(rty.Integer("P::mytype", ty.Bounds(1, 9)))) == ID("P::mytype")
 
 
 @pytest.mark.parametrize("embedded", [True, False])

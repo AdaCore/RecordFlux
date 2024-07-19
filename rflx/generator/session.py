@@ -3058,7 +3058,7 @@ class FSMGenerator:
                     [identifier],
                     (
                         self._ada_type(type_.identifier)
-                        if isinstance(type_, rty.NamedType)
+                        if isinstance(type_, rty.NamedTypeClass)
                         else const.TYPES_BASE_INT
                     ),
                     (
@@ -3147,10 +3147,10 @@ class FSMGenerator:
                 location=identifier.location,
             )
 
-        assert isinstance(type_, (rty.NamedType, rty.UniversalInteger)), type_
+        assert isinstance(type_, (rty.NamedTypeClass, rty.UniversalInteger)), type_
 
         type_identifier = (
-            type_.identifier if isinstance(type_, rty.NamedType) else const.TYPES_BASE_INT
+            type_.identifier if isinstance(type_, rty.NamedTypeClass) else const.TYPES_BASE_INT
         )
         if session_global:
             self._session_context.referenced_types.append(type_identifier)

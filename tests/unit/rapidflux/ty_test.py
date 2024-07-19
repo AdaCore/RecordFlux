@@ -3,7 +3,63 @@ from pathlib import Path
 
 import pytest
 
-from rflx.rapidflux.ty import Bounds
+from rflx.rapidflux import ID
+from rflx.rapidflux.ty import (
+    Aggregate,
+    Any,
+    Bounds,
+    Builtins,
+    Channel,
+    Enumeration,
+    Integer,
+    Message,
+    Refinement,
+    Structure,
+    Undefined,
+)
+
+INTEGER_A = Integer("A", Bounds(10, 100))
+ENUMERATION_A = Enumeration("A", [ID("AE1"), ID("AE2")])
+ENUMERATION_B = Enumeration("B", [ID("BE1"), ID("BE2"), ID("BE3")])
+
+
+@pytest.mark.parametrize(
+    "type_",
+    [
+        Undefined(),
+        Any(),
+        Builtins.BOOLEAN,
+        Builtins.UNIVERSAL_INTEGER,
+        Builtins.BASE_INTEGER,
+        Aggregate(INTEGER_A),
+        Builtins.OPAQUE,
+        Structure(
+            "A",
+            {("F",)},
+            {ID("P"): Builtins.BOOLEAN},
+            {ID("F"): Builtins.OPAQUE},
+        ),
+        Message(
+            "A",
+            {("F",)},
+            {ID("P"): Builtins.BOOLEAN},
+            {ID("F"): Builtins.OPAQUE},
+            [Refinement("F", Message("B"), "P")],
+            is_definite=True,
+        ),
+        Channel(readable=True, writable=True),
+    ],
+)
+def test_type_pickle(type_: object, tmp_path: Path) -> None:
+    pickle_file = tmp_path / "pickle"
+
+    with pickle_file.open("w+b") as f:
+        pickle.dump(type_, f)
+        f.flush()
+
+    with pickle_file.open("rb") as f:
+        loaded = pickle.load(f)  # noqa: S301
+        assert loaded == type_
 
 
 def test_bounds_contains() -> None:

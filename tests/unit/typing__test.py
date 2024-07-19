@@ -312,7 +312,7 @@ def test_integer_is_compatible_strong(integer: Type, other: Type, expected: bool
         ),
         (
             Aggregate(Integer("A", Bounds(10, 100))),
-            Aggregate(Integer("A", Bounds(20, 200))),
+            Aggregate(Integer("B", Bounds(20, 200))),
             Aggregate(BASE_INTEGER),
         ),
         (
@@ -402,7 +402,7 @@ def test_aggregate_is_compatible(aggregate: Type, other: Type, expected: bool) -
         ),
         (
             Sequence("A", Integer("B", Bounds(10, 100))),
-            Aggregate(Integer("B", Bounds(20, 200))),
+            Aggregate(Integer("C", Bounds(20, 200))),
             Undefined(),
         ),
         (
@@ -457,7 +457,7 @@ def test_composite_common_type(composite: Type, other: Type, expected: Type) -> 
         ),
         (
             Sequence("A", Integer("B", Bounds(10, 100))),
-            Aggregate(Integer("B", Bounds(20, 200))),
+            Aggregate(Integer("C", Bounds(20, 200))),
             False,
         ),
         (

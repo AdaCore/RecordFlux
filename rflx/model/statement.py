@@ -76,7 +76,7 @@ class VariableAssignment(Assignment):
         return error
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
-        assert isinstance(self.type_, rty.NamedType)
+        assert isinstance(self.type_, rty.NamedTypeClass)
         expression = expr_conv.to_ir(self.expression, variable_id)
         return [*expression.stmts, ir.Assign(self.identifier, expression.expr, self.type_, self)]
 

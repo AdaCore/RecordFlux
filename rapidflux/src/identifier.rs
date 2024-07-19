@@ -19,13 +19,13 @@ use crate::{
 };
 
 #[pyclass(module = "rflx.rapidflux")]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-pub struct ID(lib::ID);
+#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct ID(pub(crate) lib::ID);
 
 #[pymethods]
 impl ID {
     #[new]
-    fn new(identifier: &Bound<'_, PyAny>, location: Option<Location>) -> PyResult<Self> {
+    pub(crate) fn new(identifier: &Bound<'_, PyAny>, location: Option<Location>) -> PyResult<Self> {
         if identifier.is_instance_of::<PyString>() {
             Ok(_new(identifier.extract()?, location)?)
         } else if identifier.is_instance_of::<PyList>() {
@@ -93,7 +93,7 @@ impl ID {
         hasher.finish() as usize
     }
 
-    fn __repr__(&self) -> String {
+    pub(crate) fn __repr__(&self) -> String {
         format!(
             "ID(\"{}\", {})",
             self.0.identifier(),
@@ -224,7 +224,7 @@ fn _new(identifier: &str, location: Option<Location>) -> Result<ID, IDError> {
     Ok(ID(lib::ID::new(identifier, location.map(|l| l.0))?))
 }
 
-struct IDError(lib::IDError);
+pub(crate) struct IDError(lib::IDError);
 
 impl From<IDError> for PyErr {
     fn from(error: IDError) -> Self {
@@ -235,6 +235,16 @@ impl From<IDError> for PyErr {
 impl From<lib::IDError> for IDError {
     fn from(other: lib::IDError) -> Self {
         Self(other)
+    }
+}
+
+pub(crate) fn to_id(obj: &Bound<'_, PyAny>) -> Result<lib::ID, IDError> {
+    if let Ok(s) = obj.extract::<String>() {
+        lib::ID::new(&s, None).map_err(IDError)
+    } else if let Ok(id) = obj.extract::<ID>() {
+        Ok(id.0)
+    } else {
+        Err(IDError(lib::IDError::InvalidIdentifier))
     }
 }
 
