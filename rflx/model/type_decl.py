@@ -394,7 +394,7 @@ class Enumeration(Scalar):
                     assert v1.location is not None
                     self.error.push(
                         ErrorEntry(
-                            f'duplicate enumeration value "{v1}" in "{self.name}"',
+                            f'duplicate enumeration value "{v1}"',
                             Severity.ERROR,
                             v2.location,
                             annotations=[

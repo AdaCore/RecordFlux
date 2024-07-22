@@ -959,7 +959,7 @@ class Message(type_decl.TypeDecl):
         for f in structure_fields - type_fields:
             self.error.push(
                 ErrorEntry(
-                    f'missing type for field "{f.name}" in "{self.identifier}"',
+                    f'missing type for field "{f.name}"',
                     Severity.ERROR,
                     f.identifier.location,
                 ),
@@ -1021,7 +1021,7 @@ class Message(type_decl.TypeDecl):
                 has_unreachable = True
                 self.error.push(
                     ErrorEntry(
-                        f'unreachable field "{f.name}" in "{self.identifier}"',
+                        f'unreachable field "{f.name}"',
                         Severity.ERROR,
                         f.identifier.location,
                     ),
@@ -1048,7 +1048,7 @@ class Message(type_decl.TypeDecl):
                 self.error.extend(
                     [
                         ErrorEntry(
-                            f'no path to FINAL for field "{f.name}" in "{self.identifier}"',
+                            f'no path to FINAL for field "{f.name}"',
                             Severity.ERROR,
                             f.identifier.location,
                         ),
@@ -1096,7 +1096,7 @@ class Message(type_decl.TypeDecl):
                     assert are_all_locations_present(locations)
                     self.error.push(
                         ErrorEntry(
-                            f'unsupported expression in "{self.identifier}"',
+                            "unsupported expression",
                             Severity.ERROR,
                             e.location,
                             annotations=[
@@ -1663,7 +1663,7 @@ class Message(type_decl.TypeDecl):
             self.error.extend(
                 [
                     ErrorEntry(
-                        f'size aspect for final field in "{self.identifier}"',
+                        "size aspect for final field",
                         Severity.ERROR,
                         link.size.location,
                     ),
@@ -3169,7 +3169,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
             assert field.identifier.location is not None
             error.push(
                 ErrorEntry(
-                    f'name conflict for "{conflicting.identifier}" in "{message.identifier}"',
+                    f'name conflict for "{conflicting.identifier}"',
                     Severity.ERROR,
                     conflicting.identifier.location,
                     annotations=(

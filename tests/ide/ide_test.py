@@ -68,9 +68,9 @@ def test_multiple_errors() -> None:
             f'{path}:38:28: error: duplicate literal "E2_2"',
             f"{path}:38:22: note: previous occurrence",
             f'{path}:38:9: error: size of "E2" too small',
-            f'{path}:41:46: error: duplicate enumeration value "2" in "E3"',
+            f'{path}:41:46: error: duplicate enumeration value "2"',
             f"{path}:41:35: note: previous occurrence",
-            f'{path}:64:10: error: unreachable field "Z" in "RFLX_Invalid::M1"',
+            f'{path}:64:10: error: unreachable field "Z"',
             f'{path}:64:10: error: duplicate link from "Z" to "Final"',
             f"{path}:64:16: note: duplicate link",
             f"{path}:64:26: note: duplicate link",
@@ -109,7 +109,7 @@ def test_multiple_errors() -> None:
             f'{path}:125:21: error: undefined base message "RFLX_Invalid::Ref1"'
             " in derived message",
             f'{path}:140:19: error: invalid use of size attribute for "1"',
-            f'{path}:156:10: error: name conflict for "F2_F1" in "RFLX_Invalid::M5"',
+            f'{path}:156:10: error: name conflict for "F2_F1"',
             f'{path}:147:9: note: when merging message "RFLX_Invalid::M4"',
             f'{path}:154:10: note: into field "F2"',
             f'{path}:164:10: error: field "Data1" has no satisfiable condition at any outgoing '
@@ -125,7 +125,7 @@ def test_multiple_errors() -> None:
             f'{path}:192:10: error: conflicting conditions for field "F1"',
             f"{path}:196:19: note: condition 0 (F1 -> F2): F1 < 80",
             f"{path}:194:19: note: condition 1 (F1 -> Final): F1 > 50",
-            f'{path}:204:10: error: unreachable field "F2" in "RFLX_Invalid::M9"',
+            f'{path}:204:10: error: unreachable field "F2"',
             f'{path}:219:18: error: fixed size field "F1" with size aspect',
             f"{path}:229:30: error: illegal first aspect on initial link",
             f'{path}:238:19: error: undefined variable "F1"',
@@ -146,7 +146,7 @@ def test_multiple_errors() -> None:
             f"{path}:263:10: note: unsatisfied \"F2'Last = (F1'Last + 1 + 8) - 1\"",
             f"{path}:262:18: note: unsatisfied \"F2'First = F1'Last + 1\"",
             f"{path}:264:13: note: unsatisfied \"(F2'First + 16) - 1 = F2'Last\"",
-            f'{path}:276:29: error: size aspect for final field in "RFLX_Invalid::M17"',
+            f"{path}:276:29: error: size aspect for final field",
             f"{path}:279:9: error: unnecessary always-valid aspect"
             ' on "Unnecessary_Always_Valid_Enum"',
             f'{path}:290:30: error: undefined variable "Undef_Var"',

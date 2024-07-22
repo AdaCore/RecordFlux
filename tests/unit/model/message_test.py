@@ -288,7 +288,7 @@ def test_missing_type() -> None:
     assert_message_model_error(
         structure,
         {},
-        '^<stdin>:5:6: error: missing type for field "X" in "P::M"$',
+        '^<stdin>:5:6: error: missing type for field "X"$',
     )
 
 
@@ -407,7 +407,7 @@ def test_unsupported_expression() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:10:19: error: unsupported expression in "P::M"\n'
+        "^<stdin>:10:19: error: unsupported expression\n"
         '<stdin>:10:23: note: variable "X" in exponent$',
     )
 
@@ -425,7 +425,7 @@ def test_unreachable_field() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:20:3: error: unreachable field "Y" in "P::M"$',
+        '^<stdin>:20:3: error: unreachable field "Y"$',
     )
 
 
@@ -2734,7 +2734,7 @@ def test_no_path_to_final() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^error: no path to FINAL for field "F4" in "P::M"$',
+        '^error: no path to FINAL for field "F4"$',
     )
 
 
@@ -2761,9 +2761,9 @@ def test_no_path_to_final_transitive() -> None:
         structure,
         types,
         r"^"
-        r'error: no path to FINAL for field "F4" in "P::M"\n'
-        r'error: no path to FINAL for field "F5" in "P::M"\n'
-        r'error: no path to FINAL for field "F6" in "P::M"'
+        r'error: no path to FINAL for field "F4"\n'
+        r'error: no path to FINAL for field "F5"\n'
+        r'error: no path to FINAL for field "F6"'
         r"$",
     )
 
@@ -3079,7 +3079,7 @@ def test_size_aspect_final() -> None:
     assert_message_model_error(
         structure,
         types,
-        '^<stdin>:4:12: error: size aspect for final field in "P::M"$',
+        "^<stdin>:4:12: error: size aspect for final field$",
     )
 
 
@@ -5292,7 +5292,7 @@ def test_merge_message_error_name_conflict() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:30:5: error: name conflict for "F1_F2" in "P::M1"\n'
+            r'<stdin>:30:5: error: name conflict for "F1_F2"\n'
             r'<stdin>:15:3: note: when merging message "P::M2"\n'
             r'<stdin>:20:8: note: into field "F1"$'
         ),
@@ -6917,8 +6917,8 @@ def test_invalid_missing_field() -> None:
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:2:2: error: unreachable field "F2_F" in "P::M2"\n'
-            r'<stdin>:1:1: error: no path to FINAL for field "Initial" in "P::M2"'
+            r'<stdin>:2:2: error: unreachable field "F2_F"\n'
+            r'<stdin>:1:1: error: no path to FINAL for field "Initial"'
             "$"
         ),
     ):

@@ -348,7 +348,7 @@ def test_invalid_target_state() -> None:
         regex=(
             r"^"
             r'<stdin>:10:20: error: transition from state "Start" to non-existent'
-            r' state "NonExistent" in "P::S"'
+            r' state "NonExistent"'
             r"$"
         ),
     )

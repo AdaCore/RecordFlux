@@ -171,7 +171,7 @@ def test_invalid_enumeration_type_duplicate_values() -> None:
            type T is (Foo => 0, Bar => 0) with Size => 1;
         end Test;
         """,
-        r'^<stdin>:2:32: error: duplicate enumeration value "0" in "T"\n'
+        r'^<stdin>:2:32: error: duplicate enumeration value "0"\n'
         r"<stdin>:2:22: note: previous occurrence$",
     )
 
@@ -184,9 +184,9 @@ def test_invalid_enumeration_type_multiple_duplicate_values() -> None:
         end Test;
         """,
         r"^"
-        r'<stdin>:2:44: error: duplicate enumeration value "0" in "T"\n'
+        r'<stdin>:2:44: error: duplicate enumeration value "0"\n'
         r"<stdin>:2:22: note: previous occurrence\n"
-        r'<stdin>:2:56: error: duplicate enumeration value "1" in "T"\n'
+        r'<stdin>:2:56: error: duplicate enumeration value "1"\n'
         r"<stdin>:2:34: note: previous occurrence"
         r"$",
     )
@@ -529,7 +529,7 @@ def test_invalid_message_with_unreachable_field_after_merging() -> None:
 
         end Test;
         """,
-        r'^<stdin>:17:10: error: unreachable field "D" in "Test::O"$',
+        r'^<stdin>:17:10: error: unreachable field "D"$',
     )
 
 

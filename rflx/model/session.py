@@ -610,7 +610,7 @@ class Session(TopLevelDeclaration):
                     self.error.push(
                         ErrorEntry(
                             f'transition from state "{s.identifier}" to non-existent state'
-                            f' "{t.target}" in "{self.identifier}"',
+                            f' "{t.target}"',
                             Severity.ERROR,
                             t.target.location,
                         ),
