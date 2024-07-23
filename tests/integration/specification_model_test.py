@@ -2070,3 +2070,89 @@ integer (1 .. 3)
         ),
         capfd,
     )
+
+
+def test_parameter_non_scalar(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type N is
+                  message
+                    D : Opaque with Size => 8;
+                  end message;
+
+               type M (x : N) is
+                  message
+                    A : Opaque with Size => 8;
+                  end message;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::N
+            error: expected enumeration type or integer type
+             --> {file_path}:7:12
+              |
+            2 |    type N is
+              |         - note: type declared here
+            3 |       message
+            ...
+            6 |
+            7 |    type M (x : N) is
+              |            ^ found message type "Test::N"
+              |
+              """,
+        ),
+        capfd,
+    )
+
+
+def test_parameter_non_scalar_and_builtin_type(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type M (x : Opaque) is
+                  message
+                    A : Opaque with Size => 8;
+                  end message;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            error: expected enumeration type or integer type
+             --> {file_path}:2:12
+              |
+            2 |    type M (x : Opaque) is
+              |            ^ found sequence type "__INTERNAL__::Opaque" with element integer type \
+"Byte" (0 .. 255)
+              |
+              """,
+        ),
+        capfd,
+    )

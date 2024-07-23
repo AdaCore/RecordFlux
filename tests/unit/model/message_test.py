@@ -61,6 +61,7 @@ from rflx.model import (
     UncheckedDerivedMessage,
     UncheckedMessage,
     UncheckedRefinement,
+    type_decl,
 )
 from rflx.model.message import ByteOrder, annotate_path
 from rflx.rapidflux import Annotation, Location, RecordFluxError, Severity
@@ -247,10 +248,19 @@ def test_invalid_parameter_type_composite(parameter_type: abc.Callable[[], TypeD
     structure = [Link(INITIAL, Field("X")), Link(Field("X"), FINAL)]
     types = {Field(ID("P", Location((1, 2)))): parameter_type(), Field("X"): models.integer()}
 
+    declared_location = (
+        r"\n<stdin>:1:1: note: type declared here"
+        if not (
+            type_decl.is_internal_type(parameter_type().identifier)
+            or type_decl.is_builtin_type(parameter_type().identifier)
+        )
+        else ""
+    )
     assert_message_model_error(
         structure,
         types,
-        "^<stdin>:1:2: error: parameters must have a scalar type$",
+        r"^<stdin>:1:2: error: expected enumeration type or integer type\n"
+        rf"<stdin>:1:2: error: found {re.escape(str(parameter_type().type_))}{declared_location}$",
     )
 
 

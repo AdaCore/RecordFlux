@@ -350,6 +350,7 @@ def check_type_instance(
     expected: Union[type[Type], tuple[type[Type], ...]],
     location: Optional[Location],
     description: str = "",
+    additionnal_annotations: abc.Sequence[Annotation] | None = None,
 ) -> RecordFluxError:
     assert expected, "empty expected types"
 
@@ -359,6 +360,7 @@ def check_type_instance(
     error = RecordFluxError()
 
     if not isinstance(actual, expected) and actual != Any():
+        additionnal_annotations = additionnal_annotations or []
         desc = (
             " or ".join(e.DESCRIPTIVE_NAME for e in expected)
             if isinstance(expected, tuple)
@@ -370,7 +372,10 @@ def check_type_instance(
                 f"expected {desc}",
                 Severity.ERROR,
                 location,
-                annotations=[Annotation(f"found {actual}", Severity.ERROR, location)],
+                annotations=[
+                    Annotation(f"found {actual}", Severity.ERROR, location),
+                    *additionnal_annotations,
+                ],
                 generate_default_annotation=False,
             ),
         )

@@ -54,7 +54,7 @@ from rflx.model import (
 
 @lru_cache
 def null_message() -> Message:
-    return Message("Null_Msg::Message", [], {})
+    return Message(ID("Null_Msg::Message", location=Location((1, 1))), [], {})
 
 
 @lru_cache
@@ -459,7 +459,7 @@ def sequence_integer() -> Integer:
 
 @lru_cache
 def sequence_integer_vector() -> Sequence:
-    return Sequence("Sequence::Integer_Vector", sequence_integer())
+    return Sequence(ID("Sequence::Integer_Vector", location=Location((1, 1))), sequence_integer())
 
 
 @lru_cache

@@ -924,12 +924,28 @@ class Message(type_decl.TypeDecl):
 
             if f in parameters:
                 if not isinstance(t, type_decl.Scalar):
-                    self.error.push(
-                        ErrorEntry(
-                            "parameters must have a scalar type",
-                            Severity.ERROR,
-                            f.identifier.location,
-                        ),
+                    assert f.identifier.location is not None
+                    additionnal_annotations = []
+                    if not (
+                        type_decl.is_builtin_type(t.identifier)
+                        or type_decl.is_internal_type(t.identifier)
+                    ):
+                        assert t.identifier.location is not None
+                        additionnal_annotations.append(
+                            Annotation(
+                                "type declared here",
+                                Severity.NOTE,
+                                t.identifier.location,
+                            ),
+                        )
+
+                    self.error.extend(
+                        rty.check_type_instance(
+                            t.type_,
+                            (rty.Enumeration, rty.AnyInteger),
+                            location=f.identifier.location,
+                            additionnal_annotations=additionnal_annotations,
+                        ).entries,
                     )
                 elif isinstance(t, type_decl.Enumeration) and t.always_valid:
                     self.error.push(
