@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Enhance diagnostics when a message parameter is not a scalar (eng/recordflux/RecordFlux#1740)
+- Improve diagnostics phrasing (eng/recordflux/RecordFlux#1714)
 
 ## [0.22.0] - 2024-07-17
 
