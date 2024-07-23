@@ -1,4 +1,4 @@
-#!/usr/bin/env -S python3 -O
+#!/usr/bin/env python3
 
 """Generate separate test runners for the test project."""
 

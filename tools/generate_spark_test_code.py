@@ -1,4 +1,4 @@
-#!/usr/bin/env -S python3 -O
+#!/usr/bin/env python3
 
 """Generate the SPARK code for the test project and all feature tests."""
 
