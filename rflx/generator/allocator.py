@@ -98,7 +98,7 @@ class AllocatorGenerator:
 
     @property
     def unit_identifier(self) -> ID:
-        return self._session.identifier.parent * f"{self._session.identifier.name}_Allocator"
+        return self._session.identifier * "FSM_Allocator"
 
     @property
     def declaration_context(self) -> list[ContextItem]:

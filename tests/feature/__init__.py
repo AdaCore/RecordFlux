@@ -107,7 +107,6 @@ def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
     complement = session_main(
         config.inp,
         config.out,
-        session_package="RFLX.Test.Session",
         external_io_buffers=config.external_io_buffers,
     )
 
@@ -119,6 +118,11 @@ def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
     for filename, content in complement.items():
         (target_dir / filename).write_text(content)
 
+    copy_src(feature, tmp_path)
+
+
+def copy_src(feature: str, tmp_path: Path) -> None:
     src_dir = FEATURE_DIR / feature / "src"
     if src_dir.is_dir():
+        target_dir = tmp_path / "src"
         copytree(str(src_dir), str(target_dir), dirs_exist_ok=True)

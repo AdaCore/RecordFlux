@@ -14,7 +14,12 @@ from rflx.error import FatalError
 from rflx.generator import const
 from rflx.generator.allocator import AllocatorGenerator
 from rflx.generator.common import Debug
-from rflx.generator.session import EvaluatedDeclaration, ExceptionHandler, SessionGenerator
+from rflx.generator.session import (
+    EvaluatedDeclaration,
+    ExceptionHandler,
+    FSMGenerator,
+    SessionGenerator,
+)
 from rflx.identifier import ID, id_generator
 from rflx.integration import Integration
 from rflx.rapidflux import Location, RecordFluxError, ty
@@ -57,11 +62,10 @@ def dummy_session() -> ir.Session:
                     specification=ada.ProcedureSpecification(
                         identifier="F",
                         parameters=[
-                            ada.InOutParameter(["Ctx"], "Context"),
+                            ada.InOutParameter(["Ctx"], "P.S_Functions.Context"),
                             ada.OutParameter(["RFLX_Result"], "Boolean"),
                         ],
                     ),
-                    abstract=True,
                 ),
             ],
         ),
@@ -88,7 +92,7 @@ def dummy_session() -> ir.Session:
                     specification=ada.ProcedureSpecification(
                         identifier="F",
                         parameters=[
-                            ada.InOutParameter(["Ctx"], "Context"),
+                            ada.InOutParameter(["Ctx"], "P.S_Functions.Context"),
                             ada.Parameter(["P1"], "Boolean"),
                             ada.Parameter(["P2"], const.TYPES_BYTES),
                             ada.Parameter(["P3"], "T3"),
@@ -97,24 +101,21 @@ def dummy_session() -> ir.Session:
                             ada.OutParameter(["RFLX_Result"], "T.Structure"),
                         ],
                     ),
-                    abstract=True,
                 ),
             ],
         ),
     ],
 )
-def test_session_create_abstract_function(
+def test_session_create_function(
     parameter: ir.FuncDecl,
     expected: Sequence[ada.SubprogramDeclaration],
 ) -> None:
     session_generator = SessionGenerator(
         dummy_session(),
-        Integration(),
         AllocatorGenerator(dummy_session(), Integration()),
-        debug=Debug.BUILTIN,
     )
 
-    assert session_generator._create_abstract_function(parameter) == expected  # noqa: SLF001
+    assert session_generator._create_function(parameter) == expected  # noqa: SLF001
 
 
 class UnknownDeclaration(ir.FormalDecl):
@@ -124,6 +125,30 @@ class UnknownDeclaration(ir.FormalDecl):
     @property
     def type_(self) -> rty.Type:
         raise NotImplementedError
+
+
+@pytest.mark.parametrize(
+    ("parameter", "error_type", "error_msg"),
+    [
+        (
+            UnknownDeclaration("X", Location((10, 20))),
+            FatalError,
+            r'unexpected formal parameter "X"',
+        ),
+    ],
+)
+def test_session_verify_formal_parameters(
+    parameter: ir.FuncDecl,
+    error_type: type[RecordFluxError],
+    error_msg: str,
+) -> None:
+    session_generator = SessionGenerator(
+        dummy_session(),
+        AllocatorGenerator(dummy_session(), Integration()),
+    )
+
+    with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
+        session_generator._verify_formal_parameters([parameter])  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -200,27 +225,20 @@ class UnknownDeclaration(ir.FormalDecl):
             RecordFluxError,
             r'sequence as parameter of function "F" not yet supported',
         ),
-        (
-            UnknownDeclaration("X", Location((10, 20))),
-            FatalError,
-            r'unexpected formal parameter "X"',
-        ),
     ],
 )
-def test_session_create_abstract_functions_error(
-    parameter: ir.FormalDecl,
+def test_session_create_functions_error(
+    parameter: ir.FuncDecl,
     error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
     session_generator = SessionGenerator(
         dummy_session(),
-        Integration(),
         AllocatorGenerator(dummy_session(), Integration()),
-        debug=Debug.BUILTIN,
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
-        session_generator._create_abstract_functions([parameter])  # noqa: SLF001
+        session_generator._create_functions([parameter])  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -245,13 +263,13 @@ def test_session_create_abstract_functions_error(
                 global_declarations=[ada.ObjectDeclaration("X", "P.I", ada.Number(1))],
                 initialization=[
                     ada.CallStatement(
-                        "P.S_Allocator.Initialize",
+                        "P.S.FSM_Allocator.Initialize",
                         [ada.Variable("Ctx.P.Slots"), ada.Variable("Ctx.P.Memory")],
                     ),
                     ada.Assignment("Ctx.P.X", ada.Number(1)),
                 ],
                 finalization=[
-                    ada.CallStatement("P.S_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
+                    ada.CallStatement("P.S.FSM_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
                 ],
             ),
         ),
@@ -360,7 +378,7 @@ def test_session_create_abstract_functions_error(
                 ],
                 initialization=[
                     ada.CallStatement(
-                        "P.S_Allocator.Initialize",
+                        "P.S.FSM_Allocator.Initialize",
                         [ada.Variable("Ctx.P.Slots"), ada.Variable("Ctx.P.Memory")],
                     ),
                     ada.Assignment(
@@ -434,7 +452,7 @@ def test_session_create_abstract_functions_error(
                             ),
                         ],
                     ),
-                    ada.CallStatement("P.S_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
+                    ada.CallStatement("P.S.FSM_Allocator.Finalize", [ada.Variable("Ctx.P.Slots")]),
                 ],
             ),
         ),
@@ -448,14 +466,14 @@ def test_session_evaluate_declarations(
     allocator = AllocatorGenerator(dummy_session(), Integration())
 
     allocator._allocation_slots[Location((1, 1))] = 1  # noqa: SLF001
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         allocator,
         debug=Debug.BUILTIN,
     )
     assert (
-        session_generator._evaluate_declarations(  # noqa: SLF001
+        fsm_generator._evaluate_declarations(  # noqa: SLF001
             [declaration],
             is_global=lambda _: False,
             session_global=session_global,
@@ -720,14 +738,14 @@ def test_session_declare(
     allocator = AllocatorGenerator(dummy_session(), Integration())
 
     allocator._allocation_slots[loc] = 1  # noqa: SLF001
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         allocator,
         debug=Debug.BUILTIN,
     )
 
-    result = session_generator._declare(  # noqa: SLF001
+    result = fsm_generator._declare(  # noqa: SLF001
         ID("X"),
         type_,
         lambda _: False,
@@ -816,7 +834,7 @@ def test_session_declare_error(
     error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         AllocatorGenerator(dummy_session(), Integration()),
@@ -824,7 +842,7 @@ def test_session_declare_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
-        session_generator._declare(  # pragma: no branch # noqa: SLF001
+        fsm_generator._declare(  # pragma: no branch # noqa: SLF001
             ID("X", Location((10, 20))),
             type_,
             lambda _: False,
@@ -921,7 +939,7 @@ declare
    A : Universal.Message.Structure;
 begin
    Universal.Message.To_Structure (A_Ctx, A);
-   F (Ctx, A, X);
+   F (Ctx.F, A, X);
 end;\
 """,
         ),
@@ -948,7 +966,7 @@ declare
    A : Universal.Message.Structure;
 begin
    Universal.Message.To_Structure (A_Ctx, A);
-   F (Ctx, A, X);
+   F (Ctx.F, A, X);
    if not Universal.Option.Valid_Structure (X) then
       Ada.Text_IO.Put_Line ("Error: ""F"" returned an invalid message");
       Ctx.P.Next_State := S_E;
@@ -1015,7 +1033,7 @@ end;\
 )
 def test_session_state_action(action: ir.Stmt, expected: str) -> None:
     allocator = AllocatorGenerator(dummy_session(), Integration())
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         allocator,
@@ -1026,7 +1044,7 @@ def test_session_state_action(action: ir.Stmt, expected: str) -> None:
     assert (
         "\n".join(
             str(s)
-            for s in session_generator._state_action(  # noqa: SLF001
+            for s in fsm_generator._state_action(  # noqa: SLF001
                 ID("S"),
                 action,
                 ExceptionHandler(
@@ -1073,7 +1091,7 @@ def test_session_state_action_error(
     error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         AllocatorGenerator(dummy_session(), Integration()),
@@ -1081,7 +1099,7 @@ def test_session_state_action_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
-        session_generator._state_action(  # pragma: no branch # noqa: SLF001
+        fsm_generator._state_action(  # pragma: no branch # noqa: SLF001
             ID("S"),
             action,
             ExceptionHandler(
@@ -1455,7 +1473,7 @@ def test_session_assign_error(
     error_msg: str,
 ) -> None:
     allocator = AllocatorGenerator(dummy_session(), Integration())
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         allocator,
@@ -1466,7 +1484,7 @@ def test_session_assign_error(
     allocator._allocation_slots[alloc_id] = 1  # noqa: SLF001
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
-        session_generator._assign(  # noqa: SLF001
+        fsm_generator._assign(  # noqa: SLF001
             ID("X", Location((10, 20))),
             type_,
             expression,
@@ -1535,7 +1553,7 @@ def test_session_append_error(
     error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         AllocatorGenerator(dummy_session(), Integration()),
@@ -1543,7 +1561,7 @@ def test_session_append_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
-        session_generator._append(  # noqa: SLF001
+        fsm_generator._append(  # noqa: SLF001
             append,
             ExceptionHandler(
                 ir.State(
@@ -1583,7 +1601,7 @@ def test_session_read_error(
     error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         AllocatorGenerator(dummy_session(), Integration()),
@@ -1591,7 +1609,7 @@ def test_session_read_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
-        session_generator._read(  # pragma: no branch # noqa: SLF001
+        fsm_generator._read(  # pragma: no branch # noqa: SLF001
             read,
             lambda _: False,
         )
@@ -1619,7 +1637,7 @@ def test_session_write_error(
     error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         AllocatorGenerator(dummy_session(), Integration()),
@@ -1627,7 +1645,7 @@ def test_session_write_error(
     )
 
     with pytest.raises(error_type, match=rf"^<stdin>:10:20: error: {error_msg}$"):
-        session_generator._write(write, [], lambda _: False)  # pragma: no branch # noqa: SLF001
+        fsm_generator._write(write, [], lambda _: False)  # pragma: no branch # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -1681,14 +1699,14 @@ def test_session_write_error(
     ],
 )
 def test_session_to_ada_expr(expression: ir.Expr, expected: ada.Expr) -> None:
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         AllocatorGenerator(dummy_session(), Integration()),
         debug=Debug.BUILTIN,
     )
 
-    assert session_generator._to_ada_expr(expression, lambda _: False) == expected  # noqa: SLF001
+    assert fsm_generator._to_ada_expr(expression, lambda _: False) == expected  # noqa: SLF001
 
 
 @pytest.mark.parametrize(
@@ -1706,7 +1724,7 @@ def test_session_to_ada_expr_equality(
     right: ir.Expr,
     expected: ada.Expr,
 ) -> None:
-    session_generator = SessionGenerator(
+    fsm_generator = FSMGenerator(
         dummy_session(),
         Integration(),
         AllocatorGenerator(dummy_session(), Integration()),
@@ -1714,10 +1732,10 @@ def test_session_to_ada_expr_equality(
     )
 
     assert (
-        session_generator._to_ada_expr(relation(left, right), lambda _: False)  # noqa: SLF001
+        fsm_generator._to_ada_expr(relation(left, right), lambda _: False)  # noqa: SLF001
         == expected
     )
     assert (
-        session_generator._to_ada_expr(relation(right, left), lambda _: False)  # noqa: SLF001
+        fsm_generator._to_ada_expr(relation(right, left), lambda _: False)  # noqa: SLF001
         == expected
     )

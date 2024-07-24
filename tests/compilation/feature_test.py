@@ -5,13 +5,14 @@ import pytest
 from rflx.generator.common import external_io_buffers
 from rflx.integration import IntegrationFile, SessionIntegration
 from tests.const import MAIN
-from tests.feature import FEATURES, create_complement, create_model, get_config
+from tests.feature import FEATURES, copy_src, create_complement, create_model, get_config
 from tests.utils import assert_compilable_code, assert_executable_code
 
 
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_compilability(feature: str, tmp_path: Path) -> None:
     model, integration = create_model(feature)
+    copy_src(feature, tmp_path)
     assert_compilable_code(model, integration, tmp_path)
 
 

@@ -1,30 +1,30 @@
 pragma SPARK_Mode;
 
 with Ada.Text_IO;
+with GNAT.Sockets;
 
 with RFLX.RFLX_Types;
 with RFLX.RFLX_Builtin_Types;
-with RFLX.DHCP_Client.Session;
+with RFLX.DHCP_Client.Session.FSM;
 
 with Channel;
-with Session;
 
 procedure DHCP_Client is
-   package DHCP_Client_Session renames RFLX.DHCP_Client.Session;
+   package FSM renames RFLX.DHCP_Client.Session.FSM;
    package Types renames RFLX.RFLX_Types;
 
-   procedure Read (Ctx : in out Session.Context) with
+   procedure Read (Ctx : FSM.Context; Skt : in out GNAT.Sockets.Socket_Type) with
       Pre =>
-         DHCP_Client_Session.Initialized (Ctx)
-         and then DHCP_Client_Session.Has_Data (Ctx, DHCP_Client_Session.C_Channel),
+         FSM.Initialized (Ctx)
+         and then FSM.Has_Data (Ctx, FSM.C_Channel),
       Post =>
-         DHCP_Client_Session.Initialized (Ctx)
+         FSM.Initialized (Ctx)
    is
       use type Types.Index;
       use type Types.Length;
       Buffer : Types.Bytes (Types.Index'First .. Types.Index'First + 4095)
          := (others => 0);
-      Size : constant Types.Length := DHCP_Client_Session.Read_Buffer_Size (Ctx, DHCP_Client_Session.C_Channel);
+      Size : constant Types.Length := FSM.Read_Buffer_Size (Ctx, FSM.C_Channel);
    begin
       if Size = 0 then
          Ada.Text_IO.Put_Line ("Error: read buffer size is 0");
@@ -34,59 +34,60 @@ procedure DHCP_Client is
          Ada.Text_IO.Put_Line ("Error: buffer too small");
          return;
       end if;
-      DHCP_Client_Session.Read
+      FSM.Read
          (Ctx,
-          DHCP_Client_Session.C_Channel,
+          FSM.C_Channel,
           Buffer (Buffer'First .. Buffer'First - 2 + Types.Index (Size + 1)));
       Channel.Send
-         (Ctx.Socket,
+         (Skt,
           Buffer (Buffer'First .. Buffer'First - 2 + Types.Index (Size + 1)));
    end Read;
 
-   procedure Write (Ctx : in out Session.Context) with
+   procedure Write (Ctx : in out FSM.Context; Skt : in out GNAT.Sockets.Socket_Type) with
       Pre =>
-         DHCP_Client_Session.Initialized (Ctx)
-         and then DHCP_Client_Session.Needs_Data (Ctx, DHCP_Client_Session.C_Channel),
+         FSM.Initialized (Ctx)
+         and then FSM.Needs_Data (Ctx, FSM.C_Channel),
       Post =>
-         DHCP_Client_Session.Initialized (Ctx)
+         FSM.Initialized (Ctx)
    is
       use type Types.Index;
       use type Types.Length;
       Buffer : Types.Bytes (Types.Index'First .. Types.Index'First + 4095);
       Length : RFLX.RFLX_Builtin_Types.Length;
    begin
-      Channel.Receive (Ctx.Socket, Buffer, Length);
+      Channel.Receive (Skt, Buffer, Length);
       if
          Length > 0
-         and Length <= DHCP_Client_Session.Write_Buffer_Size (Ctx, DHCP_Client_Session.C_Channel)
+         and Length <= FSM.Write_Buffer_Size (Ctx, FSM.C_Channel)
       then
-         DHCP_Client_Session.Write
+         FSM.Write
             (Ctx,
-             DHCP_Client_Session.C_Channel,
+             FSM.C_Channel,
              Buffer (Buffer'First .. Buffer'First +  RFLX.RFLX_Builtin_Types.Index (Length) - 1));
       end if;
    end Write;
 
-   Ctx : Session.Context;
+   Skt : GNAT.Sockets.Socket_Type;
+   Ctx : FSM.Context;
 begin
-   Channel.Initialize (Ctx.Socket);
-   DHCP_Client_Session.Initialize (Ctx);
-   while DHCP_Client_Session.Active (Ctx) loop
-      pragma Loop_Invariant (DHCP_Client_Session.Initialized (Ctx));
-      for C in DHCP_Client_Session.Channel'Range loop
-         pragma Loop_Invariant (DHCP_Client_Session.Initialized (Ctx));
-         if DHCP_Client_Session.Has_Data (Ctx, C) then
-            Read (Ctx);
+   Channel.Initialize (Skt);
+   FSM.Initialize (Ctx);
+   while FSM.Active (Ctx) loop
+      pragma Loop_Invariant (FSM.Initialized (Ctx));
+      for C in FSM.Channel'Range loop
+         pragma Loop_Invariant (FSM.Initialized (Ctx));
+         if FSM.Has_Data (Ctx, C) then
+            Read (Ctx, Skt);
          end if;
-         if DHCP_Client_Session.Needs_Data (Ctx, C) then
-            Write (Ctx);
+         if FSM.Needs_Data (Ctx, C) then
+            Write (Ctx, Skt);
          end if;
       end loop;
-      DHCP_Client_Session.Run (Ctx);
+      FSM.Run (Ctx);
    end loop;
    pragma Warnings (Off, "statement has no effect");
    pragma Warnings (Off, """Ctx"" is set by ""Finalize"" but not used after the call");
-   DHCP_Client_Session.Finalize (Ctx);
+   FSM.Finalize (Ctx);
    pragma Warnings (On, "statement has no effect");
    pragma Warnings (On, """Ctx"" is set by ""Finalize"" but not used after the call");
 end DHCP_Client;

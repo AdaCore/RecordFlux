@@ -20,7 +20,13 @@ def test_provability(feature: str, tmp_path: Path) -> None:
     if model.sessions:
         assert len(model.sessions) == 1
         assert model.sessions[0].identifier == ID("Test::Session")
-        units = ["main.adb", "lib.adb", "rflx-test-session.adb"]
+        units = [
+            "main",
+            "lib",
+            "rflx.test.session",
+            "rflx.test.session.fsm",
+            *config.prove,
+        ]
         create_complement(config, feature, tmp_path)
         main = MAIN
     else:
@@ -52,5 +58,11 @@ def test_provability_with_external_io_buffers(feature: str, tmp_path: Path) -> N
         integration,
         tmp_path,
         main=MAIN,
-        units=["main.adb", "lib.adb", "rflx-test-session.adb", *config.prove],
+        units=[
+            "main",
+            "lib",
+            "rflx.test.session",
+            "rflx.test.session.fsm",
+            *config.prove,
+        ],
     )

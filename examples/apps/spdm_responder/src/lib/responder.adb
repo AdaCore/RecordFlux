@@ -1,7 +1,6 @@
-with RFLX.SPDM_Responder.Session;
+with RFLX.SPDM_Responder.Session.FSM;
 with RFLX.RFLX_Types;
 with RFLX.RFLX_Types.Operators;
-with SPDM_C_Responder;
 
 package body Responder with
    SPARK_Mode,
@@ -11,9 +10,9 @@ is
    use RFLX.RFLX_Types.Operators;
 
    Buffer : Bytes (Index'First .. Index'First + 1279) := (others => 0);
-   Context : SPDM_C_Responder.Context;
+   Context : RFLX.SPDM_Responder.Session.FSM.Context;
 
-   function Uninitialized return Boolean is (RFLX.SPDM_Responder.Session.Uninitialized (Context));
+   function Uninitialized return Boolean is (RFLX.SPDM_Responder.Session.FSM.Uninitialized (Context));
 
    procedure Responder_Main with
       Pre => Uninitialized,
@@ -30,7 +29,7 @@ is
 
    procedure Responder_Main
    is
-      package SR renames RFLX.SPDM_Responder.Session;
+      package SR renames RFLX.SPDM_Responder.Session.FSM;
    begin
       loop
          --  Eng/RecordFlux/RecordFlux#1032

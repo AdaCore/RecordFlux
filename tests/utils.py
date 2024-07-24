@@ -16,7 +16,7 @@ from rflx.common import STDIN
 from rflx.error import fatal_fail
 from rflx.expr import Expr
 from rflx.generator import Debug, Generator, const
-from rflx.identifier import ID, StrID
+from rflx.identifier import ID
 from rflx.integration import Integration
 from rflx.model import Field, Link, Message, Model, Session, State, TypeDecl, declaration as decl
 from rflx.rapidflux import Location, RecordFluxError
@@ -320,30 +320,25 @@ def _create_files(
 def session_main(
     input_channels: Optional[dict[str, Sequence[tuple[int, ...]]]] = None,
     output_channels: Optional[Sequence[str]] = None,
-    context: Optional[Sequence[ada.ContextItem]] = None,
-    subprograms: Optional[Sequence[ada.SubprogramBody]] = None,
-    session_package: StrID = "RFLX.Test.Session",
     external_io_buffers: int = 0,
 ) -> Mapping[str, str]:
     input_channels = input_channels or {}
     output_channels = output_channels or []
-    context = context or []
-    subprograms = subprograms or []
-    session_package = ID(session_package)
+    fsm_package = ID("RFLX.Test.Session.FSM")
 
     run_procedure_spec = ada.ProcedureSpecification("Run")
     run_procedure_decl = ada.SubprogramDeclaration(run_procedure_spec)
     run_procedure_body = ada.SubprogramBody(
         run_procedure_spec,
         [
-            ada.ObjectDeclaration(["Ctx"], "Session.Context"),
+            ada.ObjectDeclaration(["Ctx"], fsm_package * "Context"),
             *(
                 [
                     ada.UseTypeClause("RFLX" * const.TYPES_INDEX),
                     ada.UseTypeClause("RFLX" * const.TYPES_BYTES_PTR),
                     ada.ArrayType(
                         "Bytes_Ptrs",
-                        session_package * "External_Buffer",
+                        fsm_package * "External_Buffer",
                         "RFLX" * const.TYPES_BYTES_PTR,
                     ),
                     ada.ObjectDeclaration(["Buffers"], "Bytes_Ptrs"),
@@ -357,7 +352,7 @@ def session_main(
                 [
                     ada.ForIn(
                         "B",
-                        ada.Variable(session_package * "External_Buffer"),
+                        ada.Variable(fsm_package * "External_Buffer"),
                         [
                             ada.Assignment(
                                 ada.Indexed(ada.Variable("Buffers"), ada.Variable("B")),
@@ -386,18 +381,18 @@ def session_main(
                 else []
             ),
             ada.CallStatement(
-                session_package * "Initialize",
+                fsm_package * "Initialize",
                 [
                     ada.Variable("Ctx"),
-                    *_external_io_buffer_arguments(session_package, external_io_buffers),
+                    *_external_io_buffer_arguments(fsm_package, external_io_buffers),
                 ],
             ),
             ada.While(
-                ada.Call(session_package * "Active", [ada.Variable("Ctx")]),
+                ada.Call(fsm_package * "Active", [ada.Variable("Ctx")]),
                 [
                     ada.PragmaStatement(
                         "Loop_Invariant",
-                        [ada.Call(session_package * "Initialized", [ada.Variable("Ctx")])],
+                        [ada.Call(fsm_package * "Initialized", [ada.Variable("Ctx")])],
                     ),
                     *(
                         [
@@ -410,13 +405,13 @@ def session_main(
                         [
                             ada.ForIn(
                                 "C",
-                                ada.Range(session_package * "Channel"),
+                                ada.Range(fsm_package * "Channel"),
                                 [
                                     ada.PragmaStatement(
                                         "Loop_Invariant",
                                         [
                                             ada.Call(
-                                                session_package * "Initialized",
+                                                fsm_package * "Initialized",
                                                 [ada.Variable("Ctx")],
                                             ),
                                         ],
@@ -437,7 +432,7 @@ def session_main(
                                                 [
                                                     (
                                                         ada.Call(
-                                                            session_package * "Has_Data",
+                                                            fsm_package * "Has_Data",
                                                             [
                                                                 ada.Variable("Ctx"),
                                                                 ada.Variable("C"),
@@ -454,10 +449,10 @@ def session_main(
                                                             *(
                                                                 [
                                                                     _remove_buffer_call(
-                                                                        session_package,
+                                                                        fsm_package,
                                                                     ),
                                                                     _add_buffer_call(
-                                                                        session_package,
+                                                                        fsm_package,
                                                                     ),
                                                                 ]
                                                                 if external_io_buffers
@@ -477,7 +472,7 @@ def session_main(
                                                 [
                                                     (
                                                         ada.Call(
-                                                            session_package * "Needs_Data",
+                                                            fsm_package * "Needs_Data",
                                                             [
                                                                 ada.Variable("Ctx"),
                                                                 ada.Variable("C"),
@@ -494,10 +489,10 @@ def session_main(
                                                             *(
                                                                 [
                                                                     _remove_buffer_call(
-                                                                        session_package,
+                                                                        fsm_package,
                                                                     ),
                                                                     _add_buffer_call(
-                                                                        session_package,
+                                                                        fsm_package,
                                                                     ),
                                                                 ]
                                                                 if external_io_buffers
@@ -527,16 +522,16 @@ def session_main(
                             ada.PragmaStatement("Assert", [_buffer_invariant()]),
                             ada.ForIn(
                                 "B",
-                                ada.Variable(session_package * "External_Buffer"),
+                                ada.Variable(fsm_package * "External_Buffer"),
                                 [
                                     ada.IfStatement(
                                         [
                                             (
                                                 ada.Call(
-                                                    session_package * "Buffer_Accessible",
+                                                    fsm_package * "Buffer_Accessible",
                                                     [
                                                         ada.Call(
-                                                            session_package * "Next_State",
+                                                            fsm_package * "Next_State",
                                                             [
                                                                 ada.Variable("Ctx"),
                                                             ],
@@ -546,7 +541,7 @@ def session_main(
                                                 ),
                                                 [
                                                     ada.CallStatement(
-                                                        session_package * "Remove_Buffer",
+                                                        fsm_package * "Remove_Buffer",
                                                         [
                                                             ada.Variable("Ctx"),
                                                             ada.Variable("B"),
@@ -564,16 +559,16 @@ def session_main(
                             ),
                             ada.ForIn(
                                 "B",
-                                ada.Variable(session_package * "External_Buffer"),
+                                ada.Variable(fsm_package * "External_Buffer"),
                                 [
                                     ada.IfStatement(
                                         [
                                             (
                                                 ada.Call(
-                                                    session_package * "Buffer_Accessible",
+                                                    fsm_package * "Buffer_Accessible",
                                                     [
                                                         ada.Call(
-                                                            session_package * "Next_State",
+                                                            fsm_package * "Next_State",
                                                             [
                                                                 ada.Variable("Ctx"),
                                                             ],
@@ -583,7 +578,7 @@ def session_main(
                                                 ),
                                                 [
                                                     ada.CallStatement(
-                                                        session_package * "Add_Buffer",
+                                                        fsm_package * "Add_Buffer",
                                                         [
                                                             ada.Variable("Ctx"),
                                                             ada.Variable("B"),
@@ -592,7 +587,7 @@ def session_main(
                                                                 ada.Variable("B"),
                                                             ),
                                                             ada.Call(
-                                                                session_package * "Written_Last",
+                                                                fsm_package * "Written_Last",
                                                                 [
                                                                     ada.Variable("Ctx"),
                                                                     ada.Variable("B"),
@@ -611,7 +606,7 @@ def session_main(
                         if external_io_buffers
                         else []
                     ),
-                    ada.CallStatement(session_package * "Run", [ada.Variable("Ctx")]),
+                    ada.CallStatement(fsm_package * "Run", [ada.Variable("Ctx")]),
                 ],
             ),
             ada.PragmaStatement(
@@ -626,10 +621,10 @@ def session_main(
                 ],
             ),
             ada.CallStatement(
-                session_package * "Finalize",
+                fsm_package * "Finalize",
                 [
                     ada.Variable("Ctx"),
-                    *_external_io_buffer_arguments(session_package, external_io_buffers),
+                    *_external_io_buffer_arguments(fsm_package, external_io_buffers),
                 ],
             ),
             ada.PragmaStatement(
@@ -647,7 +642,7 @@ def session_main(
                 [
                     ada.ForIn(
                         "B",
-                        ada.Variable(session_package * "External_Buffer"),
+                        ada.Variable(fsm_package * "External_Buffer"),
                         [
                             ada.PragmaStatement(
                                 "Warnings",
@@ -687,7 +682,7 @@ def session_main(
             "Print",
             [
                 ada.Parameter(["Prefix"], "String"),
-                ada.Parameter(["Chan"], session_package * "Channel"),
+                ada.Parameter(["Chan"], fsm_package * "Channel"),
                 ada.Parameter(["Buffer"], "RFLX" * const.TYPES_BYTES),
             ],
         ),
@@ -703,7 +698,7 @@ def session_main(
                             ada.Variable("Chan"),
                             [
                                 (
-                                    ada.Variable(session_package * f"C_{channel}"),
+                                    ada.Variable(fsm_package * f"C_{channel}"),
                                     ada.String(channel),
                                 )
                                 for channel in sorted({*input_channels.keys(), *output_channels})
@@ -736,8 +731,8 @@ def session_main(
         ada.ProcedureSpecification(
             "Read",
             [
-                ada.Parameter(["Ctx"], "Session.Context"),
-                ada.Parameter(["Chan"], session_package * "Channel"),
+                ada.Parameter(["Ctx"], fsm_package * "Context"),
+                ada.Parameter(["Chan"], fsm_package * "Channel"),
             ],
         ),
         [
@@ -756,7 +751,7 @@ def session_main(
                 ["Size"],
                 "RFLX" * const.TYPES_LENGTH,
                 ada.Call(
-                    session_package * "Read_Buffer_Size",
+                    fsm_package * "Read_Buffer_Size",
                     [
                         ada.Variable("Ctx"),
                         ada.Variable("Chan"),
@@ -787,7 +782,7 @@ def session_main(
                 ],
             ),
             ada.CallStatement(
-                session_package * "Read",
+                fsm_package * "Read",
                 [
                     ada.Variable("Ctx"),
                     ada.Variable("Chan"),
@@ -828,18 +823,18 @@ def session_main(
         aspects=[
             ada.Precondition(
                 ada.AndThen(
-                    ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
+                    ada.Call(fsm_package * "Initialized", [ada.Variable("Ctx")]),
                     ada.Call(
-                        session_package * "Has_Data",
+                        fsm_package * "Has_Data",
                         [ada.Variable("Ctx"), ada.Variable("Chan")],
                     ),
                 ),
             ),
             ada.Postcondition(
                 ada.AndThen(
-                    ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
+                    ada.Call(fsm_package * "Initialized", [ada.Variable("Ctx")]),
                     ada.Call(
-                        session_package * "Has_Data",
+                        fsm_package * "Has_Data",
                         [ada.Variable("Ctx"), ada.Variable("Chan")],
                     ),
                 ),
@@ -851,13 +846,13 @@ def session_main(
         ada.ProcedureSpecification(
             "Write",
             [
-                ada.InOutParameter(["Ctx"], "Session.Context"),
-                ada.Parameter(["Chan"], session_package * "Channel"),
+                ada.InOutParameter(["Ctx"], fsm_package * "Context"),
+                ada.Parameter(["Chan"], fsm_package * "Channel"),
             ],
         ),
         [
             ada.UseTypeClause("RFLX" * const.TYPES_LENGTH),
-            *([ada.UseTypeClause(session_package * "Channel")] if len(input_channels) > 1 else []),
+            *([ada.UseTypeClause(fsm_package * "Channel")] if len(input_channels) > 1 else []),
             ada.ObjectDeclaration(
                 ["None"],
                 ada.Slice(
@@ -879,7 +874,7 @@ def session_main(
                                     [
                                         ada.Equal(
                                             ada.Variable("Chan"),
-                                            ada.Variable(session_package * f"C_{channel}"),
+                                            ada.Variable(fsm_package * f"C_{channel}"),
                                         ),
                                     ]
                                     if len(input_channels) > 1
@@ -923,7 +918,7 @@ def session_main(
                             ada.LessEqual(
                                 ada.Length("Message"),
                                 ada.Call(
-                                    session_package * "Write_Buffer_Size",
+                                    fsm_package * "Write_Buffer_Size",
                                     [ada.Variable("Ctx"), ada.Variable("Chan")],
                                 ),
                             ),
@@ -938,7 +933,7 @@ def session_main(
                                 ],
                             ),
                             ada.CallStatement(
-                                session_package * "Write",
+                                fsm_package * "Write",
                                 [
                                     ada.Variable("Ctx"),
                                     ada.Variable("Chan"),
@@ -978,23 +973,23 @@ def session_main(
         aspects=[
             ada.Precondition(
                 ada.AndThen(
-                    ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
+                    ada.Call(fsm_package * "Initialized", [ada.Variable("Ctx")]),
                     ada.Call(
-                        session_package * "Needs_Data",
+                        fsm_package * "Needs_Data",
                         [ada.Variable("Ctx"), ada.Variable("Chan")],
                     ),
                 ),
             ),
             ada.Postcondition(
                 ada.AndThen(
-                    ada.Call(session_package * "Initialized", [ada.Variable("Ctx")]),
+                    ada.Call(fsm_package * "Initialized", [ada.Variable("Ctx")]),
                     ada.Call(
-                        session_package * "Needs_Data",
+                        fsm_package * "Needs_Data",
                         [ada.Variable("Ctx"), ada.Variable("Chan")],
                     ),
                     ada.Equal(
-                        ada.Call(session_package * "Next_State", [ada.Variable("Ctx")]),
-                        ada.Old(ada.Call(session_package * "Next_State", [ada.Variable("Ctx")])),
+                        ada.Call(fsm_package * "Next_State", [ada.Variable("Ctx")]),
+                        ada.Old(ada.Call(fsm_package * "Next_State", [ada.Variable("Ctx")])),
                     ),
                 ),
             ),
@@ -1004,7 +999,6 @@ def session_main(
     lib_unit = ada.PackageUnit(
         [
             *const.CONFIGURATION_PRAGMAS,
-            *context,
         ],
         ada.PackageDeclaration(
             "Lib",
@@ -1023,8 +1017,7 @@ def session_main(
                 if input_channels or output_channels
                 else []
             ),
-            ada.WithClause(session_package),
-            ada.WithClause("Session"),
+            ada.WithClause(fsm_package),
         ],
         ada.PackageBody(
             "Lib",
@@ -1033,49 +1026,26 @@ def session_main(
                 *([read_procedure] if output_channels else []),
                 *(
                     [
-                        ada.ArrayType("Number_Per_Channel", session_package * "Channel", "Natural"),
+                        ada.ArrayType("Number_Per_Channel", fsm_package * "Channel", "Natural"),
                         ada.ObjectDeclaration(
                             ["Written_Messages"],
                             "Number_Per_Channel",
                             ada.NamedAggregate(("others", ada.Number(0))),
                         ),
                         ada.Pragma("Unevaluated_Use_Of_Old", [ada.Literal("Allow")]),
-                        ada.UseTypeClause(session_package * "State"),
+                        ada.UseTypeClause(fsm_package * "State"),
                         write_procedure,
                     ]
                     if input_channels
                     else []
                 ),
                 run_procedure_body,
-                *[
-                    ada.SubprogramBody(s.specification, s.declarations, s.statements)
-                    for s in subprograms
-                ],
             ],
             aspects=[ada.SparkMode()],
         ),
     )
 
-    session_unit = ada.PackageUnit(
-        [
-            *const.CONFIGURATION_PRAGMAS,
-            ada.WithClause(session_package),
-        ],
-        ada.PackageDeclaration(
-            "Session",
-            [
-                ada.DerivedType("Context", session_package * "Context", []),
-            ],
-            aspects=[
-                ada.SparkMode(),
-            ],
-        ),
-        [],
-        ada.PackageBody("Session"),
-    )
-
     return {
-        f"{session_unit.name}.ads": session_unit.ads,
         f"{lib_unit.name}.ads": lib_unit.ads,
         f"{lib_unit.name}.adb": lib_unit.adb,
         MAIN: """with Lib;

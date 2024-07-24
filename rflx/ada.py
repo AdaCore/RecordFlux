@@ -1309,6 +1309,72 @@ class Ghost(Aspect):
         return ""
 
 
+class AbstractState(Aspect):
+    def __init__(self, *identifiers: ID) -> None:
+        assert len(identifiers) > 0
+        self.identifiers = identifiers
+
+    @property
+    def mark(self) -> str:
+        return "Abstract_State"
+
+    @property
+    def definition(self) -> str:
+        args = ", ".join(str(i) for i in self.identifiers)
+        return f"({args})" if len(self.identifiers) > 1 else args
+
+
+class Initializes(Aspect):
+    def __init__(self, *identifiers: ID) -> None:
+        assert len(identifiers) > 0
+        self.identifiers = identifiers
+
+    @property
+    def mark(self) -> str:
+        return "Initializes"
+
+    @property
+    def definition(self) -> str:
+        args = ", ".join(str(i) for i in self.identifiers)
+        return f"({args})" if len(self.identifiers) > 1 else args
+
+
+class Global(Aspect):
+    def __init__(
+        self,
+        inputs: Sequence[ID] | None = None,
+        outputs: Sequence[ID] | None = None,
+        in_outs: Sequence[ID] | None = None,
+    ) -> None:
+        self.inputs = inputs or []
+        self.outputs = outputs or []
+        self.in_outs = in_outs or []
+
+    @property
+    def mark(self) -> str:
+        return "Global"
+
+    @property
+    def definition(self) -> str:
+        inputs = (
+            f"Input => {aggregate_or_single_element([i.ada_str for i in self.inputs])}"
+            if self.inputs
+            else ""
+        )
+        outputs = (
+            f"Output => {aggregate_or_single_element([i.ada_str for i in self.outputs])}"
+            if self.outputs
+            else ""
+        )
+        in_outs = (
+            f"In_Out => {aggregate_or_single_element([i.ada_str for i in self.in_outs])}"
+            if self.in_outs
+            else ""
+        )
+        parts = [p for p in [inputs, outputs, in_outs] if p]
+        return aggregate(parts) if parts else "null"
+
+
 class Import(Aspect):
     @property
     def mark(self) -> str:
@@ -2473,3 +2539,13 @@ def aspect_specification(aspects: Sequence[Aspect]) -> str:
 
 def context_clause(context: Sequence[ContextItem]) -> str:
     return ("\n".join(map(str, unique(context))) + "\n\n") if context else ""
+
+
+def aggregate(elements: Sequence[str]) -> str:
+    result = ", ".join(elements)
+    return f"({result})"
+
+
+def aggregate_or_single_element(elements: Sequence[str]) -> str:
+    result = ", ".join(elements)
+    return f"({result})" if len(elements) > 1 else result

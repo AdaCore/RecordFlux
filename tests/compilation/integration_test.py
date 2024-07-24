@@ -904,13 +904,12 @@ def test_session_message_field_access_in_transition(tmp_path: Path) -> None:
                   end message;
 
                generic
-                  with function F return M;
                session S is
                begin
                   state S is
                      M : M;
                   begin
-                     M := F;
+                     M.F := E_2;
                   transition
                      goto S
                         if M.F = E_1

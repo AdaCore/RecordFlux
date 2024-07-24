@@ -215,9 +215,9 @@ package SPDM_Responder is
                                                     Signature  : Opaque;
                                                     Slot       : SPDM::Slot) return Boolean;
 
-      with function Plat_Validate_Finish_HMAC (Transript : Transcript_ID;
-                                               HMAC      : Opaque;
-                                               Slot      : SPDM::Slot) return Boolean;
+      with function Plat_Validate_Finish_HMAC (Transcript : Transcript_ID;
+                                               HMAC       : Opaque;
+                                               Slot       : SPDM::Slot) return Boolean;
 
       with function Plat_Get_Finish_Verify_Data (Transcript : Transcript_ID;
                                                  Slot       : SPDM::Slot) return Hash;

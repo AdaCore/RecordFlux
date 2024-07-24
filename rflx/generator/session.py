@@ -24,7 +24,6 @@ from rflx.ada import (
     Case,
     CaseStatement,
     ChoiceList,
-    ClassPrecondition,
     CommentStatement,
     Component,
     Constrained,
@@ -170,6 +169,225 @@ class SessionGenerator:
     def __init__(
         self,
         session: ir.Session,
+        allocator: AllocatorGenerator,
+        prefix: str = "",
+    ) -> None:
+        self._session = session
+        self._allocator = allocator
+        self._prefix = prefix
+
+        self._session_context = SessionContext()
+        self._declaration_context: list[ContextItem] = []
+        self._unit_part = UnitPart()
+
+        self._verify(self._session)
+        self._create()
+
+    @property
+    def unit_identifier(self) -> ID:
+        return self._session.identifier
+
+    @property
+    def declaration_context(self) -> list[ContextItem]:
+        return self._declaration_context
+
+    @property
+    def unit_part(self) -> UnitPart:
+        return self._unit_part
+
+    @classmethod
+    def _verify(cls, session: ir.Session) -> None:
+        # TODO(eng/recordflux/RecordFlux#633): Move verification into model
+        cls._verify_formal_parameters(session.parameters)
+
+    @staticmethod
+    def _verify_formal_parameters(parameters: Sequence[ir.FormalDecl]) -> None:
+        for parameter in parameters:
+            if isinstance(parameter, (ir.ChannelDecl, ir.FuncDecl)):
+                pass
+            else:
+                fatal_fail(
+                    f'unexpected formal parameter "{parameter.identifier}"',
+                    location=parameter.location,
+                )
+
+    def _create(self) -> None:
+        functions: list[ir.FuncDecl] = [
+            p for p in self._session.parameters if isinstance(p, ir.FuncDecl)
+        ]
+
+        unit = UnitPart()
+        unit += self._create_functions(functions)
+        self._declaration_context = self._create_context(functions)
+        self._unit_part = unit
+
+    def _create_functions(
+        self,
+        functions: Iterable[ir.FuncDecl],
+    ) -> UnitPart:
+        result: list[Declaration] = []
+
+        for function in functions:
+            result.extend(self._create_function(function))
+
+        return UnitPart(result)
+
+    def _create_function(self, function: ir.FuncDecl) -> Sequence[SubprogramDeclaration]:
+        procedure_parameters: list[Parameter] = [
+            InOutParameter(
+                ["Ctx"],
+                functions_package(self._prefix, self._session.identifier) * "Context",
+            ),
+        ]
+
+        if function.type_ == rty.Undefined():
+            fatal_fail(
+                f'return type of function "{function.identifier}" is undefined',
+                location=function.location,
+            )
+        if function.type_ == rty.OPAQUE:
+            fatal_fail(
+                f'Opaque as return type of function "{function.identifier}" not allowed',
+                location=function.location,
+            )
+        if isinstance(function.type_, rty.Sequence):
+            fail(
+                f'sequence as return type of function "{function.identifier}" not yet supported',
+                location=function.location,
+            )
+        if isinstance(function.type_, rty.Message):
+            if not function.type_.is_definite:
+                fatal_fail(
+                    "non-definite message"
+                    f' in return type of function "{function.identifier}" not allowed',
+                    location=function.location,
+                )
+            if any(
+                isinstance(field_type, rty.Sequence) and field_type != rty.OPAQUE
+                for field_type in function.type_.types.values()
+            ):
+                fail(
+                    "message containing sequence fields"
+                    f' in return type of function "{function.identifier}" not yet supported',
+                    location=function.location,
+                )
+
+        self._session_context.referenced_types.append(function.return_type)
+
+        for a in function.arguments:
+            if isinstance(a.type_, rty.Sequence) and a.type_ != rty.OPAQUE:
+                fail(
+                    f'sequence as parameter of function "{function.identifier}" not yet supported',
+                    location=function.location,
+                )
+            procedure_parameters.append(
+                Parameter(
+                    [a.identifier],
+                    (
+                        const.TYPES_BYTES
+                        if a.type_ == rty.OPAQUE
+                        else (
+                            ID("Boolean")
+                            if a.type_ == rty.BOOLEAN
+                            else (
+                                self._prefix * a.type_identifier * "Structure"
+                                if isinstance(a.type_, rty.Message)
+                                else self._prefix * a.type_identifier
+                            )
+                        )
+                    ),
+                ),
+            )
+
+            assert isinstance(a.type_, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence))
+
+            self._session_context.referenced_types.append(a.type_.identifier)
+
+        procedure_parameters.append(
+            OutParameter(
+                [ID("RFLX_Result")],
+                (
+                    self._prefix * function.return_type * "Structure"
+                    if isinstance(function.type_, rty.Message)
+                    else (
+                        ID("Boolean")
+                        if function.type_ == rty.BOOLEAN
+                        else self._prefix * function.return_type
+                    )
+                ),
+            ),
+        )
+
+        return [
+            SubprogramDeclaration(
+                ProcedureSpecification(
+                    function.identifier,
+                    procedure_parameters,
+                ),
+                [
+                    *(
+                        [Precondition(Not(Constrained("RFLX_Result")))]
+                        if isinstance(function.type_, rty.Enumeration)
+                        and function.type_.always_valid
+                        else []
+                    ),
+                ],
+            ),
+        ]
+
+    def _create_context(
+        self,
+        functions: Sequence[ir.FuncDecl],
+    ) -> list[ContextItem]:
+        declaration_context: list[ContextItem] = []
+
+        if functions:
+            declaration_context.append(
+                WithClause(functions_package(self._prefix, self._session.identifier)),
+            )
+
+        if any(
+            t.parent in [INTERNAL_PACKAGE, const.TYPES]
+            for t in self._session_context.referenced_types
+        ):
+            declaration_context.append(WithClause(self._prefix * const.TYPES_PACKAGE))
+
+        for referenced_types, context in [
+            (self._session_context.referenced_types, declaration_context),
+        ]:
+            for type_identifier in referenced_types:
+                if type_identifier.parent in [INTERNAL_PACKAGE, BUILTINS_PACKAGE]:
+                    continue
+                type_ = self._model_type(type_identifier)
+                context.extend(
+                    [
+                        *(
+                            [WithClause(self._prefix * type_.package)]
+                            if type_.package != self._session.identifier.parent
+                            else []
+                        ),
+                        *(
+                            [
+                                WithClause(self._prefix * type_.identifier),
+                            ]
+                            if isinstance(type_, (model.Message, model.Sequence))
+                            else []
+                        ),
+                    ],
+                )
+
+        return declaration_context
+
+    def _model_type(self, identifier: ID) -> model.TypeDecl:
+        return self._session.types[
+            model.internal_type_identifier(identifier, self._session.package)
+        ]
+
+
+class FSMGenerator:
+    def __init__(
+        self,
+        session: ir.Session,
         integration: Integration,
         allocator: AllocatorGenerator,
         prefix: str = "",
@@ -194,7 +412,7 @@ class SessionGenerator:
 
     @property
     def unit_identifier(self) -> ID:
-        return self._session.identifier
+        return self._session.identifier * "FSM"
 
     @property
     def declaration_context(self) -> list[ContextItem]:
@@ -390,12 +608,13 @@ class SessionGenerator:
         has_reads = bool([read for reads in channel_reads.values() for read in reads])
         has_writes = bool([write for writes in channel_writes.values() for write in writes])
 
+        has_functions = any(isinstance(p, ir.FuncDecl) for p in self._session.parameters)
+
         unit = UnitPart()
 
         if has_reads or has_writes or self._external_io_buffers:
             unit += self._create_allow_unevaluated_use_of_old()
 
-        unit += self._create_abstract_functions(self._session.parameters)
         unit += self._create_uninitialized_function(composite_globals, is_global)
         unit += self._create_global_initialized_function(
             composite_globals,
@@ -411,11 +630,14 @@ class SessionGenerator:
             evaluated_declarations.initialization_declarations,
             evaluated_declarations.initialization,
             self._external_io_buffers,
+            has_functions,
         )
         unit += self._create_finalize_procedure(
+            self._session,
             evaluated_declarations.initialization_declarations,
             evaluated_declarations.finalization,
             self._external_io_buffers,
+            has_functions,
         )
 
         if has_reads:
@@ -460,7 +682,11 @@ class SessionGenerator:
             self._create_use_clauses(self._session_context.used_types)
             + self._create_channel_and_state_types(self._session)
             + self._create_external_buffer_type(self._external_io_buffers)
-            + self._create_context_type(self._session.initial_state.identifier, global_variables)
+            + self._create_context_type(
+                self._session.initial_state.identifier,
+                global_variables,
+                has_functions,
+            )
             + unit
         )
 
@@ -550,6 +776,7 @@ class SessionGenerator:
         self,
         initial_state: ID,
         global_variables: Mapping[ID, tuple[ID, Optional[Expr]]],
+        has_functions: bool,
     ) -> UnitPart:
         return UnitPart(
             [
@@ -558,9 +785,18 @@ class SessionGenerator:
                     "Context",
                     [
                         Component("P", "Private_Context"),
+                        *(
+                            [
+                                Component(
+                                    "F",
+                                    functions_package(self._prefix, self._session.identifier)
+                                    * "Context",
+                                ),
+                            ]
+                            if has_functions
+                            else []
+                        ),
                     ],
-                    abstract=True,
-                    tagged=True,
                     limited=True,
                 ),
             ],
@@ -604,121 +840,6 @@ class SessionGenerator:
             [Pragma("Unevaluated_Use_Of_Old", [Variable("Allow")])],
         )
 
-    def _create_abstract_functions(
-        self,
-        parameters: Iterable[ir.FormalDecl],
-    ) -> UnitPart:
-        result: list[Declaration] = []
-
-        for parameter in parameters:
-            if isinstance(parameter, ir.ChannelDecl):
-                pass
-            elif isinstance(parameter, ir.FuncDecl):
-                result.extend(self._create_abstract_function(parameter))
-            else:
-                fatal_fail(
-                    f'unexpected formal parameter "{parameter.identifier}"',
-                    location=parameter.location,
-                )
-
-        return UnitPart(result)
-
-    def _create_abstract_function(self, function: ir.FuncDecl) -> Sequence[SubprogramDeclaration]:
-        procedure_parameters: list[Parameter] = [InOutParameter(["Ctx"], "Context")]
-
-        if function.type_ == rty.Undefined():
-            fatal_fail(
-                f'return type of function "{function.identifier}" is undefined',
-                location=function.location,
-            )
-        if function.type_ == rty.OPAQUE:
-            fatal_fail(
-                f'Opaque as return type of function "{function.identifier}" not allowed',
-                location=function.location,
-            )
-        if isinstance(function.type_, rty.Sequence):
-            fail(
-                f'sequence as return type of function "{function.identifier}" not yet supported',
-                location=function.location,
-            )
-        if isinstance(function.type_, rty.Message):
-            if not function.type_.is_definite:
-                fatal_fail(
-                    "non-definite message"
-                    f' in return type of function "{function.identifier}" not allowed',
-                    location=function.location,
-                )
-            if any(
-                isinstance(field_type, rty.Sequence) and field_type != rty.OPAQUE
-                for field_type in function.type_.types.values()
-            ):
-                fail(
-                    "message containing sequence fields"
-                    f' in return type of function "{function.identifier}" not yet supported',
-                    location=function.location,
-                )
-
-        self._session_context.referenced_types.append(function.return_type)
-
-        for a in function.arguments:
-            if isinstance(a.type_, rty.Sequence) and a.type_ != rty.OPAQUE:
-                fail(
-                    f'sequence as parameter of function "{function.identifier}" not yet supported',
-                    location=function.location,
-                )
-            procedure_parameters.append(
-                Parameter(
-                    [a.identifier],
-                    (
-                        const.TYPES_BYTES
-                        if a.type_ == rty.OPAQUE
-                        else (
-                            ID("Boolean")
-                            if a.type_ == rty.BOOLEAN
-                            else (
-                                self._prefix * a.type_identifier * "Structure"
-                                if isinstance(a.type_, rty.Message)
-                                else self._prefix * a.type_identifier
-                            )
-                        )
-                    ),
-                ),
-            )
-
-            assert isinstance(a.type_, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence))
-
-            self._session_context.referenced_types.append(a.type_.identifier)
-
-        procedure_parameters.append(
-            OutParameter(
-                [ID("RFLX_Result")],
-                (
-                    self._prefix * function.return_type * "Structure"
-                    if isinstance(function.type_, rty.Message)
-                    else (
-                        ID("Boolean")
-                        if function.type_ == rty.BOOLEAN
-                        else self._prefix * function.return_type
-                    )
-                ),
-            ),
-        )
-
-        return [
-            SubprogramDeclaration(
-                ProcedureSpecification(
-                    function.identifier,
-                    procedure_parameters,
-                ),
-                (
-                    [ClassPrecondition(Not(Constrained("RFLX_Result")))]
-                    if isinstance(function.type_, rty.Enumeration) and function.type_.always_valid
-                    else []
-                ),
-                abstract=True,
-            ),
-        ]
-
     def _create_uninitialized_function(
         self,
         composite_globals: Sequence[ir.VarDecl],
@@ -727,7 +848,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Uninitialized",
             "Boolean",
-            [Parameter(["Ctx" if composite_globals else "Unused_Ctx"], "Context'Class")],
+            [Parameter(["Ctx" if composite_globals else "Unused_Ctx"], "Context")],
         )
         return UnitPart(
             [
@@ -770,7 +891,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Global_Allocated",
             "Boolean",
-            [Parameter(["Ctx"], "Context'Class")],
+            [Parameter(["Ctx"], "Context")],
         )
 
         return UnitPart(
@@ -803,7 +924,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Global_Initialized",
             "Boolean",
-            [Parameter(["Ctx"], "Context'Class")],
+            [Parameter(["Ctx"], "Context")],
         )
 
         return UnitPart(
@@ -857,7 +978,7 @@ class SessionGenerator:
             [
                 Parameter(
                     ["Ctx" if composite_globals or self._allocator.required else "Unused_Ctx"],
-                    "Context'Class",
+                    "Context",
                 ),
             ],
         )
@@ -1014,7 +1135,7 @@ class SessionGenerator:
                     ProcedureSpecification(
                         state.identifier,
                         [
-                            InOutParameter(["Ctx"], "Context'Class"),
+                            InOutParameter(["Ctx"], "Context"),
                         ],
                     ),
                     [
@@ -1102,7 +1223,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Active",
             "Boolean",
-            [Parameter(["Ctx" if len(session.states) > 1 else "Unused_Ctx"], "Context'Class")],
+            [Parameter(["Ctx" if len(session.states) > 1 else "Unused_Ctx"], "Context")],
         )
         return UnitPart(
             [
@@ -1129,11 +1250,12 @@ class SessionGenerator:
         declarations: Sequence[Declaration],
         initialization: Sequence[Statement],
         external_io_buffers: Sequence[common.Message],
+        has_functions: bool,
     ) -> UnitPart:
         specification = ProcedureSpecification(
             "Initialize",
             [
-                InOutParameter(["Ctx"], "Context'Class"),
+                InOutParameter(["Ctx"], "Context"),
                 *[
                     InOutParameter([b.buffer_id], const.TYPES_BYTES_PTR)
                     for b in external_io_buffers
@@ -1185,6 +1307,16 @@ class SessionGenerator:
                     declarations,
                     [
                         *initialization,
+                        *(
+                            [
+                                Assignment(
+                                    "Ctx.F",
+                                    Call(functions_package("", session.identifier) * "Initialize"),
+                                ),
+                            ]
+                            if has_functions
+                            else []
+                        ),
                         Assignment(
                             "Ctx.P.Next_State",
                             Variable(state_id(session.initial_state.identifier)),
@@ -1196,14 +1328,16 @@ class SessionGenerator:
 
     @staticmethod
     def _create_finalize_procedure(
+        session: ir.Session,
         declarations: Sequence[Declaration],
         finalization: Sequence[Statement],
         external_io_buffers: Sequence[common.Message],
+        has_functions: bool,
     ) -> UnitPart:
         specification = ProcedureSpecification(
             "Finalize",
             [
-                InOutParameter(["Ctx"], "Context'Class"),
+                InOutParameter(["Ctx"], "Context"),
                 *[
                     InOutParameter([b.buffer_id], const.TYPES_BYTES_PTR)
                     for b in external_io_buffers
@@ -1243,6 +1377,16 @@ class SessionGenerator:
                     declarations,
                     [
                         *finalization,
+                        *(
+                            [
+                                CallStatement(
+                                    functions_package("", session.identifier) * "Finalize",
+                                    [Variable("Ctx.F")],
+                                ),
+                            ]
+                            if has_functions
+                            else []
+                        ),
                         Assignment(
                             "Ctx.P.Next_State",
                             Variable(state_id(ir.FINAL_STATE.identifier)),
@@ -1261,7 +1405,7 @@ class SessionGenerator:
 
         specification = ProcedureSpecification(
             "Reset_Messages_Before_Write",
-            [InOutParameter(["Ctx"], "Context'Class")],
+            [InOutParameter(["Ctx"], "Context")],
         )
         states = [
             (
@@ -1333,8 +1477,12 @@ class SessionGenerator:
             ],
         )
 
-    def _create_tick_procedure(self, session: ir.Session, has_writes: bool) -> UnitPart:
-        specification = ProcedureSpecification("Tick", [InOutParameter(["Ctx"], "Context'Class")])
+    def _create_tick_procedure(
+        self,
+        session: ir.Session,
+        has_writes: bool,
+    ) -> UnitPart:
+        specification = ProcedureSpecification("Tick", [InOutParameter(["Ctx"], "Context")])
         return UnitPart(
             [
                 Pragma("Warnings", [Variable("Off"), String('subprogram "Tick" has no effect')]),
@@ -1397,7 +1545,7 @@ class SessionGenerator:
         in_io_state_specification = FunctionSpecification(
             "In_IO_State",
             "Boolean",
-            [Parameter(["Ctx" if io_states else "Unused_Ctx"], "Context'Class")],
+            [Parameter(["Ctx" if io_states else "Unused_Ctx"], "Context")],
         )
         return UnitPart(
             [
@@ -1422,7 +1570,7 @@ class SessionGenerator:
 
     @staticmethod
     def _create_run_procedure() -> UnitPart:
-        specification = ProcedureSpecification("Run", [InOutParameter(["Ctx"], "Context'Class")])
+        specification = ProcedureSpecification("Run", [InOutParameter(["Ctx"], "Context")])
         return UnitPart(
             [
                 Pragma("Warnings", [Variable("Off"), String('subprogram "Run" has no effect')]),
@@ -1464,7 +1612,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Next_State",
             "State",
-            [Parameter(["Ctx"], "Context'Class")],
+            [Parameter(["Ctx"], "Context")],
         )
         return UnitPart(
             [
@@ -1644,7 +1792,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Has_Buffer",
             "Boolean",
-            [Parameter(["Ctx"], "Context'Class"), Parameter(["Ext_Buf"], "External_Buffer")],
+            [Parameter(["Ctx"], "Context"), Parameter(["Ext_Buf"], "External_Buffer")],
         )
 
         return UnitPart(
@@ -1678,7 +1826,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Written_Last",
             const.TYPES_BIT_LENGTH,
-            [Parameter(["Ctx"], "Context'Class"), Parameter(["Ext_Buf"], "External_Buffer")],
+            [Parameter(["Ctx"], "Context"), Parameter(["Ext_Buf"], "External_Buffer")],
         )
 
         return UnitPart(
@@ -1715,7 +1863,7 @@ class SessionGenerator:
         specification = ProcedureSpecification(
             "Add_Buffer",
             [
-                InOutParameter(["Ctx"], "Context'Class"),
+                InOutParameter(["Ctx"], "Context"),
                 Parameter(["Ext_Buf"], "External_Buffer"),
                 InOutParameter(["Buffer"], const.TYPES_BYTES_PTR),
                 Parameter(["Written_Last"], const.TYPES_BIT_LENGTH),
@@ -1830,7 +1978,7 @@ class SessionGenerator:
         specification = ProcedureSpecification(
             "Remove_Buffer",
             [
-                InOutParameter(["Ctx"], "Context'Class"),
+                InOutParameter(["Ctx"], "Context"),
                 Parameter(["Ext_Buf"], "External_Buffer"),
                 OutParameter(["Buffer"], const.TYPES_BYTES_PTR),
             ],
@@ -2008,7 +2156,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Has_Data",
             "Boolean",
-            [Parameter(["Ctx"], "Context'Class"), Parameter(["Chan"], "Channel")],
+            [Parameter(["Ctx"], "Context"), Parameter(["Chan"], "Channel")],
         )
 
         return UnitPart(
@@ -2078,7 +2226,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Needs_Data",
             "Boolean",
-            [Parameter(["Ctx"], "Context'Class"), Parameter(["Chan"], "Channel")],
+            [Parameter(["Ctx"], "Context"), Parameter(["Chan"], "Channel")],
         )
 
         return UnitPart(
@@ -2119,7 +2267,7 @@ class SessionGenerator:
         specification = FunctionSpecification(
             "Read_Buffer_Size",
             const.TYPES_LENGTH,
-            [Parameter(["Ctx"], "Context'Class"), Parameter(["Chan"], "Channel")],
+            [Parameter(["Ctx"], "Context"), Parameter(["Chan"], "Channel")],
         )
 
         return UnitPart(
@@ -2181,7 +2329,7 @@ class SessionGenerator:
             "Write_Buffer_Size",
             const.TYPES_LENGTH,
             [
-                Parameter(["Ctx"], "Context'Class"),
+                Parameter(["Ctx"], "Context"),
                 Parameter(["Chan"], "Channel"),
             ],
         )
@@ -2251,7 +2399,7 @@ class SessionGenerator:
         specification = ProcedureSpecification(
             "Read",
             [
-                Parameter(["Ctx"], "Context'Class"),
+                Parameter(["Ctx"], "Context"),
                 Parameter(["Chan"], "Channel"),
                 OutParameter(["Buffer"], const.TYPES_BYTES),
                 Parameter(["Offset"], const.TYPES_LENGTH, Number(0)),
@@ -2462,7 +2610,7 @@ class SessionGenerator:
         specification = ProcedureSpecification(
             "Write",
             [
-                InOutParameter(["Ctx"], "Context'Class"),
+                InOutParameter(["Ctx"], "Context"),
                 Parameter(["Chan"], "Channel"),
                 Parameter(["Buffer"], const.TYPES_BYTES),
                 Parameter(["Offset"], const.TYPES_LENGTH, Number(0)),
@@ -3902,7 +4050,7 @@ class SessionGenerator:
             CallStatement(
                 call_expr.identifier,
                 [
-                    Variable("Ctx"),
+                    Variable("Ctx.F"),
                     *arguments,
                     Variable(target_id),
                 ],
@@ -6015,6 +6163,10 @@ def found_id(identifier: ID) -> ID:
 def state_id(identifier: ID) -> ID:
     assert identifier != ID("null")
     return "S_" + identifier
+
+
+def functions_package(prefix: str, session_id: ID) -> ID:
+    return prefix * session_id + "_Functions"
 
 
 def _unexpected_expression(expression: ir.Expr, context: str) -> NoReturn:

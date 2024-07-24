@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Generic setters for opaque fields
+- Separation of externally defined functions from state machine (eng/recordflux/RecordFlux#1032)
 
 ## [0.22.0] - 2024-07-17
 

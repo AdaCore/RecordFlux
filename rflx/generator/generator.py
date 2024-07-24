@@ -105,7 +105,7 @@ from . import common, const, message as message_generator
 from .allocator import AllocatorGenerator
 from .parser import ParserGenerator
 from .serializer import SerializerGenerator
-from .session import SessionGenerator
+from .session import FSMGenerator, SessionGenerator
 
 
 @dataclass(frozen=True)
@@ -328,7 +328,7 @@ class Generator:
             unit += allocator_generator.unit_part
             units[allocator_generator.unit_identifier] = unit
 
-        session_generator = SessionGenerator(
+        fsm_generator = FSMGenerator(
             session.to_ir(),
             integration,
             allocator_generator,
@@ -337,9 +337,24 @@ class Generator:
         )
         unit = self._create_unit(
             self._prefix,
+            fsm_generator.unit_identifier,
+            fsm_generator.declaration_context,
+            fsm_generator.body_context,
+            configuration_pragmas=[Pragma("Restrictions", [Variable("No_Streams")])],
+            terminating=False,
+        )
+        unit += fsm_generator.unit_part
+        units[fsm_generator.unit_identifier] = unit
+
+        session_generator = SessionGenerator(
+            session.to_ir(),
+            allocator_generator,
+            self._prefix,
+        )
+        unit = self._create_unit(
+            self._prefix,
             session_generator.unit_identifier,
             session_generator.declaration_context,
-            session_generator.body_context,
             configuration_pragmas=[Pragma("Restrictions", [Variable("No_Streams")])],
             terminating=False,
         )
