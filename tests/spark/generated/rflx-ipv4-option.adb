@@ -407,11 +407,11 @@ is
    end Set_Option_Data;
 
    procedure Generic_Set_Option_Data (Ctx : in out Context; Length : RFLX_Types.Length) is
-      First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Option_Data);
-      Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
-      Buffer_Last : constant RFLX_Types.Index := RFLX_Types.To_Index (First + RFLX_Types.To_Bit_Length (Length) - 1);
+      First : constant RFLX_Types.Index := RFLX_Types.To_Index (Field_First (Ctx, F_Option_Data));
    begin
-      Process_Option_Data (Ctx.Buffer.all (Buffer_First .. Buffer_Last));
+      if Length > 0 then
+         Process_Option_Data (Ctx.Buffer.all (First .. First + RFLX_Types.Index (Length) - 1));
+      end if;
       Initialize_Option_Data_Private (Ctx, Length);
    end Generic_Set_Option_Data;
 

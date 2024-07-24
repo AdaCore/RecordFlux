@@ -1303,40 +1303,38 @@ class SerializerGenerator:
                     [
                         ObjectDeclaration(
                             ["First"],
-                            const.TYPES_BIT_INDEX,
-                            Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)]),
-                            constant=True,
-                        ),
-                        ObjectDeclaration(
-                            ["Buffer_First"],
-                            const.TYPES_INDEX,
-                            Call(const.TYPES_TO_INDEX, [Variable("First")]),
-                            constant=True,
-                        ),
-                        ObjectDeclaration(
-                            ["Buffer_Last"],
                             const.TYPES_INDEX,
                             Call(
                                 const.TYPES_TO_INDEX,
-                                [
-                                    Add(
-                                        Variable("First"),
-                                        Call(const.TYPES_TO_BIT_LENGTH, [Variable("Length")]),
-                                        -Number(1),
-                                    ),
-                                ],
+                                [Call("Field_First", [Variable("Ctx"), Variable(f.affixed_name)])],
                             ),
                             constant=True,
                         ),
                     ],
                     [
-                        CallStatement(
-                            f"Process_{f.name}",
+                        IfStatement(
                             [
-                                Slice(
-                                    Selected(Variable("Ctx.Buffer"), "all"),
-                                    Variable("Buffer_First"),
-                                    Variable("Buffer_Last"),
+                                (
+                                    Greater(Variable("Length"), Number(0)),
+                                    [
+                                        CallStatement(
+                                            f"Process_{f.name}",
+                                            [
+                                                Slice(
+                                                    Selected(Variable("Ctx.Buffer"), "all"),
+                                                    Variable("First"),
+                                                    Add(
+                                                        Variable("First"),
+                                                        Call(
+                                                            const.TYPES_INDEX,
+                                                            [Variable("Length")],
+                                                        ),
+                                                        -Number(1),
+                                                    ),
+                                                ),
+                                            ],
+                                        ),
+                                    ],
                                 ),
                             ],
                         ),
