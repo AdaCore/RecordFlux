@@ -181,10 +181,14 @@ class VarDecl(Stmt):
         return []
 
     def to_z3_expr(self) -> z3.BoolRef:
-        if isinstance(self.type_, rty.AnyInteger):
+        if isinstance(self.type_, rty.Integer):
+            first = z3.Int(str(First(self.type_.identifier, self.type_)))
+            last = z3.Int(str(Last(self.type_.identifier, self.type_)))
             return z3.And(
-                z3.Int(str(self.identifier)) >= z3.IntVal(self.type_.bounds.lower),
-                z3.Int(str(self.identifier)) <= z3.IntVal(self.type_.bounds.upper),
+                first == z3.IntVal(self.type_.bounds.lower),
+                last == z3.IntVal(self.type_.bounds.upper),
+                z3.Int(str(self.identifier)) >= first,
+                z3.Int(str(self.identifier)) <= last,
             )
         return z3.BoolVal(val=True)
 
@@ -264,7 +268,11 @@ class FieldAssign(Stmt):
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self.expression.preconditions(variable_id)
+        return [
+            Cond(FieldValidNext(self.message, self.field, self.type_)),
+            Cond(SufficientSpace(self.message, self.field, self.type_)),
+            *self.expression.preconditions(variable_id),
+        ]
 
     def to_z3_expr(self) -> z3.BoolRef:
         target: z3.ExprRef
@@ -300,7 +308,11 @@ class Append(Stmt):
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self.expression.preconditions(variable_id)
+        return [
+            Cond(Valid(self.sequence, self.type_)),
+            Cond(HasElement(self.sequence, self.type_)),
+            *self.expression.preconditions(variable_id),
+        ]
 
     def to_z3_expr(self) -> z3.BoolRef:
         return z3.BoolVal(val=True)
@@ -329,7 +341,7 @@ class Extend(Stmt):
         )
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self.expression.preconditions(variable_id)
+        return [Cond(Valid(self.sequence, self.type_)), *self.expression.preconditions(variable_id)]
 
     def to_z3_expr(self) -> z3.BoolRef:
         return z3.BoolVal(val=True)
@@ -360,8 +372,8 @@ class Reset(Stmt):
             self.origin,
         )
 
-    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return []
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return [c for v in self.parameter_values.values() for c in v.preconditions(variable_id)]
 
     def to_z3_expr(self) -> z3.BoolRef:
         return z3.BoolVal(val=True)
@@ -740,22 +752,14 @@ class Last(IntAttr):
 
 
 @define(eq=False)
-class ValidChecksum(Attr):
-    @property
-    def type_(self) -> rty.Enumeration:
-        return rty.BOOLEAN
-
-    def to_z3_expr(self) -> z3.ExprRef:
+class ValidChecksum(Attr, BoolExpr):
+    def to_z3_expr(self) -> z3.BoolRef:
         return z3.Bool(str(self))
 
 
 @define(eq=False)
-class Valid(Attr):
-    @property
-    def type_(self) -> rty.Enumeration:
-        return rty.BOOLEAN
-
-    def to_z3_expr(self) -> z3.ExprRef:
+class Valid(Attr, BoolExpr):
+    def to_z3_expr(self) -> z3.BoolRef:
         return z3.Bool(str(self))
 
 
@@ -770,12 +774,8 @@ class Present(Attr):
 
 
 @define(eq=False)
-class HasData(Attr):
-    @property
-    def type_(self) -> rty.Enumeration:
-        return rty.BOOLEAN
-
-    def to_z3_expr(self) -> z3.ExprRef:
+class HasData(Attr, BoolExpr):
+    def to_z3_expr(self) -> z3.BoolRef:
         return z3.Bool(str(self))
 
 
@@ -803,6 +803,11 @@ class Opaque(Attr):
     @property
     def type_(self) -> rty.Sequence:
         return rty.OPAQUE
+
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return [
+            Cond(Valid(self.prefix, self.prefix_type)),
+        ]
 
     def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -833,29 +838,42 @@ class FieldAccessAttr(Expr):
             self.origin,
         )
 
+    @property
+    def _symbol(self) -> str:
+        return re.sub(r"([a-z])([A-Z])", r"\1_\2", self.__class__.__name__)
+
     def _update_str(self) -> None:
-        symbol = re.sub(r"([a-z])([A-Z])", r"\1_\2", self.__class__.__name__)
-        self._str = intern(f"{self.message}.{self.field}'{symbol}")
+        self._str = intern(f"{self.message}.{self.field}'{self._symbol}")
+
+
+@define(eq=False)
+class FieldValidNext(FieldAccessAttr, BoolExpr):
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.Bool(str(self))
+
+    @property
+    def _symbol(self) -> str:
+        return "Valid_Next"
 
 
 @define(eq=False)
 class FieldValid(FieldAccessAttr, BoolExpr):
-    @property
-    def type_(self) -> rty.Enumeration:
-        return rty.BOOLEAN
-
     def to_z3_expr(self) -> z3.BoolRef:
         return z3.Bool(str(self))
+
+    @property
+    def _symbol(self) -> str:
+        return "Valid"
 
 
 @define(eq=False)
 class FieldPresent(FieldAccessAttr, BoolExpr):
-    @property
-    def type_(self) -> rty.Enumeration:
-        return rty.BOOLEAN
-
     def to_z3_expr(self) -> z3.BoolRef:
         return z3.Bool(str(self))
+
+    @property
+    def _symbol(self) -> str:
+        return "Present"
 
 
 @define(eq=False)
@@ -864,8 +882,21 @@ class FieldSize(FieldAccessAttr, IntExpr):
     def type_(self) -> rty.Integer:
         return rty.BIT_LENGTH
 
+    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return (
+            [
+                Cond(FieldValidNext(self.message, self.field, self.message_type)),
+            ]
+            if isinstance(self.message_type, rty.Message)
+            else []
+        )
+
     def to_z3_expr(self) -> z3.ArithRef:
         return z3.Int(str(self))
+
+    @property
+    def _symbol(self) -> str:
+        return "Size"
 
 
 @define(eq=False)
@@ -992,6 +1023,8 @@ class Add(BinaryIntExpr):
             else INT_MAX
         )
         return [
+            *self.left.preconditions(variable_id),
+            *self.right.preconditions(variable_id),
             # Left + Right <= Upper_Bound
             Cond(
                 LessEqual(
@@ -1015,7 +1048,15 @@ class Add(BinaryIntExpr):
                         v_id,
                         Sub(
                             IntVal(upper_bound),
-                            self.right,
+                            (
+                                IntConversion(
+                                    rty.BASE_INTEGER,
+                                    self.right,
+                                )
+                                if self.right.type_ != rty.BASE_INTEGER
+                                and not isinstance(self.right.type_, rty.UniversalInteger)
+                                else self.right
+                            ),
                         ),
                         v_type,
                         origin=self.origin,
@@ -1036,10 +1077,12 @@ class Sub(BinaryIntExpr):
 
     def preconditions(
         self,
-        _variable_id: Generator[ID, None, None],
+        variable_id: Generator[ID, None, None],
         _target_type: rty.Type | None = None,
     ) -> list[Cond]:
         return [
+            *self.left.preconditions(variable_id),
+            *self.right.preconditions(variable_id),
             # Left >= Right
             Cond(GreaterEqual(self.left, self.right)),
         ]
@@ -1068,6 +1111,8 @@ class Mul(BinaryIntExpr):
             else INT_MAX
         )
         return [
+            *self.left.preconditions(variable_id),
+            *self.right.preconditions(variable_id),
             # Left * Right <= Upper_Bound
             Cond(
                 LessEqual(
@@ -1104,10 +1149,12 @@ class Div(BinaryIntExpr):
 
     def preconditions(
         self,
-        _variable_id: Generator[ID, None, None],
+        variable_id: Generator[ID, None, None],
         _target_type: rty.Type | None = None,
     ) -> list[Cond]:
         return [
+            *self.left.preconditions(variable_id),
+            *self.right.preconditions(variable_id),
             # Right /= 0
             Cond(NotEqual(self.right, IntVal(0))),
         ]
@@ -1136,6 +1183,8 @@ class Pow(BinaryIntExpr):
             else INT_MAX
         )
         return [
+            *self.left.preconditions(variable_id),
+            *self.right.preconditions(variable_id),
             # Left ** Right <= Upper_Bound
             Cond(
                 LessEqual(
@@ -1161,10 +1210,12 @@ class Mod(BinaryIntExpr):
 
     def preconditions(
         self,
-        _variable_id: Generator[ID, None, None],
+        variable_id: Generator[ID, None, None],
         _target_type: rty.Type | None = None,
     ) -> list[Cond]:
         return [
+            *self.left.preconditions(variable_id),
+            *self.right.preconditions(variable_id),
             # Right /= 0
             Cond(NotEqual(self.right, IntVal(0))),
         ]
@@ -1298,8 +1349,11 @@ class Call(Expr):
     def accessed_vars(self) -> list[ID]:
         return [i for a in self.arguments for i in a.accessed_vars]
 
-    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return self._preconditions
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return [
+            *[c for a in self.arguments for c in a.preconditions(variable_id)],
+            *self._preconditions,
+        ]
 
     def set_preconditions(self, preconditions: list[Cond]) -> None:
         self._preconditions = preconditions
@@ -1394,6 +1448,14 @@ class FieldAccess(Expr):
             self.field,
             self.message_type,
             self.origin,
+        )
+
+    def preconditions(self, _: Generator[ID, None, None]) -> list[Cond]:
+        return (
+            [Cond(FieldValid(self.message, self.field, self.message_type, self.origin))]
+            if isinstance(self.message_type, rty.Message)
+            and self.field in self.message_type.field_types
+            else []
         )
 
     def _update_str(self) -> None:
@@ -1531,9 +1593,8 @@ class BoolIfExpr(IfExpr, BoolExpr):
 
 @define(eq=False)
 class Conversion(Expr):
-    identifier: ID = field(converter=ID)
+    target_type: rty.NamedType
     argument: Expr
-    target_type: rty.Any
     origin: Optional[Origin] = None
 
     @property
@@ -1546,29 +1607,61 @@ class Conversion(Expr):
 
     def substituted(self, mapping: Mapping[ID, ID]) -> Conversion:
         return self.__class__(
-            self.identifier,
-            self.argument.substituted(mapping),
             self.target_type,
+            self.argument.substituted(mapping),
             self.origin,
         )
+
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return self.argument.preconditions(variable_id)
 
     def to_z3_expr(self) -> z3.ExprRef:
         return z3.BoolVal(val=True)
 
     def _update_str(self) -> None:
-        self._str = intern(f"{self.identifier} ({self.argument})")
+        self._str = intern(f"{self.target_type.identifier} ({self.argument})")
 
 
 @define(eq=False)
 class IntConversion(Conversion, BasicIntExpr):
-    identifier: ID = field(converter=ID)
-    argument: IntExpr
     target_type: rty.Integer
+    argument: IntExpr
     origin: Optional[Origin] = None
 
     @property
     def type_(self) -> rty.Integer:
         return self.target_type
+
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return [
+            # TARGET_TYPE'First <= ARGUMENT
+            Cond(
+                LessEqual(
+                    IntConversion(
+                        rty.BASE_INTEGER,
+                        First(self.target_type.identifier, self.argument.type_),
+                    ),
+                    IntConversion(
+                        rty.BASE_INTEGER,
+                        self.argument,
+                    ),
+                ),
+            ),
+            # ARGUMENT <= TARGET_TYPE'Last
+            Cond(
+                LessEqual(
+                    IntConversion(
+                        rty.BASE_INTEGER,
+                        self.argument,
+                    ),
+                    IntConversion(
+                        rty.BASE_INTEGER,
+                        Last(self.target_type.identifier, self.argument.type_),
+                    ),
+                ),
+            ),
+            *self.argument.preconditions(variable_id),
+        ]
 
     def to_z3_expr(self) -> z3.ArithRef:
         return self.argument.to_z3_expr()
@@ -1609,8 +1702,8 @@ class Comprehension(Expr):
             self.origin,
         )
 
-    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return []
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return self.sequence.preconditions(variable_id)
 
     def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1656,8 +1749,8 @@ class Find(Expr):
             self.origin,
         )
 
-    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return []
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return self.sequence.preconditions(variable_id)
 
     def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1778,8 +1871,8 @@ class MsgAgg(Expr):
             origin=self.origin,
         )
 
-    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return []
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return [c for v in self.field_values.values() for c in v.preconditions(variable_id)]
 
     def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1812,8 +1905,8 @@ class DeltaMsgAgg(Expr):
             origin=self.origin,
         )
 
-    def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
-        return []
+    def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
+        return [c for v in self.field_values.values() for c in v.preconditions(variable_id)]
 
     def to_z3_expr(self) -> z3.ExprRef:
         raise NotImplementedError
@@ -1864,6 +1957,27 @@ class CaseExpr(Expr):
     def _update_str(self) -> None:
         data = ",\n".join(f"      when {' | '.join(map(str, c))} => {e}" for c, e in self.choices)
         self._str = intern(f"(case {self.expression} is\n{data})")
+
+
+@define(eq=False)
+class SufficientSpace(FieldAccessAttr, BoolExpr):
+    message: ID = field(converter=ID)
+    field: ID = field(converter=ID)
+    message_type: rty.Message
+    origin: Optional[Origin] = None
+
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.Bool(str(self))
+
+
+@define(eq=False)
+class HasElement(Attr, BoolExpr):
+    prefix: ID = field(converter=ID)
+    prefix_type: rty.Sequence
+    origin: Optional[Origin] = None
+
+    def to_z3_expr(self) -> z3.BoolRef:
+        return z3.Bool(str(self))
 
 
 @frozen
@@ -2030,6 +2144,67 @@ class Session:
         assert len(value.parts) == 2, attribute
 
 
+def add_conversions(statements: Sequence[Stmt]) -> list[Stmt]:
+    result: list[Stmt] = []
+
+    for statement in statements:
+        if isinstance(statement, Assign):
+            if statement.type_.is_compatible_strong(statement.expression.type_) and not isinstance(
+                statement.expression,
+                BinaryIntExpr,
+            ):
+                result.append(statement)
+                continue
+
+            if isinstance(statement.type_, (rty.Integer, rty.Enumeration)):
+                expression: Expr
+                if isinstance(statement.expression, BinaryIntExpr):
+                    assert isinstance(statement.type_, rty.Integer)
+                    left = (
+                        statement.expression.left
+                        if statement.type_.is_compatible_strong(statement.expression.left.type_)
+                        else IntConversion(
+                            statement.type_,
+                            statement.expression.left,
+                            statement.expression.left.origin,
+                        )
+                    )
+                    right = (
+                        statement.expression.right
+                        if statement.type_.is_compatible_strong(statement.expression.right.type_)
+                        else IntConversion(
+                            statement.type_,
+                            statement.expression.right,
+                            statement.expression.right.origin,
+                        )
+                    )
+                    expression = statement.expression.__class__(
+                        left,
+                        right,
+                        origin=statement.expression.origin,
+                    )
+                else:
+                    expression = Conversion(
+                        statement.type_,
+                        statement.expression,
+                        statement.expression.origin,
+                    )
+
+                result.append(
+                    Assign(
+                        statement.target,
+                        expression,
+                        statement.type_,
+                        statement.origin,
+                    ),
+                )
+                continue
+
+        result.append(statement)
+
+    return result
+
+
 def add_checks(statements: Sequence[Stmt], variable_id: Generator[ID, None, None]) -> list[Stmt]:
     """Add check statements in places where preconditions must be ensured."""
 
@@ -2040,6 +2215,50 @@ def add_checks(statements: Sequence[Stmt], variable_id: Generator[ID, None, None
 
         for precondition in preconditions:
             result.extend([*precondition.facts, Check(precondition.goal)])
+
+        if isinstance(statement, Assign) and isinstance(
+            statement.expression,
+            (Comprehension, Find),
+        ):
+            statement.expression = statement.expression.__class__(
+                statement.expression.iterator,
+                statement.expression.sequence,
+                statement.expression.selector.__class__(
+                    [
+                        *[
+                            x
+                            for s in statement.expression.selector.stmts
+                            for p in s.preconditions(variable_id)
+                            for x in [*p.facts, Check(p.goal)]
+                        ],
+                        *statement.expression.selector.stmts,
+                        *[
+                            x
+                            for p in statement.expression.selector.expr.preconditions(variable_id)
+                            for x in [*p.facts, Check(p.goal)]
+                        ],
+                    ],
+                    statement.expression.selector.expr,
+                ),
+                statement.expression.condition.__class__(
+                    [
+                        *[
+                            x
+                            for s in statement.expression.condition.stmts
+                            for p in s.preconditions(variable_id)
+                            for x in [*p.facts, Check(p.goal)]
+                        ],
+                        *statement.expression.condition.stmts,
+                        *[
+                            x
+                            for p in statement.expression.condition.expr.preconditions(variable_id)
+                            for x in [*p.facts, Check(p.goal)]
+                        ],
+                    ],
+                    statement.expression.condition.expr,
+                ),
+                statement.expression.origin,
+            )
 
         result.append(statement)
 
@@ -2135,12 +2354,16 @@ def add_required_checks(
     in the resulting list mark the places where the code generator must insert explicit checks.
     """
 
-    result = remove_unnecessary_checks(add_checks(statements, variable_id), manager, accessed_vars)
+    result = remove_unnecessary_checks(
+        add_checks(add_conversions(statements), variable_id),
+        manager,
+        accessed_vars,
+    )
 
     for s in result:
         if isinstance(s, Check):
             info(
-                f'precondition "{s.expression.origin_str}" must be checked at runtime',
+                f'precondition "{s.expression}" must be checked at runtime',
                 s.expression.location,
             )
 

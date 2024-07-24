@@ -47,14 +47,43 @@ is
         Ghost;
    begin
       pragma Assert (Global_Invariant);
+      if not TLV.Messages.Valid (Ctx.P.Messages_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Global_Invariant);
+         goto Finalize_Global;
+      end if;
+      if not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Global_Invariant);
+         goto Finalize_Global;
+      end if;
       -- tests/feature/session_sequence_append_head/test.rflx:17:10
+      if not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Global_Invariant);
+         goto Finalize_Global;
+      end if;
       declare
          RFLX_Element_Messages_Ctx : TLV.Message.Context;
       begin
          TLV.Messages.Switch (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
-         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag));
+         if not TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Global_Invariant);
+            goto Finalize_Global;
+         end if;
          TLV.Message.Set_Tag (RFLX_Element_Messages_Ctx, TLV.Msg_Data);
-         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length));
+         if not TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Global_Invariant);
+            goto Finalize_Global;
+         end if;
          TLV.Message.Set_Length (RFLX_Element_Messages_Ctx, 1);
          if not TLV.Message.Valid_Length (RFLX_Element_Messages_Ctx, TLV.Message.F_Value, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
             Ctx.P.Next_State := S_Final;
@@ -64,12 +93,29 @@ is
             pragma Assert (Global_Invariant);
             goto Finalize_Global;
          end if;
-         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Value));
+         if not TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Value) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Global_Invariant);
+            goto Finalize_Global;
+         end if;
          TLV.Message.Set_Value (RFLX_Element_Messages_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
          pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
          TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
          pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      if not TLV.Tags.Valid (Ctx.P.Tags_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Global_Invariant);
+         goto Finalize_Global;
+      end if;
+      if not TLV.Tags.Has_Element (Ctx.P.Tags_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Global_Invariant);
+         goto Finalize_Global;
+      end if;
       -- tests/feature/session_sequence_append_head/test.rflx:18:10
       if
          not TLV.Tags.Has_Element (Ctx.P.Tags_Ctx)
@@ -94,6 +140,15 @@ is
          pragma Warnings (Off, "unused assignment");
          Ctx.P.Slots.Slot_Ptr_4 := null;
          pragma Warnings (On, "unused assignment");
+         if not (RFLX_Types.Index'Last - RFLX_Copy_Messages_Buffer'First >= RFLX_Types.Index (TLV.Messages.Byte_Size (Ctx.P.Messages_Ctx) + 1)) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
+            pragma Assert (RFLX_Copy_Messages_Buffer /= null);
+            Ctx.P.Slots.Slot_Ptr_4 := RFLX_Copy_Messages_Buffer;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
+            pragma Assert (Global_Invariant);
+            goto Finalize_Global;
+         end if;
          TLV.Messages.Copy (Ctx.P.Messages_Ctx, RFLX_Copy_Messages_Buffer.all (RFLX_Copy_Messages_Buffer'First .. RFLX_Copy_Messages_Buffer'First + RFLX_Types.Index (TLV.Messages.Byte_Size (Ctx.P.Messages_Ctx) + 1) - 2));
          TLV.Messages.Initialize (RFLX_Copy_Messages_Ctx, RFLX_Copy_Messages_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Messages_Buffer'First), TLV.Messages.Sequence_Last (Ctx.P.Messages_Ctx));
          if not TLV.Messages.Has_Element (RFLX_Copy_Messages_Ctx) then
@@ -132,6 +187,22 @@ is
             pragma Warnings (Off, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             TLV.Message.Take_Buffer (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer);
             pragma Warnings (On, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            if not (RFLX_Types.Index'Last - RFLX_Target_Message_Buffer'First >= RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1)) then
+               Ctx.P.Next_State := S_Final;
+               TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer);
+               pragma Warnings (Off, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
+               TLV.Messages.Update (RFLX_Copy_Messages_Ctx, RFLX_Head_Ctx);
+               pragma Warnings (On, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Warnings (Off, """RFLX_Copy_Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               TLV.Messages.Take_Buffer (RFLX_Copy_Messages_Ctx, RFLX_Copy_Messages_Buffer);
+               pragma Warnings (On, """RFLX_Copy_Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
+               pragma Assert (RFLX_Copy_Messages_Buffer /= null);
+               Ctx.P.Slots.Slot_Ptr_4 := RFLX_Copy_Messages_Buffer;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
+               pragma Assert (Global_Invariant);
+               goto Finalize_Global;
+            end if;
             if not (TLV.Message.Byte_Size (RFLX_Head_Ctx) <= RFLX_Target_Message_Buffer'Length) then
                Ctx.P.Next_State := S_Final;
                TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer);
@@ -149,7 +220,7 @@ is
                goto Finalize_Global;
             end if;
             TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. RFLX_Target_Message_Buffer'First + RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1) - 2));
-            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, TLV.Message.Size (RFLX_Head_Ctx));
+            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1) - 2)));
             TLV.Message.Verify_Message (Ctx.P.Message_Ctx);
             pragma Warnings (Off, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
             TLV.Messages.Update (RFLX_Copy_Messages_Ctx, RFLX_Head_Ctx);
@@ -163,12 +234,13 @@ is
          Ctx.P.Slots.Slot_Ptr_4 := RFLX_Copy_Messages_Buffer;
          pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
       end;
-      -- tests/feature/session_sequence_append_head/test.rflx:20:10
+      -- tests/feature/session_sequence_append_head/test.rflx:20:25
       if not TLV.Message.Valid (Ctx.P.Message_Ctx, TLV.Message.F_Tag) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Global_Invariant);
          goto Finalize_Global;
       end if;
+      -- tests/feature/session_sequence_append_head/test.rflx:20:10
       Message_Tag := TLV.Message.Get_Tag (Ctx.P.Message_Ctx);
       -- tests/feature/session_sequence_append_head/test.rflx:21:10
       if
@@ -268,14 +340,43 @@ is
       pragma Warnings (On, "unused assignment");
       TLV.Tags.Initialize (Local_Tags_Ctx, Local_Tags_Buffer);
       pragma Assert (Local_Invariant);
+      if not TLV.Messages.Valid (Local_Messages_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
+      if not TLV.Messages.Has_Element (Local_Messages_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
       -- tests/feature/session_sequence_append_head/test.rflx:45:10
+      if not TLV.Messages.Has_Element (Local_Messages_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
       declare
          RFLX_Element_Local_Messages_Ctx : TLV.Message.Context;
       begin
          TLV.Messages.Switch (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
-         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Tag));
+         if not TLV.Message.Sufficient_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Tag) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Tag (RFLX_Element_Local_Messages_Ctx, TLV.Msg_Data);
-         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Length));
+         if not TLV.Message.Sufficient_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Length) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Length (RFLX_Element_Local_Messages_Ctx, 2);
          if not TLV.Message.Valid_Length (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Value, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
             Ctx.P.Next_State := S_Final;
@@ -285,20 +386,56 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
-         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Value));
+         if not TLV.Message.Sufficient_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Value) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Value (RFLX_Element_Local_Messages_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
          pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
          TLV.Messages.Update (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
          pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      if not TLV.Messages.Valid (Ctx.P.Messages_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
+      if not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
       -- tests/feature/session_sequence_append_head/test.rflx:47:10
+      if not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
       declare
          RFLX_Element_Messages_Ctx : TLV.Message.Context;
       begin
          TLV.Messages.Switch (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
-         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag));
+         if not TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Tag) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Tag (RFLX_Element_Messages_Ctx, TLV.Msg_Data);
-         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length));
+         if not TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Length (RFLX_Element_Messages_Ctx, 1);
          if not TLV.Message.Valid_Length (RFLX_Element_Messages_Ctx, TLV.Message.F_Value, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
             Ctx.P.Next_State := S_Final;
@@ -308,12 +445,29 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
-         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Value));
+         if not TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Value) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Value (RFLX_Element_Messages_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
          pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
          TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
          pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      if not TLV.Tags.Valid (Local_Tags_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
+      if not TLV.Tags.Has_Element (Local_Tags_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
       -- tests/feature/session_sequence_append_head/test.rflx:48:10
       if
          not TLV.Tags.Has_Element (Local_Tags_Ctx)
@@ -348,6 +502,15 @@ is
          pragma Warnings (Off, "unused assignment");
          Ctx.P.Slots.Slot_Ptr_6 := null;
          pragma Warnings (On, "unused assignment");
+         if not (RFLX_Types.Index'Last - RFLX_Copy_Local_Messages_Buffer'First >= RFLX_Types.Index (TLV.Messages.Byte_Size (Local_Messages_Ctx) + 1)) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_6 = null);
+            pragma Assert (RFLX_Copy_Local_Messages_Buffer /= null);
+            Ctx.P.Slots.Slot_Ptr_6 := RFLX_Copy_Local_Messages_Buffer;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_6 /= null);
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Messages.Copy (Local_Messages_Ctx, RFLX_Copy_Local_Messages_Buffer.all (RFLX_Copy_Local_Messages_Buffer'First .. RFLX_Copy_Local_Messages_Buffer'First + RFLX_Types.Index (TLV.Messages.Byte_Size (Local_Messages_Ctx) + 1) - 2));
          TLV.Messages.Initialize (RFLX_Copy_Local_Messages_Ctx, RFLX_Copy_Local_Messages_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Local_Messages_Buffer'First), TLV.Messages.Sequence_Last (Local_Messages_Ctx));
          if not TLV.Messages.Has_Element (RFLX_Copy_Local_Messages_Ctx) then
@@ -386,8 +549,24 @@ is
             pragma Warnings (Off, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
             TLV.Message.Take_Buffer (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer);
             pragma Warnings (On, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+            if not (RFLX_Types.Index'Last - RFLX_Target_Message_Buffer'First >= RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1)) then
+               Ctx.P.Next_State := S_Final;
+               TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer);
+               pragma Warnings (Off, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
+               TLV.Messages.Update (RFLX_Copy_Local_Messages_Ctx, RFLX_Head_Ctx);
+               pragma Warnings (On, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
+               pragma Warnings (Off, """RFLX_Copy_Local_Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               TLV.Messages.Take_Buffer (RFLX_Copy_Local_Messages_Ctx, RFLX_Copy_Local_Messages_Buffer);
+               pragma Warnings (On, """RFLX_Copy_Local_Messages_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_6 = null);
+               pragma Assert (RFLX_Copy_Local_Messages_Buffer /= null);
+               Ctx.P.Slots.Slot_Ptr_6 := RFLX_Copy_Local_Messages_Buffer;
+               pragma Assert (Ctx.P.Slots.Slot_Ptr_6 /= null);
+               pragma Assert (Local_Invariant);
+               goto Finalize_Local;
+            end if;
             TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. RFLX_Target_Message_Buffer'First + RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1) - 2));
-            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, TLV.Message.Size (RFLX_Head_Ctx));
+            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1) - 2)));
             TLV.Message.Verify_Message (Ctx.P.Message_Ctx);
             pragma Warnings (Off, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
             TLV.Messages.Update (RFLX_Copy_Local_Messages_Ctx, RFLX_Head_Ctx);
@@ -401,12 +580,13 @@ is
          Ctx.P.Slots.Slot_Ptr_6 := RFLX_Copy_Local_Messages_Buffer;
          pragma Assert (Ctx.P.Slots.Slot_Ptr_6 /= null);
       end;
-      -- tests/feature/session_sequence_append_head/test.rflx:51:10
+      -- tests/feature/session_sequence_append_head/test.rflx:51:25
       if not TLV.Message.Valid (Ctx.P.Message_Ctx, TLV.Message.F_Tag) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Local_Invariant);
          goto Finalize_Local;
       end if;
+      -- tests/feature/session_sequence_append_head/test.rflx:51:10
       Message_Tag := TLV.Message.Get_Tag (Ctx.P.Message_Ctx);
       -- tests/feature/session_sequence_append_head/test.rflx:52:10
       if

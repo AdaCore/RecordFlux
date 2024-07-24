@@ -60,20 +60,33 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Invariant);
-      -- tests/feature/session_case_expression_aggregate/test.rflx:22:10
+      -- tests/feature/session_case_expression_aggregate/test.rflx:22:23
       if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
+      -- tests/feature/session_case_expression_aggregate/test.rflx:22:10
       Recv_Type := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_case_expression_aggregate/test.rflx:24:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Invariant);
+         goto Finalize_Prepare;
+      end if;
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Invariant);
+         goto Finalize_Prepare;
+      end if;
       Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Invariant);
+         goto Finalize_Prepare;
+      end if;
       Universal.Message.Set_Value (Ctx.P.Message_Ctx, (case Recv_Type is
           when Universal.MT_Null | Universal.MT_Data =>
              2,

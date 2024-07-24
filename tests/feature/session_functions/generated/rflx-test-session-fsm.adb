@@ -25,6 +25,16 @@ is
 
    use type RFLX.RFLX_Types.Bit_Length;
 
+   pragma Warnings (Off, """*"" is already use-visible through previous use_type_clause");
+
+   pragma Warnings (Off, "use clause for type ""*"" defined at * has no effect");
+
+   use type RFLX.RFLX_Types.Base_Integer;
+
+   pragma Warnings (On, "use clause for type ""*"" defined at * has no effect");
+
+   pragma Warnings (On, """*"" is already use-visible through previous use_type_clause");
+
    procedure Start (Ctx : in out Context) with
      Pre =>
        Initialized (Ctx),
@@ -56,6 +66,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_functions/test.rflx:44:20
       T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_functions/test.rflx:44:20
       T_2 := T_1 = Universal.MT_Data;
@@ -68,6 +79,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_functions/test.rflx:45:20
       T_4 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
       -- tests/feature/session_functions/test.rflx:45:20
       T_5 := T_4 = 3;
@@ -107,10 +119,20 @@ is
       Get_Message_Type (Ctx.F, Message_Type);
       -- tests/feature/session_functions/test.rflx:57:10
       Valid_Message (Ctx.F, Message_Type, True, Valid);
+      if not Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/session_functions/test.rflx:58:20
       T_6 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data));
       -- tests/feature/session_functions/test.rflx:58:40
       Byte_Size (Ctx.F, T_7);
+      if not (RFLX.RFLX_Types.Base_Integer (T_6) <= RFLX.RFLX_Types.Base_Integer (Test.Length'Last)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/session_functions/test.rflx:58:40
       if not (T_7 /= 0) then
          Ctx.P.Next_State := S_Final;
@@ -119,12 +141,23 @@ is
       end if;
       -- tests/feature/session_functions/test.rflx:58:10
       Length := Test.Length (T_6) / T_7;
+      -- tests/feature/session_functions/test.rflx:60:68
+      if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/session_functions/test.rflx:60:10
       declare
          Definite_Message : Test.Definite_Message.Structure;
          RFLX_Create_Message_Arg_2_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          RFLX_Create_Message_Arg_2_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data)) + 1;
       begin
+         if not (RFLX_Create_Message_Arg_2_Message'Length >= RFLX_Create_Message_Arg_2_Message_Length) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2));
          Create_Message (Ctx.F, Message_Type, Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2), Definite_Message);
          if not Test.Definite_Message.Valid_Structure (Definite_Message) then
@@ -187,14 +220,29 @@ is
       pragma Assert (Process_2_Invariant);
       -- tests/feature/session_functions/test.rflx:79:20
       T_8 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Size (Ctx.P.Message_Ctx));
+      if not (RFLX.RFLX_Types.Base_Integer (T_8) <= RFLX.RFLX_Types.Base_Integer (Test.Length'Last)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_2_Invariant);
+         goto Finalize_Process_2;
+      end if;
       -- tests/feature/session_functions/test.rflx:79:10
       Length := Test.Length (T_8) / 8;
+      if not Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_2_Invariant);
+         goto Finalize_Process_2;
+      end if;
       -- tests/feature/session_functions/test.rflx:81:10
       declare
          Definite_Message : Test.Definite_Message.Structure;
          RFLX_Create_Message_Arg_2_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          RFLX_Create_Message_Arg_2_Message_Length : constant RFLX_Types.Length := Universal.Message.Byte_Size (Ctx.P.Message_Ctx);
       begin
+         if not (RFLX_Create_Message_Arg_2_Message'Length >= RFLX_Create_Message_Arg_2_Message_Length) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Process_2_Invariant);
+            goto Finalize_Process_2;
+         end if;
          if not Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_2_Invariant);
@@ -268,7 +316,11 @@ is
          pragma Assert (Process_3_Invariant);
          goto Finalize_Process_3;
       end if;
-      pragma Assert (Test.Definite_Message.Sufficient_Space (Ctx.P.Definite_Message_Ctx, Test.Definite_Message.F_Length));
+      if not Test.Definite_Message.Sufficient_Space (Ctx.P.Definite_Message_Ctx, Test.Definite_Message.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_3_Invariant);
+         goto Finalize_Process_3;
+      end if;
       Test.Definite_Message.Set_Length (Ctx.P.Definite_Message_Ctx, Local_Message.Length);
       declare
          function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
@@ -283,6 +335,14 @@ is
          end RFLX_Process_Data;
          procedure RFLX_Test_Definite_Message_Set_Data is new Test.Definite_Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
       begin
+         if
+            not (Test.Definite_Message.Valid_Next (Ctx.P.Definite_Message_Ctx, Test.Definite_Message.F_Data)
+             and Test.Definite_Message.Available_Space (Ctx.P.Definite_Message_Ctx, Test.Definite_Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Test.Definite_Message.Field_Size_Data (Local_Message))))
+         then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Process_3_Invariant);
+            goto Finalize_Process_3;
+         end if;
          RFLX_Test_Definite_Message_Set_Data (Ctx.P.Definite_Message_Ctx, RFLX_Types.To_Length (Test.Definite_Message.Field_Size_Data (Local_Message)));
       end;
       Ctx.P.Next_State := S_Reply_3;

@@ -21,13 +21,11 @@ def test_provability(feature: str, tmp_path: Path) -> None:
         assert len(model.sessions) == 1
         assert model.sessions[0].identifier == ID("Test::Session")
         units = [
-            "main",
-            "lib",
             "rflx.test.session",
             "rflx.test.session.fsm",
             *config.prove,
         ]
-        create_complement(config, feature, tmp_path)
+        units.extend(create_complement(config, feature, tmp_path))
         main = MAIN
     else:
         main = None

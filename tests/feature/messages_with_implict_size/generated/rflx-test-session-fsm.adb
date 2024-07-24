@@ -57,9 +57,19 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
+      -- tests/feature/messages_with_implict_size/test.rflx:21:95
+      if not Universal.Message.Well_Formed (Ctx.P.M_R_Ctx, Universal.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/messages_with_implict_size/test.rflx:21:10
       Universal.Message.Reset (Ctx.P.M_S_Ctx);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type));
+      if not Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Message_Type (Ctx.P.M_S_Ctx, Universal.MT_Unconstrained_Data);
       declare
          pragma Warnings (Off, "is not modified, could be declared constant");
@@ -78,11 +88,21 @@ is
          end RFLX_Process_Data;
          procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
       begin
+         if
+            not (Universal.Message.Valid_Next (Ctx.P.M_S_Ctx, Universal.Message.F_Data)
+             and Universal.Message.Available_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Universal.Message.F_Data))))
+         then
+            Ctx.P.Next_State := S_Final;
+            Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          RFLX_Universal_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Universal.Message.F_Data)));
          Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
       end;
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Process_Invariant);
+      <<Finalize_Process>>
    end Process;
 
    procedure Reply (Ctx : in out Context) with

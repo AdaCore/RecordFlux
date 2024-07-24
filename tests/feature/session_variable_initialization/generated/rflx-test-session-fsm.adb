@@ -80,6 +80,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      -- tests/feature/session_variable_initialization/test.rflx:22:27
       T_0 := Universal.Message.Get_Value (Ctx.P.Message_Ctx);
       -- tests/feature/session_variable_initialization/test.rflx:22:19
       T_2 := 255 - RFLX.RFLX_Types.Base_Integer (T_0);
@@ -107,11 +108,23 @@ is
       T_1 := Universal.Value'Size;
       -- tests/feature/session_variable_initialization/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Value);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (T_1) / 8);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Value (Ctx.P.Message_Ctx, Ctx.P.Global);
       if RFLX.RFLX_Types.Base_Integer (Local) < RFLX.RFLX_Types.Base_Integer (Ctx.P.Global) then
          Ctx.P.Next_State := S_Reply;

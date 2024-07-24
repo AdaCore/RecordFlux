@@ -3142,7 +3142,7 @@ class FSMGenerator:
             )
 
         if isinstance(expression, ir.FieldAccess):
-            return self._assign_to_field_access(target, expression, exception_handler, is_global)
+            return self._assign_to_field_access(target, expression, is_global)
 
         if isinstance(expression, ir.Head):
             return self._assign_to_head(
@@ -3208,7 +3208,7 @@ class FSMGenerator:
             return [
                 Assignment(
                     variable_id(target, is_global),
-                    self._to_ada_expr(self._convert_type(expression, target_type), is_global),
+                    self._to_ada_expr(expression, is_global),
                 ),
             ]
 
@@ -3224,7 +3224,6 @@ class FSMGenerator:
         self,
         target: ID,
         field_access: ir.FieldAccess,
-        exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
         if isinstance(field_access.message_type, rty.Structure):
@@ -3237,7 +3236,7 @@ class FSMGenerator:
 
         assert isinstance(field_access.message_type, rty.Message)
 
-        message_type = field_access.message_type.identifier
+        message_type_id = field_access.message_type.identifier
         message_context = context_id(field_access.message, is_global)
         field = field_access.field
 
@@ -3254,24 +3253,10 @@ class FSMGenerator:
                 ]
 
             return [
-                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
-                self._raise_exception_if(
-                    Not(
-                        Call(
-                            message_type * "Valid",
-                            [
-                                Variable(message_context),
-                                Variable(message_type * f"F_{field}"),
-                            ],
-                        ),
-                    ),
-                    f'access to invalid field "{field}" of "{message_context}"',
-                    exception_handler,
-                ),
                 Assignment(
                     Variable(variable_id(target, is_global)),
                     Call(
-                        message_type * f"Get_{field}",
+                        message_type_id * f"Get_{field}",
                         [Variable(message_context)],
                     ),
                 ),
@@ -3354,7 +3339,7 @@ class FSMGenerator:
         last_field = fields[-1]
 
         return [
-            # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+            # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
             self._raise_exception_if(
                 Not(
                     Call(
@@ -3468,7 +3453,7 @@ class FSMGenerator:
                                 state,
                                 alloc_id,
                             ),
-                            # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                            # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                             self._raise_exception_if(
                                 Not(Variable(found_id(target))),
                                 f'failed to find valid element in "{sequence_id}"',
@@ -3494,6 +3479,9 @@ class FSMGenerator:
                 message_field = selected.field
                 source_buffer_size = self._allocator.get_size(message_id, state)
                 target_buffer_size = self._allocator.get_size(target, state)
+                external_io_buffer_involved = any(
+                    b.identifier in (message_id, target) for b in self._external_io_buffers
+                )
 
                 return [
                     self._raise_exception_if_not_well_formed_message(
@@ -3508,7 +3496,7 @@ class FSMGenerator:
                         sequence_id,
                         sequence_type_id,
                         comprehension_statements,
-                        target_buffer_size < source_buffer_size,
+                        target_buffer_size < source_buffer_size or external_io_buffer_involved,
                         exception_handler,
                         is_global,
                         alloc_id,
@@ -3541,7 +3529,7 @@ class FSMGenerator:
 
         if isinstance(head.type_, (rty.Integer, rty.Enumeration)):
             return [
-                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                 self._raise_exception_if(
                     Not(
                         AndThen(
@@ -3583,6 +3571,9 @@ class FSMGenerator:
         copied_sequence_context = context_id(copy_id(sequence_id), is_global)
         source_buffer_size = self._allocator.get_size(sequence_id, state)
         target_buffer_size = self._allocator.get_size(target, state)
+        external_io_buffer_involved = any(
+            b.identifier in (sequence_id, target) for b in self._external_io_buffers
+        )
 
         def statements(exception_handler: ExceptionHandler) -> list[Statement]:
             update_context = self._update_context(
@@ -3641,7 +3632,7 @@ class FSMGenerator:
                             target_type,
                             element_context,
                             target_buffer,
-                            target_buffer_size < source_buffer_size,
+                            target_buffer_size < source_buffer_size or external_io_buffer_involved,
                             local_exception_handler.copy(
                                 [
                                     CallStatement(
@@ -3660,8 +3651,30 @@ class FSMGenerator:
                                 Variable(target_context),
                                 Variable(target_buffer),
                                 Call(
-                                    target_type * "Size",
-                                    [Variable(element_context)],
+                                    const.TYPES_TO_BIT_LENGTH,
+                                    [
+                                        Call(
+                                            const.TYPES_LENGTH,
+                                            [
+                                                Add(
+                                                    First(target_buffer),
+                                                    Call(
+                                                        const.TYPES_INDEX,
+                                                        [
+                                                            Add(
+                                                                Call(
+                                                                    target_type * "Byte_Size",
+                                                                    [Variable(element_context)],
+                                                                ),
+                                                                Number(1),
+                                                            ),
+                                                        ],
+                                                    ),
+                                                    -Number(2),
+                                                ),
+                                            ],
+                                        ),
+                                    ],
                                 ),
                             ],
                         ),
@@ -3763,6 +3776,9 @@ class FSMGenerator:
                 message_field = field_access.field
                 source_buffer_size = self._allocator.get_size(message_id, state)
                 target_buffer_size = self._allocator.get_size(target, state)
+                external_io_buffer_involved = any(
+                    b.identifier in (message_id, target) for b in self._external_io_buffers
+                )
 
                 return [
                     reset_target,
@@ -3795,7 +3811,7 @@ class FSMGenerator:
                                 alloc_id,
                             ),
                         ],
-                        target_buffer_size < source_buffer_size,
+                        target_buffer_size < source_buffer_size or external_io_buffer_involved,
                         exception_handler,
                         is_global,
                         alloc_id,
@@ -3834,7 +3850,7 @@ class FSMGenerator:
             )
             post_call.extend(
                 [
-                    # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                    # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                     self._raise_exception_if(
                         Not(Call(type_identifier * "Valid_Structure", [Variable(target_id)])),
                         f'"{call_expr.identifier}" returned an invalid message',
@@ -3863,7 +3879,7 @@ class FSMGenerator:
         elif isinstance(call_expr.type_, rty.Structure):
             type_identifier = self._ada_type(call_expr.type_.identifier)
             post_call.append(
-                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                 self._raise_exception_if(
                     Not(Call(type_identifier * "Valid_Structure", [Variable(target_id)])),
                     f'"{call_expr.identifier}" returned an invalid message',
@@ -3931,8 +3947,7 @@ class FSMGenerator:
                 type_identifier = self._ada_type(a.message_type.identifier)
                 local_declarations.extend(
                     [
-                        # Eng/RecordFlux/RecordFlux#917
-                        # The use of intermediate buffers should be removed.
+                        # TODO(eng/recordflux/RecordFlux#917): Remove use of intermediate buffers.
                         ObjectDeclaration(
                             [argument_name],
                             Slice(
@@ -3940,7 +3955,9 @@ class FSMGenerator:
                                 First(const.TYPES_INDEX),
                                 Add(
                                     First(const.TYPES_INDEX),
-                                    Number(self._allocator.get_size(a.message, state) - 1),
+                                    Number(
+                                        (self._allocator.get_size(a.message, state)) - 1,
+                                    ),
                                 ),
                             ),
                             NamedAggregate(("others", Number(0))),
@@ -3967,11 +3984,21 @@ class FSMGenerator:
                         ),
                     ],
                 )
-                pre_call.append(
-                    CallStatement(
-                        type_identifier * f"Get_{a.field}",
-                        [Variable(context_id(a.message, is_global)), argument],
-                    ),
+                pre_call.extend(
+                    [
+                        # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
+                        self._raise_exception_if(
+                            Not(
+                                GreaterEqual(Length(argument_name), Variable(argument_length)),
+                            ),
+                            "insufficient space in intermediate buffer",
+                            exception_handler,
+                        ),
+                        CallStatement(
+                            type_identifier * f"Get_{a.field}",
+                            [Variable(context_id(a.message, is_global)), argument],
+                        ),
+                    ],
                 )
                 arguments.append(argument)
             elif isinstance(a, ir.Opaque) and isinstance(
@@ -3997,8 +4024,7 @@ class FSMGenerator:
                 context = context_id(a.prefix, is_global)
                 local_declarations.extend(
                     [
-                        # Eng/RecordFlux/RecordFlux#917
-                        # The use of intermediate buffers should be removed.
+                        # TODO(eng/recordflux/RecordFlux#917): Remove use of intermediate buffers.
                         ObjectDeclaration(
                             [argument_name],
                             Slice(
@@ -4006,7 +4032,9 @@ class FSMGenerator:
                                 First(const.TYPES_INDEX),
                                 Add(
                                     First(const.TYPES_INDEX),
-                                    Number(self._allocator.get_size(a.prefix, state) - 1),
+                                    Number(
+                                        (self._allocator.get_size(a.prefix, state)) - 1,
+                                    ),
                                 ),
                             ),
                             NamedAggregate(("others", Number(0))),
@@ -4026,7 +4054,14 @@ class FSMGenerator:
                 )
                 pre_call.extend(
                     [
-                        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                        # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
+                        self._raise_exception_if(
+                            Not(
+                                GreaterEqual(Length(argument_name), Variable(argument_length)),
+                            ),
+                            "insufficient space in intermediate buffer",
+                            exception_handler,
+                        ),
                         self._raise_exception_if(
                             Not(
                                 Call(
@@ -4086,8 +4121,16 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
+        if not isinstance(conversion.type_, rty.Message):
+            return [
+                Assignment(
+                    variable_id(target, is_global),
+                    self._to_ada_expr(conversion, is_global),
+                ),
+            ]
+
         assert isinstance(conversion.type_, rty.Message)
-        assert isinstance(conversion.argument, ir.FieldAccess), conversion.argument
+        assert isinstance(conversion.argument, ir.FieldAccess), f"{target}, {conversion}"
         assert conversion.argument.type_ == rty.OPAQUE
         assert isinstance(conversion.argument.message_type, rty.Message)
 
@@ -4110,7 +4153,7 @@ class FSMGenerator:
         self._session_context.referenced_packages_body.append(contains_package)
 
         return [
-            # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+            # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
             self._raise_exception_if(
                 Not(
                     Call(
@@ -4182,7 +4225,7 @@ class FSMGenerator:
         target_context = context_id(target, is_global)
 
         return [
-            # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+            # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
             self._raise_exception_if(
                 Not(
                     Call(
@@ -4303,6 +4346,17 @@ class FSMGenerator:
             local_exception_handler = exception_handler.copy(update_context)
 
             return [
+                # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
+                self._raise_exception_if(
+                    Not(
+                        Call(
+                            sequence_type * "Has_Element",
+                            [Variable(sequence_context)],
+                        ),
+                    ),
+                    "insufficient space in sequence",
+                    exception_handler,
+                ),
                 Declare(
                     [ObjectDeclaration([element_context], element_type * "Context")],
                     [
@@ -4430,6 +4484,16 @@ class FSMGenerator:
         return Literal(str(expression.value))
 
     @_to_ada_expr.register
+    def _(self, expression: ir.First, _is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration))
+        return First(self._ada_type(expression.prefix))
+
+    @_to_ada_expr.register
+    def _(self, expression: ir.Last, _is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration))
+        return Last(self._ada_type(expression.prefix))
+
+    @_to_ada_expr.register
     def _(self, expression: ir.Valid, is_global: ty.Callable[[ID], bool]) -> Expr:
         if isinstance(expression.prefix_type, rty.Message):
             return Call(
@@ -4467,20 +4531,12 @@ class FSMGenerator:
 
             result = expression.__class__(
                 (
-                    ir.IntConversion(
-                        self._ada_type(rty.BASE_INTEGER.identifier),
-                        expression.left,
-                        rty.BASE_INTEGER,
-                    )
+                    ir.IntConversion(rty.BASE_INTEGER, expression.left)
                     if expression.left.type_ != rty.BASE_INTEGER
                     else expression.left
                 ),
                 (
-                    ir.IntConversion(
-                        self._ada_type(rty.BASE_INTEGER.identifier),
-                        expression.right,
-                        rty.BASE_INTEGER,
-                    )
+                    ir.IntConversion(rty.BASE_INTEGER, expression.right)
                     if expression.right.type_ != rty.BASE_INTEGER
                     else expression.right
                 ),
@@ -4556,6 +4612,18 @@ class FSMGenerator:
     @_to_ada_expr.register
     def _(self, expression: ir.Head, _is_global: ty.Callable[[ID], bool]) -> Expr:
         _unsupported_expression(expression, "in expression")
+
+    @_to_ada_expr.register
+    def _(self, expression: ir.FieldValidNext, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.message_type, rty.Message)
+        type_name = expression.message_type.identifier
+        return Call(
+            type_name * "Valid_Next",
+            [
+                Variable(context_id(expression.message, is_global)),
+                Variable(type_name * f"F_{expression.field}"),
+            ],
+        )
 
     @_to_ada_expr.register
     def _(self, expression: ir.FieldValid, is_global: ty.Callable[[ID], bool]) -> Expr:
@@ -4708,7 +4776,10 @@ class FSMGenerator:
 
     @_to_ada_expr.register
     def _(self, expression: ir.Conversion, is_global: ty.Callable[[ID], bool]) -> Expr:
-        return Conversion(expression.identifier, self._to_ada_expr(expression.argument, is_global))
+        return Conversion(
+            self._ada_type(expression.target_type.identifier),
+            self._to_ada_expr(expression.argument, is_global),
+        )
 
     @_to_ada_expr.register
     def _(self, expression: ir.Agg, is_global: ty.Callable[[ID], bool]) -> Expr:
@@ -4748,6 +4819,25 @@ class FSMGenerator:
         ]
         return ada.CaseExpr(self._to_ada_expr(expression.expression, is_global), choices)
 
+    @_to_ada_expr.register
+    def _(self, expression: ir.SufficientSpace, is_global: ty.Callable[[ID], bool]) -> Expr:
+        return Call(
+            expression.message_type.identifier * "Sufficient_Space",
+            [
+                Variable(context_id(expression.message, is_global)),
+                Variable(
+                    expression.message_type.identifier * model.Field(expression.field).affixed_name,
+                ),
+            ],
+        )
+
+    @_to_ada_expr.register
+    def _(self, expression: ir.HasElement, is_global: ty.Callable[[ID], bool]) -> Expr:
+        return Call(
+            expression.prefix_type.identifier * "Has_Element",
+            [Variable(context_id(expression.prefix, is_global))],
+        )
+
     def _record_used_types(self, expression: ir.BinaryExpr) -> None:
         for e in [expression.left, expression.right]:
             if isinstance(e.type_, rty.Integer) or (
@@ -4762,7 +4852,7 @@ class FSMGenerator:
         sequence_context: ID,
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+        # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
         return self._raise_exception_if(
             Not(
                 Call(sequence_type * "Valid", [Variable(sequence_context)]),
@@ -4777,7 +4867,7 @@ class FSMGenerator:
         message_context: ID,
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+        # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
         return self._raise_exception_if(
             Not(
                 Call(
@@ -4796,7 +4886,7 @@ class FSMGenerator:
         message_field: ID,
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+        # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
         return self._raise_exception_if(
             Not(
                 Call(
@@ -4818,7 +4908,7 @@ class FSMGenerator:
         sequence_context: ID,
         exception_handler: ExceptionHandler,
     ) -> IfStatement:
-        # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+        # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
         return self._raise_exception_if(
             Not(
                 AndThen(
@@ -4914,6 +5004,7 @@ class FSMGenerator:
                         source_message_type.identifier,
                         source_context,
                         source_field,
+                        exception_handler,
                     ),
                 ]
 
@@ -4926,6 +5017,7 @@ class FSMGenerator:
                     source_message_type.identifier,
                     value.message,
                     source_field,
+                    exception_handler,
                 ),
             ]
 
@@ -4943,6 +5035,7 @@ class FSMGenerator:
                     target_field,
                     source_message_type.identifier,
                     source_context,
+                    exception_handler,
                 ),
             ]
 
@@ -4956,7 +5049,7 @@ class FSMGenerator:
             if isinstance(value, ir.Var) and isinstance(value.type_, (rty.Message, rty.Sequence)):
                 type_ = value.type_.identifier
                 context = context_id(value.identifier, is_global)
-                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                 statements.append(
                     self._raise_exception_if(
                         Not(
@@ -4979,7 +5072,7 @@ class FSMGenerator:
                 else:
                     size = Size(self._to_ada_expr(value, is_global))
 
-                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                 statements.append(
                     self._raise_exception_if(
                         Not(
@@ -4997,6 +5090,7 @@ class FSMGenerator:
                     ),
                 )
 
+        # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
         sufficient_space = Call(
             message_type_id * "Sufficient_Space",
             [
@@ -5004,16 +5098,11 @@ class FSMGenerator:
                 Variable(message_type_id * model.Field(field).affixed_name),
             ],
         )
-        assert_sufficient_space = (
-            self._raise_exception_if(
-                Not(sufficient_space),
-                f'insufficient space in message "{message_context}" to set field "{field.name}"'
-                f' to "{value}"',
-                exception_handler,
-            )
-            if message_context
-            in (context_id(b.identifier, is_global) for b in self._external_io_buffers)
-            else PragmaStatement("Assert", [sufficient_space])
+        assert_sufficient_space = self._raise_exception_if(
+            Not(sufficient_space),
+            f'insufficient space in message "{message_context}" to set field "{field.name}"'
+            f' to "{value}"',
+            exception_handler,
         )
 
         if isinstance(value, (ir.IntVal, ir.BoolVal, ir.FieldAccess, ir.Agg, ir.CaseExpr)) or (
@@ -5072,14 +5161,15 @@ class FSMGenerator:
 
         return result
 
-    @staticmethod
     def _set_opaque_field(  # noqa: PLR0913
+        self,
         target_type: ID,
         target_context: ID,
         field: ID,
         get_preconditions: Expr,
         get_statements: Sequence[Statement],
         length: Expr,
+        exception_handler: ExceptionHandler,
         pre_declarations: Optional[Sequence[Declaration]] = None,
         post_statements: Optional[Sequence[Statement]] = None,
     ) -> Declare:
@@ -5112,6 +5202,37 @@ class FSMGenerator:
                 ),
             ],
             [
+                # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
+                self._raise_exception_if(
+                    Not(
+                        And(
+                            Call(
+                                target_type * "Valid_Next",
+                                [
+                                    Variable(target_context),
+                                    Variable(target_type * f"F_{field}"),
+                                ],
+                            ),
+                            GreaterEqual(
+                                Call(
+                                    target_type * "Available_Space",
+                                    [
+                                        Variable(target_context),
+                                        Variable(target_type * f"F_{field}"),
+                                    ],
+                                ),
+                                Call(
+                                    const.TYPES_TO_BIT_LENGTH,
+                                    [
+                                        length,
+                                    ],
+                                ),
+                            ),
+                        ),
+                    ),
+                    f'insufficient space in message "{target_context}"',
+                    exception_handler,
+                ),
                 CallStatement(
                     "RFLX_" + (target_type * f"Set_{field}").flat,
                     [
@@ -5131,9 +5252,11 @@ class FSMGenerator:
         message_type: ID,
         message_context: ID,
         message_field: ID,
+        exception_handler: ExceptionHandler,
     ) -> Declare:
         # Prevent aliasing in generic setter function by moving context into temporary variable
         temporary_message_context = f"RFLX_{message_context.flat}_Tmp"
+        move_context_back = Assignment(message_context, Variable(temporary_message_context))
         return self._set_opaque_field(
             target_type,
             target_context,
@@ -5208,7 +5331,8 @@ class FSMGenerator:
                     ),
                 ],
             ),
-            post_statements=[Assignment(message_context, Variable(temporary_message_context))],
+            exception_handler=exception_handler.copy([move_context_back]),
+            post_statements=[move_context_back],
         )
 
     def _set_opaque_field_to_message_field_from_structure(  # noqa: PLR0913
@@ -5219,6 +5343,7 @@ class FSMGenerator:
         structure_type_id: ID,
         structure: ID,
         structure_field: ID,
+        exception_handler: ExceptionHandler,
     ) -> Declare:
         return self._set_opaque_field(
             target_type,
@@ -5274,30 +5399,56 @@ class FSMGenerator:
                     ),
                 ],
             ),
+            exception_handler=exception_handler,
             post_statements=[],
         )
 
-    def _set_opaque_field_to_message(
+    def _set_opaque_field_to_message(  # noqa: PLR0913
         self,
         target_type: ID,
         target_context: ID,
         field: ID,
         message_type: ID,
         message_context: ID,
+        exception_handler: ExceptionHandler,
     ) -> Declare:
+        # Prevent aliasing in generic setter function by moving context into temporary variable
+        temporary_message_context = f"RFLX_{message_context.flat}_Tmp"
+        move_context_back = Assignment(message_context, Variable(temporary_message_context))
         return self._set_opaque_field(
             target_type,
             target_context,
             field,
+            pre_declarations=[
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("Off"),
+                        String("is not modified, could be declared constant"),
+                    ],
+                ),
+                ObjectDeclaration(
+                    [temporary_message_context],
+                    message_type * "Context",
+                    Variable(message_context),
+                ),
+                Pragma(
+                    "Warnings",
+                    [
+                        Variable("On"),
+                        String("is not modified, could be declared constant"),
+                    ],
+                ),
+            ],
             get_preconditions=AndThen(
                 Call(
                     message_type * "Has_Buffer",
-                    [Variable(message_context)],
+                    [Variable(temporary_message_context)],
                 ),
                 Call(
                     message_type * "Well_Formed_Message",
                     [
-                        Variable(message_context),
+                        Variable(temporary_message_context),
                     ],
                 ),
                 Equal(
@@ -5305,7 +5456,7 @@ class FSMGenerator:
                     Call(
                         message_type * "Byte_Size",
                         [
-                            Variable(message_context),
+                            Variable(temporary_message_context),
                         ],
                     ),
                 ),
@@ -5314,7 +5465,7 @@ class FSMGenerator:
                 CallStatement(
                     message_type * "Data",
                     [
-                        Variable(message_context),
+                        Variable(temporary_message_context),
                         Variable("Data"),
                     ],
                 ),
@@ -5322,9 +5473,11 @@ class FSMGenerator:
             length=Call(
                 message_type * "Byte_Size",
                 [
-                    Variable(message_context),
+                    Variable(temporary_message_context),
                 ],
             ),
+            exception_handler=exception_handler.copy([move_context_back]),
+            post_statements=[move_context_back],
         )
 
     def _declare_context_buffer(
@@ -5802,13 +5955,13 @@ class FSMGenerator:
                 [Variable(element_id)],
             )
             append_element = [
-                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                 self._raise_exception_if_not_well_formed_message(
                     target_type.element.identifier,
                     element_id,
                     exception_handler,
                 ),
-                # TODO(eng/recordflux/RecordFlux#861): Move check into IR
+                # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                 self._raise_exception_if(
                     Not(
                         Greater(
@@ -6061,8 +6214,32 @@ class FSMGenerator:
             ],
         )
 
+        checks = [
+            self._raise_exception_if(
+                Not(
+                    GreaterEqual(
+                        Sub(Last(const.TYPES_INDEX), First(target_buffer)),
+                        Call(
+                            const.TYPES_INDEX,
+                            [
+                                Add(
+                                    Call(
+                                        type_ * "Byte_Size",
+                                        [Variable(source_context)],
+                                    ),
+                                    Number(1),
+                                ),
+                            ],
+                        ),
+                    ),
+                ),
+                "index overflow",
+                exception_handler,
+            ),
+        ]
+
         if target_buffer_is_smaller:
-            return [
+            checks.append(
                 self._raise_exception_if(
                     Not(
                         LessEqual(
@@ -6076,10 +6253,9 @@ class FSMGenerator:
                     "insufficient space in target buffer",
                     exception_handler,
                 ),
-                copy,
-            ]
+            )
 
-        return [copy]
+        return [*checks, copy]
 
     def _convert_type(
         self,
@@ -6101,24 +6277,16 @@ class FSMGenerator:
             left = (
                 expression.left
                 if target_type.is_compatible_strong(expression.left.type_)
-                else ir.IntConversion(
-                    self._ada_type(target_type.identifier),
-                    expression.left,
-                    target_type,
-                )
+                else ir.IntConversion(target_type, expression.left)
             )
             right = (
                 expression.right
                 if target_type.is_compatible_strong(expression.right.type_)
-                else ir.IntConversion(
-                    self._ada_type(target_type.identifier),
-                    expression.right,
-                    target_type,
-                )
+                else ir.IntConversion(target_type, expression.right)
             )
             return expression.__class__(left, right)
 
-        return ir.Conversion(self._ada_type(target_type.identifier), expression, target_type)
+        return ir.Conversion(target_type, expression)
 
     def _debug_output(self, string: str) -> Sequence[CallStatement]:
         return (

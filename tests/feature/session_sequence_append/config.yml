@@ -9,5 +9,4 @@ sequence: |
   State: Process
   Read Channel: 5 0 5 1 0 2 0 3
   State: Reply
-# Eng/RecordFlux/RecordFlux#691
-# prove:
+prove:

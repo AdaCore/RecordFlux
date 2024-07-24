@@ -63,6 +63,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_message_creation/test.rflx:17:20
       T_2 := Universal.Message.Get_Message_Type (Ctx.P.M_R_Ctx);
       -- tests/feature/session_message_creation/test.rflx:17:20
       T_3 := T_2 = Universal.MT_Data;
@@ -75,6 +76,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_message_creation/test.rflx:18:20
       T_5 := Universal.Message.Get_Length (Ctx.P.M_R_Ctx);
       -- tests/feature/session_message_creation/test.rflx:18:20
       T_6 := T_5 = 2;
@@ -118,30 +120,57 @@ is
       pragma Assert (Process_Invariant);
       -- tests/feature/session_message_creation/test.rflx:31:24
       T_11 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Size (Ctx.P.M_R_Ctx));
+      if not Universal.Message.Well_Formed_Message (Ctx.P.M_R_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/session_message_creation/test.rflx:29:10
       Universal.Message.Reset (Ctx.P.M_S_Ctx);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type));
+      if not Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Message_Type (Ctx.P.M_S_Ctx, Universal.MT_Data);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Length));
+      if not Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Length (Ctx.P.M_S_Ctx, Universal.Length (T_11) / 8);
       declare
+         pragma Warnings (Off, "is not modified, could be declared constant");
+         RFLX_Ctx_P_M_R_Ctx_Tmp : Universal.Message.Context := Ctx.P.M_R_Ctx;
+         pragma Warnings (On, "is not modified, could be declared constant");
          function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-           (Universal.Message.Has_Buffer (Ctx.P.M_R_Ctx)
-            and then Universal.Message.Well_Formed_Message (Ctx.P.M_R_Ctx)
-            and then Length = Universal.Message.Byte_Size (Ctx.P.M_R_Ctx));
+           (Universal.Message.Has_Buffer (RFLX_Ctx_P_M_R_Ctx_Tmp)
+            and then Universal.Message.Well_Formed_Message (RFLX_Ctx_P_M_R_Ctx_Tmp)
+            and then Length = Universal.Message.Byte_Size (RFLX_Ctx_P_M_R_Ctx_Tmp));
          procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
            Pre =>
              RFLX_Process_Data_Pre (Data'Length)
          is
          begin
-            Universal.Message.Data (Ctx.P.M_R_Ctx, Data);
+            Universal.Message.Data (RFLX_Ctx_P_M_R_Ctx_Tmp, Data);
          end RFLX_Process_Data;
          procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
       begin
-         RFLX_Universal_Message_Set_Data (Ctx.P.M_S_Ctx, Universal.Message.Byte_Size (Ctx.P.M_R_Ctx));
+         if
+            not (Universal.Message.Valid_Next (Ctx.P.M_S_Ctx, Universal.Message.F_Data)
+             and Universal.Message.Available_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Data) >= RFLX_Types.To_Bit_Length (Universal.Message.Byte_Size (RFLX_Ctx_P_M_R_Ctx_Tmp)))
+         then
+            Ctx.P.Next_State := S_Final;
+            Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+         RFLX_Universal_Message_Set_Data (Ctx.P.M_S_Ctx, Universal.Message.Byte_Size (RFLX_Ctx_P_M_R_Ctx_Tmp));
+         Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
       end;
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Process_Invariant);
+      <<Finalize_Process>>
    end Process;
 
    procedure Reply (Ctx : in out Context) with

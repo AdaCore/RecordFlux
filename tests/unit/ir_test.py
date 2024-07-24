@@ -106,9 +106,12 @@ def test_field_assign_substituted() -> None:
 
 
 def test_field_assign_preconditions() -> None:
-    assert not ir.FieldAssign("X", "Y", ir.IntVar("Z", INT_TY), MSG_TY).preconditions(
+    assert ir.FieldAssign("X", "Y", ir.IntVar("Z", INT_TY), MSG_TY).preconditions(
         id_generator(),
-    )
+    ) == [
+        ir.Cond(ir.FieldValidNext("X", "Y", MSG_TY)),
+        ir.Cond(ir.SufficientSpace("X", "Y", MSG_TY)),
+    ]
 
 
 def test_field_assign_to_z3_expr() -> None:
@@ -144,7 +147,10 @@ def test_append_substituted() -> None:
 
 
 def test_append_preconditions() -> None:
-    assert not ir.Append("X", ir.IntVar("Y", INT_TY), SEQ_TY).preconditions(id_generator())
+    assert ir.Append("X", ir.IntVar("Y", INT_TY), SEQ_TY).preconditions(id_generator()) == [
+        ir.Cond(ir.Valid("X", SEQ_TY)),
+        ir.Cond(ir.HasElement("X", SEQ_TY)),
+    ]
 
 
 def test_append_to_z3_expr() -> None:
@@ -172,7 +178,9 @@ def test_extend_substituted() -> None:
 
 
 def test_extend_preconditions() -> None:
-    assert not ir.Extend("X", ir.IntVar("Y", INT_TY), SEQ_TY).preconditions(id_generator())
+    assert ir.Extend("X", ir.IntVar("Y", INT_TY), SEQ_TY).preconditions(id_generator()) == [
+        ir.Cond(ir.Valid("X", SEQ_TY)),
+    ]
 
 
 def test_extend_to_z3_expr() -> None:
@@ -559,9 +567,10 @@ def test_attr_z3_expr(attribute: ir.Attr, expected: z3.ExprRef) -> None:
 @pytest.mark.parametrize(
     ("attribute", "expected"),
     [
-        (ir.FieldValid("X", "Y", MSG_TY), "X.Y'Field_Valid"),
-        (ir.FieldPresent("X", "Y", MSG_TY), "X.Y'Field_Present"),
-        (ir.FieldSize("X", "Y", MSG_TY), "X.Y'Field_Size"),
+        (ir.FieldValidNext("X", "Y", MSG_TY), "X.Y'Valid_Next"),
+        (ir.FieldValid("X", "Y", MSG_TY), "X.Y'Valid"),
+        (ir.FieldPresent("X", "Y", MSG_TY), "X.Y'Present"),
+        (ir.FieldSize("X", "Y", MSG_TY), "X.Y'Size"),
     ],
 )
 def test_field_access_attr_str(attribute: ir.FieldAccessAttr, expected: str) -> None:
@@ -571,6 +580,7 @@ def test_field_access_attr_str(attribute: ir.FieldAccessAttr, expected: str) -> 
 @pytest.mark.parametrize(
     ("attribute", "expected"),
     [
+        (ir.FieldValidNext("X", "Y", MSG_TY), rty.BOOLEAN),
         (ir.FieldValid("X", "Y", MSG_TY), rty.BOOLEAN),
         (ir.FieldPresent("X", "Y", MSG_TY), rty.BOOLEAN),
         (ir.FieldSize("X", "Y", MSG_TY), rty.BIT_LENGTH),
@@ -587,6 +597,7 @@ def test_field_access_attr_field_type() -> None:
 @pytest.mark.parametrize(
     ("attribute"),
     [
+        ir.FieldValidNext("X", "Y", MSG_TY),
         ir.FieldValid("X", "Y", MSG_TY),
         ir.FieldPresent("X", "Y", MSG_TY),
         ir.FieldSize("X", "Y", MSG_TY),
@@ -599,6 +610,7 @@ def test_field_access_attr_accessed_vars(attribute: ir.FieldAccessAttr) -> None:
 @pytest.mark.parametrize(
     ("attribute", "expected"),
     [
+        (ir.FieldValidNext("X", "Y", MSG_TY), ir.FieldValidNext("Y", "Y", MSG_TY)),
         (ir.FieldValid("X", "Y", MSG_TY), ir.FieldValid("Y", "Y", MSG_TY)),
         (ir.FieldPresent("X", "Y", MSG_TY), ir.FieldPresent("Y", "Y", MSG_TY)),
         (ir.FieldSize("X", "Y", MSG_TY), ir.FieldSize("Y", "Y", MSG_TY)),
@@ -622,9 +634,10 @@ def test_field_access_attr_substituted(
 @pytest.mark.parametrize(
     ("attribute", "expected"),
     [
-        (ir.FieldValid("X", "Y", MSG_TY), z3.Bool("X.Y'Field_Valid")),
-        (ir.FieldPresent("X", "Y", MSG_TY), z3.Bool("X.Y'Field_Present")),
-        (ir.FieldSize("X", "Y", MSG_TY), z3.Int("X.Y'Field_Size")),
+        (ir.FieldValidNext("X", "Y", MSG_TY), z3.Bool("X.Y'Valid_Next")),
+        (ir.FieldValid("X", "Y", MSG_TY), z3.Bool("X.Y'Valid")),
+        (ir.FieldPresent("X", "Y", MSG_TY), z3.Bool("X.Y'Present")),
+        (ir.FieldSize("X", "Y", MSG_TY), z3.Int("X.Y'Size")),
     ],
 )
 def test_field_access_attr_z3_expr(attribute: ir.FieldAccessAttr, expected: z3.ExprRef) -> None:
@@ -1237,43 +1250,43 @@ def test_bool_if_expr_to_z3_expr() -> None:
 
 
 def test_conversion_str() -> None:
-    assert str(ir.Conversion("X", ir.IntVar("Y", INT_TY), INT_TY)) == "X (Y)"
+    assert str(ir.Conversion(INT_TY, ir.IntVar("Y", INT_TY))) == "I (Y)"
 
 
 def test_conversion_type() -> None:
-    assert ir.Conversion("X", ir.IntVar("Y", INT_TY), INT_TY).type_ == INT_TY
+    assert ir.Conversion(INT_TY, ir.IntVar("Y", INT_TY)).type_ == INT_TY
 
 
 def test_conversion_accessed_vars() -> None:
-    assert ir.Conversion("X", ir.IntVar("Y", INT_TY), INT_TY).accessed_vars == [ID("Y")]
+    assert ir.Conversion(INT_TY, ir.IntVar("Y", INT_TY)).accessed_vars == [ID("Y")]
 
 
 def test_conversion_substituted() -> None:
-    assert ir.Conversion("X", ir.IntVar("Y", INT_TY), INT_TY).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z")},
-    ) == ir.Conversion("X", ir.IntVar("Z", INT_TY), INT_TY)
+    assert ir.Conversion(INT_TY, ir.IntVar("Y", INT_TY)).substituted(
+        {ID("I"): ID("Y"), ID("Y"): ID("Z")},
+    ) == ir.Conversion(INT_TY, ir.IntVar("Z", INT_TY))
 
 
 def test_conversion_to_z3_expr() -> None:
-    assert ir.Conversion("X", ir.IntVar("Y", INT_TY), INT_TY).to_z3_expr() == z3.BoolVal(val=True)
+    assert ir.Conversion(INT_TY, ir.IntVar("Y", INT_TY)).to_z3_expr() == z3.BoolVal(val=True)
 
 
 def test_int_conversion_str() -> None:
-    assert str(ir.IntConversion("X", ir.IntVar("Y", INT_TY), INT_TY)) == "X (Y)"
+    assert str(ir.IntConversion(INT_TY, ir.IntVar("Y", INT_TY))) == "I (Y)"
 
 
 def test_int_conversion_type() -> None:
-    assert ir.IntConversion("X", ir.IntVar("Y", INT_TY), INT_TY).type_ == INT_TY
+    assert ir.IntConversion(INT_TY, ir.IntVar("Y", INT_TY)).type_ == INT_TY
 
 
 def test_int_conversion_substituted() -> None:
-    assert ir.IntConversion("X", ir.IntVar("Y", INT_TY), INT_TY).substituted(
-        {ID("X"): ID("Y"), ID("Y"): ID("Z")},
-    ) == ir.IntConversion("X", ir.IntVar("Z", INT_TY), INT_TY)
+    assert ir.IntConversion(INT_TY, ir.IntVar("Y", INT_TY)).substituted(
+        {ID("I"): ID("Y"), ID("Y"): ID("Z")},
+    ) == ir.IntConversion(INT_TY, ir.IntVar("Z", INT_TY))
 
 
 def test_int_conversion_to_z3_expr() -> None:
-    assert ir.IntConversion("X", ir.IntVar("Y", INT_TY), INT_TY).to_z3_expr() == z3.Int("Y")
+    assert ir.IntConversion(INT_TY, ir.IntVar("Y", INT_TY)).to_z3_expr() == z3.Int("Y")
 
 
 def test_comprehension_str() -> None:
@@ -1702,26 +1715,45 @@ def test_add_required_checks() -> None:
             INT_TY,
         ),
     ]
-    assert ir.add_required_checks(
-        [
-            ir.Assign("A", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
-            ir.Assign("B", ir.Div(ir.IntVar("A", INT_TY), ir.IntVar("Z", INT_TY)), INT_TY),
-            ir.Assign("X", ir.Sub(ir.IntVar("B", INT_TY), ir.IntVal(1)), INT_TY),
-            ir.Assign("Z", ir.IntVal(0), INT_TY),
-            ir.Assign("C", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), INT_TY),
-        ],
-        PROOF_MANAGER,
-        id_generator(),
-        [],
-    ) == [
-        ir.VarDecl("T_0", rty.BASE_INTEGER),
-        ir.Assign("T_0", ir.Sub(ir.IntVal(100), ir.IntVal(1)), rty.BASE_INTEGER),
-        ir.Check(ir.LessEqual(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER))),
-        ir.Assign("A", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), INT_TY),
-        ir.Check(ir.NotEqual(ir.IntVar("Z", INT_TY), ir.IntVal(0))),
-        ir.Assign("B", ir.Div(ir.IntVar("A", INT_TY), ir.IntVar("Z", INT_TY)), INT_TY),
-        ir.Check(ir.GreaterEqual(ir.IntVar("B", INT_TY), ir.IntVal(1))),
-        ir.Assign("X", ir.Sub(ir.IntVar("B", INT_TY), ir.IntVal(1)), INT_TY),
-        ir.Assign("Z", ir.IntVal(0), INT_TY),
-        ir.Assign("C", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), INT_TY),
+    assert [
+        str(s)
+        for s in ir.add_required_checks(
+            [
+                ir.Assign(
+                    "A",
+                    ir.Add(ir.IntVar("Y", rty.BASE_INTEGER), ir.IntVal(1)),
+                    rty.BASE_INTEGER,
+                ),
+                ir.Assign(
+                    "B",
+                    ir.Div(ir.IntVar("A", rty.BASE_INTEGER), ir.IntVar("Z", rty.BASE_INTEGER)),
+                    rty.BASE_INTEGER,
+                ),
+                ir.Assign(
+                    "X",
+                    ir.Sub(ir.IntVar("B", rty.BASE_INTEGER), ir.IntVal(1)),
+                    rty.BASE_INTEGER,
+                ),
+                ir.Assign("Z", ir.IntVal(0), rty.BASE_INTEGER),
+                ir.Assign(
+                    "C",
+                    ir.Add(ir.IntVar("Z", rty.BASE_INTEGER), ir.IntVal(1)),
+                    rty.BASE_INTEGER,
+                ),
+            ],
+            PROOF_MANAGER,
+            id_generator(),
+            [],
+        )
+    ] == [
+        "Var T_0 : __BUILTINS__::Base_Integer",
+        "T_0 := 9223372036854775807 - 1",
+        "Check Y <= T_0",
+        "A := Y + 1",
+        "Check Z /= 0",
+        "B := A / Z",
+        "Check B >= 1",
+        "X := B - 1",
+        "Z := 0",
+        "C := Z + 1",
     ]

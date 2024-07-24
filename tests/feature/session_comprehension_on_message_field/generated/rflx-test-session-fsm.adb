@@ -60,6 +60,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_comprehension_on_message_field/test.rflx:16:20
       T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_comprehension_on_message_field/test.rflx:16:20
       T_2 := T_1 = Universal.MT_Options;
@@ -106,6 +107,12 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Option_Types.Initialize (Option_Types_Ctx, Option_Types_Buffer);
       pragma Assert (Process_Invariant);
+      -- tests/feature/session_comprehension_on_message_field/test.rflx:26:36
+      if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/session_comprehension_on_message_field/test.rflx:26:10
       Universal.Option_Types.Reset (Option_Types_Ctx);
       if not Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
@@ -121,6 +128,15 @@ is
          pragma Warnings (Off, "unused assignment");
          Ctx.P.Slots.Slot_Ptr_3 := null;
          pragma Warnings (On, "unused assignment");
+         if not (RFLX_Types.Index'Last - RFLX_Message_Options_Buffer'First >= RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1)) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_3 = null);
+            pragma Assert (RFLX_Message_Options_Buffer /= null);
+            Ctx.P.Slots.Slot_Ptr_3 := RFLX_Message_Options_Buffer;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_3 /= null);
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
          if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
             Ctx.P.Next_State := S_Final;
@@ -163,8 +179,25 @@ is
                   pragma Assert (Process_Invariant);
                   goto Finalize_Process;
                end if;
+               -- tests/feature/session_comprehension_on_message_field/test.rflx:26:55
                T_3 := Universal.Option.Get_Option_Type (E_Ctx);
                if T_3 = (Known => True, Enum => Universal.OT_Data) then
+                  -- tests/feature/session_comprehension_on_message_field/test.rflx:26:93
+                  if not Universal.Option.Valid (E_Ctx, Universal.Option.F_Option_Type) then
+                     Ctx.P.Next_State := S_Final;
+                     pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     Universal.Options.Update (RFLX_Message_Options_Ctx, E_Ctx);
+                     pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     pragma Warnings (Off, """RFLX_Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     Universal.Options.Take_Buffer (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer);
+                     pragma Warnings (On, """RFLX_Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_3 = null);
+                     pragma Assert (RFLX_Message_Options_Buffer /= null);
+                     Ctx.P.Slots.Slot_Ptr_3 := RFLX_Message_Options_Buffer;
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_3 /= null);
+                     pragma Assert (Process_Invariant);
+                     goto Finalize_Process;
+                  end if;
                   if
                      not (Universal.Option_Types.Has_Element (Option_Types_Ctx)
                       and then Universal.Option_Types.Available_Space (Option_Types_Ctx) >= Universal.Option_Type_Enum'Size)
@@ -213,6 +246,15 @@ is
          pragma Warnings (Off, "unused assignment");
          Ctx.P.Slots.Slot_Ptr_4 := null;
          pragma Warnings (On, "unused assignment");
+         if not (RFLX_Types.Index'Last - RFLX_Message_Options_Buffer'First >= RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1)) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
+            pragma Assert (RFLX_Message_Options_Buffer /= null);
+            Ctx.P.Slots.Slot_Ptr_4 := RFLX_Message_Options_Buffer;
+            pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
          if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
             Ctx.P.Next_State := S_Final;
@@ -255,8 +297,25 @@ is
                   pragma Assert (Process_Invariant);
                   goto Finalize_Process;
                end if;
+               -- tests/feature/session_comprehension_on_message_field/test.rflx:28:55
                T_4 := Universal.Option.Get_Option_Type (E_Ctx);
                if T_4 = (Known => True, Enum => Universal.OT_Data) then
+                  -- tests/feature/session_comprehension_on_message_field/test.rflx:28:93
+                  if not Universal.Option.Valid (E_Ctx, Universal.Option.F_Option_Type) then
+                     Ctx.P.Next_State := S_Final;
+                     pragma Warnings (Off, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     Universal.Options.Update (RFLX_Message_Options_Ctx, E_Ctx);
+                     pragma Warnings (On, """E_Ctx"" is set by ""Update"" but not used after the call");
+                     pragma Warnings (Off, """RFLX_Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     Universal.Options.Take_Buffer (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer);
+                     pragma Warnings (On, """RFLX_Message_Options_Ctx"" is set by ""Take_Buffer"" but not used after the call");
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
+                     pragma Assert (RFLX_Message_Options_Buffer /= null);
+                     Ctx.P.Slots.Slot_Ptr_4 := RFLX_Message_Options_Buffer;
+                     pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
+                     pragma Assert (Process_Invariant);
+                     goto Finalize_Process;
+                  end if;
                   if
                      not (Universal.Option_Types.Has_Element (Option_Types_Ctx)
                       and then Universal.Option_Types.Available_Space (Option_Types_Ctx) >= Universal.Option_Type_Enum'Size)
@@ -294,16 +353,28 @@ is
       T_5 := RFLX.RFLX_Types.Base_Integer (Universal.Option_Types.Size (Option_Types_Ctx));
       -- tests/feature/session_comprehension_on_message_field/test.rflx:30:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Option_Types);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length (T_5) / 8);
       if not Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types, Universal.Option_Types.Byte_Size (Option_Types_Ctx)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Option_Types) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Option_Types (Ctx.P.Message_Ctx, Option_Types_Ctx);
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Process_Invariant);

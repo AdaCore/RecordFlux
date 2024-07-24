@@ -25,7 +25,9 @@ is
       RFLX_Result.Message_Type := Message_Type;
       RFLX_Result.Length := Length;
       RFLX_Result.Data := (others => 0);
-      RFLX_Result.Data (RFLX_Result.Data'First .. RFLX_Result.Data'First + Data'Length - 1) := Data;
+      if Data'Length <= RFLX_Result.Data'Length then
+         RFLX_Result.Data (RFLX_Result.Data'First .. RFLX_Result.Data'First + Data'Length - 1) := Data;
+      end if;
    end Create_Message;
 
    procedure Valid_Message

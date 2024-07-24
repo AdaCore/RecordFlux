@@ -116,6 +116,12 @@ is
       pragma Warnings (On, "unused assignment");
       Test.Message.Initialize (M_T_Ctx, M_T_Buffer, Length => Test.Length'First, Extended => Boolean'First);
       pragma Assert (Process_Invariant);
+      -- tests/feature/parameterized_messages/test.rflx:48:74
+      if not Test.Message.Well_Formed (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/parameterized_messages/test.rflx:48:10
       Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => True);
       declare
@@ -135,6 +141,15 @@ is
          end RFLX_Process_Data;
          procedure RFLX_Test_Message_Set_Data is new Test.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
       begin
+         if
+            not (Test.Message.Valid_Next (Ctx.P.M_S_Ctx, Test.Message.F_Data)
+             and Test.Message.Available_Space (Ctx.P.M_S_Ctx, Test.Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data))))
+         then
+            Ctx.P.Next_State := S_Error;
+            Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          RFLX_Test_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
          Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
       end;
@@ -143,7 +158,11 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      pragma Assert (Test.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Test.Message.F_Extension));
+      if not Test.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Test.Message.F_Extension) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Test.Message.Set_Extension (Ctx.P.M_S_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
       -- tests/feature/parameterized_messages/test.rflx:49:10
       Length := Ctx.P.M_S_Ctx.Length;
@@ -172,6 +191,15 @@ is
          end RFLX_Process_Data;
          procedure RFLX_Test_Message_Set_Data is new Test.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
       begin
+         if
+            not (Test.Message.Valid_Next (M_T_Ctx, Test.Message.F_Data)
+             and Test.Message.Available_Space (M_T_Ctx, Test.Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data))))
+         then
+            Ctx.P.Next_State := S_Error;
+            Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          RFLX_Test_Message_Set_Data (M_T_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
          Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
       end;
@@ -180,7 +208,11 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      pragma Assert (Test.Message.Sufficient_Space (M_T_Ctx, Test.Message.F_Extension));
+      if not Test.Message.Sufficient_Space (M_T_Ctx, Test.Message.F_Extension) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Test.Message.Set_Extension (M_T_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
       -- tests/feature/parameterized_messages/test.rflx:53:19
       T_0 := Ctx.P.M_S_Ctx.Length;

@@ -11,39 +11,6 @@ sequence: |
   Read C: 1 2 3 4
   State: Reply
   State: Reset
-# TODO(eng/recordflux/RecordFlux#861): Add required checks
-#
-# rflx-test-session.adb:136:10: medium: precondition might fail, cannot prove RFLX.Test.Message.Available_Space (Ctx, RFLX.Test.Message.F_Data) >= RFLX.Test.Message.Field_Size (Ctx, RFLX.Test.Message.f_data)
-#   136 |         RFLX_Test_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
-#       |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#   possible fix: subprogram at line 123 should mention RFLX_Ctx_P_M_R_Ctx_Tmp in a precondition
-#   123 |         function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-#       |         ^ here
-#
-# rflx-test-session.adb:136:87: medium: precondition might fail, cannot prove Valid_Predecessor (Ctx, Fld)
-#   136 |         RFLX_Test_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
-#       |                                                                          ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#   possible fix: subprogram at line 123 should mention RFLX_Ctx_P_M_R_Ctx_Tmp in a precondition
-#   123 |         function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-#       |         ^ here
-#   in inlined expression function body at rflx-test-message.ads:824
-#
-# rflx-test-session.adb:176:10: medium: precondition might fail, cannot prove Test.Message.Well_Formed (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.f_data)
-#   176 |         RFLX_Test_Message_Set_Data (M_T_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
-#       |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#   possible fix: subprogram at line 163 should mention RFLX_Ctx_P_M_R_Ctx_Tmp in a precondition
-#   163 |         function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-#       |         ^ here
-#   in inlined expression function body at rflx-test-session.adb:165
-#
-# rflx-test-session.adb:176:81: medium: precondition might fail, cannot prove Valid_Predecessor (Ctx, Fld)
-#   176 |         RFLX_Test_Message_Set_Data (M_T_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
-#       |                                                                    ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#   possible fix: subprogram at line 163 should mention RFLX_Ctx_P_M_R_Ctx_Tmp in a precondition
-#   163 |         function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-#       |         ^ here
-#   in inlined expression function body at rflx-test-message.ads:824
-#
-# prove:
-#   - rflx-test
-#   - rflx-test-message
+prove:
+  - rflx.test
+  - rflx.test.message

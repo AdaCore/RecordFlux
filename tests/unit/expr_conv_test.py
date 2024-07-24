@@ -576,9 +576,9 @@ def test_to_ir_call() -> None:
 
 def test_to_ir_conversion() -> None:
     assert expr_conv.to_ir(
-        Conversion("X", Variable("Y", type_=rty.BOOLEAN), type_=INT_TY),
+        Conversion("I", Variable("Y", type_=rty.BOOLEAN), type_=INT_TY),
         id_generator(),
-    ) == ir.ComplexExpr([], ir.Conversion("X", ir.BoolVar("Y"), INT_TY))
+    ) == ir.ComplexExpr([], ir.Conversion(INT_TY, ir.BoolVar("Y")))
 
 
 def test_to_ir_comprehension() -> None:

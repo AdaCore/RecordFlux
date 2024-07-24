@@ -902,12 +902,22 @@ class UnknownStatement(ir.Stmt):
                 MSG_TY,
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
-            """\
+            '''\
 -- <stdin>:1:1
 Universal.Message.Reset (X_Ctx);
-pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type));
+if not Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Type) then
+   Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Message_Type"" to ""Universal::MT_Data""");
+   Ctx.P.Next_State := S_E;
+   pragma Finalization;
+   goto Finalize_S;
+end if;
 Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
-pragma Assert (Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length));
+if not Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length) then
+   Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Length"" to ""0""");
+   Ctx.P.Next_State := S_E;
+   pragma Finalization;
+   goto Finalize_S;
+end if;
 Universal.Message.Set_Length (X_Ctx, 0);
 if not Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (0 * RFLX_Types.Byte'Size)) then
    Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[]""\");
@@ -916,7 +926,7 @@ if not Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Typ
    goto Finalize_S;
 end if;
 Universal.Message.Set_Data_Empty (X_Ctx);\
-""",  # noqa: E501
+''',  # noqa: E501
         ),
         (
             ir.Assign(
@@ -1417,9 +1427,8 @@ class UnknownExpr(ir.Expr):
         (
             rty.Message("A"),
             ir.Conversion(
-                "T",
-                ir.ObjFieldAccess("Z", "Z", rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.OPAQUE})),
                 rty.Message("A"),
+                ir.ObjFieldAccess("Z", "Z", rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.OPAQUE})),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
@@ -1651,6 +1660,14 @@ def test_session_write_error(
 @pytest.mark.parametrize(
     ("expression", "expected"),
     [
+        (
+            ir.First("X", INT_TY),
+            ada.First(ada.Variable("P.X")),
+        ),
+        (
+            ir.Last("X", INT_TY),
+            ada.Last(ada.Variable("P.X")),
+        ),
         (
             ir.IntIfExpr(
                 ir.BoolVar("X"),

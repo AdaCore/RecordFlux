@@ -58,6 +58,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_simple/test.rflx:16:20
       T_2 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_simple/test.rflx:16:20
       T_3 := T_2 = Universal.MT_Data;
@@ -70,6 +71,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_simple/test.rflx:17:20
       T_5 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
       -- tests/feature/session_simple/test.rflx:17:20
       T_6 := T_5 = 1;
@@ -101,16 +103,28 @@ is
       pragma Assert (Process_Invariant);
       -- tests/feature/session_simple/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
       if not Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      pragma Assert (Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data));
+      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Process_Invariant);

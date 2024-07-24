@@ -57,6 +57,12 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
+      -- tests/feature/messages_with_single_opaque_field/test.rflx:24:34
+      if not Test.Message.Well_Formed (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/messages_with_single_opaque_field/test.rflx:24:10
       Test.Message.Reset (Ctx.P.M_S_Ctx);
       declare
@@ -76,11 +82,21 @@ is
          end RFLX_Process_Data;
          procedure RFLX_Test_Message_Set_Data is new Test.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
       begin
+         if
+            not (Test.Message.Valid_Next (Ctx.P.M_S_Ctx, Test.Message.F_Data)
+             and Test.Message.Available_Space (Ctx.P.M_S_Ctx, Test.Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data))))
+         then
+            Ctx.P.Next_State := S_Final;
+            Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          RFLX_Test_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
          Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
       end;
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Process_Invariant);
+      <<Finalize_Process>>
    end Process;
 
    procedure Reply (Ctx : in out Context) with

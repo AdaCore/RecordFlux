@@ -13,19 +13,5 @@ sequence: |
   State: Process_2
   Read Channel: 1 0 2 4 2
   State: Send_2
-# TODO(eng/recordflux/RecordFlux#861): Add required checks
-#
-# rflx-test-session.adb:48:27: medium: precondition might fail, cannot prove Ctx.State = S_Valid
-#   48 |         Universal.Options.Switch (Ctx.P.Options_Ctx, RFLX_Element_Options_Ctx);
-#      |         ~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  in inlined expression function body at rflx-rflx_message_sequence.ads:247, in instantiation at rflx-universal-options.ads:18
-#
-#rflx-test-session.adb:51:25: medium: assertion might fail
-#   51 |         pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length));
-#      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-#rflx-test-session.adb:54:28: medium: assertion might fail
-#   54 |            pragma Assert (Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Data));
-#      |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
+# TODO(eng/recordflux/RecordFlux#1704): Fix checks
 # prove:

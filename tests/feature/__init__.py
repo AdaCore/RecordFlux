@@ -103,7 +103,7 @@ def create_model(feature: str) -> tuple[Model, Integration]:
     return parser.create_model(), parser.get_integration()
 
 
-def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
+def create_complement(config: Config, feature: str, tmp_path: Path) -> list[str]:
     complement = session_main(
         config.inp,
         config.out,
@@ -118,11 +118,14 @@ def create_complement(config: Config, feature: str, tmp_path: Path) -> None:
     for filename, content in complement.items():
         (target_dir / filename).write_text(content)
 
-    copy_src(feature, tmp_path)
+    src_files = copy_src(feature, tmp_path)
+
+    return [*complement, *src_files]
 
 
-def copy_src(feature: str, tmp_path: Path) -> None:
+def copy_src(feature: str, tmp_path: Path) -> list[str]:
     src_dir = FEATURE_DIR / feature / "src"
     if src_dir.is_dir():
         target_dir = tmp_path / "src"
         copytree(str(src_dir), str(target_dir), dirs_exist_ok=True)
+    return [f.name for f in src_dir.glob("**/*.ad?")]

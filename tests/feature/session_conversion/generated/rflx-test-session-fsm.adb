@@ -52,6 +52,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_conversion/test.rflx:17:20
       T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_conversion/test.rflx:17:20
       T_2 := T_1 = Universal.MT_Data;
@@ -82,6 +83,12 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
+      -- tests/feature/session_conversion/test.rflx:25:46
+      if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/session_conversion/test.rflx:25:10
       if not Universal.Contains.Option_In_Message_Data (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Final;

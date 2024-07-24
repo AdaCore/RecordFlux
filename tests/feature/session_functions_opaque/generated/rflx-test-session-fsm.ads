@@ -28,7 +28,7 @@ is
          F : RFLX.Test.Session_Functions.Context;
       end record;
 
-   function Uninitialized (Unused_Ctx : Context) return Boolean;
+   function Uninitialized (Ctx : Context) return Boolean;
 
    function Global_Allocated (Ctx : Context) return Boolean;
 
@@ -83,8 +83,8 @@ private
          Memory : Test.Session.FSM_Allocator.Memory;
       end record;
 
-   function Uninitialized (Unused_Ctx : Context) return Boolean is
-     (True);
+   function Uninitialized (Ctx : Context) return Boolean is
+     (Test.Session.FSM_Allocator.Uninitialized (Ctx.P.Slots));
 
    function Global_Allocated (Ctx : Context) return Boolean is
      (Test.Session.FSM_Allocator.Global_Allocated (Ctx.P.Slots));

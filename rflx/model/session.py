@@ -127,7 +127,7 @@ class State(Base):
 
     @property
     def has_exceptions(self) -> bool:
-        # TODO(eng/recordflux/RecordFlux#861): Move into IR
+        # TODO(eng/recordflux/RecordFlux#1742): Move into IR
         # The need for exception transitions should be made dependent on the presence of asserts in
         # the IR.
         def has_expression_exceptions(expression: expr.Expr) -> bool:

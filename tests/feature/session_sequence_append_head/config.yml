@@ -9,32 +9,4 @@ sequence: |
   State: Local
   Read Channel: 1 0 2 3 4
   State: Reply_2
-# TODO(eng/recordflux/RecordFlux#861): Add required checks
-#
-# rflx-test-session.adb:52:22: medium: precondition might fail, cannot prove Ctx.State = S_Valid
-#    52 |         TLV.Messages.Switch (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
-#       |         ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#   in inlined expression function body at rflx-rflx_message_sequence.ads:247, in instantiation at rflx-tlv-messages.ads:18
-#
-# rflx-test-session.adb:55:25: medium: assertion might fail
-#    55 |         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length));
-#       |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# rflx-test-session.adb:58:28: medium: assertion might fail
-#    58 |            pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Value));
-#       |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# rflx-test-session.adb:311:22: medium: precondition might fail, cannot prove Ctx.State = S_Valid
-#   311 |         TLV.Messages.Switch (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
-#       |         ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#   in inlined expression function body at rflx-rflx_message_sequence.ads:247, in instantiation at rflx-tlv-messages.ads:18
-#
-# rflx-test-session.adb:314:25: medium: assertion might fail
-#   314 |         pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length));
-#       |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# rflx-test-session.adb:317:28: medium: assertion might fail
-#   317 |            pragma Assert (TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Value));
-#       |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# prove:
+prove:

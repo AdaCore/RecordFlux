@@ -67,6 +67,7 @@ is
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
+      -- tests/feature/session_case_expression_numeric/test.rflx:29:25
       T_0 := Test.Message.Get_Value (Ctx.P.Message_Ctx);
       -- tests/feature/session_case_expression_numeric/test.rflx:29:10
       Value := (case T_0 is
@@ -78,7 +79,11 @@ is
              2);
       -- tests/feature/session_case_expression_numeric/test.rflx:34:10
       Test.Message.Reset (Ctx.P.Message_Ctx);
-      pragma Assert (Test.Message.Sufficient_Space (Ctx.P.Message_Ctx, Test.Message.F_Value));
+      if not Test.Message.Sufficient_Space (Ctx.P.Message_Ctx, Test.Message.F_Value) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Invariant);
+         goto Finalize_Prepare;
+      end if;
       Test.Message.Set_Value (Ctx.P.Message_Ctx, Value);
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Prepare_Invariant);

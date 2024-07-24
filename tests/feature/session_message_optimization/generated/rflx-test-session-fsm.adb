@@ -69,6 +69,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_message_optimization/test.rflx:28:20
       T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_message_optimization/test.rflx:28:20
       T_2 := T_1 = Universal.MT_Data;
@@ -81,6 +82,7 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      -- tests/feature/session_message_optimization/test.rflx:29:20
       T_4 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
       -- tests/feature/session_message_optimization/test.rflx:29:20
       T_5 := T_4 = 3;
@@ -131,11 +133,22 @@ is
       pragma Assert (Process_Invariant);
       -- tests/feature/session_message_optimization/test.rflx:41:10
       Option_Type := (Known => True, Enum => Universal.OT_Data);
+      -- tests/feature/session_message_optimization/test.rflx:43:42
+      if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/session_message_optimization/test.rflx:43:10
       declare
          RFLX_Get_Option_Data_Arg_0_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
          RFLX_Get_Option_Data_Arg_0_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data)) + 1;
       begin
+         if not (RFLX_Get_Option_Data_Arg_0_Message'Length >= RFLX_Get_Option_Data_Arg_0_Message_Length) then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2));
          Get_Option_Data (Ctx.F, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2), Option_Data);
          if not Test.Option_Data.Valid_Structure (Option_Data) then
@@ -154,9 +167,17 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      pragma Assert (Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type));
+      if not Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Option.Set_Option_Type (Ctx.P.Option_Ctx, Option_Type.Enum);
-      pragma Assert (Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Length));
+      if not Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Universal.Option.Set_Length (Ctx.P.Option_Ctx, Option_Data.Length);
       declare
          function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
@@ -171,6 +192,14 @@ is
          end RFLX_Process_Data;
          procedure RFLX_Universal_Option_Set_Data is new Universal.Option.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
       begin
+         if
+            not (Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Data)
+             and Universal.Option.Available_Space (Ctx.P.Option_Ctx, Universal.Option.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Test.Option_Data.Field_Size_Data (Option_Data))))
+         then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          RFLX_Universal_Option_Set_Data (Ctx.P.Option_Ctx, RFLX_Types.To_Length (Test.Option_Data.Field_Size_Data (Option_Data)));
       end;
       -- tests/feature/session_message_optimization/test.rflx:56:16
@@ -186,6 +215,7 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      -- tests/feature/session_message_optimization/test.rflx:58:34
       T_9 := Universal.Option.Get_Option_Type (Ctx.P.Option_Ctx);
       -- tests/feature/session_message_optimization/test.rflx:58:20
       T_10 := Option_Type = T_9;
@@ -206,6 +236,11 @@ is
       -- tests/feature/session_message_optimization/test.rflx:56:16
       T_17 := T_13
       and then T_16;
+      if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       -- tests/feature/session_message_optimization/test.rflx:61:20
       T_18 := RFLX.RFLX_Types.Base_Integer (Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data));
       -- tests/feature/session_message_optimization/test.rflx:61:39
@@ -267,6 +302,16 @@ is
          pragma Assert (Trigger_Error_Invariant);
          goto Finalize_Trigger_Error;
       end if;
+      if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Trigger_Error_Invariant);
+         goto Finalize_Trigger_Error;
+      end if;
+      if not Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Trigger_Error_Invariant);
+         goto Finalize_Trigger_Error;
+      end if;
       -- tests/feature/session_message_optimization/test.rflx:80:10
       if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
          Ctx.P.Next_State := S_Error;
@@ -278,7 +323,11 @@ is
          pragma Assert (Trigger_Error_Invariant);
          goto Finalize_Trigger_Error;
       end if;
-      pragma Assert (Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Length));
+      if not Universal.Option.Sufficient_Space (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Trigger_Error_Invariant);
+         goto Finalize_Trigger_Error;
+      end if;
       Universal.Option.Set_Length (Ctx.P.Option_Ctx, Null_Option_Data.Length);
       Ctx.P.Next_State := S_Final;
       pragma Assert (Trigger_Error_Invariant);

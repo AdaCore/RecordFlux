@@ -791,7 +791,7 @@ def _(expression: expr.Conversion, variable_id: Generator[ID, None, None]) -> ir
     argument = to_ir(expression.argument, variable_id)
     return ir.ComplexExpr(
         argument.stmts,
-        ir.Conversion(expression.identifier, argument.expr, expression.type_, origin=expression),
+        ir.Conversion(expression.type_, argument.expr, origin=expression),
     )
 
 

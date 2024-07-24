@@ -65,14 +65,35 @@ is
         Ghost;
    begin
       pragma Assert (Copy_Invariant);
+      -- tests/feature/session_endianness/test.rflx:25:44
+      if not Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_A) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy_Invariant);
+         goto Finalize_Copy;
+      end if;
+      -- tests/feature/session_endianness/test.rflx:25:61
+      if not Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_B) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy_Invariant);
+         goto Finalize_Copy;
+      end if;
       -- tests/feature/session_endianness/test.rflx:25:10
       Messages.Msg_LE.Reset (Ctx.P.Out_Msg_Ctx);
-      pragma Assert (Messages.Msg_LE.Sufficient_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_C));
+      if not Messages.Msg_LE.Sufficient_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_C) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy_Invariant);
+         goto Finalize_Copy;
+      end if;
       Messages.Msg_LE.Set_C (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_A (Ctx.P.In_Msg_Ctx));
-      pragma Assert (Messages.Msg_LE.Sufficient_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_D));
+      if not Messages.Msg_LE.Sufficient_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_D) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy_Invariant);
+         goto Finalize_Copy;
+      end if;
       Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx));
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Copy_Invariant);
+      <<Finalize_Copy>>
    end Copy;
 
    procedure Reply (Ctx : in out Context) with
@@ -141,14 +162,35 @@ is
         Ghost;
    begin
       pragma Assert (Copy2_Invariant);
+      -- tests/feature/session_endianness/test.rflx:50:42
+      if not Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_C) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy2_Invariant);
+         goto Finalize_Copy2;
+      end if;
+      -- tests/feature/session_endianness/test.rflx:50:58
+      if not Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_D) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy2_Invariant);
+         goto Finalize_Copy2;
+      end if;
       -- tests/feature/session_endianness/test.rflx:50:10
       Messages.Msg.Reset (Ctx.P.Out_Msg2_Ctx);
-      pragma Assert (Messages.Msg.Sufficient_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_A));
+      if not Messages.Msg.Sufficient_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_A) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy2_Invariant);
+         goto Finalize_Copy2;
+      end if;
       Messages.Msg.Set_A (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_C (Ctx.P.In_Msg2_Ctx));
-      pragma Assert (Messages.Msg.Sufficient_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_B));
+      if not Messages.Msg.Sufficient_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_B) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy2_Invariant);
+         goto Finalize_Copy2;
+      end if;
       Messages.Msg.Set_B (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_D (Ctx.P.In_Msg2_Ctx));
       Ctx.P.Next_State := S_Reply2;
       pragma Assert (Copy2_Invariant);
+      <<Finalize_Copy2>>
    end Copy2;
 
    procedure Reply2 (Ctx : in out Context) with
