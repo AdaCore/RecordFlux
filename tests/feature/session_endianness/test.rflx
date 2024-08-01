@@ -18,6 +18,8 @@ package Test is
          goto Copy
             if In_Msg'Has_Data
          goto null
+      exception
+         goto null -- §S-S-E
       end Start;
 
       state Copy is
@@ -43,6 +45,8 @@ package Test is
          goto Copy2
           if In_Msg2'Has_Data
          goto null
+      exception
+         goto null -- §S-S-E
       end Read2;
 
       state Copy2 is

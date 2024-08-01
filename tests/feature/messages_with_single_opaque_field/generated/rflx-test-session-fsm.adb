@@ -61,11 +61,21 @@ is
    begin
       pragma Assert (Process_Invariant);
       -- tests/feature/messages_with_single_opaque_field/test.rflx:24:34
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Test.Message.Well_Formed (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/messages_with_single_opaque_field/test.rflx:24:10
       Test.Message.Reset (Ctx.P.M_S_Ctx);
       declare
@@ -89,6 +99,12 @@ is
             not (Test.Message.Valid_Next (Ctx.P.M_S_Ctx, Test.Message.F_Data)
              and Test.Message.Available_Space (Ctx.P.M_S_Ctx, Test.Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data))))
          then
+            Ctx.P.Next_State := S_Final;
+            Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+         if not Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data))) then
             Ctx.P.Next_State := S_Final;
             Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
             pragma Assert (Process_Invariant);

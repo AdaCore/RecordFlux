@@ -324,8 +324,7 @@ is
        and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx)
        and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Next (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector)
        and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Length (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector, Length)
-       and then RFLX_Types.To_Length (RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Available_Space (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector)) >= Length
-       and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Field_First (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Available_Space (Ctx, RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.F_Vector)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Vector)

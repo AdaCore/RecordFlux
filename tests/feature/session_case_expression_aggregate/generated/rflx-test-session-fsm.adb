@@ -63,17 +63,32 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Invariant);
-      -- tests/feature/session_case_expression_aggregate/test.rflx:22:23
+      -- tests/feature/session_case_expression_aggregate/test.rflx:24:23
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      -- tests/feature/session_case_expression_aggregate/test.rflx:22:10
-      Recv_Type := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_case_expression_aggregate/test.rflx:24:10
+      Recv_Type := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
+      -- tests/feature/session_case_expression_aggregate/test.rflx:26:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Invariant);
+         goto Finalize_Prepare;
+      end if;
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Message_Type, Universal.To_Base_Integer (Universal.MT_Value)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
@@ -84,13 +99,39 @@ is
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Length, Universal.To_Base_Integer (Universal.Length'(1))) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Invariant);
+         goto Finalize_Prepare;
+      end if;
+      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length'(1));
       if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Value) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      Universal.Message.Set_Value (Ctx.P.Message_Ctx, (case Recv_Type is
+      if
+         not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Value, Universal.To_Base_Integer (Universal.Value'((case Recv_Type is
+             when Universal.MT_Null | Universal.MT_Data =>
+                2,
+             when Universal.MT_Value =>
+                4,
+             when Universal.MT_Values =>
+                8,
+             when Universal.MT_Option_Types =>
+                16,
+             when Universal.MT_Options =>
+                32,
+             when Universal.MT_Unconstrained_Data =>
+                64,
+             when Universal.MT_Unconstrained_Options =>
+                128))))
+      then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Invariant);
+         goto Finalize_Prepare;
+      end if;
+      Universal.Message.Set_Value (Ctx.P.Message_Ctx, Universal.Value'((case Recv_Type is
           when Universal.MT_Null | Universal.MT_Data =>
              2,
           when Universal.MT_Value =>
@@ -104,7 +145,7 @@ is
           when Universal.MT_Unconstrained_Data =>
              64,
           when Universal.MT_Unconstrained_Options =>
-             128));
+             128)));
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Prepare_Invariant);
       <<Finalize_Prepare>>
@@ -124,7 +165,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_case_expression_aggregate/test.rflx:43:10
+      -- tests/feature/session_case_expression_aggregate/test.rflx:45:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

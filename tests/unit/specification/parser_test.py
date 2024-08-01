@@ -2721,6 +2721,8 @@ def test_create_model_session_locations() -> None:
                  goto null
                     if Z = False
                  goto A
+              exception
+                 goto null
               end A;
            end Session;
         end Test;

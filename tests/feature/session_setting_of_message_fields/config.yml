@@ -1,13 +1,13 @@
 input:
   Channel:
-    - 1 0 1 0
+    - 130 1 2
 output:
   - Channel
 sequence: |
-  Write Channel: 1 0 1 0
+  Write Channel: 130 1 2
   State: Start
   State: Process
-  Read Channel: 1 0 1 65
+  Read Channel: 129 65
   State: Reply
 # TODO(eng/recordflux/RecordFlux#1704): Fix checks
 # prove:

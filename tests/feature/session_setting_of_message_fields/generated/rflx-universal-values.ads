@@ -1,1 +1,0 @@
-../../shared/generated/rflx-universal-values.ads

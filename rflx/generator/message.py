@@ -2417,7 +2417,7 @@ def create_byte_size_function() -> UnitPart:
     )
 
 
-def create_message_last_function(prefix: str, message: Message) -> UnitPart:
+def create_message_last_function() -> UnitPart:
     specification = FunctionSpecification(
         "Message_Last",
         const.TYPES_BIT_LENGTH,
@@ -2428,17 +2428,6 @@ def create_message_last_function(prefix: str, message: Message) -> UnitPart:
         [
             SubprogramDeclaration(
                 specification,
-                [
-                    Precondition(
-                        AndThen(
-                            Call(prefix * message.identifier * "Has_Buffer", [Variable("Ctx")]),
-                            Call(
-                                prefix * message.identifier * "Well_Formed_Message",
-                                [Variable("Ctx")],
-                            ),
-                        ),
-                    ),
-                ],
             ),
         ],
         private=[ExpressionFunctionDeclaration(specification, Variable("Ctx.Verified_Last"))],

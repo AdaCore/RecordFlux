@@ -64,15 +64,25 @@ is
         Ghost;
    begin
       pragma Assert (Prepare_Invariant);
-      -- tests/feature/session_case_expression_numeric/test.rflx:29:25
+      -- tests/feature/session_case_expression_numeric/test.rflx:31:25
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Value) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      -- tests/feature/session_case_expression_numeric/test.rflx:29:25
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_case_expression_numeric/test.rflx:31:25
       T_0 := Test.Message.Get_Value (Ctx.P.Message_Ctx);
-      -- tests/feature/session_case_expression_numeric/test.rflx:29:10
+      -- tests/feature/session_case_expression_numeric/test.rflx:31:10
       Value := (case T_0 is
           when 1 | 2 =>
              4,
@@ -80,14 +90,19 @@ is
              1,
           when 4 =>
              2);
-      -- tests/feature/session_case_expression_numeric/test.rflx:34:10
+      -- tests/feature/session_case_expression_numeric/test.rflx:36:10
       Test.Message.Reset (Ctx.P.Message_Ctx);
       if not Test.Message.Sufficient_Space (Ctx.P.Message_Ctx, Test.Message.F_Value) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Invariant);
          goto Finalize_Prepare;
       end if;
-      Test.Message.Set_Value (Ctx.P.Message_Ctx, Value);
+      if not RFLX.Test.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Test.Message.F_Value) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Invariant);
+         goto Finalize_Prepare;
+      end if;
+      Test.Message.Set_Value (Ctx.P.Message_Ctx, Test.Tiny_Int'(Value));
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Prepare_Invariant);
       <<Finalize_Prepare>>
@@ -107,7 +122,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_case_expression_numeric/test.rflx:43:10
+      -- tests/feature/session_case_expression_numeric/test.rflx:45:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

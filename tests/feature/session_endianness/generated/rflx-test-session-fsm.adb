@@ -68,32 +68,62 @@ is
         Ghost;
    begin
       pragma Assert (Copy_Invariant);
-      -- tests/feature/session_endianness/test.rflx:25:44
+      -- tests/feature/session_endianness/test.rflx:27:44
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_A) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Copy_Invariant);
          goto Finalize_Copy;
       end if;
-      -- tests/feature/session_endianness/test.rflx:25:61
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_endianness/test.rflx:27:61
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Messages.Msg_LE_Nested.Valid (Ctx.P.In_Msg_Ctx, Messages.Msg_LE_Nested.F_X_B) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Copy_Invariant);
          goto Finalize_Copy;
       end if;
-      -- tests/feature/session_endianness/test.rflx:25:10
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_endianness/test.rflx:27:10
       Messages.Msg_LE.Reset (Ctx.P.Out_Msg_Ctx);
       if not Messages.Msg_LE.Sufficient_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_C) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Copy_Invariant);
          goto Finalize_Copy;
       end if;
-      Messages.Msg_LE.Set_C (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_A (Ctx.P.In_Msg_Ctx));
+      if not RFLX.Messages.Msg_LE.Field_Condition (Ctx.P.Out_Msg_Ctx, RFLX.Messages.Msg_LE.F_C) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy_Invariant);
+         goto Finalize_Copy;
+      end if;
+      Messages.Msg_LE.Set_C (Ctx.P.Out_Msg_Ctx, Messages.Integer'(Messages.Msg_LE_Nested.Get_X_A (Ctx.P.In_Msg_Ctx)));
       if not Messages.Msg_LE.Sufficient_Space (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE.F_D) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Copy_Invariant);
          goto Finalize_Copy;
       end if;
-      Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx));
+      if not RFLX.Messages.Msg_LE.Field_Condition (Ctx.P.Out_Msg_Ctx, RFLX.Messages.Msg_LE.F_D) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy_Invariant);
+         goto Finalize_Copy;
+      end if;
+      Messages.Msg_LE.Set_D (Ctx.P.Out_Msg_Ctx, Messages.Enum_T'(Messages.Msg_LE_Nested.Get_X_B (Ctx.P.In_Msg_Ctx)));
       Ctx.P.Next_State := S_Reply;
       pragma Assert (Copy_Invariant);
       <<Finalize_Copy>>
@@ -116,7 +146,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_endianness/test.rflx:34:10
+      -- tests/feature/session_endianness/test.rflx:36:10
       Ctx.P.Next_State := S_Read2;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -138,7 +168,7 @@ is
         Ghost;
    begin
       pragma Assert (Read2_Invariant);
-      -- tests/feature/session_endianness/test.rflx:41:10
+      -- tests/feature/session_endianness/test.rflx:43:10
       Messages.Msg_LE.Verify_Message (Ctx.P.In_Msg2_Ctx);
       if Messages.Msg_LE.Byte_Size (Ctx.P.In_Msg2_Ctx) > 0 then
          Ctx.P.Next_State := S_Copy2;
@@ -165,32 +195,62 @@ is
         Ghost;
    begin
       pragma Assert (Copy2_Invariant);
-      -- tests/feature/session_endianness/test.rflx:50:42
+      -- tests/feature/session_endianness/test.rflx:54:42
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_C) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Copy2_Invariant);
          goto Finalize_Copy2;
       end if;
-      -- tests/feature/session_endianness/test.rflx:50:58
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_endianness/test.rflx:54:58
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Messages.Msg_LE.Valid (Ctx.P.In_Msg2_Ctx, Messages.Msg_LE.F_D) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Copy2_Invariant);
          goto Finalize_Copy2;
       end if;
-      -- tests/feature/session_endianness/test.rflx:50:10
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_endianness/test.rflx:54:10
       Messages.Msg.Reset (Ctx.P.Out_Msg2_Ctx);
       if not Messages.Msg.Sufficient_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_A) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Copy2_Invariant);
          goto Finalize_Copy2;
       end if;
-      Messages.Msg.Set_A (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_C (Ctx.P.In_Msg2_Ctx));
+      if not RFLX.Messages.Msg.Field_Condition (Ctx.P.Out_Msg2_Ctx, RFLX.Messages.Msg.F_A) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy2_Invariant);
+         goto Finalize_Copy2;
+      end if;
+      Messages.Msg.Set_A (Ctx.P.Out_Msg2_Ctx, Messages.Integer'(Messages.Msg_LE.Get_C (Ctx.P.In_Msg2_Ctx)));
       if not Messages.Msg.Sufficient_Space (Ctx.P.Out_Msg2_Ctx, Messages.Msg.F_B) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Copy2_Invariant);
          goto Finalize_Copy2;
       end if;
-      Messages.Msg.Set_B (Ctx.P.Out_Msg2_Ctx, Messages.Msg_LE.Get_D (Ctx.P.In_Msg2_Ctx));
+      if not RFLX.Messages.Msg.Field_Condition (Ctx.P.Out_Msg2_Ctx, RFLX.Messages.Msg.F_B) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Copy2_Invariant);
+         goto Finalize_Copy2;
+      end if;
+      Messages.Msg.Set_B (Ctx.P.Out_Msg2_Ctx, Messages.Enum_T'(Messages.Msg_LE.Get_D (Ctx.P.In_Msg2_Ctx)));
       Ctx.P.Next_State := S_Reply2;
       pragma Assert (Copy2_Invariant);
       <<Finalize_Copy2>>
@@ -213,7 +273,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply2_Invariant);
-      -- tests/feature/session_endianness/test.rflx:59:10
+      -- tests/feature/session_endianness/test.rflx:63:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply2_Invariant);
    end Reply2;

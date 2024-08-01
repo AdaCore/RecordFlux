@@ -566,6 +566,8 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
                 goto Process
                    if Packet'Valid
                 goto null
+             exception
+                goto null
              end Receive;
 
              state Process
@@ -822,6 +824,8 @@ def test_session_boolean_relations(global_rel: str, local_rel: str, tmp_path: Pa
               transition
                  goto null
                     if {global_rel} and {local_rel}
+                 goto null
+              exception
                  goto null
               end Init;
            end Session;

@@ -752,15 +752,18 @@ def field_bit_location_declarations(field_name: Name) -> list[Declaration]:
     ]
 
 
-def field_condition_call(
+def field_condition_call(  # noqa: PLR0913
     prefix: str,
     message: model.Message,
     field: model.Field,
     value: Expr | None = None,
     aggregate: Expr | None = None,
     size: Expr | None = None,
+    context: ID | None = None,
 ) -> Expr:
     package = prefix * message.identifier
+    if context is None:
+        context = ID("Ctx")
     if value is None:
         value = Number(0)
     if aggregate is None:
@@ -768,12 +771,12 @@ def field_condition_call(
     if size is None:
         size = Call(
             package * "Field_Size",
-            [Variable("Ctx"), Variable(package * field.affixed_name)],
+            [Variable(context), Variable(package * field.affixed_name)],
         )
     return Call(
         package * "Field_Condition",
         [
-            Variable("Ctx"),
+            Variable(context),
             Variable(package * field.affixed_name),
             *([value] if has_scalar_value_dependent_condition(message) else []),
             *([aggregate] if has_aggregate_dependent_condition(message) else []),

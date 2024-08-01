@@ -62,7 +62,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_minimal/test.rflx:21:10
+      -- tests/feature/session_minimal/test.rflx:23:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

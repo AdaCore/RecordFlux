@@ -50,11 +50,21 @@ is
       -- tests/feature/session_conversion/test.rflx:16:16
       T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
       -- tests/feature/session_conversion/test.rflx:17:20
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_conversion/test.rflx:17:20
       T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_conversion/test.rflx:17:20
@@ -87,11 +97,21 @@ is
    begin
       pragma Assert (Process_Invariant);
       -- tests/feature/session_conversion/test.rflx:25:46
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_conversion/test.rflx:25:10
       if not Universal.Contains.Option_In_Message_Data (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Final;

@@ -12,6 +12,7 @@ pragma Restrictions (No_Streams);
 pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Builtin_Types.Conversions;
 with RFLX.RFLX_Types.Operators;
 
 package body RFLX.Test.Session.FSM with
@@ -22,11 +23,17 @@ is
 
    use type RFLX.RFLX_Types.Bytes_Ptr;
 
-   use type RFLX.Universal.Message_Type;
-
-   use type RFLX.Universal.Length;
-
    use type RFLX.RFLX_Types.Bit_Length;
+
+   pragma Warnings (Off, """*"" is already use-visible through previous use_type_clause");
+
+   pragma Warnings (Off, "use clause for type ""*"" defined at * has no effect");
+
+   use type RFLX.RFLX_Types.Base_Integer;
+
+   pragma Warnings (On, "use clause for type ""*"" defined at * has no effect");
+
+   pragma Warnings (On, """*"" is already use-visible through previous use_type_clause");
 
    procedure Start (Ctx : in out Context) with
      Pre =>
@@ -36,10 +43,10 @@ is
    is
       T_0 : Boolean;
       T_1 : Boolean;
-      T_2 : Universal.Message_Type;
+      T_2 : Boolean;
       T_3 : Boolean;
       T_4 : Boolean;
-      T_5 : Universal.Length;
+      T_5 : Test.Length;
       T_6 : Boolean;
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
@@ -50,35 +57,55 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      -- tests/feature/session_setting_of_message_fields/test.rflx:12:10
-      Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
-      -- tests/feature/session_setting_of_message_fields/test.rflx:15:16
-      T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
-      -- tests/feature/session_setting_of_message_fields/test.rflx:15:16
+      -- tests/feature/session_setting_of_message_fields/test.rflx:28:10
+      Test.Message.Verify_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_setting_of_message_fields/test.rflx:31:16
+      T_0 := Test.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
+      -- tests/feature/session_setting_of_message_fields/test.rflx:31:16
       T_1 := T_0;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:16:20
-      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+      -- tests/feature/session_setting_of_message_fields/test.rflx:32:20
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Has_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:16:20
-      T_2 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
-      -- tests/feature/session_setting_of_message_fields/test.rflx:16:20
-      T_3 := T_2 = Universal.MT_Data;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:15:16
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_setting_of_message_fields/test.rflx:32:20
+      T_2 := Test.Message.Get_Has_Data (Ctx.P.Message_Ctx);
+      -- tests/feature/session_setting_of_message_fields/test.rflx:32:20
+      T_3 := T_2;
+      -- tests/feature/session_setting_of_message_fields/test.rflx:31:16
       T_4 := T_1
       and then T_3;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:17:20
-      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+      -- tests/feature/session_setting_of_message_fields/test.rflx:33:20
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Length) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:17:20
-      T_5 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
-      -- tests/feature/session_setting_of_message_fields/test.rflx:17:20
-      T_6 := T_5 = 1;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_setting_of_message_fields/test.rflx:33:20
+      T_5 := Test.Message.Get_Length (Ctx.P.Message_Ctx);
+      -- tests/feature/session_setting_of_message_fields/test.rflx:33:20
+      T_6 := T_5 = 2;
       if
          T_4
          and then T_6
@@ -97,14 +124,14 @@ is
      Post =>
        Initialized (Ctx)
    is
-      Local_Message_Ctx : Universal.Message.Context;
+      Local_Message_Ctx : Test.Message.Context;
       T_7 : RFLX.RFLX_Types.Base_Integer;
-      T_8 : Universal.Message_Type;
-      T_9 : Universal.Message_Type;
+      T_8 : Boolean;
+      T_9 : Boolean;
       Local_Message_Buffer : RFLX_Types.Bytes_Ptr;
       function Process_Invariant return Boolean is
         (Global_Initialized (Ctx)
-         and Universal.Message.Has_Buffer (Local_Message_Ctx)
+         and Test.Message.Has_Buffer (Local_Message_Ctx)
          and Local_Message_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Local_Message_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -118,113 +145,260 @@ is
       pragma Warnings (Off, "unused assignment");
       Ctx.P.Slots.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
-      Universal.Message.Initialize (Local_Message_Ctx, Local_Message_Buffer);
+      Test.Message.Initialize (Local_Message_Ctx, Local_Message_Buffer);
       pragma Assert (Process_Invariant);
-      -- tests/feature/session_setting_of_message_fields/test.rflx:27:10
-      if not Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+      -- tests/feature/session_setting_of_message_fields/test.rflx:43:10
+      if not Test.Message.Valid_Next (Ctx.P.Message_Ctx, Test.Message.F_Has_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+      if not Test.Message.Sufficient_Space (Ctx.P.Message_Ctx, Test.Message.F_Has_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
-      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
+      if not RFLX.Test.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Test.Message.F_Has_Data, RFLX_Builtin_Types.Conversions.To_Base_Integer (Boolean'(Ctx.P.Has_Data)), (1 .. 0 => 0)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
-      if not Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
+      Test.Message.Set_Has_Data (Ctx.P.Message_Ctx, Boolean'(Ctx.P.Has_Data));
+      if not Test.Message.Sufficient_Space (Ctx.P.Message_Ctx, Test.Message.F_Length) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+      if not RFLX.Test.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Test.Message.F_Length, Test.To_Base_Integer (Test.Length'(Ctx.P.Length)), (1 .. 0 => 0)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      Universal.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (65)));
-      if not Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+      Test.Message.Set_Length (Ctx.P.Message_Ctx, Test.Length'(Ctx.P.Length));
+      if not Test.Message.Valid_Length (Ctx.P.Message_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:35:34
-      T_7 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data));
-      -- tests/feature/session_setting_of_message_fields/test.rflx:37:32
-      if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+      if not Test.Message.Sufficient_Space (Ctx.P.Message_Ctx, Test.Message.F_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:33:10
-      if not Universal.Message.Valid_Next (Local_Message_Ctx, Universal.Message.F_Message_Type) then
+      if not RFLX.Test.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Test.Message.F_Data, 0, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (65)), 8) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      if not Universal.Message.Sufficient_Space (Local_Message_Ctx, Universal.Message.F_Message_Type) then
+      Test.Message.Set_Data (Ctx.P.Message_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (65)));
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Test.Message.Valid_Next (Ctx.P.Message_Ctx, Test.Message.F_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      Universal.Message.Set_Message_Type (Local_Message_Ctx, Universal.MT_Data);
-      if not Universal.Message.Sufficient_Space (Local_Message_Ctx, Universal.Message.F_Length) then
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (RFLX.RFLX_Types.Base_Integer'First) <= RFLX.RFLX_Types.Base_Integer (Test.Message.Field_Size (Ctx.P.Message_Ctx, Test.Message.F_Data))) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      Universal.Message.Set_Length (Local_Message_Ctx, Universal.Length (T_7) / 8);
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (Test.Message.Field_Size (Ctx.P.Message_Ctx, Test.Message.F_Data)) <= RFLX.RFLX_Types.Base_Integer (RFLX.RFLX_Types.Base_Integer'Last)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_setting_of_message_fields/test.rflx:51:34
+      T_7 := RFLX.RFLX_Types.Base_Integer (Test.Message.Field_Size (Ctx.P.Message_Ctx, Test.Message.F_Data));
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (Test.Length'First) <= RFLX.RFLX_Types.Base_Integer (T_7)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (T_7) <= RFLX.RFLX_Types.Base_Integer (Test.Length'Last)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_setting_of_message_fields/test.rflx:51:54
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (8 /= 0) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_setting_of_message_fields/test.rflx:53:32
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Test.Message.Well_Formed (Ctx.P.Message_Ctx, Test.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_setting_of_message_fields/test.rflx:49:10
+      if not Test.Message.Valid_Next (Local_Message_Ctx, Test.Message.F_Has_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if not Test.Message.Sufficient_Space (Local_Message_Ctx, Test.Message.F_Has_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if not RFLX.Test.Message.Field_Condition (Local_Message_Ctx, RFLX.Test.Message.F_Has_Data, RFLX_Builtin_Types.Conversions.To_Base_Integer (Boolean'(True)), (1 .. 0 => 0)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      Test.Message.Set_Has_Data (Local_Message_Ctx, Boolean'(True));
+      if not Test.Message.Sufficient_Space (Local_Message_Ctx, Test.Message.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if not RFLX.Test.Message.Field_Condition (Local_Message_Ctx, RFLX.Test.Message.F_Length, Test.To_Base_Integer (Test.Length'(Test.Length (T_7) / 8)), (1 .. 0 => 0)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      Test.Message.Set_Length (Local_Message_Ctx, Test.Length'(Test.Length (T_7) / 8));
       declare
          pragma Warnings (Off, "is not modified, could be declared constant");
-         RFLX_Ctx_P_Message_Ctx_Tmp : Universal.Message.Context := Ctx.P.Message_Ctx;
+         RFLX_Ctx_P_Message_Ctx_Tmp : Test.Message.Context := Ctx.P.Message_Ctx;
          pragma Warnings (On, "is not modified, could be declared constant");
          function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
-           (Universal.Message.Has_Buffer (RFLX_Ctx_P_Message_Ctx_Tmp)
-            and then Universal.Message.Well_Formed (RFLX_Ctx_P_Message_Ctx_Tmp, Universal.Message.F_Data)
-            and then Length = RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Ctx_P_Message_Ctx_Tmp, Universal.Message.F_Data)));
+           (Test.Message.Has_Buffer (RFLX_Ctx_P_Message_Ctx_Tmp)
+            and then Test.Message.Well_Formed (RFLX_Ctx_P_Message_Ctx_Tmp, Test.Message.F_Data)
+            and then Length = RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_Message_Ctx_Tmp, Test.Message.F_Data)));
          procedure RFLX_Process_Data (Data : out RFLX_Types.Bytes) with
            Pre =>
              RFLX_Process_Data_Pre (Data'Length)
          is
          begin
-            Universal.Message.Get_Data (RFLX_Ctx_P_Message_Ctx_Tmp, Data);
+            Test.Message.Get_Data (RFLX_Ctx_P_Message_Ctx_Tmp, Data);
          end RFLX_Process_Data;
-         procedure RFLX_Universal_Message_Set_Data is new Universal.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
+         procedure RFLX_Test_Message_Set_Data is new Test.Message.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
       begin
          if
-            not (Universal.Message.Valid_Next (Local_Message_Ctx, Universal.Message.F_Data)
-             and Universal.Message.Available_Space (Local_Message_Ctx, Universal.Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Ctx_P_Message_Ctx_Tmp, Universal.Message.F_Data))))
+            not (Test.Message.Valid_Next (Local_Message_Ctx, Test.Message.F_Data)
+             and Test.Message.Available_Space (Local_Message_Ctx, Test.Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_Message_Ctx_Tmp, Test.Message.F_Data))))
          then
             Ctx.P.Next_State := S_Final;
             Ctx.P.Message_Ctx := RFLX_Ctx_P_Message_Ctx_Tmp;
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
-         RFLX_Universal_Message_Set_Data (Local_Message_Ctx, RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Ctx_P_Message_Ctx_Tmp, Universal.Message.F_Data)));
+         if not Test.Message.Valid_Length (Local_Message_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_Message_Ctx_Tmp, Test.Message.F_Data))) then
+            Ctx.P.Next_State := S_Final;
+            Ctx.P.Message_Ctx := RFLX_Ctx_P_Message_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+         RFLX_Test_Message_Set_Data (Local_Message_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_Message_Ctx_Tmp, Test.Message.F_Data)));
          Ctx.P.Message_Ctx := RFLX_Ctx_P_Message_Ctx_Tmp;
       end;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:40:16
-      if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
+      -- tests/feature/session_setting_of_message_fields/test.rflx:56:16
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Has_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:40:16
-      T_8 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
-      -- tests/feature/session_setting_of_message_fields/test.rflx:40:39
-      if not Universal.Message.Valid (Local_Message_Ctx, Universal.Message.F_Message_Type) then
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_setting_of_message_fields/test.rflx:56:16
+      T_8 := Test.Message.Get_Has_Data (Ctx.P.Message_Ctx);
+      -- tests/feature/session_setting_of_message_fields/test.rflx:56:35
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Test.Message.Valid (Local_Message_Ctx, Test.Message.F_Has_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      -- tests/feature/session_setting_of_message_fields/test.rflx:40:39
-      T_9 := Universal.Message.Get_Message_Type (Local_Message_Ctx);
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_setting_of_message_fields/test.rflx:56:35
+      T_9 := Test.Message.Get_Has_Data (Local_Message_Ctx);
       if T_8 = T_9 then
          Ctx.P.Next_State := S_Reply;
       else
@@ -233,7 +407,7 @@ is
       pragma Assert (Process_Invariant);
       <<Finalize_Process>>
       pragma Warnings (Off, """Local_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Universal.Message.Take_Buffer (Local_Message_Ctx, Local_Message_Buffer);
+      Test.Message.Take_Buffer (Local_Message_Ctx, Local_Message_Buffer);
       pragma Warnings (On, """Local_Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Assert (Ctx.P.Slots.Slot_Ptr_2 = null);
       pragma Assert (Local_Message_Buffer /= null);
@@ -257,9 +431,30 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/session_setting_of_message_fields/test.rflx:48:10
-      Ctx.P.Next_State := S_Final;
+      -- tests/feature/session_setting_of_message_fields/test.rflx:64:10
+      -- tests/feature/session_setting_of_message_fields/test.rflx:67:16
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Test.Message.Valid (Ctx.P.Message_Ctx, Test.Message.F_Has_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Reply_Invariant);
+         goto Finalize_Reply;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      if Test.Message.Get_Has_Data (Ctx.P.Message_Ctx) then
+         Ctx.P.Next_State := S_Final;
+      else
+         Ctx.P.Next_State := S_Final;
+      end if;
       pragma Assert (Reply_Invariant);
+      <<Finalize_Reply>>
    end Reply;
 
    procedure Initialize (Ctx : in out Context) is
@@ -270,7 +465,9 @@ is
       pragma Warnings (Off, "unused assignment");
       Ctx.P.Slots.Slot_Ptr_1 := null;
       pragma Warnings (On, "unused assignment");
-      Universal.Message.Initialize (Ctx.P.Message_Ctx, Message_Buffer);
+      Test.Message.Initialize (Ctx.P.Message_Ctx, Message_Buffer);
+      Ctx.P.Has_Data := True;
+      Ctx.P.Length := 1;
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
@@ -278,7 +475,7 @@ is
       Message_Buffer : RFLX_Types.Bytes_Ptr;
    begin
       pragma Warnings (Off, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
-      Universal.Message.Take_Buffer (Ctx.P.Message_Ctx, Message_Buffer);
+      Test.Message.Take_Buffer (Ctx.P.Message_Ctx, Message_Buffer);
       pragma Warnings (On, """Ctx.P.Message_Ctx"" is set by ""Take_Buffer"" but not used after the call");
       pragma Assert (Ctx.P.Slots.Slot_Ptr_1 = null);
       pragma Assert (Message_Buffer /= null);
@@ -297,7 +494,7 @@ is
    begin
       case Ctx.P.Next_State is
          when S_Start =>
-            Universal.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
+            Test.Message.Reset (Ctx.P.Message_Ctx, Ctx.P.Message_Ctx.First, Ctx.P.Message_Ctx.First - 1);
          when S_Process | S_Reply | S_Final =>
             null;
       end case;
@@ -346,14 +543,14 @@ is
       begin
          Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First + Offset + (Length - RFLX_Types.Length'(1)));
       end Read;
-      procedure Universal_Message_Read is new Universal.Message.Generic_Read (Read, Read_Pre);
+      procedure Test_Message_Read is new Test.Message.Generic_Read (Read, Read_Pre);
    begin
       Buffer := (others => 0);
       case Chan is
          when C_Channel =>
             case Ctx.P.Next_State is
                when S_Reply =>
-                  Universal_Message_Read (Ctx.P.Message_Ctx);
+                  Test_Message_Read (Ctx.P.Message_Ctx);
                when others =>
                   pragma Warnings (Off, "unreachable code");
                   null;
@@ -382,13 +579,13 @@ is
          Message_Buffer := (others => 0);
          Message_Buffer (Message_Buffer'First .. RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) - 1 + Length)) := Buffer;
       end Write;
-      procedure Universal_Message_Write is new Universal.Message.Generic_Write (Write, Write_Pre);
+      procedure Test_Message_Write is new Test.Message.Generic_Write (Write, Write_Pre);
    begin
       case Chan is
          when C_Channel =>
             case Ctx.P.Next_State is
                when S_Start =>
-                  Universal_Message_Write (Ctx.P.Message_Ctx, Offset);
+                  Test_Message_Write (Ctx.P.Message_Ctx, Offset);
                when others =>
                   pragma Warnings (Off, "unreachable code");
                   null;

@@ -52,16 +52,36 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Options_Ctx, Options_Buffer);
       pragma Assert (Start_Invariant);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Options.Valid (Options_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Options.Has_Element (Options_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_append_unconstrained/test.rflx:14:10
       if not Universal.Options.Has_Element (Options_Ctx) then
          Ctx.P.Next_State := S_Final;
@@ -80,6 +100,14 @@ is
             pragma Assert (Start_Invariant);
             goto Finalize_Start;
          end if;
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Options_Ctx, RFLX.Universal.Option.F_Option_Type, Universal.To_Base_Integer (Universal.OT_Data)) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
+         end if;
          Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
          if not Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
             Ctx.P.Next_State := S_Final;
@@ -89,7 +117,15 @@ is
             pragma Assert (Start_Invariant);
             goto Finalize_Start;
          end if;
-         Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 1);
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Options_Ctx, RFLX.Universal.Option.F_Length, Universal.To_Base_Integer (Universal.Length'(1))) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
+         end if;
+         Universal.Option.Set_Length (RFLX_Element_Options_Ctx, Universal.Length'(1));
          if not Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
             Ctx.P.Next_State := S_Final;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -106,11 +142,49 @@ is
             pragma Assert (Start_Invariant);
             goto Finalize_Start;
          end if;
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Options_Ctx, RFLX.Universal.Option.F_Data, 0) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
+         end if;
          Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (1)));
          pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Universal.Options.Valid (Options_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Universal.Options.Has_Element (Options_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_append_unconstrained/test.rflx:16:10
       if not Universal.Options.Has_Element (Options_Ctx) then
          Ctx.P.Next_State := S_Final;
@@ -129,6 +203,14 @@ is
             pragma Assert (Start_Invariant);
             goto Finalize_Start;
          end if;
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Options_Ctx, RFLX.Universal.Option.F_Option_Type, Universal.To_Base_Integer (Universal.OT_Data)) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
+         end if;
          Universal.Option.Set_Option_Type (RFLX_Element_Options_Ctx, Universal.OT_Data);
          if not Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Length) then
             Ctx.P.Next_State := S_Final;
@@ -138,7 +220,15 @@ is
             pragma Assert (Start_Invariant);
             goto Finalize_Start;
          end if;
-         Universal.Option.Set_Length (RFLX_Element_Options_Ctx, 2);
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Options_Ctx, RFLX.Universal.Option.F_Length, Universal.To_Base_Integer (Universal.Length'(2))) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
+         end if;
+         Universal.Option.Set_Length (RFLX_Element_Options_Ctx, Universal.Length'(2));
          if not Universal.Option.Valid_Length (RFLX_Element_Options_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
             Ctx.P.Next_State := S_Final;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
@@ -155,11 +245,49 @@ is
             pragma Assert (Start_Invariant);
             goto Finalize_Start;
          end if;
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Options_Ctx, RFLX.Universal.Option.F_Data, 0) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
+         end if;
          Universal.Option.Set_Data (RFLX_Element_Options_Ctx, (RFLX_Types.Byte'Val (2), RFLX_Types.Byte'Val (3)));
          pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
          pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Universal.Options.Valid (Options_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Universal.Options.Has_Element (Options_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_append_unconstrained/test.rflx:18:10
       if not Universal.Options.Has_Element (Options_Ctx) then
          Ctx.P.Next_State := S_Final;
@@ -171,6 +299,14 @@ is
       begin
          Universal.Options.Switch (Options_Ctx, RFLX_Element_Options_Ctx);
          if not Universal.Option.Sufficient_Space (RFLX_Element_Options_Ctx, Universal.Option.F_Option_Type) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
+            pragma Warnings (On, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Start_Invariant);
+            goto Finalize_Start;
+         end if;
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Options_Ctx, RFLX.Universal.Option.F_Option_Type, Universal.To_Base_Integer (Universal.OT_Null)) then
             Ctx.P.Next_State := S_Final;
             pragma Warnings (Off, """RFLX_Element_Options_Ctx"" is set by ""Update"" but not used after the call");
             Universal.Options.Update (Options_Ctx, RFLX_Element_Options_Ctx);
@@ -190,6 +326,11 @@ is
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Message_Type, Universal.To_Base_Integer (Universal.MT_Unconstrained_Options)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Unconstrained_Options);
       if not Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Options, Universal.Options.Byte_Size (Options_Ctx)) then
          Ctx.P.Next_State := S_Final;
@@ -197,6 +338,16 @@ is
          goto Finalize_Start;
       end if;
       if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Options, 0) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Start_Invariant);
+         goto Finalize_Start;
+      end if;
+      if not Universal.Options.Valid (Options_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;

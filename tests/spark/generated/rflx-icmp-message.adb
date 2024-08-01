@@ -451,8 +451,7 @@ is
        and then RFLX.ICMP.Message.Has_Buffer (Ctx)
        and then RFLX.ICMP.Message.Valid_Next (Ctx, RFLX.ICMP.Message.F_Data)
        and then RFLX.ICMP.Message.Valid_Length (Ctx, RFLX.ICMP.Message.F_Data, Length)
-       and then RFLX_Types.To_Length (RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Data)) >= Length
-       and then RFLX.ICMP.Message.Field_First (Ctx, RFLX.ICMP.Message.F_Data) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.ICMP.Message.Available_Space (Ctx, RFLX.ICMP.Message.F_Data)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Data)
@@ -501,6 +500,7 @@ is
       if Length > 0 then
          Process_Data (Ctx.Buffer.all (First .. First + RFLX_Types.Index (Length) - 1));
       end if;
+      pragma Assert (RFLX.ICMP.Message.Valid_Length (Ctx, RFLX.ICMP.Message.F_Data, Length));
       Initialize_Data_Private (Ctx, Length);
    end Generic_Set_Data;
 

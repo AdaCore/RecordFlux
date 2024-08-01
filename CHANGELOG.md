@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI subcommand `rflx optimize` expects project file instead of directory containing generated code (eng/recordflux/RecordFlux#1766)
 - Improve generation of predicate for single-field messages (eng/recordflux/RecordFlux#1761)
 - Rename `*_Functions.Context` to `*_Environment.State` to prevent confusions (eng/recordflux/RecordFlux#1769)
+- Exception transitions are required in more cases as result of fixing missing checks in state machine (eng/recordflux/RecordFlux#1704)
 
 ### Removed
 
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Generation of uncompilable code for messages with variable as field condition (eng/recordflux/RecordFlux#1762)
+- Missing checks in state machine to improve provability (eng/recordflux/RecordFlux#1704)
 - Syntax highlighting for identifiers with numbers or keywords (AdaCore/RecordFlux#1301, eng/recordflux/RecordFlux#1776)
 
 ## [0.23.0] - 2024-08-23

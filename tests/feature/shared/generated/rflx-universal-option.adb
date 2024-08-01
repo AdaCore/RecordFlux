@@ -345,8 +345,7 @@ is
        and then RFLX.Universal.Option.Has_Buffer (Ctx)
        and then RFLX.Universal.Option.Valid_Next (Ctx, RFLX.Universal.Option.F_Data)
        and then RFLX.Universal.Option.Valid_Length (Ctx, RFLX.Universal.Option.F_Data, Length)
-       and then RFLX_Types.To_Length (RFLX.Universal.Option.Available_Space (Ctx, RFLX.Universal.Option.F_Data)) >= Length
-       and then RFLX.Universal.Option.Field_First (Ctx, RFLX.Universal.Option.F_Data) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.Universal.Option.Available_Space (Ctx, RFLX.Universal.Option.F_Data)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Data)
@@ -393,6 +392,7 @@ is
       if Length > 0 then
          Process_Data (Ctx.Buffer.all (First .. First + RFLX_Types.Index (Length) - 1));
       end if;
+      pragma Assert (RFLX.Universal.Option.Valid_Length (Ctx, RFLX.Universal.Option.F_Data, Length));
       Initialize_Data_Private (Ctx, Length);
    end Generic_Set_Data;
 

@@ -37,6 +37,8 @@ package Test is
          goto Process
             if M_R'Valid
          goto Error
+      exception
+         goto null -- §S-S-E
       end Receive;
 
       state Process

@@ -211,8 +211,7 @@ is
        and then RFLX.Test.Message.Has_Buffer (Ctx)
        and then RFLX.Test.Message.Valid_Next (Ctx, RFLX.Test.Message.F_Data)
        and then RFLX.Test.Message.Valid_Length (Ctx, RFLX.Test.Message.F_Data, Length)
-       and then RFLX_Types.To_Length (RFLX.Test.Message.Available_Space (Ctx, RFLX.Test.Message.F_Data)) >= Length
-       and then RFLX.Test.Message.Field_First (Ctx, RFLX.Test.Message.F_Data) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.Test.Message.Available_Space (Ctx, RFLX.Test.Message.F_Data)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Data)
@@ -251,8 +250,7 @@ is
        and then RFLX.Test.Message.Has_Buffer (Ctx)
        and then RFLX.Test.Message.Valid_Next (Ctx, RFLX.Test.Message.F_Extension)
        and then RFLX.Test.Message.Valid_Length (Ctx, RFLX.Test.Message.F_Extension, Length)
-       and then RFLX_Types.To_Length (RFLX.Test.Message.Available_Space (Ctx, RFLX.Test.Message.F_Extension)) >= Length
-       and then RFLX.Test.Message.Field_First (Ctx, RFLX.Test.Message.F_Extension) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.Test.Message.Available_Space (Ctx, RFLX.Test.Message.F_Extension)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Extension)
@@ -309,6 +307,7 @@ is
       if Length > 0 then
          Process_Data (Ctx.Buffer.all (First .. First + RFLX_Types.Index (Length) - 1));
       end if;
+      pragma Assert (RFLX.Test.Message.Valid_Length (Ctx, RFLX.Test.Message.F_Data, Length));
       Initialize_Data_Private (Ctx, Length);
    end Generic_Set_Data;
 
@@ -318,6 +317,7 @@ is
       if Length > 0 then
          Process_Extension (Ctx.Buffer.all (First .. First + RFLX_Types.Index (Length) - 1));
       end if;
+      pragma Assert (RFLX.Test.Message.Valid_Length (Ctx, RFLX.Test.Message.F_Extension, Length));
       Initialize_Extension_Private (Ctx, Length);
    end Generic_Set_Extension;
 

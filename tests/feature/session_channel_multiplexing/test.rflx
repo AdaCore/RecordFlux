@@ -20,6 +20,8 @@ package Test is
          goto Reply_2
             if Message_2'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
          goto null -- §S-S-E
+      exception
+         goto null -- §S-S-E
       end Start;
 
       state Reply_1 is

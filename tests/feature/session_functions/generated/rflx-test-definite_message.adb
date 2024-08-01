@@ -361,8 +361,7 @@ is
        and then RFLX.Test.Definite_Message.Has_Buffer (Ctx)
        and then RFLX.Test.Definite_Message.Valid_Next (Ctx, RFLX.Test.Definite_Message.F_Data)
        and then RFLX.Test.Definite_Message.Valid_Length (Ctx, RFLX.Test.Definite_Message.F_Data, Length)
-       and then RFLX_Types.To_Length (RFLX.Test.Definite_Message.Available_Space (Ctx, RFLX.Test.Definite_Message.F_Data)) >= Length
-       and then RFLX.Test.Definite_Message.Field_First (Ctx, RFLX.Test.Definite_Message.F_Data) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.Test.Definite_Message.Available_Space (Ctx, RFLX.Test.Definite_Message.F_Data)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Data)
@@ -409,6 +408,7 @@ is
       if Length > 0 then
          Process_Data (Ctx.Buffer.all (First .. First + RFLX_Types.Index (Length) - 1));
       end if;
+      pragma Assert (RFLX.Test.Definite_Message.Valid_Length (Ctx, RFLX.Test.Definite_Message.F_Data, Length));
       Initialize_Data_Private (Ctx, Length);
    end Generic_Set_Data;
 

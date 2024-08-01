@@ -1337,6 +1337,20 @@ class SerializerGenerator:
                                 ),
                             ],
                         ),
+                        # Improve provability of `Valid_Length`
+                        PragmaStatement(
+                            "Assert",
+                            [
+                                Call(
+                                    self.prefix * message.identifier * "Valid_Length",
+                                    [
+                                        Variable("Ctx"),
+                                        Variable(self.prefix * message.identifier * f.affixed_name),
+                                        Variable("Length"),
+                                    ],
+                                ),
+                            ],
+                        ),
                         CallStatement(
                             f"Initialize_{f.name}_Private",
                             [
@@ -1540,23 +1554,6 @@ class SerializerGenerator:
                                             ],
                                         ),
                                         Variable("Length"),
-                                    ),
-                                    Equal(
-                                        Mod(
-                                            Call(
-                                                self.prefix * message.identifier * "Field_First",
-                                                [
-                                                    Variable("Ctx"),
-                                                    Variable(
-                                                        self.prefix
-                                                        * message.identifier
-                                                        * f.affixed_name,
-                                                    ),
-                                                ],
-                                            ),
-                                            Size(const.TYPES_BYTE),
-                                        ),
-                                        Number(1),
                                     ),
                                 ),
                             ),

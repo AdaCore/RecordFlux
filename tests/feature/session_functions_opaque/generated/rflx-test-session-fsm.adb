@@ -84,13 +84,23 @@ is
          pragma Assert (Check_Message_Invariant);
          goto Finalize_Check_Message;
       end if;
+      if not RFLX.Universal.Message.Field_Condition (Message_Ctx, RFLX.Universal.Message.F_Message_Type, Universal.To_Base_Integer (Universal.MT_Data)) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Check_Message_Invariant);
+         goto Finalize_Check_Message;
+      end if;
       Universal.Message.Set_Message_Type (Message_Ctx, Universal.MT_Data);
       if not Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Length) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Message_Invariant);
          goto Finalize_Check_Message;
       end if;
-      Universal.Message.Set_Length (Message_Ctx, 2);
+      if not RFLX.Universal.Message.Field_Condition (Message_Ctx, RFLX.Universal.Message.F_Length, Universal.To_Base_Integer (Universal.Length'(2))) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Check_Message_Invariant);
+         goto Finalize_Check_Message;
+      end if;
+      Universal.Message.Set_Length (Message_Ctx, Universal.Length'(2));
       if not Universal.Message.Valid_Length (Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Message_Invariant);
@@ -101,12 +111,27 @@ is
          pragma Assert (Check_Message_Invariant);
          goto Finalize_Check_Message;
       end if;
+      if not RFLX.Universal.Message.Field_Condition (Message_Ctx, RFLX.Universal.Message.F_Data, 0) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Check_Message_Invariant);
+         goto Finalize_Check_Message;
+      end if;
       Universal.Message.Set_Data (Message_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Well_Formed_Message (Message_Ctx) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Message_Invariant);
          goto Finalize_Check_Message;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions_opaque/test.rflx:25:10
       declare
          RFLX_Check_Size_Arg_1_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
@@ -122,8 +147,18 @@ is
             pragma Assert (Check_Message_Invariant);
             goto Finalize_Check_Message;
          end if;
-         Universal.Message.Data (Message_Ctx, RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Length - RFLX_Types.Length'(1)));
-         Check_Size (Ctx.E, Test.Size (Universal.Message.Size (Message_Ctx)), RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Length - RFLX_Types.Length'(1)), Valid);
+         Universal.Message.Data (Message_Ctx, RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. (if
+             RFLX_Check_Size_Arg_1_Message_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Length - RFLX_Types.Length'(1)
+          else
+             (-1))));
+         Check_Size (Ctx.E, Test.Size (Universal.Message.Size (Message_Ctx)), RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. (if
+             RFLX_Check_Size_Arg_1_Message_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Length - RFLX_Types.Length'(1)
+          else
+             (-1))), Valid);
       end;
       if Valid then
          Ctx.P.Next_State := S_Check_Message_Sequence;
@@ -166,16 +201,36 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Options.Initialize (Message_Sequence_Ctx, Message_Sequence_Buffer);
       pragma Assert (Check_Message_Sequence_Invariant);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Options.Valid (Message_Sequence_Ctx) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Message_Sequence_Invariant);
          goto Finalize_Check_Message_Sequence;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Options.Has_Element (Message_Sequence_Ctx) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Message_Sequence_Invariant);
          goto Finalize_Check_Message_Sequence;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions_opaque/test.rflx:39:10
       if not Universal.Options.Has_Element (Message_Sequence_Ctx) then
          Ctx.P.Next_State := S_Error;
@@ -194,6 +249,14 @@ is
             pragma Assert (Check_Message_Sequence_Invariant);
             goto Finalize_Check_Message_Sequence;
          end if;
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Message_Sequence_Ctx, RFLX.Universal.Option.F_Option_Type, Universal.To_Base_Integer (Universal.OT_Data)) then
+            Ctx.P.Next_State := S_Error;
+            pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+            pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Check_Message_Sequence_Invariant);
+            goto Finalize_Check_Message_Sequence;
+         end if;
          Universal.Option.Set_Option_Type (RFLX_Element_Message_Sequence_Ctx, Universal.OT_Data);
          if not Universal.Option.Sufficient_Space (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Length) then
             Ctx.P.Next_State := S_Error;
@@ -203,7 +266,15 @@ is
             pragma Assert (Check_Message_Sequence_Invariant);
             goto Finalize_Check_Message_Sequence;
          end if;
-         Universal.Option.Set_Length (RFLX_Element_Message_Sequence_Ctx, 2);
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Message_Sequence_Ctx, RFLX.Universal.Option.F_Length, Universal.To_Base_Integer (Universal.Length'(2))) then
+            Ctx.P.Next_State := S_Error;
+            pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+            pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Check_Message_Sequence_Invariant);
+            goto Finalize_Check_Message_Sequence;
+         end if;
+         Universal.Option.Set_Length (RFLX_Element_Message_Sequence_Ctx, Universal.Length'(2));
          if not Universal.Option.Valid_Length (RFLX_Element_Message_Sequence_Ctx, Universal.Option.F_Data, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
             Ctx.P.Next_State := S_Error;
             pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
@@ -220,11 +291,34 @@ is
             pragma Assert (Check_Message_Sequence_Invariant);
             goto Finalize_Check_Message_Sequence;
          end if;
+         if not RFLX.Universal.Option.Field_Condition (RFLX_Element_Message_Sequence_Ctx, RFLX.Universal.Option.F_Data, 0) then
+            Ctx.P.Next_State := S_Error;
+            pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
+            pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Check_Message_Sequence_Invariant);
+            goto Finalize_Check_Message_Sequence;
+         end if;
          Universal.Option.Set_Data (RFLX_Element_Message_Sequence_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
          pragma Warnings (Off, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
          Universal.Options.Update (Message_Sequence_Ctx, RFLX_Element_Message_Sequence_Ctx);
          pragma Warnings (On, """RFLX_Element_Message_Sequence_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Universal.Options.Valid (Message_Sequence_Ctx) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Check_Message_Sequence_Invariant);
+         goto Finalize_Check_Message_Sequence;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions_opaque/test.rflx:41:10
       declare
          RFLX_Check_Size_Arg_1_Message_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
@@ -240,8 +334,18 @@ is
             pragma Assert (Check_Message_Sequence_Invariant);
             goto Finalize_Check_Message_Sequence;
          end if;
-         Universal.Options.Data (Message_Sequence_Ctx, RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Sequence_Length - RFLX_Types.Length'(1)));
-         Check_Size (Ctx.E, Test.Size (Universal.Options.Size (Message_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Sequence_Length - RFLX_Types.Length'(1)), Valid);
+         Universal.Options.Data (Message_Sequence_Ctx, RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. (if
+             RFLX_Check_Size_Arg_1_Message_Sequence_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Sequence_Length - RFLX_Types.Length'(1)
+          else
+             (-1))));
+         Check_Size (Ctx.E, Test.Size (Universal.Options.Size (Message_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. (if
+             RFLX_Check_Size_Arg_1_Message_Sequence_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Sequence_Length - RFLX_Types.Length'(1)
+          else
+             (-1))), Valid);
       end;
       if Valid then
          Ctx.P.Next_State := S_Check_Scalar_Sequence;
@@ -284,16 +388,36 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Values.Initialize (Scalar_Sequence_Ctx, Scalar_Sequence_Buffer);
       pragma Assert (Check_Scalar_Sequence_Invariant);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Values.Valid (Scalar_Sequence_Ctx) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Scalar_Sequence_Invariant);
          goto Finalize_Check_Scalar_Sequence;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Values.Has_Element (Scalar_Sequence_Ctx) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Scalar_Sequence_Invariant);
          goto Finalize_Check_Scalar_Sequence;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions_opaque/test.rflx:55:10
       if
          not Universal.Values.Has_Element (Scalar_Sequence_Ctx)
@@ -304,6 +428,36 @@ is
          goto Finalize_Check_Scalar_Sequence;
       end if;
       Universal.Values.Append_Element (Scalar_Sequence_Ctx, 1);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Universal.Values.Valid (Scalar_Sequence_Ctx) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Check_Scalar_Sequence_Invariant);
+         goto Finalize_Check_Scalar_Sequence;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Universal.Values.Has_Element (Scalar_Sequence_Ctx) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Check_Scalar_Sequence_Invariant);
+         goto Finalize_Check_Scalar_Sequence;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions_opaque/test.rflx:57:10
       if
          not Universal.Values.Has_Element (Scalar_Sequence_Ctx)
@@ -314,6 +468,21 @@ is
          goto Finalize_Check_Scalar_Sequence;
       end if;
       Universal.Values.Append_Element (Scalar_Sequence_Ctx, 2);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Universal.Values.Valid (Scalar_Sequence_Ctx) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Check_Scalar_Sequence_Invariant);
+         goto Finalize_Check_Scalar_Sequence;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions_opaque/test.rflx:59:10
       declare
          RFLX_Check_Size_Arg_1_Scalar_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
@@ -329,8 +498,18 @@ is
             pragma Assert (Check_Scalar_Sequence_Invariant);
             goto Finalize_Check_Scalar_Sequence;
          end if;
-         Universal.Values.Data (Scalar_Sequence_Ctx, RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Scalar_Sequence_Length - RFLX_Types.Length'(1)));
-         Check_Size (Ctx.E, Test.Size (Universal.Values.Size (Scalar_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Scalar_Sequence_Length - RFLX_Types.Length'(1)), Valid);
+         Universal.Values.Data (Scalar_Sequence_Ctx, RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. (if
+             RFLX_Check_Size_Arg_1_Scalar_Sequence_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Scalar_Sequence_Length - RFLX_Types.Length'(1)
+          else
+             (-1))));
+         Check_Size (Ctx.E, Test.Size (Universal.Values.Size (Scalar_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. (if
+             RFLX_Check_Size_Arg_1_Scalar_Sequence_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Scalar_Sequence_Length - RFLX_Types.Length'(1)
+          else
+             (-1))), Valid);
       end;
       if Valid then
          Ctx.P.Next_State := S_Final;

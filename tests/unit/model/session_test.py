@@ -58,6 +58,7 @@ def test_str() -> None:
                             ),
                             Transition("A"),
                         ],
+                        exception_transition=Transition(target=ID("null")),
                         description="rfc1149.txt+51:4-52:9",
                     ),
                 ],
@@ -105,6 +106,8 @@ def test_str() -> None:
                      if Z = True
                         and G (F) = True
                   goto A
+               exception
+                  goto null
                end B;
             end S""",
         ),
@@ -144,6 +147,7 @@ def test_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> None:
                         ),
                         Transition("a"),
                     ],
+                    exception_transition=Transition(target=ID("null")),
                 ),
             ],
             [
@@ -186,6 +190,8 @@ def test_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> None:
                      if Z = True
                         and G (F) = True
                   goto A
+               exception
+                  goto null
                end B;
             end S""",
     )
@@ -272,6 +278,7 @@ def test_inconsistent_identifier_casing() -> None:
                         ),
                         Transition(ID("a", location=Location((9, 9)))),
                     ],
+                    exception_transition=Transition(target=ID("null")),
                 ),
             ],
             [
@@ -540,6 +547,7 @@ def test_undeclared_variable() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
             ),
         ],
         declarations=[],
@@ -563,6 +571,7 @@ def test_undefined_type() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
             ),
         ],
         declarations=[
@@ -592,6 +601,7 @@ def test_declared_variable() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
             ),
         ],
         declarations=[decl.VariableDeclaration("Defined", "TLV::Tag")],
@@ -615,6 +625,7 @@ def test_declared_local_variable() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[decl.VariableDeclaration("Local", "Boolean")],
             ),
         ],
@@ -635,6 +646,7 @@ def test_undeclared_local_variable() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
             ),
             State(
@@ -651,6 +663,7 @@ def test_undeclared_local_variable() -> None:
                         target=ID("State"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
             ),
         ],
@@ -676,6 +689,7 @@ def test_declared_local_variable_valid() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
             ),
         ],
@@ -740,6 +754,7 @@ def test_assignment_from_undeclared_variable() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -822,6 +837,7 @@ def test_call_to_undeclared_function() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -857,6 +873,7 @@ def test_call_undeclared_variable() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -887,6 +904,7 @@ def test_call_invalid_argument_type() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -1133,6 +1151,7 @@ def test_channel_attribute_has_data() -> None:
             State(
                 "Start",
                 transitions=[Transition(target=ID("null"))],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[stmt.VariableAssignment("Result", expr.HasData(expr.Variable("Message")))],
             ),
@@ -1160,6 +1179,7 @@ def test_undeclared_variable_in_function_call() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
                 actions=[
                     stmt.VariableAssignment(
@@ -1198,6 +1218,7 @@ def test_local_variable_shadows_global() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[
                     decl.VariableDeclaration("Global", "Boolean", location=Location((10, 20))),
                 ],
@@ -1295,6 +1316,7 @@ def test_renaming() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
             ),
         ],
@@ -1330,6 +1352,7 @@ def test_renaming_invalid() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
             ),
         ],
@@ -1372,6 +1395,7 @@ def test_renaming_undefined() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
             ),
         ],
@@ -2006,6 +2030,7 @@ def test_undefined_type_in_declarations(declarations: abc.Sequence[decl.BasicDec
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
             ),
         ],
         declarations=declarations,
@@ -2046,6 +2071,7 @@ def test_undefined_type_in_local_declarations(
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=declarations,
             ),
         ],
@@ -2070,6 +2096,7 @@ def test_type_error_in_variable_declaration() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
             ),
         ],
@@ -2101,6 +2128,7 @@ def test_type_error_in_renaming_declaration() -> None:
                         target=ID("Start"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 declarations=[],
             ),
         ],
@@ -2227,6 +2255,7 @@ def test_conflicting_actions(
                         target=ID("null"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
             ),
         ],
         declarations=[
@@ -2381,6 +2410,7 @@ def test_resolving_of_function_calls() -> None:
                         target=ID("null"),
                     ),
                 ],
+                exception_transition=Transition(target=ID("null")),
             ),
         ],
         declarations=[
@@ -3113,6 +3143,7 @@ def test_unchecked_session_checked() -> None:
                     ),
                     Transition("A"),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 description="rfc1149.txt+51:4-52:9",
             ),
         ],
@@ -3162,6 +3193,7 @@ def test_unchecked_session_checked() -> None:
                     ),
                     Transition("A"),
                 ],
+                exception_transition=Transition(target=ID("null")),
                 description="rfc1149.txt+51:4-52:9",
             ),
         ],

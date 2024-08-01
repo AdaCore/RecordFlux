@@ -21,6 +21,13 @@ def test_constructed_origin_location() -> None:
     assert ir.ConstructedOrigin("X", Location((1, 2))).location == Location((1, 2))
 
 
+def test_proof_manager() -> None:
+    PROOF_MANAGER.add(
+        [ir.ProofJob([ir.Check(ir.BoolVal(value=True))], results={ir.ProofResult.SAT: [1]})],
+    )
+    assert PROOF_MANAGER.check()[0].result == [1]
+
+
 def test_stmt_location() -> None:
     assert ir.Assign(
         "X",
@@ -39,6 +46,16 @@ def test_var_decl() -> None:
 
 def test_var_decl_accessed_vars() -> None:
     assert ir.VarDecl("X", INT_TY).accessed_vars == []
+
+
+def test_var_decl_to_z3_expr() -> None:
+    assert ir.VarDecl("X", MSG_TY).to_z3_expr() == z3.BoolVal(val=True)
+    assert ir.VarDecl("X", INT_TY).to_z3_expr() == z3.And(
+        z3.Int("I'First") == z3.IntVal(10),
+        z3.Int("I'Last") == z3.IntVal(100),
+        z3.Int("X") >= z3.Int("I'First"),
+        z3.Int("X") <= z3.Int("I'Last"),
+    )
 
 
 def test_assign() -> None:
@@ -1681,6 +1698,14 @@ def test_case_expr_precondition() -> None:
     ).preconditions(id_generator())
 
 
+def test_sufficient_space_to_z3_expr() -> None:
+    assert ir.SufficientSpace("X", "Y", MSG_TY).to_z3_expr() == z3.Bool("X.Y'Sufficient_Space")
+
+
+def test_has_element_to_z3_expr() -> None:
+    assert ir.HasElement("X", SEQ_TY).to_z3_expr() == z3.Bool("X'Has_Element")
+
+
 def test_add_required_checks() -> None:
     assert ir.add_required_checks(
         [
@@ -1694,9 +1719,7 @@ def test_add_required_checks() -> None:
                 INT_TY,
             ),
         ],
-        PROOF_MANAGER,
         id_generator(),
-        [],
     ) == [
         ir.Check(
             ir.NotEqual(
@@ -1741,9 +1764,7 @@ def test_add_required_checks() -> None:
                     rty.BASE_INTEGER,
                 ),
             ],
-            PROOF_MANAGER,
             id_generator(),
-            [],
         )
     ] == [
         "Var T_0 : __BUILTINS__::Base_Integer",
@@ -1755,5 +1776,45 @@ def test_add_required_checks() -> None:
         "Check B >= 1",
         "X := B - 1",
         "Z := 0",
+        "Var T_1 : __BUILTINS__::Base_Integer",
+        "T_1 := 9223372036854775807 - 1",
+        "Check Z <= T_1",
         "C := Z + 1",
+    ]
+
+
+def test_add_conversions() -> None:
+    assert [
+        str(s)
+        for s in ir.add_conversions(
+            [
+                ir.Assign(
+                    "A",
+                    ir.Add(ir.IntVar("Y", rty.BASE_INTEGER), ir.IntVal(10)),
+                    INT_TY,
+                ),
+                ir.Assign(
+                    "B",
+                    ir.Div(ir.IntVar("A", rty.BASE_INTEGER), ir.IntVar("Z", rty.BASE_INTEGER)),
+                    INT_TY,
+                ),
+                ir.Assign(
+                    "X",
+                    ir.Sub(ir.IntVar("B", rty.BASE_INTEGER), ir.IntVal(10)),
+                    INT_TY,
+                ),
+                ir.Assign("Z", ir.IntVal(10), INT_TY),
+                ir.Assign(
+                    "C",
+                    ir.Add(ir.IntVar("Z", rty.BASE_INTEGER), ir.IntVal(10)),
+                    INT_TY,
+                ),
+            ],
+        )
+    ] == [
+        "A := I (Y) + 10",
+        "B := I (A) / I (Z)",
+        "X := I (B) - 10",
+        "Z := 10",
+        "C := I (Z) + 10",
     ]

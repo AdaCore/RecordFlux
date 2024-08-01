@@ -336,8 +336,7 @@ is
        and then RFLX.Sequence.Inner_Message.Has_Buffer (Ctx)
        and then RFLX.Sequence.Inner_Message.Valid_Next (Ctx, RFLX.Sequence.Inner_Message.F_Payload)
        and then RFLX.Sequence.Inner_Message.Valid_Length (Ctx, RFLX.Sequence.Inner_Message.F_Payload, Length)
-       and then RFLX_Types.To_Length (RFLX.Sequence.Inner_Message.Available_Space (Ctx, RFLX.Sequence.Inner_Message.F_Payload)) >= Length
-       and then RFLX.Sequence.Inner_Message.Field_First (Ctx, RFLX.Sequence.Inner_Message.F_Payload) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.Sequence.Inner_Message.Available_Space (Ctx, RFLX.Sequence.Inner_Message.F_Payload)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Payload)
@@ -383,6 +382,7 @@ is
       if Length > 0 then
          Process_Payload (Ctx.Buffer.all (First .. First + RFLX_Types.Index (Length) - 1));
       end if;
+      pragma Assert (RFLX.Sequence.Inner_Message.Valid_Length (Ctx, RFLX.Sequence.Inner_Message.F_Payload, Length));
       Initialize_Payload_Private (Ctx, Length);
    end Generic_Set_Payload;
 

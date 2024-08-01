@@ -348,8 +348,7 @@ is
        and then RFLX.Sequence.Message.Has_Buffer (Ctx)
        and then RFLX.Sequence.Message.Valid_Next (Ctx, RFLX.Sequence.Message.F_Integer_Vector)
        and then RFLX.Sequence.Message.Valid_Length (Ctx, RFLX.Sequence.Message.F_Integer_Vector, Length)
-       and then RFLX_Types.To_Length (RFLX.Sequence.Message.Available_Space (Ctx, RFLX.Sequence.Message.F_Integer_Vector)) >= Length
-       and then RFLX.Sequence.Message.Field_First (Ctx, RFLX.Sequence.Message.F_Integer_Vector) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.Sequence.Message.Available_Space (Ctx, RFLX.Sequence.Message.F_Integer_Vector)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Integer_Vector)
@@ -388,8 +387,7 @@ is
        and then RFLX.Sequence.Message.Has_Buffer (Ctx)
        and then RFLX.Sequence.Message.Valid_Next (Ctx, RFLX.Sequence.Message.F_Enumeration_Vector)
        and then RFLX.Sequence.Message.Valid_Length (Ctx, RFLX.Sequence.Message.F_Enumeration_Vector, Length)
-       and then RFLX_Types.To_Length (RFLX.Sequence.Message.Available_Space (Ctx, RFLX.Sequence.Message.F_Enumeration_Vector)) >= Length
-       and then RFLX.Sequence.Message.Field_First (Ctx, RFLX.Sequence.Message.F_Enumeration_Vector) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.Sequence.Message.Available_Space (Ctx, RFLX.Sequence.Message.F_Enumeration_Vector)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Enumeration_Vector)
@@ -427,8 +425,7 @@ is
        and then RFLX.Sequence.Message.Has_Buffer (Ctx)
        and then RFLX.Sequence.Message.Valid_Next (Ctx, RFLX.Sequence.Message.F_AV_Enumeration_Vector)
        and then RFLX.Sequence.Message.Valid_Length (Ctx, RFLX.Sequence.Message.F_AV_Enumeration_Vector, Length)
-       and then RFLX_Types.To_Length (RFLX.Sequence.Message.Available_Space (Ctx, RFLX.Sequence.Message.F_AV_Enumeration_Vector)) >= Length
-       and then RFLX.Sequence.Message.Field_First (Ctx, RFLX.Sequence.Message.F_AV_Enumeration_Vector) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.Sequence.Message.Available_Space (Ctx, RFLX.Sequence.Message.F_AV_Enumeration_Vector)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_AV_Enumeration_Vector)

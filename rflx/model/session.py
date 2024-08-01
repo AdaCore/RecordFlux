@@ -136,6 +136,7 @@ class State(Base):
                     lambda x: isinstance(
                         x,
                         (
+                            expr.Variable,
                             expr.Selected,
                             expr.Head,
                             expr.Comprehension,
@@ -431,7 +432,6 @@ class Session(TopLevelDeclaration):
             self.types,
             self.location,
             variable_id,
-            self._workers,
         )
 
     def _normalize(self) -> None:  # noqa: PLR0912

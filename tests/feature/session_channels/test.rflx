@@ -15,6 +15,8 @@ package Test is
          goto Reply
             if Message'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
          goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
       end Start;
 
       state Reply is

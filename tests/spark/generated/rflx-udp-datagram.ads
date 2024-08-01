@@ -249,10 +249,7 @@ is
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length;
 
-   function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
-     Pre =>
-       RFLX.UDP.Datagram.Has_Buffer (Ctx)
-       and then RFLX.UDP.Datagram.Well_Formed_Message (Ctx);
+   function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 

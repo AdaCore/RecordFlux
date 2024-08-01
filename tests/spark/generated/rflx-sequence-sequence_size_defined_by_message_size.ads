@@ -250,10 +250,7 @@ is
 
    function Byte_Size (Ctx : Context) return RFLX_Types.Length;
 
-   function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
-     Pre =>
-       RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Has_Buffer (Ctx)
-       and then RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Well_Formed_Message (Ctx);
+   function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 

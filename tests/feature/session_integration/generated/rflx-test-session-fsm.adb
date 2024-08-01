@@ -57,11 +57,21 @@ is
       -- tests/feature/session_integration/test.rflx:15:16
       T_1 := T_0;
       -- tests/feature/session_integration/test.rflx:16:20
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_integration/test.rflx:16:20
       T_2 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_integration/test.rflx:16:20
@@ -70,11 +80,21 @@ is
       T_4 := T_1
       and then T_3;
       -- tests/feature/session_integration/test.rflx:17:20
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_integration/test.rflx:17:20
       T_5 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
       -- tests/feature/session_integration/test.rflx:17:20
@@ -113,19 +133,34 @@ is
          pragma Assert (Prepare_Message_Invariant);
          goto Finalize_Prepare_Message;
       end if;
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Message_Type, Universal.To_Base_Integer (Universal.MT_Data)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Message_Invariant);
+         goto Finalize_Prepare_Message;
+      end if;
       Universal.Message.Set_Message_Type (Ctx.P.Message_Ctx, Universal.MT_Data);
       if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Message_Invariant);
          goto Finalize_Prepare_Message;
       end if;
-      Universal.Message.Set_Length (Ctx.P.Message_Ctx, 1);
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Length, Universal.To_Base_Integer (Universal.Length'(1))) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Message_Invariant);
+         goto Finalize_Prepare_Message;
+      end if;
+      Universal.Message.Set_Length (Ctx.P.Message_Ctx, Universal.Length'(1));
       if not Universal.Message.Valid_Length (Ctx.P.Message_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Message_Invariant);
          goto Finalize_Prepare_Message;
       end if;
       if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Prepare_Message_Invariant);
+         goto Finalize_Prepare_Message;
+      end if;
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.Message_Ctx, RFLX.Universal.Message.F_Data, 0) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Prepare_Message_Invariant);
          goto Finalize_Prepare_Message;
@@ -189,19 +224,34 @@ is
          pragma Assert (Next_Invariant);
          goto Finalize_Next;
       end if;
+      if not RFLX.Universal.Message.Field_Condition (M_Ctx, RFLX.Universal.Message.F_Message_Type, Universal.To_Base_Integer (Universal.MT_Data)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Next_Invariant);
+         goto Finalize_Next;
+      end if;
       Universal.Message.Set_Message_Type (M_Ctx, Universal.MT_Data);
       if not Universal.Message.Sufficient_Space (M_Ctx, Universal.Message.F_Length) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Next_Invariant);
          goto Finalize_Next;
       end if;
-      Universal.Message.Set_Length (M_Ctx, 1);
+      if not RFLX.Universal.Message.Field_Condition (M_Ctx, RFLX.Universal.Message.F_Length, Universal.To_Base_Integer (Universal.Length'(1))) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Next_Invariant);
+         goto Finalize_Next;
+      end if;
+      Universal.Message.Set_Length (M_Ctx, Universal.Length'(1));
       if not Universal.Message.Valid_Length (M_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Next_Invariant);
          goto Finalize_Next;
       end if;
       if not Universal.Message.Sufficient_Space (M_Ctx, Universal.Message.F_Data) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Next_Invariant);
+         goto Finalize_Next;
+      end if;
+      if not RFLX.Universal.Message.Field_Condition (M_Ctx, RFLX.Universal.Message.F_Data, 0) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Next_Invariant);
          goto Finalize_Next;

@@ -7,6 +7,7 @@ from abc import abstractmethod
 from collections.abc import Generator, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from enum import Enum
+from functools import singledispatch
 from sys import intern
 from typing import TYPE_CHECKING, Protocol, TypeVar
 
@@ -17,7 +18,7 @@ from rflx import typing_ as rty
 from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE, MP_CONTEXT
 from rflx.error import info
-from rflx.identifier import ID, ID_PREFIX, StrID
+from rflx.identifier import ID, StrID
 from rflx.rapidflux import Location, ty
 
 if TYPE_CHECKING:
@@ -1634,6 +1635,7 @@ class IntConversion(Conversion, BasicIntExpr):
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
+            *self.argument.preconditions(variable_id),
             # TARGET_TYPE'First <= ARGUMENT
             Cond(
                 LessEqual(
@@ -1660,7 +1662,6 @@ class IntConversion(Conversion, BasicIntExpr):
                     ),
                 ),
             ),
-            *self.argument.preconditions(variable_id),
         ]
 
     def to_z3_expr(self) -> z3.ArithRef:
@@ -2099,9 +2100,7 @@ class Session:
         types: Mapping[ID, type_decl.TypeDecl],
         location: Location | None,
         variable_id: Generator[ID, None, None],
-        workers: int = 1,
     ) -> None:
-        manager = ProofManager(workers)
         states = [
             State(
                 s.identifier,
@@ -2110,11 +2109,19 @@ class Session:
                         t.target,
                         ComplexExpr(
                             add_required_checks(
-                                t.condition.stmts,
-                                manager,
+                                [
+                                    *t.condition.stmts,
+                                    # Add a dummy assignment to ensure that the
+                                    # transition condition is considered when
+                                    # adding required checks.
+                                    Assign(
+                                        "RFLX_Transition_Condition",
+                                        t.condition.expr,
+                                        rty.BOOLEAN,
+                                    ),
+                                ],
                                 variable_id,
-                                t.condition.expr.accessed_vars,
-                            ),
+                            )[:-1],
                             t.condition.expr,
                         ),
                         t.description,
@@ -2123,7 +2130,7 @@ class Session:
                     for t in s.transitions
                 ],
                 s.exception_transition,
-                add_required_checks(s.actions, manager, variable_id, []),
+                add_required_checks(s.actions, variable_id),
                 s.description,
                 s.location,
             )
@@ -2145,62 +2152,132 @@ class Session:
 
 
 def add_conversions(statements: Sequence[Stmt]) -> list[Stmt]:
+    expression: Expr
     result: list[Stmt] = []
 
     for statement in statements:
         if isinstance(statement, Assign):
-            if statement.type_.is_compatible_strong(statement.expression.type_) and not isinstance(
-                statement.expression,
-                BinaryIntExpr,
-            ):
-                result.append(statement)
-                continue
+            expression = _convert_expression(statement.expression, statement.type_)
+            result.append(
+                Assign(
+                    statement.target,
+                    expression,
+                    statement.type_,
+                    statement.origin,
+                ),
+            )
+            continue
 
-            if isinstance(statement.type_, (rty.Integer, rty.Enumeration)):
-                expression: Expr
-                if isinstance(statement.expression, BinaryIntExpr):
-                    assert isinstance(statement.type_, rty.Integer)
-                    left = (
-                        statement.expression.left
-                        if statement.type_.is_compatible_strong(statement.expression.left.type_)
-                        else IntConversion(
-                            statement.type_,
-                            statement.expression.left,
-                            statement.expression.left.origin,
-                        )
-                    )
-                    right = (
-                        statement.expression.right
-                        if statement.type_.is_compatible_strong(statement.expression.right.type_)
-                        else IntConversion(
-                            statement.type_,
-                            statement.expression.right,
-                            statement.expression.right.origin,
-                        )
-                    )
-                    expression = statement.expression.__class__(
-                        left,
-                        right,
-                        origin=statement.expression.origin,
-                    )
-                else:
-                    expression = Conversion(
-                        statement.type_,
-                        statement.expression,
-                        statement.expression.origin,
-                    )
+        if isinstance(statement, FieldAssign):
+            field_type = statement.type_.field_types[statement.field]
+            expression = _convert_expression(statement.expression, field_type)
+            result.append(
+                FieldAssign(
+                    statement.message,
+                    statement.field,
+                    expression,
+                    statement.type_,
+                    statement.origin,
+                ),
+            )
+            continue
 
-                result.append(
-                    Assign(
-                        statement.target,
-                        expression,
-                        statement.type_,
-                        statement.origin,
-                    ),
-                )
-                continue
+        if isinstance(statement, Append):
+            expression = _convert_expression(statement.expression, statement.type_)
+            result.append(
+                Append(
+                    statement.sequence,
+                    expression,
+                    statement.type_,
+                    statement.origin,
+                ),
+            )
+            continue
 
         result.append(statement)
+
+    return result
+
+
+@singledispatch
+def _convert_expression(
+    expression: Expr,  # noqa: ARG001
+    target_type: rty.Type,  # noqa: ARG001
+) -> Expr:
+    raise NotImplementedError
+
+
+@_convert_expression.register(MsgAgg)
+@_convert_expression.register(DeltaMsgAgg)
+def _(
+    expression: MsgAgg | DeltaMsgAgg,
+    target_type: rty.Type,  # noqa: ARG001
+) -> Expr:
+    field_values: dict[ID, Expr] = {
+        f: _convert_expression(v, expression.type_.types[f])
+        for f, v in expression.field_values.items()
+    }
+
+    return expression.__class__(
+        expression.identifier,
+        field_values,
+        expression.type_,
+        expression.origin,
+    )
+
+
+@_convert_expression.register(BinaryIntExpr)
+@_convert_expression.register(IntExpr)
+@_convert_expression.register(Expr)
+def _(
+    expression: BinaryIntExpr | IntExpr | Expr,
+    target_type: rty.Type,
+) -> Expr:
+    result: Expr
+
+    if (
+        target_type.is_compatible_strong(expression.type_)
+        and not isinstance(expression, BinaryIntExpr)
+        or not isinstance(target_type, (rty.Integer, rty.Enumeration))
+    ):
+        return expression
+
+    if isinstance(expression, BinaryIntExpr):
+        assert isinstance(target_type, rty.Integer)
+        left = (
+            expression.left
+            if target_type.is_compatible_strong(expression.left.type_)
+            else IntConversion(
+                target_type,
+                expression.left,
+                expression.left.origin,
+            )
+        )
+        right = (
+            expression.right
+            if target_type.is_compatible_strong(expression.right.type_)
+            else IntConversion(
+                target_type,
+                expression.right,
+                expression.right.origin,
+            )
+        )
+        result = expression.__class__(
+            left,
+            right,
+            origin=expression.origin,
+        )
+
+    elif isinstance(expression, IntExpr):
+        assert isinstance(target_type, rty.Integer)
+        result = IntConversion(
+            target_type,
+            expression,
+            expression.origin,
+        )
+
+    else:
+        assert False
 
     return result
 
@@ -2265,86 +2342,9 @@ def add_checks(statements: Sequence[Stmt], variable_id: Generator[ID, None, None
     return result
 
 
-def remove_unnecessary_checks(
-    statements: Sequence[Stmt],
-    manager: ProofManager,
-    accessed_vars: Sequence[ID],
-) -> list[Stmt]:
-    """Remove all checks that are always true."""
-
-    always_true: list[int] = []
-
-    facts: list[Stmt] = []
-
-    for i, s in enumerate(statements):
-        if isinstance(s, Check):
-            manager.add(
-                [
-                    ProofJob(
-                        [
-                            Check(Not(BoolVar("__GOAL__"))),
-                            Assign("__GOAL__", s.expression, s.expression.type_),
-                            *facts,
-                        ],
-                        {
-                            ProofResult.UNSAT: [i],
-                            ProofResult.SAT: [],
-                            ProofResult.UNKNOWN: [],
-                        },
-                    ),
-                ],
-            )
-        facts.append(s)
-
-    results = manager.check()
-
-    for r in results:
-        always_true.extend(r.result)
-
-    result = list(statements)
-    for i in reversed(always_true):
-        result = [*result[:i], *result[i + 1 :]]
-
-    return remove_unused_temporary_variables(result, accessed_vars)
-
-
-def remove_unused_temporary_variables(
-    statements: Sequence[Stmt],
-    accessed_vars: Sequence[ID],
-) -> list[Stmt]:
-    """Remove all unused temporary variable declarations and assignments."""
-
-    used_vars = set(accessed_vars)
-    unused_statements = []
-
-    for i, s in reversed(list(enumerate(statements))):
-        used_vars.update(s.accessed_vars)
-        if (
-            isinstance(s, VarDecl)
-            and str(s.identifier).startswith(ID_PREFIX)
-            and s.identifier not in used_vars
-        ):
-            unused_statements.append(i)
-        if (
-            isinstance(s, Assign)
-            and str(s.target).startswith(ID_PREFIX)
-            and s.target not in used_vars
-        ):
-            unused_statements.append(i)
-
-    statements = list(statements)
-
-    for i in unused_statements:
-        statements.pop(i)
-
-    return statements
-
-
 def add_required_checks(
     statements: Sequence[Stmt],
-    manager: ProofManager,
     variable_id: Generator[ID, None, None],
-    accessed_vars: Sequence[ID],
 ) -> list[Stmt]:
     """
     Add check statements in places where preconditions are not always true.
@@ -2354,11 +2354,8 @@ def add_required_checks(
     in the resulting list mark the places where the code generator must insert explicit checks.
     """
 
-    result = remove_unnecessary_checks(
-        add_checks(add_conversions(statements), variable_id),
-        manager,
-        accessed_vars,
-    )
+    # TODO(eng/recordflux/RecordFlux#1764): Fix removal of unnecessary checks in IR
+    result = add_checks(add_conversions(statements), variable_id)
 
     for s in result:
         if isinstance(s, Check):

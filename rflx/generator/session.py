@@ -3684,40 +3684,38 @@ class FSMGenerator:
                             target_buffer_size < source_buffer_size or external_io_buffer_involved,
                             local_exception_handler.copy(
                                 [
-                                    CallStatement(
-                                        target_type * "Initialize",
-                                        [
-                                            Variable(target_context),
-                                            Variable(target_buffer),
-                                        ],
+                                    self._initialize_context(
+                                        target,
+                                        target_type,
+                                        is_global,
+                                        buffer=Variable(target_buffer),
                                     ),
                                 ],
                             ),
                         ),
-                        CallStatement(
-                            target_type * "Initialize",
-                            [
-                                Variable(target_context),
-                                Variable(target_buffer),
-                                Call(
-                                    const.TYPES_TO_BIT_LENGTH,
-                                    [
-                                        Call(
-                                            const.TYPES_LENGTH,
-                                            [
-                                                Add(
-                                                    First(target_buffer),
-                                                    Call(
-                                                        target_type * "Byte_Size",
-                                                        [Variable(element_context)],
-                                                    ),
-                                                    -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
+                        self._initialize_context(
+                            target,
+                            target_type,
+                            is_global,
+                            buffer=Variable(target_buffer),
+                            written_last=Call(
+                                const.TYPES_TO_BIT_LENGTH,
+                                [
+                                    Call(
+                                        const.TYPES_LENGTH,
+                                        [
+                                            Add(
+                                                First(target_buffer),
+                                                Call(
+                                                    target_type * "Byte_Size",
+                                                    [Variable(element_context)],
                                                 ),
-                                            ],
-                                        ),
-                                    ],
-                                ),
-                            ],
+                                                -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
                         ),
                         CallStatement(
                             target_type * "Verify_Message",
@@ -4053,10 +4051,14 @@ class FSMGenerator:
                 argument = Slice(
                     Variable(argument_name),
                     First(const.TYPES_INDEX),
-                    Add(
-                        First(const.TYPES_INDEX),
-                        Variable(argument_length),
-                        -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
+                    IfThenElse(
+                        Greater(Variable(argument_length), Number(0)),
+                        Add(
+                            First(const.TYPES_INDEX),
+                            Variable(argument_length),
+                            -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
+                        ),
+                        Number(-1),
                     ),
                 )
                 type_identifier = self._ada_type(a.prefix_type.identifier)
@@ -4471,10 +4473,81 @@ class FSMGenerator:
     ) -> Sequence[Statement]:
         location = f"for {origin.location}" if origin and origin.location else ""
         return [
+            # TODO(eng/recordflux/RecordFlux#1764): Fix removal of unnecessary checks in IR
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("Off"),
+                    String("condition can only be False if invalid values present"),
+                ],
+            ),
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("Off"),
+                    String("condition is always False"),
+                ],
+            ),
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("Off"),
+                    String("this code can never be executed and has been deleted"),
+                ],
+            ),
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("Off"),
+                    String("statement has no effect"),
+                ],
+            ),
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("Off"),
+                    String("this statement is never reached"),
+                ],
+            ),
             self._raise_exception_if(
                 Not(self._to_ada_expr(expression, is_global)),
                 f"precondition failed{location}",
                 exception_handler,
+            ),
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("On"),
+                    String("this statement is never reached"),
+                ],
+            ),
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("On"),
+                    String("statement has no effect"),
+                ],
+            ),
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("On"),
+                    String("this code can never be executed and has been deleted"),
+                ],
+            ),
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("On"),
+                    String("condition is always False"),
+                ],
+            ),
+            PragmaStatement(
+                "Warnings",
+                [
+                    Variable("On"),
+                    String("condition can only be False if invalid values present"),
+                ],
             ),
         ]
 
@@ -5082,7 +5155,10 @@ class FSMGenerator:
             ]
 
         message_type_id = message_type.identifier
+        message_model = self._model_type(message_type_id)
+        assert isinstance(message_model, model.Message)
         field_type = message_type.field_types[field]
+        assert isinstance(field_type, rty.NamedTypeClass)
         statements: list[Statement] = []
         result = statements
 
@@ -5100,7 +5176,11 @@ class FSMGenerator:
                                 [
                                     Variable(message_context),
                                     Variable(message_type_id * f"F_{field}"),
-                                    Call(type_ * "Byte_Size", [Variable(context)]),
+                                    (
+                                        Length(value.identifier)
+                                        if value.type_ == rty.OPAQUE
+                                        else Call(type_ * "Byte_Size", [Variable(context)])
+                                    ),
                                 ],
                             ),
                         ),
@@ -5133,15 +5213,16 @@ class FSMGenerator:
                 )
 
         # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
-        sufficient_space = Call(
-            message_type_id * "Sufficient_Space",
-            [
-                Variable(message_context),
-                Variable(message_type_id * model.Field(field).affixed_name),
-            ],
-        )
-        assert_sufficient_space = self._raise_exception_if(
-            Not(sufficient_space),
+        check_sufficient_space = self._raise_exception_if(
+            Not(
+                Call(
+                    message_type_id * "Sufficient_Space",
+                    [
+                        Variable(message_context),
+                        Variable(message_type_id * model.Field(field).affixed_name),
+                    ],
+                ),
+            ),
             f'insufficient space in message "{message_context}" to set field "{field.name}"'
             f' to "{value}"',
             exception_handler,
@@ -5172,10 +5253,63 @@ class FSMGenerator:
                 elif isinstance(value, ir.EnumLit):
                     ada_value = Literal(value.identifier)
                 else:
-                    ada_value = self._to_ada_expr(self._convert_type(value, field_type), is_global)
+                    ada_value = self._to_ada_expr(value, is_global)
+                    if isinstance(field_type, (rty.Enumeration, rty.Integer)):
+                        ada_value = QualifiedExpr(
+                            self._ada_type(field_type.identifier),
+                            ada_value,
+                        )
+                if (
+                    not isinstance(ada_value, Number)
+                    and isinstance(value.type_, rty.NamedTypeClass)
+                    and value.type_ == rty.BOOLEAN
+                    and common.has_scalar_value_dependent_condition(message_model)
+                ):
+                    to_base_integer = const.BUILTIN_TYPES_CONVERSIONS_PACKAGE * "To_Base_Integer"
+                    self._session_context.referenced_packages_body.append(
+                        const.BUILTIN_TYPES_CONVERSIONS_PACKAGE,
+                    )
+                else:
+                    to_base_integer = field_type.identifier.parent * "To_Base_Integer"
+
                 statements.extend(
                     [
-                        assert_sufficient_space,
+                        check_sufficient_space,
+                        self._raise_exception_if(
+                            Not(
+                                common.field_condition_call(
+                                    self._prefix,
+                                    message_model,
+                                    model.Field(field),
+                                    value=(
+                                        (
+                                            ada_value
+                                            if isinstance(ada_value, Number)
+                                            else Call(to_base_integer, [ada_value])
+                                        )
+                                        if isinstance(
+                                            value.type_,
+                                            (rty.Enumeration, rty.AnyInteger),
+                                        )
+                                        else None
+                                    ),
+                                    aggregate=(ada_value if isinstance(value, ir.Agg) else None),
+                                    size=(
+                                        Number(len(value.elements) * 8)
+                                        if isinstance(value, ir.Agg)
+                                        else (
+                                            Call(const.TYPES_TO_BIT_LENGTH, [Length(ada_value)])
+                                            if isinstance(value.type_, rty.Sequence)
+                                            else Number(0)
+                                        )
+                                    ),
+                                    context=message_context,
+                                ),
+                            ),
+                            f'violated field condition in message "{message_context}"'
+                            f' when setting field "{field.name}" to "{value}"',
+                            exception_handler,
+                        ),
                         CallStatement(
                             message_type_id * f"Set_{field}",
                             [
@@ -5187,9 +5321,32 @@ class FSMGenerator:
                 )
         elif isinstance(value, ir.Var) and isinstance(value.type_, rty.Sequence):
             sequence_context = context_id(value.identifier, is_global)
+            sequence_type_id = value.type_.identifier
             statements.extend(
                 [
-                    assert_sufficient_space,
+                    check_sufficient_space,
+                    self._raise_exception_if(
+                        Not(
+                            common.field_condition_call(
+                                self._prefix,
+                                message_model,
+                                model.Field(field),
+                                size=Call(
+                                    const.TYPES_TO_BIT_LENGTH,
+                                    [Length(self._to_ada_expr(value, is_global))],
+                                ),
+                                context=message_context,
+                            ),
+                        ),
+                        f'violated field condition in message "{message_context}"'
+                        f' when setting field "{field.name}" to sequence "{value}"',
+                        exception_handler,
+                    ),
+                    self._raise_exception_if_invalid_sequence(
+                        sequence_type_id,
+                        sequence_context,
+                        exception_handler,
+                    ),
                     CallStatement(
                         message_type_id * f"Set_{field}",
                         [Variable(message_context), Variable(sequence_context)],
@@ -5273,6 +5430,20 @@ class FSMGenerator:
                         ),
                     ),
                     f'insufficient space in message "{target_context}"',
+                    exception_handler,
+                ),
+                self._raise_exception_if(
+                    Not(
+                        Call(
+                            target_type * "Valid_Length",
+                            [
+                                Variable(target_context),
+                                Variable(target_type * f"F_{field}"),
+                                length,
+                            ],
+                        ),
+                    ),
+                    f'invalid message field size for "{length}"',
                     exception_handler,
                 ),
                 CallStatement(
@@ -5594,7 +5765,7 @@ class FSMGenerator:
                         sequence_type,
                         sequence_context,
                         copy_id(buffer_id(sequence_identifier)),
-                        target_buffer_is_smaller=False,
+                        check_target_buffer_size=False,
                         exception_handler=exception_handler.copy(free_buffer),
                     ),
                     self._initialize_context(
@@ -5918,14 +6089,13 @@ class FSMGenerator:
                     " as selector for message types",
                     location=selector.location,
                 )
-            element_id = selector.identifier + "_Ctx"
+            element_context = context_id(selector.identifier, is_global)
             target_context = context_id(target_identifier, is_global)
             target_buffer = "RFLX_Target_" + target_identifier
-
             assign_element = [
                 self._raise_exception_if_not_well_formed_message(
                     target_type.identifier,
-                    element_id,
+                    element_context,
                     exception_handler,
                 ),
                 Declare(
@@ -5939,18 +6109,43 @@ class FSMGenerator:
                         ),
                         *self._copy_to_buffer(
                             target_type_id,
-                            element_id,
+                            element_context,
                             buffer_id(target_buffer),
-                            target_buffer_is_smaller=True,
-                            exception_handler=exception_handler,
+                            check_target_buffer_size=True,
+                            exception_handler=exception_handler.copy(
+                                [
+                                    self._initialize_context(
+                                        target_identifier,
+                                        target_type_id,
+                                        is_global,
+                                        buffer=Variable(buffer_id(target_buffer)),
+                                    ),
+                                ],
+                            ),
                         ),
-                        CallStatement(
-                            target_type_id * "Initialize",
-                            [
-                                Variable(variable_id(target_context, is_global)),
-                                Variable(buffer_id(target_buffer)),
-                                Call(target_type_id * "Size", [Variable(element_id)]),
-                            ],
+                        self._initialize_context(
+                            target_identifier,
+                            target_type_id,
+                            is_global,
+                            buffer=Variable(buffer_id(target_buffer)),
+                            written_last=Call(
+                                const.TYPES_TO_BIT_LENGTH,
+                                [
+                                    Add(
+                                        First(buffer_id(target_buffer)),
+                                        Call(
+                                            const.TYPES_LENGTH,
+                                            [
+                                                Call(
+                                                    target_type.identifier * "Byte_Size",
+                                                    [Variable(element_context)],
+                                                ),
+                                            ],
+                                        ),
+                                        -Number(1),
+                                    ),
+                                ],
+                            ),
                         ),
                         CallStatement(
                             target_type_id * "Verify_Message",
@@ -6239,7 +6434,7 @@ class FSMGenerator:
         type_: ID,
         source_context: ID,
         target_buffer: ID,
-        target_buffer_is_smaller: bool,
+        check_target_buffer_size: bool,
         exception_handler: ExceptionHandler,
     ) -> list[Statement]:
         self._session_context.used_types_body.append(const.TYPES_LENGTH)
@@ -6252,13 +6447,23 @@ class FSMGenerator:
                     Variable(target_buffer * "all"),
                     ValueRange(
                         First(target_buffer),
-                        Add(
-                            First(target_buffer),
-                            Call(
-                                type_ * "Byte_Size",
-                                [Variable(source_context)],
+                        IfThenElse(
+                            Greater(
+                                Call(
+                                    type_ * "Byte_Size",
+                                    [Variable(source_context)],
+                                ),
+                                Number(0),
                             ),
-                            -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
+                            Add(
+                                First(target_buffer),
+                                Call(
+                                    type_ * "Byte_Size",
+                                    [Variable(source_context)],
+                                ),
+                                -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
+                            ),
+                            Number(-1),
                         ),
                     ),
                 ),
@@ -6289,7 +6494,7 @@ class FSMGenerator:
             ),
         ]
 
-        if target_buffer_is_smaller:
+        if check_target_buffer_size:
             checks.append(
                 self._raise_exception_if(
                     Not(
@@ -6322,20 +6527,6 @@ class FSMGenerator:
         assert isinstance(target_type, (rty.Integer, rty.Enumeration)), target_type
 
         self._session_context.referenced_types_body.append(target_type.identifier)
-
-        if isinstance(expression, ir.BinaryIntExpr):
-            assert isinstance(target_type, rty.Integer)
-            left = (
-                expression.left
-                if target_type.is_compatible_strong(expression.left.type_)
-                else ir.IntConversion(target_type, expression.left)
-            )
-            right = (
-                expression.right
-                if target_type.is_compatible_strong(expression.right.type_)
-                else ir.IntConversion(target_type, expression.right)
-            )
-            return expression.__class__(left, right)
 
         return ir.Conversion(target_type, expression)
 

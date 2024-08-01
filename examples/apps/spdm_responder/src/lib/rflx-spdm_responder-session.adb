@@ -11,10 +11,9 @@ with RFLX.SPDM_Responder.Session_Environment;
 --  implementation for all subprograms declared in RFLX.SPDM_Responder.Session.
 --  The implementations of these subprograms contain a binding for a C
 --  interface. This binding is not required for pure SPARK/Ada projects and can
---  be replaced. Additionally it contains an initialization procedure that is
---  used for the sole purpose of initializing the example C implementation. It
---  is not strictly required as an implementation is free to decide how and when
---  to initialize its custom RFLX.SPDM_Responder.Session_Environment.State type.
+--  be replaced.
+--  SPARK mode is disabled for this package body because the C binding requires
+--  Ada features that are not part of the SPARK language.
 package body RFLX.SPDM_Responder.Session with
    SPARK_Mode
 is

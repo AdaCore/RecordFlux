@@ -464,8 +464,7 @@ is
        and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
        and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Options)
        and then RFLX.IPv4.Packet.Valid_Length (Ctx, RFLX.IPv4.Packet.F_Options, Length)
-       and then RFLX_Types.To_Length (RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Options)) >= Length
-       and then RFLX.IPv4.Packet.Field_First (Ctx, RFLX.IPv4.Packet.F_Options) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Options)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Options)
@@ -516,8 +515,7 @@ is
        and then RFLX.IPv4.Packet.Has_Buffer (Ctx)
        and then RFLX.IPv4.Packet.Valid_Next (Ctx, RFLX.IPv4.Packet.F_Payload)
        and then RFLX.IPv4.Packet.Valid_Length (Ctx, RFLX.IPv4.Packet.F_Payload, Length)
-       and then RFLX_Types.To_Length (RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload)) >= Length
-       and then RFLX.IPv4.Packet.Field_First (Ctx, RFLX.IPv4.Packet.F_Payload) mod RFLX_Types.Byte'Size = 1,
+       and then RFLX_Types.To_Length (RFLX.IPv4.Packet.Available_Space (Ctx, RFLX.IPv4.Packet.F_Payload)) >= Length,
      Post =>
        Has_Buffer (Ctx)
        and then Well_Formed (Ctx, F_Payload)
@@ -576,6 +574,7 @@ is
       if Length > 0 then
          Process_Payload (Ctx.Buffer.all (First .. First + RFLX_Types.Index (Length) - 1));
       end if;
+      pragma Assert (RFLX.IPv4.Packet.Valid_Length (Ctx, RFLX.IPv4.Packet.F_Payload, Length));
       Initialize_Payload_Private (Ctx, Length);
    end Generic_Set_Payload;
 

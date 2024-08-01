@@ -216,6 +216,7 @@ def test_session_graph(tmp_path: Path) -> None:
                     Transition(target=ID("STATE"), condition=Equal(Variable("Global"), TRUE)),
                     Transition(target=ID("null")),
                 ],
+                exception_transition=Transition(target=ID("null")),
             ),
             State(
                 "STATE",

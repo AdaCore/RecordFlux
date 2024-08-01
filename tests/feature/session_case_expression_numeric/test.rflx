@@ -21,6 +21,8 @@ package Test is
          goto Prepare
             if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
          goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
       end Start;
 
       state Prepare is

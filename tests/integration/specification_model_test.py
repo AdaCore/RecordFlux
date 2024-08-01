@@ -654,6 +654,7 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                     ),
                     Transition("A"),
                 ],
+                exception_transition=Transition("null"),
                 description="rfc1149.txt+51:4-52:9",
             ),
         ],

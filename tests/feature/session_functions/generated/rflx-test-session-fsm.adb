@@ -64,11 +64,21 @@ is
       -- tests/feature/session_functions/test.rflx:43:16
       T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
       -- tests/feature/session_functions/test.rflx:44:20
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions/test.rflx:44:20
       T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
       -- tests/feature/session_functions/test.rflx:44:20
@@ -77,11 +87,21 @@ is
       T_3 := T_0
       and then T_2;
       -- tests/feature/session_functions/test.rflx:45:20
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Valid (Ctx.P.Message_Ctx, Universal.Message.F_Length) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
          goto Finalize_Start;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions/test.rflx:45:20
       T_4 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
       -- tests/feature/session_functions/test.rflx:45:20
@@ -122,34 +142,119 @@ is
       Get_Message_Type (Ctx.E, Message_Type);
       -- tests/feature/session_functions/test.rflx:57:10
       Valid_Message (Ctx.E, Message_Type, True, Valid);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (RFLX.RFLX_Types.Base_Integer'First) <= RFLX.RFLX_Types.Base_Integer (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data))) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data)) <= RFLX.RFLX_Types.Base_Integer (RFLX.RFLX_Types.Base_Integer'Last)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions/test.rflx:58:20
       T_6 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data));
       -- tests/feature/session_functions/test.rflx:58:40
       Byte_Size (Ctx.E, T_7);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (Test.Length'First) <= RFLX.RFLX_Types.Base_Integer (T_6)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not (RFLX.RFLX_Types.Base_Integer (T_6) <= RFLX.RFLX_Types.Base_Integer (Test.Length'Last)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions/test.rflx:58:40
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not (T_7 /= 0) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions/test.rflx:58:10
       Length := Test.Length (T_6) / T_7;
       -- tests/feature/session_functions/test.rflx:60:68
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions/test.rflx:60:10
       declare
          Definite_Message : Test.Definite_Message.Structure;
@@ -231,20 +336,101 @@ is
         Ghost;
    begin
       pragma Assert (Process_2_Invariant);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (RFLX.RFLX_Types.Base_Integer'First) <= RFLX.RFLX_Types.Base_Integer (Universal.Message.Size (Ctx.P.Message_Ctx))) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_2_Invariant);
+         goto Finalize_Process_2;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (Universal.Message.Size (Ctx.P.Message_Ctx)) <= RFLX.RFLX_Types.Base_Integer (RFLX.RFLX_Types.Base_Integer'Last)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_2_Invariant);
+         goto Finalize_Process_2;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions/test.rflx:79:20
       T_8 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Size (Ctx.P.Message_Ctx));
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (RFLX.RFLX_Types.Base_Integer (Test.Length'First) <= RFLX.RFLX_Types.Base_Integer (T_8)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_2_Invariant);
+         goto Finalize_Process_2;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not (RFLX.RFLX_Types.Base_Integer (T_8) <= RFLX.RFLX_Types.Base_Integer (Test.Length'Last)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_2_Invariant);
          goto Finalize_Process_2;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/session_functions/test.rflx:79:35
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not (8 /= 0) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_2_Invariant);
+         goto Finalize_Process_2;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions/test.rflx:79:10
       Length := Test.Length (T_8) / 8;
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_2_Invariant);
          goto Finalize_Process_2;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_functions/test.rflx:81:10
       declare
          Definite_Message : Test.Definite_Message.Structure;
@@ -261,8 +447,18 @@ is
             pragma Assert (Process_2_Invariant);
             goto Finalize_Process_2;
          end if;
-         Universal.Message.Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Create_Message_Arg_2_Message_Length - RFLX_Types.Length'(1)));
-         Create_Message (Ctx.E, (Known => True, Enum => Universal.OT_Data), Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Create_Message_Arg_2_Message_Length - RFLX_Types.Length'(1)), Definite_Message);
+         Universal.Message.Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. (if
+             RFLX_Create_Message_Arg_2_Message_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Create_Message_Arg_2_Message_Length - RFLX_Types.Length'(1)
+          else
+             (-1))));
+         Create_Message (Ctx.E, (Known => True, Enum => Universal.OT_Data), Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. (if
+             RFLX_Create_Message_Arg_2_Message_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Create_Message_Arg_2_Message_Length - RFLX_Types.Length'(1)
+          else
+             (-1))), Definite_Message);
          if not Test.Definite_Message.Valid_Structure (Definite_Message) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_2_Invariant);
@@ -334,7 +530,12 @@ is
          pragma Assert (Process_3_Invariant);
          goto Finalize_Process_3;
       end if;
-      Test.Definite_Message.Set_Length (Ctx.P.Definite_Message_Ctx, Local_Message.Length);
+      if not RFLX.Test.Definite_Message.Field_Condition (Ctx.P.Definite_Message_Ctx, RFLX.Test.Definite_Message.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_3_Invariant);
+         goto Finalize_Process_3;
+      end if;
+      Test.Definite_Message.Set_Length (Ctx.P.Definite_Message_Ctx, Test.Length'(Local_Message.Length));
       declare
          function RFLX_Process_Data_Pre (Length : RFLX_Types.Length) return Boolean is
            (Test.Definite_Message.Valid_Structure (Local_Message)
@@ -356,6 +557,11 @@ is
             not (Test.Definite_Message.Valid_Next (Ctx.P.Definite_Message_Ctx, Test.Definite_Message.F_Data)
              and Test.Definite_Message.Available_Space (Ctx.P.Definite_Message_Ctx, Test.Definite_Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Test.Definite_Message.Field_Size_Data (Local_Message))))
          then
+            Ctx.P.Next_State := S_Final;
+            pragma Assert (Process_3_Invariant);
+            goto Finalize_Process_3;
+         end if;
+         if not Test.Definite_Message.Valid_Length (Ctx.P.Definite_Message_Ctx, Test.Definite_Message.F_Data, RFLX_Types.To_Length (Test.Definite_Message.Field_Size_Data (Local_Message))) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_3_Invariant);
             goto Finalize_Process_3;

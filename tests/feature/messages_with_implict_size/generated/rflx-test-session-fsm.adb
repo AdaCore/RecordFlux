@@ -61,14 +61,29 @@ is
    begin
       pragma Assert (Process_Invariant);
       -- tests/feature/messages_with_implict_size/test.rflx:21:95
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Universal.Message.Well_Formed (Ctx.P.M_R_Ctx, Universal.Message.F_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/messages_with_implict_size/test.rflx:21:10
       Universal.Message.Reset (Ctx.P.M_S_Ctx);
       if not Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.M_S_Ctx, RFLX.Universal.Message.F_Message_Type, Universal.To_Base_Integer (Universal.MT_Unconstrained_Data)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
@@ -95,6 +110,12 @@ is
             not (Universal.Message.Valid_Next (Ctx.P.M_S_Ctx, Universal.Message.F_Data)
              and Universal.Message.Available_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Data) >= RFLX_Types.To_Bit_Length (RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Universal.Message.F_Data))))
          then
+            Ctx.P.Next_State := S_Final;
+            Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
+         if not Universal.Message.Valid_Length (Ctx.P.M_S_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (Universal.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Universal.Message.F_Data))) then
             Ctx.P.Next_State := S_Final;
             Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
             pragma Assert (Process_Invariant);

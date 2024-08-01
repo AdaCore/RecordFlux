@@ -119,13 +119,23 @@ is
       pragma Warnings (On, "unused assignment");
       Test.Message.Initialize (M_T_Ctx, M_T_Buffer, Length => Test.Length'First, Extended => Boolean'First);
       pragma Assert (Process_Invariant);
-      -- tests/feature/parameterized_messages/test.rflx:48:74
+      -- tests/feature/parameterized_messages/test.rflx:50:74
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not Test.Message.Well_Formed (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
-      -- tests/feature/parameterized_messages/test.rflx:48:10
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/parameterized_messages/test.rflx:50:10
       Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => True);
       declare
          pragma Warnings (Off, "is not modified, could be declared constant");
@@ -153,6 +163,12 @@ is
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
+         if not Test.Message.Valid_Length (Ctx.P.M_S_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data))) then
+            Ctx.P.Next_State := S_Error;
+            Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          RFLX_Test_Message_Set_Data (Ctx.P.M_S_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
          Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
       end;
@@ -166,12 +182,33 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      if not RFLX.Test.Message.Field_Condition (Ctx.P.M_S_Ctx, RFLX.Test.Message.F_Extension) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Test.Message.Set_Extension (Ctx.P.M_S_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
-      -- tests/feature/parameterized_messages/test.rflx:49:10
-      Length := Ctx.P.M_S_Ctx.Length;
-      -- tests/feature/parameterized_messages/test.rflx:50:10
-      Test.Message.Reset (M_T_Ctx, Length => Ctx.P.M_S_Ctx.Length, Extended => True);
       -- tests/feature/parameterized_messages/test.rflx:51:10
+      Length := Ctx.P.M_S_Ctx.Length;
+      -- tests/feature/parameterized_messages/test.rflx:52:10
+      Test.Message.Reset (M_T_Ctx, Length => Ctx.P.M_S_Ctx.Length, Extended => True);
+      -- tests/feature/parameterized_messages/test.rflx:53:22
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not Test.Message.Well_Formed (Ctx.P.M_R_Ctx, Test.Message.F_Data) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      -- tests/feature/parameterized_messages/test.rflx:53:10
       if not Test.Message.Valid_Next (M_T_Ctx, Test.Message.F_Data) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Process_Invariant);
@@ -203,6 +240,12 @@ is
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
+         if not Test.Message.Valid_Length (M_T_Ctx, Test.Message.F_Data, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data))) then
+            Ctx.P.Next_State := S_Error;
+            Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
+            pragma Assert (Process_Invariant);
+            goto Finalize_Process;
+         end if;
          RFLX_Test_Message_Set_Data (M_T_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_M_R_Ctx_Tmp, Test.Message.F_Data)));
          Ctx.P.M_R_Ctx := RFLX_Ctx_P_M_R_Ctx_Tmp;
       end;
@@ -216,25 +259,30 @@ is
          pragma Assert (Process_Invariant);
          goto Finalize_Process;
       end if;
+      if not RFLX.Test.Message.Field_Condition (M_T_Ctx, RFLX.Test.Message.F_Extension) then
+         Ctx.P.Next_State := S_Error;
+         pragma Assert (Process_Invariant);
+         goto Finalize_Process;
+      end if;
       Test.Message.Set_Extension (M_T_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
-      -- tests/feature/parameterized_messages/test.rflx:53:19
+      -- tests/feature/parameterized_messages/test.rflx:55:19
       T_0 := Ctx.P.M_S_Ctx.Length;
-      -- tests/feature/parameterized_messages/test.rflx:53:32
+      -- tests/feature/parameterized_messages/test.rflx:55:32
       T_1 := M_T_Ctx.Length;
-      -- tests/feature/parameterized_messages/test.rflx:53:19
+      -- tests/feature/parameterized_messages/test.rflx:55:19
       T_2 := RFLX.RFLX_Types.Base_Integer (T_0) = RFLX.RFLX_Types.Base_Integer (T_1);
-      -- tests/feature/parameterized_messages/test.rflx:53:47
+      -- tests/feature/parameterized_messages/test.rflx:55:47
       T_3 := Ctx.P.M_S_Ctx.Extended;
-      -- tests/feature/parameterized_messages/test.rflx:53:62
+      -- tests/feature/parameterized_messages/test.rflx:55:62
       T_4 := M_T_Ctx.Extended;
-      -- tests/feature/parameterized_messages/test.rflx:53:47
+      -- tests/feature/parameterized_messages/test.rflx:55:47
       T_5 := T_3 = T_4;
-      -- tests/feature/parameterized_messages/test.rflx:53:10
+      -- tests/feature/parameterized_messages/test.rflx:55:10
       Equal := T_2
       and then T_5;
-      -- tests/feature/parameterized_messages/test.rflx:56:25
+      -- tests/feature/parameterized_messages/test.rflx:58:25
       T_6 := Ctx.P.M_R_Ctx.Length;
-      -- tests/feature/parameterized_messages/test.rflx:56:16
+      -- tests/feature/parameterized_messages/test.rflx:58:16
       T_7 := RFLX.RFLX_Types.Base_Integer (Length) = RFLX.RFLX_Types.Base_Integer (T_6);
       if
          T_7
@@ -272,7 +320,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/parameterized_messages/test.rflx:65:10
+      -- tests/feature/parameterized_messages/test.rflx:67:10
       Ctx.P.Next_State := S_Reset;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -293,7 +341,7 @@ is
         Ghost;
    begin
       pragma Assert (Reset_Invariant);
-      -- tests/feature/parameterized_messages/test.rflx:73:10
+      -- tests/feature/parameterized_messages/test.rflx:75:10
       Test.Message.Reset (Ctx.P.M_S_Ctx, Length => Ctx.P.M_R_Ctx.Length, Extended => Ctx.P.M_R_Ctx.Extended);
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reset_Invariant);

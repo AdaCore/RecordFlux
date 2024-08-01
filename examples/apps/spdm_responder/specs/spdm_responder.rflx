@@ -296,6 +296,8 @@ package SPDM_Responder is
          goto Receive_Get_Version
             if Valid
          goto Error_Unspecified
+      exception
+         goto Error_Unspecified
       end Init;
 
       state Receive_Get_Version
@@ -996,6 +998,8 @@ package SPDM_Responder is
          goto Prepare_Measurements
             if Valid
          goto Error_Unspecified
+      exception
+         goto Error_Unspecified
       end Reset_Measurements_Hash;
 
       state Prepare_Measurements
@@ -1046,6 +1050,8 @@ package SPDM_Responder is
          Last_Measurement        := Local_Number_Of_Indices;
       transition
          goto Prepare_Measurements_Records
+      exception
+         goto Error_Unspecified
       end Prepare_Measurements_All;
 
       state Prepare_Measurements_Records
@@ -1281,6 +1287,8 @@ package SPDM_Responder is
          Last_Measurement  := Number_Of_Indices;
       transition
          goto Prepare_Measurements_Records
+      exception
+         goto Error_Unspecified
       end Prepare_Key_Exchange_TCB_Hash;
 
       state Prepare_Key_Exchange_Hash
@@ -1577,6 +1585,8 @@ package SPDM_Responder is
       transition
          goto Send_Idle
             if Current_Phase = Secure_Session
+         goto Error_Unspecified
+      exception
          goto Error_Unspecified
       end Finish_Session_Handshake;
 

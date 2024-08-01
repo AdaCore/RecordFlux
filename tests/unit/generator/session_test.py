@@ -911,6 +911,12 @@ if not Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Message_Ty
    pragma Finalization;
    goto Finalize_S;
 end if;
+if not Universal.Message.Field_Condition (X_Ctx, Universal.Message.F_Message_Type, Universal.To_Base_Integer (Universal.MT_Data)) then
+   Ada.Text_IO.Put_Line ("Error: violated field condition in message ""X_Ctx"" when setting field ""Message_Type"" to ""Universal::MT_Data""");
+   Ctx.P.Next_State := S_E;
+   pragma Finalization;
+   goto Finalize_S;
+end if;
 Universal.Message.Set_Message_Type (X_Ctx, Universal.MT_Data);
 if not Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length) then
    Ada.Text_IO.Put_Line ("Error: insufficient space in message ""X_Ctx"" to set field ""Length"" to ""0""");
@@ -918,7 +924,13 @@ if not Universal.Message.Sufficient_Space (X_Ctx, Universal.Message.F_Length) th
    pragma Finalization;
    goto Finalize_S;
 end if;
-Universal.Message.Set_Length (X_Ctx, 0);
+if not Universal.Message.Field_Condition (X_Ctx, Universal.Message.F_Length, Universal.To_Base_Integer (Universal.Length'(0))) then
+   Ada.Text_IO.Put_Line ("Error: violated field condition in message ""X_Ctx"" when setting field ""Length"" to ""0""");
+   Ctx.P.Next_State := S_E;
+   pragma Finalization;
+   goto Finalize_S;
+end if;
+Universal.Message.Set_Length (X_Ctx, Universal.Length'(0));
 if not Universal.Message.Valid_Length (X_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (0 * RFLX_Types.Byte'Size)) then
    Ada.Text_IO.Put_Line ("Error: invalid message field size for ""[]""\");
    Ctx.P.Next_State := S_E;

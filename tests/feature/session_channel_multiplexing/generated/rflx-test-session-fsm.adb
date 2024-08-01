@@ -68,7 +68,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_1_Invariant);
-      -- tests/feature/session_channel_multiplexing/test.rflx:27:10
+      -- tests/feature/session_channel_multiplexing/test.rflx:29:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_1_Invariant);
    end Reply_1;
@@ -88,7 +88,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_2_Invariant);
-      -- tests/feature/session_channel_multiplexing/test.rflx:34:10
+      -- tests/feature/session_channel_multiplexing/test.rflx:36:10
       Ctx.P.Next_State := S_Start;
       pragma Assert (Reply_2_Invariant);
    end Reply_2;

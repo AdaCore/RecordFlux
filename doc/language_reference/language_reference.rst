@@ -1909,6 +1909,8 @@ By convention one protocol is specified in one package.
             goto Forward
                if Frame'Valid
             goto Validate
+         exception
+            goto null
          end Validate;
 
          state Forward

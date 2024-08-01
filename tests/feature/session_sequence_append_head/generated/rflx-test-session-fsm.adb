@@ -50,16 +50,36 @@ is
         Ghost;
    begin
       pragma Assert (Global_Invariant);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Messages.Valid (Ctx.P.Messages_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Global_Invariant);
          goto Finalize_Global;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Global_Invariant);
          goto Finalize_Global;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_sequence_append_head/test.rflx:17:10
       if not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx) then
          Ctx.P.Next_State := S_Final;
@@ -78,6 +98,14 @@ is
             pragma Assert (Global_Invariant);
             goto Finalize_Global;
          end if;
+         if not RFLX.TLV.Message.Field_Condition (RFLX_Element_Messages_Ctx, RFLX.TLV.Message.F_Tag, TLV.To_Base_Integer (TLV.Msg_Data)) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Global_Invariant);
+            goto Finalize_Global;
+         end if;
          TLV.Message.Set_Tag (RFLX_Element_Messages_Ctx, TLV.Msg_Data);
          if not TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length) then
             Ctx.P.Next_State := S_Final;
@@ -87,7 +115,15 @@ is
             pragma Assert (Global_Invariant);
             goto Finalize_Global;
          end if;
-         TLV.Message.Set_Length (RFLX_Element_Messages_Ctx, 1);
+         if not RFLX.TLV.Message.Field_Condition (RFLX_Element_Messages_Ctx, RFLX.TLV.Message.F_Length, TLV.To_Base_Integer (TLV.Length'(1))) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Global_Invariant);
+            goto Finalize_Global;
+         end if;
+         TLV.Message.Set_Length (RFLX_Element_Messages_Ctx, TLV.Length'(1));
          if not TLV.Message.Valid_Length (RFLX_Element_Messages_Ctx, TLV.Message.F_Value, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
             Ctx.P.Next_State := S_Final;
             pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
@@ -104,21 +140,49 @@ is
             pragma Assert (Global_Invariant);
             goto Finalize_Global;
          end if;
+         if not RFLX.TLV.Message.Field_Condition (RFLX_Element_Messages_Ctx, RFLX.TLV.Message.F_Value, 0) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Global_Invariant);
+            goto Finalize_Global;
+         end if;
          TLV.Message.Set_Value (RFLX_Element_Messages_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
          pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
          TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
          pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Tags.Valid (Ctx.P.Tags_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Global_Invariant);
          goto Finalize_Global;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Tags.Has_Element (Ctx.P.Tags_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Global_Invariant);
          goto Finalize_Global;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_sequence_append_head/test.rflx:18:10
       if
          not TLV.Tags.Has_Element (Ctx.P.Tags_Ctx)
@@ -152,7 +216,12 @@ is
             pragma Assert (Global_Invariant);
             goto Finalize_Global;
          end if;
-         TLV.Messages.Copy (Ctx.P.Messages_Ctx, RFLX_Copy_Messages_Buffer.all (RFLX_Copy_Messages_Buffer'First .. RFLX_Copy_Messages_Buffer'First + TLV.Messages.Byte_Size (Ctx.P.Messages_Ctx) - RFLX_Types.Length'(1)));
+         TLV.Messages.Copy (Ctx.P.Messages_Ctx, RFLX_Copy_Messages_Buffer.all (RFLX_Copy_Messages_Buffer'First .. (if
+             TLV.Messages.Byte_Size (Ctx.P.Messages_Ctx) > 0
+          then
+             RFLX_Copy_Messages_Buffer'First + TLV.Messages.Byte_Size (Ctx.P.Messages_Ctx) - RFLX_Types.Length'(1)
+          else
+             (-1))));
          TLV.Messages.Initialize (RFLX_Copy_Messages_Ctx, RFLX_Copy_Messages_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Messages_Buffer'First), TLV.Messages.Sequence_Last (Ctx.P.Messages_Ctx));
          if not TLV.Messages.Has_Element (RFLX_Copy_Messages_Ctx) then
             Ctx.P.Next_State := S_Final;
@@ -222,8 +291,13 @@ is
                pragma Assert (Global_Invariant);
                goto Finalize_Global;
             end if;
-            TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1)));
-            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1))));
+            TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. (if
+                TLV.Message.Byte_Size (RFLX_Head_Ctx) > 0
+             then
+                RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1)
+             else
+                (-1))));
+            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, Written_Last => RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1))));
             TLV.Message.Verify_Message (Ctx.P.Message_Ctx);
             pragma Warnings (Off, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
             TLV.Messages.Update (RFLX_Copy_Messages_Ctx, RFLX_Head_Ctx);
@@ -238,11 +312,21 @@ is
          pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
       end;
       -- tests/feature/session_sequence_append_head/test.rflx:20:25
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Message.Valid (Ctx.P.Message_Ctx, TLV.Message.F_Tag) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Global_Invariant);
          goto Finalize_Global;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_sequence_append_head/test.rflx:20:10
       Message_Tag := TLV.Message.Get_Tag (Ctx.P.Message_Ctx);
       -- tests/feature/session_sequence_append_head/test.rflx:21:10
@@ -343,16 +427,36 @@ is
       pragma Warnings (On, "unused assignment");
       TLV.Tags.Initialize (Local_Tags_Ctx, Local_Tags_Buffer);
       pragma Assert (Local_Invariant);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Messages.Valid (Local_Messages_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Local_Invariant);
          goto Finalize_Local;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Messages.Has_Element (Local_Messages_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Local_Invariant);
          goto Finalize_Local;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_sequence_append_head/test.rflx:45:10
       if not TLV.Messages.Has_Element (Local_Messages_Ctx) then
          Ctx.P.Next_State := S_Final;
@@ -371,6 +475,14 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
+         if not RFLX.TLV.Message.Field_Condition (RFLX_Element_Local_Messages_Ctx, RFLX.TLV.Message.F_Tag, TLV.To_Base_Integer (TLV.Msg_Data)) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Tag (RFLX_Element_Local_Messages_Ctx, TLV.Msg_Data);
          if not TLV.Message.Sufficient_Space (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Length) then
             Ctx.P.Next_State := S_Final;
@@ -380,7 +492,15 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
-         TLV.Message.Set_Length (RFLX_Element_Local_Messages_Ctx, 2);
+         if not RFLX.TLV.Message.Field_Condition (RFLX_Element_Local_Messages_Ctx, RFLX.TLV.Message.F_Length, TLV.To_Base_Integer (TLV.Length'(2))) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
+         TLV.Message.Set_Length (RFLX_Element_Local_Messages_Ctx, TLV.Length'(2));
          if not TLV.Message.Valid_Length (RFLX_Element_Local_Messages_Ctx, TLV.Message.F_Value, RFLX_Types.To_Length (2 * RFLX_Types.Byte'Size)) then
             Ctx.P.Next_State := S_Final;
             pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
@@ -397,21 +517,49 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
+         if not RFLX.TLV.Message.Field_Condition (RFLX_Element_Local_Messages_Ctx, RFLX.TLV.Message.F_Value, 0) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Value (RFLX_Element_Local_Messages_Ctx, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)));
          pragma Warnings (Off, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
          TLV.Messages.Update (Local_Messages_Ctx, RFLX_Element_Local_Messages_Ctx);
          pragma Warnings (On, """RFLX_Element_Local_Messages_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Messages.Valid (Ctx.P.Messages_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Local_Invariant);
          goto Finalize_Local;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Local_Invariant);
          goto Finalize_Local;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_sequence_append_head/test.rflx:47:10
       if not TLV.Messages.Has_Element (Ctx.P.Messages_Ctx) then
          Ctx.P.Next_State := S_Final;
@@ -430,6 +578,14 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
+         if not RFLX.TLV.Message.Field_Condition (RFLX_Element_Messages_Ctx, RFLX.TLV.Message.F_Tag, TLV.To_Base_Integer (TLV.Msg_Data)) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Tag (RFLX_Element_Messages_Ctx, TLV.Msg_Data);
          if not TLV.Message.Sufficient_Space (RFLX_Element_Messages_Ctx, TLV.Message.F_Length) then
             Ctx.P.Next_State := S_Final;
@@ -439,7 +595,15 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
-         TLV.Message.Set_Length (RFLX_Element_Messages_Ctx, 1);
+         if not RFLX.TLV.Message.Field_Condition (RFLX_Element_Messages_Ctx, RFLX.TLV.Message.F_Length, TLV.To_Base_Integer (TLV.Length'(1))) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
+         TLV.Message.Set_Length (RFLX_Element_Messages_Ctx, TLV.Length'(1));
          if not TLV.Message.Valid_Length (RFLX_Element_Messages_Ctx, TLV.Message.F_Value, RFLX_Types.To_Length (1 * RFLX_Types.Byte'Size)) then
             Ctx.P.Next_State := S_Final;
             pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
@@ -456,21 +620,49 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
+         if not RFLX.TLV.Message.Field_Condition (RFLX_Element_Messages_Ctx, RFLX.TLV.Message.F_Value, 0) then
+            Ctx.P.Next_State := S_Final;
+            pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
+            pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
+            pragma Assert (Local_Invariant);
+            goto Finalize_Local;
+         end if;
          TLV.Message.Set_Value (RFLX_Element_Messages_Ctx, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (2)));
          pragma Warnings (Off, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
          TLV.Messages.Update (Ctx.P.Messages_Ctx, RFLX_Element_Messages_Ctx);
          pragma Warnings (On, """RFLX_Element_Messages_Ctx"" is set by ""Update"" but not used after the call");
       end;
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Tags.Valid (Local_Tags_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Local_Invariant);
          goto Finalize_Local;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Tags.Has_Element (Local_Tags_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Local_Invariant);
          goto Finalize_Local;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_sequence_append_head/test.rflx:48:10
       if
          not TLV.Tags.Has_Element (Local_Tags_Ctx)
@@ -481,6 +673,36 @@ is
          goto Finalize_Local;
       end if;
       TLV.Tags.Append_Element (Local_Tags_Ctx, TLV.Msg_Data);
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not TLV.Tags.Valid (Local_Tags_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
+      if not TLV.Tags.Has_Element (Local_Tags_Ctx) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Local_Invariant);
+         goto Finalize_Local;
+      end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_sequence_append_head/test.rflx:49:10
       if
          not TLV.Tags.Has_Element (Local_Tags_Ctx)
@@ -514,7 +736,12 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
-         TLV.Messages.Copy (Local_Messages_Ctx, RFLX_Copy_Local_Messages_Buffer.all (RFLX_Copy_Local_Messages_Buffer'First .. RFLX_Copy_Local_Messages_Buffer'First + TLV.Messages.Byte_Size (Local_Messages_Ctx) - RFLX_Types.Length'(1)));
+         TLV.Messages.Copy (Local_Messages_Ctx, RFLX_Copy_Local_Messages_Buffer.all (RFLX_Copy_Local_Messages_Buffer'First .. (if
+             TLV.Messages.Byte_Size (Local_Messages_Ctx) > 0
+          then
+             RFLX_Copy_Local_Messages_Buffer'First + TLV.Messages.Byte_Size (Local_Messages_Ctx) - RFLX_Types.Length'(1)
+          else
+             (-1))));
          TLV.Messages.Initialize (RFLX_Copy_Local_Messages_Ctx, RFLX_Copy_Local_Messages_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Local_Messages_Buffer'First), TLV.Messages.Sequence_Last (Local_Messages_Ctx));
          if not TLV.Messages.Has_Element (RFLX_Copy_Local_Messages_Ctx) then
             Ctx.P.Next_State := S_Final;
@@ -568,8 +795,13 @@ is
                pragma Assert (Local_Invariant);
                goto Finalize_Local;
             end if;
-            TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1)));
-            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1))));
+            TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. (if
+                TLV.Message.Byte_Size (RFLX_Head_Ctx) > 0
+             then
+                RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1)
+             else
+                (-1))));
+            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, Written_Last => RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1))));
             TLV.Message.Verify_Message (Ctx.P.Message_Ctx);
             pragma Warnings (Off, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
             TLV.Messages.Update (RFLX_Copy_Local_Messages_Ctx, RFLX_Head_Ctx);
@@ -584,11 +816,21 @@ is
          pragma Assert (Ctx.P.Slots.Slot_Ptr_6 /= null);
       end;
       -- tests/feature/session_sequence_append_head/test.rflx:51:25
+      pragma Warnings (Off, "condition can only be False if invalid values present");
+      pragma Warnings (Off, "condition is always False");
+      pragma Warnings (Off, "this code can never be executed and has been deleted");
+      pragma Warnings (Off, "statement has no effect");
+      pragma Warnings (Off, "this statement is never reached");
       if not TLV.Message.Valid (Ctx.P.Message_Ctx, TLV.Message.F_Tag) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Local_Invariant);
          goto Finalize_Local;
       end if;
+      pragma Warnings (On, "this statement is never reached");
+      pragma Warnings (On, "statement has no effect");
+      pragma Warnings (On, "this code can never be executed and has been deleted");
+      pragma Warnings (On, "condition is always False");
+      pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/session_sequence_append_head/test.rflx:51:10
       Message_Tag := TLV.Message.Get_Tag (Ctx.P.Message_Ctx);
       -- tests/feature/session_sequence_append_head/test.rflx:52:10

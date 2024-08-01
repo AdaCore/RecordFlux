@@ -559,11 +559,7 @@ class Generator:
             ),
             executor.submit(message_generator.create_size_function),
             executor.submit(message_generator.create_byte_size_function),
-            executor.submit(
-                message_generator.create_message_last_function,
-                prefix,
-                message,
-            ),
+            executor.submit(message_generator.create_message_last_function),
             executor.submit(message_generator.create_written_last_function),
             executor.submit(message_generator.create_data_procedure, prefix, message),
             executor.submit(

@@ -14,8 +14,7 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Test.Session.FSM_Allocator;
 with RFLX.RFLX_Types;
-with RFLX.Universal;
-with RFLX.Universal.Message;
+with RFLX.Test.Message;
 
 package RFLX.Test.Session.FSM with
   SPARK_Mode
@@ -131,17 +130,19 @@ private
    type Private_Context is
       record
          Next_State : State := S_Start;
-         Message_Ctx : Universal.Message.Context;
+         Message_Ctx : Test.Message.Context;
+         Has_Data : Boolean := True;
+         Length : Test.Length := 1;
          Slots : Test.Session.FSM_Allocator.Slots;
          Memory : Test.Session.FSM_Allocator.Memory;
       end record;
 
    function Uninitialized (Ctx : Context) return Boolean is
-     (not Universal.Message.Has_Buffer (Ctx.P.Message_Ctx)
+     (not Test.Message.Has_Buffer (Ctx.P.Message_Ctx)
       and Test.Session.FSM_Allocator.Uninitialized (Ctx.P.Slots));
 
    function Global_Initialized (Ctx : Context) return Boolean is
-     (Universal.Message.Has_Buffer (Ctx.P.Message_Ctx)
+     (Test.Message.Has_Buffer (Ctx.P.Message_Ctx)
       and then Ctx.P.Message_Ctx.Buffer_First = RFLX_Types.Index'First
       and then Ctx.P.Message_Ctx.Buffer_Last = RFLX_Types.Index'First + 4095);
 
@@ -163,8 +164,8 @@ private
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Reply =>
-                    Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx)
-                    and Universal.Message.Byte_Size (Ctx.P.Message_Ctx) > 0,
+                    Test.Message.Well_Formed_Message (Ctx.P.Message_Ctx)
+                    and Test.Message.Byte_Size (Ctx.P.Message_Ctx) > 0,
                  when others =>
                     False)));
 
@@ -173,7 +174,7 @@ private
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Reply =>
-                    Universal.Message.Byte_Size (Ctx.P.Message_Ctx),
+                    Test.Message.Byte_Size (Ctx.P.Message_Ctx),
                  when others =>
                     RFLX_Types.Unreachable)));
 
@@ -191,7 +192,7 @@ private
           when C_Channel =>
              (case Ctx.P.Next_State is
                  when S_Start =>
-                    Universal.Message.Buffer_Length (Ctx.P.Message_Ctx),
+                    Test.Message.Buffer_Length (Ctx.P.Message_Ctx),
                  when others =>
                     RFLX_Types.Unreachable)));
 
