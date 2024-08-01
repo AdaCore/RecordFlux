@@ -1,5 +1,3 @@
-#![allow(clippy::trivially_copy_pass_by_ref)]
-
 use std::{
     collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
@@ -57,7 +55,6 @@ impl Severity {
         })
     }
 
-    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn __getnewargs__(&self) -> (String,) {
         // Removing ANSI escapes is needed here otherwise Python will not be able to rebuild the
         // object while calling `pickle.load`

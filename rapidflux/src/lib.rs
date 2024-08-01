@@ -1,5 +1,6 @@
 #![deny(clippy::pedantic)]
 #![allow(
+    clippy::trivially_copy_pass_by_ref,
     clippy::type_complexity,
     clippy::unsafe_derive_deserialize,
     clippy::unused_self
