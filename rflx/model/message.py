@@ -1673,12 +1673,29 @@ class Message(type_decl.TypeDecl):
             t = self.types[link.target]
             unconstrained = isinstance(t, (type_decl.Opaque, type_decl.Sequence))
             if not unconstrained and link.size != expr.UNDEFINED:
+                assert isinstance(t, type_decl.Scalar)
+                assert t.size_expr.location is not None
+                assert link.size.location is not None
+                assert link.target.identifier.location is not None
                 self.error.extend(
                     [
                         ErrorEntry(
-                            f'fixed size field "{link.target.name}" with size aspect',
+                            f'fixed size field "{link.target.name}" does not permit a size aspect',
                             Severity.ERROR,
-                            link.target.identifier.location,
+                            link.size.location,
+                            annotations=[
+                                Annotation(
+                                    "modify this field's type, or alternatively, "
+                                    "remove the size aspect",
+                                    Severity.HELP,
+                                    link.target.identifier.location,
+                                ),
+                                Annotation(
+                                    "associated type size defined here",
+                                    Severity.NOTE,
+                                    t.size_expr.location,
+                                ),
+                            ],
                         ),
                     ],
                 )

@@ -2207,3 +2207,53 @@ def test_reserved_word_link_condition(
         ),
         capfd,
     )
+
+
+def test_size_aspect_defined_twice_in_message_field(
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    file_path = tmp_path / "test.rflx"
+    file_path.write_text(
+        textwrap.dedent(
+            """\
+            package Test is
+               type I is range 0 .. 255 with Size => 8;
+               type M is
+                  message
+                     One : I
+                        with Size => 16;
+                     Two : I;
+                  end message;
+            end Test;
+            """,
+        ),
+    )
+    assert_error_full_message(
+        file_path,
+        textwrap.dedent(
+            f"""\
+            info: Parsing {file_path}
+            info: Processing Test
+            info: Verifying __BUILTINS__::Boolean
+            info: Verifying __INTERNAL__::Opaque
+            info: Verifying Test::I
+            info: Verifying Test::M
+            error: fixed size field "One" does not permit a size aspect
+             --> {file_path}:6:26
+              |
+            2 |    type I is range 0 .. 255 with Size => 8;
+              |                                          - note: associated type size \
+defined here
+            3 |    type M is
+            4 |       message
+            5 |          One : I
+              |          --- help: modify this field's type, or alternatively, remove the \
+size aspect
+            6 |             with Size => 16;
+              |                          ^^
+              |
+          """,
+        ),
+        capfd,
+    )

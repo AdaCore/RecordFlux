@@ -689,7 +689,7 @@ def integer() -> Integer:
         ID("P::Integer", location=Location((1, 1))),
         Number(1),
         Number(220),
-        Number(8),
+        Number(8, location=Location((1, 2))),
         location=Location((1, 1)),
     )
 

@@ -2129,8 +2129,12 @@ def test_tlv_valid_enum() -> None:
 
 def test_invalid_fixed_size_field_with_size() -> None:
     structure = [
-        Link(INITIAL, Field("F1")),
-        Link(Field("F1"), Field("F2"), size=Number(300)),
+        Link(INITIAL, Field(ID("F1", location=Location((1, 1))))),
+        Link(
+            Field("F1"),
+            Field(ID("F2", location=Location((1, 2)))),
+            size=Number(300, location=Location((10, 10))),
+        ),
         Link(Field("F2"), FINAL),
     ]
     types = {
@@ -2140,7 +2144,9 @@ def test_invalid_fixed_size_field_with_size() -> None:
     assert_message_model_error(
         structure,
         types,
-        r'^error: fixed size field "F2" with size aspect$',
+        r'^<stdin>:10:10: error: fixed size field "F2" does not permit a size aspect\n'
+        r"<stdin>:1:2: help: modify this field's type, or alternatively, remove the size aspect\n"
+        r"<stdin>:1:2: note: associated type size defined here$",
     )
 
 
