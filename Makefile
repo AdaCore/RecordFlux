@@ -189,6 +189,11 @@ BUILD_DEPS = $(DEVEL_VENV)/lib/python$(PYTHON_VERSION)/site-packages/langkit
 $(BUILD_DEPS):: export PYTHONPATH=
 $(BUILD_DEPS): $(CONTRIB) $(DEVEL_VENV) $(PROJECT_MANAGEMENT)
 	$(POETRY) install -v --no-root --only=build
+
+	@# TODO(eng/recordflux/RecordFlux#1645): Workaround, remove when fixed
+	$(DEVEL_VENV)/bin/pip uninstall --yes setuptools
+	$(POETRY) install -v --no-root --only=build
+
 	touch $(BUILD_DEPS)
 
 # --- Setup: Langkit-based parser ---
