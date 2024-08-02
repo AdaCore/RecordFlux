@@ -96,6 +96,14 @@ ADA_GRAMMAR = lark.Lark(
         # 3.5.1 (4)
         modular_type_definition:    "mod" expression
 
+        # 3.8.1 (4)
+        discrete_choice_list:       discrete_choice ( "|" discrete_choice )*
+
+        # 3.8.1 (5/3)
+        discrete_choice:            choice_expression | discrete_choice_others
+
+        !discrete_choice_others:     "others"
+
         # 3.11 (2)
         declarative_part:           declarative_item*
 
@@ -153,6 +161,14 @@ ADA_GRAMMAR = lark.Lark(
 
         !relation_operator:         "and" | "and then" | "or" | "or else"
 
+        # 4.4 (2.1/3)
+        choice_expression: \
+                                    choice_relation (relation_operator choice_relation)?
+
+        # 4.4 (2.2/3)
+        choice_relation: \
+                                    simple_expression (relational_operator simple_expression)?
+
         # 4.4 (3/3)
         relation: \
                                     simple_expression (relational_operator simple_expression)?
@@ -193,7 +209,7 @@ ADA_GRAMMAR = lark.Lark(
         !binary_adding_operator:    "+" | "-" | "&"
 
         # 4.5.7 (2/3)
-        conditional_expression:     if_expression
+        conditional_expression:     if_expression | case_expression
 
         # 4.5.7 (3/3)
         if_expression: \
@@ -207,6 +223,18 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.5.7 (4/3)
         condition:                  expression
+
+        # 4.5.7 (5/3)
+        case_expression: \
+                                    "case" expression "is" \
+                                    case_expr_alternatives
+
+        case_expr_alternatives: case_expression_alternative ( "," case_expression_alternative )*
+
+        # 4.5.7 (6/3)
+        case_expression_alternative: \
+                                    "when" discrete_choice_list "=>" \
+                                    expression
 
         # 5.1 (2/3)
         sequence_of_statements:     statement statement*
@@ -622,6 +650,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def modular_type_definition(self, data: list[ada.Expr]) -> ada.Declaration:
         return ada.ModularType(identifier="__INVALID__", modulus=data[0])
 
+    def discrete_choice_list(self, data: list[ada.Expr]) -> list[ada.Expr]:
+        return data
+
+    def discrete_choice(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def discrete_choice_others(self, data: list[lark.Token]) -> ada.Variable:
+        assert data[0] == "others"
+        return ada.Variable("others")
+
     def declarative_part(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
         return data
 
@@ -649,7 +687,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def prefix(self, data: list[ID]) -> ID:
         return data[0]
 
-    def selected_component(self, data: list[tuple[ID, ID]]) -> ID:
+    def selected_component(self, data: tuple[ID, ID]) -> ID:
         return data[0] * data[1]
 
     def selector_name(self, data: list[ID]) -> ID:
@@ -713,6 +751,18 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def relation_operator(self, data: list[lark.Token]) -> str:
         assert isinstance(data[0].value, str)
         return data[0].value
+
+    def choice_expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+        if len(data) == 1:
+            assert isinstance(data[0], ada.Expr)
+            return data[0]
+        raise NotImplementedError
+
+    def choice_relation(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+        if len(data) == 1:
+            assert isinstance(data[0], ada.Expr)
+            return data[0]
+        raise NotImplementedError
 
     def relation(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
 
@@ -839,6 +889,24 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def condition(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
+
+    def case_expression(
+        self,
+        data: tuple[ada.Expr, list[tuple[ada.Expr, ada.Expr]]],
+    ) -> ada.CaseExpr:
+        return ada.CaseExpr(control_expression=data[0], case_expressions=data[1])
+
+    def case_expr_alternatives(
+        self,
+        data: list[tuple[list[ada.Expr], ada.Expr]],
+    ) -> list[tuple[ada.Expr, ada.Expr]]:
+        return [(c, e[1]) for e in data for c in e[0]]
+
+    def case_expression_alternative(
+        self,
+        data: tuple[list[ada.Expr], ada.Expr],
+    ) -> tuple[list[ada.Expr], ada.Expr]:
+        return data
 
     def sequence_of_statements(self, data: list[ada.Statement]) -> list[ada.Statement]:
         return data

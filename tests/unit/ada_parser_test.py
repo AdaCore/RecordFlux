@@ -536,6 +536,21 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         package P is new G (F.A, F.B, F.C);
         """,
+        """\
+        package P
+        is
+
+           function F (Val : Integer) return Boolean is
+             (case Val is
+                  when 0 =>
+                     False,
+                  when 1 =>
+                     True,
+                  when others =>
+                     False);
+
+        end P;
+        """,
     ],
 )
 def test_roundtrip_text(data: str) -> None:
