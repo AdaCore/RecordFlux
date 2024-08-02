@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Enhance diagnostics when a message parameter is not a scalar (eng/recordflux/RecordFlux#1740)
 - Improve diagnostics phrasing (eng/recordflux/RecordFlux#1714)
+- Enhance diagnostics when a message field and its type have a size aspect (eng/recordflux/RecordFlux#1746)
 
 ### Fixed
 
