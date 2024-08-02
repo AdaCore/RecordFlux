@@ -59,7 +59,7 @@ KACL_CLI = $(POETRY) run kacl-cli
 PYTHON_PACKAGES := doc/language_reference/conf.py doc/user_guide/conf.py examples/apps language rflx tests tools stubs build.py
 DEVUTILS_DEPENDENCIES = $(RFLX)
 
--include $(DEVUTILS_DIR)/Makefile.common
+include $(DEVUTILS_DIR)/Makefile.common
 
 # --- Environment variables ---
 
@@ -149,10 +149,12 @@ pyproject.toml: pyproject.toml.in $(DEVUTILS_DIR)
 
 # --- Setup: External repositories ---
 
-$(DEVUTILS_DIR):
+$(DEVUTILS_DIR) $(DEVUTILS_DIR)/Makefile.common:
 ifeq ($(NO_GIT_CHECKOUT), )
+ifndef MAKE_RESTARTS
 	git clone $(DEVUTILS_ORIGIN)/RecordFlux-devutils.git $(DEVUTILS_DIR)
 	git -C $(DEVUTILS_DIR) -c advice.detachedHead=false checkout $(DEVUTILS_HEAD)
+endif
 endif
 	@test -d $(DEVUTILS_DIR) || (echo "$(DEVUTILS_DIR)" is missing; exit 1)
 
