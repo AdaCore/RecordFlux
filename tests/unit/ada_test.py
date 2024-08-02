@@ -389,7 +389,9 @@ def test_number_rflx_expr() -> None:
 
 def test_string_str() -> None:
     assert str(ada.String("X Y")) == '"X Y"'
-    assert str(ada.String('X "Y"')) == '"X ""Y"""'
+    assert str(ada.String.escaped('X "Y"')) == '"X ""Y"""'
+    with pytest.raises(ValueError, match="^unescaped quotation mark in string"):
+        ada.String('X "Y"')
 
 
 def test_string_rflx_expr() -> None:

@@ -323,7 +323,7 @@ def test_state_machine_create_functions_error(
                         "Warnings",
                         [
                             ada.Variable("Off"),
-                            ada.String(
+                            ada.String.escaped(
                                 '"X_Ctx" is set by "Take_Buffer" but not used after the call',
                             ),
                         ],
@@ -339,7 +339,7 @@ def test_state_machine_create_functions_error(
                         "Warnings",
                         [
                             ada.Variable("On"),
-                            ada.String(
+                            ada.String.escaped(
                                 '"X_Ctx" is set by "Take_Buffer" but not used after the call',
                             ),
                         ],
@@ -416,7 +416,7 @@ def test_state_machine_create_functions_error(
                         "Warnings",
                         [
                             ada.Variable("Off"),
-                            ada.String(
+                            ada.String.escaped(
                                 '"Ctx.P.X_Ctx" is set by "Take_Buffer" but not used after the call',
                             ),
                         ],
@@ -432,7 +432,7 @@ def test_state_machine_create_functions_error(
                         "Warnings",
                         [
                             ada.Variable("On"),
-                            ada.String(
+                            ada.String.escaped(
                                 '"Ctx.P.X_Ctx" is set by "Take_Buffer" but not used after the call',
                             ),
                         ],

@@ -107,17 +107,20 @@ def create_use_type_clause(composite_fields: abc.Sequence[Field], offset: bool) 
         [
             Pragma(
                 "Warnings",
-                [Variable("Off"), String('use clause for type "Base_Integer" * has no effect')],
+                [
+                    Variable("Off"),
+                    String.escaped('use clause for type "Base_Integer" * has no effect'),
+                ],
             ),
             Pragma(
                 "Warnings",
-                [Variable("Off"), String('use clause for type "Bytes" * has no effect')],
+                [Variable("Off"), String.escaped('use clause for type "Bytes" * has no effect')],
             ),
             Pragma(
                 "Warnings",
                 [
                     Variable("Off"),
-                    String(
+                    String.escaped(
                         '"BASE_INTEGER" is already use-visible through previous use_type_clause',
                     ),
                 ],
@@ -126,7 +129,9 @@ def create_use_type_clause(composite_fields: abc.Sequence[Field], offset: bool) 
                 "Warnings",
                 [
                     Variable("Off"),
-                    String('"LENGTH" is already use-visible through previous use_type_clause'),
+                    String.escaped(
+                        '"LENGTH" is already use-visible through previous use_type_clause',
+                    ),
                 ],
             ),  # required when user-defined type Index is subtype of Length
             *[
@@ -145,25 +150,30 @@ def create_use_type_clause(composite_fields: abc.Sequence[Field], offset: bool) 
                 "Warnings",
                 [
                     Variable("On"),
-                    String('"LENGTH" is already use-visible through previous use_type_clause'),
+                    String.escaped(
+                        '"LENGTH" is already use-visible through previous use_type_clause',
+                    ),
                 ],
             ),
             Pragma(
                 "Warnings",
                 [
                     Variable("On"),
-                    String(
+                    String.escaped(
                         '"BASE_INTEGER" is already use-visible through previous use_type_clause',
                     ),
                 ],
             ),
             Pragma(
                 "Warnings",
-                [Variable("On"), String('use clause for type "Base_Integer" * has no effect')],
+                [
+                    Variable("On"),
+                    String.escaped('use clause for type "Base_Integer" * has no effect'),
+                ],
             ),
             Pragma(
                 "Warnings",
-                [Variable("On"), String('use clause for type "Bytes" * has no effect')],
+                [Variable("On"), String.escaped('use clause for type "Bytes" * has no effect')],
             ),
         ],
     )
@@ -888,7 +898,7 @@ def create_valid_context_function(
                 "Warnings",
                 [
                     Variable("Off"),
-                    String('"Buffer" is not modified, could be of access constant type'),
+                    String.escaped('"Buffer" is not modified, could be of access constant type'),
                 ],
             ),
             # Eng/RecordFlux/Workarounds#47
@@ -905,7 +915,7 @@ def create_valid_context_function(
                 "Warnings",
                 [
                     Variable("On"),
-                    String('"Buffer" is not modified, could be of access constant type'),
+                    String.escaped('"Buffer" is not modified, could be of access constant type'),
                 ],
             ),
             Pragma(
@@ -1641,11 +1651,11 @@ def create_generic_read_procedure(prefix: str, message: Message) -> UnitPart:
         [
             Pragma(
                 "Warnings",
-                [Variable("Off"), String('formal parameter "*" is not referenced')],
+                [Variable("Off"), String.escaped('formal parameter "*" is not referenced')],
             ),
             Pragma(
                 "Warnings",
-                [Variable("Off"), String('unused variable "*"')],
+                [Variable("Off"), String.escaped('unused variable "*"')],
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
@@ -1660,11 +1670,11 @@ def create_generic_read_procedure(prefix: str, message: Message) -> UnitPart:
             ),
             Pragma(
                 "Warnings",
-                [Variable("On"), String('unused variable "*"')],
+                [Variable("On"), String.escaped('unused variable "*"')],
             ),
             Pragma(
                 "Warnings",
-                [Variable("On"), String('formal parameter "*" is not referenced')],
+                [Variable("On"), String.escaped('formal parameter "*" is not referenced')],
             ),
             SubprogramDeclaration(
                 specification,
@@ -1740,11 +1750,11 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
         [
             Pragma(
                 "Warnings",
-                [Variable("Off"), String('formal parameter "*" is not referenced')],
+                [Variable("Off"), String.escaped('formal parameter "*" is not referenced')],
             ),
             Pragma(
                 "Warnings",
-                [Variable("Off"), String('unused variable "*"')],
+                [Variable("Off"), String.escaped('unused variable "*"')],
             ),
             ExpressionFunctionDeclaration(
                 FunctionSpecification(
@@ -1762,11 +1772,11 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
             ),
             Pragma(
                 "Warnings",
-                [Variable("On"), String('unused variable "*"')],
+                [Variable("On"), String.escaped('unused variable "*"')],
             ),
             Pragma(
                 "Warnings",
-                [Variable("On"), String('formal parameter "*" is not referenced')],
+                [Variable("On"), String.escaped('formal parameter "*" is not referenced')],
             ),
             SubprogramDeclaration(
                 specification,
@@ -1883,7 +1893,7 @@ def create_generic_write_procedure(prefix: str, message: Message) -> UnitPart:
                                     Variable("Ctx.Buffer.all"),
                                 ),
                             ),
-                            String(
+                            String.escaped(
                                 "Length <= Buffer'Length is not ensured by postcondition of"
                                 ' "Write"',
                             ),
@@ -3078,7 +3088,7 @@ def create_switch_procedures(
                     CallStatement("Take_Buffer", [Variable("Ctx"), Variable("Buffer")]),
                     PragmaStatement(
                         "Warnings",
-                        [Variable("Off"), String('unused assignment to "Buffer"')],
+                        [Variable("Off"), String.escaped('unused assignment to "Buffer"')],
                     ),
                     CallStatement(
                         prefix * common.sequence_name(message, f) * "Initialize",
@@ -3091,7 +3101,7 @@ def create_switch_procedures(
                     ),
                     PragmaStatement(
                         "Warnings",
-                        [Variable("On"), String('unused assignment to "Buffer"')],
+                        [Variable("On"), String.escaped('unused assignment to "Buffer"')],
                     ),
                 ],
             )

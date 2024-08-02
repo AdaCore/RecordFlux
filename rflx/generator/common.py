@@ -1044,7 +1044,7 @@ def suppress_warnings_decl(
         *[
             Pragma(
                 "Warnings",
-                [Variable("Off"), String(s)],
+                [Variable("Off"), String.escaped(s)],
             )
             for s in warnings
         ],
@@ -1052,7 +1052,7 @@ def suppress_warnings_decl(
         *[
             Pragma(
                 "Warnings",
-                [Variable("On"), String(s)],
+                [Variable("On"), String.escaped(s)],
             )
             for s in reversed(warnings)
         ],

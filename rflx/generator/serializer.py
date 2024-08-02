@@ -654,7 +654,10 @@ class SerializerGenerator:
             [
                 Pragma(
                     "Warnings",
-                    [Variable("Off"), String('aspect "*" not enforced on inlined subprogram "*"')],
+                    [
+                        Variable("Off"),
+                        String.escaped('aspect "*" not enforced on inlined subprogram "*"'),
+                    ],
                 ),
                 *[
                     SubprogramDeclaration(
@@ -669,7 +672,10 @@ class SerializerGenerator:
                 ],
                 Pragma(
                     "Warnings",
-                    [Variable("On"), String('aspect "*" not enforced on inlined subprogram "*"')],
+                    [
+                        Variable("On"),
+                        String.escaped('aspect "*" not enforced on inlined subprogram "*"'),
+                    ],
                 ),
             ],
             [

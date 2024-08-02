@@ -642,7 +642,7 @@ def state_machine_main(
                 "Warnings",
                 [
                     ada.Variable("Off"),
-                    ada.String('"Ctx" is set by "Finalize" but not used after the call'),
+                    ada.String.escaped('"Ctx" is set by "Finalize" but not used after the call'),
                 ],
             ),
             ada.CallStatement(
@@ -660,7 +660,7 @@ def state_machine_main(
                 "Warnings",
                 [
                     ada.Variable("On"),
-                    ada.String('"Ctx" is set by "Finalize" but not used after the call'),
+                    ada.String.escaped('"Ctx" is set by "Finalize" but not used after the call'),
                 ],
             ),
             *(
@@ -673,7 +673,7 @@ def state_machine_main(
                                 "Warnings",
                                 [
                                     ada.Variable("Off"),
-                                    ada.String(
+                                    ada.String.escaped(
                                         '"Buffers" is set by "Free" but not used after the call',
                                     ),
                                 ],
@@ -688,7 +688,7 @@ def state_machine_main(
                                 "Warnings",
                                 [
                                     ada.Variable("On"),
-                                    ada.String(
+                                    ada.String.escaped(
                                         '"Buffers" is set by "Free" but not used after the call',
                                     ),
                                 ],

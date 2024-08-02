@@ -648,7 +648,14 @@ class Aggregate(Expr):
 
 class String(Aggregate):
     def __init__(self, data: str) -> None:
-        data = data.replace('"', '""').replace("\n", " ")
+        quotes = 0
+        for d in data:
+            if d == '"':
+                quotes += 1
+            else:
+                if quotes % 2 != 0:
+                    raise ValueError(f"unescaped quotation mark in string: {data}")
+                quotes = 0
         super().__init__(*[Number(ord(d)) for d in data])
         self.data = data
 
@@ -661,6 +668,10 @@ class String(Aggregate):
 
     def rflx_expr(self) -> expr.String:
         return expr.String(self.data)
+
+    @staticmethod
+    def escaped(data: str) -> String:
+        return String("".join(d if d != '"' else '""' for d in data))
 
 
 class NamedAggregate(Expr):

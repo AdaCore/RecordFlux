@@ -896,12 +896,12 @@ class Generator:
                     # package.
                     Pragma(
                         "Warnings",
-                        [Variable("Off"), String('unit "*RFLX_Types" is not referenced')],
+                        [Variable("Off"), String.escaped('unit "*RFLX_Types" is not referenced')],
                     ),
                     WithClause(prefix * const.TYPES_PACKAGE),
                     Pragma(
                         "Warnings",
-                        [Variable("On"), String('unit "*RFLX_Types" is not referenced')],
+                        [Variable("On"), String.escaped('unit "*RFLX_Types" is not referenced')],
                     ),
                 ],
                 package,
@@ -932,10 +932,13 @@ class Generator:
         if constraints == expr.TRUE:
             specification.extend(
                 [
-                    Pragma("Warnings", [Variable("Off"), String('unused variable "Val"')]),
+                    Pragma("Warnings", [Variable("Off"), String.escaped('unused variable "Val"')]),
                     Pragma(
                         "Warnings",
-                        [Variable("Off"), String('formal parameter "Val" is not referenced')],
+                        [
+                            Variable("Off"),
+                            String.escaped('formal parameter "Val" is not referenced'),
+                        ],
                     ),
                 ],
             )
@@ -956,9 +959,12 @@ class Generator:
                 [
                     Pragma(
                         "Warnings",
-                        [Variable("On"), String('formal parameter "Val" is not referenced')],
+                        [
+                            Variable("On"),
+                            String.escaped('formal parameter "Val" is not referenced'),
+                        ],
                     ),
-                    Pragma("Warnings", [Variable("On"), String('unused variable "Val"')]),
+                    Pragma("Warnings", [Variable("On"), String.escaped('unused variable "Val"')]),
                 ],
             )
 
@@ -1326,7 +1332,7 @@ class Generator:
                         ),
                         PragmaStatement(
                             "Warnings",
-                            [Variable("Off"), String('unused assignment to "Buffer"')],
+                            [Variable("Off"), String.escaped('unused assignment to "Buffer"')],
                         ),
                         CallStatement(
                             sdu_identifier * "Initialize",
@@ -1340,7 +1346,7 @@ class Generator:
                         ),
                         PragmaStatement(
                             "Warnings",
-                            [Variable("On"), String('unused assignment to "Buffer"')],
+                            [Variable("On"), String.escaped('unused assignment to "Buffer"')],
                         ),
                     ],
                 ),
@@ -1506,7 +1512,7 @@ class Generator:
                             "Warnings",
                             [
                                 Variable("Off"),
-                                String(
+                                String.escaped(
                                     f'"{sdu_context.ada_str}" is set by "Take_Buffer"'
                                     " but not used after the call",
                                 ),
@@ -1520,7 +1526,7 @@ class Generator:
                             "Warnings",
                             [
                                 Variable("On"),
-                                String(
+                                String.escaped(
                                     f'"{sdu_context.ada_str}" is set by "Take_Buffer"'
                                     " but not used after the call",
                                 ),

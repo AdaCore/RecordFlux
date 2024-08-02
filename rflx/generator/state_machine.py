@@ -555,14 +555,16 @@ class FSMGenerator:
                         "Warnings",
                         [
                             Variable("Off"),
-                            String('"*" is already use-visible through previous use_type_clause'),
+                            String.escaped(
+                                '"*" is already use-visible through previous use_type_clause',
+                            ),
                         ],
                     ),
                     Pragma(
                         "Warnings",
                         [
                             Variable("Off"),
-                            String('use clause for type "*" defined at * has no effect'),
+                            String.escaped('use clause for type "*" defined at * has no effect'),
                         ],
                     ),
                     UseTypeClause(self._prefix * const.TYPES_BASE_INT),
@@ -570,14 +572,16 @@ class FSMGenerator:
                         "Warnings",
                         [
                             Variable("On"),
-                            String('use clause for type "*" defined at * has no effect'),
+                            String.escaped('use clause for type "*" defined at * has no effect'),
                         ],
                     ),
                     Pragma(
                         "Warnings",
                         [
                             Variable("On"),
-                            String('"*" is already use-visible through previous use_type_clause'),
+                            String.escaped(
+                                '"*" is already use-visible through previous use_type_clause',
+                            ),
                         ],
                     ),
                 ]
@@ -1541,7 +1545,10 @@ class FSMGenerator:
         specification = ProcedureSpecification("Tick", [InOutParameter(["Ctx"], "Context")])
         return UnitPart(
             [
-                Pragma("Warnings", [Variable("Off"), String('subprogram "Tick" has no effect')]),
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String.escaped('subprogram "Tick" has no effect')],
+                ),
                 SubprogramDeclaration(
                     specification,
                     [
@@ -1549,7 +1556,10 @@ class FSMGenerator:
                         Postcondition(Call("Initialized", [Variable("Ctx")])),
                     ],
                 ),
-                Pragma("Warnings", [Variable("On"), String('subprogram "Tick" has no effect')]),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String.escaped('subprogram "Tick" has no effect')],
+                ),
             ],
             [
                 SubprogramBody(
@@ -1629,7 +1639,10 @@ class FSMGenerator:
         specification = ProcedureSpecification("Run", [InOutParameter(["Ctx"], "Context")])
         return UnitPart(
             [
-                Pragma("Warnings", [Variable("Off"), String('subprogram "Run" has no effect')]),
+                Pragma(
+                    "Warnings",
+                    [Variable("Off"), String.escaped('subprogram "Run" has no effect')],
+                ),
                 SubprogramDeclaration(
                     specification,
                     [
@@ -1637,7 +1650,10 @@ class FSMGenerator:
                         Postcondition(Call("Initialized", [Variable("Ctx")])),
                     ],
                 ),
-                Pragma("Warnings", [Variable("On"), String('subprogram "Run" has no effect')]),
+                Pragma(
+                    "Warnings",
+                    [Variable("On"), String.escaped('subprogram "Run" has no effect')],
+                ),
             ],
             [
                 SubprogramBody(
@@ -3370,8 +3386,8 @@ class FSMGenerator:
                         ],
                     ),
                 ),
-                f'trying to set message fields "{first_field}" to "{last_field}" although'
-                f' "{first_field}" is not valid next field',
+                f'trying to set message fields ""{first_field}"" to ""{last_field}"" although'
+                f' ""{first_field}"" is not valid next field',
                 exception_handler,
             ),
             *[
@@ -3476,7 +3492,7 @@ class FSMGenerator:
                             # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                             self._raise_exception_if(
                                 Not(Variable(found_id(target))),
-                                f'failed to find valid element in "{sequence_id}"',
+                                f'failed to find valid element in ""{sequence_id}""',
                                 local_exception_handler,
                             ),
                         ],
@@ -3568,7 +3584,7 @@ class FSMGenerator:
                         ),
                     ),
                     f"access to first element of invalid or empty sequence"
-                    f' "{sequence_context}"',
+                    f' ""{sequence_context}""',
                     exception_handler,
                 ),
                 Assignment(
@@ -3864,7 +3880,7 @@ class FSMGenerator:
                     # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                     self._raise_exception_if(
                         Not(Call(type_identifier * "Valid_Structure", [Variable(target_id)])),
-                        f'"{call_expr.identifier}" returned an invalid message',
+                        f'""{call_expr.identifier}"" returned an invalid message',
                         exception_handler,
                     ),
                     self._raise_exception_if(
@@ -3874,7 +3890,7 @@ class FSMGenerator:
                                 [Variable(message_id), Variable(target_id)],
                             ),
                         ),
-                        f'insufficient space for converting message "{target}"',
+                        f'insufficient space for converting message ""{target}""',
                         exception_handler,
                     ),
                     CallStatement(
@@ -3893,7 +3909,7 @@ class FSMGenerator:
                 # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                 self._raise_exception_if(
                     Not(Call(type_identifier * "Valid_Structure", [Variable(target_id)])),
-                    f'"{call_expr.identifier}" returned an invalid message',
+                    f'""{call_expr.identifier}"" returned an invalid message',
                     exception_handler,
                 ),
             )
@@ -4090,7 +4106,7 @@ class FSMGenerator:
                                     [Variable(context)],
                                 ),
                             ),
-                            f'invalid "{context}"',
+                            f'invalid ""{context}""',
                             exception_handler,
                         ),
                         CallStatement(type_identifier * "Data", [Variable(context), argument]),
@@ -4183,7 +4199,7 @@ class FSMGenerator:
                         [Variable(context_id(conversion.argument.message, is_global))],
                     ),
                 ),
-                f'invalid conversion "{conversion}"',
+                f'invalid conversion ""{conversion}""',
                 exception_handler,
             ),
             self._raise_exception_if(
@@ -4196,7 +4212,7 @@ class FSMGenerator:
                         ],
                     ),
                 ),
-                f'insufficient space for "{field}" in "{target}"',
+                f'insufficient space for ""{field}"" in ""{target}""',
                 exception_handler,
             ),
             CallStatement(
@@ -4239,6 +4255,7 @@ class FSMGenerator:
         assert isinstance(message_type, ty.Message)
 
         target_context = context_id(target, is_global)
+        value_str = " ".join(str(value).split("\n"))
 
         return [
             # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
@@ -4252,8 +4269,8 @@ class FSMGenerator:
                         ],
                     ),
                 ),
-                f'trying to set message field "{target_field}" to "{value}" although'
-                f' "{target_field}" is not valid next field',
+                f'trying to set message field ""{target_field}"" to ""{value_str}"" although'
+                f' ""{target_field}"" is not valid next field',
                 exception_handler,
             ),
             self._raise_exception_if(
@@ -4266,8 +4283,8 @@ class FSMGenerator:
                         ],
                     ),
                 ),
-                f'insufficient space in message "{target_context}" to set field "{target_field}"'
-                f' to "{value}"',
+                f'insufficient space in message ""{target_context}"" to set field'
+                f' ""{target_field}"" to ""{value_str}""',
                 exception_handler,
             ),
             *self._set_message_field(
@@ -4323,7 +4340,7 @@ class FSMGenerator:
                             required_space,
                         ),
                     ),
-                    f'insufficient space for appending to sequence "{sequence_context}"',
+                    f'insufficient space for appending to sequence ""{sequence_context}""',
                     exception_handler,
                 ),
             ]
@@ -4881,7 +4898,7 @@ class FSMGenerator:
             Not(
                 Call(sequence_type * "Valid", [Variable(sequence_context)]),
             ),
-            f'invalid sequence "{sequence_context}"',
+            f'invalid sequence ""{sequence_context}""',
             exception_handler,
         )
 
@@ -4899,7 +4916,7 @@ class FSMGenerator:
                     [Variable(message_context)],
                 ),
             ),
-            f'invalid message "{message_context}"',
+            f'invalid message ""{message_context}""',
             exception_handler,
         )
 
@@ -4921,7 +4938,7 @@ class FSMGenerator:
                     ],
                 ),
             ),
-            f'invalid message field "{message_type * message_field}"',
+            f'invalid message field ""{message_type * message_field}""',
             exception_handler,
         )
 
@@ -4949,7 +4966,7 @@ class FSMGenerator:
                     ),
                 ),
             ),
-            f'insufficient space in sequence "{sequence_context}"',
+            f'insufficient space in sequence ""{sequence_context}""',
             exception_handler,
         )
 
@@ -5010,6 +5027,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
+        value_str = " ".join(str(value).split("\n"))
         if isinstance(value, ir.FieldAccess) and value.type_ == ty.OPAQUE:
             target_context = message_context
             target_message_type = message_type
@@ -5093,7 +5111,7 @@ class FSMGenerator:
                                 ],
                             ),
                         ),
-                        f'invalid message field size for "{value}"',
+                        f'invalid message field size for ""{value_str}""',
                         exception_handler,
                     ),
                 )
@@ -5116,7 +5134,7 @@ class FSMGenerator:
                                 ],
                             ),
                         ),
-                        f'invalid message field size for "{value}"',
+                        f'invalid message field size for ""{value_str}""',
                         exception_handler,
                     ),
                 )
@@ -5132,8 +5150,8 @@ class FSMGenerator:
                     ],
                 ),
             ),
-            f'insufficient space in message "{message_context}" to set field "{field.name}"'
-            f' to "{value}"',
+            f'insufficient space in message ""{message_context}"" to set field ""{field.name}""'
+            f' to ""{value_str}""',
             exception_handler,
         )
 
@@ -5215,8 +5233,8 @@ class FSMGenerator:
                                     context=message_context,
                                 ),
                             ),
-                            f'violated field condition in message "{message_context}"'
-                            f' when setting field "{field.name}" to "{value}"',
+                            f'violated field condition in message ""{message_context}""'
+                            f' when setting field ""{field.name}"" to ""{value_str}""',
                             exception_handler,
                         ),
                         CallStatement(
@@ -5247,8 +5265,8 @@ class FSMGenerator:
                                 context=message_context,
                             ),
                         ),
-                        f'violated field condition in message "{message_context}"'
-                        f' when setting field "{field.name}" to sequence "{value}"',
+                        f'violated field condition in message ""{message_context}""'
+                        f' when setting field ""{field.name}"" to sequence ""{value_str}""',
                         exception_handler,
                     ),
                     self._raise_exception_if_invalid_sequence(
@@ -5341,7 +5359,7 @@ class FSMGenerator:
                             ),
                         ),
                     ),
-                    f'insufficient space in message "{target_context}"',
+                    f'insufficient space in message ""{target_context}""',
                     exception_handler,
                 ),
                 self._raise_exception_if(
@@ -5355,7 +5373,7 @@ class FSMGenerator:
                             ],
                         ),
                     ),
-                    f'invalid message field size for "{length}"',
+                    f'invalid message field size for ""{length}""',
                     exception_handler,
                 ),
                 CallStatement(
@@ -6255,7 +6273,7 @@ class FSMGenerator:
                 "Warnings",
                 [
                     Variable("Off"),
-                    String(
+                    String.escaped(
                         f'"{context.ada_str}" is set by "Take_Buffer" but not used after the call',
                     ),
                 ],
@@ -6271,7 +6289,7 @@ class FSMGenerator:
                 "Warnings",
                 [
                     Variable("On"),
-                    String(
+                    String.escaped(
                         f'"{context.ada_str}" is set by "Take_Buffer" but not used after the call',
                     ),
                 ],
@@ -6290,7 +6308,7 @@ class FSMGenerator:
                 "Warnings",
                 [
                     Variable("Off"),
-                    String(
+                    String.escaped(
                         f'"{element_context.ada_str}" is set by "Update" '
                         f"but not used after the call",
                     ),
@@ -6308,7 +6326,7 @@ class FSMGenerator:
                 [
                     Variable("On"),
                     String(
-                        f'"{element_context.ada_str}" is set by "Update"'
+                        f'""{element_context.ada_str}"" is set by ""Update""'
                         f" but not used after the call",
                     ),
                 ],
