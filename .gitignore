@@ -12,6 +12,7 @@
 .hypothesis
 .venv*
 .vscode/configurationCache.log
+/.rflx_cache
 /contrib
 /crashes
 /devutils
