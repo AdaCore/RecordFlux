@@ -13,6 +13,7 @@ import pytest
 
 from rflx import ada, lang
 from rflx.common import STDIN
+from rflx.error import fatal_fail
 from rflx.expr import Expr
 from rflx.generator import Debug, Generator, const
 from rflx.identifier import ID, StrID
@@ -1246,6 +1247,10 @@ def parse_expression(data: str, rule: str = lang.GrammarRule.extended_expression
     return expression
 
 
+def raise_fatal_error() -> None:
+    fatal_fail("TEST")
+
+
 def get_test_model(name: str) -> Model:
     parser = Parser()
     parser.parse(SPEC_DIR / f"{name}.rflx")
@@ -1268,3 +1273,7 @@ def assert_stderr_regex(
     check_regex(expected_regex)
     capture = capfd.readouterr()
     assert re.match(expected_regex, capture.err) is not None
+
+
+def is_gnat_tracker_release_testing() -> bool:
+    return "RFLX_GNAT_TRACKER_RELEASE_TEST" in os.environ

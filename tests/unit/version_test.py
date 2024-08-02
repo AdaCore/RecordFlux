@@ -4,12 +4,36 @@ from typing import Optional
 
 import pytest
 
+import rflx
 from rflx import __version__, version
 from rflx.error import FatalError
+from rflx.version import is_gnat_tracker_release
 
 
 def test_version() -> None:
     assert version.version().startswith(f"RecordFlux {__version__}")
+
+
+@pytest.mark.parametrize(
+    ("rflx_version", "expected"),
+    [
+        ("0.22.1", False),
+        ("0.22.1.dev13+1ef4d7163", False),
+        ("0.22.1-dev13+1ef4d7163", False),
+        ("25.1.0", False),
+        ("25.0", True),
+        ("25.dev20240804", True),
+        ("27.1", True),
+        ("27.2", True),
+    ],
+)
+def test_is_gnat_tracker_release(
+    rflx_version: str,
+    expected: bool,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(rflx, "__version__", rflx_version)
+    assert is_gnat_tracker_release() == expected
 
 
 @pytest.mark.parametrize(

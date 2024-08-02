@@ -1,8 +1,22 @@
+import re
 import subprocess
 import textwrap
 from pathlib import Path
 
-from tests.const import DATA_DIR, SPEC_DIR, VALIDATOR_DIR
+import pytest
+
+from rflx import cli
+from tests.const import (
+    DATA_DIR,
+    GITHUB_TRACKER_REF_PATTERN,
+    GNAT_TRACKER_REF_PATTERN,
+    SPEC_DIR,
+    VALIDATOR_DIR,
+)
+from tests.utils import is_gnat_tracker_release_testing, raise_fatal_error
+
+MESSAGE_SPEC_FILE = str(SPEC_DIR / "tlv.rflx")
+SESSION_SPEC_FILE = str(SPEC_DIR / "session.rflx")
 
 
 def test_check() -> None:
@@ -311,4 +325,26 @@ def test_run_ls() -> None:
         Shutting down the server
         Closing the event loop.
         """,  # noqa: E501
+    )
+
+
+def test_unexpected_exception(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
+    with pytest.raises(SystemExit, match="^2$"):
+        cli.main(
+            ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+        )
+    tracker_ref_pattern = (
+        GNAT_TRACKER_REF_PATTERN
+        if is_gnat_tracker_release_testing()
+        else GITHUB_TRACKER_REF_PATTERN
+    )
+    assert re.fullmatch(
+        rf"\n-* RecordFlux Bug -*.*Traceback.*-*.*{tracker_ref_pattern}.*",
+        capfd.readouterr().err,
+        re.DOTALL,
     )

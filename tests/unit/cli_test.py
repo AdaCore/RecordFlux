@@ -13,14 +13,14 @@ from typing import ClassVar, NoReturn, Optional
 import pytest
 
 import rflx.specification
-from rflx import cli, generator, validator
+from rflx import cli, fatal_error, generator, validator
 from rflx.converter import iana
-from rflx.error import fail, fatal_fail
+from rflx.error import fail
 from rflx.ls.server import server
 from rflx.pyrflx import PyRFLXError
 from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity, logging
-from tests.const import DATA_DIR, SPEC_DIR
-from tests.utils import assert_stderr_regex
+from tests.const import DATA_DIR, GITHUB_TRACKER_REF_PATTERN, GNAT_TRACKER_REF_PATTERN, SPEC_DIR
+from tests.utils import assert_stderr_regex, raise_fatal_error
 
 MESSAGE_SPEC_FILE = str(SPEC_DIR / "tlv.rflx")
 SESSION_SPEC_FILE = str(SPEC_DIR / "session.rflx")
@@ -51,10 +51,6 @@ def raise_validation_error() -> None:
 
 def raise_unexpected_exception() -> None:
     raise NotImplementedError("Not implemented")
-
-
-def raise_fatal_error() -> None:
-    fatal_fail("TEST")
 
 
 def test_run(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -651,18 +647,28 @@ def test_main_validate_fatal_error(
     assert "RecordFlux Bug" in capfd.readouterr().err
 
 
+@pytest.mark.parametrize(
+    ("gnat_tracker_release", "tracker_ref_pattern"),
+    [
+        (False, GITHUB_TRACKER_REF_PATTERN),
+        (True, GNAT_TRACKER_REF_PATTERN),
+    ],
+)
 def test_main_unexpected_exception(
+    gnat_tracker_release: bool,
+    tracker_ref_pattern: str,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     capfd: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
+    monkeypatch.setattr(fatal_error, "is_gnat_tracker_release", lambda: gnat_tracker_release)
     with pytest.raises(SystemExit, match="^2$"):
         cli.main(
             ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
         )
     assert re.fullmatch(
-        r"\n-* RecordFlux Bug -*.*Traceback.*-*.*RecordFlux/issues.*",
+        rf"\n-* RecordFlux Bug -*.*Traceback.*-*.*{tracker_ref_pattern}.*",
         capfd.readouterr().err,
         re.DOTALL,
     )

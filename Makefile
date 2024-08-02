@@ -480,7 +480,7 @@ endif
 	$(BUILD_DIR)/venv/bin/pip install $(PIP_ARGS) $(PACKAGE) pytest
 	$(BUILD_DIR)/venv/bin/rflx --version
 	mkdir -p $(BUILD_DIR)/tests
-	cp -r tests/{__init__.py,const.py,end_to_end,data} $(BUILD_DIR)/tests/
+	cp -r tests/{__init__.py,const.py,utils.py,end_to_end,data} $(BUILD_DIR)/tests/
 	cd $(BUILD_DIR) && source venv/bin/activate && rflx --version && venv/bin/pytest -vv tests/end_to_end
 	$(RM) -r $(BUILD_DIR)/{venv,tests}
 

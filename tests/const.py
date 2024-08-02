@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Final
 
 TEST_DIR = Path("tests")
 DATA_DIR = TEST_DIR / "data"
@@ -12,3 +13,8 @@ VALIDATOR_DIR = DATA_DIR / "validator"
 
 EX_SPEC_DIR = Path("examples/specs")
 MAIN = "main.adb"
+
+GITHUB_TRACKER_REF_PATTERN: Final = (
+    r".*GitHub.*https://github.com/AdaCore/RecordFlux/issues/new\?labels=bug.*"
+)
+GNAT_TRACKER_REF_PATTERN: Final = r".*GNATtracker.*https://support.adacore.com/csm.*"

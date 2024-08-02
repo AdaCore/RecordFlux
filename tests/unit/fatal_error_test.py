@@ -4,7 +4,12 @@ import re
 
 import pytest
 
-from rflx.fatal_error import FatalErrorHandler
+from rflx import fatal_error
+from rflx.fatal_error import (
+    FatalErrorHandler,
+    fatal_error_message,
+)
+from tests.const import GITHUB_TRACKER_REF_PATTERN, GNAT_TRACKER_REF_PATTERN
 
 
 def test_fatal_error_handler() -> None:
@@ -41,3 +46,19 @@ def test_fatal_error_handler_unsafe() -> None:
         result[0],
         re.DOTALL,
     )
+
+
+@pytest.mark.parametrize(
+    ("gnat_tracker_release", "expected"),
+    [
+        (False, GITHUB_TRACKER_REF_PATTERN),
+        (True, GNAT_TRACKER_REF_PATTERN),
+    ],
+)
+def test_fatal_error_message(
+    gnat_tracker_release: bool,
+    expected: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(fatal_error, "is_gnat_tracker_release", lambda: gnat_tracker_release)
+    assert re.match(expected, fatal_error_message(unsafe=False), re.DOTALL)
