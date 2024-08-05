@@ -230,7 +230,7 @@ ADA_GRAMMAR = lark.Lark(
         simple_expression:          term (binary_adding_operator term)*
 
         # 4.4 (5)
-        term:                       factor
+        term:                       factor (multiplying_operator factor)*
 
         # 4.4 (6)
         factor:                     primary ("**" primary)?
@@ -251,6 +251,9 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.5 (4)
         !binary_adding_operator:    "+" | "-" | "&"
+
+        # 4.5 (4)
+        !multiplying_operator:      "*" | "/" | "mod" | "rem"
 
         # 4.5.7 (2/3)
         conditional_expression:     if_expression | case_expression
@@ -981,8 +984,32 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
         raise NotImplementedError(f"simple expression with operator {data[:-2]}")
 
-    def term(self, data: list[ada.Expr]) -> ada.Expr:
-        return data[0]
+    def term(self, data: list[ada.Expr | str]) -> ada.Expr:
+
+        assert isinstance(data[-1], ada.Expr), data
+
+        if len(data) == 1:
+            return data[-1]
+
+        assert len(data) > 2, data
+        assert isinstance(data[-2], str)
+
+        left = self.term(data[:-2])
+
+        if data[-2] == "/":
+            return ada.Div(left, data[-1])
+
+        if data[-2] == "mod":
+            return ada.Mod(left, data[-1])
+
+        if data[-2] == "rem":
+            return ada.Rem(left, data[-1])
+
+        if data[-2] == "*":
+            terms = left.terms if isinstance(left, ada.Mul) else [left]
+            return ada.Mul(*terms, data[-1])
+
+        raise NotImplementedError(f"term with operator {data[:-2]}")
 
     def factor(self, data: list[ada.Expr]) -> ada.Expr:
         if len(data) == 1:
@@ -1006,6 +1033,10 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0].value
 
     def binary_adding_operator(self, data: list[lark.Token]) -> str:
+        assert isinstance(data[0].value, str)
+        return data[0].value
+
+    def multiplying_operator(self, data: list[lark.Token]) -> str:
         assert isinstance(data[0].value, str)
         return data[0].value
 

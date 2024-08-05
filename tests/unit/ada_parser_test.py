@@ -627,6 +627,14 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           type T is range 1 .. U'Last * 8;
+
+        end P;
+        """,
     ],
 )
 def test_roundtrip_text(data: str) -> None:
