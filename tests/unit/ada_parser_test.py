@@ -597,6 +597,14 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           type A is array (I range <>) of B;
+
+        end P;
+        """,
     ],
 )
 def test_roundtrip_text(data: str) -> None:

@@ -63,6 +63,7 @@ ADA_GRAMMAR = lark.Lark(
         # 3.2.1 (4/2)
         type_definition: \
                                     integer_type_definition
+                                  | array_type_definition
                                   | derived_type_definition
 
         # 3.2.2 (3/2)
@@ -112,6 +113,23 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.5.1 (4)
         modular_type_definition:    "mod" expression
+
+        # 3.6 (2)
+        array_type_definition: \
+                                    unconstrained_array_definition
+
+        # 3.6 (3)
+        unconstrained_array_definition: \
+                                    "array" "(" index_subtype_definition \
+                                        ( "," index_subtype_definition )* ")" \
+                                            "of" component_definition
+
+        # 3.6 (4)
+        index_subtype_definition:   subtype_mark "range" "<>"
+
+        # 3.6 (7/2)
+        component_definition: \
+                                    subtype_indication
 
         # 3.8.1 (4)
         discrete_choice_list:       discrete_choice ( "|" discrete_choice )*
@@ -622,7 +640,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             | ada.RangeType
             | ada.DerivedRecordType
             | ada.DerivedRangeType
-            | ada.PlainDerivedType,
+            | ada.PlainDerivedType
+            | ada.UnconstrainedArrayType,
             list[ada.Aspect],
         ],
     ) -> ada.TypeDeclaration:
@@ -661,6 +680,13 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             return ada.PlainDerivedType(
                 identifier=identifier,
                 type_identifier=definition.type_identifier,
+            )
+        if isinstance(definition, ada.UnconstrainedArrayType):
+            assert definition.identifier == ID("__INVALID__")
+            return ada.UnconstrainedArrayType(
+                identifier=identifier,
+                index_type=definition.index_type,
+                component_identifier=definition.component_identifier,
             )
 
         assert False, data
@@ -747,6 +773,24 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def modular_type_definition(self, data: list[ada.Expr]) -> ada.Declaration:
         return ada.ModularType(identifier="__INVALID__", modulus=data[0])
+
+    def array_type_definition(self, data: tuple[ada.UnconstrainedArrayType]) -> ada.ArrayType:
+        return data[0]
+
+    def unconstrained_array_definition(self, data: tuple[ID, ID]) -> ada.UnconstrainedArrayType:
+        return ada.UnconstrainedArrayType(
+            identifier="__INVALID__",
+            index_type=data[0],
+            component_identifier=data[1],
+        )
+
+    def index_subtype_definition(self, data: list[ID]) -> ID:
+        return data[0]
+
+    def component_definition(self, data: tuple[tuple[ID, Optional[Constraint]]]) -> ID:
+        identifier, constraint = data[0]
+        assert constraint is None
+        return identifier
 
     def discrete_choice_list(self, data: list[ada.Expr]) -> list[ada.Expr]:
         return data
