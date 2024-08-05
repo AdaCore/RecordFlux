@@ -39,10 +39,14 @@ def check_file_coverage(
 
     ignore = ignore or []
 
-    source_files = [
-        s.relative_to(source_dir) for ext in ("**/*.py", "**/*.pyi") for s in source_dir.glob(ext)
-    ]
-    test_files = [t.relative_to(test_dir) for t in test_dir.glob("**/*.py")]
+    source_files = sorted(
+        [
+            s.relative_to(source_dir)
+            for ext in ("**/*.py", "**/*.pyi")
+            for s in source_dir.glob(ext)
+        ],
+    )
+    test_files = sorted([t.relative_to(test_dir) for t in test_dir.glob("**/*.py")])
 
     excess_source_files = [
         str(source_file)
