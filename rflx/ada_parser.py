@@ -64,6 +64,7 @@ ADA_GRAMMAR = lark.Lark(
         type_definition: \
                                     integer_type_definition
                                   | array_type_definition
+                                  | access_type_definition
                                   | derived_type_definition
 
         # 3.2.2 (3/2)
@@ -138,6 +139,14 @@ ADA_GRAMMAR = lark.Lark(
         discrete_choice:            choice_expression | discrete_choice_others
 
         !discrete_choice_others:     "others"
+
+        # 3.10 (2/2)
+        access_type_definition: \
+                                    access_to_object_definition
+
+        # 3.10 (3)
+        access_to_object_definition: \
+                                    "access" subtype_indication
 
         # 3.11 (2)
         declarative_part:           declarative_item*
@@ -641,20 +650,20 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             | ada.DerivedRecordType
             | ada.DerivedRangeType
             | ada.PlainDerivedType
-            | ada.UnconstrainedArrayType,
+            | ada.UnconstrainedArrayType
+            | ada.AccessType,
             list[ada.Aspect],
         ],
     ) -> ada.TypeDeclaration:
         identifier, definition, aspects = data
+        assert definition.identifier == ID("__INVALID__")
         if isinstance(definition, ada.ModularType):
-            assert definition.identifier == ID("__INVALID__")
             return ada.ModularType(
                 identifier=identifier,
                 modulus=definition.modulus,
                 aspects=aspects,
             )
         if isinstance(definition, ada.RangeType):
-            assert definition.identifier == ID("__INVALID__")
             return ada.RangeType(
                 identifier=identifier,
                 first=definition.first,
@@ -662,13 +671,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 aspects=aspects,
             )
         if isinstance(definition, ada.DerivedRecordType):
-            assert definition.identifier == ID("__INVALID__")
             return ada.DerivedRecordType(
                 identifier=identifier,
                 type_identifier=definition.type_identifier,
             )
         if isinstance(definition, ada.DerivedRangeType):
-            assert definition.identifier == ID("__INVALID__")
             return ada.DerivedRangeType(
                 identifier=identifier,
                 type_identifier=definition.type_identifier,
@@ -676,17 +683,20 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 last=definition.last,
             )
         if isinstance(definition, ada.PlainDerivedType):
-            assert definition.identifier == ID("__INVALID__")
             return ada.PlainDerivedType(
                 identifier=identifier,
                 type_identifier=definition.type_identifier,
             )
         if isinstance(definition, ada.UnconstrainedArrayType):
-            assert definition.identifier == ID("__INVALID__")
             return ada.UnconstrainedArrayType(
                 identifier=identifier,
                 index_type=definition.index_type,
                 component_identifier=definition.component_identifier,
+            )
+        if isinstance(definition, ada.AccessType):
+            return ada.AccessType(
+                identifier=identifier,
+                object_identifier=definition.object_identifier,
             )
 
         assert False, data
@@ -801,6 +811,14 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def discrete_choice_others(self, data: list[lark.Token]) -> ada.Variable:
         assert data[0] == "others"
         return ada.Variable("others")
+
+    def access_type_definition(self, data: tuple[ID]) -> ada.AccessType:
+        return ada.AccessType(identifier="__INVALID__", object_identifier=data[0])
+
+    def access_to_object_definition(self, data: tuple[tuple[ID, Constraint | None]]) -> ID:
+        identifier, constraint = data[0]
+        assert constraint is None
+        return identifier
 
     def declarative_part(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
         return data

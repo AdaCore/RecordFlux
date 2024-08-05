@@ -493,6 +493,20 @@ from rflx import ada, ada_parser
             body_context=[],
             body=ada.PackageBody("P"),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.AccessType(
+                        identifier="P",
+                        object_identifier="T",
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -602,6 +616,14 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
         is
 
            type A is array (I range <>) of B;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           type P is access T;
 
         end P;
         """,
