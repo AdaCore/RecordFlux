@@ -901,3 +901,85 @@ def test_declarative_items() -> None:
         end P;
         """,
     )
+
+
+@pytest.mark.parametrize(
+    ("model", "expected"),
+    [
+        (
+            ada.PackageUnit(
+                declaration_context=[],
+                declaration=ada.PackageDeclaration("P"),
+                body_context=[],
+                body=ada.PackageBody("P"),
+            ),
+            """\
+            package P
+            is
+
+            end P;
+            """,
+        ),
+        (
+            ada.PackageUnit(
+                declaration_context=[],
+                declaration=ada.PackageDeclaration("P"),
+                body_context=[],
+                body=ada.PackageBody("P"),
+                formal_parameters=[],
+            ),
+            """\
+            generic
+            package P
+            is
+
+            end P;
+            """,
+        ),
+        (
+            ada.PackageUnit(
+                declaration_context=[],
+                declaration=ada.PackageDeclaration("P"),
+                body_context=[],
+                body=ada.PackageBody("P"),
+                formal_parameters=[ada.RangeType("T", first=ada.Number(0), last=ada.Number(124))],
+            ),
+            """\
+            generic
+               type T is range 0 .. 124;
+            package P
+            is
+
+            end P;
+            """,
+        ),
+        (
+            ada.PackageUnit(
+                declaration_context=[],
+                declaration=ada.PackageDeclaration("P"),
+                body_context=[],
+                body=ada.PackageBody("P"),
+                formal_parameters=[
+                    ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
+                    ada.SubprogramDeclaration(
+                        specification=ada.ProcedureSpecification(
+                            "P",
+                            parameters=[ada.Parameter(["P1"], "T", ada.Number(42))],
+                        ),
+                    ),
+                ],
+            ),
+            """\
+            generic
+               type T is range 0 .. 124;
+               with procedure P (P1 : T := 42);
+            package P
+            is
+
+            end P;
+            """,
+        ),
+    ],
+)
+def test_generic_package(model: ada.PackageUnit, expected: str) -> None:
+    assert model.ads == textwrap.dedent(expected)

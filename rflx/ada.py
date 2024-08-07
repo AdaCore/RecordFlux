@@ -2407,12 +2407,14 @@ class PackageUnit(Unit):
         declaration: PackageDeclaration,
         body_context: list[ContextItem],
         body: PackageBody,
+        formal_parameters: list[SubprogramDeclaration | TypeDeclaration] | None = None,
     ) -> None:
         assert declaration.identifier == body.identifier
         self.declaration_context = declaration_context
         self.declaration = declaration
         self.body_context = body_context
         self.body = body
+        self.formal_parameters = formal_parameters
 
     def __iadd__(self, other: object) -> Self:
         if isinstance(other, (UnitPart, SubprogramUnitPart)):
@@ -2428,7 +2430,14 @@ class PackageUnit(Unit):
 
     @property
     def ads(self) -> str:
-        return f"{context_clause(self.declaration_context)}{self.declaration}"
+        formal_part = ""
+        if self.formal_parameters is not None:
+            formal_part = "generic"
+            for d in self.formal_parameters:
+                prefix = "with " if isinstance(d, SubprogramDeclaration) else ""
+                formal_part += f"\n{indent(prefix + str(d), 3)}"
+            formal_part += "\n"
+        return f"{context_clause(self.declaration_context)}{formal_part}{self.declaration}"
 
     @property
     def adb(self) -> str:
