@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import reduce
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import lark.grammar
 
@@ -582,7 +582,7 @@ class FunctionPart:
 
 
 class FunctionDeclPart(FunctionPart):
-    def __init__(self, aspects: Optional[list[ada.Aspect]]):
+    def __init__(self, aspects: list[ada.Aspect] | None):
         self.aspects = aspects
 
     def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
@@ -592,7 +592,7 @@ class FunctionDeclPart(FunctionPart):
 class FunctionBodyPart(FunctionPart):
     def __init__(
         self,
-        aspects: Optional[list[ada.Aspect]],
+        aspects: list[ada.Aspect] | None,
         declarations: list[ada.Declaration],
         statements: list[ada.Statement],
     ):
@@ -623,14 +623,14 @@ class PackageInstantiationPart(PackagePart):
     def __init__(
         self,
         name: ID,
-        associations: Optional[list[ID]],
+        associations: list[ID] | None,
     ):
         self.name = name
         self.associations = associations
 
 
 class ExpressionFunctionPart(FunctionPart):
-    def __init__(self, expression: ada.Expr, aspects: Optional[list[ada.Aspect]]):
+    def __init__(self, expression: ada.Expr, aspects: list[ada.Aspect] | None):
         self.expression = expression
         self.aspects = aspects
 
@@ -762,11 +762,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def subtype_indication(
         self,
-        data: tuple[ID, Optional[Constraint]],
-    ) -> tuple[ID, Optional[Constraint]]:
+        data: tuple[ID, Constraint | None],
+    ) -> tuple[ID, Constraint | None]:
         return data
 
-    def optional_constraint(self, data: list[Constraint]) -> Optional[Constraint]:
+    def optional_constraint(self, data: list[Constraint]) -> Constraint | None:
         if len(data) == 0:
             return None
         return data[0]
@@ -777,12 +777,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def constraint(self, data: tuple[ScalarConstraint]) -> Constraint:
         return data[0]
 
-    def scalar_constraint(self, data: tuple[Union[RangeConstraint]]) -> ScalarConstraint:
+    def scalar_constraint(self, data: tuple[RangeConstraint]) -> ScalarConstraint:
         return data[0]
 
     def object_declaration(
         self,
-        data: tuple[list[ID], bool, tuple[ID, Optional[Constraint]], Optional[ada.Expr]],
+        data: tuple[list[ID], bool, tuple[ID, Constraint | None], ada.Expr | None],
     ) -> ada.ObjectDeclaration:
         assert data[2][1] is None
         return ada.ObjectDeclaration(
@@ -792,7 +792,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             constant=data[1],
         )
 
-    def object_declaration_expr(self, data: list[ada.Expr]) -> Optional[ada.Expr]:
+    def object_declaration_expr(self, data: list[ada.Expr]) -> ada.Expr | None:
         if not data:
             return None
         return data[0]
@@ -805,7 +805,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def derived_type_definition(
         self,
-        data: tuple[tuple[ID, Optional[Constraint]]],
+        data: tuple[tuple[ID, Constraint | None]],
     ) -> ada.DerivedType:
         identifier, constraint = data[0]
         if constraint is None:
@@ -853,12 +853,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def index_subtype_definition(self, data: list[ID]) -> ID:
         return data[0]
 
-    def component_definition(self, data: tuple[tuple[ID, Optional[Constraint]]]) -> ID:
+    def component_definition(self, data: tuple[tuple[ID, Constraint | None]]) -> ID:
         identifier, constraint = data[0]
         assert constraint is None
         return identifier
 
-    def optional_discriminant_part(self, data: list[list[ID]]) -> Optional[list[ID]]:
+    def optional_discriminant_part(self, data: list[list[ID]]) -> list[ID] | None:
         if len(data) == 0:
             return None
         return data[0]
@@ -886,8 +886,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def declarative_item(
         self,
-        data: list[Union[ada.Declaration, ada.SubprogramBody]],
-    ) -> Union[ada.Declaration, ada.SubprogramBody]:
+        data: list[ada.Declaration | ada.SubprogramBody],
+    ) -> ada.Declaration | ada.SubprogramBody:
         return data[0]
 
     def basic_declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
@@ -899,7 +899,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def proper_body(self, data: list[ada.SubprogramBody]) -> ada.SubprogramBody:
         return data[0]
 
-    def name(self, data: list[Union[ID, ada.Attribute]]) -> Union[ID, ada.Attribute]:
+    def name(self, data: list[ID | ada.Attribute]) -> ID | ada.Attribute:
         return data[0]
 
     def direct_name(self, data: list[ID]) -> ID:
@@ -946,7 +946,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def positional_array_aggregate(self, data: list[ada.Expr]) -> list[ada.Expr]:
         return data
 
-    def expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+    def expression(self, data: list[ada.Expr | str]) -> ada.Expr:
 
         operators: dict[str, type[ada.BoolAssExpr]] = {
             "and": ada.And,
@@ -973,19 +973,19 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert isinstance(data[0].value, str)
         return data[0].value
 
-    def choice_expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+    def choice_expression(self, data: list[ada.Expr | str]) -> ada.Expr:
         if len(data) == 1:
             assert isinstance(data[0], ada.Expr)
             return data[0]
         raise NotImplementedError
 
-    def choice_relation(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+    def choice_relation(self, data: list[ada.Expr | str]) -> ada.Expr:
         if len(data) == 1:
             assert isinstance(data[0], ada.Expr)
             return data[0]
         raise NotImplementedError
 
-    def relation(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+    def relation(self, data: list[ada.Expr | str]) -> ada.Expr:
 
         operators: dict[str, type[ada.Relation]] = {
             "=": ada.Equal,
@@ -1017,7 +1017,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def membership_choice(self, data: list[ada.ValueRange]) -> ada.Expr:
         return data[0]
 
-    def simple_expression(self, data: list[Union[ada.Expr, str]]) -> ada.Expr:
+    def simple_expression(self, data: list[ada.Expr | str]) -> ada.Expr:
 
         assert isinstance(data[-1], ada.Expr), data
 
@@ -1074,7 +1074,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             return data[0]
         return ada.Pow(data[0], data[1])
 
-    def primary(self, data: list[Union[ada.Expr, ID]]) -> ada.Expr:
+    def primary(self, data: list[ada.Expr | ID]) -> ada.Expr:
         # TODO(senier): How exactly do we distinguish ID and Variable?
         if isinstance(data[0], ID):
             return ada.Variable(data[0])
@@ -1106,8 +1106,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[
             ada.Expr,
             ada.Expr,
-            Optional[list[tuple[ada.Expr, ada.Expr]]],
-            Optional[ada.Expr],
+            list[tuple[ada.Expr, ada.Expr]] | None,
+            ada.Expr | None,
         ],
     ) -> ada.IfExpr:
         condition, expression, elif_expressions, else_expression = data
@@ -1131,7 +1131,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> tuple[ada.Expr, ada.Expr]:
         return data
 
-    def if_expr_else(self, data: list[ada.Expr]) -> Optional[ada.Expr]:
+    def if_expr_else(self, data: list[ada.Expr]) -> ada.Expr | None:
         if not data:
             return None
         return data[0]
@@ -1174,8 +1174,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[
             ada.Expr,
             list[ada.Statement],
-            Optional[list[tuple[ada.Expr, list[ada.Statement]]]],
-            Optional[list[ada.Statement]],
+            list[tuple[ada.Expr, list[ada.Statement]]] | None,
+            list[ada.Statement] | None,
         ],
     ) -> ada.IfStatement:
         condition_statements = [(data[0], data[1])]
@@ -1186,7 +1186,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def optional_elsifs(
         self,
         data: list[tuple[ada.Expr, list[ada.Statement]]],
-    ) -> Optional[list[tuple[ada.Expr, list[ada.Statement]]]]:
+    ) -> list[tuple[ada.Expr, list[ada.Statement]]] | None:
         if not data:
             return None
         return data
@@ -1200,7 +1200,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def optional_else(
         self,
         data: list[list[ada.Statement]],
-    ) -> Optional[list[ada.Statement]]:
+    ) -> list[ada.Statement] | None:
         if not data:
             return None
         return data[0]
@@ -1226,7 +1226,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def procedure_specification(
         self,
-        data: tuple[ID, Optional[list[ada.Parameter]]],
+        data: tuple[ID, list[ada.Parameter] | None],
     ) -> ada.ProcedureSpecification:
         identifier, parameters = data
         return ada.ProcedureSpecification(
@@ -1236,7 +1236,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def function_specification(
         self,
-        data: tuple[ID, tuple[ID, Optional[list[ada.Parameter]]]],
+        data: tuple[ID, tuple[ID, list[ada.Parameter] | None]],
     ) -> ada.FunctionSpecification:
         identifier, (return_type, parameters) = data
         return ada.FunctionSpecification(
@@ -1256,28 +1256,28 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def parameter_profile(
         self,
-        data: list[Optional[list[ada.Parameter]]],
-    ) -> Optional[list[ada.Parameter]]:
+        data: list[list[ada.Parameter] | None],
+    ) -> list[ada.Parameter] | None:
         return data[0]
 
     def parameter_profile_formal_part(
         self,
         data: list[list[ada.Parameter]],
-    ) -> Optional[list[ada.Parameter]]:
+    ) -> list[ada.Parameter] | None:
         if not data:
             return None
         return data[0]
 
     def parameter_and_result_profile(
         self,
-        data: tuple[Optional[list[ada.Parameter]], ID],
-    ) -> tuple[ID, Optional[list[ada.Parameter]]]:
+        data: tuple[list[ada.Parameter] | None, ID],
+    ) -> tuple[ID, list[ada.Parameter] | None]:
         return data[1], data[0]
 
     def parameter_and_result_profile_formal_part(
         self,
         data: list[list[ada.Parameter]],
-    ) -> Optional[list[ada.Parameter]]:
+    ) -> list[ada.Parameter] | None:
         if not data:
             return None
         return data[0]
@@ -1313,7 +1313,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: tuple[
             ada.ProcedureSpecification,
-            Optional[list[ada.Aspect]],
+            list[ada.Aspect] | None,
             list[ada.Declaration],
             list[ada.Statement],
         ],
@@ -1327,26 +1327,26 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def function_call(
         self,
-        data: tuple[ID, tuple[Optional[list[ada.Expr]], Optional[dict[ID, ada.Expr]]]],
+        data: tuple[ID, tuple[list[ada.Expr] | None, dict[ID, ada.Expr] | None]],
     ) -> ada.Call:
         identifier, (arguments, named_arguments) = data
         return ada.Call(identifier=identifier, arguments=arguments, named_arguments=named_arguments)
 
     def actual_parameter_part(
         self,
-        data: list[tuple[Optional[ID], ada.Expr]],
-    ) -> tuple[Optional[list[ada.Expr]], Optional[list[tuple[ID, ada.Expr]]]]:
+        data: list[tuple[ID | None, ada.Expr]],
+    ) -> tuple[list[ada.Expr] | None, list[tuple[ID, ada.Expr]] | None]:
         arguments = [e for i, e in data if not i]
         named_arguments = [(i, e) for i, e in data if i]
         return arguments or None, named_arguments or None
 
     def parameter_association(
         self,
-        data: list[tuple[Optional[ID], ada.Expr]],
-    ) -> tuple[Optional[ID], ada.Expr]:
+        data: list[tuple[ID | None, ada.Expr]],
+    ) -> tuple[ID | None, ada.Expr]:
         return data[0]
 
-    def explicit_actual_parameter(self, data: list[ada.Expr]) -> tuple[Optional[ID], ada.Expr]:
+    def explicit_actual_parameter(self, data: list[ada.Expr]) -> tuple[ID | None, ada.Expr]:
         return None, data[0]
 
     def simple_return_statement(self, data: list[ada.Expr]) -> ada.ReturnStatement:
@@ -1360,7 +1360,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def package_specification(
         self,
-        data: tuple[ID, Optional[list[ada.Aspect]], PackagePart],
+        data: tuple[ID, list[ada.Aspect] | None, PackagePart],
     ) -> ada.PackageDeclaration:
         identifier, aspects, part = data
         if isinstance(part, PackageInstantiationPart):
@@ -1392,8 +1392,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def use_clause(
         self,
-        data: list[Union[ada.UsePackageClause, ada.UseTypeClause]],
-    ) -> Union[ada.UsePackageClause, ada.UseTypeClause]:
+        data: list[ada.UsePackageClause | ada.UseTypeClause],
+    ) -> ada.UsePackageClause | ada.UseTypeClause:
         return data[0]
 
     def use_package_clause(self, data: list[ID]) -> ada.UsePackageClause:
@@ -1514,7 +1514,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def package_body(
         self,
-        data: tuple[ID, Optional[list[ada.Aspect]], Optional[list[ada.Declaration]], ID],
+        data: tuple[ID, list[ada.Aspect] | None, list[ada.Declaration] | None, ID],
     ) -> ada.PackageBody:
         identifier, aspects, declarations, end_identifier = data
         assert identifier == end_identifier
@@ -1528,11 +1528,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def generic_package_instantiation_part(
         self,
-        data: tuple[ID, Optional[list[ID]]],
+        data: tuple[ID, list[ID] | None],
     ) -> PackageInstantiationPart:
         return PackageInstantiationPart(name=data[0], associations=data[1])
 
-    def optional_generic_actual_part(self, data: list[list[ID]]) -> Optional[list[ID]]:
+    def optional_generic_actual_part(self, data: list[list[ID]]) -> list[ID] | None:
         if len(data) == 0:
             return None
         return data[0]
@@ -1566,7 +1566,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
 
-    def aspect_part(self, data: list[Union[ID, ada.Expr]]) -> ada.Aspect:
+    def aspect_part(self, data: list[ID | ada.Expr]) -> ada.Aspect:
         assert isinstance(data[0], ID)
         name = data[0].parts[0]
         definition = data[1] if len(data) > 1 and isinstance(data[1], ada.Expr) else None
@@ -1611,7 +1611,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def aspect_mark(self, data: list[ID]) -> ID:
         return data[0]
 
-    def aspect_definition(self, data: list[Union[ID, ada.Expr]]) -> Union[ID, ada.Expr]:
+    def aspect_definition(self, data: list[ID | ada.Expr]) -> ID | ada.Expr:
         return data[0]
 
     def pragma_statement(self, data: tuple[ID, list[ada.Expr]]) -> ada.Statement:
@@ -1620,7 +1620,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def optional_aspect_specification(
         self,
         data: list[list[ada.Aspect]],
-    ) -> Optional[list[ada.Aspect]]:
+    ) -> list[ada.Aspect] | None:
         if len(data) == 0:
             return None
         return data[0]
@@ -1631,18 +1631,18 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> ada.Declaration:
         return data[1].declaration(data[0])
 
-    def function_declaration_part(self, data: list[Optional[list[ada.Aspect]]]) -> FunctionDeclPart:
+    def function_declaration_part(self, data: list[list[ada.Aspect] | None]) -> FunctionDeclPart:
         return FunctionDeclPart(aspects=data[0])
 
     def function_body_part(
         self,
-        data: tuple[Optional[list[ada.Aspect]], list[ada.Declaration], list[ada.Statement]],
+        data: tuple[list[ada.Aspect] | None, list[ada.Declaration], list[ada.Statement]],
     ) -> FunctionBodyPart:
         return FunctionBodyPart(declarations=data[1], statements=data[2], aspects=data[0])
 
     def expression_function_part(
         self,
-        data: tuple[lark.Token, ada.Expr, Optional[list[ada.Aspect]]],
+        data: tuple[lark.Token, ada.Expr, list[ada.Aspect] | None],
     ) -> ExpressionFunctionPart:
         return ExpressionFunctionPart(expression=data[1], aspects=data[2])
 
