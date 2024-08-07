@@ -91,6 +91,7 @@ package SPDM_Responder is
        Session_Handshake => 2,
        Secure_Session    => 3)
    with Size => 8;
+
    generic
       Transport : Channel with Readable, Writable;
       with function Plat_Cfg_CT_Exponent return SPDM::CT_Exponent;

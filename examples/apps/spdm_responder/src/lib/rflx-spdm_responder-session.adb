@@ -6,28 +6,31 @@ with RFLX.SPDM_Responder.Session_Functions;
 --  Example platform implementation for SPDM.
 --
 --  @description
---  This package serves as both an example and a default C binding for
---  the platform code required by SPDM. It includes the minimum required
---  implementation that consists of a RFLX.SPDM_Responder.Session_Functions.Context type derived from the SPDM
---  responder session RFLX.SPDM_Responder.Session_Functions.Context and implementations for all of its abstract
---  subprograms.
---  The implementations of these subprograms contain a binding for a C interface.
---  This binding is not required for pure SPARK/Ada projects and can be replaced.
---  Additionally it contains an initialization procedure that is used for the sole
---  purpose of initializing the example C implementation. It is not strictly required
---  as an implementation is free to decide how and when to initialize its custom
---  RFLX.SPDM_Responder.Session_Functions.Context type.
+--  This package serves as both an example and a default C binding for the
+--  platform code required by SPDM. It includes the minimum required
+--  implementation that consists of a
+--  RFLX.SPDM_Responder.Session_Functions.Context type derived from the SPDM
+--  responder session RFLX.SPDM_Responder.Session_Functions.Context and
+--  implementations for all of its abstract subprograms.
+--  The implementations of these subprograms contain a binding for a C
+--  interface. This binding is not required for pure SPARK/Ada projects and can
+--  be replaced. Additionally it contains an initialization procedure that is
+--  used for the sole purpose of initializing the example C implementation. It
+--  is not strictly required as an implementation is free to decide how and when
+--  to initialize its custom RFLX.SPDM_Responder.Session_Functions.Context type.
 package body RFLX.SPDM_Responder.Session with
    SPARK_Mode
 is
 
    --  Ensure initialization of Ctx.Instance.
    --
-   --  This procedure is both implemented and called by the platform code.
-   --  It is called before the start of the state machine and ensures that
-   --  RFLX.SPDM_Responder.Session_Functions.Context.Instance is initialized. It is not necessary for the state
-   --  machine to function. If the platform code has other means of initializing
-   --  the RFLX.SPDM_Responder.Session_Functions.Context this procedure can be removed.
+   --  This procedure is both implemented and called by the platform code. It is
+   --  called before the start of the state machine and ensures that
+   --  RFLX.SPDM_Responder.Session_Functions.Context.Instance is initialized. It
+   --  is not necessary for the state machine to function. If the platform code
+   --  has other means of initializing the
+   --  RFLX.SPDM_Responder.Session_Functions.Context this procedure can be
+   --  removed.
    --
    --  @param Ctx RFLX.SPDM_Responder.Session_Functions.Context.
    procedure Plat_Initialize (Ctx : in out RFLX.SPDM_Responder.Session_Functions.Context)
