@@ -41,6 +41,8 @@ is
 
    function Uninitialized (Ctx : Context) return Boolean;
 
+   function Global_Initialized (Ctx : Context) return Boolean;
+
    function Global_Allocated (Ctx : Context) return Boolean;
 
    function Initialized (Ctx : Context) return Boolean;

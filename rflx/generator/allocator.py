@@ -71,12 +71,14 @@ class AllocatorGenerator:
         self._unit_part = UnitPart()
         self._integration = integration
 
+        self._external_io_buffers = (
+            common.external_io_buffers(session)
+            if integration.use_external_io_buffers(session.identifier)
+            else []
+        )
+
         global_slots, self._externally_managed_buffers = self._allocate_global_slots(
-            (
-                common.external_io_buffers(session)
-                if integration.use_external_io_buffers(session.identifier)
-                else []
-            ),
+            self._external_io_buffers,
         )
         local_slots: list[SlotInfo] = self._allocate_local_slots()
         numbered_slots: list[NumberedSlotInfo] = []

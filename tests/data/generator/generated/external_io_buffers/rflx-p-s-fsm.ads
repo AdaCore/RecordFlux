@@ -45,6 +45,10 @@ is
 
    function Uninitialized (Ctx : Context) return Boolean;
 
+   function Global_Initialized (Unused_Ctx : Context) return Boolean;
+
+   function Buffers_Initialized (Ctx : Context) return Boolean;
+
    function Initialized (Ctx : Context) return Boolean;
 
    function Active (Ctx : Context) return Boolean;
@@ -108,7 +112,8 @@ is
 
    procedure Add_Buffer (Ctx : in out Context; Ext_Buf : External_Buffer; Buffer : in out RFLX_Types.Bytes_Ptr; Written_Last : RFLX_Types.Bit_Length) with
      Pre =>
-       Buffer_Accessible (Next_State (Ctx), Ext_Buf)
+       Global_Initialized (Ctx)
+       and then Buffer_Accessible (Next_State (Ctx), Ext_Buf)
        and then not Has_Buffer (Ctx, Ext_Buf)
        and then Buffer /= null
        and then Buffer'Length > 0
@@ -118,7 +123,8 @@ is
                      and Written_Last <= RFLX_Types.To_Last_Bit_Index (Buffer'Last)))
        and then Written_Last mod RFLX_Types.Byte'Size = 0,
      Post =>
-       Buffer_Accessible (Next_State (Ctx), Ext_Buf)
+       Global_Initialized (Ctx)
+       and then Buffer_Accessible (Next_State (Ctx), Ext_Buf)
        and then Has_Buffer (Ctx, Ext_Buf)
        and then Buffer = null
        and then (if
@@ -131,10 +137,12 @@ is
 
    procedure Remove_Buffer (Ctx : in out Context; Ext_Buf : External_Buffer; Buffer : out RFLX_Types.Bytes_Ptr) with
      Pre =>
-       Buffer_Accessible (Next_State (Ctx), Ext_Buf)
+       Global_Initialized (Ctx)
+       and Buffer_Accessible (Next_State (Ctx), Ext_Buf)
        and Has_Buffer (Ctx, Ext_Buf),
      Post =>
-       Buffer_Accessible (Next_State (Ctx), Ext_Buf)
+       Global_Initialized (Ctx)
+       and then Buffer_Accessible (Next_State (Ctx), Ext_Buf)
        and then not Has_Buffer (Ctx, Ext_Buf)
        and then Buffer /= null
        and then Buffer'Length > 0
@@ -202,11 +210,15 @@ private
    function Uninitialized (Ctx : Context) return Boolean is
      (not TLV.Message.Has_Buffer (Ctx.P.M_Ctx));
 
-   function Global_Initialized (Ctx : Context) return Boolean is
+   function Global_Initialized (Unused_Ctx : Context) return Boolean is
+     (True);
+
+   function Buffers_Initialized (Ctx : Context) return Boolean is
      (TLV.Message.Has_Buffer (Ctx.P.M_Ctx));
 
    function Initialized (Ctx : Context) return Boolean is
-     (Global_Initialized (Ctx));
+     (Global_Initialized (Ctx)
+      and then Buffers_Initialized (Ctx));
 
    function Active (Ctx : Context) return Boolean is
      (Ctx.P.Next_State /= S_Final);

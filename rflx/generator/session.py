@@ -621,8 +621,13 @@ class FSMGenerator:
             self._external_io_buffers,
             is_global,
         )
+        unit += self._create_buffers_initialized_function(
+            composite_globals,
+            self._external_io_buffers,
+            is_global,
+        )
         unit += self._create_global_allocated_function()
-        unit += self._create_initialized_function(composite_globals)
+        unit += self._create_initialized_function(composite_globals, self._external_io_buffers)
         unit += self._create_states(self._session, composite_globals, is_global)
         unit += self._create_active_function(self._session)
         unit += self._create_initialize_procedure(
@@ -660,10 +665,12 @@ class FSMGenerator:
             unit += self._create_has_buffer_function(self._external_io_buffers)
             unit += self._create_written_last_function(self._external_io_buffers)
             unit += self._create_add_buffer_procedure(
+                composite_globals,
                 self._external_io_buffers,
                 self.unit_identifier,
             )
             unit += self._create_remove_buffer_procedure(
+                composite_globals,
                 self._external_io_buffers,
                 self.unit_identifier,
             )
@@ -926,57 +933,111 @@ class FSMGenerator:
 
         self._session_context.used_types.append(const.TYPES_INDEX)
 
+        composite_globals = [
+            v
+            for v in composite_globals
+            if all(b.identifier != v.identifier for b in external_io_buffers)
+        ]
+
         specification = FunctionSpecification(
             "Global_Initialized",
             "Boolean",
-            [Parameter(["Ctx"], "Context")],
+            [Parameter(["Ctx" if composite_globals else "Unused_Ctx"], "Context")],
         )
 
         return UnitPart(
+            [SubprogramDeclaration(specification)],
             private=[
                 ExpressionFunctionDeclaration(
                     specification,
                     AndThen(
                         *[
                             e
-                            for d in composite_globals
-                            for e in [
-                                Call(
-                                    d.type_.identifier * "Has_Buffer",
-                                    [Variable(context_id(d.identifier, is_global))],
-                                ),
-                                *(
-                                    [
-                                        Equal(
-                                            Variable(
-                                                context_id(d.identifier, is_global)
-                                                * "Buffer_First",
-                                            ),
+                            for v in composite_globals
+                            for e in (
+                                [
+                                    Call(
+                                        v.type_.identifier * "Has_Buffer",
+                                        [Variable(context_id(v.identifier, is_global))],
+                                    ),
+                                    Equal(
+                                        Variable(
+                                            context_id(v.identifier, is_global) * "Buffer_First",
+                                        ),
+                                        First(const.TYPES_INDEX),
+                                    ),
+                                    Equal(
+                                        Variable(
+                                            context_id(v.identifier, is_global) * "Buffer_Last",
+                                        ),
+                                        Add(
                                             First(const.TYPES_INDEX),
+                                            Number(self._allocator.get_size(v.identifier) - 1),
                                         ),
-                                        Equal(
-                                            Variable(
-                                                context_id(d.identifier, is_global) * "Buffer_Last",
-                                            ),
-                                            Add(
-                                                First(const.TYPES_INDEX),
-                                                Number(self._allocator.get_size(d.identifier) - 1),
-                                            ),
-                                        ),
-                                    ]
-                                    if all(
-                                        b.identifier != d.identifier for b in external_io_buffers
-                                    )
-                                    else []
-                                ),
-                            ]
+                                    ),
+                                ]
+                            )
                         ],
                     ),
                 ),
             ],
         )
 
-    def _create_initialized_function(self, composite_globals: Sequence[ir.VarDecl]) -> UnitPart:
+    def _call_global_initialized(self, composite_globals: Sequence[ir.VarDecl]) -> list[Expr]:
+        return [Call("Global_Initialized", [Variable("Ctx")])] if composite_globals else []
+
+    def _create_buffers_initialized_function(
+        self,
+        composite_globals: Sequence[ir.VarDecl],
+        external_io_buffers: Sequence[common.Message],
+        is_global: Callable[[ID], bool],
+    ) -> UnitPart:
+        if not external_io_buffers:
+            return UnitPart()
+
+        self._session_context.used_types.append(const.TYPES_INDEX)
+
+        specification = FunctionSpecification(
+            "Buffers_Initialized",
+            "Boolean",
+            [Parameter(["Ctx"], "Context")],
+        )
+
+        return UnitPart(
+            [SubprogramDeclaration(specification)],
+            private=[
+                ExpressionFunctionDeclaration(
+                    specification,
+                    AndThen(
+                        *[
+                            e
+                            for v in composite_globals
+                            if any(b.identifier == v.identifier for b in external_io_buffers)
+                            for e in (
+                                [
+                                    Call(
+                                        v.type_.identifier * "Has_Buffer",
+                                        [Variable(context_id(v.identifier, is_global))],
+                                    ),
+                                ]
+                            )
+                        ],
+                    ),
+                ),
+            ],
+        )
+
+    def _call_buffers_initialized(
+        self,
+        external_io_buffers: Sequence[common.Message],
+    ) -> list[Expr]:
+        return [Call("Buffers_Initialized", [Variable("Ctx")])] if external_io_buffers else []
+
+    def _create_initialized_function(
+        self,
+        composite_globals: Sequence[ir.VarDecl],
+        external_io_buffers: Sequence[common.Message],
+    ) -> UnitPart:
         specification = FunctionSpecification(
             "Initialized",
             "Boolean",
@@ -996,17 +1057,9 @@ class FSMGenerator:
                     specification,
                     AndThen(
                         *[
-                            *(
-                                [
-                                    Call(
-                                        ID("Global_Initialized"),
-                                        [Variable("Ctx")],
-                                    ),
-                                ]
-                                if composite_globals
-                                else []
-                            ),
+                            *self._call_global_initialized(composite_globals),
                             *self._call_global_allocated(),
+                            *self._call_buffers_initialized(external_io_buffers),
                         ],
                     ),
                 ),
@@ -1055,11 +1108,7 @@ class FSMGenerator:
                     type_identifier = self._ada_type(d.type_.identifier)
                     invariant.extend(
                         [
-                            *(
-                                [Call("Global_Initialized", [Variable("Ctx")])]
-                                if composite_globals
-                                else []
-                            ),
+                            *self._call_global_initialized(composite_globals),
                             Call(type_identifier * "Has_Buffer", [Variable(identifier)]),
                             Equal(
                                 Variable(identifier * "Buffer_First"),
@@ -1862,6 +1911,7 @@ class FSMGenerator:
 
     def _create_add_buffer_procedure(
         self,
+        composite_globals: Sequence[ir.VarDecl],
         external_io_buffers: Sequence[common.Message],
         unit_id: ID,
     ) -> UnitPart:
@@ -1882,6 +1932,7 @@ class FSMGenerator:
                     [
                         Precondition(
                             AndThen(
+                                *self._call_global_initialized(composite_globals),
                                 *self._call_global_allocated(),
                                 Call(
                                     "Buffer_Accessible",
@@ -1921,6 +1972,7 @@ class FSMGenerator:
                         ),
                         Postcondition(
                             AndThen(
+                                *self._call_global_initialized(composite_globals),
                                 *self._call_global_allocated(),
                                 Call(
                                     "Buffer_Accessible",
@@ -1977,6 +2029,7 @@ class FSMGenerator:
 
     def _create_remove_buffer_procedure(
         self,
+        composite_globals: Sequence[ir.VarDecl],
         external_io_buffers: Sequence[common.Message],
         unit_id: ID,
     ) -> UnitPart:
@@ -1996,6 +2049,7 @@ class FSMGenerator:
                     [
                         Precondition(
                             And(
+                                *self._call_global_initialized(composite_globals),
                                 *self._call_global_allocated(),
                                 Call(
                                     "Buffer_Accessible",
@@ -2006,6 +2060,7 @@ class FSMGenerator:
                         ),
                         Postcondition(
                             AndThen(
+                                *self._call_global_initialized(composite_globals),
                                 *self._call_global_allocated(),
                                 Call(
                                     "Buffer_Accessible",
