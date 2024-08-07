@@ -524,7 +524,12 @@ ADA_GRAMMAR = lark.Lark(
 
         # 12.6 (2.1/3)
         formal_concrete_subprogram_declaration: \
-                                    "with" subprogram_specification ";"
+                                    "with" formal_concrete_subprogram_specification ";"
+
+        # Due to reduce/reduce conflict we cannot use subprogram_specification as stated in the
+        # LRM (cf. unified_function_declaration).
+        formal_concrete_subprogram_specification: \
+                                    procedure_specification | function_specification
 
         # 13.1.1 (2/3)
         aspect_specification:       "with"  aspect_part ( "," aspect_part )*
@@ -1500,11 +1505,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def generic_formal_part(
         self,
-        data: list[list[ada.SubprogramDeclaration | ada.TypeDeclaration]],
+        data: list[tuple[ada.SubprogramDeclaration | ada.TypeDeclaration]],
     ) -> list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None:
         if not data:
             return []
-        return data[0]
+        return [d[0] for d in data]
 
     def generic_formal_parameter_declaration(
         self,
@@ -1574,6 +1579,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[ada.SubprogramSpecification],
     ) -> ada.SubprogramDeclaration:
         return ada.SubprogramDeclaration(specification=data[0])
+
+    def formal_concrete_subprogram_specification(
+        self,
+        data: tuple[ada.SubprogramSpecification],
+    ) -> ada.SubprogramSpecification:
+        return data[0]
 
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
