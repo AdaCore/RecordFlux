@@ -1220,8 +1220,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def subprogram_specification(
         self,
-        data: list[ada.ProcedureSpecification],
-    ) -> ada.ProcedureSpecification:
+        data: list[ada.SubprogramSpecification],
+    ) -> ada.SubprogramSpecification:
         return data[0]
 
     def procedure_specification(
@@ -1562,6 +1562,18 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def formal_private_type_definition(self, data: tuple[lark.Token]) -> Literal["private"]:
         assert data[0] == "private"
         return "private"
+
+    def formal_subprogram_declaration(
+        self,
+        data: tuple[ada.SubprogramDeclaration],
+    ) -> ada.SubprogramDeclaration:
+        return data[0]
+
+    def formal_concrete_subprogram_declaration(
+        self,
+        data: tuple[ada.SubprogramSpecification],
+    ) -> ada.SubprogramDeclaration:
+        return ada.SubprogramDeclaration(specification=data[0])
 
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
