@@ -254,7 +254,9 @@ ADA_GRAMMAR = lark.Lark(
         term:                       factor (multiplying_operator factor)*
 
         # 4.4 (6)
-        factor:                     primary ("**" primary)?
+        factor:                     primary ("**" primary)? | negated_primary
+
+        negated_primary:            "not" primary
 
         # 4.4 (7/3)
         primary: \
@@ -1060,6 +1062,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         if len(data) == 1:
             return data[0]
         return ada.Pow(data[0], data[1])
+
+    def negated_primary(self, data: list[ada.Expr]) -> ada.Expr:
+        return ada.Not(data[0])
 
     def primary(self, data: list[ada.Expr | ID]) -> ada.Expr:
         # TODO(senier): How exactly do we distinguish ID and Variable?
