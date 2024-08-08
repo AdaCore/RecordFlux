@@ -177,7 +177,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.11 (4/1)
         basic_declarative_item: \
-                                    basic_declaration
+                                    basic_declaration | use_clause
 
         # 3.11 (5)
         body:                       proper_body
