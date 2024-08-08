@@ -144,7 +144,8 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.7 (5/2)
         discriminant_specification: \
-                                    defining_identifier_list ":" subtype_mark
+                                    defining_identifier_list ":" subtype_mark \
+                                        optional_default_expression
 
         # 3.7 (6)
         default_expression:         expression
@@ -830,8 +831,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def known_discriminant_part(self, data: list[ada.Discriminant]) -> list[ada.Discriminant]:
         return data
 
-    def discriminant_specification(self, data: tuple[list[ID], ID]) -> ada.Discriminant:
-        return ada.Discriminant(identifiers=data[0], type_identifier=data[1])
+    def discriminant_specification(
+        self,
+        data: tuple[list[ID], ID, ada.Expr | None],
+    ) -> ada.Discriminant:
+        identifiers, type_identifier, default = data
+        return ada.Discriminant(
+            identifiers=identifiers,
+            type_identifier=type_identifier,
+            default=default,
+        )
 
     def default_expression(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]

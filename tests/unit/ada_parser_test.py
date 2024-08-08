@@ -629,6 +629,20 @@ from rflx import ada, ada_parser
             body_context=[],
             body=ada.PackageBody("P"),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.PrivateType(
+                        "PT",
+                        discriminants=[ada.Discriminant(["D"], "T", ada.Number(42))],
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -835,6 +849,14 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
         is
 
            type PT (D1 : T; D2 : T) is private;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           type PT (D1 : T; D2 : T := 42) is private;
 
         end P;
         """,
