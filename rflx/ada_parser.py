@@ -53,12 +53,11 @@ ADA_GRAMMAR = lark.Lark(
         defining_identifier:        identifier
 
         # 3.2.1 (2)
-        type_declaration:           full_type_declaration
+        type_declaration:           combined_type_declaration
 
         # 3.2.1 (3/3)
-        full_type_declaration: \
-                                    "type" defining_identifier "is" type_definition \
-                                        optional_aspect_specification ";"
+        # Type declarations must be combined, as the parser does not backtrack.
+        # For full_type_declaration see combined_type_declaration.
 
         # 3.2.1 (4/2)
         type_definition: \
@@ -66,6 +65,7 @@ ADA_GRAMMAR = lark.Lark(
                                   | array_type_definition
                                   | access_type_definition
                                   | derived_type_definition
+                                  | private_type_definition
 
         # 3.2.2 (3/2)
         subtype_indication:         subtype_mark optional_constraint
@@ -576,6 +576,12 @@ ADA_GRAMMAR = lark.Lark(
 
         expression_function_part:   /is\s*\(/ expression ")" optional_aspect_specification
 
+        combined_type_declaration: \
+                                    "type" defining_identifier optional_discriminant_part "is" \
+                                        type_definition optional_aspect_specification ";"
+
+        !private_type_definition:   "private"
+
         # Skip whitespace
         %import common.WS
         %ignore WS
@@ -708,66 +714,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def type_declaration(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
-
-    def full_type_declaration(
-        self,
-        data: tuple[
-            ID,
-            ada.ModularType
-            | ada.RangeType
-            | ada.DerivedRecordType
-            | ada.DerivedRangeType
-            | ada.PlainDerivedType
-            | ada.UnconstrainedArrayType
-            | ada.AccessType,
-            list[ada.Aspect],
-        ],
-    ) -> ada.TypeDeclaration:
-        identifier, definition, aspects = data
-        assert definition.identifier == ID("__INVALID__")
-        if isinstance(definition, ada.ModularType):
-            return ada.ModularType(
-                identifier=identifier,
-                modulus=definition.modulus,
-                aspects=aspects,
-            )
-        if isinstance(definition, ada.RangeType):
-            return ada.RangeType(
-                identifier=identifier,
-                first=definition.first,
-                last=definition.last,
-                aspects=aspects,
-            )
-        if isinstance(definition, ada.DerivedRecordType):
-            return ada.DerivedRecordType(
-                identifier=identifier,
-                type_identifier=definition.type_identifier,
-            )
-        if isinstance(definition, ada.DerivedRangeType):
-            return ada.DerivedRangeType(
-                identifier=identifier,
-                type_identifier=definition.type_identifier,
-                first=definition.first,
-                last=definition.last,
-            )
-        if isinstance(definition, ada.PlainDerivedType):
-            return ada.PlainDerivedType(
-                identifier=identifier,
-                type_identifier=definition.type_identifier,
-            )
-        if isinstance(definition, ada.UnconstrainedArrayType):
-            return ada.UnconstrainedArrayType(
-                identifier=identifier,
-                index_type=definition.index_type,
-                component_identifier=definition.component_identifier,
-            )
-        if isinstance(definition, ada.AccessType):
-            return ada.AccessType(
-                identifier=identifier,
-                object_identifier=definition.object_identifier,
-            )
-
-        assert False, data
 
     def type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
@@ -1710,6 +1656,78 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[lark.Token, ada.Expr, list[ada.Aspect] | None],
     ) -> ExpressionFunctionPart:
         return ExpressionFunctionPart(expression=data[1], aspects=data[2])
+
+    def combined_type_declaration(
+        self,
+        data: tuple[
+            ID,
+            list[ada.Discriminant] | None,
+            ada.AccessType
+            | ada.DerivedRangeType
+            | ada.DerivedRecordType
+            | ada.ModularType
+            | ada.PlainDerivedType
+            | ada.PrivateType
+            | ada.RangeType
+            | ada.UnconstrainedArrayType,
+            list[ada.Aspect],
+        ],
+    ) -> ada.TypeDeclaration:
+        identifier, discriminants, definition, aspects = data
+        assert definition.identifier == ID("__INVALID__")
+        if isinstance(definition, ada.ModularType):
+            return ada.ModularType(
+                identifier=identifier,
+                modulus=definition.modulus,
+                aspects=aspects,
+            )
+        if isinstance(definition, ada.RangeType):
+            return ada.RangeType(
+                identifier=identifier,
+                first=definition.first,
+                last=definition.last,
+                aspects=aspects,
+            )
+        if isinstance(definition, ada.DerivedRecordType):
+            return ada.DerivedRecordType(
+                identifier=identifier,
+                type_identifier=definition.type_identifier,
+            )
+        if isinstance(definition, ada.DerivedRangeType):
+            return ada.DerivedRangeType(
+                identifier=identifier,
+                type_identifier=definition.type_identifier,
+                first=definition.first,
+                last=definition.last,
+            )
+        if isinstance(definition, ada.PlainDerivedType):
+            return ada.PlainDerivedType(
+                identifier=identifier,
+                type_identifier=definition.type_identifier,
+            )
+        if isinstance(definition, ada.UnconstrainedArrayType):
+            return ada.UnconstrainedArrayType(
+                identifier=identifier,
+                index_type=definition.index_type,
+                component_identifier=definition.component_identifier,
+            )
+        if isinstance(definition, ada.AccessType):
+            return ada.AccessType(
+                identifier=identifier,
+                object_identifier=definition.object_identifier,
+            )
+        if isinstance(definition, ada.PrivateType):
+            return ada.PrivateType(
+                identifier=identifier,
+                discriminants=discriminants,
+                aspects=aspects,
+            )
+
+        assert False, data
+
+    def private_type_definition(self, data: list[lark.Token]) -> ada.PrivateType:
+        assert data[0] == "private"
+        return ada.PrivateType("__INVALID__")
 
     def optional_private(self, data: list[lark.Token]) -> bool:
         if len(data) > 0 and data[0] == "private":
