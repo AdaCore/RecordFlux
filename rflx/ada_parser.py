@@ -146,6 +146,12 @@ ADA_GRAMMAR = lark.Lark(
         discriminant_specification: \
                                     defining_identifier_list ":" subtype_mark
 
+        # 3.7 (6)
+        default_expression:         expression
+
+        optional_default_expression: \
+                                    (":=" default_expression)?
+
         # 3.8.1 (4)
         discrete_choice_list:       discrete_choice ( "|" discrete_choice )*
 
@@ -367,7 +373,8 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (15/3)
         parameter_specification: \
-                                    defining_identifier_list ":" mode subtype_mark
+                                    defining_identifier_list ":" mode subtype_mark \
+                                        optional_default_expression
 
         # 6.1 (16)
         !mode:                       "in"? | "in" "out" | "out"
@@ -863,7 +870,27 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert constraint is None
         return identifier
 
-    def optional_discriminant_part(self, data: list[list[ID]]) -> list[ID] | None:
+    def discriminant_part(self, data: tuple[list[ada.Discriminant]]) -> list[ada.Discriminant]:
+        return data[0]
+
+    def optional_discriminant_part(
+        self,
+        data: list[list[ada.Discriminant]],
+    ) -> list[ada.Discriminant] | None:
+        if len(data) == 0:
+            return None
+        return data[0]
+
+    def known_discriminant_part(self, data: list[ada.Discriminant]) -> list[ada.Discriminant]:
+        return data
+
+    def discriminant_specification(self, data: tuple[list[ID], ID]) -> ada.Discriminant:
+        return ada.Discriminant(identifiers=data[0], type_identifier=data[1])
+
+    def default_expression(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def optional_default_expression(self, data: list[ada.Expr]) -> ada.Expr | None:
         if len(data) == 0:
             return None
         return data[0]
@@ -1290,17 +1317,32 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def formal_part(self, data: list[ada.Parameter]) -> list[ada.Parameter]:
         return data
 
-    def parameter_specification(self, data: tuple[list[ID], str, ID]) -> ada.Parameter:
-        identifiers, mode, type_identifier = data
+    def parameter_specification(
+        self,
+        data: tuple[list[ID], str, ID, ada.Expr | None],
+    ) -> ada.Parameter:
+        identifiers, mode, type_identifier, default = data
 
         if mode == "in out":
-            return ada.InOutParameter(identifiers=identifiers, type_identifier=type_identifier)
+            return ada.InOutParameter(
+                identifiers=identifiers,
+                type_identifier=type_identifier,
+                default=default,
+            )
 
         if mode == "out":
-            return ada.OutParameter(identifiers=identifiers, type_identifier=type_identifier)
+            return ada.OutParameter(
+                identifiers=identifiers,
+                type_identifier=type_identifier,
+                default=default,
+            )
 
         if mode == "in":
-            return ada.Parameter(identifiers=identifiers, type_identifier=type_identifier)
+            return ada.Parameter(
+                identifiers=identifiers,
+                type_identifier=type_identifier,
+                default=default,
+            )
 
         assert False, f"Unexpected mode {mode}"
 
@@ -1556,10 +1598,10 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def formal_complete_type_declaration(
         self,
-        data: tuple[ID, None, Literal["private"], list[ada.Aspect] | None],
+        data: tuple[ID, list[ada.Discriminant] | None, Literal["private"], list[ada.Aspect] | None],
     ) -> ada.PrivateType:
-        identifier, _, _, aspects = data
-        return ada.PrivateType(identifier=identifier, aspects=aspects)
+        identifier, discriminants, _, aspects = data
+        return ada.PrivateType(identifier=identifier, aspects=aspects, discriminants=discriminants)
 
     def formal_type_definition(self, data: tuple[Literal["private"]]) -> Literal["private"]:
         return data[0]

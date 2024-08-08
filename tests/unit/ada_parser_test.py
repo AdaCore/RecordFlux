@@ -573,6 +573,29 @@ from rflx import ada, ada_parser
                 ),
             ],
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.SubprogramDeclaration(
+                        ada.ProcedureSpecification(
+                            "P",
+                            [ada.Parameter(["P1"], "T", ada.Number(42))],
+                        ),
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration("P"),
+            body_context=[],
+            body=ada.PackageBody("P"),
+            formal_parameters=[ada.PrivateType("PT", discriminants=[ada.Discriminant(["D"], "T")])],
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -737,6 +760,22 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
            type PT is private;
            with procedure P (P1 : T);
            with function F (P1 : T) return U;
+        package P
+        is
+
+        end P;
+        """,
+        """\
+        generic
+           with function F (P1 : T := 42) return U;
+        package P
+        is
+
+        end P;
+        """,
+        """\
+        generic
+           type PT (D : T) is private;
         package P
         is
 
