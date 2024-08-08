@@ -552,7 +552,23 @@ ADA_GRAMMAR = lark.Lark(
         aspect_mark:                identifier
 
         # 13.1.1 (4/3)
-        aspect_definition:          expression
+        aspect_definition:          expression | dependency_relation
+
+        # SPARK rules
+
+        # SPARK RM 6.1.5
+        dependency_relation:        "(" dependency_clause ( "," dependency_clause )* ")"
+
+        dependency_clause:          output_list "=>" input_list
+
+        output_list:                name
+
+        input_list:                 input
+                                  | "(" input ( "," input )* ")"
+                                  | null
+
+        input:                      name
+        !null:                      "null"
 
         # Custom rules
         pragma_statement:           "pragma" identifier \
@@ -1591,16 +1607,24 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
 
-    def aspect_part(self, data: list[ID | ada.Expr]) -> ada.Aspect:
+    def aspect_part(self, data: list[ID | ada.Expr | ada.Depends]) -> ada.Aspect:  # noqa: PLR0911
         assert isinstance(data[0], ID)
         name = data[0].parts[0]
-        definition = data[1] if len(data) > 1 and isinstance(data[1], ada.Expr) else None
+        definition = (
+            data[1] if len(data) > 1 and isinstance(data[1], (ada.Expr, ada.Depends)) else None
+        )
 
         if name == "Annotate":
             assert isinstance(definition, ada.Aggregate), definition
             return ada.Annotate(
                 *[e.name for e in definition.elements if isinstance(e, ada.Variable)],
             )
+
+        if name == "Depends":
+            assert isinstance(definition, ada.Depends)
+            return definition
+
+        assert not isinstance(definition, ada.Depends)
 
         if name == "SPARK_Mode":
             if definition is None:
@@ -1638,6 +1662,27 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def aspect_definition(self, data: list[ID | ada.Expr]) -> ID | ada.Expr:
         return data[0]
+
+    def dependency_relation(self, data: list[tuple[ID, list[ID]]]) -> ada.Depends:
+        return ada.Depends(dict(data))
+
+    def dependency_clause(self, data: tuple[list[ID], list[ID]]) -> tuple[list[ID], list[ID]]:
+        return data
+
+    def output_list(self, data: list[ID | ada.Attribute]) -> ID:
+        assert isinstance(data[0], ID)
+        return data[0]
+
+    def input_list(self, data: list[ID]) -> list[ID]:
+        return data
+
+    def input(self, data: tuple[ID | ada.Attribute]) -> ID:
+        assert isinstance(data[0], ID)
+        return data[0]
+
+    def null(self, data: tuple[lark.Token]) -> ada.Variable:
+        assert data[0] == "null"
+        return ada.Variable("null")
 
     def pragma_statement(self, data: tuple[ID, list[ada.Expr]]) -> ada.Statement:
         return ada.PragmaStatement(identifier=data[0], parameters=data[1])

@@ -661,6 +661,23 @@ from rflx import ada, ada_parser
             body_context=[],
             body=ada.PackageBody("P"),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.SubprogramDeclaration(
+                        specification=ada.ProcedureSpecification(
+                            identifier="F",
+                            parameters=[ada.OutParameter("C", "T"), ada.InOutParameter("B", "T")],
+                        ),
+                        aspects=[ada.Depends({"C": ["B"], "B": "null"})],
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -885,6 +902,16 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
            procedure F (C : T) with
              Pre =>
                not C'Constrained;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           procedure F (C : out T; B : in out T) with
+             Depends =>
+               (C => B, B => null);
 
         end P;
         """,
