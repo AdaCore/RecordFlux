@@ -915,6 +915,16 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           procedure F (C : T) with
+             Post =>
+               P (C) = P (C)'Old;
+
+        end P;
+        """,
     ],
 )
 def test_roundtrip_text(data: str) -> None:

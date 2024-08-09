@@ -189,6 +189,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.1 (2/3)
         name:                       direct_name
+                                  | indexed_component
                                   | selected_component | attribute_reference
 
         # 4.1 (3)
@@ -196,6 +197,12 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.1 (4)
         prefix:                     name
+
+        # 4.1.1 (2)
+        indexed_component:          prefix indexed_component_expressions
+
+        indexed_component_expressions: \
+                                    "(" expression ( "," expression )* ")"
 
         # 4.1.3 (2)
         selected_component:         prefix "." selector_name
@@ -357,7 +364,7 @@ ADA_GRAMMAR = lark.Lark(
         defining_designator:        defining_program_unit_name
 
         # 6.1 (7)
-        defining_program_unit_name: name
+        defining_program_unit_name: (identifier ".")* defining_identifier
 
         # 6.1 (12)
         parameter_profile:          parameter_profile_formal_part
@@ -912,6 +919,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def prefix(self, data: list[ID]) -> ID:
         return data[0]
+
+    def indexed_component(self, data: tuple[ID, list[ada.Expr]]) -> ada.Indexed:
+        return ada.Indexed(ada.Variable(data[0]), *data[1])
+
+    def indexed_component_expressions(self, data: list[ada.Expr]) -> list[ada.Expr]:
+        return data
 
     def selected_component(self, data: tuple[ID, ID]) -> ID:
         return data[0] * data[1]
@@ -1476,9 +1489,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: list[ada.PackageBody],
     ) -> tuple[None, ada.PackageBody]:
         return None, data[0]
-
-    def parent_unit_name(self, data: list[ID]) -> ID:
-        return data[0]
 
     def context_clause(self, data: list[ada.ContextItem]) -> list[ada.ContextItem]:
         return data
