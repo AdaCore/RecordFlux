@@ -435,9 +435,13 @@ ADA_GRAMMAR = lark.Lark(
                                     )
 
         package_specification_part: package_spec_declarations \
+                                        optional_package_spec_private_declarations \
                                     "end" defining_program_unit_name
 
         package_spec_declarations:  basic_declarative_item*
+
+        optional_package_spec_private_declarations: \
+                                    ( "private" basic_declarative_item* )?
 
         # 7.2 (2/3)
         package_body: \
@@ -720,8 +724,14 @@ class PackagePart:
 
 
 class PackageSpecificationPart(PackagePart):
-    def __init__(self, declarations: list[ada.Declaration], identifier: ID):
+    def __init__(
+        self,
+        declarations: list[ada.Declaration],
+        private_declarations: list[ada.Declaration] | None,
+        identifier: ID,
+    ):
         self.declarations = declarations
+        self.private_declarations = private_declarations
         self.identifier = identifier
 
 
@@ -1473,6 +1483,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             return ada.PackageDeclaration(
                 identifier=identifier,
                 declarations=part.declarations,
+                private_declarations=part.private_declarations,
                 aspects=aspects,
             )
 
@@ -1480,11 +1491,23 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def package_specification_part(
         self,
-        data: tuple[list[ada.Declaration], ID],
+        data: tuple[list[ada.Declaration], list[ada.Declaration] | None, ID],
     ) -> PackageSpecificationPart:
-        return PackageSpecificationPart(declarations=data[0], identifier=data[1])
+        return PackageSpecificationPart(
+            declarations=data[0],
+            private_declarations=data[1],
+            identifier=data[2],
+        )
 
     def package_spec_declarations(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
+        return data
+
+    def optional_package_spec_private_declarations(
+        self,
+        data: list[ada.Declaration],
+    ) -> list[ada.Declaration] | None:
+        if not data:
+            return None
         return data
 
     def use_clause(
