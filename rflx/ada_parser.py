@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 from functools import reduce
+from pathlib import Path
 from typing import Literal
 
 import lark.grammar
+from lark.exceptions import VisitError
 
 from rflx import ada
+from rflx.error import fail
 from rflx.identifier import ID
+from rflx.rapidflux import Location
+
+
+class ParseError(Exception):
+    pass
+
 
 ADA_GRAMMAR = lark.Lark(
     r"""
@@ -66,7 +75,7 @@ ADA_GRAMMAR = lark.Lark(
         type_definition: \
                                     enumeration_type_definition | ("is" (integer_type_definition
                                   | array_type_definition
-                                  | access_type_definition
+                                  | record_type_definition | access_type_definition
                                   | derived_type_definition
                                   | private_type_definition))
 
@@ -163,6 +172,30 @@ ADA_GRAMMAR = lark.Lark(
 
         optional_default_expression: \
                                     (":=" default_expression)?
+
+        # 3.8 (2)
+        record_type_definition:     record_definition
+
+        # 3.8 (3)
+        record_definition: \
+                                    "record" \
+                                        component_list \
+                                    "end" "record"
+                                  | "null" "record"
+
+        # 3.8 (4)
+        component_list: \
+                                    component_item component_item*
+
+        # 3.8 (5/1)
+        component_item:             component_declaration
+
+
+        # 3.8 (6/3)
+        component_declaration: \
+                                    defining_identifier_list ":" component_definition \
+                                            optional_default_expression \
+                                        ";"
 
         # 3.8.1 (4)
         discrete_choice_list:       discrete_choice ( "|" discrete_choice )*
@@ -699,6 +732,7 @@ ADA_GRAMMAR = lark.Lark(
     """,
     start="file",
     parser="lalr",
+    propagate_positions=True,
 )
 
 
@@ -968,6 +1002,30 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         if len(data) == 0:
             return None
         return data[0]
+
+    def record_type_definition(self, data: list[ada.RecordType]) -> ada.RecordType:
+        return data[0]
+
+    def record_definition(self, data: list[list[ada.Component]]) -> ada.RecordType:
+        if not data:
+            return ada.RecordType("__INVALID__", components=[])
+        return ada.RecordType(identifier="__INVALID__", components=data[0])
+
+    def component_list(self, data: list[ada.Component]) -> list[ada.Component]:
+        return data
+
+    def component_item(self, data: list[ada.Component]) -> ada.Component:
+        return data[0]
+
+    def component_declaration(self, data: tuple[list[ID], ID, ada.Expr]) -> ada.Component:
+        identifier_list, type_identifier, default = data
+        if len(identifier_list) != 1:
+            raise ParseError("identifier lists unsupported for record component declaration")
+        return ada.Component(
+            identifier=identifier_list[0],
+            type_identifier=type_identifier,
+            default=default,
+        )
 
     def discrete_choice_list(self, data: list[ada.Expr]) -> list[ada.Expr]:
         return data
@@ -1845,6 +1903,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             | ada.PlainDerivedType
             | ada.PrivateType
             | ada.RangeType
+            | ada.RecordType
             | ada.UnconstrainedArrayType,
             list[ada.Aspect],
         ],
@@ -1908,6 +1967,16 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 identifier=identifier,
                 literals=definition.literals,
                 size=size,
+            )
+        if isinstance(definition, ada.RecordType):
+            return ada.RecordType(
+                identifier=identifier,
+                components=definition.components,
+                discriminants=discriminants,
+                variant_part=definition.variant_part,
+                aspects=aspects,
+                abstract=definition.abstract,
+                tagged=definition.tagged,
             )
 
         assert False, data
@@ -2007,5 +2076,18 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         )
 
 
-def parse(text: str) -> ada.PackageUnit:
-    return TreeToAda().transform(ADA_GRAMMAR.parse(f"{text}\0"))
+def parse(text: str, source: Path | None = None) -> ada.PackageUnit:
+    try:
+        return TreeToAda().transform(ADA_GRAMMAR.parse(f"{text}\0"))
+    except VisitError as e:
+        if isinstance(e.orig_exc, ParseError):
+            assert isinstance(e.obj, lark.Tree)  # noqa: PT017
+            fail(
+                str(e.orig_exc),
+                location=Location(
+                    start=(e.obj.meta.line, e.obj.meta.column),
+                    end=(e.obj.meta.end_line, e.obj.meta.end_column),
+                    source=source,
+                ),
+            )
+        raise

@@ -4,6 +4,7 @@ import pytest
 
 from rflx import ada, ada_parser
 from rflx.identifier import ID
+from rflx.rapidflux import RecordFluxError
 
 
 @pytest.mark.parametrize(
@@ -708,6 +709,27 @@ from rflx.identifier import ID
             body_context=[],
             body=ada.PackageBody("P"),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.RecordType(
+                        "R",
+                        components=[
+                            ada.Component("C1", "T", ada.Number(42)),
+                            ada.Component("C2", "U"),
+                        ],
+                        discriminants=[
+                            ada.Discriminant(["D1"], "T", ada.Number(0)),
+                            ada.Discriminant(["D2"], "T"),
+                        ],
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -1058,9 +1080,52 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           type R is
+              record
+                 F : T;
+              end record;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           type N is null record;
+
+        end P;
+        """,
     ],
 )
 def test_roundtrip_text(data: str) -> None:
     data = textwrap.dedent(data)
     result = ada_parser.parse(data)
     assert result.ads + result.adb == data
+
+
+@pytest.mark.parametrize(
+    ("data", "message"),
+    [
+        (
+            """\
+        package P
+        is
+
+           type R is record
+             F1, F2 : T;
+           end record;
+
+        end P;
+        """,
+            "<stdin>:5:6: error: identifier lists unsupported for record component declaration",
+        ),
+    ],
+)
+def test_parse_error(data: str, message: str) -> None:
+    data = textwrap.dedent(data)
+    with pytest.raises(RecordFluxError, match=rf"^{message}$"):
+        ada_parser.parse(data)
