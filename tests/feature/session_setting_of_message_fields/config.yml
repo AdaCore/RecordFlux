@@ -9,5 +9,4 @@ sequence: |
   State: Process
   Read Channel: 129 65
   State: Reply
-# TODO(eng/recordflux/RecordFlux#1704): Fix checks
-# prove:
+prove:

@@ -16,5 +16,4 @@ sequence: |
   Read O: 0 1 0 1 0 0 0 32
   State: Reply2
   State: Start
-# TODO(eng/recordflux/RecordFlux#1704): Fix checks
-# prove:
+prove:

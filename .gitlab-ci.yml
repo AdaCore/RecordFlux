@@ -478,7 +478,7 @@ verification_python_tests:
   services:
     - image:recordflux
     - cpu:8
-    - mem:16
+    - mem:32
     - security_group:GitLabRunnerTasksExecDefaultSG
   parallel:
     matrix:
