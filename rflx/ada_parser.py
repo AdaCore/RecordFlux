@@ -60,12 +60,15 @@ ADA_GRAMMAR = lark.Lark(
         # For full_type_declaration see combined_type_declaration.
 
         # 3.2.1 (4/2)
+        # Contrary to the LRM, we need to include the "is" of the type declaration as part of
+        # the type definition as we must treat "is (" as a single token inside
+        # enumeration_type_definition to keep the parser LR(1).
         type_definition: \
-                                    integer_type_definition
+                                    enumeration_type_definition | ("is" (integer_type_definition
                                   | array_type_definition
                                   | access_type_definition
                                   | derived_type_definition
-                                  | private_type_definition
+                                  | private_type_definition))
 
         # 3.2.2 (3/2)
         subtype_indication:         subtype_mark optional_constraint
@@ -107,12 +110,20 @@ ADA_GRAMMAR = lark.Lark(
                                     simple_expression ".." simple_expression
 
         # 3.5.1 (2)
-        integer_type_definition:    signed_integer_type_definition | modular_type_definition
+        enumeration_type_definition: \
+                                     is_lpar enumeration_literal_specification \
+                                        ( "," enumeration_literal_specification )* ")"
 
         # 3.5.1 (3)
+        enumeration_literal_specification: defining_identifier
+
+        # 3.5.4 (2)
+        integer_type_definition:    signed_integer_type_definition | modular_type_definition
+
+        # 3.5.4 (3)
         signed_integer_type_definition: "range" expression ".." expression
 
-        # 3.5.1 (4)
+        # 3.5.4 (4)
         modular_type_definition:    "mod" expression
 
         # 3.6 (2)
@@ -626,10 +637,10 @@ ADA_GRAMMAR = lark.Lark(
                                         handled_sequence_of_statements \
                                     "end" designator
 
-        expression_function_part:   /is\s*\(/ expression ")" optional_aspect_specification
+        expression_function_part:   is_lpar expression ")" optional_aspect_specification
 
         combined_type_declaration: \
-                                    "type" defining_identifier optional_discriminant_part "is" \
+                                    "type" defining_identifier optional_discriminant_part \
                                         type_definition optional_aspect_specification ";"
 
         !private_type_definition:   "private"
@@ -645,6 +656,7 @@ ADA_GRAMMAR = lark.Lark(
                                   | aspect_import
                                   | aspect_post
                                   | aspect_pre
+                                  | aspect_size
                                   | aspect_spark_mode
 
         aspect_always_terminates:   "Always_Terminates" ( "=>" expression )?
@@ -666,13 +678,17 @@ ADA_GRAMMAR = lark.Lark(
 
         aspect_import:              "Import"
 
-        aspect_post:                "Post"  "=>" expression
+        aspect_post:                "Post" "=>" expression
 
-        aspect_pre:                 "Pre"  "=>" expression
+        aspect_pre:                 "Pre" "=>" expression
+
+        aspect_size:                "Size" "=>" expression
 
         aspect_spark_mode:          "SPARK_Mode" ( "=>" expression )?
 
         !others:                    "others"
+
+        is_lpar:                     /is\s*\(/
 
         # Skip whitespace
         %import common.WS
@@ -883,6 +899,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def range(self, data: tuple[ada.Number, ada.Number]) -> ada.ValueRange:
         return ada.ValueRange(lower=data[0], upper=data[1])
+
+    def enumeration_type_definition(self, data: list[ID]) -> ada.EnumerationType:
+        return ada.EnumerationType("__INVALID__", literals={i: None for i in data[1:]})
+
+    def enumeration_literal_specification(self, data: list[ID]) -> ID:
+        return data[0]
 
     def integer_type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
@@ -1818,6 +1840,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             ada.AccessType
             | ada.DerivedRangeType
             | ada.DerivedRecordType
+            | ada.EnumerationType
             | ada.ModularType
             | ada.PlainDerivedType
             | ada.PrivateType
@@ -1875,6 +1898,17 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 discriminants=discriminants,
                 aspects=aspects,
             )
+        if isinstance(definition, ada.EnumerationType):
+            size = (
+                next(a.expression for a in aspects if isinstance(a, ada.SizeAspect))
+                if aspects
+                else None
+            )
+            return ada.EnumerationType(
+                identifier=identifier,
+                literals=definition.literals,
+                size=size,
+            )
 
         assert False, data
 
@@ -1925,6 +1959,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def aspect_pre(self, data: tuple[ada.Expr]) -> ada.Precondition:
         return ada.Precondition(data[0])
 
+    def aspect_size(self, data: tuple[ada.Expr]) -> ada.SizeAspect:
+        return ada.SizeAspect(data[0])
+
     def aspect_spark_mode(self, data: list[ada.Variable]) -> ada.SparkMode:
         if not data:
             return ada.SparkMode()
@@ -1933,6 +1970,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def others(self, data: list[lark.Token]) -> ada.Variable:
         assert data[0] == "others"
         return ada.Variable("others")
+
+    def is_lpar(self, _: tuple[lark.Token]) -> None:
+        return None
 
     def file(
         self,

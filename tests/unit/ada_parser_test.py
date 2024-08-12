@@ -3,6 +3,7 @@ import textwrap
 import pytest
 
 from rflx import ada, ada_parser
+from rflx.identifier import ID
 
 
 @pytest.mark.parametrize(
@@ -692,6 +693,21 @@ from rflx import ada, ada_parser
             body_context=[],
             body=ada.PackageBody("P"),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.EnumerationType(
+                        "Enum",
+                        literals={ID("E1"): None, ID("E2"): None, ID("E3"): None},
+                        size=ada.Number(8),
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -1021,6 +1037,24 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
         private
 
            type T is range 0 .. 42;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           type Color is (Red, Green, Blue);
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           type Color is (Red, Green, Blue) with
+             Size =>
+               8;
 
         end P;
         """,
