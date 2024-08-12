@@ -157,9 +157,7 @@ ADA_GRAMMAR = lark.Lark(
         discrete_choice_list:       discrete_choice ( "|" discrete_choice )*
 
         # 3.8.1 (5/3)
-        discrete_choice:            choice_expression | discrete_choice_others
-
-        !discrete_choice_others:     "others"
+        discrete_choice:            choice_expression | others
 
         # 3.10 (2/2)
         access_type_definition: \
@@ -556,17 +554,36 @@ ADA_GRAMMAR = lark.Lark(
         # 13.1.1 (2/3)
         aspect_specification:       "with"  aspect_part ( "," aspect_part )*
 
-        aspect_part:                aspect_mark ( "=>" aspect_definition )?
-
         optional_aspect_specification: aspect_specification?
 
         # 13.1.1 (3/3)
         aspect_mark:                identifier
 
-        # 13.1.1 (4/3)
-        aspect_definition:          expression | dependency_relation
-
         # SPARK rules
+
+        # SPARK RM 6.1.3
+        contract_case_list:         "(" contract_case ( "," contract_case )* ")"
+
+        contract_case:              condition "=>" expression
+                                  | others "=>" expression
+
+        # SPARK RM 6.1.4
+        global_specification:       moded_global
+                                  | global_list
+                                  | null_global_specification
+
+        moded_global:               "(" moded_global_list ( "," moded_global_list )* ")"
+
+        moded_global_list:          mode_selector "=>" global_list
+
+        global_list:                global_item
+                                  | "(" global_item ( "," global_item )* ")"
+
+        !mode_selector:             "Input" | "Output" | "In_Out"
+
+        global_item:                name
+
+        null_global_specification:  null
 
         # SPARK RM 6.1.5
         dependency_relation:        "(" dependency_clause ( "," dependency_clause )* ")"
@@ -612,6 +629,46 @@ ADA_GRAMMAR = lark.Lark(
                                         type_definition optional_aspect_specification ";"
 
         !private_type_definition:   "private"
+
+        aspect_part:                aspect_always_terminates
+                                  | aspect_annotate
+                                  | aspect_contract_cases
+                                  | aspect_convention
+                                  | aspect_default_initial_condition
+                                  | aspect_depends
+                                  | aspect_ghost
+                                  | aspect_global
+                                  | aspect_import
+                                  | aspect_post
+                                  | aspect_pre
+                                  | aspect_spark_mode
+
+        aspect_always_terminates:   "Always_Terminates" ( "=>" expression )?
+
+        aspect_annotate:            "Annotate" "=>" expression
+
+        aspect_contract_cases:      "Contract_Cases" "=>" contract_case_list
+
+        aspect_convention:          "Convention" "=>" expression
+
+        aspect_default_initial_condition: \
+                                    "Default_Initial_Condition" "=>" expression
+
+        aspect_depends:             "Depends" "=>" dependency_relation
+
+        !aspect_ghost:              "Ghost"
+
+        aspect_global:              "Global" "=>" global_specification
+
+        aspect_import:              "Import"
+
+        aspect_post:                "Post"  "=>" expression
+
+        aspect_pre:                 "Pre"  "=>" expression
+
+        aspect_spark_mode:          "SPARK_Mode" ( "=>" expression )?
+
+        !others:                    "others"
 
         # Skip whitespace
         %import common.WS
@@ -885,10 +942,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def discrete_choice(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
-
-    def discrete_choice_others(self, data: list[lark.Token]) -> ada.Variable:
-        assert data[0] == "others"
-        return ada.Variable("others")
 
     def access_type_definition(self, data: tuple[ID]) -> ada.AccessType:
         return ada.AccessType(identifier="__INVALID__", object_identifier=data[0])
@@ -1625,61 +1678,61 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
 
-    def aspect_part(self, data: list[ID | ada.Expr | ada.Depends]) -> ada.Aspect:  # noqa: PLR0911
-        assert isinstance(data[0], ID)
-        name = data[0].parts[0]
-        definition = (
-            data[1] if len(data) > 1 and isinstance(data[1], (ada.Expr, ada.Depends)) else None
-        )
-
-        if name == "Annotate":
-            assert isinstance(definition, ada.Aggregate), definition
-            return ada.Annotate(
-                *[e.name for e in definition.elements if isinstance(e, ada.Variable)],
-            )
-
-        if name == "Depends":
-            assert isinstance(definition, ada.Depends)
-            return definition
-
-        assert not isinstance(definition, ada.Depends)
-
-        if name == "SPARK_Mode":
-            if definition is None:
-                return ada.SparkMode()
-            assert isinstance(definition, ada.Variable)
-            return ada.SparkMode(off=definition.name == "off")
-
-        if name == "Always_Terminates":
-            return ada.AlwaysTerminates(expression=definition)
-
-        if name == "Global":
-            return ada.Global()
-
-        if name == "Import":
-            return ada.Import()
-
-        if name == "Ghost":
-            return ada.Ghost()
-
-        assert definition is not None, data
-
-        if name == "Post":
-            return ada.Postcondition(definition)
-
-        if name == "Pre":
-            return ada.Precondition(definition)
-
-        if name == "Convention":
-            return ada.Convention(ada.ConventionKind[str(definition)])
-
-        raise NotImplementedError(data[0].name)
-
     def aspect_mark(self, data: list[ID]) -> ID:
         return data[0]
 
-    def aspect_definition(self, data: list[ID | ada.Expr]) -> ID | ada.Expr:
+    def contract_case_list(self, data: list[list[ada.Expr]]) -> ada.ContractCases:
+        return ada.ContractCases(*[(c, e) for c, e in data])  # noqa: C416
+
+    def contract_case(self, data: list[ada.Expr]) -> list[ada.Expr]:
+        return data
+
+    def global_specification(self, data: tuple[ada.Global]) -> ada.Global:
         return data[0]
+
+    def moded_global(
+        self,
+        data: list[tuple[Literal["Input", "Output", "In_Out"], list[ID]]],
+    ) -> ada.Global:
+        inputs: list[ID] | None = None
+        outputs: list[ID] | None = None
+        in_outs: list[ID] | None = None
+
+        for mode, ids in data:
+            if mode == "Input":
+                assert inputs is None
+                inputs = ids
+            elif mode == "Output":
+                assert outputs is None
+                outputs = ids
+            elif mode == "In_Out":
+                assert in_outs is None
+                in_outs = ids
+            else:
+                assert False, mode
+
+        return ada.Global(inputs=inputs, outputs=outputs, in_outs=in_outs)
+
+    def moded_global_list(
+        self,
+        data: tuple[Literal["Input", "Output", "In_Out"], list[ID]],
+    ) -> tuple[Literal["Input", "Output", "In_Out"], list[ID]]:
+        return data
+
+    def global_list(self, data: list[ID]) -> list[ID]:
+        return data
+
+    def mode_selector(self, data: tuple[lark.Token]) -> str:
+        assert isinstance(data[0].value, str)
+        assert data[0].value in ("Input", "Output", "In_Out")
+        return data[0].value
+
+    def global_item(self, data: tuple[ID]) -> ID:
+        return data[0]
+
+    def null_global_specification(self, data: tuple[str]) -> ada.Global:
+        assert data[0] == "null"
+        return ada.Global()
 
     def dependency_relation(self, data: list[tuple[ID, list[ID]]]) -> ada.Depends:
         return ada.Depends(dict(data))
@@ -1698,9 +1751,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert isinstance(data[0], ID)
         return data[0]
 
-    def null(self, data: tuple[lark.Token]) -> ada.Variable:
+    def null(self, data: tuple[lark.Token]) -> Literal["null"]:
         assert data[0] == "null"
-        return ada.Variable("null")
+        return "null"
 
     def pragma_statement(self, data: tuple[ID, list[ada.Expr]]) -> ada.Statement:
         return ada.PragmaStatement(identifier=data[0], parameters=data[1])
@@ -1806,10 +1859,57 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert data[0] == "private"
         return ada.PrivateType("__INVALID__")
 
-    def optional_private(self, data: list[lark.Token]) -> bool:
-        if len(data) > 0 and data[0] == "private":
-            return True
-        return False
+    def aspect_part(self, data: tuple[ada.Aspect]) -> ada.Aspect:
+        return data[0]
+
+    def aspect_always_terminates(self, data: tuple[ada.Expr]) -> ada.AlwaysTerminates:
+        return ada.AlwaysTerminates(expression=data[0] if data else None)
+
+    def aspect_annotate(self, data: tuple[ada.Aggregate]) -> ada.Annotate:
+        return ada.Annotate(
+            *[e.name for e in data[0].elements if isinstance(e, ada.Variable)],
+        )
+
+    def aspect_contract_cases(self, data: tuple[ada.ContractCases]) -> ada.ContractCases:
+        return data[0]
+
+    def aspect_convention(self, data: tuple[ada.Variable]) -> ada.Convention:
+        kind = {"Intrinsic": ada.ConventionKind.Intrinsic}
+        return ada.Convention(convention=kind[data[0].name])
+
+    def aspect_default_initial_condition(
+        self,
+        data: tuple[ada.Expr],
+    ) -> ada.DefaultInitialCondition:
+        return ada.DefaultInitialCondition(data[0])
+
+    def aspect_depends(self, data: tuple[ada.Depends]) -> ada.Depends:
+        return data[0]
+
+    def aspect_ghost(self, data: tuple[lark.Token]) -> ada.Ghost:
+        assert data[0] == "Ghost"
+        return ada.Ghost()
+
+    def aspect_global(self, data: tuple[ada.Global]) -> ada.Global:
+        return data[0]
+
+    def aspect_import(self, _: list[None]) -> ada.Import:
+        return ada.Import()
+
+    def aspect_post(self, data: tuple[ada.Expr]) -> ada.Postcondition:
+        return ada.Postcondition(data[0])
+
+    def aspect_pre(self, data: tuple[ada.Expr]) -> ada.Precondition:
+        return ada.Precondition(data[0])
+
+    def aspect_spark_mode(self, data: list[ada.Variable]) -> ada.SparkMode:
+        if not data:
+            return ada.SparkMode()
+        return ada.SparkMode(off=data[0].name == "off")
+
+    def others(self, data: list[lark.Token]) -> ada.Variable:
+        assert data[0] == "others"
+        return ada.Variable("others")
 
     def file(
         self,

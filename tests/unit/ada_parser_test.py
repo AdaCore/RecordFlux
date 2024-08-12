@@ -929,9 +929,72 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
         package P
         is
 
-           procedure F (C : T) with
+           procedure S (C : T) with
              Pre =>
                P (C) = L'(if V (C) then E (C) else F (C))'Old;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           procedure S (C : T) with
+             Contract_Cases =>
+               (P (C) =>
+                   True,
+                others =>
+                   False);
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           procedure P (C : T) with
+             Global =>
+               null;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           G1, G2 : Integer;
+
+           procedure P (C : T) with
+             Global =>
+               (Input => G1, In_Out => G2);
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           procedure P (C : T; D : in out T; E : out T) with
+             Depends =>
+               (D => (D, C), E => C);
+
+        end P;
+        """,
+        """\
+        package P with
+          Always_Terminates
+        is
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           type T (D : U) is private with
+             Default_Initial_Condition =>
+               P (D)
+               and Q (D);
 
         end P;
         """,
