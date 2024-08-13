@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections import abc
 from pathlib import Path
-from typing import ClassVar, Final, Optional, Union
+from typing import ClassVar, Final
 
 import attr
 
@@ -80,7 +80,7 @@ class Enumeration(NamedType):
     DESCRIPTIVE_NAME: ClassVar[str] = "enumeration type"
     literals: abc.Sequence[ID] = attr.ib()
     always_valid: bool = attr.ib(default=False)
-    location: Optional[Location] = attr.ib(default=None, cmp=False)
+    location: Location | None = attr.ib(default=None, cmp=False)
 
     def __str__(self) -> str:
         return f'{self.DESCRIPTIVE_NAME} "{self.identifier}"'
@@ -125,7 +125,7 @@ class Integer(AnyInteger, NamedType):
     DESCRIPTIVE_NAME: ClassVar[str] = "integer type"
     identifier: ID = attr.ib(converter=ID)
     bounds: Bounds = attr.ib()
-    location: Optional[Location] = attr.ib(default=None, cmp=False)
+    location: Location | None = attr.ib(default=None, cmp=False)
 
     def __str__(self) -> str:
         bounds = f" ({self.bounds})" if self.bounds else ""
@@ -303,8 +303,8 @@ def common_type(types: abc.Sequence[Type]) -> Type:
 
 def check_type(
     actual: Type,
-    expected: Union[Type, tuple[Type, ...]],
-    location: Optional[Location],
+    expected: Type | tuple[Type, ...],
+    location: Location | None,
     description: str,
 ) -> RecordFluxError:
     assert expected, "empty expected types"
@@ -347,8 +347,8 @@ def check_type(
 
 def check_type_instance(
     actual: Type,
-    expected: Union[type[Type], tuple[type[Type], ...]],
-    location: Optional[Location],
+    expected: type[Type] | tuple[type[Type], ...],
+    location: Location | None,
     description: str = "",
     additionnal_annotations: abc.Sequence[Annotation] | None = None,
 ) -> RecordFluxError:
@@ -383,7 +383,7 @@ def check_type_instance(
     return error
 
 
-def _undefined_type(location: Optional[Location], description: str = "") -> RecordFluxError:
+def _undefined_type(location: Location | None, description: str = "") -> RecordFluxError:
     return RecordFluxError(
         [
             ErrorEntry(

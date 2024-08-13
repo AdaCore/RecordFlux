@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import pytest
 
 import rflx
@@ -47,7 +45,7 @@ def test_is_gnat_tracker_release(
         ('setuptools_scm<8,>=6.2; extra == "devel"', "setuptools_scm", "devel"),
     ],
 )
-def test_requirement(requirement: str, name: str, extra: Optional[str]) -> None:
+def test_requirement(requirement: str, name: str, extra: str | None) -> None:
     r = version.Requirement(requirement)
     assert r.name == name
     assert r.extra == extra

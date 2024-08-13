@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Optional
 
 from rflx.common import assert_never
 from rflx.error import Location
@@ -84,8 +83,8 @@ class Symbol:
 
     identifier: ID
     category: SymbolCategory
-    definition_location: Optional[Location]
-    parent: Optional[ID]
+    definition_location: Location | None
+    parent: ID | None
 
 
 class LSModel:

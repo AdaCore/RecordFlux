@@ -19,7 +19,6 @@ import sys
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Optional
 
 from ruamel.yaml import YAML
 from ruamel.yaml.parser import ParserError
@@ -58,7 +57,7 @@ class State(enum.Enum):
 class StyleChecker:
     def __init__(self, filename: Path):
         self._filename = filename
-        self._previous: Optional[tuple[int, str]] = None
+        self._previous: tuple[int, str] | None = None
         self._headings_re = re.compile(r"^(=+|-+|~+|\^+|\*+|\"+)$")
 
     def check(self, lineno: int, line: str) -> None:
@@ -134,11 +133,11 @@ class CodeChecker:
 
     def check(
         self,
-        lineno: Optional[int],
+        lineno: int | None,
         block: str,
-        code_type: Optional[CodeBlockType],
+        code_type: CodeBlockType | None,
         indent: int,
-        subtype: Optional[str] = None,
+        subtype: str | None = None,
     ) -> None:
         assert lineno
         # Remove trailing empty line as this is an error for RecordFlux style checks. It could be
@@ -165,7 +164,7 @@ class CodeChecker:
                 f"{self._filename}:{lineno}: error in code block\n{error}",
             ) from error
 
-    def _check_rflx(self, block: str, subtype: Optional[str] = None) -> None:
+    def _check_rflx(self, block: str, subtype: str | None = None) -> None:
         try:
             if subtype is None:
                 parser = Parser()
@@ -178,7 +177,7 @@ class CodeChecker:
         except RecordFluxError as rflx_error:
             raise CheckDocError(str(rflx_error)) from rflx_error
 
-    def _check_ada(self, block: str, subtype: Optional[str] = None) -> None:
+    def _check_ada(self, block: str, subtype: str | None = None) -> None:
         args = []
         unit = "main"
 
@@ -263,10 +262,10 @@ def check_file(filename: Path, content: str) -> bool:  # noqa: PLR0912, PLR0915
     found = False
     state = State.OUTSIDE
     block = ""
-    block_start: Optional[int] = None
-    doc_check_type: Optional[CodeBlockType] = None
+    block_start: int | None = None
+    doc_check_type: CodeBlockType | None = None
     indent: int = 0
-    subtype: Optional[str] = None
+    subtype: str | None = None
     style_checker = StyleChecker(filename)
     code_checker = CodeChecker(filename)
 

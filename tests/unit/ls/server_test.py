@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 from pathlib import Path
-from typing import Final, Optional
+from typing import Final
 
 import pytest
 from lsprotocol.types import (
@@ -136,7 +136,7 @@ def test_to_lsp_location() -> None:
         (error.Severity.HELP, DiagnosticSeverity.Hint),
     ],
 )
-def test_to_lsp_severity(severity: error.Severity, expected: Optional[DiagnosticSeverity]) -> None:
+def test_to_lsp_severity(severity: error.Severity, expected: DiagnosticSeverity | None) -> None:
     assert server.to_lsp_severity(severity) == expected
 
 

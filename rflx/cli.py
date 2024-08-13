@@ -11,7 +11,6 @@ from collections.abc import Sequence
 from enum import Enum
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Optional
 
 import importlib_resources
 from importlib_resources.abc import Traversable
@@ -538,7 +537,7 @@ def parse(
     no_caching: bool,
     no_verification: bool,
     workers: int = 1,
-    integration_files_dir: Optional[Path] = None,
+    integration_files_dir: Path | None = None,
 ) -> tuple[Model, Integration]:
     parser = Parser(
         cache(no_caching, no_verification),

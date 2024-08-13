@@ -6,7 +6,7 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
 from functools import singledispatch
-from typing import Final, Optional, Union
+from typing import Final, Union
 
 import z3
 
@@ -19,6 +19,10 @@ from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Se
 PROVER_TIMEOUT: Final = 1800000
 
 
+# TODO(eng/recordflux/RecordFlux#1424): Replace with PEP604 union
+ArithBoolRef = Union[z3.ArithRef, z3.BoolRef]
+
+
 class ProofResult(Enum):
     SAT = z3.sat
     UNSAT = z3.unsat
@@ -29,14 +33,14 @@ class Proof:
     def __init__(
         self,
         expr: expr.Expr,
-        facts: Optional[Sequence[expr.Expr]] = None,
+        facts: Sequence[expr.Expr] | None = None,
         logic: str = "QF_NIA",
     ):
         self._expr = expr
         self._facts = facts or []
         self._result = ProofResult.UNSAT
         self._logic = logic
-        self._unknown_reason: Optional[str] = None
+        self._unknown_reason: str | None = None
 
         solver = z3.SolverFor(self._logic)
         solver.set("timeout", PROVER_TIMEOUT)
@@ -53,7 +57,7 @@ class Proof:
         return self._result
 
     @property
-    def error(self) -> list[tuple[str, Optional[Location]]]:
+    def error(self) -> list[tuple[str, Location | None]]:
         assert self._result != ProofResult.SAT
 
         if self._result == ProofResult.UNKNOWN:
@@ -343,8 +347,8 @@ def _(expression: expr.Relation) -> z3.BoolRef:
 @singledispatch
 def _relation_operator(
     _: expr.Relation,
-    left: Union[z3.ArithRef, z3.BoolRef],  # noqa: ARG001
-    right: Union[z3.ArithRef, z3.BoolRef],  # noqa: ARG001
+    left: ArithBoolRef,  # noqa: ARG001
+    right: ArithBoolRef,  # noqa: ARG001
 ) -> object:
     raise NotImplementedError
 
@@ -352,8 +356,8 @@ def _relation_operator(
 @_relation_operator.register
 def _(
     _: expr.Less,
-    left: Union[z3.ArithRef, z3.BoolRef],
-    right: Union[z3.ArithRef, z3.BoolRef],
+    left: ArithBoolRef,
+    right: ArithBoolRef,
 ) -> object:
     return operator.lt(left, right)
 
@@ -361,8 +365,8 @@ def _(
 @_relation_operator.register
 def _(
     _: expr.LessEqual,
-    left: Union[z3.ArithRef, z3.BoolRef],
-    right: Union[z3.ArithRef, z3.BoolRef],
+    left: ArithBoolRef,
+    right: ArithBoolRef,
 ) -> object:
     return operator.le(left, right)
 
@@ -370,8 +374,8 @@ def _(
 @_relation_operator.register
 def _(
     _: expr.Equal,
-    left: Union[z3.ArithRef, z3.BoolRef],
-    right: Union[z3.ArithRef, z3.BoolRef],
+    left: ArithBoolRef,
+    right: ArithBoolRef,
 ) -> object:
     return operator.eq(left, right)
 
@@ -379,8 +383,8 @@ def _(
 @_relation_operator.register
 def _(
     _: expr.GreaterEqual,
-    left: Union[z3.ArithRef, z3.BoolRef],
-    right: Union[z3.ArithRef, z3.BoolRef],
+    left: ArithBoolRef,
+    right: ArithBoolRef,
 ) -> object:
     return operator.ge(left, right)
 
@@ -388,8 +392,8 @@ def _(
 @_relation_operator.register
 def _(
     _: expr.Greater,
-    left: Union[z3.ArithRef, z3.BoolRef],
-    right: Union[z3.ArithRef, z3.BoolRef],
+    left: ArithBoolRef,
+    right: ArithBoolRef,
 ) -> object:
     return operator.gt(left, right)
 
@@ -397,8 +401,8 @@ def _(
 @_relation_operator.register
 def _(
     _: expr.NotEqual,
-    left: Union[z3.ArithRef, z3.BoolRef],
-    right: Union[z3.ArithRef, z3.BoolRef],
+    left: ArithBoolRef,
+    right: ArithBoolRef,
 ) -> object:
     return operator.ne(left, right)
 

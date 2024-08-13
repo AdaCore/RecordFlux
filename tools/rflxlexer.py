@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Optional
+from typing import Iterator
 
 import pygments.lexer
 import pygments.token
@@ -174,7 +174,7 @@ class RFLXLexer(pygments.lexer.Lexer):
             for t in unit.iter_tokens()
         ]
 
-        prev: Optional[tuple[int, lang.SlocRange]] = None
+        prev: tuple[int, lang.SlocRange] | None = None
         result = []
 
         for start, t in tokens:

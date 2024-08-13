@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -180,8 +179,8 @@ def test_no_files(
     tmp_path: Path,
     source_files: list[str],
     test_files: list[str],
-    expected: Optional[str],
-    ignore: Optional[list[str]],
+    expected: str | None,
+    ignore: list[str] | None,
 ) -> None:
     source_dir = tmp_path / "source"
     test_dir = tmp_path / "test"
@@ -230,7 +229,7 @@ def test_no_files(
         ("a", None, False),
     ],
 )
-def test_ignored(file: str, ignore_list: Optional[list[str]], expected: bool) -> None:
+def test_ignored(file: str, ignore_list: list[str] | None, expected: bool) -> None:
     assert (
         check_unit_test_file_coverage._ignored(  # noqa: SLF001
             Path(file),
@@ -241,13 +240,13 @@ def test_ignored(file: str, ignore_list: Optional[list[str]], expected: bool) ->
 
 
 def test_cli(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    stored_source_dir: Optional[Path] = None
-    stored_test_dir: Optional[Path] = None
+    stored_source_dir: Path | None = None
+    stored_test_dir: Path | None = None
 
     def dummy_check_file_coverage(
         source_dir: Path,
         test_dir: Path,
-        ignore: Optional[list[Path]] = None,  # noqa: ARG001
+        ignore: list[Path] | None = None,  # noqa: ARG001
     ) -> None:
         nonlocal stored_source_dir, stored_test_dir
         stored_source_dir = source_dir

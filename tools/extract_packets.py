@@ -17,13 +17,12 @@ from collections.abc import Sequence
 from math import ceil, log
 from pathlib import Path
 from pydoc import locate
-from typing import Union
 
 import scapy.layers  # type: ignore[import-untyped]
 from scapy.utils import hexdump, rdpcap  # type: ignore[import-untyped]
 
 
-def main(argv: Sequence[str]) -> Union[bool, str]:
+def main(argv: Sequence[str]) -> bool | str:
     available_layers = [
         f"{p.name}.{c}"
         for p in pkgutil.iter_modules(scapy.layers.__path__)

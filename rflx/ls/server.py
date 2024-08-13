@@ -6,7 +6,7 @@ import threading
 import uuid
 from collections import defaultdict
 from pathlib import Path
-from typing import Callable, Final, Iterable, Mapping, Optional
+from typing import Callable, Final, Iterable, Mapping
 from urllib.parse import unquote, urlparse
 
 from lsprotocol.types import (
@@ -67,7 +67,7 @@ LSP_TOKEN_CATEGORIES: Final = {
 }
 
 
-def to_lsp_location(location: Optional[error.Location]) -> Optional[Location]:
+def to_lsp_location(location: error.Location | None) -> Location | None:
     if (
         location is None
         or location.source is None
@@ -85,7 +85,7 @@ def to_lsp_location(location: Optional[error.Location]) -> Optional[Location]:
     )
 
 
-def to_lsp_severity(severity: error.Severity) -> Optional[DiagnosticSeverity]:
+def to_lsp_severity(severity: error.Severity) -> DiagnosticSeverity | None:
     if severity is error.Severity.ERROR:
         return DiagnosticSeverity.Error
     if severity is error.Severity.INFO or severity is error.Severity.NOTE:
@@ -223,7 +223,7 @@ class RecordFluxLanguageServer(LanguageServer):
 # TODO(eng/recordflux/RecordFlux#1424): Use typing.ParamSpec instead of ... and object
 def debounce(  # type: ignore[misc]
     interval_s: int,
-    keyed_by: Optional[str] = None,
+    keyed_by: str | None = None,
 ) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """
     Debounce calls to this function until interval_s seconds have passed.
@@ -302,7 +302,7 @@ async def did_change(ls: RecordFluxLanguageServer, params: DidChangeTextDocument
 async def go_to_definition(
     ls: RecordFluxLanguageServer,
     params: DefinitionParams,
-) -> Optional[list[Location]]:
+) -> list[Location] | None:
     with LSFatalErrorHandler(ls):
         lexer = initialize_lexer(ls, params.text_document.uri)
         token = lexer.search_token(params.position.line, params.position.character)

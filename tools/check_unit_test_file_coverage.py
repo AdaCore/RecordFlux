@@ -12,14 +12,13 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 class CheckUnitTestFileError(Exception):
     pass
 
 
-def _ignored(file: Path, ignore_list: Optional[list[Path]] = None) -> bool:
+def _ignored(file: Path, ignore_list: list[Path] | None = None) -> bool:
     return ignore_list is not None and any(
         i.parts == file.parts[: len(i.parts)] for i in ignore_list
     )
@@ -28,7 +27,7 @@ def _ignored(file: Path, ignore_list: Optional[list[Path]] = None) -> bool:
 def check_file_coverage(
     source_dir: Path,
     test_dir: Path,
-    ignore: Optional[list[Path]] = None,
+    ignore: list[Path] | None = None,
 ) -> None:
 
     if not source_dir.exists():

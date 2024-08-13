@@ -8,7 +8,7 @@ from copy import copy
 from dataclasses import dataclass, field as dataclass_field
 from enum import Enum
 from functools import cached_property, partial
-from typing import Callable, Optional, Union
+from typing import Callable
 
 import rflx.typing_ as rty
 from rflx import expr, expr_proof
@@ -63,7 +63,7 @@ class Link(Base):
     condition: expr.Expr = expr.TRUE
     size: expr.Expr = expr.UNDEFINED
     first: expr.Expr = expr.UNDEFINED
-    location: Optional[Location] = dataclass_field(default=None, repr=False)
+    location: Location | None = dataclass_field(default=None, repr=False)
 
     def __str__(self) -> str:
         condition = indent_next(
@@ -104,9 +104,9 @@ class Message(type_decl.TypeDecl):
         identifier: StrID,
         structure: Sequence[Link],
         types: Mapping[Field, type_decl.TypeDecl],
-        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
-        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
-        location: Optional[Location] = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] | None = None,
+        byte_order: ByteOrder | Mapping[Field, ByteOrder] | None = None,
+        location: Location | None = None,
         skip_verification: bool = False,
         workers: int = 1,
     ) -> None:
@@ -269,13 +269,13 @@ class Message(type_decl.TypeDecl):
 
     def copy(  # noqa: PLR0913
         self,
-        identifier: Optional[StrID] = None,
-        structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, type_decl.TypeDecl]] = None,
-        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
-        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
-        location: Optional[Location] = None,
-        skip_verification: Optional[bool] = None,
+        identifier: StrID | None = None,
+        structure: Sequence[Link] | None = None,
+        types: Mapping[Field, type_decl.TypeDecl] | None = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] | None = None,
+        byte_order: ByteOrder | Mapping[Field, ByteOrder] | None = None,
+        location: Location | None = None,
+        skip_verification: bool | None = None,
     ) -> Message:
         return Message(
             identifier if identifier else self.identifier,
@@ -388,7 +388,7 @@ class Message(type_decl.TypeDecl):
 
             return result
 
-    def field_size_opt(self, field: Field) -> Optional[expr.Number]:
+    def field_size_opt(self, field: Field) -> expr.Number | None:
         """Return field size if field size is fixed and None otherwise."""
         if field == FINAL:
             return expr.Number(0)
@@ -591,8 +591,8 @@ class Message(type_decl.TypeDecl):
 
     def size(
         self,
-        field_values: Optional[Mapping[Field, expr.Expr]] = None,
-        message_instance: Optional[ID] = None,
+        field_values: Mapping[Field, expr.Expr] | None = None,
+        message_instance: ID | None = None,
         subpath: bool = False,
     ) -> expr.Expr:
         """
@@ -1027,7 +1027,7 @@ class Message(type_decl.TypeDecl):
                     ),
                 )
 
-        def has_final(field: Field, seen: Optional[set[Field]] = None) -> bool:
+        def has_final(field: Field, seen: set[Field] | None = None) -> bool:
             """Return True if the field has a path to the final field or a cycle was found."""
 
             if seen is None:
@@ -1238,7 +1238,7 @@ class Message(type_decl.TypeDecl):
 
         return (structure, checksums)
 
-    def _compute_topological_sorting(self, has_unreachable: bool) -> Optional[tuple[Field, ...]]:
+    def _compute_topological_sorting(self, has_unreachable: bool) -> tuple[Field, ...] | None:
         """Return fields topologically sorted (Kahn's algorithm)."""
         result: tuple[Field, ...] = ()
         fields = [INITIAL]
@@ -2284,7 +2284,7 @@ class Message(type_decl.TypeDecl):
             return link.size
         return self.field_size(link.target)
 
-    def _target_size_opt(self, link: Link) -> Optional[expr.Expr]:
+    def _target_size_opt(self, link: Link) -> expr.Expr | None:
         if link.size != expr.UNDEFINED:
             return link.size
         return self.field_size_opt(link.target)
@@ -2296,7 +2296,7 @@ class Message(type_decl.TypeDecl):
             link.target.identifier.location,
         )
 
-    def _target_last_opt(self, link: Link) -> Optional[expr.Expr]:
+    def _target_last_opt(self, link: Link) -> expr.Expr | None:
         size = self._target_size_opt(link)
         if not size:
             return None
@@ -2401,11 +2401,11 @@ class DerivedMessage(Message):
         self,
         identifier: StrID,
         base: Message,
-        structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, type_decl.TypeDecl]] = None,
-        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
-        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
-        location: Optional[Location] = None,
+        structure: Sequence[Link] | None = None,
+        types: Mapping[Field, type_decl.TypeDecl] | None = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] | None = None,
+        byte_order: ByteOrder | Mapping[Field, ByteOrder] | None = None,
+        location: Location | None = None,
         skip_verification: bool = False,
         workers: int = 1,
     ) -> None:
@@ -2444,13 +2444,13 @@ class DerivedMessage(Message):
 
     def copy(  # noqa: PLR0913
         self,
-        identifier: Optional[StrID] = None,
-        structure: Optional[Sequence[Link]] = None,
-        types: Optional[Mapping[Field, type_decl.TypeDecl]] = None,
-        checksums: Optional[Mapping[ID, Sequence[expr.Expr]]] = None,
-        byte_order: Optional[Union[ByteOrder, Mapping[Field, ByteOrder]]] = None,
-        location: Optional[Location] = None,
-        skip_verification: Optional[bool] = None,
+        identifier: StrID | None = None,
+        structure: Sequence[Link] | None = None,
+        types: Mapping[Field, type_decl.TypeDecl] | None = None,
+        checksums: Mapping[ID, Sequence[expr.Expr]] | None = None,
+        byte_order: ByteOrder | Mapping[Field, ByteOrder] | None = None,
+        location: Location | None = None,
+        skip_verification: bool | None = None,
     ) -> DerivedMessage:
         return DerivedMessage(
             identifier if identifier else self.identifier,
@@ -2472,7 +2472,7 @@ class Refinement(type_decl.TypeDecl):
         field: Field,
         sdu: Message,
         condition: expr.Expr = expr.TRUE,
-        location: Optional[Location] = None,
+        location: Location | None = None,
         skip_verification: bool = False,
     ) -> None:
         super().__init__(
@@ -2679,16 +2679,13 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
     parameter_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
     field_types: Sequence[tuple[Field, ID, Sequence[tuple[ID, expr.Expr]]]]
     checksums: Mapping[ID, Sequence[expr.Expr]] = dataclass_field(default_factory=dict)
-    byte_order: Union[
-        Mapping[Field, ByteOrder],
-        ByteOrder,
-    ] = dataclass_field(
+    byte_order: Mapping[Field, ByteOrder] | ByteOrder = dataclass_field(
         # TODO(eng/recordflux/RecordFlux#1359): Fix type annotation
         # The type should be `dict[Field, ByteOrder]`, but the subscription of `dict` is not
         # supported by Python 3.8.
         default_factory=dict,
     )
-    location: Optional[Location] = dataclass_field(default=None)
+    location: Location | None = dataclass_field(default=None)
 
     @property
     def fields(self) -> list[Field]:
@@ -2836,7 +2833,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
     def merged(
         self,
         declarations: Sequence[TopLevelDeclaration],
-        message_arguments: Optional[Mapping[ID, Mapping[ID, expr.Expr]]] = None,
+        message_arguments: Mapping[ID, Mapping[ID, expr.Expr]] | None = None,
     ) -> UncheckedMessage:
         assert all_types_declared(self, declarations)
 
@@ -2866,7 +2863,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
         argument_errors: RecordFluxError,
         message: Message,
         type_arguments: Sequence[tuple[ID, expr.Expr]],
-        field_type_location: Optional[Location],
+        field_type_location: Location | None,
     ) -> None:
         for param, arg in itertools.zip_longest(message.parameter_types, type_arguments):
             if arg:
@@ -3240,7 +3237,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
 class UncheckedDerivedMessage(type_decl.UncheckedTypeDecl):
     identifier: ID
     base_identifier: ID
-    location: Optional[Location] = dataclass_field(default=None)
+    location: Location | None = dataclass_field(default=None)
 
     def checked(
         self,
@@ -3298,7 +3295,7 @@ class UncheckedRefinement(type_decl.UncheckedTypeDecl):
     field: Field
     sdu: ID
     condition: expr.Expr
-    location: Optional[Location] = dataclass_field(default=None)
+    location: Location | None = dataclass_field(default=None)
 
     def __init__(  # noqa: PLR0913
         self,
@@ -3307,7 +3304,7 @@ class UncheckedRefinement(type_decl.UncheckedTypeDecl):
         field: Field,
         sdu: ID,
         condition: expr.Expr = expr.TRUE,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(
             ID(package) * f"__REFINEMENT__{sdu.flat}__{pdu.flat}__{field.name}__",
@@ -3423,7 +3420,7 @@ def aggregate_constraints(
     def get_constraints(
         aggregate: expr.Aggregate,
         field: expr.Variable,
-        location: Optional[Location],
+        location: Location | None,
     ) -> Sequence[expr.Expr]:
         comp = types[Field(field.name)]
 
@@ -3591,7 +3588,7 @@ def prove(
 def annotate_path(
     path: Sequence[Link],
     message_location: Location,
-    link_filter: Optional[Callable[[Link], bool]] = None,
+    link_filter: Callable[[Link], bool] | None = None,
 ) -> Sequence[Annotation]:
     link_filter = link_filter or (lambda _: True)
     assert message_location.end is not None

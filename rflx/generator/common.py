@@ -5,7 +5,6 @@ import math
 import textwrap
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Optional
 
 from rflx import expr, expr_conv, ir, model, typing_ as rty
 from rflx.ada import (
@@ -674,7 +673,7 @@ def context_cursor_unchanged(
 def sufficient_space_for_field_condition(
     message_id: ID,
     field_name: Name,
-    size: Optional[Expr] = None,
+    size: Expr | None = None,
 ) -> Expr:
     if size is None:
         size = Call(message_id * "Field_Size", [Variable("Ctx"), field_name])
@@ -757,9 +756,9 @@ def field_condition_call(
     prefix: str,
     message: model.Message,
     field: model.Field,
-    value: Optional[Expr] = None,
-    aggregate: Optional[Expr] = None,
-    size: Optional[Expr] = None,
+    value: Expr | None = None,
+    aggregate: Expr | None = None,
+    size: Expr | None = None,
 ) -> Expr:
     package = prefix * message.identifier
     if value is None:
@@ -823,7 +822,7 @@ def contains_function_name(refinement_package: ID, pdu: ID, sdu: ID, field: ID) 
 
 def has_value_dependent_condition(
     message: model.Message,
-    field: Optional[model.Field] = None,
+    field: model.Field | None = None,
 ) -> bool:
     links = message.outgoing(field) if field else message.structure
     fields = [field] if field else message.fields
@@ -842,7 +841,7 @@ def has_value_dependent_condition(
 
 def has_aggregate_dependent_condition(
     message: model.Message,
-    field: Optional[model.Field] = None,
+    field: model.Field | None = None,
 ) -> bool:
     links = message.outgoing(field) if field else message.structure
     fields = [field] if field else message.fields
@@ -861,7 +860,7 @@ def has_aggregate_dependent_condition(
 
 def has_size_dependent_condition(
     message: model.Message,
-    field: Optional[model.Field] = None,
+    field: model.Field | None = None,
 ) -> bool:
     field_sizes = {expr.Size(f.name) for f in message.fields}
     links = message.outgoing(field) if field else message.structure

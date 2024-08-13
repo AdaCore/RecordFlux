@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import abc
-from typing import Union
 
 import pytest
 
@@ -662,7 +661,7 @@ def test_check_type_error(actual: Type, expected: Type, match: str) -> None:
 )
 def test_check_type_instance(
     actual: Type,
-    expected: Union[type[Type], tuple[type[Type], ...]],
+    expected: type[Type] | tuple[type[Type], ...],
 ) -> None:
     check_type_instance(actual, expected, Location((10, 20)), '"A"').propagate()
 
@@ -694,7 +693,7 @@ def test_check_type_instance(
 )
 def test_check_type_instance_error(
     actual: Type,
-    expected: Union[type[Type], tuple[type[Type], ...]],
+    expected: type[Type] | tuple[type[Type], ...],
     match: str,
 ) -> None:
     with pytest.raises(RecordFluxError, match=match):

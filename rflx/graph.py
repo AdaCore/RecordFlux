@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
 
 from pydotplus import Dot, Edge, InvocationException, Node  # type: ignore[attr-defined]
 
@@ -100,7 +99,7 @@ def create_message_graph(message: Message) -> Dot:
     return result
 
 
-def create_session_graph(session: Session, ignore: Optional[Sequence[str]] = None) -> Dot:
+def create_session_graph(session: Session, ignore: Sequence[str] | None = None) -> Dot:
     """
     Return pydot graph representation of session.
 

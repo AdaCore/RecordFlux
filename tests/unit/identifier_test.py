@@ -3,7 +3,6 @@ from __future__ import annotations
 import pickle
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Union
 
 import pytest
 
@@ -38,7 +37,7 @@ def test_id_invalid_type() -> None:
         "A::B:C::D",
     ],
 )
-def test_id_invalid(identifier: Union[str, Sequence[str]]) -> None:
+def test_id_invalid(identifier: str | Sequence[str]) -> None:
     with pytest.raises(FatalError, match=r"^invalid identifier$"):
         ID(identifier)
 

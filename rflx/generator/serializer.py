@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from enum import Enum
-from typing import Optional
 
 from rflx import expr, expr_conv, typing_ as rty
 from rflx.ada import (
@@ -1720,7 +1719,7 @@ class SerializerGenerator:
         self,
         message: Message,
         field: Field,
-        size: Optional[Expr] = None,
+        size: Expr | None = None,
     ) -> list[Expr]:
         return [
             common.sufficient_space_for_field_condition(
@@ -1767,8 +1766,8 @@ class SerializerGenerator:
 
     @staticmethod
     def _update_last(
-        message: Optional[Message] = None,
-        field: Optional[Field] = None,
+        message: Message | None = None,
+        field: Field | None = None,
     ) -> list[Statement]:
         assert (message and field) or not (message or field)
         last = (

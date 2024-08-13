@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import abc
-from typing import Union
 
 from rflx import expr, expr_conv, typing_ as rty
 from rflx.ada import (
@@ -3417,7 +3416,7 @@ def _create_structure_type(prefix: str, message: Message) -> UnitPart:
 
             type_ = message.field_types[link.target]
 
-            component_type: Union[ID, Expr]
+            component_type: ID | Expr
 
             if isinstance(type_, Scalar):
                 component_type = common.prefixed_type_identifier(type_.identifier, prefix)

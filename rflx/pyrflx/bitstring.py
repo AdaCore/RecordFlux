@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Union
 
 from typing_extensions import Self
 
@@ -23,7 +22,7 @@ class Bitstring:
         self._bits += other._bits
         return self
 
-    def __getitem__(self, key: Union[int, slice]) -> Bitstring:
+    def __getitem__(self, key: int | slice) -> Bitstring:
         if isinstance(key, slice) and isinstance(key.stop, int) and len(self._bits) < key.stop:
             raise IndexError
         return Bitstring(self._bits[key])

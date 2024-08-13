@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
-from typing import Optional, Union
 
 from rflx.error import FatalError
 from rflx.identifier import ID, StrID
@@ -18,7 +17,7 @@ class PyRFLX:
     def __init__(
         self,
         model: Model,
-        checksum_functions: Optional[Mapping[StrID, Mapping[str, ChecksumFunction]]] = None,
+        checksum_functions: Mapping[StrID, Mapping[str, ChecksumFunction]] | None = None,
         skip_message_verification: bool = False,
     ) -> None:
         """
@@ -54,8 +53,8 @@ class PyRFLX:
     @classmethod
     def from_specs(
         cls,
-        files: Iterable[Union[str, Path]],
-        cache: Optional[Cache] = None,
+        files: Iterable[str | Path],
+        cache: Cache | None = None,
         skip_message_verification: bool = False,
     ) -> PyRFLX:
         paths = list(map(Path, files))

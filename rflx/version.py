@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from importlib import metadata
-from typing import Optional
 
 import rflx
 from rflx import __version__
@@ -52,7 +51,7 @@ def is_gnat_tracker_release() -> bool:
 class Requirement:
     def __init__(self, string: str) -> None:
         self.name: str
-        self.extra: Optional[str]
+        self.extra: str | None
 
         match = re.match(r'([^<=> (]{1,})[^;]*(?: *; extra == [\'"](.*)[\'"])?', string)
 

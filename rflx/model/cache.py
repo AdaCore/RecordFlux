@@ -7,7 +7,7 @@ import time
 import typing as ty
 from functools import lru_cache, singledispatch
 from pathlib import Path
-from typing import Literal, Optional, TextIO
+from typing import Literal, TextIO
 
 import importlib_resources
 
@@ -187,7 +187,7 @@ class Digest:
         return self._full_name
 
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> str | None:
         return self._value
 
 

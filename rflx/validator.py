@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
 from types import TracebackType
-from typing import Optional, TextIO, Union
+from typing import TextIO
 
 from ruamel.yaml.main import YAML
 from typing_extensions import Self
@@ -33,9 +33,9 @@ from rflx.specification import Parser
 class Validator:
     def __init__(
         self,
-        files: Iterable[Union[str, Path]],
-        checksum_module: Optional[str] = None,
-        cache: Optional[Cache] = None,
+        files: Iterable[str | Path],
+        checksum_module: str | None = None,
+        cache: Cache | None = None,
         split_disjunctions: bool = False,
     ):
         model = self._create_model(
@@ -73,9 +73,9 @@ class Validator:
     def validate(  # noqa: PLR0913
         self,
         message_identifier: ID,
-        paths_invalid: Optional[list[Path]] = None,
-        paths_valid: Optional[list[Path]] = None,
-        json_output: Optional[Path] = None,
+        paths_invalid: list[Path] | None = None,
+        paths_valid: list[Path] | None = None,
+        json_output: Path | None = None,
         abort_on_error: bool = False,
         coverage: bool = False,
         target_coverage: float = 0.00,
@@ -155,9 +155,9 @@ class Validator:
     def _check_arguments(
         self,
         _message_identifier: ID,
-        paths_invalid: Optional[list[Path]] = None,
-        paths_valid: Optional[list[Path]] = None,
-        json_output: Optional[Path] = None,
+        paths_invalid: list[Path] | None = None,
+        paths_valid: list[Path] | None = None,
+        json_output: Path | None = None,
         _abort_on_error: bool = False,
         _coverage: bool = False,
         target_coverage: float = 0.00,
@@ -290,7 +290,7 @@ class Validator:
         return result
 
     @staticmethod
-    def _parse_checksum_module(name: Optional[str]) -> dict[StrID, dict[str, ChecksumFunction]]:
+    def _parse_checksum_module(name: str | None) -> dict[StrID, dict[str, ChecksumFunction]]:
         if name is None:
             return {}
 
@@ -336,7 +336,7 @@ class Validator:
             raise ValidationError(f"{message_path} is not a regular file")
 
         parameters_path = message_path.with_suffix(".yaml")
-        message_parameters: dict[str, Union[bool, int, str]] = {}
+        message_parameters: dict[str, bool | int | str] = {}
 
         if parameters_path.is_file():
             yaml = YAML()
@@ -480,7 +480,7 @@ class CoverageInformation:
 class ValidationResult:
     validation_success: bool
     parsed_message: MessageValue
-    parser_error: Optional[str]
+    parser_error: str | None
     message_path: Path
     original_message: bytes
     valid_original_message: bool
@@ -515,9 +515,9 @@ class ValidationResult:
 
 
 class OutputWriter:
-    file: Optional[TextIO]
+    file: TextIO | None
 
-    def __init__(self, file: Optional[Path]) -> None:
+    def __init__(self, file: Path | None) -> None:
         if file is not None:
             try:
                 self.file = file.open("w", encoding="utf-8")
@@ -534,9 +534,9 @@ class OutputWriter:
 
     def __exit__(
         self,
-        exception_type: Optional[type[BaseException]],
-        exception_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if self.file is not None:
             self.file.write("\n]\n")

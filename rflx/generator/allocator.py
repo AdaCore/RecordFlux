@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import zip_longest
-from typing import Optional
 
 from rflx import ir, typing_ as rty
 from rflx.ada import (
@@ -124,15 +123,15 @@ class AllocatorGenerator:
     def get_local_slot_ptrs(self) -> list[ID]:
         return [self._slot_name(s.slot_id) for s in self._numbered_slots if not s.global_]
 
-    def get_slot_ptr(self, location: Optional[Location]) -> ID:
+    def get_slot_ptr(self, location: Location | None) -> ID:
         assert location is not None
         slot_id: int = self._allocation_slots[location]
         return self._slot_name(slot_id)
 
-    def get_size(self, variable: Optional[ID] = None, state: Optional[ID] = None) -> int:
+    def get_size(self, variable: ID | None = None, state: ID | None = None) -> int:
         return self._integration.get_size(self._session.identifier, variable, state)
 
-    def is_externally_managed(self, location: Optional[Location]) -> bool:
+    def is_externally_managed(self, location: Location | None) -> bool:
         assert location is not None
         return location in self._externally_managed_buffers
 
@@ -370,7 +369,7 @@ class AllocatorGenerator:
         return (slots, externally_managed_buffers)
 
     @staticmethod
-    def _scope(state: ir.State, var_id: ID) -> Optional[ID]:
+    def _scope(state: ir.State, var_id: ID) -> ID | None:
         """
         Return the scope of the variable var_id.
 
@@ -397,7 +396,7 @@ class AllocatorGenerator:
 
         @dataclass
         class AllocationRequirement:
-            location: Optional[Location]
+            location: Location | None
             size: int
 
         def determine_allocation_requirements(

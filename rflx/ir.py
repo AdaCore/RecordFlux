@@ -8,7 +8,7 @@ from collections.abc import Generator, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from enum import Enum
 from sys import intern
-from typing import TYPE_CHECKING, Optional, Protocol, TypeVar, Union
+from typing import TYPE_CHECKING, Protocol, TypeVar
 
 import z3
 from attr import define, field, frozen
@@ -31,11 +31,11 @@ class Origin(Protocol):
     def __str__(self) -> str: ...  # pragma: no cover
 
     @property
-    def location(self) -> Optional[Location]: ...  # pragma: no cover
+    def location(self) -> Location | None: ...  # pragma: no cover
 
 
 class ConstructedOrigin(Origin):
-    def __init__(self, string_representation: str, location: Optional[Location]) -> None:
+    def __init__(self, string_representation: str, location: Location | None) -> None:
         self._string_representation = string_representation
         self._location = location
 
@@ -43,7 +43,7 @@ class ConstructedOrigin(Origin):
         return self._string_representation
 
     @property
-    def location(self) -> Optional[Location]:
+    def location(self) -> Location | None:
         return self._location
 
 
@@ -105,7 +105,7 @@ class ProofManager(Base):
 
 
 class Cond(Base):
-    def __init__(self, goal: BoolExpr, facts: Optional[Sequence[Stmt]] = None) -> None:
+    def __init__(self, goal: BoolExpr, facts: Sequence[Stmt] | None = None) -> None:
         self._goal = goal
         self._facts = facts or []
 
@@ -122,8 +122,8 @@ class Cond(Base):
 class Stmt(Base):
     """Statement in three-address code (TAC) format."""
 
-    origin: Optional[Origin]
-    _str: Optional[str] = field(init=False, default=None)
+    origin: Origin | None
+    _str: str | None = field(init=False, default=None)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -139,7 +139,7 @@ class Stmt(Base):
         return self._str  # type: ignore[unreachable]
 
     @property
-    def location(self) -> Optional[Location]:
+    def location(self) -> Location | None:
         return self.origin.location if self.origin else None
 
     @property
@@ -170,8 +170,8 @@ class Stmt(Base):
 class VarDecl(Stmt):
     identifier: ID = field(converter=ID)
     type_: rty.NamedType
-    expression: Optional[ComplexExpr] = None
-    origin: Optional[Origin] = None
+    expression: ComplexExpr | None = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -202,7 +202,7 @@ class Assign(Stmt):
     target: ID = field(converter=ID)
     expression: Expr
     type_: rty.NamedType
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -252,7 +252,7 @@ class FieldAssign(Stmt):
     field: ID = field(converter=ID)
     expression: Expr
     type_: rty.Message
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -293,7 +293,7 @@ class Append(Stmt):
     sequence: ID = field(converter=ID)
     expression: Expr
     type_: rty.Sequence
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -326,7 +326,7 @@ class Extend(Stmt):
     sequence: ID = field(converter=ID)
     expression: Expr
     type_: rty.Sequence
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -355,7 +355,7 @@ class Reset(Stmt):
     identifier: ID = field(converter=ID)
     parameter_values: Mapping[ID, Expr]
     type_: rty.Any
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -389,7 +389,7 @@ class Reset(Stmt):
 class ChannelStmt(Stmt):
     channel: ID = field(converter=ID)
     expression: BasicExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -425,10 +425,10 @@ class Write(ChannelStmt):
 @define(eq=False)
 class Check(Stmt):
     expression: BoolExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
-    def location(self) -> Optional[Location]:
+    def location(self) -> Location | None:
         return self.expression.location
 
     @property
@@ -458,8 +458,8 @@ Self = TypeVar("Self", bound="Expr")
 class Expr(Base):
     """Expression in three-address code (TAC) format."""
 
-    origin: Optional[Origin]
-    _str: Optional[str] = field(init=False, default=None)
+    origin: Origin | None
+    _str: str | None = field(init=False, default=None)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -486,7 +486,7 @@ class Expr(Base):
         return str(self)
 
     @property
-    def location(self) -> Optional[Location]:
+    def location(self) -> Location | None:
         return self.origin.location if self.origin else None
 
     @property
@@ -548,7 +548,7 @@ class BasicBoolExpr(BasicExpr, BoolExpr):
 @define(eq=False)
 class Var(BasicExpr):
     identifier: ID = field(converter=ID)
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -562,7 +562,7 @@ class Var(BasicExpr):
 class IntVar(Var, BasicIntExpr):
     identifier: ID = field(converter=ID)
     var_type: rty.AnyInteger
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.AnyInteger:
@@ -580,7 +580,7 @@ class IntVar(Var, BasicIntExpr):
 @define(eq=False)
 class BoolVar(Var, BasicBoolExpr):
     identifier: ID = field(converter=ID)
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Enumeration:
@@ -599,7 +599,7 @@ class BoolVar(Var, BasicBoolExpr):
 class ObjVar(Var):
     identifier: ID = field(converter=ID)
     var_type: rty.Any
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Any:
@@ -618,7 +618,7 @@ class ObjVar(Var):
 class EnumLit(BasicExpr):
     identifier: ID = field(converter=ID)
     enum_type: rty.Enumeration
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Enumeration:
@@ -641,7 +641,7 @@ class EnumLit(BasicExpr):
 @define(eq=False)
 class IntVal(BasicIntExpr):
     value: int
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.UniversalInteger:
@@ -664,7 +664,7 @@ class IntVal(BasicIntExpr):
 @define(eq=False)
 class BoolVal(BasicBoolExpr):
     value: bool
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -684,7 +684,7 @@ class BoolVal(BasicBoolExpr):
 class Attr(Expr):
     prefix: ID = field(converter=ID)
     prefix_type: rty.Any
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -706,7 +706,7 @@ class Attr(Expr):
 class IntAttr(Attr, IntExpr):
     prefix: ID = field(converter=ID)
     prefix_type: rty.Any
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntAttr:
         return self.__class__(
@@ -783,7 +783,7 @@ class HasData(Attr, BoolExpr):
 class Head(Attr):
     prefix: ID = field(converter=ID)
     prefix_type: rty.Composite
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Any:
@@ -797,8 +797,8 @@ class Head(Attr):
 @define(eq=False)
 class Opaque(Attr):
     prefix: ID = field(converter=ID)
-    prefix_type: Union[rty.Message, rty.Sequence]
-    origin: Optional[Origin] = None
+    prefix_type: rty.Message | rty.Sequence
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Sequence:
@@ -818,7 +818,7 @@ class FieldAccessAttr(Expr):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
     message_type: rty.Compound
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -902,7 +902,7 @@ class FieldSize(FieldAccessAttr, IntExpr):
 @define(eq=False)
 class UnaryExpr(Expr):
     expression: BasicExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -915,7 +915,7 @@ class UnaryExpr(Expr):
 @define(eq=False)
 class UnaryIntExpr(UnaryExpr, IntExpr):
     expression: BasicIntExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.AnyInteger:
@@ -925,14 +925,14 @@ class UnaryIntExpr(UnaryExpr, IntExpr):
 @define(eq=False)
 class UnaryBoolExpr(UnaryExpr, BoolExpr):
     expression: BasicBoolExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
 
 @define(eq=False)
 class BinaryExpr(Expr):
     left: BasicExpr
     right: BasicExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -952,7 +952,7 @@ class BinaryExpr(Expr):
         return f"{self.left.origin_str}{self._symbol}{self.right.origin_str}"
 
     @property
-    def location(self) -> Optional[Location]:
+    def location(self) -> Location | None:
         if self.origin is not None:
             return self.origin.location
         if self.left.origin is not None:
@@ -971,7 +971,7 @@ class BinaryExpr(Expr):
 class BinaryIntExpr(BinaryExpr, IntExpr):
     left: BasicIntExpr
     right: BasicIntExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @abstractmethod
     def preconditions(
@@ -992,7 +992,7 @@ class BinaryIntExpr(BinaryExpr, IntExpr):
 class BinaryBoolExpr(BinaryExpr, BoolExpr):
     left: BasicBoolExpr
     right: BasicBoolExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
 
 @define(eq=False)
@@ -1258,14 +1258,14 @@ class Or(BinaryBoolExpr):
 class Relation(BoolExpr, BinaryExpr):
     left: BasicExpr
     right: BasicExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
 
 @define(eq=False)
 class Less(Relation):
     left: BasicIntExpr
     right: BasicIntExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     def to_z3_expr(self) -> z3.BoolRef:
         return self.left.to_z3_expr() < self.right.to_z3_expr()
@@ -1279,7 +1279,7 @@ class Less(Relation):
 class LessEqual(Relation):
     left: BasicIntExpr
     right: BasicIntExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     def to_z3_expr(self) -> z3.BoolRef:
         return self.left.to_z3_expr() <= self.right.to_z3_expr()
@@ -1303,7 +1303,7 @@ class Equal(Relation):
 class GreaterEqual(Relation):
     left: BasicIntExpr
     right: BasicIntExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     def to_z3_expr(self) -> z3.BoolRef:
         return self.left.to_z3_expr() >= self.right.to_z3_expr()
@@ -1317,7 +1317,7 @@ class GreaterEqual(Relation):
 class Greater(Relation):
     left: BasicIntExpr
     right: BasicIntExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     def to_z3_expr(self) -> z3.BoolRef:
         return self.left.to_z3_expr() > self.right.to_z3_expr()
@@ -1342,7 +1342,7 @@ class Call(Expr):
     identifier: ID = field(converter=ID)
     arguments: Sequence[Expr]
     argument_types: Sequence[rty.Any]
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
     _preconditions: list[Cond] = field(init=False, factory=list)
 
     @property
@@ -1371,7 +1371,7 @@ class IntCall(Call, IntExpr):
     arguments: Sequence[Expr]
     argument_types: Sequence[rty.Any]
     type_: rty.AnyInteger
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntCall:
         return self.__class__(
@@ -1416,7 +1416,7 @@ class ObjCall(Call):
     arguments: Sequence[Expr]
     argument_types: Sequence[rty.Any]
     type_: rty.Any
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjCall:
         return self.__class__(
@@ -1436,7 +1436,7 @@ class FieldAccess(Expr):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
     message_type: rty.Compound
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -1467,7 +1467,7 @@ class IntFieldAccess(FieldAccess, IntExpr):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
     message_type: rty.Compound
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.AnyInteger:
@@ -1501,7 +1501,7 @@ class ObjFieldAccess(FieldAccess):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
     message_type: rty.Compound
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Any:
@@ -1526,7 +1526,7 @@ class IfExpr(Expr):
     condition: BasicBoolExpr
     then_expr: ComplexExpr
     else_expr: ComplexExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -1562,7 +1562,7 @@ class IntIfExpr(IfExpr, IntExpr):
     then_expr: ComplexIntExpr
     else_expr: ComplexIntExpr
     return_type: rty.AnyInteger
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.AnyInteger:
@@ -1579,7 +1579,7 @@ class BoolIfExpr(IfExpr, BoolExpr):
     condition: BasicBoolExpr
     then_expr: ComplexBoolExpr
     else_expr: ComplexBoolExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Enumeration:
@@ -1595,7 +1595,7 @@ class BoolIfExpr(IfExpr, BoolExpr):
 class Conversion(Expr):
     target_type: rty.NamedType
     argument: Expr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Any:
@@ -1626,7 +1626,7 @@ class Conversion(Expr):
 class IntConversion(Conversion, BasicIntExpr):
     target_type: rty.Integer
     argument: IntExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Integer:
@@ -1670,10 +1670,10 @@ class IntConversion(Conversion, BasicIntExpr):
 @define(eq=False)
 class Comprehension(Expr):
     iterator: ID = field(converter=ID)
-    sequence: Union[Var, FieldAccess]
+    sequence: Var | FieldAccess
     selector: ComplexExpr
     condition: ComplexBoolExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Aggregate:
@@ -1717,10 +1717,10 @@ class Comprehension(Expr):
 @define(eq=False)
 class Find(Expr):
     iterator: ID = field(converter=ID)
-    sequence: Union[Var, FieldAccess]
+    sequence: Var | FieldAccess
     selector: ComplexExpr
     condition: ComplexBoolExpr
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Any:
@@ -1764,7 +1764,7 @@ class Find(Expr):
 @define(eq=False)
 class Agg(Expr):
     elements: Sequence[BasicExpr]
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Aggregate:
@@ -1791,8 +1791,8 @@ class Agg(Expr):
 
 
 def _named_agg_elements_converter(
-    elements: Sequence[tuple[Union[StrID, BasicExpr], BasicExpr]],
-) -> Sequence[tuple[Union[ID, BasicExpr], BasicExpr]]:
+    elements: Sequence[tuple[StrID | BasicExpr, BasicExpr]],
+) -> Sequence[tuple[ID | BasicExpr, BasicExpr]]:
     return [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
 
 
@@ -1800,10 +1800,10 @@ def _named_agg_elements_converter(
 class NamedAgg(Expr):
     """Only used by code generator and therefore provides minimum functionality."""
 
-    elements: Sequence[tuple[Union[ID, BasicExpr], BasicExpr]] = field(
+    elements: Sequence[tuple[ID | BasicExpr, BasicExpr]] = field(
         converter=_named_agg_elements_converter,
     )
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Any:
@@ -1829,7 +1829,7 @@ class NamedAgg(Expr):
 @define(eq=False)
 class Str(Expr):
     string: str
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def type_(self) -> rty.Sequence:
@@ -1857,7 +1857,7 @@ class MsgAgg(Expr):
     identifier: ID = field(converter=ID)
     field_values: Mapping[ID, Expr]
     type_: rty.Message
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -1891,7 +1891,7 @@ class DeltaMsgAgg(Expr):
     identifier: ID = field(converter=ID)
     field_values: Mapping[ID, Expr]
     type_: rty.Message
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -1925,7 +1925,7 @@ class CaseExpr(Expr):
     expression: BasicExpr
     choices: Sequence[tuple[Sequence[BasicExpr], BasicExpr]]
     type_: rty.Any
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -1964,7 +1964,7 @@ class SufficientSpace(FieldAccessAttr, BoolExpr):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
     message_type: rty.Message
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     def to_z3_expr(self) -> z3.BoolRef:
         return z3.Bool(str(self))
@@ -1974,7 +1974,7 @@ class SufficientSpace(FieldAccessAttr, BoolExpr):
 class HasElement(Attr, BoolExpr):
     prefix: ID = field(converter=ID)
     prefix_type: rty.Sequence
-    origin: Optional[Origin] = None
+    origin: Origin | None = None
 
     def to_z3_expr(self) -> z3.BoolRef:
         return z3.Bool(str(self))
@@ -1983,7 +1983,7 @@ class HasElement(Attr, BoolExpr):
 @frozen
 class Decl:
     identifier: ID = field(converter=ID)
-    location: Optional[Location]
+    location: Location | None
 
 
 @frozen
@@ -2004,7 +2004,7 @@ class FuncDecl(FormalDecl):
     arguments: Sequence[Argument]
     return_type: ID = field(converter=ID)
     type_: rty.Type
-    location: Optional[Location]
+    location: Location | None
 
 
 @frozen
@@ -2012,7 +2012,7 @@ class ChannelDecl(FormalDecl):
     identifier: ID = field(converter=ID)
     readable: bool
     writable: bool
-    location: Optional[Location]
+    location: Location | None
 
 
 @frozen
@@ -2060,18 +2060,18 @@ class ComplexBoolExpr(ComplexExpr):
 class Transition:
     target: ID = field(converter=ID)
     condition: ComplexExpr
-    description: Optional[str]
-    location: Optional[Location]
+    description: str | None
+    location: Location | None
 
 
 @frozen
 class State:
     identifier: ID = field(converter=ID)
     transitions: Sequence[Transition]
-    exception_transition: Optional[Transition]
+    exception_transition: Transition | None
     actions: Sequence[Stmt]
-    description: Optional[str]
-    location: Optional[Location]
+    description: str | None
+    location: Location | None
 
     @property
     def declarations(self) -> list[VarDecl]:
@@ -2088,7 +2088,7 @@ class Session:
     declarations: Sequence[VarDecl]
     parameters: Sequence[FormalDecl]
     types: Mapping[ID, type_decl.TypeDecl]
-    location: Optional[Location]
+    location: Location | None
 
     def __init__(  # noqa: PLR0913
         self,
@@ -2097,7 +2097,7 @@ class Session:
         declarations: Sequence[VarDecl],
         parameters: Sequence[FormalDecl],
         types: Mapping[ID, type_decl.TypeDecl],
-        location: Optional[Location],
+        location: Location | None,
         variable_id: Generator[ID, None, None],
         workers: int = 1,
     ) -> None:

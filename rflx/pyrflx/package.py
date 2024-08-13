@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
-from typing import Optional, Union
 
 from rflx.common import Base
 from rflx.identifier import StrID
@@ -22,7 +21,7 @@ class Package(Base):
     def new_message(
         self,
         key: StrID,
-        parameters: Optional[Mapping[str, Union[bool, int, str]]] = None,
+        parameters: Mapping[str, bool | int | str] | None = None,
     ) -> MessageValue:
         message = self._messages[str(key)].clone()
         if parameters:

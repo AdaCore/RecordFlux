@@ -10,7 +10,6 @@ import re
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
 
 ID_SEPARATOR = "-"
 ID_REGEX = r"§(?:[A-Z0-9]+" + ID_SEPARATOR + r")*[A-Z0-9]+"
@@ -42,7 +41,7 @@ class Requirement:
         identifier: str,
         description: str,
         referenced: bool = False,
-        requirements: Optional[list[Requirement]] = None,
+        requirements: list[Requirement] | None = None,
     ):
         self._identifier = identifier
         self._description = description.capitalize()
@@ -78,7 +77,7 @@ class Requirement:
         self._referenced = value
 
 
-def main(argv: Sequence[str]) -> Union[bool, str]:
+def main(argv: Sequence[str]) -> bool | str:
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("requirements", metavar="REQUIREMENTS_FILE", type=Path)
     arg_parser.add_argument("directories", metavar="DIRECTORY", type=Path, nargs="+")

@@ -27,38 +27,45 @@ FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pyca
 # This is only relevant for Python 3.8.
 
 
+# TODO(eng/recordflux/RecordFlux#1424): Replace remaining use of Optional
+# and Union. Pydantic has issues with PEP604 type annotations in Python
+# 3.8 and 3.9.
+
+
 class ConfigFile(BaseModel):  # type: ignore[misc]
-    input: Optional[ty.Mapping[str, Optional[ty.Sequence[ty.Union[int, str]]]]] = None
-    output: Optional[ty.Sequence[str]] = None
-    sequence: Optional[str] = None
-    prove: Optional[ty.Sequence[str]] = None
-    external_io_buffers: Optional[int] = None
+    input: Optional[ty.Mapping[str, Optional[ty.Sequence[ty.Union[int, str]]]]] = (  # noqa: UP007
+        None
+    )
+    output: Optional[ty.Sequence[str]] = None  # noqa: UP007
+    sequence: Optional[str] = None  # noqa: UP007
+    prove: Optional[ty.Sequence[str]] = None  # noqa: UP007
+    external_io_buffers: Optional[int] = None  # noqa: UP007
 
     @field_validator("input")
     def initialize_input_if_present(
         cls,  # noqa: N805
-        value: Optional[ty.Mapping[str, ty.Sequence[str]]],
+        value: Optional[ty.Mapping[str, ty.Sequence[str]]],  # noqa: UP007
     ) -> ty.Mapping[str, ty.Sequence[str]]:
         return value if value is not None else {}
 
     @field_validator("output")
     def initialize_output_if_present(
         cls,  # noqa: N805
-        value: Optional[ty.Sequence[str]],
+        value: Optional[ty.Sequence[str]],  # noqa: UP007
     ) -> ty.Sequence[str]:
         return value if value is not None else []
 
     @field_validator("prove")
     def initialize_prove_if_present(
         cls,  # noqa: N805
-        value: Optional[ty.Sequence[str]],
+        value: Optional[ty.Sequence[str]],  # noqa: UP007
     ) -> ty.Sequence[str]:
         return value if value is not None else []
 
     @field_validator("external_io_buffers")
     def initialize_external_io_buffers_if_present(
         cls,  # noqa: N805
-        value: Optional[int],
+        value: Optional[int],  # noqa: UP007
     ) -> int:
         return value if value is not None else 0
 
@@ -68,7 +75,7 @@ class Config:
     inp: dict[str, Sequence[tuple[int, ...]]] = dataclass_field(default_factory=dict)
     out: Sequence[str] = dataclass_field(default_factory=list)
     sequence: str = dataclass_field(default="")
-    prove: Optional[Sequence[str]] = dataclass_field(default=None)
+    prove: Sequence[str] | None = dataclass_field(default=None)
     external_io_buffers: int = dataclass_field(default=0)
 
 

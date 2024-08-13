@@ -24,19 +24,26 @@ from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 # This is only relevant for Python 3.8.
 
 
+# TODO(eng/recordflux/RecordFlux#1424): Replace remaining use of Optional
+# and Union. Pydantic has issues with PEP604 type annotations in Python
+# 3.8 and 3.9.
+
 IntSize = Annotated[int, Gt(0)]
 
 
 class SessionSize(BaseModel):  # type: ignore[misc]
-    default: Optional[IntSize] = Field(None, alias="Default")
-    global_: Optional[ty.Mapping[str, IntSize]] = Field(None, alias="Global")
-    local_: Optional[ty.Mapping[str, ty.Mapping[str, IntSize]]] = Field(None, alias="Local")
+    default: Optional[IntSize] = Field(None, alias="Default")  # noqa: UP007
+    global_: Optional[ty.Mapping[str, IntSize]] = Field(None, alias="Global")  # noqa: UP007
+    local_: Optional[ty.Mapping[str, ty.Mapping[str, IntSize]]] = Field(  # noqa: UP007
+        None,
+        alias="Local",
+    )
 
     model_config = ConfigDict(extra="forbid")
 
 
 class SessionIntegration(BaseModel):  # type: ignore[misc]
-    buffer_size: Optional[SessionSize] = Field(alias="Buffer_Size", default=None)
+    buffer_size: Optional[SessionSize] = Field(alias="Buffer_Size", default=None)  # noqa: UP007
     external_io_buffers: bool = Field(alias="External_IO_Buffers", default=False)
 
     model_config = ConfigDict(extra="forbid")
@@ -53,7 +60,7 @@ class Integration:
     def defaultsize(self) -> int:
         return 4096
 
-    def __init__(self, integration_files_dir: Optional[Path] = None) -> None:
+    def __init__(self, integration_files_dir: Path | None = None) -> None:
         self._packages: dict[str, IntegrationFile] = {}
         self._integration_files_dir = integration_files_dir
 
@@ -102,7 +109,7 @@ class Integration:
                 self._validate_globals(package, integration, session, error)
                 self._validate_states(package, integration, session, error)
 
-    def get_size(self, session: ID, variable: Optional[ID], state: Optional[ID]) -> int:
+    def get_size(self, session: ID, variable: ID | None, state: ID | None) -> int:
         """
         Return the requested buffer size for a variable of a given session and state.
 

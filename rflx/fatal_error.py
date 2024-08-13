@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import traceback
 import types
-from typing import Callable, Final, Optional
+from typing import Callable, Final
 
 from rflx.version import is_gnat_tracker_release, version
 
@@ -32,9 +32,9 @@ class FatalErrorHandler:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        tb: Optional[types.TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        tb: types.TracebackType | None,
     ) -> None:
         if exc_type is not None:
             self._output_func(fatal_error_message(self._unsafe))

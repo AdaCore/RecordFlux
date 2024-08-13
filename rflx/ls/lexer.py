@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import singledispatchmethod
-from typing import Optional, Union, cast
+from typing import Optional, cast
 
 from rflx import const, lang
 from rflx.identifier import ID
@@ -26,7 +26,7 @@ class Token:
 
     """
 
-    symbol: Optional[Symbol]
+    symbol: Symbol | None
     lexeme: str
     line_number: int
     character_offset: int
@@ -35,10 +35,10 @@ class Token:
 @dataclass
 class State:
     imports: set[ID]
-    current_package: Optional[ID]
+    current_package: ID | None
     declarations: list[ID]
-    foreign_package: Optional[ID]
-    current_session: Optional[ID]
+    foreign_package: ID | None
+    current_session: ID | None
     top_level: bool
 
 
@@ -52,7 +52,7 @@ class LSLexer:
         """List of tokens resulting from the previous LSLexer.tokenize calls."""
         return self._tokens
 
-    def search_token(self, line_number: int, character_offset: int) -> Optional[Token]:
+    def search_token(self, line_number: int, character_offset: int) -> Token | None:
         """Return the token at the given location if it exists, otherwise return None."""
 
         if len(self._tokens) == 0:
@@ -110,8 +110,10 @@ class LSLexer:
         state = State(set(), None, [], None, None, top_level=False)
         self._process_ast_node(unit.root, state)
 
+    # TODO(eng/recordflux/RecordFlux#1424): Replace remaining use of Optional
+    # singledispatch has issues with PEP604 type annotations in Python 3.8 and 3.9.
     @singledispatchmethod
-    def _process_ast_node(self, node: Optional[lang.RFLXNode], state: State) -> None:
+    def _process_ast_node(self, node: Optional[lang.RFLXNode], state: State) -> None:  # noqa: UP007
         if node is None:
             return
 
@@ -121,7 +123,7 @@ class LSLexer:
         for child in node.children:
             self._process_ast_node(child, state)
 
-    def _identify_symbol(self, lexeme: str, state: State) -> Optional[Symbol]:
+    def _identify_symbol(self, lexeme: str, state: State) -> Symbol | None:
         symbols: list[Symbol] = self._model.get_symbols(lexeme)
 
         if state.foreign_package is not None and state.foreign_package != ID(lexeme):
@@ -203,7 +205,7 @@ class LSLexer:
     # Python 3.11 directly supports single dispatch with typing.Union
     @_process_ast_node.register(lang.TypeDecl)
     @_process_ast_node.register(lang.SessionDecl)
-    def _(self, node: Union[lang.TypeDecl, lang.SessionDecl], state: State) -> None:
+    def _(self, node: lang.TypeDecl | lang.SessionDecl, state: State) -> None:
         partial_identifier = ID(node.f_identifier.text)
         identifier = (
             state.current_package * partial_identifier

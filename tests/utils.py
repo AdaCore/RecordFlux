@@ -7,7 +7,6 @@ import shutil
 import subprocess
 import textwrap
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Optional, Union
 
 import pytest
 
@@ -45,8 +44,8 @@ def assert_message_model_error(
     structure: Sequence[Link],
     types: Mapping[Field, TypeDecl],
     regex: str,
-    checksums: Optional[Mapping[ID, Sequence[Expr]]] = None,
-    location: Optional[Location] = None,
+    checksums: Mapping[ID, Sequence[Expr]] | None = None,
+    location: Location | None = None,
 ) -> None:
     location = location or Location((1, 1), end=(1, 2))
     check_regex(regex)
@@ -80,7 +79,7 @@ def assert_session_model_error(
 
 
 def assert_equal_code_specs(
-    spec_files: Iterable[Union[str, pathlib.Path]],
+    spec_files: Iterable[str | pathlib.Path],
     expected_dir: pathlib.Path,
     tmp_path: pathlib.Path,
     accept_extra_files: bool = False,
@@ -133,9 +132,9 @@ def assert_equal_code(
 
 
 def assert_compilable_code_specs(
-    spec_files: Iterable[Union[str, pathlib.Path]],
+    spec_files: Iterable[str | pathlib.Path],
     tmp_path: pathlib.Path,
-    prefix: Optional[str] = None,
+    prefix: str | None = None,
 ) -> None:
     parser = Parser()
 
@@ -148,7 +147,7 @@ def assert_compilable_code_specs(
 def assert_compilable_code_string(
     specification: str,
     tmp_path: pathlib.Path,
-    prefix: Optional[str] = None,
+    prefix: str | None = None,
 ) -> None:
     parser = Parser()
     parser.parse_string(specification)
@@ -160,8 +159,8 @@ def assert_compilable_code(  # noqa: PLR0913
     model: Model,
     integration: Integration,
     tmp_path: pathlib.Path,
-    main: Optional[str] = None,
-    prefix: Optional[str] = None,
+    main: str | None = None,
+    prefix: str | None = None,
     debug: Debug = Debug.BUILTIN,
     mode: str = "strict",
 ) -> None:
@@ -184,7 +183,7 @@ def assert_executable_code(
     integration: Integration,
     tmp_path: pathlib.Path,
     main: str = MAIN,
-    prefix: Optional[str] = None,
+    prefix: str | None = None,
     debug: Debug = Debug.BUILTIN,
 ) -> str:
     assert_compilable_code(
@@ -215,8 +214,8 @@ def assert_executable_code(
 def assert_provable_code_string(
     specification: str,
     tmp_path: pathlib.Path,
-    prefix: Optional[str] = None,
-    units: Optional[Sequence[str]] = None,
+    prefix: str | None = None,
+    units: Sequence[str] | None = None,
 ) -> None:
     parser = Parser()
     parser.parse_string(specification)
@@ -228,9 +227,9 @@ def assert_provable_code(
     model: Model,
     integration: Integration,
     tmp_path: pathlib.Path,
-    main: Optional[str] = None,
-    prefix: Optional[str] = None,
-    units: Optional[Sequence[str]] = None,
+    main: str | None = None,
+    prefix: str | None = None,
+    units: Sequence[str] | None = None,
 ) -> None:
     _create_files(tmp_path, model, integration, main, prefix)
 
@@ -259,8 +258,8 @@ def _create_files(
     tmp_path: pathlib.Path,
     model: Model,
     integration: Integration,
-    main: Optional[str] = None,
-    prefix: Optional[str] = None,
+    main: str | None = None,
+    prefix: str | None = None,
     debug: Debug = Debug.BUILTIN,
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
@@ -318,8 +317,8 @@ def _create_files(
 
 
 def session_main(
-    input_channels: Optional[dict[str, Sequence[tuple[int, ...]]]] = None,
-    output_channels: Optional[Sequence[str]] = None,
+    input_channels: dict[str, Sequence[tuple[int, ...]]] | None = None,
+    output_channels: Sequence[str] | None = None,
     external_io_buffers: int = 0,
 ) -> Mapping[str, str]:
     input_channels = input_channels or {}

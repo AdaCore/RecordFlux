@@ -3,7 +3,7 @@ from __future__ import annotations
 import string
 from collections import abc
 from dataclasses import dataclass
-from typing import Optional, Protocol, TypeVar, Union
+from typing import Protocol, TypeVar
 
 from hypothesis import assume, strategies as st
 
@@ -184,8 +184,8 @@ def messages(  # noqa: PLR0915
     class FieldPair:
         source: Field
         target: Field
-        source_type: Optional[TypeDecl]
-        target_type: Optional[TypeDecl]
+        source_type: TypeDecl | None
+        target_type: TypeDecl | None
 
     def size(pair: FieldPair) -> expr.Expr:
         max_size = 2**29 - 1
@@ -379,7 +379,7 @@ def models(draw: Draw) -> Model:
 
 
 @st.composite
-def numbers(draw: Draw, min_value: int = 0, max_value: Optional[int] = None) -> expr.Number:
+def numbers(draw: Draw, min_value: int = 0, max_value: int | None = None) -> expr.Number:
     return expr.Number(draw(st.integers(min_value=min_value, max_value=max_value)))
 
 
@@ -390,7 +390,7 @@ def variables(draw: Draw, elements: st.SearchStrategy[str]) -> expr.Variable:
 
 @st.composite
 def attributes(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Expr:
-    sample: st.SearchStrategy[type[Union[expr.Size, expr.First, expr.Last]]] = st.sampled_from(
+    sample: st.SearchStrategy[type[expr.Size | expr.First | expr.Last]] = st.sampled_from(
         [expr.Size, expr.First, expr.Last],
     )
     attribute = draw(sample)
@@ -432,16 +432,14 @@ def mathematical_expressions(draw: Draw, elements: st.SearchStrategy[expr.Expr])
 def relations(draw: Draw, elements: st.SearchStrategy[expr.Expr]) -> expr.Relation:
     sample: st.SearchStrategy[
         type[
-            Union[
-                expr.Less,
-                expr.LessEqual,
-                expr.Equal,
-                expr.GreaterEqual,
-                expr.Greater,
-                expr.NotEqual,
-                expr.In,
-                expr.NotIn,
-            ]
+            expr.Less
+            | expr.LessEqual
+            | expr.Equal
+            | expr.GreaterEqual
+            | expr.Greater
+            | expr.NotEqual
+            | expr.In
+            | expr.NotIn
         ]
     ] = st.sampled_from(
         [

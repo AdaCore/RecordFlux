@@ -5,7 +5,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional, Union
+from typing import Iterable
 
 import rflx.typing_ as rty
 from rflx import expr, lang, model
@@ -118,7 +118,7 @@ def validate_handler(
         error.propagate()
 
 
-def create_description(description: Optional[lang.Description] = None) -> Optional[str]:
+def create_description(description: lang.Description | None = None) -> str | None:
     if description:
         assert isinstance(description.text, str)
         return description.text.split('"')[1]
@@ -363,7 +363,7 @@ def create_sequence(
     _parameters: lang.Parameters,
     sequence: lang.TypeDef,
     filename: Path,
-) -> Optional[model.UncheckedSequence]:
+) -> model.UncheckedSequence | None:
     assert isinstance(sequence, lang.SequenceTypeDef)
     element_identifier = model.internal_type_identifier(
         create_id(error, sequence.f_element_type, filename),
@@ -435,7 +435,7 @@ def create_binop(error: RecordFluxError, expression: lang.Expr, filename: Path) 
     raise NotImplementedError(f"Invalid BinOp {expression.f_op.kind_name} => {expression.text}")
 
 
-MATH_OPERATIONS: Mapping[str, type[Union[expr.BinExpr, expr.AssExpr]]] = {
+MATH_OPERATIONS: Mapping[str, type[expr.BinExpr | expr.AssExpr]] = {
     "OpPow": expr.Pow,
     "OpAdd": expr.Add,
     "OpSub": expr.Sub,
@@ -841,9 +841,9 @@ def create_case(error: RecordFluxError, expression: lang.Expr, filename: Path) -
     assert isinstance(expression, lang.CaseExpression)
 
     def create_choice(
-        value: Union[lang.AbstractID, lang.Expr],
+        value: lang.AbstractID | lang.Expr,
         filename: Path,
-    ) -> Union[ID, expr.Number]:
+    ) -> ID | expr.Number:
         if isinstance(value, lang.AbstractID):
             return create_id(error, value, filename)
         assert isinstance(value, lang.Expr)
@@ -851,7 +851,7 @@ def create_case(error: RecordFluxError, expression: lang.Expr, filename: Path) -
         assert isinstance(result, expr.Number)
         return result
 
-    choices: Sequence[tuple[Sequence[Union[ID, expr.Number]], expr.Expr]] = [
+    choices: Sequence[tuple[Sequence[ID | expr.Number], expr.Expr]] = [
         (
             [
                 create_choice(s, filename)
@@ -1047,7 +1047,7 @@ def create_range(
     _parameters: lang.Parameters,
     rangetype: lang.TypeDef,
     filename: Path,
-) -> Optional[model.UncheckedInteger]:
+) -> model.UncheckedInteger | None:
     assert isinstance(rangetype, lang.RangeTypeDef)
     if rangetype.f_size.f_identifier.text != "Size":
         error.extend(
@@ -1087,7 +1087,7 @@ def create_null_message(
     _parameters: lang.Parameters,
     message: lang.TypeDef,
     _filename: Path,
-) -> Optional[model.UncheckedMessage]:
+) -> model.UncheckedMessage | None:
     assert isinstance(message, lang.NullMessageTypeDef)
     return model.UncheckedMessage(
         identifier,
@@ -1106,11 +1106,11 @@ def create_message(
     parameters: lang.Parameters,
     message: lang.TypeDef,
     filename: Path,
-) -> Optional[model.UncheckedMessage]:
+) -> model.UncheckedMessage | None:
     assert isinstance(message, lang.MessageTypeDef)
     fields = message.f_message_fields
 
-    def get_parameters(param: lang.Parameters) -> Optional[lang.ParameterList]:
+    def get_parameters(param: lang.Parameters) -> lang.ParameterList | None:
         if not param:
             return None
         assert isinstance(param.f_parameters, lang.ParameterList)
@@ -1422,10 +1422,10 @@ def parse_aspects(  # noqa: PLR0912
     filename: Path,
 ) -> tuple[
     Mapping[ID, Sequence[expr.Expr]],
-    Union[model.ByteOrder, dict[model.Field, model.ByteOrder]],
+    model.ByteOrder | dict[model.Field, model.ByteOrder],
 ]:
     checksum_result = {}
-    byte_order_result: Union[model.ByteOrder, dict[model.Field, model.ByteOrder]] = {}
+    byte_order_result: model.ByteOrder | dict[model.Field, model.ByteOrder] = {}
 
     grouped = defaultdict(list)
     for aspect in aspects:
@@ -1472,7 +1472,7 @@ def create_derived_message(
     _parameters: lang.Parameters,
     derivation: lang.TypeDef,
     filename: Path,
-) -> Optional[model.UncheckedDerivedMessage]:
+) -> model.UncheckedDerivedMessage | None:
     assert isinstance(derivation, lang.TypeDerivationDef)
     base_id = create_id(error, derivation.f_base, filename)
     base_name = model.internal_type_identifier(base_id, identifier.parent)
@@ -1489,11 +1489,11 @@ def create_enumeration(
     _parameters: lang.Parameters,
     enumeration: lang.TypeDef,
     filename: Path,
-) -> Optional[model.UncheckedEnumeration]:
+) -> model.UncheckedEnumeration | None:
     assert isinstance(enumeration, lang.EnumerationTypeDef)
     literals: list[tuple[ID, expr.Number]] = []
 
-    def create_aspects(aspects: lang.AspectList) -> Optional[tuple[expr.Expr, bool]]:
+    def create_aspects(aspects: lang.AspectList) -> tuple[expr.Expr, bool] | None:
         always_valid = False
         size = None
 
@@ -1726,9 +1726,9 @@ class SpecificationFile:
 class Parser:
     def __init__(
         self,
-        cache: Optional[Cache] = None,
+        cache: Cache | None = None,
         workers: int = 1,
-        integration_files_dir: Optional[Path] = None,
+        integration_files_dir: Path | None = None,
     ) -> None:
         self._cache = AlwaysVerify() if cache is None else cache
         self._workers = workers
@@ -1827,7 +1827,7 @@ class Parser:
             for spec_node in self._specifications.values()
         }
 
-    def _parse_file(self, error: RecordFluxError, filename: Path) -> Optional[SpecificationFile]:
+    def _parse_file(self, error: RecordFluxError, filename: Path) -> SpecificationFile | None:
         logging.info("Parsing {filename}", filename=filename)
 
         source_code_str = filename.read_text()
@@ -1907,7 +1907,7 @@ class Parser:
                     lang.TypeDef,
                     Path,
                 ],
-                Optional[model.UncheckedTypeDecl],
+                model.UncheckedTypeDecl | None,
             ],
         ] = {
             "SequenceTypeDef": create_sequence,

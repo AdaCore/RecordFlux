@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import NoReturn, Optional, Sequence
+from typing import NoReturn, Sequence
 
 from typing_extensions import TypeGuard
 
@@ -16,7 +16,7 @@ from rflx.rapidflux import (
 def fail(
     message: str,
     severity: Severity = Severity.ERROR,
-    location: Optional[Location] = None,
+    location: Location | None = None,
 ) -> NoReturn:
     raise RecordFluxError([ErrorEntry(message, severity, location)])
 
@@ -24,26 +24,26 @@ def fail(
 def fatal_fail(
     message: str,
     severity: Severity = Severity.ERROR,
-    location: Optional[Location] = None,
+    location: Location | None = None,
 ) -> NoReturn:
     raise FatalError(str(RecordFluxError([ErrorEntry(message, severity, location)])))
 
 
 def warn(
     message: str,
-    location: Optional[Location] = None,
+    location: Location | None = None,
 ) -> None:
     RecordFluxError([ErrorEntry(message, Severity.WARNING, location)]).print_messages()
 
 
 def info(
     message: str,
-    location: Optional[Location] = None,
+    location: Location | None = None,
 ) -> None:
     RecordFluxError([ErrorEntry(message, Severity.INFO, location)]).print_messages()
 
 
 def are_all_locations_present(
-    locations: Sequence[Optional[Location]],
+    locations: Sequence[Location | None],
 ) -> TypeGuard[Sequence[Location]]:
     return all(l is not None for l in locations)

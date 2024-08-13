@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
@@ -80,7 +79,7 @@ def _append(
     row: int,
     col: int,
     spec_file: Path,
-    check_type: Optional[Check] = None,
+    check_type: Check | None = None,
 ) -> None:
     error.push(
         ErrorEntry(

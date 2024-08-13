@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Sequence
 
 from rflx.common import Base
 from rflx.identifier import ID, StrID
@@ -10,7 +10,7 @@ from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
 
 class TopLevelDeclaration(Base):
-    def __init__(self, identifier: StrID, location: Optional[Location] = None) -> None:
+    def __init__(self, identifier: StrID, location: Location | None = None) -> None:
         self.identifier = ID(identifier)
         self.location = location
         self.error = RecordFluxError()

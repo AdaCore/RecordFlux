@@ -5,6 +5,7 @@ from typing import Final, Union
 
 from rflx.rapidflux import ID as ID
 
+# TODO(eng/recordflux/RecordFlux#1424): Replace with PEP604 union
 StrID = Union[str, ID]
 
 ID_PREFIX: Final = "T_"

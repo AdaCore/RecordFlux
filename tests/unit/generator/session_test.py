@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Callable, Optional, Sequence
+from typing import Callable, Sequence
 
 import pytest
 import z3
@@ -729,7 +729,7 @@ class EvaluatedDeclarationStr:
 )
 def test_session_declare(
     type_: rty.Type,
-    expression: Optional[ir.ComplexExpr],
+    expression: ir.ComplexExpr | None,
     constant: bool,
     session_global: bool,
     expected: EvaluatedDeclarationStr,
@@ -830,7 +830,7 @@ def test_session_declare(
 )
 def test_session_declare_error(
     type_: rty.Type,
-    expression: Optional[ir.ComplexExpr],
+    expression: ir.ComplexExpr | None,
     error_type: type[RecordFluxError],
     error_msg: str,
 ) -> None:

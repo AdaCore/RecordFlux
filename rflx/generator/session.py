@@ -4,7 +4,7 @@ import typing as ty
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field as dataclass_field
 from functools import partial, singledispatchmethod
-from typing import NoReturn, Optional, Union
+from typing import NoReturn
 
 from typing_extensions import Self
 
@@ -782,7 +782,7 @@ class FSMGenerator:
     def _create_context_type(
         self,
         initial_state: ID,
-        global_variables: Mapping[ID, tuple[ID, Optional[Expr]]],
+        global_variables: Mapping[ID, tuple[ID, Expr | None]],
         has_functions: bool,
     ) -> UnitPart:
         return UnitPart(
@@ -2890,7 +2890,7 @@ class FSMGenerator:
     def _evaluate_declarations(
         self,
         declarations: Iterable[ir.VarDecl],
-        is_global: Optional[Callable[[ID], bool]] = None,
+        is_global: Callable[[ID], bool] | None = None,
         session_global: bool = False,
     ) -> EvaluatedDeclaration:
         if session_global:
@@ -3002,8 +3002,8 @@ class FSMGenerator:
         identifier: ID,
         type_: rty.Type,
         is_global: Callable[[ID], bool],
-        alloc_id: Optional[Location],
-        expression: Optional[ir.ComplexExpr] = None,
+        alloc_id: Location | None,
+        expression: ir.ComplexExpr | None = None,
         constant: bool = False,
         session_global: bool = False,
     ) -> EvaluatedDeclaration:
@@ -3167,7 +3167,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Optional[Location],
+        alloc_id: Location | None,
     ) -> Sequence[Statement]:
         if isinstance(expression, ir.DeltaMsgAgg):
             return self._assign_to_delta_message_aggregate(
@@ -3430,7 +3430,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Optional[Location],
+        alloc_id: Location | None,
     ) -> Sequence[Statement]:
         if not isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message)):
             fatal_fail(
@@ -3455,7 +3455,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Optional[Location],
+        alloc_id: Location | None,
     ) -> Sequence[Statement]:
         assert isinstance(find.sequence.type_, rty.Sequence)
         sequence_type_id = find.sequence.type_.identifier
@@ -3571,7 +3571,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Optional[Location],
+        alloc_id: Location | None,
     ) -> Sequence[Statement]:
         assert isinstance(head.prefix_type, rty.Sequence)
         assert isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message))
@@ -3765,7 +3765,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Optional[Location],
+        alloc_id: Location | None,
     ) -> Sequence[Statement]:
         assert isinstance(comprehension.type_, (rty.Sequence, rty.Aggregate))
         assert isinstance(comprehension.sequence.type_, rty.Sequence)
@@ -4332,7 +4332,7 @@ class FSMGenerator:
         def check(
             sequence_type: ID,
             required_space: Expr,
-            precondition: Optional[Expr] = None,
+            precondition: Expr | None = None,
         ) -> list[Statement]:
             return [
                 *(
@@ -4478,7 +4478,7 @@ class FSMGenerator:
     def _check(
         self,
         expression: ir.BoolExpr,
-        origin: Optional[ir.Origin],
+        origin: ir.Origin | None,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
@@ -4852,7 +4852,7 @@ class FSMGenerator:
 
     @_to_ada_expr.register
     def _(self, expression: ir.NamedAgg, is_global: ty.Callable[[ID], bool]) -> Expr:
-        elements: list[tuple[Union[ID, ada.Expr], ada.Expr]] = [
+        elements: list[tuple[ID | ada.Expr, ada.Expr]] = [
             (
                 n if isinstance(n, ID) else self._to_ada_expr(n, is_global),
                 self._to_ada_expr(e, is_global),
@@ -5225,8 +5225,8 @@ class FSMGenerator:
         get_statements: Sequence[Statement],
         length: Expr,
         exception_handler: ExceptionHandler,
-        pre_declarations: Optional[Sequence[Declaration]] = None,
-        post_statements: Optional[Sequence[Statement]] = None,
+        pre_declarations: Sequence[Declaration] | None = None,
+        post_statements: Sequence[Statement] | None = None,
     ) -> Declare:
         pre_declarations = pre_declarations if pre_declarations else []
         post_statements = post_statements if post_statements else []
@@ -5566,7 +5566,7 @@ class FSMGenerator:
         statements: Callable[[ExceptionHandler], Sequence[Statement]],
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-        alloc_id: Optional[Location],
+        alloc_id: Location | None,
     ) -> list[Statement]:
         # Eng/RecordFlux/RecordFlux#577
         sequence_context = context_id(sequence_identifier, is_global)
@@ -5621,7 +5621,7 @@ class FSMGenerator:
         target_buffer_is_smaller: bool,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
-        alloc_id: Optional[Location],
+        alloc_id: Location | None,
     ) -> Declare:
         # Eng/RecordFlux/RecordFlux#577
         take_buffer = self._take_buffer(sequence_identifier, sequence_type, is_global)
@@ -5678,7 +5678,7 @@ class FSMGenerator:
         sequence_identifier: ID,
         sequence_type: ID,
         target_identifier: ID,
-        target_type: Union[rty.Sequence, rty.Integer, rty.Enumeration, rty.Message],
+        target_type: rty.Sequence | rty.Integer | rty.Enumeration | rty.Message,
         iterator_identifier: ID,
         iterator_type: ID,
         selector_stmts: list[ir.Stmt],
@@ -5688,7 +5688,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
-        alloc_id: Optional[Location],
+        alloc_id: Location | None,
     ) -> While:
         assert not isinstance(selector, ir.MsgAgg)
 
@@ -5897,7 +5897,7 @@ class FSMGenerator:
     def _comprehension_assign_element(  # noqa: PLR0913
         self,
         target_identifier: ID,
-        target_type: Union[rty.Integer, rty.Enumeration, rty.Message],
+        target_type: rty.Integer | rty.Enumeration | rty.Message,
         selector_stmts: list[ir.Stmt],
         selector: ir.Expr,
         update_context: Sequence[Statement],
@@ -6086,7 +6086,7 @@ class FSMGenerator:
         identifier: ID,
         type_: ID,
         is_global: Callable[[ID], bool],
-        alloc_id: Optional[Location],
+        alloc_id: Location | None,
     ) -> Sequence[Statement]:
         if self._allocator.is_externally_managed(alloc_id):
             return self._take_buffer(identifier, type_, is_global)
@@ -6096,7 +6096,7 @@ class FSMGenerator:
             *self._free_buffer(identifier, alloc_id),
         ]
 
-    def _free_buffer(self, identifier: ID, alloc_id: Optional[Location]) -> Sequence[Statement]:
+    def _free_buffer(self, identifier: ID, alloc_id: Location | None) -> Sequence[Statement]:
         slot = Variable("Ctx.P.Slots" * self._allocator.get_slot_ptr(alloc_id))
         return [
             PragmaStatement("Assert", [Equal(slot, Variable("null"))]),
@@ -6116,7 +6116,7 @@ class FSMGenerator:
         identifier: ID,
         type_: ID,
         is_global: Callable[[ID], bool],
-        buf: Optional[ID] = None,
+        buf: ID | None = None,
     ) -> Sequence[Statement]:
         context = context_id(identifier, is_global)
         buf = buf or buffer_id(identifier)
@@ -6186,7 +6186,7 @@ class FSMGenerator:
             ),
         ]
 
-    def _allocate_buffer(self, identifier: ID, alloc_id: Optional[Location]) -> Sequence[Statement]:
+    def _allocate_buffer(self, identifier: ID, alloc_id: Location | None) -> Sequence[Statement]:
         if self._allocator.is_externally_managed(alloc_id):
             return []
 
@@ -6204,11 +6204,11 @@ class FSMGenerator:
         identifier: ID,
         type_: ID,
         is_global: Callable[[ID], bool],
-        first: Optional[Expr] = None,
-        last: Optional[Expr] = None,
-        parameters: Optional[Mapping[ID, Expr]] = None,
-        written_last: Optional[Expr] = None,
-        buffer: Optional[Expr] = None,
+        first: Expr | None = None,
+        last: Expr | None = None,
+        parameters: Mapping[ID, Expr] | None = None,
+        written_last: Expr | None = None,
+        buffer: Expr | None = None,
     ) -> CallStatement:
         return CallStatement(
             type_ * "Initialize",

@@ -11,7 +11,7 @@ from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
 from sys import intern
-from typing import TYPE_CHECKING, Final, Optional, Union
+from typing import TYPE_CHECKING, Final
 
 from rflx import const, typing_ as rty
 from rflx.common import Base, indent, indent_next, unique
@@ -42,7 +42,7 @@ class Expr(Base):
     def __init__(
         self,
         type_: rty.Type = rty.UNDEFINED,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ):
         self.type_ = type_
         self.location = location
@@ -98,7 +98,7 @@ class Expr(Base):
         """Initialize and check the types of sub-expressions."""
         raise NotImplementedError
 
-    def check_type(self, expected: Union[rty.Type, tuple[rty.Type, ...]]) -> RecordFluxError:
+    def check_type(self, expected: rty.Type | tuple[rty.Type, ...]) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
         error = self._check_type_subexpr()
         error.extend(
@@ -113,7 +113,7 @@ class Expr(Base):
 
     def check_type_instance(
         self,
-        expected: Union[type[rty.Type], tuple[type[rty.Type], ...]],
+        expected: type[rty.Type] | tuple[type[rty.Type], ...],
     ) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
         error = self._check_type_subexpr()
@@ -140,8 +140,8 @@ class Expr(Base):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         return func(self)
@@ -157,7 +157,7 @@ class Expr(Base):
 
 
 class Not(Expr):
-    def __init__(self, expr: Expr, location: Optional[Location] = None) -> None:
+    def __init__(self, expr: Expr, location: Location | None = None) -> None:
         super().__init__(rty.BOOLEAN, location)
         self.expr = expr
 
@@ -185,8 +185,8 @@ class Not(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -234,7 +234,7 @@ class BinExpr(Expr):
         left: Expr,
         right: Expr,
         type_: rty.Type = rty.UNDEFINED,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(type_, location)
         self.left = left
@@ -275,8 +275,8 @@ class BinExpr(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -302,7 +302,7 @@ class BinExpr(Expr):
 
 
 class AssExpr(Expr):
-    def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
+    def __init__(self, *terms: Expr, location: Location | None = None) -> None:
         super().__init__(rty.UNDEFINED, location=location)
         self.terms = list(terms)
 
@@ -345,8 +345,8 @@ class AssExpr(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -466,7 +466,7 @@ class AssExpr(Expr):
 
 
 class BoolAssExpr(AssExpr):
-    def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
+    def __init__(self, *terms: Expr, location: Location | None = None) -> None:
         super().__init__(*terms, location=location)
         self.type_ = rty.BOOLEAN
 
@@ -572,7 +572,7 @@ class OrElse(Or):
 class Number(Expr):
     type_: rty.UniversalInteger
 
-    def __init__(self, value: int, base: int = 0, location: Optional[Location] = None) -> None:
+    def __init__(self, value: int, base: int = 0, location: Location | None = None) -> None:
         super().__init__(rty.UniversalInteger(ty.Bounds(value, value)), location)
         self.value = value
         self.base = base
@@ -684,7 +684,7 @@ class Number(Expr):
 
 
 class Neg(Expr):
-    def __init__(self, expr: Expr, location: Optional[Location] = None) -> None:
+    def __init__(self, expr: Expr, location: Location | None = None) -> None:
         super().__init__(expr.type_, location)
         self.expr = expr
 
@@ -712,8 +712,8 @@ class Neg(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -733,7 +733,7 @@ class Neg(Expr):
 
 
 class MathAssExpr(AssExpr):
-    def __init__(self, *terms: Expr, location: Optional[Location] = None) -> None:
+    def __init__(self, *terms: Expr, location: Location | None = None) -> None:
         super().__init__(*terms, location=location)
         common_type = rty.common_type([t.type_ for t in terms])
         self.type_ = common_type if common_type != rty.UNDEFINED else rty.BASE_INTEGER
@@ -815,7 +815,7 @@ class Mul(MathAssExpr):
 
 
 class MathBinExpr(BinExpr):
-    def __init__(self, left: Expr, right: Expr, location: Optional[Location] = None) -> None:
+    def __init__(self, left: Expr, right: Expr, location: Location | None = None) -> None:
         super().__init__(left, right, rty.common_type([left.type_, right.type_]), location)
 
     def _check_type_subexpr(self) -> RecordFluxError:
@@ -937,7 +937,7 @@ class Name(Expr):
         self,
         immutable: bool = False,
         type_: rty.Type = rty.UNDEFINED,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(type_, location)
         self.immutable = immutable
@@ -957,8 +957,8 @@ class Name(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         if self.immutable:
             return self
@@ -974,7 +974,7 @@ class TypeName(Name):
         self,
         identifier: StrID,
         type_: rty.Type = rty.UNDEFINED,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
         super().__init__(immutable=False, type_=type_, location=location)
@@ -1002,7 +1002,7 @@ class Literal(Name):
         self,
         identifier: StrID,
         type_: rty.Type = rty.UNDEFINED,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
         super().__init__(immutable=False, type_=type_, location=location)
@@ -1034,9 +1034,9 @@ class Literal(Name):
 
     def copy(
         self,
-        identifier: Optional[StrID] = None,
-        type_: Optional[rty.Type] = None,
-        location: Optional[Location] = None,
+        identifier: StrID | None = None,
+        type_: rty.Type | None = None,
+        location: Location | None = None,
     ) -> Literal:
         return self.__class__(
             ID(identifier) if identifier is not None else self.identifier,
@@ -1051,7 +1051,7 @@ class Variable(Name):
         identifier: StrID,
         immutable: bool = False,
         type_: rty.Type = rty.UNDEFINED,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
         super().__init__(immutable, type_, location)
@@ -1084,10 +1084,10 @@ class Variable(Name):
 
     def copy(
         self,
-        identifier: Optional[StrID] = None,
-        immutable: Optional[bool] = None,
-        type_: Optional[rty.Type] = None,
-        location: Optional[Location] = None,
+        identifier: StrID | None = None,
+        immutable: bool | None = None,
+        type_: rty.Type | None = None,
+        location: Location | None = None,
     ) -> Variable:
         return self.__class__(
             ID(identifier) if identifier is not None else self.identifier,
@@ -1110,7 +1110,7 @@ FALSE = Literal(
 
 
 class Attribute(Name):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         if isinstance(prefix, ID):
             prefix = Variable(prefix, location=prefix.location)
         if isinstance(prefix, str):
@@ -1139,8 +1139,8 @@ class Attribute(Name):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -1158,7 +1158,7 @@ class Attribute(Name):
 
 
 class Size(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
         self.type_ = rty.UNIVERSAL_INTEGER
 
@@ -1167,7 +1167,7 @@ class Size(Attribute):
 
 
 class Length(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
         self.type_ = rty.UNIVERSAL_INTEGER
 
@@ -1176,7 +1176,7 @@ class Length(Attribute):
 
 
 class First(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
         self.type_ = rty.UNIVERSAL_INTEGER
 
@@ -1185,7 +1185,7 @@ class First(Attribute):
 
 
 class Last(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
         self.type_ = rty.UNIVERSAL_INTEGER
 
@@ -1194,7 +1194,7 @@ class Last(Attribute):
 
 
 class ValidChecksum(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
         self.type_ = rty.BOOLEAN
 
@@ -1207,7 +1207,7 @@ class ValidChecksum(Attribute):
 
 
 class Valid(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
         self.type_ = rty.BOOLEAN
 
@@ -1218,7 +1218,7 @@ class Valid(Attribute):
 
 
 class Present(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
         self.type_ = rty.BOOLEAN
 
@@ -1239,7 +1239,7 @@ class Present(Attribute):
 
 
 class HasData(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
         self.type_ = rty.BOOLEAN
 
@@ -1254,7 +1254,7 @@ class HasData(Attribute):
 class Head(Attribute):
     def __init__(
         self,
-        prefix: Union[StrID, Expr],
+        prefix: StrID | Expr,
         type_: rty.Type = rty.UNDEFINED,
     ):
         super().__init__(prefix)
@@ -1277,7 +1277,7 @@ class Head(Attribute):
 
 
 class Opaque(Attribute):
-    def __init__(self, prefix: Union[StrID, Expr]) -> None:
+    def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
         self.type_ = rty.OPAQUE
 
@@ -1297,7 +1297,7 @@ class Val(Attribute):
 
     def __init__(
         self,
-        prefix: Union[StrID, Expr],
+        prefix: StrID | Expr,
         expression: Expr,
     ) -> None:
         self.expression = expression
@@ -1317,8 +1317,8 @@ class Val(Attribute):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,  # noqa: ARG002
-        mapping: Optional[Mapping[Name, Expr]] = None,  # noqa: ARG002
+        func: Callable[[Expr], Expr] | None = None,  # noqa: ARG002
+        mapping: Mapping[Name, Expr] | None = None,  # noqa: ARG002
     ) -> Expr:
         return self
 
@@ -1357,7 +1357,7 @@ class Selected(Name):
         selector: StrID,
         immutable: bool = False,
         type_: rty.Type = rty.UNDEFINED,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         self.prefix = prefix
         self.selector = ID(selector)
@@ -1407,8 +1407,8 @@ class Selected(Name):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -1424,11 +1424,11 @@ class Selected(Name):
 
     def copy(
         self,
-        prefix: Optional[Expr] = None,
-        selector: Optional[StrID] = None,
-        immutable: Optional[bool] = None,
-        type_: Optional[rty.Type] = None,
-        location: Optional[Location] = None,
+        prefix: Expr | None = None,
+        selector: StrID | None = None,
+        immutable: bool | None = None,
+        type_: rty.Type | None = None,
+        location: Location | None = None,
     ) -> Selected:
         return self.__class__(
             prefix if prefix is not None else self.prefix,
@@ -1444,10 +1444,10 @@ class Call(Name):
         self,
         identifier: StrID,
         type_: rty.Type,
-        args: Optional[Sequence[Expr]] = None,
+        args: Sequence[Expr] | None = None,
         immutable: bool = False,
-        argument_types: Optional[Sequence[rty.Type]] = None,
-        location: Optional[Location] = None,
+        argument_types: Sequence[rty.Type] | None = None,
+        location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.args = args or []
@@ -1505,8 +1505,8 @@ class Call(Name):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -1557,7 +1557,7 @@ UNDEFINED = UndefinedExpr(location=Location((1, 1)))
 
 
 class Aggregate(Expr):
-    def __init__(self, *elements: Expr, location: Optional[Location] = None) -> None:
+    def __init__(self, *elements: Expr, location: Location | None = None) -> None:
         super().__init__(rty.Aggregate(rty.common_type([e.type_ for e in elements])), location)
         self.elements = list(elements)
 
@@ -1587,8 +1587,8 @@ class Aggregate(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -1608,7 +1608,7 @@ class Aggregate(Expr):
 
 
 class String(Aggregate):
-    def __init__(self, data: str, location: Optional[Location] = None) -> None:
+    def __init__(self, data: str, location: Location | None = None) -> None:
         super().__init__(*[Number(ord(d)) for d in data], location=location)
         self.data = data
 
@@ -1624,8 +1624,8 @@ class String(Aggregate):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         return func(self)
@@ -1637,7 +1637,7 @@ class String(Aggregate):
 class NamedAggregate(Expr):
     """Only used by code generator and therefore provides minimum functionality."""
 
-    def __init__(self, *elements: tuple[Union[StrID, Expr], Expr]) -> None:
+    def __init__(self, *elements: tuple[StrID | Expr, Expr]) -> None:
         super().__init__()
         self.elements = [(ID(n) if isinstance(n, str) else n, e) for n, e in elements]
 
@@ -1662,7 +1662,7 @@ class NamedAggregate(Expr):
 
 
 class Relation(BinExpr):
-    def __init__(self, left: Expr, right: Expr, location: Optional[Location] = None) -> None:
+    def __init__(self, left: Expr, right: Expr, location: Location | None = None) -> None:
         super().__init__(left, right, rty.BOOLEAN, location)
 
     @abstractmethod
@@ -1874,7 +1874,7 @@ class IfExpr(Expr):
     def __init__(
         self,
         condition_expressions: Sequence[tuple[Expr, Expr]],
-        else_expression: Optional[Expr] = None,
+        else_expression: Expr | None = None,
     ) -> None:
         super().__init__(
             rty.common_type(
@@ -1926,8 +1926,8 @@ class IfExpr(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -1964,7 +1964,7 @@ class QuantifiedExpr(Expr):
         parameter_identifier: StrID,
         iterable: Expr,
         predicate: Expr,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(rty.BOOLEAN, location)
         self.parameter_identifier = ID(parameter_identifier)
@@ -2018,8 +2018,8 @@ class QuantifiedExpr(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2080,7 +2080,7 @@ class ForSomeIn(QuantifiedExpr):
 
 
 class ValueRange(Expr):
-    def __init__(self, lower: Expr, upper: Expr, location: Optional[Location] = None):
+    def __init__(self, lower: Expr, upper: Expr, location: Location | None = None):
         super().__init__(rty.Any(), location)
         self.lower = lower
         self.upper = upper
@@ -2103,8 +2103,8 @@ class ValueRange(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2126,8 +2126,8 @@ class Conversion(Expr):
         identifier: StrID,
         argument: Expr,
         type_: rty.Type = rty.UNDEFINED,
-        argument_types: Optional[Sequence[rty.Type]] = None,
-        location: Optional[Location] = None,
+        argument_types: Sequence[rty.Type] | None = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(type_, location)
         self.identifier = ID(identifier)
@@ -2185,8 +2185,8 @@ class Conversion(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2252,7 +2252,7 @@ class Comprehension(Expr):
         sequence: Expr,
         selector: Expr,
         condition: Expr,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(rty.Aggregate(selector.type_), location)
         self.iterator = ID(iterator)
@@ -2300,8 +2300,8 @@ class Comprehension(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2335,7 +2335,7 @@ class MessageAggregate(Expr):
         identifier: StrID,
         field_values: Mapping[StrID, Expr],
         type_: rty.Type = rty.UNDEFINED,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(type_, location)
         self.identifier = ID(identifier)
@@ -2468,8 +2468,8 @@ class MessageAggregate(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2518,7 +2518,7 @@ class DeltaMessageAggregate(MessageAggregate):
 
 def substitution(
     mapping: Mapping[Name, Expr],
-    func: Optional[Callable[[Expr], Expr]] = None,
+    func: Callable[[Expr], Expr] | None = None,
 ) -> Callable[[Expr], Expr]:
     assert not (mapping and func)
     if func:
@@ -2564,8 +2564,8 @@ class CaseExpr(Expr):
     def __init__(
         self,
         expr: Expr,
-        choices: Sequence[tuple[Sequence[Union[ID, Number]], Expr]],
-        location: Optional[Location] = None,
+        choices: Sequence[tuple[Sequence[ID | Number], Expr]],
+        location: Location | None = None,
     ) -> None:
         super().__init__(rty.common_type([e.type_ for _, e in choices]), location)
         self.expr = expr
@@ -2795,8 +2795,8 @@ class CaseExpr(Expr):
 
     def substituted(
         self,
-        func: Optional[Callable[[Expr], Expr]] = None,
-        mapping: Optional[Mapping[Name, Expr]] = None,
+        func: Callable[[Expr], Expr] | None = None,
+        mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
         func = substitution(mapping or {}, func)
         expr = func(self)
@@ -2840,7 +2840,7 @@ def similar_fields(
 def _similar_field_names(
     field: ID,
     fields: Iterable[ID],
-    location: Optional[Location],
+    location: Location | None,
 ) -> list[ErrorEntry]:
     similar_flds = similar_fields(field, fields)
     if similar_flds:

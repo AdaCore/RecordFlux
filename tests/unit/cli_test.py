@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 from collections.abc import Callable
 from io import TextIOWrapper
 from pathlib import Path
-from typing import ClassVar, NoReturn, Optional
+from typing import ClassVar, NoReturn
 
 import pytest
 
@@ -30,8 +30,8 @@ IANA_XML_FILE = str(DATA_DIR / "bootp-dhcp-parameters.xml")
 def validator_mock(
     self: object,  # noqa: ARG001
     files: object,  # noqa: ARG001
-    checksum_module: Optional[str] = None,  # noqa: ARG001
-    cache: Optional[object] = None,  # noqa: ARG001
+    checksum_module: str | None = None,  # noqa: ARG001
+    cache: object | None = None,  # noqa: ARG001
     split_disjunctions: bool = False,  # noqa: ARG001
 ) -> None:
     return None

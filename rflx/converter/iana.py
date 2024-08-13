@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
 from xml.etree.ElementTree import Element, ParseError
 
 from defusedxml import ElementTree
@@ -90,8 +89,8 @@ def write_rflx_specification(
     file: Path,
     package_entries: list[SpecificationElement],
     package_name: str,
-    registry_title: Optional[Element],
-    registry_last_updated: Optional[Element],
+    registry_title: Element | None,
+    registry_last_updated: Element | None,
     reproducible: bool,
 ) -> None:
     package_header: list[CommentBlock] = []
@@ -133,7 +132,7 @@ def resolve_duplicate_literals(enum_types: Sequence[EnumType]) -> None:
 def _convert_registry_to_enum_type(
     registry: Element,
     always_valid: bool,
-) -> Optional[EnumType]:
+) -> EnumType | None:
     records = registry.findall("iana:record", NAMESPACE)
     title = registry.find("iana:title", NAMESPACE)
     if len(records) == 0 or title is None or title.text is None:
@@ -201,7 +200,7 @@ def _convert_registry_to_enum_type(
     return None
 
 
-def _get_name_tag(record: Element) -> Optional[str]:
+def _get_name_tag(record: Element) -> str | None:
     sub_elements = record.findall("*", NAMESPACE)
     child_names = {c.tag[c.tag.index("}") + 1 :] for c in sub_elements}
     possible_name_tags = ["name", "code", "type", "description"]
@@ -281,7 +280,7 @@ class EnumLiteral(SpecificationElement):
         rflx_name: str,
         rflx_value: str,
         bit_length: int,
-        comments: Optional[list[Element]] = None,
+        comments: list[Element] | None = None,
     ):
         self.name = rflx_name
         self.value = rflx_value
@@ -368,7 +367,7 @@ class CommentBlock(SpecificationElement):
 
 
 def _normalize_name(description_text: str) -> str:
-    t: dict[str, Union[int, str, None]] = {c: " " for c in string.punctuation + "\n"}
+    t: dict[str, int | str | None] = {c: " " for c in string.punctuation + "\n"}
     name = description_text.translate(str.maketrans(t))
     return "_".join([s[0].upper() + s[1:] for s in name.split()])
 

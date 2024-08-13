@@ -4,7 +4,7 @@ import typing as ty
 from abc import abstractmethod
 from collections import abc
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol, Union
+from typing import Any, Protocol, Union
 
 from rflx.common import Base
 from rflx.const import BUILTINS_PACKAGE
@@ -56,6 +56,7 @@ class ChecksumFunction(Protocol):
     def __call__(self, message: bytes, **kwargs: object) -> int: ...  # pragma: no cover
 
 
+# TODO(eng/recordflux/RecordFlux#1424): Replace with PEP604 union
 ValueType = Union[
     "MessageValue",
     ty.Sequence["TypeValue"],
@@ -67,7 +68,7 @@ ValueType = Union[
 
 
 class TypeValue(Base):
-    _value: Optional[ValueType] = None
+    _value: ValueType | None = None
 
     def __init__(self, vtype: TypeDecl) -> None:
         self._type = vtype
@@ -110,7 +111,7 @@ class TypeValue(Base):
         raise NotImplementedError
 
     @abstractmethod
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: Bitstring | bytes, check: bool = True) -> None:
         raise NotImplementedError
 
     @property
@@ -145,7 +146,7 @@ class TypeValue(Base):
         cls,
         vtype: TypeDecl,
         imported: bool = False,
-        refinements: Optional[abc.Sequence[RefinementValue]] = None,
+        refinements: abc.Sequence[RefinementValue] | None = None,
     ) -> TypeValue:
         if isinstance(vtype, Integer):
             return IntegerValue(vtype)
@@ -207,7 +208,7 @@ class IntegerValue(ScalarValue):
             raise e
         self._value = value
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: Bitstring | bytes, check: bool = True) -> None:
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         self.assign(int(value), check)
@@ -279,7 +280,7 @@ class EnumValue(ScalarValue):
         assert r == TRUE
         self._value = (str(prefixed_value), self._type.literals[prefixed_value.name])
 
-    def parse(self, value: Union[Bitstring, bytes], _check: bool = True) -> None:
+    def parse(self, value: Bitstring | bytes, _check: bool = True) -> None:
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
         value_as_number = Number(int(value))
@@ -334,7 +335,7 @@ class EnumValue(ScalarValue):
 
 class CompositeValue(TypeValue):
     def __init__(self, vtype: Composite) -> None:
-        self._expected_size: Optional[Expr] = None
+        self._expected_size: Expr | None = None
         super().__init__(vtype)
 
     def set_expected_size(self, expected_size: Expr) -> None:
@@ -342,7 +343,7 @@ class CompositeValue(TypeValue):
 
     def _check_size_of_assigned_value(
         self,
-        value: Union[bytes, Bitstring, abc.Sequence[TypeValue]],
+        value: bytes | Bitstring | abc.Sequence[TypeValue],
     ) -> None:
         if isinstance(value, bytes):
             size_of_value = len(value) * 8
@@ -371,17 +372,17 @@ class CompositeValue(TypeValue):
 
 
 class OpaqueValue(CompositeValue):
-    _value: Optional[bytes]
-    _nested_message: Optional[MessageValue] = None
+    _value: bytes | None
+    _nested_message: MessageValue | None = None
 
     def __init__(self, vtype: Opaque) -> None:
         super().__init__(vtype)
-        self._refinement_message: Optional[MessageValue] = None
+        self._refinement_message: MessageValue | None = None
 
     def assign(self, value: bytes, check: bool = True) -> None:
         self.parse(value, check)
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: Bitstring | bytes, check: bool = True) -> None:
         if check:
             self._check_size_of_assigned_value(value)
         if self._refinement_message is not None:
@@ -411,7 +412,7 @@ class OpaqueValue(CompositeValue):
         return Number(len(self._value) * 8)
 
     @property
-    def nested_message(self) -> Optional[MessageValue]:
+    def nested_message(self) -> MessageValue | None:
         return self._nested_message
 
     @property
@@ -434,7 +435,7 @@ class OpaqueValue(CompositeValue):
     def accepted_type(self) -> type:
         return bytes
 
-    def as_json(self) -> Optional[bytes]:
+    def as_json(self) -> bytes | None:
         return self._value
 
 
@@ -486,7 +487,7 @@ class SequenceValue(CompositeValue):
 
         self._value = value
 
-    def parse(self, value: Union[Bitstring, bytes], check: bool = True) -> None:
+    def parse(self, value: Bitstring | bytes, check: bool = True) -> None:
         self._check_size_of_assigned_value(value)
         if isinstance(value, bytes):
             value = Bitstring.from_bytes(value)
@@ -563,10 +564,10 @@ class MessageValue(TypeValue):
     def __init__(
         self,
         model: Message,
-        refinements: Optional[abc.Sequence[RefinementValue]] = None,
+        refinements: abc.Sequence[RefinementValue] | None = None,
         skip_verification: bool = False,
-        parameters: Optional[abc.Mapping[Name, Expr]] = None,
-        state: Optional[MessageValue.State] = None,
+        parameters: abc.Mapping[Name, Expr] | None = None,
+        state: MessageValue.State | None = None,
     ) -> None:
         super().__init__(model)
         self._skip_verification = skip_verification
@@ -618,7 +619,7 @@ class MessageValue(TypeValue):
     def add_refinement(self, refinement: RefinementValue) -> None:
         self._refinements = [*(self._refinements or []), refinement]
 
-    def add_parameters(self, parameters: abc.Mapping[str, Union[bool, int, str]]) -> None:
+    def add_parameters(self, parameters: abc.Mapping[str, bool | int | str]) -> None:
         expected = {p.name for p in self._type.parameter_types}
         added = set(parameters)
 
@@ -763,7 +764,7 @@ class MessageValue(TypeValue):
     def _valid_refinement_condition(self, refinement: RefinementValue) -> bool:
         return self._simplified(refinement.condition) == TRUE
 
-    def _next_link(self, source_field_name: str) -> Optional[Link]:
+    def _next_link(self, source_field_name: str) -> Link | None:
         field = Field(source_field_name)
         if field == FINAL:
             return None
@@ -800,7 +801,7 @@ class MessageValue(TypeValue):
                 return field
         return ""
 
-    def _get_size(self, fld: str) -> Optional[Number]:
+    def _get_size(self, fld: str) -> Number | None:
         typeval = self._fields[fld].typeval
         if isinstance(typeval, ScalarValue):
             return typeval.size
@@ -815,7 +816,7 @@ class MessageValue(TypeValue):
                 return size if isinstance(size, Number) else None
         return None
 
-    def _get_first(self, fld: str) -> Optional[Number]:
+    def _get_first(self, fld: str) -> Number | None:
         for l in self._type.incoming(Field(fld)):
             if l.first != UNDEFINED and (
                 self._skip_verification or self._simplified(l.condition) == TRUE
@@ -845,7 +846,7 @@ class MessageValue(TypeValue):
     def assign(self, value: bytes, check: bool = True) -> None:
         raise NotImplementedError
 
-    def parse(self, value: Union[Bitstring, bytes], _check: bool = True) -> None:
+    def parse(self, value: Bitstring | bytes, _check: bool = True) -> None:
         assert not self._skip_verification
         self._path.clear()
         if isinstance(value, bytes):
@@ -923,7 +924,7 @@ class MessageValue(TypeValue):
     def _set_unchecked(
         self,
         field_name: str,
-        value: Union[bytes, int, str, abc.Sequence[TypeValue]],
+        value: bytes | int | str | abc.Sequence[TypeValue],
     ) -> None:
         field = self._fields[field_name]
         field.prev = self._last_field
@@ -942,8 +943,8 @@ class MessageValue(TypeValue):
     def _set_checked(
         self,
         field_name: str,
-        value: Union[bytes, int, str, abc.Sequence[TypeValue], Bitstring],
-        message_size: Optional[int] = None,
+        value: bytes | int | str | abc.Sequence[TypeValue] | Bitstring,
+        message_size: int | None = None,
     ) -> None:
         def set_refinement(fld: MessageValue.Field, fld_name: str) -> None:
             if isinstance(fld.typeval, OpaqueValue):
@@ -1029,7 +1030,7 @@ class MessageValue(TypeValue):
     def set(
         self,
         field_name: str,
-        value: Union[bytes, int, str, abc.Sequence[TypeValue]],
+        value: bytes | int | str | abc.Sequence[TypeValue],
     ) -> None:
         if self._skip_verification:
             self._set_unchecked(field_name, value)
@@ -1048,7 +1049,7 @@ class MessageValue(TypeValue):
     def _set_parsed_value(
         self,
         field_name: str,
-        value: Union[bytes, int, str, abc.Sequence[TypeValue], Bitstring],
+        value: bytes | int | str | abc.Sequence[TypeValue] | Bitstring,
         message_size: int,
     ) -> None:
         self._set_checked(field_name, value, message_size)
@@ -1191,7 +1192,7 @@ class MessageValue(TypeValue):
             )
             raise e
 
-        arguments: dict[str, Union[str, int, bytes, tuple[int, int], list[int]]] = {}
+        arguments: dict[str, str | int | bytes | tuple[int, int] | list[int]] = {}
         for expr_tuple in checksum.parameters:
             if isinstance(expr_tuple.evaluated_expression, ValueRange):
                 assert isinstance(expr_tuple.evaluated_expression.lower, Number)
@@ -1337,8 +1338,8 @@ class MessageValue(TypeValue):
 
     def _update_simplified_mapping(
         self,
-        message_size: Optional[int] = None,
-        field: Optional[Field] = None,
+        message_size: int | None = None,
+        field: Field | None = None,
     ) -> None:
         if field:
             if isinstance(field.typeval, ScalarValue):
@@ -1442,7 +1443,7 @@ class MessageValue(TypeValue):
     class Checksum:
         def __init__(self, field_name: str, parameters: abc.Sequence[Expr]):
             self.field_name = field_name
-            self.function: Optional[ChecksumFunction] = None
+            self.function: ChecksumFunction | None = None
             self.calculated = False
 
             @dataclass
@@ -1460,10 +1461,10 @@ class MessageValue(TypeValue):
             self,
             type_value: TypeValue,
             name: str = "",
-            name_variable: Optional[Variable] = None,
-            name_first: Optional[First] = None,
-            name_last: Optional[Last] = None,
-            name_size: Optional[Size] = None,
+            name_variable: Variable | None = None,
+            name_first: First | None = None,
+            name_last: Last | None = None,
+            name_size: Size | None = None,
         ):
             assert name or (name_variable and name_first and name_last and name_size)
             self.typeval = type_value
@@ -1517,8 +1518,8 @@ class MessageValue(TypeValue):
 
     @dataclass
     class State:
-        fields: Optional[abc.Mapping[str, MessageValue.Field]] = None
-        checksums: Optional[abc.Mapping[str, MessageValue.Checksum]] = None
+        fields: abc.Mapping[str, MessageValue.Field] | None = None
+        checksums: abc.Mapping[str, MessageValue.Checksum] | None = None
 
 
 class RefinementValue:

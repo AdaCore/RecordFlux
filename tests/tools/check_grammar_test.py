@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -13,7 +12,7 @@ from tools.check_grammar import check_spec, main
 DATA_DIR = BASE_DATA_DIR / "lrm_grammar"
 
 
-def check_rst(filename: Path, invalid: bool = False, examples: Optional[list[Path]] = None) -> None:
+def check_rst(filename: Path, invalid: bool = False, examples: list[Path] | None = None) -> None:
     errors = RecordFluxError()
     check_spec(
         filename=filename,

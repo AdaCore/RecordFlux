@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from datetime import date
 from functools import cached_property
 from pathlib import Path
-from typing import Optional
 
 from rflx import __version__, expr, expr_conv, typing_ as rty
 from rflx.ada import (
@@ -367,11 +366,11 @@ class Generator:
     def _create_unit(  # noqa: PLR0913
         prefix: str,
         identifier: ID,
-        declaration_context: Optional[abc.Sequence[ContextItem]] = None,
-        body_context: Optional[abc.Sequence[ContextItem]] = None,
-        formal_parameters: Optional[list[FormalDeclaration]] = None,
-        configuration_pragmas: Optional[abc.Sequence[Pragma]] = None,
-        aspects: Optional[abc.Sequence[Aspect]] = None,
+        declaration_context: abc.Sequence[ContextItem] | None = None,
+        body_context: abc.Sequence[ContextItem] | None = None,
+        formal_parameters: list[FormalDeclaration] | None = None,
+        configuration_pragmas: abc.Sequence[Pragma] | None = None,
+        aspects: abc.Sequence[Aspect] | None = None,
         terminating: bool = True,
     ) -> PackageUnit:
         declaration_context = declaration_context if declaration_context else []

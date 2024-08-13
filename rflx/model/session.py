@@ -7,7 +7,7 @@ from collections.abc import Generator, Iterable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Final, Optional
+from typing import Final
 
 from rflx import expr, expr_conv, ir, typing_ as rty
 from rflx.common import Base, indent, indent_next, verbose_repr
@@ -28,8 +28,8 @@ class Transition(Base):
         self,
         target: StrID,
         condition: expr.Expr = expr.TRUE,
-        description: Optional[str] = None,
-        location: Optional[Location] = None,
+        description: str | None = None,
+        location: Location | None = None,
     ):
         self.target = ID(target)
         self.condition = condition
@@ -64,12 +64,12 @@ class State(Base):
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
-        transitions: Optional[Sequence[Transition]] = None,
-        exception_transition: Optional[Transition] = None,
-        actions: Optional[Sequence[stmt.Statement]] = None,
-        declarations: Optional[Sequence[decl.BasicDeclaration]] = None,
-        description: Optional[str] = None,
-        location: Optional[Location] = None,
+        transitions: Sequence[Transition] | None = None,
+        exception_transition: Transition | None = None,
+        actions: Sequence[stmt.Statement] | None = None,
+        declarations: Sequence[decl.BasicDeclaration] | None = None,
+        description: str | None = None,
+        location: Location | None = None,
     ):
         if transitions:
             assert transitions[-1].condition == expr.TRUE, "missing default transition"
@@ -118,7 +118,7 @@ class State(Base):
         return self._transitions or []
 
     @property
-    def exception_transition(self) -> Optional[Transition]:
+    def exception_transition(self) -> Transition | None:
         return self._exception_transition
 
     @property
@@ -351,7 +351,7 @@ class Session(TopLevelDeclaration):
         declarations: Sequence[decl.BasicDeclaration],
         parameters: Sequence[decl.FormalDeclaration],
         types: Sequence[type_decl.TypeDecl],
-        location: Optional[Location] = None,
+        location: Location | None = None,
         workers: int = 1,
     ):
         super().__init__(identifier, location)
@@ -679,7 +679,7 @@ class Session(TopLevelDeclaration):
     ) -> None:
         visible_declarations = dict(visible_declarations)
 
-        def undefined_type(type_identifier: StrID, location: Optional[Location]) -> None:
+        def undefined_type(type_identifier: StrID, location: Location | None) -> None:
             self.error.push(
                 ErrorEntry(
                     f'undefined type "{type_identifier}"',
@@ -1034,7 +1034,7 @@ class UncheckedSession(UncheckedTopLevelDeclaration):
     states: Sequence[State]
     declarations: Sequence[decl.BasicDeclaration]
     parameters: Sequence[decl.FormalDeclaration]
-    location: Optional[Location]
+    location: Location | None
 
     def checked(
         self,

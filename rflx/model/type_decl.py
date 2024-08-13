@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import abc
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import rflx.typing_ as rty
 from rflx import const, expr
@@ -64,7 +64,7 @@ class Scalar(TypeDecl):
         self,
         identifier: StrID,
         size: expr.Expr,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(identifier, location)
 
@@ -104,7 +104,7 @@ class Integer(Scalar):
         first: expr.Expr,
         last: expr.Expr,
         size: expr.Expr,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(identifier, size, location)
 
@@ -305,7 +305,7 @@ class Enumeration(Scalar):
         literals: abc.Sequence[tuple[StrID, expr.Number]],
         size: expr.Expr,
         always_valid: bool,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(identifier, size, location)
 
@@ -507,7 +507,7 @@ class Sequence(Composite):
         self,
         identifier: StrID,
         element_type: TypeDecl,
-        location: Optional[Location] = None,
+        location: Location | None = None,
     ) -> None:
         super().__init__(identifier, location)
         self.element_type = element_type
@@ -627,7 +627,7 @@ class Sequence(Composite):
 
 
 class Opaque(Composite):
-    def __init__(self, location: Optional[Location] = None) -> None:
+    def __init__(self, location: Location | None = None) -> None:
         super().__init__(const.INTERNAL_PACKAGE * "Opaque", location)
 
     def __repr__(self) -> str:
@@ -665,7 +665,7 @@ class UncheckedInteger(UncheckedTypeDecl):
     first: expr.Expr
     last: expr.Expr
     size: expr.Expr
-    location: Optional[Location]
+    location: Location | None
 
     def checked(
         self,
@@ -682,7 +682,7 @@ class UncheckedEnumeration(UncheckedTypeDecl):
     literals: abc.Sequence[tuple[ID, expr.Number]]
     size: expr.Expr
     always_valid: bool
-    location: Optional[Location]
+    location: Location | None
 
     def checked(
         self,
@@ -703,7 +703,7 @@ class UncheckedEnumeration(UncheckedTypeDecl):
 class UncheckedSequence(UncheckedTypeDecl):
     identifier: ID
     element_identifier: ID
-    location: Optional[Location]
+    location: Location | None
 
     def checked(
         self,
@@ -731,7 +731,7 @@ class UncheckedSequence(UncheckedTypeDecl):
 @dataclass
 class UncheckedOpaque(UncheckedTypeDecl):
     identifier: ID
-    location: Optional[Location]
+    location: Location | None
 
     def checked(
         self,
@@ -783,7 +783,7 @@ def is_builtin_type(identifier: StrID) -> bool:
     )
 
 
-def internal_type_identifier(identifier: ID, package: Optional[ID] = None) -> ID:
+def internal_type_identifier(identifier: ID, package: ID | None = None) -> ID:
     """
     Return the internal identifier of a type.
 
