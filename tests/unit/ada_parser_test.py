@@ -745,6 +745,24 @@ from rflx.rapidflux import RecordFluxError
                 ],
             ),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration("P"),
+            body_context=[],
+            body=ada.PackageBody(
+                "P",
+                declarations=[
+                    ada.SubprogramBody(
+                        specification=ada.ProcedureSpecification(
+                            "F",
+                            [ada.OutParameter(["P"], "T")],
+                        ),
+                        declarations=[],
+                        statements=[ada.Assignment("P", ada.Number(42))],
+                    ),
+                ],
+            ),
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -1136,6 +1154,21 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
            procedure Proc (V : T) is
            begin
               C (V);
+           end Proc;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+        end P;
+        package body P
+        is
+
+           procedure Proc (R : out T) is
+           begin
+              R := 42;
            end Proc;
 
         end P;

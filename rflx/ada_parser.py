@@ -369,12 +369,17 @@ ADA_GRAMMAR = lark.Lark(
 
         # 5.1 (4/2)
         simple_statement:           pragma_statement
+                                  | assignment_statement
                                   | procedure_call_statement
                                   | simple_return_statement
 
         # 5.1 (4/2)
         compound_statement: \
                                     if_statement
+
+        # 5.2 (2)
+        assignment_statement: \
+                                    name ":=" expression ";"
 
         # 5.3 (2)
         if_statement: \
@@ -1348,6 +1353,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def compound_statement(self, data: list[ada.Statement]) -> ada.Statement:
         return data[0]
+
+    def assignment_statement(self, data: tuple[ID, ada.Expr]) -> ada.Assignment:
+        return ada.Assignment(data[0], data[1])
 
     def if_statement(
         self,
