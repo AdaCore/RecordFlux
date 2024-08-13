@@ -265,11 +265,18 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.3.3 (2)
         array_aggregate: \
-                                    positional_array_aggregate
+                                    "(" array_component_association \
+                                        ( "," array_component_association )* ")"
 
         # 4.3.3 (3/2)
-        positional_array_aggregate: \
-                                    "(" expression "," expression ("," expression)* ")"
+        # positional_array_aggregate: Unified in array_aggregate to keep parser LR(1)
+
+        # 4.3.3 (4)
+        # named_array_aggregate: Unified in array_aggregate to keep parser LR(1)
+
+        # 4.3.3 (5/2)
+        array_component_association: \
+                                    (name "=>")? expression
 
         # 4.4 (2)
         expression:                 relation (relation_operator relation)*
@@ -1116,14 +1123,34 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def attribute_designator(self, data: list[ID]) -> str:
         return data[0].ada_str
 
-    def aggregate(self, data: list[list[ada.Expr]]) -> ada.Aggregate:
-        return ada.Aggregate(*data[0])
-
-    def array_aggregate(self, data: list[list[ada.Expr]]) -> list[ada.Expr]:
+    def aggregate(
+        self,
+        data: list[ada.Aggregate | ada.NamedAggregate],
+    ) -> ada.Aggregate | ada.NamedAggregate:
         return data[0]
 
-    def positional_array_aggregate(self, data: list[ada.Expr]) -> list[ada.Expr]:
-        return data
+    def array_aggregate(
+        self,
+        data: list[tuple[ID | None, ada.Expr]],
+    ) -> ada.Aggregate | ada.NamedAggregate:
+        named_arguments = [(n, e) for n, e in data if n is not None]
+        positional_arguments = [e for n, e in data if n is None]
+        if named_arguments and positional_arguments:
+            raise ParseError("invalid mixed positional and named aggregate")
+        if named_arguments:
+            return ada.NamedAggregate(*named_arguments)
+        if positional_arguments:
+            return ada.Aggregate(*positional_arguments)
+        assert False, data
+
+    def array_component_association(self, data: list[ID | ada.Expr]) -> tuple[ID | None, ada.Expr]:
+        if len(data) == 1:
+            assert isinstance(data[0], ada.Expr)
+            return None, data[0]
+        assert len(data) == 2
+        assert isinstance(data[0], ID)
+        assert isinstance(data[1], ada.Expr)
+        return data[0], data[1]
 
     def expression(self, data: list[ada.Expr | str]) -> ada.Expr:
 

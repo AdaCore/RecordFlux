@@ -527,6 +527,19 @@ def procedure_body(
             parameters=[ada.OutParameter(["P"], "T")],
             statements=[ada.Assignment("P", ada.Number(42))],
         ),
+        procedure_body(
+            parameters=[ada.OutParameter(["P"], "T")],
+            statements=[
+                ada.Assignment(
+                    "P",
+                    ada.NamedAggregate(
+                        ("E1", ada.Number(1)),
+                        ("E2", ada.Number(2)),
+                        ("E3", ada.Number(3)),
+                    ),
+                ),
+            ],
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -933,6 +946,21 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
            procedure Proc (R : out T) is
            begin
               R := 42;
+           end Proc;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+        end P;
+        package body P
+        is
+
+           procedure Proc (R : out T) is
+           begin
+              R := (F1 => 1, F2 => 2, F3 => 3);
            end Proc;
 
         end P;
