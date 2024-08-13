@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import textwrap
 
 import pytest
@@ -7,22 +9,73 @@ from rflx.identifier import ID
 from rflx.rapidflux import RecordFluxError
 
 
+def package(  # noqa: PLR0913
+    name: str = "P",
+    declaration: ada.PackageDeclaration | None = None,
+    declaration_context: list[ada.ContextItem] | None = None,
+    declaration_aspects: list[ada.Aspect] | None = None,
+    declaration_declarations: list[ada.Declaration] | None = None,
+    declaration_private_declarations: list[ada.Declaration] | None = None,
+    body_declarations: list[ada.Declaration] | None = None,
+    formal_parameters: list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None = None,
+) -> ada.PackageUnit:
+    return ada.PackageUnit(
+        declaration_context=declaration_context or [],
+        declaration=declaration
+        or ada.PackageDeclaration(
+            name,
+            declarations=declaration_declarations,
+            private_declarations=declaration_private_declarations,
+            aspects=declaration_aspects,
+        ),
+        body_context=[],
+        body=ada.PackageBody(
+            name,
+            declarations=body_declarations,
+        ),
+        formal_parameters=formal_parameters,
+    )
+
+
+def function_declaration(
+    parameters: list[ada.Parameter] | None = None,
+    aspects: list[ada.Aspect] | None = None,
+) -> ada.PackageUnit:
+    return package(
+        declaration_declarations=[
+            ada.SubprogramDeclaration(
+                specification=ada.FunctionSpecification(
+                    identifier="S",
+                    return_type="T",
+                    parameters=parameters,
+                ),
+                aspects=aspects,
+            ),
+        ],
+    )
+
+
+def procedure_body(
+    statements: list[ada.Statement],
+    parameters: list[ada.Parameter] | None = None,
+) -> ada.PackageUnit:
+    return package(
+        body_declarations=[
+            ada.SubprogramBody(
+                specification=ada.ProcedureSpecification("S", parameters=parameters),
+                declarations=[],
+                statements=statements,
+            ),
+        ],
+    )
+
+
 @pytest.mark.parametrize(
     ("unit"),
     [
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration("P"),
-            body_context=[],
-            body=ada.PackageBody("P"),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration("A.B.C"),
-            body_context=[],
-            body=ada.PackageBody("A.B.C"),
-        ),
-        ada.PackageUnit(
+        package(),
+        package(name="A.B.C"),
+        package(
             declaration_context=[
                 ada.Pragma("Style_Checks", [ada.String("N3aAbCdefhiIklnOprStux")]),
                 ada.Pragma(
@@ -33,538 +86,338 @@ from rflx.rapidflux import RecordFluxError
                     ],
                 ),
             ],
-            declaration=ada.PackageDeclaration("P"),
-            body_context=[],
-            body=ada.PackageBody("P"),
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                aspects=[ada.SparkMode(), ada.AlwaysTerminates(ada.TRUE)],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.ModularType("T1", ada.Number(8)),
-                    ada.ModularType("T2", ada.Pow(ada.Number(2), ada.Number(8))),
-                    ada.ModularType(
-                        "T3",
-                        ada.Sub(ada.Pow(ada.Number(2), ada.Number(8)), ada.Number(1)),
-                    ),
-                    ada.ModularType(
-                        "T4",
-                        ada.Add(ada.Number(1), ada.Number(2), ada.Number(3), ada.Number(4)),
-                    ),
-                    ada.ModularType(
-                        "T5",
+        package(declaration_aspects=[ada.SparkMode(), ada.AlwaysTerminates(ada.TRUE)]),
+        package(
+            declaration_declarations=[
+                ada.ModularType("T1", ada.Number(8)),
+                ada.ModularType("T2", ada.Pow(ada.Number(2), ada.Number(8))),
+                ada.ModularType(
+                    "T3",
+                    ada.Sub(ada.Pow(ada.Number(2), ada.Number(8)), ada.Number(1)),
+                ),
+                ada.ModularType(
+                    "T4",
+                    ada.Add(ada.Number(1), ada.Number(2), ada.Number(3), ada.Number(4)),
+                ),
+                ada.ModularType(
+                    "T5",
+                    ada.Sub(
                         ada.Sub(
-                            ada.Sub(
-                                ada.Add(ada.Number(1), ada.Number(2), ada.Number(3), ada.Number(4)),
-                                ada.Number(1),
-                            ),
+                            ada.Add(ada.Number(1), ada.Number(2), ada.Number(3), ada.Number(4)),
                             ada.Number(1),
                         ),
+                        ada.Number(1),
                     ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.ModularType(
-                        "T",
-                        ada.Number(8),
-                        aspects=[ada.Annotate("GNATprove", "No_Wrap_Around")],
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.ModularType(
+                    "T",
+                    ada.Number(8),
+                    aspects=[ada.Annotate("GNATprove", "No_Wrap_Around")],
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[ada.RangeType("T", first=ada.Number(0), last=ada.Number(255))],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.RangeType("T", first=ada.Number(0), last=ada.Number(255)),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.ExpressionFunctionDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="Expr_Function",
-                            return_type="T",
-                            parameters=[
-                                ada.Parameter(["A"], "T1"),
-                                ada.Parameter(["B"], "T2"),
-                            ],
-                        ),
-                        expression=ada.IfExpr(
-                            condition_expressions=[
-                                (
-                                    ada.AndThen(
-                                        ada.Less(
-                                            ada.Variable("Bits"),
-                                            ada.Size(ada.Variable("U64")),
-                                        ),
-                                        ada.Greater(ada.Variable("Bits"), ada.Number(1)),
-                                    ),
-                                    ada.Less(
-                                        ada.Variable("V"),
-                                        ada.Pow(ada.Number(2), ada.Variable("Bits")),
-                                    ),
-                                ),
-                            ],
-                        ),
-                        aspects=[ada.Postcondition(ada.TRUE)],
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="F",
-                            return_type="T",
-                        ),
-                        aspects=[ada.Precondition(ada.TRUE)],
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="F",
-                            return_type="T",
-                            parameters=[
-                                ada.Parameter(["P1"], "Boolean"),
-                                ada.Parameter(["P2"], "Natural"),
-                            ],
-                        ),
-                        aspects=[
-                            ada.Precondition(
-                                ada.AndThen(
-                                    ada.Call(identifier="Is_Valid", arguments=[ada.Variable("P")]),
-                                    ada.Greater(ada.Variable("P2"), ada.Number(42)),
-                                ),
-                            ),
+        package(
+            declaration_declarations=[
+                ada.ExpressionFunctionDeclaration(
+                    specification=ada.FunctionSpecification(
+                        identifier="Expr_Function",
+                        return_type="T",
+                        parameters=[
+                            ada.Parameter(["A"], "T1"),
+                            ada.Parameter(["B"], "T2"),
                         ],
                     ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="F",
-                            return_type="T",
-                            parameters=[
-                                ada.Parameter(["P1"], "Boolean"),
-                                ada.Parameter(["P2"], "Natural"),
-                            ],
-                        ),
-                        aspects=[
-                            ada.Precondition(
+                    expression=ada.IfExpr(
+                        condition_expressions=[
+                            (
                                 ada.AndThen(
                                     ada.Less(
                                         ada.Variable("Bits"),
                                         ada.Size(ada.Variable("U64")),
                                     ),
-                                    ada.Less(
-                                        ada.Variable("Amount"),
-                                        ada.Size(ada.Variable("U64")),
-                                    ),
-                                    ada.Call(
-                                        "Fits_Into",
-                                        [ada.Variable("V"), ada.Variable("Bits")],
-                                    ),
+                                    ada.Greater(ada.Variable("Bits"), ada.Number(1)),
+                                ),
+                                ada.Less(
+                                    ada.Variable("V"),
+                                    ada.Pow(ada.Number(2), ada.Variable("Bits")),
                                 ),
                             ),
                         ],
                     ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+                    aspects=[ada.Postcondition(ada.TRUE)],
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.ProcedureSpecification(
-                            identifier="P",
-                            parameters=[
-                                ada.Parameter(["A_Param"], "T1"),
-                                ada.InOutParameter(["B_Param"], "T2"),
-                            ],
-                        ),
-                        aspects=[
-                            ada.Postcondition(ada.Equal(ada.Variable("B_Param"), ada.Number(42))),
-                        ],
+        function_declaration(aspects=[ada.Precondition(ada.TRUE)]),
+        function_declaration(
+            parameters=[
+                ada.Parameter(["P1"], "Boolean"),
+                ada.Parameter(["P2"], "Natural"),
+            ],
+            aspects=[
+                ada.Precondition(
+                    ada.AndThen(
+                        ada.Call(identifier="Is_Valid", arguments=[ada.Variable("P")]),
+                        ada.Greater(ada.Variable("P2"), ada.Number(42)),
                     ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="F",
-                            parameters=[
-                                ada.Parameter(["P"], "T"),
-                            ],
-                            return_type="T",
+        function_declaration(
+            parameters=[
+                ada.Parameter(["P1"], "Boolean"),
+                ada.Parameter(["P2"], "Natural"),
+            ],
+            aspects=[
+                ada.Precondition(
+                    ada.AndThen(
+                        ada.Less(
+                            ada.Variable("Bits"),
+                            ada.Size(ada.Variable("U64")),
                         ),
-                        aspects=[
-                            ada.Precondition(
-                                ada.In(
-                                    ada.Variable("T"),
-                                    ada.ValueRange(ada.Number(0), ada.Number(42)),
-                                ),
+                        ada.Less(
+                            ada.Variable("Amount"),
+                            ada.Size(ada.Variable("U64")),
+                        ),
+                        ada.Call(
+                            "Fits_Into",
+                            [ada.Variable("V"), ada.Variable("Bits")],
+                        ),
+                    ),
+                ),
+            ],
+        ),
+        function_declaration(
+            parameters=[
+                ada.Parameter(["A_Param"], "T1"),
+                ada.InOutParameter(["B_Param"], "T2"),
+            ],
+            aspects=[
+                ada.Postcondition(ada.Equal(ada.Variable("B_Param"), ada.Number(42))),
+            ],
+        ),
+        function_declaration(
+            parameters=[
+                ada.Parameter(["P"], "T"),
+            ],
+            aspects=[
+                ada.Precondition(
+                    ada.In(
+                        ada.Variable("T"),
+                        ada.ValueRange(ada.Number(0), ada.Number(42)),
+                    ),
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
+                ada.SubprogramDeclaration(
+                    specification=ada.FunctionSpecification(
+                        identifier="F",
+                        parameters=[
+                            ada.Parameter(["P"], "T"),
+                        ],
+                        return_type="T",
+                    ),
+                    aspects=[
+                        ada.Precondition(
+                            ada.In(
+                                ada.Variable("T"),
+                                ada.ValueRange(ada.Number(0), ada.Number(42)),
                             ),
-                        ],
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="F",
-                            parameters=[
-                                ada.Parameter(["P"], "T"),
-                            ],
-                            return_type="T",
                         ),
-                        aspects=[
-                            ada.Precondition(
-                                ada.In(
-                                    ada.Variable("T"),
-                                    ada.ValueRange(ada.Number(0), ada.Number(42)),
-                                ),
+                    ],
+                ),
+            ],
+            body_declarations=[ada.RangeType("T", first=ada.Number(0), last=ada.Number(255))],
+        ),
+        package(
+            declaration_declarations=[
+                ada.SubprogramDeclaration(
+                    specification=ada.FunctionSpecification(
+                        identifier="F",
+                        parameters=[
+                            ada.Parameter(["P"], "T"),
+                        ],
+                        return_type="T",
+                    ),
+                    aspects=[
+                        ada.Precondition(
+                            ada.In(
+                                ada.Variable("T"),
+                                ada.ValueRange(ada.Number(0), ada.Number(42)),
                             ),
-                        ],
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody(
-                "P",
-                declarations=[ada.RangeType("T", first=ada.Number(0), last=ada.Number(255))],
-            ),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="F",
-                            parameters=[
-                                ada.Parameter(["P"], "T"),
-                            ],
-                            return_type="T",
                         ),
-                        aspects=[
-                            ada.Precondition(
-                                ada.In(
-                                    ada.Variable("T"),
-                                    ada.ValueRange(ada.Number(0), ada.Number(42)),
-                                ),
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody(
-                "P",
-                declarations=[
-                    ada.SubprogramBody(
-                        specification=ada.FunctionSpecification("F", "T"),
-                        declarations=[ada.Pragma("Unreferenced", [ada.Variable("X")])],
-                        statements=[ada.ReturnStatement(ada.Variable("Y"))],
-                    ),
-                    ada.ObjectDeclaration(
-                        identifiers=["X"],
-                        type_identifier="T",
-                        expression=ada.Call("F", [ada.Number(32)]),
-                        constant=True,
-                    ),
-                ],
-            ),
+                    ],
+                ),
+            ],
+            body_declarations=[
+                ada.SubprogramBody(
+                    specification=ada.FunctionSpecification("F", "T"),
+                    declarations=[ada.Pragma("Unreferenced", [ada.Variable("X")])],
+                    statements=[ada.ReturnStatement(ada.Variable("Y"))],
+                ),
+                ada.ObjectDeclaration(
+                    identifiers=["X"],
+                    type_identifier="T",
+                    expression=ada.Call("F", [ada.Number(32)]),
+                    constant=True,
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration("P", declarations=[]),
-            body_context=[],
-            body=ada.PackageBody(
-                "P",
-                declarations=[
-                    ada.SubprogramBody(
-                        specification=ada.ProcedureSpecification("F", [ada.Parameter(["P"], "T")]),
-                        declarations=[],
-                        statements=[ada.PragmaStatement("Unreferenced", [ada.Variable("P")])],
-                    ),
-                ],
-            ),
+        package(
+            body_declarations=[
+                ada.SubprogramBody(
+                    specification=ada.ProcedureSpecification("F", [ada.Parameter(["P"], "T")]),
+                    declarations=[],
+                    statements=[ada.PragmaStatement("Unreferenced", [ada.Variable("P")])],
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration("P", declarations=[]),
-            body_context=[],
-            body=ada.PackageBody(
-                "P",
-                declarations=[
-                    ada.SubprogramBody(
-                        specification=ada.FunctionSpecification(
-                            "F",
-                            "Boolean",
-                            [ada.Parameter(["P"], "T")],
-                        ),
-                        declarations=[],
-                        statements=[
-                            ada.IfStatement(
-                                condition_statements=[
-                                    (
-                                        ada.Equal(ada.Variable("P"), ada.Number(42)),
-                                        [ada.ReturnStatement(ada.TRUE)],
-                                    ),
-                                ],
-                                else_statements=[ada.ReturnStatement(ada.FALSE)],
-                            ),
-                        ],
+        package(
+            body_declarations=[
+                ada.SubprogramBody(
+                    specification=ada.FunctionSpecification(
+                        "F",
+                        "Boolean",
+                        [ada.Parameter(["P"], "T")],
                     ),
-                ],
-            ),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="F",
-                            return_type="T",
-                        ),
-                        aspects=[
-                            ada.Ghost(),
-                            ada.Global(),
-                            ada.Convention(ada.ConventionKind.Intrinsic),
-                            ada.Import(),
-                        ],
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.ExpressionFunctionDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="Fits_Into_Upper",
-                            return_type="Boolean",
-                            parameters=[
-                                ada.Parameter(["V"], "U64"),
-                                ada.Parameter(["Bits", "Lower"], "Natural"),
-                            ],
-                        ),
-                        expression=ada.IfExpr(
-                            condition_expressions=[
+                    declarations=[],
+                    statements=[
+                        ada.IfStatement(
+                            condition_statements=[
                                 (
-                                    ada.Less(ada.Variable("Bits"), ada.Size("U64")),
-                                    ada.LessEqual(
-                                        ada.Variable("V"),
-                                        ada.Sub(
-                                            ada.Pow(ada.Number(2), ada.Variable("Bits")),
+                                    ada.Equal(ada.Variable("P"), ada.Number(42)),
+                                    [ada.ReturnStatement(ada.TRUE)],
+                                ),
+                            ],
+                            else_statements=[ada.ReturnStatement(ada.FALSE)],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
+                ada.SubprogramDeclaration(
+                    specification=ada.FunctionSpecification(
+                        identifier="F",
+                        return_type="T",
+                    ),
+                    aspects=[
+                        ada.Ghost(),
+                        ada.Global(),
+                        ada.Convention(ada.ConventionKind.Intrinsic),
+                        ada.Import(),
+                    ],
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
+                ada.ExpressionFunctionDeclaration(
+                    specification=ada.FunctionSpecification(
+                        identifier="Fits_Into_Upper",
+                        return_type="Boolean",
+                        parameters=[
+                            ada.Parameter(["V"], "U64"),
+                            ada.Parameter(["Bits", "Lower"], "Natural"),
+                        ],
+                    ),
+                    expression=ada.IfExpr(
+                        condition_expressions=[
+                            (
+                                ada.Less(ada.Variable("Bits"), ada.Size("U64")),
+                                ada.LessEqual(
+                                    ada.Variable("V"),
+                                    ada.Sub(
+                                        ada.Pow(ada.Number(2), ada.Variable("Bits")),
+                                        ada.Pow(ada.Number(2), ada.Variable("Lower")),
+                                    ),
+                                ),
+                            ),
+                            (
+                                ada.AndThen(
+                                    ada.Greater(ada.Variable("Lower"), ada.Number(0)),
+                                    ada.Less(ada.Variable("Lower"), ada.Size("U64")),
+                                ),
+                                ada.LessEqual(
+                                    ada.Variable("V"),
+                                    ada.Sub(
+                                        ada.Last("U64"),
+                                        ada.Add(
                                             ada.Pow(ada.Number(2), ada.Variable("Lower")),
+                                            ada.Number(1),
                                         ),
                                     ),
                                 ),
-                                (
-                                    ada.AndThen(
-                                        ada.Greater(ada.Variable("Lower"), ada.Number(0)),
-                                        ada.Less(ada.Variable("Lower"), ada.Size("U64")),
-                                    ),
-                                    ada.LessEqual(
-                                        ada.Variable("V"),
-                                        ada.Sub(
-                                            ada.Last("U64"),
-                                            ada.Add(
-                                                ada.Pow(ada.Number(2), ada.Variable("Lower")),
-                                                ada.Number(1),
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            ],
-                        ),
-                        aspects=[ada.Postcondition(ada.TRUE)],
+                            ),
+                        ],
                     ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+                    aspects=[ada.Postcondition(ada.TRUE)],
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
+        package(
             declaration=ada.GenericPackageInstantiation("P", "G", ["A", "B", "F.C"]),
-            body_context=[],
-            body=ada.PackageBody("P"),
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.PlainDerivedType(
-                        "T",
-                        "Natural",
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.PlainDerivedType(
+                    "T",
+                    "Natural",
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.DerivedRangeType(
-                        identifier="T",
-                        type_identifier="Natural",
-                        first=ada.Number(2),
-                        last=ada.Number(42),
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.DerivedRangeType(
+                    identifier="T",
+                    type_identifier="Natural",
+                    first=ada.Number(2),
+                    last=ada.Number(42),
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.AccessType(
-                        identifier="P",
-                        object_identifier="T",
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.AccessType(
+                    identifier="P",
+                    object_identifier="T",
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
             formal_parameters=[],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
             formal_parameters=[ada.PrivateType("PT")],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
             formal_parameters=[
                 ada.SubprogramDeclaration(
                     ada.ProcedureSpecification("P", [ada.Parameter(["P1"], "T")]),
                 ),
             ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
             formal_parameters=[
                 ada.SubprogramDeclaration(
                     ada.FunctionSpecification("F", "U", [ada.Parameter(["P1"], "T")]),
                 ),
             ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
             formal_parameters=[
                 ada.PrivateType("PT"),
                 ada.SubprogramDeclaration(
@@ -575,193 +428,104 @@ from rflx.rapidflux import RecordFluxError
                 ),
             ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        ada.ProcedureSpecification(
-                            "P",
-                            [ada.Parameter(["P1"], "T", ada.Number(42))],
-                        ),
+        package(
+            declaration_declarations=[
+                ada.SubprogramDeclaration(
+                    ada.ProcedureSpecification(
+                        "P",
+                        [ada.Parameter(["P1"], "T", ada.Number(42))],
                     ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration("P"),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
             formal_parameters=[ada.PrivateType("PT", discriminants=[ada.Discriminant(["D"], "T")])],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.UseTypeClause("T"),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.UseTypeClause("T"),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.PrivateType("PT"),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.PrivateType("PT"),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.PrivateType("PT", discriminants=[ada.Discriminant(["D"], "T")]),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.PrivateType("PT", discriminants=[ada.Discriminant(["D"], "T")]),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.PrivateType(
-                        "PT",
-                        discriminants=[ada.Discriminant(["D"], "T", ada.Number(42))],
+        package(
+            declaration_declarations=[
+                ada.PrivateType(
+                    "PT",
+                    discriminants=[ada.Discriminant(["D"], "T", ada.Number(42))],
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
+                ada.SubprogramDeclaration(
+                    specification=ada.FunctionSpecification(
+                        identifier="F",
+                        return_type="T",
+                        parameters=[ada.Parameter("C", "T")],
                     ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+                    aspects=[ada.Precondition(ada.Not(ada.Constrained("C")))],
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.FunctionSpecification(
-                            identifier="F",
-                            return_type="T",
-                            parameters=[ada.Parameter("C", "T")],
-                        ),
-                        aspects=[ada.Precondition(ada.Not(ada.Constrained("C")))],
+        package(
+            declaration_declarations=[
+                ada.SubprogramDeclaration(
+                    specification=ada.ProcedureSpecification(
+                        identifier="F",
+                        parameters=[ada.OutParameter("C", "T"), ada.InOutParameter("B", "T")],
                     ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+                    aspects=[ada.Depends({"C": ["B"], "B": "null"})],
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.SubprogramDeclaration(
-                        specification=ada.ProcedureSpecification(
-                            identifier="F",
-                            parameters=[ada.OutParameter("C", "T"), ada.InOutParameter("B", "T")],
-                        ),
-                        aspects=[ada.Depends({"C": ["B"], "B": "null"})],
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.PrivateType("PT"),
+            ],
+            declaration_private_declarations=[
+                ada.RangeType("PT", ada.Number(1), ada.Number(42)),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.PrivateType("PT"),
-                ],
-                private_declarations=[
-                    ada.RangeType("PT", ada.Number(1), ada.Number(42)),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.EnumerationType(
+                    "Enum",
+                    literals={ID("E1"): None, ID("E2"): None, ID("E3"): None},
+                    size=ada.Number(8),
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.EnumerationType(
-                        "Enum",
-                        literals={ID("E1"): None, ID("E2"): None, ID("E3"): None},
-                        size=ada.Number(8),
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        package(
+            declaration_declarations=[
+                ada.RecordType(
+                    "R",
+                    components=[
+                        ada.Component("C1", "T", ada.Number(42)),
+                        ada.Component("C2", "U"),
+                    ],
+                    discriminants=[
+                        ada.Discriminant(["D1"], "T", ada.Number(0)),
+                        ada.Discriminant(["D2"], "T"),
+                    ],
+                ),
+            ],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration(
-                "P",
-                declarations=[
-                    ada.RecordType(
-                        "R",
-                        components=[
-                            ada.Component("C1", "T", ada.Number(42)),
-                            ada.Component("C2", "U"),
-                        ],
-                        discriminants=[
-                            ada.Discriminant(["D1"], "T", ada.Number(0)),
-                            ada.Discriminant(["D2"], "T"),
-                        ],
-                    ),
-                ],
-            ),
-            body_context=[],
-            body=ada.PackageBody("P"),
+        procedure_body(
+            parameters=[ada.Parameter(["P"], "T")],
+            statements=[ada.CallStatement("G", [ada.Variable("P")])],
         ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration("P"),
-            body_context=[],
-            body=ada.PackageBody(
-                "P",
-                declarations=[
-                    ada.SubprogramBody(
-                        specification=ada.ProcedureSpecification("F", [ada.Parameter(["P"], "T")]),
-                        declarations=[],
-                        statements=[ada.CallStatement("G", [ada.Variable("P")])],
-                    ),
-                ],
-            ),
-        ),
-        ada.PackageUnit(
-            declaration_context=[],
-            declaration=ada.PackageDeclaration("P"),
-            body_context=[],
-            body=ada.PackageBody(
-                "P",
-                declarations=[
-                    ada.SubprogramBody(
-                        specification=ada.ProcedureSpecification(
-                            "F",
-                            [ada.OutParameter(["P"], "T")],
-                        ),
-                        declarations=[],
-                        statements=[ada.Assignment("P", ada.Number(42))],
-                    ),
-                ],
-            ),
+        procedure_body(
+            parameters=[ada.OutParameter(["P"], "T")],
+            statements=[ada.Assignment("P", ada.Number(42))],
         ),
     ],
 )
