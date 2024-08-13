@@ -369,6 +369,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 5.1 (4/2)
         simple_statement:           pragma_statement
+                                  | procedure_call_statement
                                   | simple_return_statement
 
         # 5.1 (4/2)
@@ -445,6 +446,10 @@ ADA_GRAMMAR = lark.Lark(
                                     "begin" \
                                         handled_sequence_of_statements \
                                     "end" designator ";"
+
+        # 6.4 (2)
+        procedure_call_statement: \
+                                    name actual_parameter_part? ";"
 
         # 6.4 (3)
         function_call: \
@@ -1513,6 +1518,17 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             declarations=data[2],
             statements=data[3],
             aspects=data[1],
+        )
+
+    def procedure_call_statement(
+        self,
+        data: tuple[ID, tuple[list[ada.Expr] | None, dict[ID, ada.Expr] | None]],
+    ) -> ada.CallStatement:
+        identifier, (arguments, named_arguments) = data
+        return ada.CallStatement(
+            identifier=identifier,
+            arguments=arguments,
+            named_arguments=named_arguments,
         )
 
     def function_call(
