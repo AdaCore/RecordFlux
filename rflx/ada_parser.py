@@ -684,6 +684,7 @@ ADA_GRAMMAR = lark.Lark(
                                   | aspect_convention
                                   | aspect_default_initial_condition
                                   | aspect_depends
+                                  | aspect_dynamic_predicate
                                   | aspect_ghost
                                   | aspect_global
                                   | aspect_import
@@ -704,6 +705,8 @@ ADA_GRAMMAR = lark.Lark(
                                     "Default_Initial_Condition" "=>" expression
 
         aspect_depends:             "Depends" "=>" dependency_relation
+
+        aspect_dynamic_predicate:   "Dynamic_Predicate" "=>" expression
 
         !aspect_ghost:              "Ghost"
 
@@ -2011,6 +2014,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def aspect_depends(self, data: tuple[ada.Depends]) -> ada.Depends:
         return data[0]
+
+    def aspect_dynamic_predicate(self, data: tuple[ada.Expr]) -> ada.DynamicPredicate:
+        return ada.DynamicPredicate(data[0])
 
     def aspect_ghost(self, data: tuple[lark.Token]) -> ada.Ghost:
         assert data[0] == "Ghost"

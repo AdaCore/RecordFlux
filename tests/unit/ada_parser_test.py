@@ -1099,6 +1099,17 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           type T (D : U) is private with
+             Dynamic_Predicate =>
+               P (D)
+               and Q (D);
+
+        end P;
+        """,
     ],
 )
 def test_roundtrip_text(data: str) -> None:
