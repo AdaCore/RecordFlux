@@ -40,7 +40,7 @@ class Expr(Base):
             return self._str
 
     def __neg__(self) -> Expr:
-        raise NotImplementedError
+        return Neg(self)
 
     @abstractmethod
     def _update_str(self) -> None:
@@ -385,9 +385,6 @@ class Variable(Name):
         self.identifier = ID(identifier)
         super().__init__()
 
-    def __neg__(self) -> Neg:
-        return Neg(self)
-
     @property
     def _representation(self) -> str:
         return str(self.name)
@@ -414,9 +411,6 @@ class Attribute(Name):
 
         self.prefix: Expr = prefix
         super().__init__()
-
-    def __neg__(self) -> Neg:
-        return Neg(self)
 
     @property
     def _representation(self) -> str:
@@ -562,9 +556,6 @@ class Indexed(Name):
         self.elements = list(elements)
         super().__init__()
 
-    def __neg__(self) -> Neg:
-        return Neg(self)
-
     @property
     def _representation(self) -> str:
         return f"{self.prefix} (" + ", ".join(map(str, self.elements)) + ")"
@@ -586,9 +577,6 @@ class Selected(Name):
         self.selector = ID(selector)
         super().__init__()
 
-    def __neg__(self) -> Neg:
-        return Neg(self)
-
     @property
     def _representation(self) -> str:
         return f"{self.prefix}.{self.selector}"
@@ -608,9 +596,6 @@ class Call(Name):
         self.arguments = arguments or []
         self.named_arguments = named_arguments or {}
         super().__init__()
-
-    def __neg__(self) -> Neg:
-        return Neg(self)
 
     @property
     def _representation(self) -> str:
@@ -1002,7 +987,7 @@ class QualifiedExpr(Expr):
 
     @property
     def precedence(self) -> Precedence:
-        raise NotImplementedError
+        return Precedence.LITERAL
 
     def rflx_expr(self) -> expr.Expr:
         return expr.QualifiedExpr(ID(self.type_identifier), self.expression.rflx_expr())
