@@ -119,7 +119,7 @@ is
        and then Buffer'Length > 0
        and then Buffer'Last < RFLX_Types.Index'Last
        and then (Written_Last = 0
-                 or (Written_Last >= RFLX_Types.To_First_Bit_Index (Buffer'First) - 1
+                 or (Written_Last >= RFLX_Types.To_First_Bit_Index (Buffer'First) - RFLX_Types.Bit_Length'(1)
                      and Written_Last <= RFLX_Types.To_Last_Bit_Index (Buffer'Last)))
        and then Written_Last mod RFLX_Types.Byte'Size = 0,
      Post =>

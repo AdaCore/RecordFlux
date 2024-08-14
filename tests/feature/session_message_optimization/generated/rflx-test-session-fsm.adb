@@ -13,10 +13,13 @@ pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.Test.Option_Data;
+with RFLX.RFLX_Types.Operators;
 
 package body RFLX.Test.Session.FSM with
   SPARK_Mode
 is
+
+   use RFLX.RFLX_Types.Operators;
 
    use type RFLX.RFLX_Types.Bytes_Ptr;
 
@@ -141,16 +144,26 @@ is
       end if;
       -- tests/feature/session_message_optimization/test.rflx:43:10
       declare
-         RFLX_Get_Option_Data_Arg_0_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
-         RFLX_Get_Option_Data_Arg_0_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data)) + 1;
+         RFLX_Get_Option_Data_Arg_0_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
+         RFLX_Get_Option_Data_Arg_0_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data));
       begin
          if not (RFLX_Get_Option_Data_Arg_0_Message'Length >= RFLX_Get_Option_Data_Arg_0_Message_Length) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
-         Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2));
-         Get_Option_Data (Ctx.E, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2), Option_Data);
+         Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. (if
+             RFLX_Get_Option_Data_Arg_0_Message_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Get_Option_Data_Arg_0_Message_Length - RFLX_Types.Length'(1)
+          else
+             (-1))));
+         Get_Option_Data (Ctx.E, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. (if
+             RFLX_Get_Option_Data_Arg_0_Message_Length > 0
+          then
+             RFLX_Types.Index'First + RFLX_Get_Option_Data_Arg_0_Message_Length - RFLX_Types.Length'(1)
+          else
+             (-1))), Option_Data);
          if not Test.Option_Data.Valid_Structure (Option_Data) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_Invariant);
@@ -188,7 +201,11 @@ is
              RFLX_Process_Data_Pre (Data'Length)
          is
          begin
-            Data := Option_Data.Data (Option_Data.Data'First .. Option_Data.Data'First + Data'Length - 1);
+            if Data'Length > 0 then
+               Data := Option_Data.Data (Option_Data.Data'First .. Option_Data.Data'First + RFLX_Types.Length'(Data'Length) - RFLX_Types.Length'(1));
+            else
+               Data := (others => 0);
+            end if;
          end RFLX_Process_Data;
          procedure RFLX_Universal_Option_Set_Data is new Universal.Option.Generic_Set_Data (RFLX_Process_Data, RFLX_Process_Data_Pre);
       begin
@@ -450,10 +467,10 @@ is
         Pre =>
           Read_Pre (Message_Buffer)
       is
-         Length : constant RFLX_Types.Index := RFLX_Types.Index (RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset));
-         Buffer_Last : constant RFLX_Types.Index := Buffer'First - 1 + Length;
+         Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
+         Buffer_Last : constant RFLX_Types.Index := Buffer'First + (Length - RFLX_Types.Length'(1));
       begin
-         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First - 2 + RFLX_Types.Index (Offset + 1) + Length);
+         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First + Offset + (Length - RFLX_Types.Length'(1)));
       end Read;
       procedure Universal_Option_Read is new Universal.Option.Generic_Read (Read, Read_Pre);
    begin

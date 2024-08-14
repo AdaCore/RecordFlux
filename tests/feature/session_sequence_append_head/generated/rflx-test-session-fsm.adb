@@ -12,10 +12,13 @@ pragma Restrictions (No_Streams);
 pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types.Operators;
 
 package body RFLX.Test.Session.FSM with
   SPARK_Mode
 is
+
+   use RFLX.RFLX_Types.Operators;
 
    use type RFLX.RFLX_Types.Bytes_Ptr;
 
@@ -149,7 +152,7 @@ is
             pragma Assert (Global_Invariant);
             goto Finalize_Global;
          end if;
-         TLV.Messages.Copy (Ctx.P.Messages_Ctx, RFLX_Copy_Messages_Buffer.all (RFLX_Copy_Messages_Buffer'First .. RFLX_Copy_Messages_Buffer'First + RFLX_Types.Index (TLV.Messages.Byte_Size (Ctx.P.Messages_Ctx) + 1) - 2));
+         TLV.Messages.Copy (Ctx.P.Messages_Ctx, RFLX_Copy_Messages_Buffer.all (RFLX_Copy_Messages_Buffer'First .. RFLX_Copy_Messages_Buffer'First + TLV.Messages.Byte_Size (Ctx.P.Messages_Ctx) - RFLX_Types.Length'(1)));
          TLV.Messages.Initialize (RFLX_Copy_Messages_Ctx, RFLX_Copy_Messages_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Messages_Buffer'First), TLV.Messages.Sequence_Last (Ctx.P.Messages_Ctx));
          if not TLV.Messages.Has_Element (RFLX_Copy_Messages_Ctx) then
             Ctx.P.Next_State := S_Final;
@@ -219,8 +222,8 @@ is
                pragma Assert (Global_Invariant);
                goto Finalize_Global;
             end if;
-            TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. RFLX_Target_Message_Buffer'First + RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1) - 2));
-            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1) - 2)));
+            TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1)));
+            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1))));
             TLV.Message.Verify_Message (Ctx.P.Message_Ctx);
             pragma Warnings (Off, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
             TLV.Messages.Update (RFLX_Copy_Messages_Ctx, RFLX_Head_Ctx);
@@ -312,12 +315,12 @@ is
         (Global_Initialized (Ctx)
          and TLV.Messages.Has_Buffer (Local_Messages_Ctx)
          and Local_Messages_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Local_Messages_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
+         and Local_Messages_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_4 = null
          and Global_Initialized (Ctx)
          and TLV.Tags.Has_Buffer (Local_Tags_Ctx)
          and Local_Tags_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Local_Tags_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
+         and Local_Tags_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_5 = null
          and Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -511,7 +514,7 @@ is
             pragma Assert (Local_Invariant);
             goto Finalize_Local;
          end if;
-         TLV.Messages.Copy (Local_Messages_Ctx, RFLX_Copy_Local_Messages_Buffer.all (RFLX_Copy_Local_Messages_Buffer'First .. RFLX_Copy_Local_Messages_Buffer'First + RFLX_Types.Index (TLV.Messages.Byte_Size (Local_Messages_Ctx) + 1) - 2));
+         TLV.Messages.Copy (Local_Messages_Ctx, RFLX_Copy_Local_Messages_Buffer.all (RFLX_Copy_Local_Messages_Buffer'First .. RFLX_Copy_Local_Messages_Buffer'First + TLV.Messages.Byte_Size (Local_Messages_Ctx) - RFLX_Types.Length'(1)));
          TLV.Messages.Initialize (RFLX_Copy_Local_Messages_Ctx, RFLX_Copy_Local_Messages_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Copy_Local_Messages_Buffer'First), TLV.Messages.Sequence_Last (Local_Messages_Ctx));
          if not TLV.Messages.Has_Element (RFLX_Copy_Local_Messages_Ctx) then
             Ctx.P.Next_State := S_Final;
@@ -565,8 +568,8 @@ is
                pragma Assert (Local_Invariant);
                goto Finalize_Local;
             end if;
-            TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. RFLX_Target_Message_Buffer'First + RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1) - 2));
-            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + RFLX_Types.Index (TLV.Message.Byte_Size (RFLX_Head_Ctx) + 1) - 2)));
+            TLV.Message.Copy (RFLX_Head_Ctx, RFLX_Target_Message_Buffer.all (RFLX_Target_Message_Buffer'First .. RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1)));
+            TLV.Message.Initialize (Ctx.P.Message_Ctx, RFLX_Target_Message_Buffer, RFLX_Types.To_Bit_Length (RFLX_Types.Length (RFLX_Target_Message_Buffer'First + TLV.Message.Byte_Size (RFLX_Head_Ctx) - RFLX_Types.Length'(1))));
             TLV.Message.Verify_Message (Ctx.P.Message_Ctx);
             pragma Warnings (Off, """RFLX_Head_Ctx"" is set by ""Update"" but not used after the call");
             TLV.Messages.Update (RFLX_Copy_Local_Messages_Ctx, RFLX_Head_Ctx);
@@ -748,10 +751,10 @@ is
         Pre =>
           Read_Pre (Message_Buffer)
       is
-         Length : constant RFLX_Types.Index := RFLX_Types.Index (RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset));
-         Buffer_Last : constant RFLX_Types.Index := Buffer'First - 1 + Length;
+         Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
+         Buffer_Last : constant RFLX_Types.Index := Buffer'First + (Length - RFLX_Types.Length'(1));
       begin
-         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First - 2 + RFLX_Types.Index (Offset + 1) + Length);
+         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First + Offset + (Length - RFLX_Types.Length'(1)));
       end Read;
       procedure TLV_Message_Read is new TLV.Message.Generic_Read (Read, Read_Pre);
    begin

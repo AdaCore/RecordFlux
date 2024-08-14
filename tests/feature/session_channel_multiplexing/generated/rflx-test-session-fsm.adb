@@ -12,10 +12,13 @@ pragma Restrictions (No_Streams);
 pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
+with RFLX.RFLX_Types.Operators;
 
 package body RFLX.Test.Session.FSM with
   SPARK_Mode
 is
+
+   use RFLX.RFLX_Types.Operators;
 
    use type RFLX.RFLX_Types.Bytes_Ptr;
 
@@ -184,10 +187,10 @@ is
         Pre =>
           Read_Pre (Message_Buffer)
       is
-         Length : constant RFLX_Types.Index := RFLX_Types.Index (RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset));
-         Buffer_Last : constant RFLX_Types.Index := Buffer'First - 1 + Length;
+         Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
+         Buffer_Last : constant RFLX_Types.Index := Buffer'First + (Length - RFLX_Types.Length'(1));
       begin
-         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First - 2 + RFLX_Types.Index (Offset + 1) + Length);
+         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First + Offset + (Length - RFLX_Types.Length'(1)));
       end Read;
       procedure Universal_Message_Read is new Universal.Message.Generic_Read (Read, Read_Pre);
    begin

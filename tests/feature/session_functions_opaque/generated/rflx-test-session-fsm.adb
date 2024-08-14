@@ -17,11 +17,14 @@ with RFLX.Universal.Message;
 with RFLX.Universal.Options;
 with RFLX.Universal.Option;
 with RFLX.Universal.Values;
+with RFLX.RFLX_Types.Operators;
 with RFLX.RFLX_Types;
 
 package body RFLX.Test.Session.FSM with
   SPARK_Mode
 is
+
+   use RFLX.RFLX_Types.Operators;
 
    use type RFLX.RFLX_Types.Bytes_Ptr;
 
@@ -61,7 +64,7 @@ is
       function Check_Message_Invariant return Boolean is
         (Universal.Message.Has_Buffer (Message_Ctx)
          and Message_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Message_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
+         and Message_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_1 = null)
        with
         Annotate =>
@@ -106,7 +109,7 @@ is
       end if;
       -- tests/feature/session_functions_opaque/test.rflx:25:10
       declare
-         RFLX_Check_Size_Arg_1_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         RFLX_Check_Size_Arg_1_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
          RFLX_Check_Size_Arg_1_Message_Length : constant RFLX_Types.Length := Universal.Message.Byte_Size (Message_Ctx);
       begin
          if not (RFLX_Check_Size_Arg_1_Message'Length >= RFLX_Check_Size_Arg_1_Message_Length) then
@@ -119,8 +122,8 @@ is
             pragma Assert (Check_Message_Invariant);
             goto Finalize_Check_Message;
          end if;
-         Universal.Message.Data (Message_Ctx, RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Length + 1) - 2));
-         Check_Size (Ctx.E, Test.Size (Universal.Message.Size (Message_Ctx)), RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Length + 1) - 2), Valid);
+         Universal.Message.Data (Message_Ctx, RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Length - RFLX_Types.Length'(1)));
+         Check_Size (Ctx.E, Test.Size (Universal.Message.Size (Message_Ctx)), RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Length - RFLX_Types.Length'(1)), Valid);
       end;
       if Valid then
          Ctx.P.Next_State := S_Check_Message_Sequence;
@@ -150,7 +153,7 @@ is
       function Check_Message_Sequence_Invariant return Boolean is
         (Universal.Options.Has_Buffer (Message_Sequence_Ctx)
          and Message_Sequence_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Message_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
+         and Message_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_1 = null)
        with
         Annotate =>
@@ -224,7 +227,7 @@ is
       end;
       -- tests/feature/session_functions_opaque/test.rflx:41:10
       declare
-         RFLX_Check_Size_Arg_1_Message_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         RFLX_Check_Size_Arg_1_Message_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
          RFLX_Check_Size_Arg_1_Message_Sequence_Length : constant RFLX_Types.Length := Universal.Options.Byte_Size (Message_Sequence_Ctx);
       begin
          if not (RFLX_Check_Size_Arg_1_Message_Sequence'Length >= RFLX_Check_Size_Arg_1_Message_Sequence_Length) then
@@ -237,8 +240,8 @@ is
             pragma Assert (Check_Message_Sequence_Invariant);
             goto Finalize_Check_Message_Sequence;
          end if;
-         Universal.Options.Data (Message_Sequence_Ctx, RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Sequence_Length + 1) - 2));
-         Check_Size (Ctx.E, Test.Size (Universal.Options.Size (Message_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Sequence_Length + 1) - 2), Valid);
+         Universal.Options.Data (Message_Sequence_Ctx, RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Sequence_Length - RFLX_Types.Length'(1)));
+         Check_Size (Ctx.E, Test.Size (Universal.Options.Size (Message_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Message_Sequence_Length - RFLX_Types.Length'(1)), Valid);
       end;
       if Valid then
          Ctx.P.Next_State := S_Check_Scalar_Sequence;
@@ -268,7 +271,7 @@ is
       function Check_Scalar_Sequence_Invariant return Boolean is
         (Universal.Values.Has_Buffer (Scalar_Sequence_Ctx)
          and Scalar_Sequence_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Scalar_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
+         and Scalar_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_1 = null)
        with
         Annotate =>
@@ -313,7 +316,7 @@ is
       Universal.Values.Append_Element (Scalar_Sequence_Ctx, 2);
       -- tests/feature/session_functions_opaque/test.rflx:59:10
       declare
-         RFLX_Check_Size_Arg_1_Scalar_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + 4095) := (others => 0);
+         RFLX_Check_Size_Arg_1_Scalar_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
          RFLX_Check_Size_Arg_1_Scalar_Sequence_Length : constant RFLX_Types.Length := Universal.Values.Byte_Size (Scalar_Sequence_Ctx);
       begin
          if not (RFLX_Check_Size_Arg_1_Scalar_Sequence'Length >= RFLX_Check_Size_Arg_1_Scalar_Sequence_Length) then
@@ -326,8 +329,8 @@ is
             pragma Assert (Check_Scalar_Sequence_Invariant);
             goto Finalize_Check_Scalar_Sequence;
          end if;
-         Universal.Values.Data (Scalar_Sequence_Ctx, RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Scalar_Sequence_Length + 1) - 2));
-         Check_Size (Ctx.E, Test.Size (Universal.Values.Size (Scalar_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Scalar_Sequence_Length + 1) - 2), Valid);
+         Universal.Values.Data (Scalar_Sequence_Ctx, RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Scalar_Sequence_Length - RFLX_Types.Length'(1)));
+         Check_Size (Ctx.E, Test.Size (Universal.Values.Size (Scalar_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Check_Size_Arg_1_Scalar_Sequence_Length - RFLX_Types.Length'(1)), Valid);
       end;
       if Valid then
          Ctx.P.Next_State := S_Final;

@@ -46,6 +46,7 @@ from rflx.ada import (
     GreaterEqual,
     If,
     IfStatement,
+    IfThenElse,
     In,
     Indexed,
     InOutParameter,
@@ -75,6 +76,7 @@ from rflx.ada import (
     Precondition,
     PrivateType,
     ProcedureSpecification,
+    QualifiedExpr,
     RecordType,
     Selected,
     Size,
@@ -86,6 +88,7 @@ from rflx.ada import (
     SubprogramBody,
     SubprogramDeclaration,
     UnitPart,
+    UsePackageClause,
     UseTypeClause,
     Val,
     ValueRange,
@@ -110,6 +113,7 @@ class SessionContext:
     referenced_packages_body: list[ID] = dataclass_field(default_factory=list)
     used_types: list[ID] = dataclass_field(default_factory=list)
     used_types_body: list[ID] = dataclass_field(default_factory=list)
+    used_packages_body: list[ID] = dataclass_field(default_factory=list)
     states_with_exceptions: set[ID] = dataclass_field(default_factory=set)
 
 
@@ -493,9 +497,14 @@ class FSMGenerator:
                     ],
                 )
 
-        body_context.extend(
-            [WithClause(self._prefix * p) for p in self._session_context.referenced_packages_body],
-        )
+        body_context = [
+            *body_context,
+            *[WithClause(self._prefix * p) for p in self._session_context.referenced_packages_body],
+            *[
+                WithClause(self._prefix * identifier)
+                for identifier in self._session_context.used_packages_body
+            ],
+        ]
 
         if any(
             t.parent == const.TYPES
@@ -527,6 +536,10 @@ class FSMGenerator:
 
     def _create_use_clauses_body(self) -> list[Declaration]:
         return [
+            *[
+                UsePackageClause(self._prefix * type_identifier)
+                for type_identifier in self._session_context.used_packages_body
+            ],
             *[
                 UseTypeClause(self._prefix * type_identifier)
                 for type_identifier in self._session_context.used_types_body
@@ -1101,6 +1114,8 @@ class FSMGenerator:
 
             for d in declarations:
                 if isinstance(d.type_, (rty.Message, rty.Sequence)) and d.type_ != rty.OPAQUE:
+                    self._session_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
+
                     identifier = context_id(d.identifier, is_global)
                     type_identifier = self._ada_type(d.type_.identifier)
                     invariant.extend(
@@ -1117,9 +1132,12 @@ class FSMGenerator:
                                 Variable(identifier * "Buffer_Last"),
                                 Add(
                                     First(self._prefix * const.TYPES_INDEX),
-                                    Number(
-                                        self._allocator.get_size(d.identifier, state.identifier)
-                                        - 1,
+                                    QualifiedExpr(
+                                        const.TYPES_LENGTH,
+                                        Number(
+                                            self._allocator.get_size(d.identifier, state.identifier)
+                                            - 1,
+                                        ),
                                     ),
                                 ),
                             ),
@@ -1926,7 +1944,7 @@ class FSMGenerator:
                                                     const.TYPES_TO_FIRST_BIT_INDEX,
                                                     [First("Buffer")],
                                                 ),
-                                                Number(1),
+                                                QualifiedExpr(const.TYPES_BIT_LENGTH, Number(1)),
                                             ),
                                         ),
                                         LessEqual(
@@ -2429,6 +2447,7 @@ class FSMGenerator:
     ) -> UnitPart:
         self._session_context.used_types.append(const.TYPES_INDEX)
         self._session_context.used_types.append(const.TYPES_LENGTH)
+        self._session_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
 
         specification = ProcedureSpecification(
             "Read",
@@ -2495,26 +2514,27 @@ class FSMGenerator:
                             [
                                 ObjectDeclaration(
                                     ["Length"],
-                                    const.TYPES_INDEX,
-                                    Call(
-                                        const.TYPES_INDEX,
-                                        [
-                                            Min(
-                                                const.TYPES_LENGTH,
-                                                Length("Buffer"),
-                                                Sub(
-                                                    Length("Message_Buffer"),
-                                                    Variable("Offset"),
-                                                ),
-                                            ),
-                                        ],
+                                    const.TYPES_LENGTH,
+                                    Min(
+                                        const.TYPES_LENGTH,
+                                        Length("Buffer"),
+                                        Sub(
+                                            Length("Message_Buffer"),
+                                            Variable("Offset"),
+                                        ),
                                     ),
                                     constant=True,
                                 ),
                                 ObjectDeclaration(
                                     ["Buffer_Last"],
                                     const.TYPES_INDEX,
-                                    Add(First("Buffer"), -Number(1), Variable("Length")),
+                                    Add(
+                                        First("Buffer"),
+                                        Sub(
+                                            Variable("Length"),
+                                            QualifiedExpr(const.TYPES_LENGTH, Number(1)),
+                                        ),
+                                    ),
                                     constant=True,
                                 ),
                             ],
@@ -2541,12 +2561,11 @@ class FSMGenerator:
                                         ),
                                         Add(
                                             First("Message_Buffer"),
-                                            -Number(2),
-                                            Call(
-                                                const.TYPES_INDEX,
-                                                [Add(Variable("Offset"), Number(1))],
+                                            Variable("Offset"),
+                                            Sub(
+                                                Variable("Length"),
+                                                QualifiedExpr(const.TYPES_LENGTH, Number(1)),
                                             ),
-                                            Variable("Length"),
                                         ),
                                     ),
                                 ),
@@ -3592,6 +3611,7 @@ class FSMGenerator:
         assert isinstance(head.type_, rty.Message)
 
         self._session_context.used_types_body.append(const.TYPES_LENGTH)
+        self._session_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
         self._session_context.referenced_types_body.append(target_type)
 
         target_context = context_id(target, is_global)
@@ -3688,18 +3708,10 @@ class FSMGenerator:
                                                 Add(
                                                     First(target_buffer),
                                                     Call(
-                                                        const.TYPES_INDEX,
-                                                        [
-                                                            Add(
-                                                                Call(
-                                                                    target_type * "Byte_Size",
-                                                                    [Variable(element_context)],
-                                                                ),
-                                                                Number(1),
-                                                            ),
-                                                        ],
+                                                        target_type * "Byte_Size",
+                                                        [Variable(element_context)],
                                                     ),
-                                                    -Number(2),
+                                                    -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
                                                 ),
                                             ],
                                         ),
@@ -3957,20 +3969,20 @@ class FSMGenerator:
                 arguments.append(self._to_ada_expr(a, is_global))
             elif isinstance(a, ir.FieldAccess) and a.type_ == rty.OPAQUE:
                 assert isinstance(a.type_, rty.Sequence)
+                self._session_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
                 argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.message}"
                 argument_length = f"{argument_name}_Length"
                 argument = Slice(
                     Variable(argument_name),
                     First(const.TYPES_INDEX),
-                    Add(
-                        First(const.TYPES_INDEX),
-                        Call(
-                            const.TYPES_INDEX,
-                            [
-                                Variable(argument_length),
-                            ],
+                    IfThenElse(
+                        Greater(Variable(argument_length), Number(0)),
+                        Add(
+                            First(const.TYPES_INDEX),
+                            Variable(argument_length),
+                            -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
                         ),
-                        -Number(2),
+                        Number(-1),
                     ),
                 )
                 type_identifier = self._ada_type(a.message_type.identifier)
@@ -3984,8 +3996,11 @@ class FSMGenerator:
                                 First(const.TYPES_INDEX),
                                 Add(
                                     First(const.TYPES_INDEX),
-                                    Number(
-                                        (self._allocator.get_size(a.message, state)) - 1,
+                                    QualifiedExpr(
+                                        const.TYPES_LENGTH,
+                                        Number(
+                                            (self._allocator.get_size(a.message, state)) - 1,
+                                        ),
                                     ),
                                 ),
                             ),
@@ -3994,20 +4009,17 @@ class FSMGenerator:
                         ObjectDeclaration(
                             [argument_length],
                             const.TYPES_LENGTH,
-                            Add(
-                                Call(
-                                    const.TYPES_TO_LENGTH,
-                                    [
-                                        Call(
-                                            type_identifier * "Field_Size",
-                                            [
-                                                Variable(context_id(a.message, is_global)),
-                                                Variable(type_identifier * f"F_{a.field}"),
-                                            ],
-                                        ),
-                                    ],
-                                ),
-                                Number(1),
+                            Call(
+                                const.TYPES_TO_LENGTH,
+                                [
+                                    Call(
+                                        type_identifier * "Field_Size",
+                                        [
+                                            Variable(context_id(a.message, is_global)),
+                                            Variable(type_identifier * f"F_{a.field}"),
+                                        ],
+                                    ),
+                                ],
                             ),
                             constant=True,
                         ),
@@ -4035,6 +4047,7 @@ class FSMGenerator:
                 (rty.Message, rty.Sequence),
             ):
                 self._session_context.used_types_body.append(const.TYPES_LENGTH)
+                self._session_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
                 argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.prefix}"
                 argument_length = f"{argument_name}_Length"
                 argument = Slice(
@@ -4042,11 +4055,8 @@ class FSMGenerator:
                     First(const.TYPES_INDEX),
                     Add(
                         First(const.TYPES_INDEX),
-                        Call(
-                            const.TYPES_INDEX,
-                            [Add(Variable(argument_length), Number(1))],
-                        ),
-                        -Number(2),
+                        Variable(argument_length),
+                        -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
                     ),
                 )
                 type_identifier = self._ada_type(a.prefix_type.identifier)
@@ -4061,8 +4071,11 @@ class FSMGenerator:
                                 First(const.TYPES_INDEX),
                                 Add(
                                     First(const.TYPES_INDEX),
-                                    Number(
-                                        (self._allocator.get_size(a.prefix, state)) - 1,
+                                    QualifiedExpr(
+                                        const.TYPES_LENGTH,
+                                        Number(
+                                            (self._allocator.get_size(a.prefix, state)) - 1,
+                                        ),
                                     ),
                                 ),
                             ),
@@ -5374,6 +5387,7 @@ class FSMGenerator:
         structure_field: ID,
         exception_handler: ExceptionHandler,
     ) -> Declare:
+        self._session_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
         return self._set_opaque_field(
             target_type,
             target_context,
@@ -5402,19 +5416,34 @@ class FSMGenerator:
                 ),
             ),
             get_statements=[
-                Assignment(
-                    Variable("Data"),
-                    Indexed(
-                        Variable(f"{structure}.{structure_field}"),
-                        ValueRange(
-                            First(f"{structure}.{structure_field}"),
-                            Add(
-                                First(f"{structure}.{structure_field}"),
-                                Length("Data"),
-                                -Number(1),
-                            ),
+                IfStatement(
+                    [
+                        (
+                            Greater(Length("Data"), Number(0)),
+                            [
+                                Assignment(
+                                    Variable("Data"),
+                                    Indexed(
+                                        Variable(f"{structure}.{structure_field}"),
+                                        ValueRange(
+                                            First(f"{structure}.{structure_field}"),
+                                            Add(
+                                                First(f"{structure}.{structure_field}"),
+                                                QualifiedExpr(const.TYPES_LENGTH, Length("Data")),
+                                                -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ],
                         ),
-                    ),
+                    ],
+                    [
+                        Assignment(
+                            Variable("Data"),
+                            NamedAggregate(("others", Number(0))),
+                        ),
+                    ],
                 ),
             ],
             length=Call(
@@ -6214,6 +6243,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
     ) -> list[Statement]:
         self._session_context.used_types_body.append(const.TYPES_LENGTH)
+        self._session_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
         copy = CallStatement(
             type_ * "Copy",
             [
@@ -6225,18 +6255,10 @@ class FSMGenerator:
                         Add(
                             First(target_buffer),
                             Call(
-                                const.TYPES_INDEX,
-                                [
-                                    Add(
-                                        Call(
-                                            type_ * "Byte_Size",
-                                            [Variable(source_context)],
-                                        ),
-                                        Number(1),
-                                    ),
-                                ],
+                                type_ * "Byte_Size",
+                                [Variable(source_context)],
                             ),
-                            -Number(2),
+                            -QualifiedExpr(const.TYPES_LENGTH, Number(1)),
                         ),
                     ),
                 ),

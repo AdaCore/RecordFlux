@@ -15,10 +15,13 @@ pragma Warnings (Off, "redundant conversion");
 with RFLX.Universal.Option_Types;
 with RFLX.Universal.Options;
 with RFLX.Universal.Option;
+with RFLX.RFLX_Types.Operators;
 
 package body RFLX.Test.Session.FSM with
   SPARK_Mode
 is
+
+   use RFLX.RFLX_Types.Operators;
 
    use type RFLX.RFLX_Types.Bytes_Ptr;
 
@@ -91,7 +94,7 @@ is
         (Global_Initialized (Ctx)
          and Universal.Option_Types.Has_Buffer (Option_Types_Ctx)
          and Option_Types_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
-         and Option_Types_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + 4095
+         and Option_Types_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_2 = null
          and Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_3 /= null
@@ -137,7 +140,7 @@ is
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
-         Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
+         Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + Universal.Message.Byte_Size (Ctx.P.Message_Ctx) - RFLX_Types.Length'(1)));
          if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Ctx.P.Slots.Slot_Ptr_3 = null);
@@ -255,7 +258,7 @@ is
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
-         Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + RFLX_Types.Index (Universal.Message.Byte_Size (Ctx.P.Message_Ctx) + 1) - 2));
+         Universal.Message.Copy (Ctx.P.Message_Ctx, RFLX_Message_Options_Buffer.all (RFLX_Message_Options_Buffer'First .. RFLX_Message_Options_Buffer'First + Universal.Message.Byte_Size (Ctx.P.Message_Ctx) - RFLX_Types.Length'(1)));
          if not Universal.Message.Well_Formed (Ctx.P.Message_Ctx, Universal.Message.F_Options) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Ctx.P.Slots.Slot_Ptr_4 = null);
@@ -490,10 +493,10 @@ is
         Pre =>
           Read_Pre (Message_Buffer)
       is
-         Length : constant RFLX_Types.Index := RFLX_Types.Index (RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset));
-         Buffer_Last : constant RFLX_Types.Index := Buffer'First - 1 + Length;
+         Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
+         Buffer_Last : constant RFLX_Types.Index := Buffer'First + (Length - RFLX_Types.Length'(1));
       begin
-         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First - 2 + RFLX_Types.Index (Offset + 1) + Length);
+         Buffer (Buffer'First .. RFLX_Types.Index (Buffer_Last)) := Message_Buffer (RFLX_Types.Index (RFLX_Types.Length (Message_Buffer'First) + Offset) .. Message_Buffer'First + Offset + (Length - RFLX_Types.Length'(1)));
       end Read;
       procedure Universal_Message_Read is new Universal.Message.Generic_Read (Read, Read_Pre);
    begin
