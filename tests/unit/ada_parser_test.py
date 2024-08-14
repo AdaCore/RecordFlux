@@ -448,6 +448,11 @@ def procedure_body(
         ),
         package(
             declaration_declarations=[
+                ada.UseTypeClause("T", "U", "V"),
+            ],
+        ),
+        package(
+            declaration_declarations=[
                 ada.PrivateType("PT"),
             ],
         ),
@@ -739,6 +744,16 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
         is
 
            use type T;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           use type T, U, V;
+
+           use type W;
 
         end P;
         """,

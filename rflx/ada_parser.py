@@ -1668,8 +1668,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return ada.UsePackageClause(identifier=data[0])
 
     def use_type_clause(self, data: list[ID]) -> ada.UseTypeClause:
-        assert len(data) == 1
-        return ada.UseTypeClause(identifier=data[0])
+        return ada.UseTypeClause(*data)
 
     def compilation_unit(
         self,
