@@ -1056,8 +1056,18 @@ class UsePackageClause(ContextItem, Declaration):
 
 
 class UseTypeClause(ContextItem, Declaration):
+    def __init__(self, *identifiers: StrID) -> None:
+        self.identifiers = [ID(i) for i in identifiers]
+
+    def __hash__(self) -> int:
+        return hash(self._identifiers_str)
+
     def __str__(self) -> str:
-        return f"use type {self.identifier.ada_str};"
+        return f"use type {self._identifiers_str};"
+
+    @property
+    def _identifiers_str(self) -> str:
+        return ", ".join(identifier.ada_str for identifier in self.identifiers)
 
 
 class Aspect(Base):
