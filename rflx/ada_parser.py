@@ -573,7 +573,8 @@ ADA_GRAMMAR = lark.Lark(
 
         # 12.1 (6)
         generic_formal_parameter_declaration: \
-                                    formal_type_declaration \
+                                    formal_object_declaration \
+                                  | formal_type_declaration \
                                   | formal_subprogram_declaration
 
         # 12.3 (2/3)
@@ -592,6 +593,12 @@ ADA_GRAMMAR = lark.Lark(
 
         # 12.3 (5)
         explicit_generic_actual_parameter: name
+
+        # 12.4 (2/3)
+        formal_object_declaration: \
+                                    defining_identifier_list ":" subtype_mark \
+                                        optional_default_expression \
+                                        optional_aspect_specification ";"
 
         # 12.5 (2/3)
         formal_type_declaration: \
@@ -1771,8 +1778,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def generic_formal_parameter_declaration(
         self,
-        data: list[ada.SubprogramDeclaration | ada.TypeDeclaration],
-    ) -> list[ada.SubprogramDeclaration | ada.TypeDeclaration]:
+        data: list[ada.SubprogramDeclaration | ada.TypeDeclaration | ada.ObjectDeclaration],
+    ) -> list[ada.SubprogramDeclaration | ada.TypeDeclaration | ada.ObjectDeclaration]:
         return data
 
     def package_body(
@@ -1808,6 +1815,18 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def explicit_generic_actual_parameter(self, data: list[ID]) -> ID:
         return data[0]
+
+    def formal_object_declaration(
+        self,
+        data: tuple[list[ID], ID, ada.Expr | None, list[ada.Aspect] | None],
+    ) -> ada.ObjectDeclaration:
+        identifiers, type_identifier, default_expression, aspects = data
+        return ada.ObjectDeclaration(
+            identifiers=identifiers,
+            type_identifier=type_identifier,
+            expression=default_expression,
+            aspects=aspects,
+        )
 
     def formal_type_declaration(self, data: list[ada.TypeDeclaration]) -> ada.TypeDeclaration:
         return data[0]

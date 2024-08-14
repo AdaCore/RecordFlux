@@ -715,9 +715,18 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
         """,
         """\
         generic
+           E : T;
+        package P
+        is
+
+        end P;
+        """,
+        """\
+        generic
            type PT is private;
            with procedure P (P1 : T);
            with function F (P1 : T) return U;
+           E : T;
         package P
         is
 
