@@ -152,6 +152,9 @@ ADA_GRAMMAR = lark.Lark(
         component_definition: \
                                     subtype_indication
 
+        # 3.6.1 (3)
+        discrete_range:             range
+
         # 3.7 (2/2)
         discriminant_part:          known_discriminant_part
 
@@ -231,7 +234,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.1 (2/3)
         name:                       direct_name
-                                  | indexed_component
+                                  | indexed_component | slice
                                   | selected_component | attribute_reference
                                   | qualified_expression
 
@@ -246,6 +249,9 @@ ADA_GRAMMAR = lark.Lark(
 
         indexed_component_expressions: \
                                     "(" expression ( "," expression )* ")"
+
+        # 4.1.2 (2)
+        slice:                      prefix "(" discrete_range ")"
 
         # 4.1.3 (2)
         selected_component:         prefix "." selector_name
@@ -990,6 +996,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert constraint is None
         return identifier
 
+    def discrete_range(self, data: tuple[ada.ValueRange]) -> ada.ValueRange:
+        return data[0]
+
     def discriminant_part(self, data: tuple[list[ada.Discriminant]]) -> list[ada.Discriminant]:
         return data[0]
 
@@ -1093,6 +1102,10 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def indexed_component_expressions(self, data: list[ada.Expr]) -> list[ada.Expr]:
         return data
+
+    def slice(self, data: tuple[ID, ada.ValueRange]) -> ada.Slice:
+        name, value_range = data
+        return ada.Slice(ada.Variable(name), value_range.lower, value_range.upper)
 
     def selected_component(self, data: tuple[ID, ID]) -> ID:
         return data[0] * data[1]
