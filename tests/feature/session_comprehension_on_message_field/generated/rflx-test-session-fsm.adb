@@ -185,7 +185,7 @@ is
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
-         Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options), Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options));
+         Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Message_Options_Buffer'First) + (Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options) - Ctx.P.Message_Ctx.First), RFLX_Types.To_First_Bit_Index (RFLX_Message_Options_Buffer'First) + (Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options) - Ctx.P.Message_Ctx.First));
          while Universal.Options.Has_Element (RFLX_Message_Options_Ctx) loop
             pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Message_Options_Ctx));
             pragma Loop_Invariant (RFLX_Message_Options_Ctx.Buffer_First = RFLX_Message_Options_Ctx.Buffer_First'Loop_Entry);
@@ -344,7 +344,7 @@ is
             pragma Assert (Process_Invariant);
             goto Finalize_Process;
          end if;
-         Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options), Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options));
+         Universal.Options.Initialize (RFLX_Message_Options_Ctx, RFLX_Message_Options_Buffer, RFLX_Types.To_First_Bit_Index (RFLX_Message_Options_Buffer'First) + (Universal.Message.Field_First (Ctx.P.Message_Ctx, Universal.Message.F_Options) - Ctx.P.Message_Ctx.First), RFLX_Types.To_First_Bit_Index (RFLX_Message_Options_Buffer'First) + (Universal.Message.Field_Last (Ctx.P.Message_Ctx, Universal.Message.F_Options) - Ctx.P.Message_Ctx.First));
          while Universal.Options.Has_Element (RFLX_Message_Options_Ctx) loop
             pragma Loop_Invariant (Universal.Options.Has_Buffer (RFLX_Message_Options_Ctx));
             pragma Loop_Invariant (RFLX_Message_Options_Ctx.Buffer_First = RFLX_Message_Options_Ctx.Buffer_First'Loop_Entry);

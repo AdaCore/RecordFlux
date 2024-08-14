@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Generation of uncompilable code for messages with variable as field condition (eng/recordflux/RecordFlux#1762)
 - Missing checks in state machine to improve provability (eng/recordflux/RecordFlux#1704)
+- Copying of sequence fields for external IO buffers (eng/recordflux/RecordFlux#1704)
 - Syntax highlighting for identifiers with numbers or keywords (AdaCore/RecordFlux#1301, eng/recordflux/RecordFlux#1776)
 
 ## [0.23.0] - 2024-08-23

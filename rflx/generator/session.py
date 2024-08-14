@@ -5742,20 +5742,22 @@ class FSMGenerator:
         take_buffer = self._take_buffer(sequence_identifier, sequence_type, is_global)
         free_buffer = self._free_buffer(sequence_identifier, alloc_id)
         local_exception_handler = exception_handler.copy(free_buffer)
+        sequence_buffer = buffer_id(sequence_identifier)
+        message_context = context_id(message_identifier, is_global)
         return Declare(
             self._declare_context_buffer(sequence_identifier, sequence_type, is_global),
             [
                 *self._allocate_buffer(sequence_identifier, alloc_id),
                 *self._copy_to_buffer(
                     message_type,
-                    context_id(message_identifier, is_global),
-                    buffer_id(sequence_identifier),
+                    message_context,
+                    sequence_buffer,
                     target_buffer_is_smaller,
                     local_exception_handler,
                 ),
                 self._raise_exception_if_not_well_formed_message_field(
                     message_type,
-                    context_id(message_identifier, is_global),
+                    message_context,
                     message_field,
                     local_exception_handler,
                 ),
@@ -5763,23 +5765,35 @@ class FSMGenerator:
                     sequence_identifier,
                     sequence_type,
                     is_global,
-                    first=Call(
-                        message_type * "Field_First",
-                        [
-                            Variable(context_id(message_identifier, is_global)),
-                            Variable(
-                                message_type * model.Field(message_field).affixed_name,
+                    first=Add(
+                        Call(const.TYPES_TO_FIRST_BIT_INDEX, [First(sequence_buffer)]),
+                        Sub(
+                            Call(
+                                message_type * "Field_First",
+                                [
+                                    Variable(context_id(message_identifier, is_global)),
+                                    Variable(
+                                        message_type * model.Field(message_field).affixed_name,
+                                    ),
+                                ],
                             ),
-                        ],
+                            Variable(message_context * "First"),
+                        ),
                     ),
-                    last=Call(
-                        message_type * "Field_Last",
-                        [
-                            Variable(context_id(message_identifier, is_global)),
-                            Variable(
-                                message_type * model.Field(message_field).affixed_name,
+                    last=Add(
+                        Call(const.TYPES_TO_FIRST_BIT_INDEX, [First(sequence_buffer)]),
+                        Sub(
+                            Call(
+                                message_type * "Field_Last",
+                                [
+                                    Variable(context_id(message_identifier, is_global)),
+                                    Variable(
+                                        message_type * model.Field(message_field).affixed_name,
+                                    ),
+                                ],
                             ),
-                        ],
+                            Variable(message_context * "First"),
+                        ),
                     ),
                 ),
                 *statements(exception_handler.copy([*take_buffer, *free_buffer])),
