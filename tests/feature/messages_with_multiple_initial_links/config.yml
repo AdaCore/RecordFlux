@@ -1,3 +1,4 @@
 # TODO(eng/recordflux/RecordFlux#1570): Does not prove at the moment.
-prove:
-  - rflx-universal-values.ads
+proof:
+  units:
+    - rflx-universal-values.ads

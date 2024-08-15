@@ -9,4 +9,4 @@ sequence: |
   State: Local
   Read Channel: 1 0 2 3 4
   State: Reply_2
-prove:
+proof:

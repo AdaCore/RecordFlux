@@ -9,4 +9,4 @@ sequence: |
   State: Prepare
   Read Channel: 1
   State: Reply
-prove:
+proof:

@@ -12,4 +12,4 @@ sequence: |
   State: Trigger_Error
   Error: "Get_Option_Data" returned an invalid message
   State: Error
-prove:
+proof:

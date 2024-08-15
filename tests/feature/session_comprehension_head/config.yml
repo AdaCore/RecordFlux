@@ -13,4 +13,5 @@ sequence: |
   State: Process_2
   Read Channel: 1 0 2 4 2
   State: Send_2
-prove:
+proof:
+  timeout: 120

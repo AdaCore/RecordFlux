@@ -3,4 +3,4 @@ sequence: |
   State: Check_Message
   State: Check_Message_Sequence
   State: Check_Scalar_Sequence
-prove:
+proof:

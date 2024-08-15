@@ -16,4 +16,5 @@ sequence: |
   Read O: 0 1 0 1 0 0 0 32
   State: Reply2
   State: Start
-prove:
+proof:
+  timeout: 180

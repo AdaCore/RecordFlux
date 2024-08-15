@@ -223,15 +223,16 @@ def assert_provable_code_string(
     assert_provable_code(parser.create_model(), Integration(), tmp_path, prefix=prefix, units=units)
 
 
-def assert_provable_code(
+def assert_provable_code(  # noqa: PLR0913
     model: Model,
     integration: Integration,
     tmp_path: pathlib.Path,
     main: str | None = None,
     prefix: str | None = None,
+    timeout: int = 60,
     units: Sequence[str] | None = None,
 ) -> None:
-    _create_files(tmp_path, model, integration, main, prefix)
+    _create_files(tmp_path, model, integration, main, prefix, proof_timeout=timeout)
 
     def run(command: Sequence[str]) -> None:
         p = subprocess.run(
@@ -254,13 +255,14 @@ def assert_provable_code(
         run(gnatprove)
 
 
-def _create_files(
+def _create_files(  # noqa: PLR0913
     tmp_path: pathlib.Path,
     model: Model,
     integration: Integration,
     main: str | None = None,
     prefix: str | None = None,
     debug: Debug = Debug.BUILTIN,
+    proof_timeout: int = 60,
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
     shutil.copy("defaults.adc", tmp_path)
@@ -297,7 +299,7 @@ def _create_files(
 
                package Prove is
                   for Proof_Switches ("Ada") use
-                     Defaults.Proof_Switches & ("--steps=0", "--timeout=60");
+                     Defaults.Proof_Switches & ("--steps=0", "--timeout={proof_timeout}");
                end Prove;
             end Test;""",
         ),

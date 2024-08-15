@@ -13,7 +13,7 @@ from tests.utils import assert_provable_code
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_provability(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
-    if config.prove is None:
+    if config.proof is None:
         pytest.skip()
     model, integration = create_model(feature)
     units = []
@@ -23,19 +23,26 @@ def test_provability(feature: str, tmp_path: Path) -> None:
         units = [
             "rflx.test.session",
             "rflx.test.session.fsm",
-            *config.prove,
+            *config.proof.units,
         ]
         units.extend(create_complement(config, feature, tmp_path))
         main = MAIN
     else:
         main = None
-    assert_provable_code(model, integration, tmp_path, main=main, units=[*units, *config.prove])
+    assert_provable_code(
+        model,
+        integration,
+        tmp_path,
+        main=main,
+        timeout=config.proof.timeout,
+        units=[*units, *config.proof.units],
+    )
 
 
 @pytest.mark.parametrize("feature", [f.name for f in FEATURES])
 def test_provability_with_external_io_buffers(feature: str, tmp_path: Path) -> None:
     config = get_config(feature)
-    if config.prove is None:
+    if config.proof is None:
         pytest.skip()
     model, integration = create_model(feature)
     if not model.sessions:
@@ -56,11 +63,12 @@ def test_provability_with_external_io_buffers(feature: str, tmp_path: Path) -> N
         integration,
         tmp_path,
         main=MAIN,
+        timeout=config.proof.timeout,
         units=[
             "main",
             "lib",
             "rflx.test.session",
             "rflx.test.session.fsm",
-            *config.prove,
+            *config.proof.units,
         ],
     )

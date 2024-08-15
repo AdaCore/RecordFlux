@@ -11,6 +11,7 @@ sequence: |
   Read C: 1 2 3 4
   State: Reply
   State: Reset
-prove:
-  - rflx.test
-  - rflx.test.message
+proof:
+  units:
+    - rflx.test
+    - rflx.test.message

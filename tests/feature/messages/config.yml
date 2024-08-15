@@ -1,7 +1,8 @@
-prove:
-  - rflx-universal-contains.adb
-  - rflx-universal-message.adb
-  - rflx-universal-option.adb
-  - rflx-universal-option_types.ads
-  - rflx-universal-options.ads
-  - rflx-universal-values.ads
+proof:
+  units:
+    - rflx-universal-contains.adb
+    - rflx-universal-message.adb
+    - rflx-universal-option.adb
+    - rflx-universal-option_types.ads
+    - rflx-universal-options.ads
+    - rflx-universal-values.ads

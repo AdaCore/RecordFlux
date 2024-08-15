@@ -15,4 +15,4 @@ sequence: |
   State: Process_3
   Read Channel: 1 2 3 4
   State: Reply_3
-prove:
+proof:
