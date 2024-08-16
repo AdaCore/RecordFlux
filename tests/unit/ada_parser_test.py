@@ -257,6 +257,20 @@ def procedure_body(
         ),
         package(
             declaration_declarations=[
+                ada.SubprogramRenamingDeclaration(
+                    specification=ada.FunctionSpecification(
+                        identifier="S",
+                        parameters=[
+                            ada.Parameter(["P"], "T"),
+                        ],
+                        return_type="T",
+                    ),
+                    subprogram_identifier="U",
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
                 ada.SubprogramDeclaration(
                     specification=ada.FunctionSpecification(
                         identifier="F",
@@ -1105,6 +1119,16 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
            function "+" (L : Natural; R : Natural) return Natural is abstract;
 
            function "-" (L, R : Natural) return Natural is abstract;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           function F (L : Natural; R : Natural) return Natural renames U;
+
+           procedure P (P : Natural) renames U;
 
         end P;
         """,

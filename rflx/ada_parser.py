@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import reduce
 from pathlib import Path
 from typing import Literal
@@ -416,7 +417,7 @@ ADA_GRAMMAR = lark.Lark(
         # Function specifications is special-cased in unified_function_declaration
         subprogram_declaration: \
                                     subprogram_specification \
-                                    is_abstract? \
+                                    is_abstract_or_renames? \
                                     optional_aspect_specification ";"
 
         # 6.1 (4/2)
@@ -720,7 +721,7 @@ ADA_GRAMMAR = lark.Lark(
                                         | expression_function_part ) \
                                     ";"
 
-        function_declaration_part:   is_abstract? optional_aspect_specification
+        function_declaration_part:   is_abstract_or_renames? optional_aspect_specification
 
         function_body_part:         optional_aspect_specification \
                                     "is" \
@@ -795,7 +796,12 @@ ADA_GRAMMAR = lark.Lark(
 
         !box:                        "<>"
 
-        !is_abstract:               /is\s+abstract/
+        ?is_abstract_or_renames: \
+                                    is_abstract | renames
+
+        is_abstract:                /is\s+abstract/
+
+        renames:                    "renames" name
 
         # Skip whitespace
         %import common.WS
@@ -816,11 +822,18 @@ class FunctionPart:
 
 
 class FunctionDeclPart(FunctionPart):
-    def __init__(self, abstract: bool, aspects: list[ada.Aspect] | None):
+    def __init__(self, abstract: bool, aspects: list[ada.Aspect] | None, renaming: ID | None):
         self.abstract = abstract
         self.aspects = aspects
+        self.renaming = renaming
 
     def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
+        assert not self.abstract or not self.renaming
+        if self.renaming:
+            return ada.SubprogramRenamingDeclaration(
+                specification=specification,
+                subprogram_identifier=self.renaming,
+            )
         return ada.SubprogramDeclaration(
             specification=specification,
             aspects=self.aspects,
@@ -907,6 +920,15 @@ class RangeConstraint(ScalarConstraint):
 
 class SignedIntegerConstraint(ScalarConstraint):
     pass
+
+
+class AbstractDeclaration:
+    pass
+
+
+@dataclass
+class RenamingDeclaration:
+    identifier: ID
 
 
 class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
@@ -1496,15 +1518,34 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def subprogram_declaration(
         self,
-        data: tuple[ada.SubprogramSpecification, list[ada.Aspect]],
-    ) -> ada.SubprogramDeclaration:
-        specification = data[0]
-        aspects = data[-1]
-        abstract = len(data) == 3
+        data: (
+            tuple[ada.SubprogramSpecification, list[ada.Aspect]]
+            | tuple[
+                ada.SubprogramSpecification,
+                RenamingDeclaration | AbstractDeclaration,
+                list[ada.Aspect],
+            ]
+        ),
+    ) -> ada.SubprogramDeclaration | ada.SubprogramRenamingDeclaration:
+        if len(data) == 2:
+            specification, aspects = data
+        else:
+            specification, decl_kind, aspects = data
+            if isinstance(decl_kind, RenamingDeclaration):
+                return ada.SubprogramRenamingDeclaration(
+                    specification=specification,
+                    subprogram_identifier=decl_kind.identifier,
+                )
+            if isinstance(decl_kind, AbstractDeclaration):
+                return ada.SubprogramDeclaration(
+                    specification=specification,
+                    aspects=aspects,
+                    abstract=True,
+                )
         return ada.SubprogramDeclaration(
             specification=specification,
             aspects=aspects,
-            abstract=abstract,
+            abstract=False,
         )
 
     def subprogram_specification(
@@ -2076,15 +2117,21 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def function_declaration_part(
         self,
-        data: list[list[ada.Aspect] | None],
+        data: (
+            tuple[list[ada.Aspect] | None]
+            | tuple[RenamingDeclaration | AbstractDeclaration, list[ada.Aspect] | None]
+        ),
     ) -> FunctionDeclPart:
         if len(data) == 1:
-            aspects = data[0]
-            abstract = False
-        else:
-            aspects = data[1]
-            abstract = True
-        return FunctionDeclPart(abstract=abstract, aspects=aspects)
+            return FunctionDeclPart(abstract=False, aspects=data[0], renaming=None)
+
+        if isinstance(data[0], RenamingDeclaration):
+            return FunctionDeclPart(abstract=False, aspects=data[1], renaming=data[0].identifier)
+
+        if isinstance(data[0], AbstractDeclaration):
+            return FunctionDeclPart(abstract=True, aspects=data[1], renaming=None)
+
+        assert_never(data[0])
 
     def function_body_part(
         self,
@@ -2275,8 +2322,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def box(self, _: tuple[lark.Token]) -> SignedIntegerConstraint:
         return SignedIntegerConstraint()
 
-    def is_abstract(self, _: tuple[lark.Token]) -> bool:
-        return True
+    def is_abstract(self, _: tuple[lark.Token]) -> AbstractDeclaration:
+        return AbstractDeclaration()
+
+    def renames(self, data: tuple[ID]) -> RenamingDeclaration:
+        return RenamingDeclaration(data[0])
 
     def file(
         self,
@@ -2314,6 +2364,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 def parse(text: str, source: Path | None = None) -> ada.PackageUnit:
     try:
         return TreeToAda().transform(ADA_GRAMMAR.parse(f"{text}\0"))
+    except lark.UnexpectedToken:
+        raise
     except VisitError as e:
         if isinstance(e.orig_exc, ParseError):
             assert isinstance(e.obj, lark.Tree)  # noqa: PT017
