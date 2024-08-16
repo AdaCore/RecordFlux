@@ -31,7 +31,7 @@ macro_rules! impl_states {
     };
 }
 
-/// Register classes in a submodule.
+/// Register classes and functions in a submodule.
 ///
 /// This macro generate a `register_<module name>_module` function that is used by the
 /// `register_submodule` function later to add a submodule in `rapidflux`.
@@ -43,15 +43,18 @@ macro_rules! impl_states {
 /// use pyo3::prelude::*;
 ///
 /// #[pyclass]
-/// pub struct Foo;
+/// pub struct A;
 /// #[pyclass]
-/// pub struct Bar;
+/// pub struct B;
 ///
-/// register_submodule_classes!(foo, [Foo, Bar]);
+/// fn bar() {}
+/// fn baz() {}
+///
+/// register_submodule_declarations!(foo, [A, B], [bar, baz]);
 /// ```
 #[macro_export]
-macro_rules! register_submodule_classes {
-    ($module_name:ident, [$($class_name:ident),+ $(,)?] $(,)?) => {
+macro_rules! register_submodule_declarations {
+    ($module_name:ident, [$($class_name:ident),* $(,)?], [$($fn_name:ident),* $(,)?] $(,)?) => {
         ::paste::paste! {
             pub fn [<register_ $module_name _module>]<'py>(
                 py: Python<'py>,
@@ -62,41 +65,6 @@ macro_rules! register_submodule_classes {
                 $(
                     m.add_class::<$class_name>()?;
                  )*
-
-                // Submodules need to be added manually to `sys.modules`.
-                // See: https://github.com/PyO3/pyo3/issues/759#issuecomment-1208179322
-                py.import_bound("sys")?
-                    .getattr("modules")?
-                    .set_item(PY_MODULE_PATH, m)
-            }
-        }
-    };
-}
-
-/// Register functions in a submodule.
-///
-/// Works like `register_submodule_classes` but takes one or more functions instead.
-///
-/// # Examples
-///
-/// ```rust
-/// // in `foo.rs`
-/// use pyo3::prelude::*;
-///
-/// fn bar() {}
-/// fn baz() {}
-///
-/// register_submodule_functions!(foo, [bar, baz]);
-/// ```
-#[macro_export]
-macro_rules! register_submodule_functions {
-    ($module_name:ident, [$($fn_name:ident),+ $(,)?] $(,)?) => {
-        ::paste::paste! {
-            pub fn [<register_ $module_name _module>]<'py>(
-                py: Python<'py>,
-                m: &Bound<'py, PyModule>
-            ) -> PyResult<()> {
-                const PY_MODULE_PATH: &str = concat!("rflx.rapidflux.", stringify!($module_name));
 
                 $(
                     m.add_function(wrap_pyfunction!($fn_name, m)?)?;

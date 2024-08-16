@@ -15,7 +15,7 @@ use librapidflux::ty as lib;
 use crate::{
     diagnostics::Location,
     identifier::{to_id, ID},
-    impl_states, register_submodule_classes,
+    impl_states, register_submodule_declarations,
 };
 
 #[pyclass(subclass, module = "rflx.rapidflux.ty")]
@@ -176,18 +176,6 @@ impl Any {
         to_py(&lib::Ty::Any.common_type(&to_ty(other)), py)
     }
 }
-
-// #[pyclass(extends=Any, subclass, module = "rflx.rapidflux.ty")]
-// #[derive(Clone, Serialize, Deserialize)]
-// pub struct NamedType;
-
-// #[pymethods]
-// impl NamedType {
-//     #[new]
-//     fn new() -> PyClassInitializer<Self> {
-//         PyClassInitializer::from(Any::new()).add_subclass(Self)
-//     }
-// }
 
 #[pyclass(extends=Any, module = "rflx.rapidflux.ty")]
 #[derive(Clone, Serialize, Deserialize)]
@@ -1139,7 +1127,6 @@ impl_states!(
     Type,
     Undefined,
     Any,
-    // NamedType,
     Enumeration,
     AnyInteger,
     UniversalInteger,
@@ -1153,7 +1140,7 @@ impl_states!(
     Message,
     Channel
 );
-register_submodule_classes!(
+register_submodule_declarations!(
     ty,
     [
         Bounds,
@@ -1161,7 +1148,6 @@ register_submodule_classes!(
         Type,
         Undefined,
         Any,
-        // NamedType,
         Enumeration,
         AnyInteger,
         UniversalInteger,
@@ -1174,5 +1160,6 @@ register_submodule_classes!(
         Structure,
         Message,
         Channel,
-    ]
+    ],
+    []
 );

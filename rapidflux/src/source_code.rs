@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use librapidflux::source_code as lib;
 use pyo3::prelude::*;
 
-use crate::register_submodule_functions;
+use crate::register_submodule_declarations;
 
 #[pyfunction]
 fn register(path: PathBuf, source_code: String) {
@@ -26,4 +26,4 @@ fn clear() {
     lib::clear();
 }
 
-register_submodule_functions!(source_code, [clear, register, retrieve]);
+register_submodule_declarations!(source_code, [], [clear, register, retrieve]);

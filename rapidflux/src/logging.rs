@@ -5,7 +5,7 @@ use pyo3::{
 
 use librapidflux as lib;
 
-use crate::register_submodule_functions;
+use crate::register_submodule_declarations;
 
 /// Format a Python's string with the arguments passed in `args` dict.
 ///
@@ -111,4 +111,4 @@ fn set_quiet(value: bool) {
     lib::diagnostics::logging::set_quiet(value);
 }
 
-register_submodule_functions!(logging, [error, help, info, note, set_quiet, warning]);
+register_submodule_declarations!(logging, [], [error, help, info, note, set_quiet, warning]);
