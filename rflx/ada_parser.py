@@ -88,10 +88,10 @@ ADA_GRAMMAR = lark.Lark(
         subtype_mark:               name
 
         # 3.2.2 (5)
-        constraint:                  scalar_constraint
+        constraint:                 scalar_constraint
 
         # 3.2.2 (6)
-        scalar_constraint: \
+        ?scalar_constraint: \
                                     range_constraint
 
         # 3.3.1 (2/3)
@@ -112,7 +112,7 @@ ADA_GRAMMAR = lark.Lark(
                                     "new" subtype_indication
 
         # 3.5 (2)
-        range_constraint:           "range" range
+        ?range_constraint:          "range" (range | box)
 
         # 3.5 (3)
         range: \
@@ -137,16 +137,15 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.6 (2)
         array_type_definition: \
-                                    unconstrained_array_definition
+                                    combined_array_definition
 
         # 3.6 (3)
-        unconstrained_array_definition: \
-                                    "array" "(" index_subtype_definition \
-                                        ( "," index_subtype_definition )* ")" \
-                                            "of" component_definition
+        # unconstrained_array_definition must be combined with constrained_array
+        # definition to keep parser LR(1) (see combinded_array_definition).
 
         # 3.6 (4)
-        index_subtype_definition:   subtype_mark "range" "<>"
+        # index_subtype_definition is combined with discrete_subtype_definition
+        # (cf. combined_subtype_definition)
 
         # 3.6 (7/2)
         component_definition: \
@@ -616,6 +615,7 @@ ADA_GRAMMAR = lark.Lark(
         ?formal_type_definition: \
                                     formal_private_type_definition
                                   | formal_signed_integer_type_definition
+                                  | formal_array_type_definition
 
         # 12.5.1 (2)
         !formal_private_type_definition: "private"
@@ -625,6 +625,9 @@ ADA_GRAMMAR = lark.Lark(
 
         # 12.5.2 (3)
         formal_signed_integer_type_definition: "range" "<>"
+
+        # 12.5.3 (2)
+        ?formal_array_type_definition: array_type_definition
 
         # 12.6 (2/2)
         formal_subprogram_declaration: formal_concrete_subprogram_declaration
@@ -765,6 +768,16 @@ ADA_GRAMMAR = lark.Lark(
 
         is_lpar:                     /is\s*\(/
 
+        combined_array_definition: \
+                                    "array" "(" combined_subtype_definition \
+                                        ( "," combined_subtype_definition )* ")" \
+                                            "of" component_definition
+
+        ?combined_subtype_definition: \
+                                    subtype_indication
+
+        !box:                        "<>"
+
         # Skip whitespace
         %import common.WS
         %ignore WS
@@ -863,8 +876,19 @@ class RangeConstraint(ScalarConstraint):
         self.first = first
         self.last = last
 
+    @property
+    def to_value_range(self) -> ada.ValueRange:
+        return ada.ValueRange(lower=self.first, upper=self.last)
+
+
+class SignedIntegerConstraint(ScalarConstraint):
+    pass
+
 
 class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
+
+    def __default__(self, token: lark.Token, _: None, meta: lark.tree.Meta) -> None:
+        raise ParseError(f'missing handler for rule "{token}"')
 
     def identifier(self, data: list[lark.lexer.Token]) -> ID:
         return ID(data[0])
@@ -925,9 +949,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def constraint(self, data: tuple[ScalarConstraint]) -> Constraint:
         return data[0]
 
-    def scalar_constraint(self, data: tuple[RangeConstraint]) -> ScalarConstraint:
-        return data[0]
-
     def object_declaration(
         self,
         data: tuple[list[ID], bool, tuple[ID, Constraint | None], ada.Expr | None],
@@ -970,11 +991,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             )
         assert False, data
 
-    def range_constraint(self, data: tuple[ada.ValueRange]) -> RangeConstraint:
-        return RangeConstraint(first=data[0].lower, last=data[0].upper)
-
-    def range(self, data: tuple[ada.Number, ada.Number]) -> ada.ValueRange:
-        return ada.ValueRange(lower=data[0], upper=data[1])
+    def range(self, data: tuple[ada.Number, ada.Number]) -> RangeConstraint:
+        return RangeConstraint(first=data[0], last=data[1])
 
     def enumeration_type_definition(self, data: list[ID]) -> ada.EnumerationType:
         return ada.EnumerationType("__INVALID__", literals={i: None for i in data[1:]})
@@ -997,23 +1015,13 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def array_type_definition(self, data: tuple[ada.UnconstrainedArrayType]) -> ada.ArrayType:
         return data[0]
 
-    def unconstrained_array_definition(self, data: tuple[ID, ID]) -> ada.UnconstrainedArrayType:
-        return ada.UnconstrainedArrayType(
-            identifier="__INVALID__",
-            index_type=data[0],
-            component_identifier=data[1],
-        )
-
-    def index_subtype_definition(self, data: list[ID]) -> ID:
-        return data[0]
-
     def component_definition(self, data: tuple[tuple[ID, Constraint | None]]) -> ID:
         identifier, constraint = data[0]
         assert constraint is None
         return identifier
 
-    def discrete_range(self, data: tuple[ada.ValueRange]) -> ada.ValueRange:
-        return data[0]
+    def discrete_range(self, data: tuple[RangeConstraint]) -> ada.ValueRange:
+        return data[0].to_value_range
 
     def discriminant_part(self, data: tuple[list[ada.Discriminant]]) -> list[ada.Discriminant]:
         return data[0]
@@ -1249,8 +1257,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def membership_choice_list(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
 
-    def membership_choice(self, data: list[ada.ValueRange]) -> ada.Expr:
-        return data[0]
+    def membership_choice(self, data: tuple[RangeConstraint]) -> ada.Expr:
+        return data[0].to_value_range
 
     def simple_expression(self, data: list[ada.Expr | str]) -> ada.Expr:
 
@@ -1845,39 +1853,62 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[
             ID,
             list[ada.Discriminant] | None,
-            Literal["private", "discrete", "signed_integer"],
+            ada.PrivateType
+            | ada.DiscreteType
+            | ada.SignedIntegerType
+            | ada.UnconstrainedArrayType
+            | ada.ArrayType,
             list[ada.Aspect] | None,
         ],
-    ) -> ada.PrivateType | ada.DiscreteType | ada.SignedIntegerType:
-        identifier, discriminants, kind, aspects = data
-        if kind == "private":
+    ) -> (
+        ada.PrivateType
+        | ada.DiscreteType
+        | ada.SignedIntegerType
+        | ada.UnconstrainedArrayType
+        | ada.ArrayType
+    ):
+        identifier, discriminants, declaration, aspects = data
+        assert declaration.identifier == ID("__INVALID__")
+        if type(declaration) == ada.PrivateType:
             return ada.PrivateType(
                 identifier=identifier,
                 discriminants=discriminants,
                 aspects=aspects,
             )
-        if kind == "discrete":
+        if type(declaration) == ada.DiscreteType:
             return ada.DiscreteType(
                 identifier=identifier,
                 discriminants=discriminants,
                 aspects=aspects,
             )
-        if kind == "signed_integer":
+        if type(declaration) == ada.SignedIntegerType:
             return ada.SignedIntegerType(
                 identifier=identifier,
                 discriminants=discriminants,
                 aspects=aspects,
             )
-        raise ParseError(f'unsupported formal type declaration "{kind}"')
+        if type(declaration) == ada.UnconstrainedArrayType:
+            return ada.UnconstrainedArrayType(
+                identifier=identifier,
+                index_type=declaration.index_type,
+                component_identifier=declaration.component_identifier,
+            )
+        if type(declaration) == ada.ArrayType:
+            return ada.ArrayType(
+                identifier=identifier,
+                index_type=declaration.index_type,
+                component_identifier=declaration.component_identifier,
+            )
+        raise ParseError(f'unsupported formal type declaration "{type(declaration)}"')
 
-    def formal_private_type_definition(self, _: None) -> Literal["private"]:
-        return "private"
+    def formal_private_type_definition(self, _: None) -> ada.PrivateType:
+        return ada.PrivateType("__INVALID__")
 
-    def formal_discrete_type_definition(self, _: None) -> Literal["discrete"]:
-        return "discrete"
+    def formal_discrete_type_definition(self, _: None) -> ada.DiscreteType:
+        return ada.DiscreteType("__INVALID__")
 
-    def formal_signed_integer_type_definition(self, _: None) -> Literal["signed_integer"]:
-        return "signed_integer"
+    def formal_signed_integer_type_definition(self, _: None) -> ada.SignedIntegerType:
+        return ada.SignedIntegerType("__INVALID__")
 
     def formal_subprogram_declaration(
         self,
@@ -2164,6 +2195,27 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def is_lpar(self, _: tuple[lark.Token]) -> None:
         return None
+
+    def combined_array_definition(
+        self,
+        data: tuple[tuple[ID, Constraint | None], ID],
+    ) -> ada.UnconstrainedArrayType | ada.ArrayType:
+        (index_type, constraint), component_identifier = data
+        if type(constraint) == SignedIntegerConstraint:
+            return ada.UnconstrainedArrayType(
+                identifier="__INVALID__",
+                index_type=index_type,
+                component_identifier=component_identifier,
+            )
+        assert constraint is None, constraint
+        return ada.ArrayType(
+            identifier="__INVALID__",
+            index_type=index_type,
+            component_identifier=component_identifier,
+        )
+
+    def box(self, _: tuple[lark.Token]) -> SignedIntegerConstraint:
+        return SignedIntegerConstraint()
 
     def file(
         self,
