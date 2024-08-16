@@ -398,6 +398,14 @@ def procedure_body(
             ],
         ),
         package(
+            declaration_declarations=[
+                ada.Subtype(
+                    identifier="S",
+                    base_identifier="T",
+                ),
+            ],
+        ),
+        package(
             formal_parameters=[],
         ),
         package(

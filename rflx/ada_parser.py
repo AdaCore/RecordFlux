@@ -53,7 +53,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 3.1 (3/3)
         basic_declaration: \
-                                    type_declaration \
+                                    type_declaration | subtype_declaration \
                                   | object_declaration \
                                   | subprogram_declaration \
                                   | unified_function_declaration \
@@ -79,6 +79,11 @@ ADA_GRAMMAR = lark.Lark(
                                   | record_type_definition | access_type_definition
                                   | derived_type_definition
                                   | private_type_definition))
+
+        # 3.2.2 (2/3)
+        subtype_declaration: \
+                                    "subtype" defining_identifier "is" subtype_indication \
+                                        optional_aspect_specification ";"
 
         # 3.2.2 (3/2)
         subtype_indication:         subtype_mark optional_constraint
@@ -936,6 +941,13 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
+
+    def subtype_declaration(
+        self,
+        data: tuple[ID, tuple[ID, Constraint | None], list[ada.Aspect] | None],
+    ) -> ada.Subtype:
+        identifier, (base_identifier, _), aspects = data
+        return ada.Subtype(identifier=identifier, base_identifier=base_identifier, aspects=aspects)
 
     def subtype_indication(
         self,
