@@ -8,6 +8,7 @@ import lark.grammar
 from lark.exceptions import VisitError
 
 from rflx import ada
+from rflx.common import assert_never
 from rflx.error import fail
 from rflx.identifier import ID
 from rflx.rapidflux import Location
@@ -616,6 +617,7 @@ ADA_GRAMMAR = lark.Lark(
                                     formal_private_type_definition
                                   | formal_signed_integer_type_definition
                                   | formal_array_type_definition
+                                  | formal_access_type_definition
 
         # 12.5.1 (2)
         !formal_private_type_definition: "private"
@@ -628,6 +630,9 @@ ADA_GRAMMAR = lark.Lark(
 
         # 12.5.3 (2)
         ?formal_array_type_definition: array_type_definition
+
+        # 12.5.4 (2)
+        ?formal_access_type_definition: access_type_definition
 
         # 12.6 (2/2)
         formal_subprogram_declaration: formal_concrete_subprogram_declaration
@@ -1638,7 +1643,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def package_specification(
         self,
-        data: tuple[ID, list[ada.Aspect] | None, PackagePart],
+        data: tuple[
+            ID,
+            list[ada.Aspect] | None,
+            PackageSpecificationPart | PackageInstantiationPart,
+        ],
     ) -> ada.PackageDeclaration:
         identifier, aspects, part = data
         if isinstance(part, PackageInstantiationPart):
@@ -1658,7 +1667,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 aspects=aspects,
             )
 
-        raise NotImplementedError(type(part))
+        assert_never(part)
 
     def package_specification_part(
         self,
@@ -1857,7 +1866,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             | ada.DiscreteType
             | ada.SignedIntegerType
             | ada.UnconstrainedArrayType
-            | ada.ArrayType,
+            | ada.ArrayType
+            | ada.AccessType,
             list[ada.Aspect] | None,
         ],
     ) -> (
@@ -1866,40 +1876,47 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         | ada.SignedIntegerType
         | ada.UnconstrainedArrayType
         | ada.ArrayType
+        | ada.AccessType
     ):
         identifier, discriminants, declaration, aspects = data
         assert declaration.identifier == ID("__INVALID__")
-        if type(declaration) == ada.PrivateType:
+        if isinstance(declaration, ada.PrivateType):
             return ada.PrivateType(
                 identifier=identifier,
                 discriminants=discriminants,
                 aspects=aspects,
             )
-        if type(declaration) == ada.DiscreteType:
+        if isinstance(declaration, ada.DiscreteType):
             return ada.DiscreteType(
                 identifier=identifier,
                 discriminants=discriminants,
                 aspects=aspects,
             )
-        if type(declaration) == ada.SignedIntegerType:
+        if isinstance(declaration, ada.SignedIntegerType):
             return ada.SignedIntegerType(
                 identifier=identifier,
                 discriminants=discriminants,
                 aspects=aspects,
             )
-        if type(declaration) == ada.UnconstrainedArrayType:
+        if isinstance(declaration, ada.UnconstrainedArrayType):
             return ada.UnconstrainedArrayType(
                 identifier=identifier,
                 index_type=declaration.index_type,
                 component_identifier=declaration.component_identifier,
             )
-        if type(declaration) == ada.ArrayType:
+        if isinstance(declaration, ada.ArrayType):
             return ada.ArrayType(
                 identifier=identifier,
                 index_type=declaration.index_type,
                 component_identifier=declaration.component_identifier,
             )
-        raise ParseError(f'unsupported formal type declaration "{type(declaration)}"')
+        if isinstance(declaration, ada.AccessType):
+            return ada.AccessType(
+                identifier=identifier,
+                object_identifier=declaration.object_identifier,
+            )
+
+        assert_never(declaration)
 
     def formal_private_type_definition(self, _: None) -> ada.PrivateType:
         return ada.PrivateType("__INVALID__")

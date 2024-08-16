@@ -413,6 +413,9 @@ def procedure_body(
             formal_parameters=[ada.ArrayType("AT", "I", "T")],
         ),
         package(
+            formal_parameters=[ada.AccessType("T_Ptr", "T")],
+        ),
+        package(
             formal_parameters=[
                 ada.SubprogramDeclaration(
                     ada.ProcedureSpecification("P", [ada.Parameter(["P1"], "T")]),
@@ -1060,6 +1063,14 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
         """\
         generic
            type T is array (I range <>) of E;
+        package P
+        is
+
+        end P;
+        """,
+        """\
+        generic
+           type T is access U;
         package P
         is
 
