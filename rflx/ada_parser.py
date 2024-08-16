@@ -416,6 +416,7 @@ ADA_GRAMMAR = lark.Lark(
         # Function specifications is special-cased in unified_function_declaration
         subprogram_declaration: \
                                     subprogram_specification \
+                                    is_abstract? \
                                     optional_aspect_specification ";"
 
         # 6.1 (4/2)
@@ -432,10 +433,16 @@ ADA_GRAMMAR = lark.Lark(
         designator:                 name
 
         # 6.1 (6)
-        defining_designator:        defining_program_unit_name
+        ?defining_designator:       defining_program_unit_name | defining_operator_symbol
 
         # 6.1 (7)
         defining_program_unit_name: (identifier ".")* defining_identifier
+
+        # 6.1 (9)
+        operator_symbol:            /"(""|[^"])*"/
+
+        # 6.1 (11)
+        ?defining_operator_symbol:  operator_symbol
 
         # 6.1 (12)
         parameter_profile:          parameter_profile_formal_part
@@ -713,7 +720,7 @@ ADA_GRAMMAR = lark.Lark(
                                         | expression_function_part ) \
                                     ";"
 
-        function_declaration_part: optional_aspect_specification
+        function_declaration_part:   is_abstract? optional_aspect_specification
 
         function_body_part:         optional_aspect_specification \
                                     "is" \
@@ -788,6 +795,8 @@ ADA_GRAMMAR = lark.Lark(
 
         !box:                        "<>"
 
+        !is_abstract:               /is\s+abstract/
+
         # Skip whitespace
         %import common.WS
         %ignore WS
@@ -807,11 +816,16 @@ class FunctionPart:
 
 
 class FunctionDeclPart(FunctionPart):
-    def __init__(self, aspects: list[ada.Aspect] | None):
+    def __init__(self, abstract: bool, aspects: list[ada.Aspect] | None):
+        self.abstract = abstract
         self.aspects = aspects
 
     def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
-        return ada.SubprogramDeclaration(specification=specification, aspects=self.aspects)
+        return ada.SubprogramDeclaration(
+            specification=specification,
+            aspects=self.aspects,
+            abstract=self.abstract,
+        )
 
 
 class FunctionBodyPart(FunctionPart):
@@ -1484,8 +1498,14 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: tuple[ada.SubprogramSpecification, list[ada.Aspect]],
     ) -> ada.SubprogramDeclaration:
-        specification, aspects = data
-        return ada.SubprogramDeclaration(specification=specification, aspects=aspects)
+        specification = data[0]
+        aspects = data[-1]
+        abstract = len(data) == 3
+        return ada.SubprogramDeclaration(
+            specification=specification,
+            aspects=aspects,
+            abstract=abstract,
+        )
 
     def subprogram_specification(
         self,
@@ -1517,11 +1537,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def designator(self, data: list[ID]) -> ID:
         return reduce(lambda l, r: l * r, data)
 
-    def defining_designator(self, data: list[ID]) -> ID:
-        return data[0]
-
     def defining_program_unit_name(self, data: list[ID]) -> ID:
         return reduce(lambda l, r: l * r, data)
+
+    def operator_symbol(self, data: tuple[lark.Token]) -> ID:
+        return ID(data[0].value)
 
     def parameter_profile(
         self,
@@ -2054,8 +2074,17 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> ada.Declaration:
         return data[1].declaration(data[0])
 
-    def function_declaration_part(self, data: list[list[ada.Aspect] | None]) -> FunctionDeclPart:
-        return FunctionDeclPart(aspects=data[0])
+    def function_declaration_part(
+        self,
+        data: list[list[ada.Aspect] | None],
+    ) -> FunctionDeclPart:
+        if len(data) == 1:
+            aspects = data[0]
+            abstract = False
+        else:
+            aspects = data[1]
+            abstract = True
+        return FunctionDeclPart(abstract=abstract, aspects=aspects)
 
     def function_body_part(
         self,
@@ -2245,6 +2274,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def box(self, _: tuple[lark.Token]) -> SignedIntegerConstraint:
         return SignedIntegerConstraint()
+
+    def is_abstract(self, _: tuple[lark.Token]) -> bool:
+        return True
 
     def file(
         self,

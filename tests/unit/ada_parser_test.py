@@ -245,6 +245,20 @@ def procedure_body(
             declaration_declarations=[
                 ada.SubprogramDeclaration(
                     specification=ada.FunctionSpecification(
+                        identifier='"+"',
+                        parameters=[
+                            ada.Parameter(["L", "R"], "T"),
+                        ],
+                        return_type="T",
+                    ),
+                    abstract=True,
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
+                ada.SubprogramDeclaration(
+                    specification=ada.FunctionSpecification(
                         identifier="F",
                         parameters=[
                             ada.Parameter(["P"], "T"),
@@ -1081,6 +1095,16 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
            type T is access U;
         package P
         is
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           function "+" (L : Natural; R : Natural) return Natural is abstract;
+
+           function "-" (L, R : Natural) return Natural is abstract;
 
         end P;
         """,
