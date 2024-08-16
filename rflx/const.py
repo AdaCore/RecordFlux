@@ -2,13 +2,12 @@ import multiprocessing
 from pathlib import Path
 from typing import Final
 
-from rflx.identifier import ID
+from rflx.rapidflux import ID, consts
 
-BUILTINS_PACKAGE: Final = ID("__BUILTINS__")
-INTERNAL_PACKAGE: Final = ID("__INTERNAL__")
+BUILTINS_PACKAGE: Final = ID(consts.BUILTINS_PACKAGE)
+INTERNAL_PACKAGE: Final = ID(consts.INTERNAL_PACKAGE)
 
-# TODO(eng/recordflux/RecordFlux#1077): Size of integers is limited to 63 bits
-MAX_SCALAR_SIZE: Final = 63
+MAX_SCALAR_SIZE: Final = consts.MAX_SCALAR_SIZE
 
 CACHE_PATH: Final = Path.cwd() / ".rflx_cache"
 

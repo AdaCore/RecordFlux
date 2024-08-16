@@ -1142,6 +1142,7 @@ impl_states!(
 );
 register_submodule_declarations!(
     ty,
+    [],
     [
         Bounds,
         Builtins,

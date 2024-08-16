@@ -31,7 +31,7 @@ macro_rules! impl_states {
     };
 }
 
-/// Register classes and functions in a submodule.
+/// Register attributes, classes and functions in a submodule.
 ///
 /// This macro generate a `register_<module name>_module` function that is used by the
 /// `register_submodule` function later to add a submodule in `rapidflux`.
@@ -50,17 +50,21 @@ macro_rules! impl_states {
 /// fn bar() {}
 /// fn baz() {}
 ///
-/// register_submodule_declarations!(foo, [A, B], [bar, baz]);
+/// register_submodule_declarations!(foo, [("c", 299_792_458)], [A, B], [bar, baz]);
 /// ```
 #[macro_export]
 macro_rules! register_submodule_declarations {
-    ($module_name:ident, [$($class_name:ident),* $(,)?], [$($fn_name:ident),* $(,)?] $(,)?) => {
+    ($module_name:ident, [$(($attr_name:literal, $attr:expr)),* $(,)?], [$($class_name:ident),* $(,)?], [$($fn_name:ident),* $(,)?] $(,)?) => {
         ::paste::paste! {
             pub fn [<register_ $module_name _module>]<'py>(
                 py: Python<'py>,
                 m: &Bound<'py, PyModule>
             ) -> PyResult<()> {
                 const PY_MODULE_PATH: &str = concat!("rflx.rapidflux.", stringify!($module_name));
+
+                $(
+                    m.add($attr_name, $attr)?;
+                 )*
 
                 $(
                     m.add_class::<$class_name>()?;

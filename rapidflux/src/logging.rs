@@ -111,4 +111,9 @@ fn set_quiet(value: bool) {
     lib::diagnostics::logging::set_quiet(value);
 }
 
-register_submodule_declarations!(logging, [], [error, help, info, note, set_quiet, warning]);
+register_submodule_declarations!(
+    logging,
+    [],
+    [],
+    [error, help, info, note, set_quiet, warning]
+);

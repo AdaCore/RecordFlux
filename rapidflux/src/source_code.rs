@@ -26,4 +26,4 @@ fn clear() {
     lib::clear();
 }
 
-register_submodule_declarations!(source_code, [], [clear, register, retrieve]);
+register_submodule_declarations!(source_code, [], [], [clear, register, retrieve]);

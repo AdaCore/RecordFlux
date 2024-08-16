@@ -9,6 +9,7 @@
 
 use pyo3::prelude::*;
 
+mod consts;
 mod diagnostics;
 mod identifier;
 mod logging;
@@ -27,6 +28,9 @@ fn rapidflux(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<diagnostics::ErrorEntry>()?;
     m.add_class::<diagnostics::RapidFluxError>()?;
     m.add("FatalError", py.get_type_bound::<diagnostics::FatalError>())?;
+
+    // Constants module
+    register_submodule!(consts, py, m);
 
     // Logging module
     register_submodule!(logging, py, m);
