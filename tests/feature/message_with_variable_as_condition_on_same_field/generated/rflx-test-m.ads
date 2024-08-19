@@ -15,7 +15,7 @@ with RFLX.RFLX_Types;
 with RFLX.RFLX_Builtin_Types.Conversions;
 use RFLX.RFLX_Builtin_Types.Conversions;
 
-package RFLX.P.Message with
+package RFLX.Test.M with
   SPARK_Mode,
   Always_Terminates
 is
@@ -127,7 +127,7 @@ is
    procedure Reset (Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and RFLX.P.Message.Has_Buffer (Ctx),
+       and RFLX.Test.M.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -139,7 +139,7 @@ is
    procedure Reset (Ctx : in out Context; First : RFLX_Types.Bit_Index; Last : RFLX_Types.Bit_Length) with
      Pre =>
        not Ctx'Constrained
-       and RFLX.P.Message.Has_Buffer (Ctx)
+       and RFLX.Test.M.Has_Buffer (Ctx)
        and RFLX_Types.To_Index (First) >= Ctx.Buffer_First
        and RFLX_Types.To_Index (Last) <= Ctx.Buffer_Last
        and First <= Last + 1
@@ -156,7 +156,7 @@ is
 
    procedure Take_Buffer (Ctx : in out Context; Buffer : out RFLX_Types.Bytes_Ptr) with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx),
+       RFLX.Test.M.Has_Buffer (Ctx),
      Post =>
        not Has_Buffer (Ctx)
        and then Buffer /= null
@@ -174,15 +174,15 @@ is
 
    procedure Copy (Ctx : Context; Buffer : out RFLX_Types.Bytes) with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Well_Formed_Message (Ctx)
-       and then RFLX.P.Message.Byte_Size (Ctx) = Buffer'Length;
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Well_Formed_Message (Ctx)
+       and then RFLX.Test.M.Byte_Size (Ctx) = Buffer'Length;
 
    function Read (Ctx : Context) return RFLX_Types.Bytes with
      Ghost,
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Well_Formed_Message (Ctx);
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Well_Formed_Message (Ctx);
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
@@ -200,8 +200,8 @@ is
       with function Pre (Buffer : RFLX_Types.Bytes) return Boolean is Always_Valid;
    procedure Generic_Read (Ctx : Context) with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Well_Formed_Message (Ctx)
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Well_Formed_Message (Ctx)
        and then Pre (Read (Ctx));
 
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
@@ -221,9 +221,9 @@ is
    procedure Generic_Write (Ctx : in out Context; Offset : RFLX_Types.Length := 0) with
      Pre =>
        not Ctx'Constrained
-       and then RFLX.P.Message.Has_Buffer (Ctx)
-       and then Offset < RFLX.P.Message.Buffer_Length (Ctx)
-       and then Pre (RFLX.P.Message.Buffer_Length (Ctx), Offset),
+       and then RFLX.Test.M.Has_Buffer (Ctx)
+       and then Offset < RFLX.Test.M.Buffer_Length (Ctx)
+       and then Pre (RFLX.Test.M.Buffer_Length (Ctx), Offset),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -235,11 +235,11 @@ is
 
    function Buffer_Length (Ctx : Context) return RFLX_Types.Length with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx);
+       RFLX.Test.M.Has_Buffer (Ctx);
 
    function Buffer_Size (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx);
+       RFLX.Test.M.Has_Buffer (Ctx);
 
    function Size (Ctx : Context) return RFLX_Types.Bit_Length with
      Post =>
@@ -249,16 +249,16 @@ is
 
    function Message_Last (Ctx : Context) return RFLX_Types.Bit_Length with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Well_Formed_Message (Ctx);
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Well_Formed_Message (Ctx);
 
    function Written_Last (Ctx : Context) return RFLX_Types.Bit_Length;
 
    procedure Data (Ctx : Context; Data : out RFLX_Types.Bytes) with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Well_Formed_Message (Ctx)
-       and then Data'Length = RFLX.P.Message.Byte_Size (Ctx);
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Well_Formed_Message (Ctx)
+       and then Data'Length = RFLX.Test.M.Byte_Size (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -270,11 +270,12 @@ is
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
-   function Field_Condition (Ctx : Context; Fld : Field) return Boolean with
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Valid_Next (Ctx, Fld)
-       and then RFLX.P.Message.Sufficient_Space (Ctx, Fld),
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Valid_Value (Fld, Val)
+       and then RFLX.Test.M.Valid_Next (Ctx, Fld)
+       and then RFLX.Test.M.Sufficient_Space (Ctx, Fld),
      Post =>
        True;
 
@@ -282,13 +283,13 @@ is
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       RFLX.P.Message.Valid_Next (Ctx, Fld);
+       RFLX.Test.M.Valid_Next (Ctx, Fld);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
    function Field_First (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Index with
      Pre =>
-       RFLX.P.Message.Valid_Next (Ctx, Fld),
+       RFLX.Test.M.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -296,22 +297,22 @@ is
 
    function Field_Last (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       RFLX.P.Message.Valid_Next (Ctx, Fld)
-       and then RFLX.P.Message.Sufficient_Space (Ctx, Fld);
+       RFLX.Test.M.Valid_Next (Ctx, Fld)
+       and then RFLX.Test.M.Sufficient_Space (Ctx, Fld);
 
    function Valid_Next (Ctx : Context; Fld : Field) return Boolean;
 
    function Available_Space (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length with
      Pre =>
-       RFLX.P.Message.Valid_Next (Ctx, Fld);
+       RFLX.Test.M.Valid_Next (Ctx, Fld);
 
    function Sufficient_Space (Ctx : Context; Fld : Field) return Boolean with
      Pre =>
-       RFLX.P.Message.Valid_Next (Ctx, Fld);
+       RFLX.Test.M.Valid_Next (Ctx, Fld);
 
    procedure Verify (Ctx : in out Context; Fld : Field) with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx),
+       RFLX.Test.M.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -321,7 +322,7 @@ is
 
    procedure Verify_Message (Ctx : in out Context) with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx),
+       RFLX.Test.M.Has_Buffer (Ctx),
      Post =>
        Has_Buffer (Ctx)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -343,11 +344,11 @@ is
 
    function Well_Formed_Message (Ctx : Context) return Boolean with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx);
+       RFLX.Test.M.Has_Buffer (Ctx);
 
    function Valid_Message (Ctx : Context) return Boolean with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx);
+       RFLX.Test.M.Has_Buffer (Ctx);
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -361,11 +362,11 @@ is
 
    function Get_A (Ctx : Context) return Boolean with
      Pre =>
-       RFLX.P.Message.Valid (Ctx, RFLX.P.Message.F_A);
+       RFLX.Test.M.Valid (Ctx, RFLX.Test.M.F_A);
 
-   function Get_B (Ctx : Context) return RFLX.P.T with
+   function Get_B (Ctx : Context) return RFLX.Test.T with
      Pre =>
-       RFLX.P.Message.Valid (Ctx, RFLX.P.Message.F_B);
+       RFLX.Test.M.Valid (Ctx, RFLX.Test.M.F_B);
 
    pragma Warnings (On, "precondition is always False");
 
@@ -373,7 +374,7 @@ is
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean with
      Pre =>
-       RFLX.P.Message.Valid_Next (Ctx, Fld),
+       RFLX.Test.M.Valid_Next (Ctx, Fld),
      Post =>
        True;
 
@@ -385,17 +386,17 @@ is
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Valid_Next (Ctx, RFLX.P.Message.F_A)
+       and then RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Valid_Next (Ctx, RFLX.Test.M.F_A)
        and then Valid_Boolean (To_Base_Integer (Val))
-       and then RFLX.P.Message.Available_Space (Ctx, RFLX.P.Message.F_A) >= RFLX.P.Message.Field_Size (Ctx, RFLX.P.Message.F_A)
-       and then RFLX.P.Message.Field_Condition (Ctx, RFLX.P.Message.F_A),
+       and then RFLX.Test.M.Available_Space (Ctx, RFLX.Test.M.F_A) >= RFLX.Test.M.Field_Size (Ctx, RFLX.Test.M.F_A)
+       and then RFLX.Test.M.Field_Condition (Ctx, RFLX.Test.M.F_A, To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_A)
        and Get_A (Ctx) = Val
        and Invalid (Ctx, F_B)
-       and Valid_Next (Ctx, F_B)
+       and (if Get_A (Ctx) then Valid_Next (Ctx, F_B))
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
        and Ctx.Buffer_Last = Ctx.Buffer_Last'Old
        and Ctx.First = Ctx.First'Old
@@ -403,15 +404,15 @@ is
        and Valid_Next (Ctx, F_A) = Valid_Next (Ctx, F_A)'Old
        and Field_First (Ctx, F_A) = Field_First (Ctx, F_A)'Old;
 
-   procedure Set_B (Ctx : in out Context; Val : RFLX.P.T) with
+   procedure Set_B (Ctx : in out Context; Val : RFLX.Test.T) with
      Inline_Always,
      Pre =>
        not Ctx'Constrained
-       and then RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Valid_Next (Ctx, RFLX.P.Message.F_B)
-       and then RFLX.P.Valid_T (RFLX.P.To_Base_Integer (Val))
-       and then RFLX.P.Message.Available_Space (Ctx, RFLX.P.Message.F_B) >= RFLX.P.Message.Field_Size (Ctx, RFLX.P.Message.F_B)
-       and then RFLX.P.Message.Field_Condition (Ctx, RFLX.P.Message.F_B),
+       and then RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Valid_Next (Ctx, RFLX.Test.M.F_B)
+       and then RFLX.Test.Valid_T (RFLX.Test.To_Base_Integer (Val))
+       and then RFLX.Test.M.Available_Space (Ctx, RFLX.Test.M.F_B) >= RFLX.Test.M.Field_Size (Ctx, RFLX.Test.M.F_B)
+       and then RFLX.Test.M.Field_Condition (Ctx, RFLX.Test.M.F_B, RFLX.Test.To_Base_Integer (Val)),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, F_B)
@@ -447,15 +448,15 @@ is
    type Structure is
       record
          A : Boolean;
-         B : RFLX.P.T;
+         B : RFLX.Test.T;
       end record;
 
    function Valid_Structure (Struct : Structure) return Boolean;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Well_Formed_Message (Ctx),
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Well_Formed_Message (Ctx),
      Post =>
        Valid_Structure (Struct);
 
@@ -464,9 +465,9 @@ is
    procedure To_Context (Struct : Structure; Ctx : in out Context) with
      Pre =>
        not Ctx'Constrained
-       and then RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Valid_Structure (Struct)
-       and then RFLX.P.Message.Sufficient_Buffer_Length (Ctx, Struct),
+       and then RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Valid_Structure (Struct)
+       and then RFLX.Test.M.Sufficient_Buffer_Length (Ctx, Struct),
      Post =>
        Has_Buffer (Ctx)
        and Well_Formed_Message (Ctx)
@@ -531,7 +532,7 @@ private
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length; Buffer : RFLX_Types.Bytes_Ptr) return Boolean is
      ((if Well_Formed (Cursors (F_A)) then True)
-      and then (if Well_Formed (Cursors (F_B)) then Valid (Cursors (F_A))))
+      and then (if Well_Formed (Cursors (F_B)) then (Valid (Cursors (F_A)) and then To_Actual (Cursors (F_A).Value))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
@@ -552,7 +553,7 @@ private
              True,
           when F_B =>
              (Valid (Cursors (F_A))
-              and then True)))
+              and then To_Actual (Cursors (F_A).Value))))
     with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
@@ -688,7 +689,7 @@ private
    function Initialized (Ctx : Context) return Boolean is
      (Ctx.Verified_Last = Ctx.First - 1
       and then Valid_Next (Ctx, F_A)
-      and then RFLX.P.Message.Field_First (Ctx, RFLX.P.Message.F_A) rem RFLX_Types.Byte'Size = 1
+      and then RFLX.Test.M.Field_First (Ctx, RFLX.Test.M.F_A) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_A) = Ctx.Last - Ctx.First + 1
       and then (for all F in Field =>
                    Invalid (Ctx, F)));
@@ -722,14 +723,14 @@ private
           when F_A =>
              Valid_Boolean (Val),
           when F_B =>
-             RFLX.P.Valid_T (Val)));
+             RFLX.Test.Valid_T (Val)));
 
-   function Field_Condition (Ctx : Context; Fld : Field) return Boolean is
+   function Field_Condition (Ctx : Context; Fld : Field; Val : RFLX_Types.Base_Integer) return Boolean is
      ((case Fld is
           when F_A =>
-             True,
+             To_Actual (Val),
           when F_B =>
-             To_Actual (Ctx.Cursors (F_A).Value)));
+             True));
 
    function Field_Size (Ctx : Context; Fld : Field) return RFLX_Types.Bit_Length is
      (Field_Size_Internal (Ctx.Cursors, Ctx.First, Ctx.Verified_Last, Ctx.Written_Last, Ctx.Buffer, Fld));
@@ -769,12 +770,10 @@ private
       or Ctx.Cursors (Fld).State = S_Incomplete);
 
    function Well_Formed_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_B)
-      and then To_Actual (Ctx.Cursors (F_A).Value));
+     (Valid (Ctx, F_B));
 
    function Valid_Message (Ctx : Context) return Boolean is
-     (Valid (Ctx, F_B)
-      and then To_Actual (Ctx.Cursors (F_A).Value));
+     (Valid (Ctx, F_B));
 
    function Incomplete_Message (Ctx : Context) return Boolean is
      ((for some F in Field =>
@@ -783,14 +782,14 @@ private
    function Get_A (Ctx : Context) return Boolean is
      (To_Actual (Ctx.Cursors (F_A).Value));
 
-   function Get_B (Ctx : Context) return RFLX.P.T is
+   function Get_B (Ctx : Context) return RFLX.Test.T is
      (To_Actual (Ctx.Cursors (F_B).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
      (Size = Field_Size (Ctx, Fld))
     with
      Pre =>
-       RFLX.P.Message.Valid_Next (Ctx, Fld);
+       RFLX.Test.M.Valid_Next (Ctx, Fld);
 
    function Valid_Length (Ctx : Context; Fld : Field; Length : RFLX_Types.Length) return Boolean is
      (Valid_Size (Ctx, Fld, RFLX_Types.To_Bit_Length (Length)));
@@ -816,4 +815,4 @@ private
    function Field_Size_B (Struct : Structure) return RFLX_Types.Bit_Length is
      (7);
 
-end RFLX.P.Message;
+end RFLX.Test.M;

@@ -13,7 +13,7 @@ pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
 with RFLX.RFLX_Types.Operations;
 
-package body RFLX.P.Message with
+package body RFLX.Test.M with
   SPARK_Mode
 is
 
@@ -90,12 +90,12 @@ is
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
     with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and RFLX.P.Message.Valid_Next (Ctx, Fld);
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and RFLX.Test.M.Valid_Next (Ctx, Fld);
 
    procedure Reset_Dependent_Fields (Ctx : in out Context; Fld : Field) with
      Pre =>
-       RFLX.P.Message.Valid_Next (Ctx, Fld),
+       RFLX.Test.M.Valid_Next (Ctx, Fld),
      Post =>
        Valid_Next (Ctx, Fld)
        and Ctx.Buffer_First = Ctx.Buffer_First'Old
@@ -120,9 +120,9 @@ is
 
    function Get (Ctx : Context; Fld : Field) return RFLX_Types.Base_Integer with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Valid_Next (Ctx, Fld)
-       and then RFLX.P.Message.Sufficient_Buffer_Length (Ctx, Fld)
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Valid_Next (Ctx, Fld)
+       and then RFLX.Test.M.Sufficient_Buffer_Length (Ctx, Fld)
    is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
@@ -150,7 +150,7 @@ is
             Value := Get (Ctx, Fld);
             if
                Valid_Value (Fld, Value)
-               and then Field_Condition (Ctx, Fld)
+               and then Field_Condition (Ctx, Fld, Value)
             then
                pragma Assert ((if Fld = F_B then Field_Last (Ctx, Fld) mod RFLX_Types.Byte'Size = 0));
                pragma Assert ((((Field_Last (Ctx, Fld) + RFLX_Types.Byte'Size - 1) / RFLX_Types.Byte'Size) * RFLX_Types.Byte'Size) mod RFLX_Types.Byte'Size = 0);
@@ -180,11 +180,11 @@ is
 
    procedure Set (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer; Size : RFLX_Types.Bit_Length; State_Valid : Boolean; Buffer_First : out RFLX_Types.Index; Buffer_Last : out RFLX_Types.Index; Offset : out RFLX_Types.Offset) with
      Pre =>
-       RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Valid_Next (Ctx, Fld)
-       and then RFLX.P.Message.Valid_Value (Fld, Val)
-       and then RFLX.P.Message.Valid_Size (Ctx, Fld, Size)
-       and then Size <= RFLX.P.Message.Available_Space (Ctx, Fld)
+       RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Valid_Next (Ctx, Fld)
+       and then RFLX.Test.M.Valid_Value (Fld, Val)
+       and then RFLX.Test.M.Valid_Size (Ctx, Fld, Size)
+       and then Size <= RFLX.Test.M.Available_Space (Ctx, Fld)
        and then State_Valid,
      Post =>
        Valid_Next (Ctx, Fld)
@@ -233,14 +233,14 @@ is
    procedure Set_Scalar (Ctx : in out Context; Fld : Field; Val : RFLX_Types.Base_Integer) with
      Pre =>
        not Ctx'Constrained
-       and then RFLX.P.Message.Has_Buffer (Ctx)
-       and then RFLX.P.Message.Valid_Next (Ctx, Fld)
+       and then RFLX.Test.M.Has_Buffer (Ctx)
+       and then RFLX.Test.M.Valid_Next (Ctx, Fld)
        and then Fld in F_A | F_B
-       and then RFLX.P.Message.Valid_Value (Fld, Val)
-       and then RFLX.P.Message.Valid_Size (Ctx, Fld, RFLX.P.Message.Field_Size (Ctx, Fld))
-       and then RFLX.P.Message.Available_Space (Ctx, Fld) >= RFLX.P.Message.Field_Size (Ctx, Fld)
-       and then RFLX.P.Message.Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
-       and then RFLX_Types.Fits_Into (Val, Natural (RFLX.P.Message.Field_Size (Ctx, Fld))),
+       and then RFLX.Test.M.Valid_Value (Fld, Val)
+       and then RFLX.Test.M.Valid_Size (Ctx, Fld, RFLX.Test.M.Field_Size (Ctx, Fld))
+       and then RFLX.Test.M.Available_Space (Ctx, Fld) >= RFLX.Test.M.Field_Size (Ctx, Fld)
+       and then RFLX.Test.M.Field_Size (Ctx, Fld) in 1 .. RFLX_Types.Base_Integer'Size
+       and then RFLX_Types.Fits_Into (Val, Natural (RFLX.Test.M.Field_Size (Ctx, Fld))),
      Post =>
        Has_Buffer (Ctx)
        and Valid (Ctx, Fld)
@@ -270,9 +270,9 @@ is
       Set_Scalar (Ctx, F_A, To_Base_Integer (Val));
    end Set_A;
 
-   procedure Set_B (Ctx : in out Context; Val : RFLX.P.T) is
+   procedure Set_B (Ctx : in out Context; Val : RFLX.Test.T) is
    begin
-      Set_Scalar (Ctx, F_B, RFLX.P.To_Base_Integer (Val));
+      Set_Scalar (Ctx, F_B, RFLX.Test.To_Base_Integer (Val));
    end Set_B;
 
    procedure To_Structure (Ctx : Context; Struct : out Structure) is
@@ -288,4 +288,4 @@ is
       Set_B (Ctx, Struct.B);
    end To_Context;
 
-end RFLX.P.Message;
+end RFLX.Test.M;

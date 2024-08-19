@@ -820,22 +820,13 @@ def contains_function_name(refinement_package: ID, pdu: ID, sdu: ID, field: ID) 
     return f"{sdu_name.flat}_In_{pdu_name.flat}_{field}"
 
 
-def has_value_dependent_condition(
-    message: model.Message,
-    field: model.Field | None = None,
-) -> bool:
-    links = message.outgoing(field) if field else message.structure
-    fields = [field] if field else message.fields
+def has_value_dependent_condition(message: model.Message) -> bool:
     return any(
-        r
-        for l in links
-        for r in l.condition.findall(lambda x: isinstance(x, expr.Relation))
-        if isinstance(r, expr.Relation)
-        and not r.findall(lambda x: isinstance(x, expr.Aggregate))
-        and r.findall(
-            lambda x: isinstance(x, expr.Variable)
-            and any(x.identifier == f.identifier for f in fields),
-        )
+        True
+        for l in message.structure
+        for v in l.condition.variables()
+        if v.identifier == l.source.identifier
+        and isinstance(v.type_, (rty.Integer, rty.Enumeration))
     )
 
 

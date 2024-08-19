@@ -1,0 +1,13 @@
+package Test is
+
+   type T is range 0 .. 127 with Size => 7;
+
+   type M is
+      message
+         A : Boolean
+            then B
+               if A;
+         B : T;
+      end message;
+
+end Test;

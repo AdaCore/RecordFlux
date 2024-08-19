@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI flag `--optimize` of `rflx generate` subcommand (eng/recordflux/RecordFlux#1766)
 - CLI option `--timeout` of `rflx generate` and `rflx optimize` subcommands (eng/recordflux/RecordFlux#1766)
 
+### Fixed
+
+- Generation of uncompilable code for messages with variable as field condition (eng/recordflux/RecordFlux#1762)
+
 ## [0.23.0] - 2024-08-23
 
 ### Changed

@@ -42,37 +42,6 @@ class TC:
 
 GENERATOR_TEST_CASES = [
     TC(
-        "boolean_variable",
-        lambda: Model(
-            [
-                Message(
-                    ID("P::Message", Location((1, 1))),
-                    [
-                        Link(INITIAL, Field("A"), location=Location((1, 1))),
-                        Link(Field("A"), Field("B"), location=Location((1, 1))),
-                        Link(
-                            Field("B"),
-                            FINAL,
-                            condition=expr.Variable("A"),
-                            location=Location((2, 2)),
-                        ),
-                    ],
-                    {
-                        Field(ID("A", location=Location((1, 1)))): type_decl.BOOLEAN,
-                        Field(ID("B", location=Location((2, 2)))): type_decl.Integer(
-                            "P::T",
-                            first=expr.Number(0),
-                            last=expr.Number(127),
-                            size=expr.Number(7),
-                        ),
-                    },
-                    location=Location((1, 1), end=(1, 2)),
-                ),
-            ],
-        ),
-        lambda: Integration(),
-    ),
-    TC(
         "external_io_buffers",
         lambda: Model(
             [
