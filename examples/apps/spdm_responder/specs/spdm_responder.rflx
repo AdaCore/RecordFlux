@@ -1176,6 +1176,8 @@ package SPDM_Responder is
          Reset_Measurement_Sig                    := True;
       transition
          goto Send_Idle
+            if Success
+         goto Error_Unspecified
       exception
          goto Error_Unspecified
       end Prepare_Measurements_Sign;
@@ -1498,6 +1500,8 @@ package SPDM_Responder is
                                             Request.Finish_Request_Requester_Verify_Data,
                                             0, Hash_Length);
       transition
+         goto Error_Unspecified
+            if Success = False
          goto Prepare_Finish_Response
             if Valid
          goto Error_Invalid_Request
