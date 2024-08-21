@@ -1,5 +1,7 @@
 include ../../../Makefile.common
 
+PROOF_PROCS ?= $(shell nproc)
+
 GENERATED = generated/rflx-spdm.ads
 
 SOURCE_SPECIFICATIONS = \
@@ -71,9 +73,10 @@ libriscv64: $(BUILD_DIR)/riscv64/lib/libspdm.a
 
 .PHONY: prove
 
+# TODO(eng/recordflux/RecordFlux#1390): Prove SPDM messages
 prove: $(GNATPROVE_CACHE_DIR) $(GENERATED)
-	gnatprove -P build_lib.gpr -j0 -XTARGET=riscv64 -u responder
-	gnatprove -P build.gpr -j0 -XTARGET=riscv64 -u main
+	gnatprove -P build_lib.gpr -j$(PROOF_PROCS) -XTARGET=riscv64 -u responder -u rflx.spdm_responder.session -u rflx.spdm_responder.session.fsm -u rflx.spdm_responder.session.fsm_allocator -u rflx.spdm_responder.session_environment
+	gnatprove -P build.gpr -j$(PROOF_PROCS) -XTARGET=riscv64 -u main
 
 .PHONY: generate
 

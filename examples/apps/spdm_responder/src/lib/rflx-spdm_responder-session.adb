@@ -15,7 +15,7 @@ with RFLX.SPDM_Responder.Session_Environment;
 --  SPARK mode is disabled for this package body because the C binding requires
 --  Ada features that are not part of the SPARK language.
 package body RFLX.SPDM_Responder.Session with
-   SPARK_Mode
+   SPARK_Mode => Off
 is
    --  Return CT exponent (DSP0274_1.1.0 [178]).
    --
