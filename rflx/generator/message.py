@@ -293,7 +293,10 @@ def create_cursors_invariant_function() -> UnitPart:
     return UnitPart(
         [],
         [],
-        common.wrap_warning(
+        common.suppress_warnings_decl(
+            [
+                "postcondition does not mention function result",
+            ],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -349,7 +352,6 @@ def create_cursors_invariant_function() -> UnitPart:
                     [Postcondition(TRUE)],
                 ),
             ],
-            ["postcondition does not mention function result"],
         ),
     )
 
@@ -386,7 +388,12 @@ def create_valid_predecessors_invariant_function(
     return UnitPart(
         [],
         [],
-        common.wrap_warning(
+        common.suppress_warnings_decl(
+            [
+                'formal parameter "*" is not referenced',
+                "postcondition does not mention function result",
+                'unused variable "*"',
+            ],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -453,11 +460,6 @@ def create_valid_predecessors_invariant_function(
                     ],
                 ),
             ],
-            [
-                'formal parameter "*" is not referenced',
-                "postcondition does not mention function result",
-                'unused variable "*"',
-            ],
         ),
     )
 
@@ -510,7 +512,10 @@ def create_valid_next_internal_function(
 
     return UnitPart(
         [],
-        private=common.wrap_warning(
+        private=common.suppress_warnings_decl(
+            [
+                "postcondition does not mention function result",
+            ],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -546,9 +551,6 @@ def create_valid_next_internal_function(
                     ],
                 ),
             ],
-            [
-                "postcondition does not mention function result",
-            ],
         ),
     )
 
@@ -572,7 +574,11 @@ def create_field_size_internal_function(message: Message, prefix: str) -> UnitPa
 
     return UnitPart(
         [],
-        private=common.wrap_warning(
+        private=common.suppress_warnings_decl(
+            [
+                'unused variable "*"',
+                'formal parameter "*" is not referenced',
+            ],
             [
                 ExpressionFunctionDeclaration(
                     specification,
@@ -625,7 +631,6 @@ def create_field_size_internal_function(message: Message, prefix: str) -> UnitPa
                     ],
                 ),
             ],
-            ['unused variable "*"', 'formal parameter "*" is not referenced'],
         ),
     )
 
@@ -784,7 +789,14 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
 
     return UnitPart(
         [],
-        private=common.wrap_warning(
+        private=common.suppress_warnings_decl(
+            [
+                # Eng/RecordFlux/Workarounds#47
+                "postcondition does not mention function result",
+                'unused variable "*"',
+                "no recursive call visible",
+                'formal parameter "*" is not referenced',
+            ],
             [
                 *[fld_first_func(fld) for fld in message.fields],
                 ExpressionFunctionDeclaration(
@@ -801,13 +813,6 @@ def create_field_first_internal_function(message: Message, prefix: str) -> UnitP
                         Postcondition(TRUE),
                     ],
                 ),
-            ],
-            [
-                # Eng/RecordFlux/Workarounds#47
-                "postcondition does not mention function result",
-                'unused variable "*"',
-                "no recursive call visible",
-                'formal parameter "*" is not referenced',
             ],
         ),
     )

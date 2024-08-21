@@ -1088,7 +1088,10 @@ def external_io_buffers(session: ir.Session) -> list[Message]:
     )
 
 
-def wrap_warning(expr_list: list[Declaration], warnings: list[str]) -> list[Declaration]:
+def suppress_warnings_decl(
+    warnings: list[str],
+    expressions: list[Declaration],
+) -> list[Declaration]:
     return [
         *[
             Pragma(
@@ -1097,13 +1100,33 @@ def wrap_warning(expr_list: list[Declaration], warnings: list[str]) -> list[Decl
             )
             for s in warnings
         ],
-        *expr_list,
+        *expressions,
         *[
             Pragma(
                 "Warnings",
                 [Variable("On"), String(s)],
             )
+            for s in reversed(warnings)
+        ],
+    ]
+
+
+def suppress_warnings_stmt(warnings: list[str], statements: list[Statement]) -> list[Statement]:
+    return [
+        *[
+            PragmaStatement(
+                "Warnings",
+                [Variable("Off"), String(s)],
+            )
             for s in warnings
+        ],
+        *statements,
+        *[
+            PragmaStatement(
+                "Warnings",
+                [Variable("On"), String(s)],
+            )
+            for s in reversed(warnings)
         ],
     ]
 

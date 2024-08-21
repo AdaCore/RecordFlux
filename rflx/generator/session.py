@@ -4472,84 +4472,25 @@ class FSMGenerator:
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
         location = f"for {origin.location}" if origin and origin.location else ""
-        return [
+        return (
             # TODO(eng/recordflux/RecordFlux#1764): Fix removal of unnecessary checks in IR
-            PragmaStatement(
-                "Warnings",
+            common.suppress_warnings_stmt(
                 [
-                    Variable("Off"),
-                    String("condition can only be False if invalid values present"),
+                    "condition can only be False if invalid values present",
+                    "condition is always False",
+                    "this code can never be executed and has been deleted",
+                    "statement has no effect",
+                    "this statement is never reached",
                 ],
-            ),
-            PragmaStatement(
-                "Warnings",
                 [
-                    Variable("Off"),
-                    String("condition is always False"),
+                    self._raise_exception_if(
+                        Not(self._to_ada_expr(expression, is_global)),
+                        f"precondition failed{location}",
+                        exception_handler,
+                    ),
                 ],
-            ),
-            PragmaStatement(
-                "Warnings",
-                [
-                    Variable("Off"),
-                    String("this code can never be executed and has been deleted"),
-                ],
-            ),
-            PragmaStatement(
-                "Warnings",
-                [
-                    Variable("Off"),
-                    String("statement has no effect"),
-                ],
-            ),
-            PragmaStatement(
-                "Warnings",
-                [
-                    Variable("Off"),
-                    String("this statement is never reached"),
-                ],
-            ),
-            self._raise_exception_if(
-                Not(self._to_ada_expr(expression, is_global)),
-                f"precondition failed{location}",
-                exception_handler,
-            ),
-            PragmaStatement(
-                "Warnings",
-                [
-                    Variable("On"),
-                    String("this statement is never reached"),
-                ],
-            ),
-            PragmaStatement(
-                "Warnings",
-                [
-                    Variable("On"),
-                    String("statement has no effect"),
-                ],
-            ),
-            PragmaStatement(
-                "Warnings",
-                [
-                    Variable("On"),
-                    String("this code can never be executed and has been deleted"),
-                ],
-            ),
-            PragmaStatement(
-                "Warnings",
-                [
-                    Variable("On"),
-                    String("condition is always False"),
-                ],
-            ),
-            PragmaStatement(
-                "Warnings",
-                [
-                    Variable("On"),
-                    String("condition can only be False if invalid values present"),
-                ],
-            ),
-        ]
+            )
+        )
 
     def _reset(
         self,

@@ -506,11 +506,11 @@ private
      Post =>
        True;
 
-   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+   pragma Warnings (On, "unused variable ""*""");
 
    pragma Warnings (On, "postcondition does not mention function result");
 
-   pragma Warnings (On, "unused variable ""*""");
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -545,9 +545,9 @@ private
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last, Buffer, P)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, Buffer, P, Fld);
 
-   pragma Warnings (On, "unused variable ""*""");
-
    pragma Warnings (On, "formal parameter ""*"" is not referenced");
+
+   pragma Warnings (On, "unused variable ""*""");
 
    pragma Warnings (Off, "postcondition does not mention function result");
 
@@ -597,13 +597,13 @@ private
      Post =>
        True;
 
-   pragma Warnings (On, "postcondition does not mention function result");
-
-   pragma Warnings (On, "unused variable ""*""");
+   pragma Warnings (On, "formal parameter ""*"" is not referenced");
 
    pragma Warnings (On, "no recursive call visible");
 
-   pragma Warnings (On, "formal parameter ""*"" is not referenced");
+   pragma Warnings (On, "unused variable ""*""");
+
+   pragma Warnings (On, "postcondition does not mention function result");
 
    pragma Warnings (Off, """Buffer"" is not modified, could be of access constant type");
 
