@@ -1169,6 +1169,13 @@ class ParserGenerator:
         )
 
     def valid_message_condition(self, message: Message, well_formed: bool = False) -> Expr:
+        """
+        Return condition representing the validity or well-formedness of the message.
+
+        Only the validity or well-formedness of the last fields and their field conditions are
+        checked. As a field can only be valid if its predecessors are valid, it is unnecessary to
+        check all fields.
+        """
         return expr_conv.to_ada(
             expr.Or(
                 *[
