@@ -10,10 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Vim and Neovim syntax highlighting support (eng/recordflux/RecordFlux#1749)
+- Project file support in code optimizer (eng/recordflux/RecordFlux#1766)
 
 ### Changed
 
+- CLI subcommand `rflx optimize` expects project file instead of directory containing generated code (eng/recordflux/RecordFlux#1766)
 - Improve generation of predicate for single-field messages (eng/recordflux/RecordFlux#1761)
+
+### Removed
+
+- CLI flag `--optimize` of `rflx generate` subcommand (eng/recordflux/RecordFlux#1766)
+- CLI option `--timeout` of `rflx generate` and `rflx optimize` subcommands (eng/recordflux/RecordFlux#1766)
 
 ## [0.23.0] - 2024-08-23
 

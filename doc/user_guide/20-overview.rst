@@ -84,6 +84,9 @@ As only successfully verified specifications are guaranteed to lead to provable 
 SPARK source files are generated into the directory specified by the `-d` switch on the command line.
 The result can be included in the list of source directories and analyzed by `gnatprove` as usual (see the `SPARK User’s Guide <https://docs.adacore.com/live/wave/spark2014/html/spark2014_ug/>`_ for details).
 
+The Optimizer reduces the size of the generated state machine code.
+In order to use the Optimizer, a project file for the SPARK code must be provided by the user and passed as an argument to `rflx optimize`.
+
 The Validator is available through the `rflx validate` subcommand on the command line.
 It can be used to check whether a message specification correctly formalizes real-world data, or vice versa, whether a given data sample corresponds to the specification.
 Two types of samples can be used: valid samples which must be accepted by a specification (passed with the `-v` option) and invalid samples which must be rejected (passed with the `-i` option).

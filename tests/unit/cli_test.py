@@ -310,83 +310,32 @@ def test_main_generate_reproducible(
     assert result == [expected]
 
 
-@pytest.mark.parametrize(
-    ("args", "expected"),
-    [
-        ([], False),
-        (["--optimize"], True),
-    ],
-)
-def test_main_generate_optimize(
-    args: list[str],
-    expected: bool,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    def generator_mock(
-        self: object,  # noqa: ARG001
-        prefix: str,  # noqa: ARG001
-        workers: int,  # noqa: ARG001
-        reproducible: bool,  # noqa: ARG001
-        debug: generator.Debug,  # noqa: ARG001
-        ignore_unsupported_checksum: bool,  # noqa: ARG001
-    ) -> None:
-        pass
-
-    monkeypatch.setattr(generator.Generator, "__init__", generator_mock)
-    monkeypatch.setattr(
-        generator.Generator,
-        "generate",
-        lambda self, model, integration, directory, library_files, top_level_package: None,  # noqa: ARG005
-    )
-
-    called = []
-
-    def optimize_mock(
-        generated_dir: Path,  # noqa: ARG001
-        workers: int = 0,  # noqa: ARG001
-        timeout: int = 1,  # noqa: ARG001
-    ) -> None:
-        called.append(True)
-
-    monkeypatch.setattr(generator.optimizer, "optimize", optimize_mock)
-
-    assert (
-        cli.main(
-            ["rflx", "generate", "-d", str(tmp_path), *args, MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
-        )
-        == 0
-    )
-    assert bool(called) == expected
-
-
 def test_main_optimize(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     call = []
 
-    def optimize_mock(
-        generated_dir: Path,
-        workers: int = 0,  # noqa: ARG001
-        timeout: int = 1,  # noqa: ARG001
-    ) -> None:
-        call.append(generated_dir)
+    def optimize_mock(project_file: Path) -> None:
+        call.append(project_file)
 
     monkeypatch.setattr(generator.optimizer, "optimize", optimize_mock)
 
+    project_file = tmp_path / "test.gpr"
+    project_file.touch()
+
     assert (
         cli.main(
-            ["rflx", "optimize", str(tmp_path)],
+            ["rflx", "optimize", str(project_file)],
         )
         == 0
     )
-    assert call == [tmp_path]
+    assert call == [project_file]
 
 
-def test_main_optimize_non_existent_directory(capfd: pytest.CaptureFixture[str]) -> None:
-    assert cli.main(["rflx", "optimize", "non-existent directory"]) == 1
-    assert_stderr_regex('^error: directory not found: "non-existent directory"$', capfd)
+def test_main_optimize_non_existent_project_file(capfd: pytest.CaptureFixture[str]) -> None:
+    assert cli.main(["rflx", "optimize", "non-existent file"]) == 1
+    assert_stderr_regex('^error: project file not found: "non-existent file"$', capfd)
 
 
 def test_main_graph(tmp_path: Path) -> None:

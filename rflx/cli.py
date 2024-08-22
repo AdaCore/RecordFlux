@@ -234,17 +234,6 @@ def main(  # noqa: PLR0915
         help="ensure reproducible output",
     )
     parser_generate.add_argument(
-        "--optimize",
-        action="store_true",
-        help="optimize generated state machine code (requires GNATprove)",
-    )
-    parser_generate.add_argument(
-        "--timeout",
-        type=int,
-        default=1,
-        help="prover timeout in seconds for code optimization (default: %(default)s)",
-    )
-    parser_generate.add_argument(
         "files",
         metavar="SPECIFICATION_FILE",
         type=Path,
@@ -258,18 +247,13 @@ def main(  # noqa: PLR0915
         help="optimize generated state machine code",
     )
     parser_optimize.add_argument(
-        "--timeout",
-        type=int,
-        default=1,
-        help="prover timeout in seconds (default: %(default)s)",
-    )
-    parser_optimize.add_argument(
-        "directory",
-        metavar="DIRECTORY",
+        "project_file",
+        metavar="PROJECT_FILE",
         type=Path,
-        help="directory containing the generated code",
+        help="project file",
     )
     parser_optimize.set_defaults(func=optimize)
+
     parser_graph = subparsers.add_parser("graph", help="generate graphs")
     parser_graph.add_argument(
         "-f",
@@ -523,15 +507,12 @@ def generate(args: argparse.Namespace) -> None:
         top_level_package=args.prefix == DEFAULT_PREFIX,
     )
 
-    if args.optimize:
-        optimizer.optimize(args.output_directory, args.workers, args.timeout)
-
 
 def optimize(args: argparse.Namespace) -> None:
-    if not args.directory.is_dir():
-        fail(f'directory not found: "{args.directory}"')
+    if not args.project_file.is_file():
+        fail(f'project file not found: "{args.project_file}"')
 
-    optimizer.optimize(args.directory, args.workers, args.timeout)
+    optimizer.optimize(args.project_file)
 
 
 def parse(

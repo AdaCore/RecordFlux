@@ -412,7 +412,7 @@ class FSMGenerator:
 
     @property
     def unit_identifier(self) -> ID:
-        return self._session.identifier * "FSM"
+        return self._session.identifier * const.STATE_MACHINE_PACKAGE
 
     @property
     def declaration_context(self) -> list[ContextItem]:
