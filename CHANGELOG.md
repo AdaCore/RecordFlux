@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Improve generation of predicate for single-field messages (eng/recordflux/RecordFlux#1761)
+
 ## [0.23.0] - 2024-08-23
 
 ### Changed
@@ -554,6 +560,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2019-05-14
 
+[Unreleased]: https://github.com/AdaCore/RecordFlux/compare/v0.23.0...HEAD
 [0.23.0]: https://github.com/AdaCore/RecordFlux/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/AdaCore/RecordFlux/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/AdaCore/RecordFlux/compare/v0.20.0...v0.21.0

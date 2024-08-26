@@ -1203,6 +1203,21 @@ def create_initialized_function(prefix: str, message: Message) -> UnitPart:
     specification = FunctionSpecification("Initialized", "Boolean", [Parameter(["Ctx"], "Context")])
     first_field = message.fields[0]
 
+    def all_fields_invalid() -> Expr:
+        if len(message.fields) == 1:
+            return Call(
+                "Invalid",
+                [Variable("Ctx"), Variable(message.fields[0].affixed_name)],
+            )
+        return ForAllIn(
+            "F",
+            Variable("Field"),
+            Call(
+                "Invalid",
+                [Variable("Ctx"), Variable("F")],
+            ),
+        )
+
     return UnitPart(
         [
             # Eng/RecordFlux/Workarounds#47
@@ -1246,14 +1261,7 @@ def create_initialized_function(prefix: str, message: Message) -> UnitPart:
                             Number(1),
                         ),
                     ),
-                    ForAllIn(
-                        "F",
-                        Variable("Field"),
-                        Call(
-                            "Invalid",
-                            [Variable("Ctx"), Variable("F")],
-                        ),
-                    ),
+                    all_fields_invalid(),
                 ),
             ),
         ],

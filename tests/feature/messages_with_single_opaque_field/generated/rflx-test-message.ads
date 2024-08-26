@@ -696,8 +696,7 @@ private
       and then Valid_Next (Ctx, F_Data)
       and then RFLX.Test.Message.Field_First (Ctx, RFLX.Test.Message.F_Data) rem RFLX_Types.Byte'Size = 1
       and then Available_Space (Ctx, F_Data) = Ctx.Last - Ctx.First + 1
-      and then (for all F in Field =>
-                   Invalid (Ctx, F)));
+      and then Invalid (Ctx, F_Data));
 
    function Read (Ctx : Context) return RFLX_Types.Bytes is
      (Ctx.Buffer.all (RFLX_Types.To_Index (Ctx.First) .. RFLX_Types.To_Index (Ctx.Verified_Last)));
