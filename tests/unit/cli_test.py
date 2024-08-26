@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -10,6 +11,7 @@ from io import TextIOWrapper
 from pathlib import Path
 from typing import ClassVar, NoReturn
 
+import importlib_resources
 import pytest
 
 import rflx.specification
@@ -743,6 +745,130 @@ def test_install_vscode_extension(
     assert (
         "error: installation of VS Code extension failed: file not found\n"
         in capfd.readouterr().err
+    )
+
+
+def test_install_nvim_xdg_location(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    config_path = tmp_path / "nvim"
+    config_path.mkdir(parents=True, exist_ok=True)
+    script_path = tmp_path / "recordflux.vim"
+    script_path.write_text("nvim syntax file content")
+    expected_script_location = config_path / "syntax" / "recordflux.vim"
+    expected_ftdetect_location = config_path / "ftdetect" / "recordflux.vim"
+
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    monkeypatch.setattr(cli, "vim_syntax_file", lambda **_: script_path)
+
+    assert cli.main(["rflx", "install", "nvim"]) == 0
+    assert expected_script_location.read_text() == "nvim syntax file content"
+    assert (
+        expected_ftdetect_location.read_text()
+        == "autocmd BufRead,BufNewFile *.rflx set filetype=recordflux\n"
+    )
+
+
+def test_install_nvim_home_location(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    config_path = tmp_path / ".config" / "nvim"
+    config_path.mkdir(parents=True, exist_ok=True)
+    script_path = tmp_path / "recordflux.vim"
+    script_path.write_text("nvim syntax file content")
+    expected_script_location = config_path / "syntax" / "recordflux.vim"
+    expected_ftdetect_location = config_path / "ftdetect" / "recordflux.vim"
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setattr(cli, "vim_syntax_file", lambda **_: script_path)
+
+    assert cli.main(["rflx", "install", "nvim"]) == 0
+    assert expected_script_location.read_text() == "nvim syntax file content"
+    assert (
+        expected_ftdetect_location.read_text()
+        == "autocmd BufRead,BufNewFile *.rflx set filetype=recordflux\n"
+    )
+
+
+def test_install_nvim_no_env_variable(
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    for variable in ("HOME", "XDG_CONFIG_HOME"):
+        if os.environ.get(variable) is not None:
+            monkeypatch.delenv(variable)
+
+    assert cli.main(["rflx", "install", "nvim"]) == 1
+    assert_stderr_regex(
+        r"^error: could not find config directory\n"
+        r"help: make sure \$HOME or \$XDG_CONFIG_HOME variable is set\n$",
+        capfd,
+    )
+
+
+def test_install_vim(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    script_path = tmp_path / "recordflux.vim"
+    script_path.write_text("vim syntax file content")
+    config_dir = tmp_path / ".vim"
+    expected_syntax_location = config_dir / "syntax" / "recordflux.vim"
+    expected_ftdetect_location = config_dir / "ftdetect" / "recordflux.vim"
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setattr(cli, "vim_syntax_file", lambda *_: script_path)
+
+    assert cli.main(["rflx", "install", "vim"]) == 0
+    assert expected_syntax_location.read_text() == "vim syntax file content"
+    assert (
+        expected_ftdetect_location.read_text()
+        == "autocmd BufRead,BufNewFile *.rflx set filetype=recordflux\n"
+    )
+    assert_stderr_regex(
+        rf'^info: Installed vim ftdetect file in "{expected_ftdetect_location}"\n'
+        rf'info: Installed vim syntax file in "{expected_syntax_location}"\n$',
+        capfd,
+    )
+
+
+def test_install_vim_no_home(
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.delenv("HOME")
+    assert cli.main(["rflx", "install", "vim"]) == 1
+    assert_stderr_regex(
+        r"^error: could not locate home directory\nhelp: make sure \$HOME variable is set\n$",
+        capfd,
+    )
+
+
+def test_vim_syntax_file_ressource(monkeypatch: pytest.MonkeyPatch) -> None:
+    expected_location = Path("rflx") / "ide" / "vim" / "recordflux.vim"
+    monkeypatch.setattr(importlib_resources, "files", lambda _: Path("rflx"))
+    assert cli.vim_syntax_file() == expected_location
+
+
+@pytest.mark.parametrize(
+    "editor",
+    ["vim", "nvim"],
+)
+def test_install_permission_denied(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+    editor: str,
+) -> None:
+    tmp_dir = tmp_path / "vim"
+    tmp_dir.mkdir()
+    perm_denied = tmp_dir / "recordflux.vim"
+    perm_denied.touch()
+    tmp_dir.chmod(0o444)
+    monkeypatch.setenv("HOME", str(tmp_dir))
+
+    assert cli.main(["rflx", "install", editor]) == 1
+    assert_stderr_regex(
+        rf"^error: failed to install {editor} files: "
+        rf'"\[Errno 13\] Permission denied: \'[^\']+\'"\n$',
+        capfd,
     )
 
 

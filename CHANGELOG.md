@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Vim and Neovim syntax highlighting support (eng/recordflux/RecordFlux#1749)
+
 ### Changed
 
 - Improve generation of predicate for single-field messages (eng/recordflux/RecordFlux#1761)

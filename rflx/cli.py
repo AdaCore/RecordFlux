@@ -41,6 +41,8 @@ py_logging.basicConfig(level=py_logging.INFO, format="%(message)s")
 class IDE(Enum):
     GNATSTUDIO = "gnatstudio"
     VSCODE = "vscode"
+    NVIM = "nvim"
+    VIM = "vim"
 
     def __str__(self) -> str:
         return self.value
@@ -627,6 +629,34 @@ def validate(args: argparse.Namespace) -> None:
         raise fatal_error from e
 
 
+def install_vim_ftdetect(config_dir: Path, editor: str) -> None:
+    ftdetect_dir = config_dir / "ftdetect"
+    ftdetect_file = ftdetect_dir / "recordflux.vim"
+    ftdetect_dir.mkdir(parents=True, exist_ok=True)
+    ftdetect_file.write_text("autocmd BufRead,BufNewFile *.rflx set filetype=recordflux\n")
+
+    logging.info('Installed {editor} ftdetect file in "{path}"', editor=editor, path=ftdetect_file)
+
+
+def install_syntax_file(config_dir: Path, editor: str) -> None:
+    syntax_dir = config_dir / "syntax"
+    syntax_dir.mkdir(parents=True, exist_ok=True)
+    with importlib_resources.as_file(vim_syntax_file()) as syntax_file:
+        file_path = syntax_dir / syntax_file.name
+
+    shutil.copy(syntax_file, file_path)
+
+    logging.info('Installed {editor} syntax file in "{path}"', editor=editor, path=file_path)
+
+
+def install_vim_files(config_dir: Path, editor: str) -> None:
+    try:
+        install_vim_ftdetect(config_dir, editor)
+        install_syntax_file(config_dir, editor)
+    except OSError as e:
+        fail(f'failed to install {editor} files: "{e}"')
+
+
 def install(args: argparse.Namespace) -> None:
     if args.ide is IDE.GNATSTUDIO:
         # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
@@ -644,6 +674,39 @@ def install(args: argparse.Namespace) -> None:
             except (FileNotFoundError, subprocess.CalledProcessError) as e:
                 fail(f"installation of VS Code extension failed: {e}")
 
+    elif args.ide is IDE.NVIM:
+        home_dir = os.environ.get("HOME")
+        xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+        if home_dir is None and xdg_config_home is None:
+            RecordFluxError(
+                [
+                    ErrorEntry("could not find config directory", Severity.ERROR),
+                    ErrorEntry(
+                        "make sure $HOME or $XDG_CONFIG_HOME variable is set",
+                        Severity.HELP,
+                    ),
+                ],
+            ).propagate()
+
+        if xdg_config_home is not None:
+            config_path = Path(xdg_config_home) / "nvim"
+        else:
+            assert home_dir is not None
+            config_path = Path(home_dir) / ".config" / "nvim"
+
+        install_vim_files(config_path, editor="nvim")
+
+    elif args.ide is IDE.VIM:
+        home_dir = os.environ.get("HOME")
+        if home_dir is None:
+            RecordFluxError(
+                [
+                    ErrorEntry("could not locate home directory", Severity.ERROR),
+                    ErrorEntry("make sure $HOME variable is set", Severity.HELP),
+                ],
+            ).propagate()
+        assert home_dir is not None
+        install_vim_files(Path(home_dir) / ".vim", editor="vim")
     else:
         assert_never(args.ide)  # pragma: no cover
 
@@ -669,6 +732,12 @@ def run_language_server(args: argparse.Namespace) -> None:
 def vscode_extension() -> Traversable:
     # TODO(eng/recordflux/RecordFlux#1359): Replace importlib_resources by importlib.resources
     path = importlib_resources.files("rflx") / "ide" / "vscode" / "recordflux.vsix"
+    assert isinstance(path, Traversable)
+    return path
+
+
+def vim_syntax_file() -> Traversable:
+    path = importlib_resources.files("rflx") / "ide" / "vim" / "recordflux.vim"
     assert isinstance(path, Traversable)
     return path
 
