@@ -775,7 +775,7 @@ def field_condition_call(
         [
             Variable("Ctx"),
             Variable(package * field.affixed_name),
-            *([value] if has_value_dependent_condition(message) else []),
+            *([value] if has_scalar_value_dependent_condition(message) else []),
             *([aggregate] if has_aggregate_dependent_condition(message) else []),
             *([size] if has_size_dependent_condition(message, field) else []),
         ],
@@ -820,7 +820,7 @@ def contains_function_name(refinement_package: ID, pdu: ID, sdu: ID, field: ID) 
     return f"{sdu_name.flat}_In_{pdu_name.flat}_{field}"
 
 
-def has_value_dependent_condition(message: model.Message) -> bool:
+def has_scalar_value_dependent_condition(message: model.Message) -> bool:
     return any(
         True
         for l in message.structure

@@ -2198,7 +2198,7 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
         Parameter(["Fld"], "Field"),
         *(
             [Parameter(["Val"], const.TYPES_BASE_INT)]
-            if common.has_value_dependent_condition(message)
+            if common.has_scalar_value_dependent_condition(message)
             else []
         ),
         *(
@@ -2235,7 +2235,7 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
                                         [Variable("Fld"), Variable("Val")],
                                     ),
                                 ]
-                                if common.has_value_dependent_condition(message)
+                                if common.has_scalar_value_dependent_condition(message)
                                 else []
                             ),
                             Call(

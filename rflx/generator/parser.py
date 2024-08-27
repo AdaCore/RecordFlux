@@ -252,7 +252,11 @@ class ParserGenerator:
                 [
                     Variable("Ctx"),
                     Variable("Fld"),
-                    *([Variable("Value")] if common.has_value_dependent_condition(message) else []),
+                    *(
+                        [Variable("Value")]
+                        if common.has_scalar_value_dependent_condition(message)
+                        else []
+                    ),
                     *(
                         [
                             Slice(
