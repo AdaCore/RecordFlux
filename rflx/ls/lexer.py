@@ -21,7 +21,7 @@ class Token:
         lexeme: A string representation of the token in the file.
         line_number: An integer indicating the line at which the token is located in the file
                      starting from 1.
-        character_offset: An integer indicating the character offset from the begining of the line
+        character_offset: An integer indicating the character offset from the beginning of the line
                           at which the first character of the lexeme is located starting from 1.
 
     """

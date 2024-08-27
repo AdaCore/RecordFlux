@@ -38,7 +38,7 @@
         },
         "operators": {
             "name": "entity.name.operator.recordflux",
-            "match": "=>|=|\\*|\\+|\\-|/=|\\.\\.|<|<=|>|>=|:=|\\b(or|and|range|sequence|'First|'Size|'Last|'Valid_Checksum|'Valid|'Write|'Read)\\b"
+            "match": "=>|=|\\*|\\+|\\-|/=|\\.\\.|<|<=|>|>=|:=|\\b(or|and|range|sequence|unsigned|'First|'Size|'Last|'Valid_Checksum|'Valid|'Write|'Read)\\b"
         },
         "strings": {
             "name": "string.quoted.double.recordflux",

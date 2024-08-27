@@ -16,6 +16,7 @@ grammar.add_rules(
             lexer.Null,
             lexer.Type,
             lexer.Range,
+            lexer.Unsigned,
             lexer.With,
             lexer.Mod,
             lexer.Message,
@@ -350,8 +351,16 @@ grammar.add_rules(
         "with",
         grammar.aspect,
     ),
+    unsigned_type_definition=ast.UnsignedTypeDef(
+        "unsigned",
+        grammar.expression,
+    ),
     modular_type_definition=ast.ModularTypeDef("mod", grammar.expression),
-    integer_type_definition=Or(grammar.range_type_definition, grammar.modular_type_definition),
+    integer_type_definition=Or(
+        grammar.range_type_definition,
+        grammar.unsigned_type_definition,
+        grammar.modular_type_definition,
+    ),
     if_condition=Pick("if", grammar.expression),
     extended_if_condition=Pick("if", grammar.extended_expression),
     then=ast.Then(

@@ -79,7 +79,13 @@ class TypeValue(Base):
         return NotImplemented
 
     def equal_type(self, other: TypeDecl) -> bool:
-        return isinstance(self._type, type(other))
+        return isinstance(self._type, type(other)) or (
+            # Different variants of integer types (e.g., UnsignedInteger,
+            # Integer) are considered equivalent at the type level. Whether or
+            # not a given value fits to some type is a separate question.
+            isinstance(self._type, Integer)
+            and isinstance(other, Integer)
+        )
 
     @property
     def name(self) -> str:
@@ -458,7 +464,7 @@ class SequenceValue(CompositeValue):
                     if not v.equal_type(self._element_type):
                         e = PyRFLXError()
                         e.push_msg(
-                            f'cannot assign "{v.name}" to an sequence of '
+                            f'cannot assign "{v.name}" to a sequence of '
                             f'"{self._element_type.name}"',
                         )
                         raise e
@@ -472,7 +478,7 @@ class SequenceValue(CompositeValue):
                 else:
                     e = PyRFLXError()
                     e.push_msg(
-                        f"cannot assign {type(v).__name__} to an sequence of "
+                        f"cannot assign {type(v).__name__} to a sequence of "
                         f"{type(self._element_type).__name__}",
                     )
                     raise e
@@ -480,7 +486,7 @@ class SequenceValue(CompositeValue):
                 if isinstance(v, MessageValue) or not v.equal_type(self._element_type):
                     e = PyRFLXError()
                     e.push_msg(
-                        f"cannot assign {type(v).__name__} to an sequence of "
+                        f"cannot assign {type(v).__name__} to a sequence of "
                         f"{type(self._element_type).__name__}",
                     )
                     raise e

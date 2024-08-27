@@ -28,6 +28,7 @@ from rflx.model import (
     statement as stmt,
 )
 from rflx.model.message import ByteOrder
+from rflx.model.type_decl import UncheckedInteger
 from rflx.rapidflux import Location, RecordFluxError, Severity
 from rflx.specification import parser
 from rflx.ty import UNDEFINED
@@ -39,6 +40,8 @@ from tests.utils import (
     parse_bool_expression,
     parse_expression,
     parse_math_expression,
+    parse_range_type,
+    parse_unsigned_type,
 )
 
 T = Integer("Test::T", expr.Number(0), expr.Number(255), expr.Number(8))
@@ -456,6 +459,18 @@ def test_parse_integer_type_spec() -> None:
                             "last": {"_kind": "NumericLiteral", "_value": "255"},
                         },
                         "identifier": {"_kind": "UnqualifiedID", "_value": "Line_Size"},
+                        "parameters": None,
+                    },
+                    {
+                        "_kind": "TypeDecl",
+                        "definition": {
+                            "_kind": "UnsignedTypeDef",
+                            "size": {"_kind": "NumericLiteral", "_value": "6"},
+                        },
+                        "identifier": {
+                            "_kind": "UnqualifiedID",
+                            "_value": "Address",
+                        },
                         "parameters": None,
                     },
                 ],
@@ -3566,7 +3581,7 @@ def test_parse_error_unsupported_modular_integer_type() -> None:
         """,
         r"^"
         r"<stdin>:2:9: error: modular integer types are not supported\n"
-        r'<stdin>:2:9: help: use "type T is range 0 .. 65535 with Size => 16" instead'
+        r'<stdin>:2:9: help: use "type T is unsigned 16" instead'
         r"$",
     )
 
@@ -4140,6 +4155,78 @@ def test_invalid_variable(string: str, error: str) -> None:
 )
 def test_expression_suffix(string: str, expected: expr.Expr) -> None:
     actual = parse_expression(string, lang.GrammarRule.extended_expression_rule)
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    ("string", "expected"),
+    [
+        (
+            "range 1 .. 2_000 with Size => 16",
+            UncheckedInteger(
+                identifier=ID("T", Location((1, 1), Path("<stdin>"))),
+                first=expr.Number(
+                    value=1,
+                    base=0,
+                ),
+                last=expr.Number(
+                    value=2000,
+                    base=0,
+                ),
+                size=expr.Number(
+                    value=16,
+                    base=0,
+                ),
+                location=Location((1, 1), Path("<stdin>"), (1, 33)),
+            ),
+        ),
+    ],
+)
+def test_range_type(string: str, expected: UncheckedInteger) -> None:
+    actual = parse_range_type(string, lang.GrammarRule.range_type_definition_rule)
+    assert actual == expected
+    assert actual.location
+
+
+@pytest.mark.parametrize(
+    ("string", "expected"),
+    [
+        (
+            "unsigned 6",
+            UncheckedInteger(
+                identifier=ID("T", Location((1, 1), Path("<stdin>"))),
+                first=expr.Number(
+                    value=0,
+                    base=0,
+                ),
+                last=expr.Sub(
+                    expr.Pow(
+                        expr.Number(
+                            value=2,
+                            base=0,
+                        ),
+                        expr.Number(
+                            value=6,
+                            base=0,
+                        ),
+                    ),
+                    expr.Number(
+                        value=1,
+                        base=0,
+                    ),
+                ),
+                size=expr.Number(
+                    value=6,
+                    base=0,
+                ),
+                location=Location((1, 1), Path("<stdin>"), (1, 11)),
+            ),
+        ),
+    ],
+)
+def test_unsigned_type(string: str, expected: None) -> None:
+    actual = parse_unsigned_type(string, lang.GrammarRule.unsigned_type_definition_rule)
     assert actual == expected
     assert actual.location
 

@@ -258,28 +258,31 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 
 
 def test_write_specification_files(tmp_path: Path) -> None:
-    t = Integer("P::T", Number(0), Number(255), Number(8))
-    v = type_decl.Sequence("P::V", element_type=t)
+    u = Integer("P::U", Number(0), Number(255), Number(8))
+    i = Integer("P::I", Number(2), Number(42), Number(16))
     s = StateMachine("P::S", [State("A", [Transition("null")])], [], [], [])
+    v = type_decl.Sequence("P::V", element_type=i)
     m = Message(
         ID("P::M", Location((1, 1))),
         [
             Link(INITIAL, Field("Foo"), location=Location((1, 1))),
             Link(Field("Foo"), FINAL, location=Location((2, 2))),
         ],
-        {Field(ID("Foo", location=Location((1, 1)))): t},
+        {Field(ID("Foo", location=Location((1, 1)))): u},
         location=Location((1, 1), end=(1, 2)),
     )
-    Model([t, v, s, m]).write_specification_files(tmp_path)
+    Model([u, i, v, s, m]).write_specification_files(tmp_path)
     expected_path = tmp_path / Path("p.rflx")
     assert list(tmp_path.glob("*.rflx")) == [expected_path]
     assert expected_path.read_text() == textwrap.dedent(
         """\
         package P is
 
-           type T is range 0 .. 255 with Size => 8;
+           type U is unsigned 8;
 
-           type V is sequence of P::T;
+           type I is range 2 .. 42 with Size => 16;
+
+           type V is sequence of P::I;
 
            generic
            machine S is
@@ -293,7 +296,7 @@ def test_write_specification_files(tmp_path: Path) -> None:
 
            type M is
               message
-                 Foo : P::T;
+                 Foo : P::U;
               end message;
 
         end P;""",
@@ -320,9 +323,9 @@ def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
         """\
         package P is
 
-           type S is range 0 .. 65535 with Size => 16;
+           type S is unsigned 16;
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 
            type V is sequence of P::T;
 
@@ -357,7 +360,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
         """\
         package P is
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 
         end P;""",
     )
@@ -379,7 +382,7 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
 
         package R is
 
-           type V is range 0 .. 65535 with Size => 16;
+           type V is unsigned 16;
 
            type M is
               message
@@ -415,7 +418,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
         """\
         package P is
 
-           type T is range 0 .. 255 with Size => 8;
+           type T is unsigned 8;
 
         end P;""",
     )
@@ -435,7 +438,7 @@ def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path)
 
         package R is
 
-           type V is range 0 .. 65535 with Size => 16;
+           type V is unsigned 16;
 
            type U is sequence of P::T;
 

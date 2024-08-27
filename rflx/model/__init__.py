@@ -49,6 +49,8 @@ from .type_decl import (
     UncheckedOpaque as UncheckedOpaque,
     UncheckedSequence as UncheckedSequence,
     UncheckedTypeDecl as UncheckedTypeDecl,
+    UncheckedUnsignedInteger as UncheckedUnsignedInteger,
+    UnsignedInteger as UnsignedInteger,
     internal_type_identifier as internal_type_identifier,
     is_builtin_type as is_builtin_type,
     is_internal_type as is_internal_type,

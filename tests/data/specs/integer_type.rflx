@@ -2,5 +2,6 @@ package Integer_Type is
 
    type Page_Num is range 1 .. 2_000 with Size => 16;
    type Line_Size is range 0 .. 255 with Size => 8;
+   type Address is unsigned 6;
 
 end Integer_Type;

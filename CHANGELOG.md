@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Vim and Neovim syntax highlighting support (eng/recordflux/RecordFlux#1749)
 - Project file support in code optimizer (eng/recordflux/RecordFlux#1766)
+- Shorthand syntax for unsigned integer types (eng/recordflux/RecordFlux#1398)
 
 ### Changed
 

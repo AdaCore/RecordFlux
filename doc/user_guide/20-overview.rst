@@ -296,7 +296,7 @@ The specification for our pub-sub message is as follows:
 .. doc-check: rflx,basic_declarations
 .. code:: rflx
 
-   type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Length is unsigned 8;
 
 
 .. doc-check: rflx,basic_declarations

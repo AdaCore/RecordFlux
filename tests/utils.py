@@ -27,12 +27,15 @@ from rflx.model import (
     TypeDecl,
     declaration as decl,
 )
+from rflx.model.type_decl import UncheckedInteger
 from rflx.rapidflux import Location, RecordFluxError
 from rflx.specification import Parser
 from rflx.specification.parser import (
     create_bool_expression,
     create_expression,
     create_math_expression,
+    create_range,
+    create_unsigned,
     diagnostics_to_error,
 )
 from tests.const import MAIN, SPEC_DIR, STATE_MACHINE_NAME
@@ -1237,6 +1240,34 @@ def parse_expression(data: str, rule: str = lang.GrammarRule.extended_expression
     error.propagate()
     assert isinstance(expression, Expr)
     return expression
+
+
+def parse_range_type(
+    data: str,
+    rule: str = lang.GrammarRule.extended_expression_rule,
+    name: str = "T",
+) -> UncheckedInteger:
+    ast_node, filename = parse(data, rule)
+    assert isinstance(ast_node, lang.RangeTypeDef)
+    error = RecordFluxError()
+    range_type = create_range(error, ID(name, Location((1, 1), filename)), ast_node, filename)
+    error.propagate()
+    assert isinstance(range_type, UncheckedInteger)
+    return range_type
+
+
+def parse_unsigned_type(
+    data: str,
+    rule: str = lang.GrammarRule.extended_expression_rule,
+    name: str = "T",
+) -> UncheckedInteger:
+    ast_node, filename = parse(data, rule)
+    assert isinstance(ast_node, lang.UnsignedTypeDef)
+    error = RecordFluxError()
+    unsigned_type = create_unsigned(error, ID(name, Location((1, 1), filename)), ast_node, filename)
+    error.propagate()
+    assert isinstance(unsigned_type, UncheckedInteger)
+    return unsigned_type
 
 
 def raise_fatal_error() -> None:

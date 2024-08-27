@@ -265,7 +265,8 @@ A size aspect defines the size of a type or message field in bits.
 **Syntax**
 
 .. productionlist::
-   size_aspect: "Size" "=>" `math_expression`
+   size_aspect: "Size" "=>" `size_expression`
+   size_expression: `math_expression`
 
 Scalar Types
 ============
@@ -274,20 +275,41 @@ Integer Types
 -------------
 
 An integer type is used to represent whole numbers.
+In RecordFlux integer types can be specified in several ways as explained next.
 
 **Syntax**
 
 .. productionlist::
-   integer_type: "type" `name` "is"
-               : "range" `first` ".." `last`
-               : "with" `size_aspect`
+   integer_type: `range_type`
+               : | `unsigned_type`
+
+
+Range Integer Types
+^^^^^^^^^^^^^^^^^^^
+
+A range integer type is the most general form of integer type specifications.
+It allows one to explicitly specify the lower and upper bound for the type, as well as the size of the type in bits.
+At the moment only non-negative integers are supported.
+
+**Syntax**
+
+.. productionlist::
+   range_type: "type" `name` "is"
+             : "range" `first` ".." `last`
+             : "with" `size_aspect`
    first: `math_expression`
    last: `math_expression`
 
 **Static Semantics**
 
-The set of values of a integer type consists of all numbers from the lower bound to the upper bound.
-The bit size has to be specified explicitly.
+The set of values of a range integer type consists of all numbers from the lower bound to the upper bound.
+The lower bound must be >= 0 and \<= the upper bound.
+The bit size has to be specified explicitly and must be a value between 1 and 63 (included).
+It can also be larger and does not have to be a multiple of 8 bits.
+However, the size of the type must be able to accommodate the upper bound.
+
+..
+    TODO(eng/recordflux/RecordFlux#1077): Increase the size limit of integer types.
 
 **Example**
 
@@ -295,6 +317,31 @@ The bit size has to be specified explicitly.
 .. code:: rflx
 
    type Type_Length is range 46 .. 2 ** 16 - 1 with Size => 16
+
+
+Unsigned Integer Types
+^^^^^^^^^^^^^^^^^^^^^^
+
+For unsigned integers which cover the whole range of their specified size the following shorthand syntax is available.
+
+**Syntax**
+
+.. productionlist::
+   unsigned_type: "type" `name`
+                : "is" "unsigned" `size_expression`
+
+**Static Semantics**
+
+The above syntax is equivalent to the definition of a range integer type where the lower limit is ``0`` and upper limit ``2 ** size - 1``.
+
+**Example**
+
+.. doc-check: rflx,basic_declaration
+.. code:: rflx
+
+   -- Value range: 0 .. 63
+   type Address is unsigned 6
+
 
 Enumeration Types
 -----------------
@@ -1277,10 +1324,10 @@ By convention one protocol is specified in one package.
 
    package Ethernet is
 
-      type Address is range 0 .. 2 ** 48 - 1 with Size => 48;
+      type Address is unsigned 48;
       type Type_Length is range 46 .. 2 ** 16 - 1 with Size => 16;
       type TPID is range 16#8100# .. 16#8100# with Size => 16;
-      type TCI is range 0 .. 2 ** 16 - 1 with Size => 16;
+      type TCI is unsigned 16;
       type Ether_Type is
          (ET_IPv4            => 16#0800#,
           ET_ARP             => 16#0806#,

@@ -318,6 +318,10 @@ class RangeTypeDef(IntegerTypeDef):
     size = Field(type=Aspect)
 
 
+class UnsignedTypeDef(IntegerTypeDef):
+    size = Field(type=Expr)
+
+
 class ModularTypeDef(IntegerTypeDef):
     """Deprecated modular integer type definition."""
 

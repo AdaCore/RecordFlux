@@ -24,6 +24,7 @@ class Token(LexerToken):  # type: ignore[misc]
     Null = WithText()
     Type = WithText()
     Range = WithText()
+    Unsigned = WithText()
     With = WithText()
     Mod = WithText()
     Message = WithText()
@@ -178,6 +179,7 @@ rflx_lexer.add_rules(
     (Literal("null"), Token.Null),
     (Literal("type"), Token.Type),
     (Literal("range"), Token.Range),
+    (Literal("unsigned"), Token.Unsigned),
     (Literal("with"), Token.With),
     (Literal("mod"), Token.Mod),
     (Literal("message"), Token.Message),

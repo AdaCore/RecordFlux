@@ -63,6 +63,48 @@ def test_modular_type() -> None:
     }
 
 
+def test_range_type() -> None:
+    unit = parse_buffer(
+        """
+            type Range_Type is range 1 .. 2_000 with Size => 16;
+        """,
+        rule=lang.GrammarRule.type_declaration_rule,
+    )
+    assert to_dict(unit.root) == {
+        "_kind": "TypeDecl",
+        "definition": {
+            "_kind": "RangeTypeDef",
+            "first": {"_kind": "NumericLiteral", "_value": "1"},
+            "last": {"_kind": "NumericLiteral", "_value": "2_000"},
+            "size": {
+                "_kind": "Aspect",
+                "identifier": {"_kind": "UnqualifiedID", "_value": "Size"},
+                "value": {"_kind": "NumericLiteral", "_value": "16"},
+            },
+        },
+        "identifier": {"_kind": "UnqualifiedID", "_value": "Range_Type"},
+        "parameters": None,
+    }
+
+
+def test_unsigned_type() -> None:
+    unit = parse_buffer(
+        """
+            type Unsigned_Type is unsigned 7;
+        """,
+        rule=lang.GrammarRule.type_declaration_rule,
+    )
+    assert to_dict(unit.root) == {
+        "_kind": "TypeDecl",
+        "definition": {
+            "_kind": "UnsignedTypeDef",
+            "size": {"_kind": "NumericLiteral", "_value": "7"},
+        },
+        "identifier": {"_kind": "UnqualifiedID", "_value": "Unsigned_Type"},
+        "parameters": None,
+    }
+
+
 def test_checksum_attributes() -> None:
     unit = parse_buffer(
         """

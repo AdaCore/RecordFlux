@@ -4,6 +4,7 @@ syntax keyword rflxKeyword package
 syntax keyword rflxKeyword is
 syntax keyword rflxKeyword type
 syntax keyword rflxKeyword range
+syntax keyword rflxKeyword unsigned
 syntax keyword rflxKeyword all
 syntax keyword rflxKeyword some
 syntax keyword rflxKeyword Head

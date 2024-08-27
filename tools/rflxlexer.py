@@ -55,6 +55,7 @@ MAPPINGS = {
         "Then",
         "Transition",
         "Type",
+        "Unsigned",
         "Use",
         "Valid",
         "Valid_Checksum",

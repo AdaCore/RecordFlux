@@ -297,6 +297,29 @@ class Integer(Scalar):
             )
 
 
+class UnsignedInteger(Integer):
+    def __init__(
+        self,
+        identifier: StrID,
+        size: expr.Expr,
+        location: Location | None = None,
+    ) -> None:
+        super().__init__(
+            identifier,
+            expr.Number(0, location=size.location),
+            expr.Sub(
+                expr.Pow(expr.Number(2), size),
+                expr.Number(1),
+                location=size.location,
+            ),
+            size,
+            location,
+        )
+
+    def __str__(self) -> str:
+        return f"type {self.name} is unsigned {self.size_expr}"
+
+
 class Enumeration(Scalar):
     def __init__(  # noqa: PLR0912
         self,
@@ -673,6 +696,21 @@ class UncheckedInteger(UncheckedTypeDecl):
         workers: int = 1,  # noqa: ARG002
     ) -> Integer:
         return Integer(self.identifier, self.first, self.last, self.size, self.location)
+
+
+@dataclass
+class UncheckedUnsignedInteger(UncheckedTypeDecl):
+    identifier: ID
+    size: expr.Expr
+    location: Location | None
+
+    def checked(
+        self,
+        _declarations: typing.Sequence[TopLevelDeclaration],
+        skip_verification: bool = False,  # noqa: ARG002
+        workers: int = 1,  # noqa: ARG002
+    ) -> UnsignedInteger:
+        return UnsignedInteger(self.identifier, self.size, self.location)
 
 
 @dataclass

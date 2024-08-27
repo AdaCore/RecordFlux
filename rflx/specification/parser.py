@@ -399,9 +399,9 @@ def create_id_or_null(error: RecordFluxError, identifier: lang.AbstractID, filen
 def create_sequence(
     error: RecordFluxError,
     identifier: ID,
-    _parameters: lang.Parameters,
     sequence: lang.TypeDef,
     filename: Path,
+    _parameters: lang.Parameters | None = None,
 ) -> model.UncheckedSequence | None:
     assert isinstance(sequence, lang.SequenceTypeDef)
     element_identifier = model.internal_type_identifier(
@@ -1055,9 +1055,9 @@ def create_bool_expression(
 def create_modular(
     error: RecordFluxError,
     identifier: ID,
-    _parameters: lang.Parameters,
     modular: lang.TypeDef,
     filename: Path,
+    _parameters: lang.Parameters | None = None,
 ) -> None:
     assert isinstance(modular, lang.ModularTypeDef)
     modulus = create_math_expression(error, modular.f_mod, filename).simplified()
@@ -1071,8 +1071,7 @@ def create_modular(
                 type_location(identifier, modular),
             ),
             ErrorEntry(
-                f'use "type {identifier.name} is range 0 .. {upper}'
-                f' with Size => {upper.bit_length()}" instead',
+                f'use "type {identifier.name} is unsigned {upper.bit_length()}" instead',
                 Severity.HELP,
                 type_location(identifier, modular),
             ),
@@ -1083,9 +1082,9 @@ def create_modular(
 def create_range(
     error: RecordFluxError,
     identifier: ID,
-    _parameters: lang.Parameters,
     rangetype: lang.TypeDef,
     filename: Path,
+    _parameters: lang.Parameters | None = None,
 ) -> model.UncheckedInteger | None:
     assert isinstance(rangetype, lang.RangeTypeDef)
     if rangetype.f_size.f_identifier.text != "Size":
@@ -1120,12 +1119,28 @@ def create_range(
     )
 
 
+def create_unsigned(
+    error: RecordFluxError,
+    identifier: ID,
+    unsignedtype: lang.TypeDef,
+    filename: Path,
+    _parameters: lang.Parameters | None = None,
+) -> model.UncheckedUnsignedInteger | None:
+    assert isinstance(unsignedtype, lang.UnsignedTypeDef)
+    size = create_math_expression(error, unsignedtype.f_size, filename)
+    return model.UncheckedUnsignedInteger(
+        identifier,
+        size,
+        type_location(identifier, unsignedtype),
+    )
+
+
 def create_null_message(
     _error: RecordFluxError,
     identifier: ID,
-    _parameters: lang.Parameters,
     message: lang.TypeDef,
     _filename: Path,
+    _parameters: lang.Parameters | None = None,
 ) -> model.UncheckedMessage | None:
     assert isinstance(message, lang.NullMessageTypeDef)
     return model.UncheckedMessage(
@@ -1142,14 +1157,14 @@ def create_null_message(
 def create_message(
     error: RecordFluxError,
     identifier: ID,
-    parameters: lang.Parameters,
     message: lang.TypeDef,
     filename: Path,
+    parameters: lang.Parameters | None = None,
 ) -> model.UncheckedMessage | None:
     assert isinstance(message, lang.MessageTypeDef)
     fields = message.f_message_fields
 
-    def get_parameters(param: lang.Parameters) -> lang.ParameterList | None:
+    def get_parameters(param: lang.Parameters | None) -> lang.ParameterList | None:
         if not param:
             return None
         assert isinstance(param.f_parameters, lang.ParameterList)
@@ -1508,9 +1523,9 @@ def parse_aspects(  # noqa: PLR0912
 def create_derived_message(
     error: RecordFluxError,
     identifier: ID,
-    _parameters: lang.Parameters,
     derivation: lang.TypeDef,
     filename: Path,
+    _parameters: lang.Parameters | None = None,
 ) -> model.UncheckedDerivedMessage | None:
     assert isinstance(derivation, lang.TypeDerivationDef)
     base_id = create_id(error, derivation.f_base, filename)
@@ -1525,9 +1540,9 @@ def create_derived_message(
 def create_enumeration(
     error: RecordFluxError,
     identifier: ID,
-    _parameters: lang.Parameters,
     enumeration: lang.TypeDef,
     filename: Path,
+    _parameters: lang.Parameters | None = None,
 ) -> model.UncheckedEnumeration | None:
     assert isinstance(enumeration, lang.EnumerationTypeDef)
     literals: list[tuple[ID, expr.Number]] = []
@@ -1942,9 +1957,9 @@ class Parser:
                 [
                     RecordFluxError,
                     ID,
-                    lang.Parameters,
                     lang.TypeDef,
                     Path,
+                    lang.Parameters | None,
                 ],
                 model.UncheckedTypeDecl | None,
             ],
@@ -1952,6 +1967,7 @@ class Parser:
             "SequenceTypeDef": create_sequence,
             "ModularTypeDef": create_modular,
             "RangeTypeDef": create_range,
+            "UnsignedTypeDef": create_unsigned,
             "MessageTypeDef": create_message,
             "NullMessageTypeDef": create_null_message,
             "TypeDerivationDef": create_derived_message,
@@ -1984,9 +2000,9 @@ class Parser:
                 new_type = handlers[t.f_definition.kind_name](
                     error,
                     identifier,
-                    t.f_parameters,
                     t.f_definition,
                     filename,
+                    t.f_parameters,
                 )
                 if new_type is not None:
                     declarations.append(new_type)

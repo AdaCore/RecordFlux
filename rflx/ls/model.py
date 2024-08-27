@@ -16,6 +16,7 @@ from rflx.model.type_decl import (
     UncheckedEnumeration,
     UncheckedInteger,
     UncheckedSequence,
+    UncheckedUnsignedInteger,
 )
 
 
@@ -127,7 +128,7 @@ class LSModel:
 
     @staticmethod
     def _to_symbols(declaration: UncheckedTopLevelDeclaration) -> list[Symbol]:
-        if isinstance(declaration, UncheckedInteger):
+        if isinstance(declaration, (UncheckedInteger, UncheckedUnsignedInteger)):
             return [
                 Symbol(declaration.identifier, SymbolCategory.NUMERIC, declaration.location, None),
             ]
