@@ -366,14 +366,12 @@ is
    procedure Initialize (Ctx : in out Context) is
    begin
       Test.Session.FSM_Allocator.Initialize (Ctx.P.Slots, Ctx.P.Memory);
-      Ctx.F := Test.Session_Functions.Initialize;
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
    procedure Finalize (Ctx : in out Context) is
    begin
       Test.Session.FSM_Allocator.Finalize (Ctx.P.Slots);
-      Test.Session_Functions.Finalize (Ctx.F);
       Ctx.P.Next_State := S_Final;
    end Finalize;
 

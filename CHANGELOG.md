@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CLI flag `--optimize` of `rflx generate` subcommand (eng/recordflux/RecordFlux#1766)
 - CLI option `--timeout` of `rflx generate` and `rflx optimize` subcommands (eng/recordflux/RecordFlux#1766)
+- `Initialize` and `Finalize` functions for session functions context (eng/recordflux/RecordFlux#1768)
 
 ### Fixed
 

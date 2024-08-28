@@ -385,7 +385,6 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := null;
       pragma Warnings (On, "unused assignment");
       Test.Definite_Message.Initialize (Ctx.P.Definite_Message_Ctx, Definite_Message_Buffer);
-      Ctx.F := Test.Session_Functions.Initialize;
       Ctx.P.Next_State := S_Start;
    end Initialize;
 
@@ -408,7 +407,6 @@ is
       Ctx.P.Slots.Slot_Ptr_2 := Definite_Message_Buffer;
       pragma Assert (Ctx.P.Slots.Slot_Ptr_2 /= null);
       Test.Session.FSM_Allocator.Finalize (Ctx.P.Slots);
-      Test.Session_Functions.Finalize (Ctx.F);
       Ctx.P.Next_State := S_Final;
    end Finalize;
 

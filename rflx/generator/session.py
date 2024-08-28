@@ -635,14 +635,11 @@ class FSMGenerator:
             evaluated_declarations.initialization_declarations,
             evaluated_declarations.initialization,
             self._external_io_buffers,
-            has_functions,
         )
         unit += self._create_finalize_procedure(
-            self._session,
             evaluated_declarations.initialization_declarations,
             evaluated_declarations.finalization,
             self._external_io_buffers,
-            has_functions,
         )
 
         if has_reads:
@@ -1304,7 +1301,6 @@ class FSMGenerator:
         declarations: Sequence[Declaration],
         initialization: Sequence[Statement],
         external_io_buffers: Sequence[common.Message],
-        has_functions: bool,
     ) -> UnitPart:
         specification = ProcedureSpecification(
             "Initialize",
@@ -1361,16 +1357,6 @@ class FSMGenerator:
                     declarations,
                     [
                         *initialization,
-                        *(
-                            [
-                                Assignment(
-                                    "Ctx.F",
-                                    Call(functions_package("", session.identifier) * "Initialize"),
-                                ),
-                            ]
-                            if has_functions
-                            else []
-                        ),
                         Assignment(
                             "Ctx.P.Next_State",
                             Variable(state_id(session.initial_state.identifier)),
@@ -1382,11 +1368,9 @@ class FSMGenerator:
 
     @staticmethod
     def _create_finalize_procedure(
-        session: ir.Session,
         declarations: Sequence[Declaration],
         finalization: Sequence[Statement],
         external_io_buffers: Sequence[common.Message],
-        has_functions: bool,
     ) -> UnitPart:
         specification = ProcedureSpecification(
             "Finalize",
@@ -1431,16 +1415,6 @@ class FSMGenerator:
                     declarations,
                     [
                         *finalization,
-                        *(
-                            [
-                                CallStatement(
-                                    functions_package("", session.identifier) * "Finalize",
-                                    [Variable("Ctx.F")],
-                                ),
-                            ]
-                            if has_functions
-                            else []
-                        ),
                         Assignment(
                             "Ctx.P.Next_State",
                             Variable(state_id(ir.FINAL_STATE.identifier)),

@@ -15,8 +15,4 @@ is
          Instance : System.Address := System.Null_Address;
       end record;
 
-   function Initialize return Context;
-
-   procedure Finalize (Ctx : in out Context);
-
 end RFLX.SPDM_Responder.Session_Functions;
