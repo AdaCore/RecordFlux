@@ -120,7 +120,7 @@ is
             goto Finalize_Check_Message;
          end if;
          Universal.Message.Data (Message_Ctx, RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Length + 1) - 2));
-         Check_Size (Ctx.F, Test.Size (Universal.Message.Size (Message_Ctx)), RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Length + 1) - 2), Valid);
+         Check_Size (Ctx.E, Test.Size (Universal.Message.Size (Message_Ctx)), RFLX_Check_Size_Arg_1_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Length + 1) - 2), Valid);
       end;
       if Valid then
          Ctx.P.Next_State := S_Check_Message_Sequence;
@@ -238,7 +238,7 @@ is
             goto Finalize_Check_Message_Sequence;
          end if;
          Universal.Options.Data (Message_Sequence_Ctx, RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Sequence_Length + 1) - 2));
-         Check_Size (Ctx.F, Test.Size (Universal.Options.Size (Message_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Sequence_Length + 1) - 2), Valid);
+         Check_Size (Ctx.E, Test.Size (Universal.Options.Size (Message_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Message_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Message_Sequence_Length + 1) - 2), Valid);
       end;
       if Valid then
          Ctx.P.Next_State := S_Check_Scalar_Sequence;
@@ -327,7 +327,7 @@ is
             goto Finalize_Check_Scalar_Sequence;
          end if;
          Universal.Values.Data (Scalar_Sequence_Ctx, RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Scalar_Sequence_Length + 1) - 2));
-         Check_Size (Ctx.F, Test.Size (Universal.Values.Size (Scalar_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Scalar_Sequence_Length + 1) - 2), Valid);
+         Check_Size (Ctx.E, Test.Size (Universal.Values.Size (Scalar_Sequence_Ctx)), RFLX_Check_Size_Arg_1_Scalar_Sequence (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Check_Size_Arg_1_Scalar_Sequence_Length + 1) - 2), Valid);
       end;
       if Valid then
          Ctx.P.Next_State := S_Final;

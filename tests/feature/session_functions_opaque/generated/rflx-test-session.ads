@@ -12,13 +12,13 @@ pragma Restrictions (No_Streams);
 pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
-with RFLX.Test.Session_Functions;
+with RFLX.Test.Session_Environment;
 with RFLX.RFLX_Types;
 
 package RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Check_Size (Ctx : in out RFLX.Test.Session_Functions.Context; Size : RFLX.Test.Size; Data : RFLX_Types.Bytes; RFLX_Result : out Boolean);
+   procedure Check_Size (State : in out RFLX.Test.Session_Environment.State; Size : RFLX.Test.Size; Data : RFLX_Types.Bytes; RFLX_Result : out Boolean);
 
 end RFLX.Test.Session;

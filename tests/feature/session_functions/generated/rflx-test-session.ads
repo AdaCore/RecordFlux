@@ -12,7 +12,7 @@ pragma Restrictions (No_Streams);
 pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
-with RFLX.Test.Session_Functions;
+with RFLX.Test.Session_Environment;
 with RFLX.RFLX_Types;
 with RFLX.Universal;
 with RFLX.Test.Definite_Message;
@@ -21,14 +21,14 @@ package RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Get_Message_Type (Ctx : in out RFLX.Test.Session_Functions.Context; RFLX_Result : out RFLX.Universal.Option_Type) with
+   procedure Get_Message_Type (State : in out RFLX.Test.Session_Environment.State; RFLX_Result : out RFLX.Universal.Option_Type) with
      Pre =>
        not RFLX_Result'Constrained;
 
-   procedure Create_Message (Ctx : in out RFLX.Test.Session_Functions.Context; Message_Type : RFLX.Universal.Option_Type; Length : RFLX.Test.Length; Data : RFLX_Types.Bytes; RFLX_Result : out RFLX.Test.Definite_Message.Structure);
+   procedure Create_Message (State : in out RFLX.Test.Session_Environment.State; Message_Type : RFLX.Universal.Option_Type; Length : RFLX.Test.Length; Data : RFLX_Types.Bytes; RFLX_Result : out RFLX.Test.Definite_Message.Structure);
 
-   procedure Valid_Message (Ctx : in out RFLX.Test.Session_Functions.Context; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean; RFLX_Result : out RFLX.Test.Result);
+   procedure Valid_Message (State : in out RFLX.Test.Session_Environment.State; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean; RFLX_Result : out RFLX.Test.Result);
 
-   procedure Byte_Size (Ctx : in out RFLX.Test.Session_Functions.Context; RFLX_Result : out RFLX.Test.Length);
+   procedure Byte_Size (State : in out RFLX.Test.Session_Environment.State; RFLX_Result : out RFLX.Test.Length);
 
 end RFLX.Test.Session;

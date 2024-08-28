@@ -5,11 +5,11 @@ package body RFLX.Test.Session with
 is
 
    procedure Get_Option_Data
-      (Ctx         : in out RFLX.Test.Session_Functions.Context;
+      (State       : in out RFLX.Test.Session_Environment.State;
        Data        :        RFLX.RFLX_Types.Bytes;
        RFLX_Result :    out RFLX.Test.Option_Data.Structure)
    is
-      pragma Unreferenced (Ctx);
+      pragma Unreferenced (State);
       use type RFLX.RFLX_Types.Index;
       use type RFLX.Universal.Length;
       Length : constant RFLX.Universal.Length := (if Data'Length <= RFLX.Universal.Length'Last then Data'Length else 0);

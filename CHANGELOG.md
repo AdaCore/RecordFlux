@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CLI subcommand `rflx optimize` expects project file instead of directory containing generated code (eng/recordflux/RecordFlux#1766)
 - Improve generation of predicate for single-field messages (eng/recordflux/RecordFlux#1761)
+- Rename `*_Functions.Context` to `*_Environment.State` to prevent confusions (eng/recordflux/RecordFlux#1769)
 
 ### Removed
 

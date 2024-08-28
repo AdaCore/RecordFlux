@@ -4,22 +4,22 @@ is
    Global : RFLX.Test.Length := 0;
 
    procedure Get_Message_Type
-      (Ctx         : in out RFLX.Test.Session_Functions.Context;
+      (State       : in out RFLX.Test.Session_Environment.State;
        RFLX_Result :    out RFLX.Universal.Option_Type)
    is
-      pragma Unreferenced (Ctx);
+      pragma Unreferenced (State);
    begin
       RFLX_Result := (Known => True, Enum => RFLX.Universal.OT_Data);
    end Get_Message_Type;
 
    procedure Create_Message
-      (Ctx          : in out RFLX.Test.Session_Functions.Context;
+      (State        : in out RFLX.Test.Session_Environment.State;
        Message_Type :        RFLX.Universal.Option_Type;
        Length       :        RFLX.Test.Length;
        Data         :        RFLX.RFLX_Types.Bytes;
        RFLX_Result  :    out RFLX.Test.Definite_Message.Structure)
    is
-      pragma Unreferenced (Ctx);
+      pragma Unreferenced (State);
       use type RFLX.RFLX_Types.Index;
    begin
       RFLX_Result.Message_Type := Message_Type;
@@ -31,12 +31,12 @@ is
    end Create_Message;
 
    procedure Valid_Message
-      (Ctx           : in out RFLX.Test.Session_Functions.Context;
+      (State         : in out RFLX.Test.Session_Environment.State;
        Message_Type  :        RFLX.Universal.Option_Type;
        Strict        :        Boolean;
        RFLX_Result   :    out RFLX.Test.Result)
    is
-      pragma Unreferenced (Ctx);
+      pragma Unreferenced (State);
       use type RFLX.Universal.Option_Type;
    begin
       Global := 8;
@@ -46,10 +46,10 @@ is
    end Valid_Message;
 
    procedure Byte_Size
-      (Ctx          : in out RFLX.Test.Session_Functions.Context;
+      (State        : in out RFLX.Test.Session_Environment.State;
        RFLX_Result  :    out RFLX.Test.Length)
    is
-      pragma Unreferenced (Ctx);
+      pragma Unreferenced (State);
    begin
       RFLX_Result := Global;
    end Byte_Size;

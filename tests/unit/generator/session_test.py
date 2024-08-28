@@ -62,7 +62,7 @@ def dummy_session() -> ir.Session:
                     specification=ada.ProcedureSpecification(
                         identifier="F",
                         parameters=[
-                            ada.InOutParameter(["Ctx"], "P.S_Functions.Context"),
+                            ada.InOutParameter(["State"], "P.S_Environment.State"),
                             ada.OutParameter(["RFLX_Result"], "Boolean"),
                         ],
                     ),
@@ -92,7 +92,7 @@ def dummy_session() -> ir.Session:
                     specification=ada.ProcedureSpecification(
                         identifier="F",
                         parameters=[
-                            ada.InOutParameter(["Ctx"], "P.S_Functions.Context"),
+                            ada.InOutParameter(["State"], "P.S_Environment.State"),
                             ada.Parameter(["P1"], "Boolean"),
                             ada.Parameter(["P2"], const.TYPES_BYTES),
                             ada.Parameter(["P3"], "T3"),
@@ -949,7 +949,7 @@ declare
    A : Universal.Message.Structure;
 begin
    Universal.Message.To_Structure (A_Ctx, A);
-   F (Ctx.F, A, X);
+   F (Ctx.E, A, X);
 end;\
 """,
         ),
@@ -976,7 +976,7 @@ declare
    A : Universal.Message.Structure;
 begin
    Universal.Message.To_Structure (A_Ctx, A);
-   F (Ctx.F, A, X);
+   F (Ctx.E, A, X);
    if not Universal.Option.Valid_Structure (X) then
       Ada.Text_IO.Put_Line ("Error: ""F"" returned an invalid message");
       Ctx.P.Next_State := S_E;

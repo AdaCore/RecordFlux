@@ -116,9 +116,9 @@ is
    begin
       pragma Assert (Process_Invariant);
       -- tests/feature/session_functions/test.rflx:56:10
-      Get_Message_Type (Ctx.F, Message_Type);
+      Get_Message_Type (Ctx.E, Message_Type);
       -- tests/feature/session_functions/test.rflx:57:10
-      Valid_Message (Ctx.F, Message_Type, True, Valid);
+      Valid_Message (Ctx.E, Message_Type, True, Valid);
       if not Universal.Message.Valid_Next (Ctx.P.Message_Ctx, Universal.Message.F_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
@@ -127,7 +127,7 @@ is
       -- tests/feature/session_functions/test.rflx:58:20
       T_6 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data));
       -- tests/feature/session_functions/test.rflx:58:40
-      Byte_Size (Ctx.F, T_7);
+      Byte_Size (Ctx.E, T_7);
       if not (RFLX.RFLX_Types.Base_Integer (T_6) <= RFLX.RFLX_Types.Base_Integer (Test.Length'Last)) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
@@ -159,7 +159,7 @@ is
             goto Finalize_Process;
          end if;
          Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2));
-         Create_Message (Ctx.F, Message_Type, Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2), Definite_Message);
+         Create_Message (Ctx.E, Message_Type, Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length) - 2), Definite_Message);
          if not Test.Definite_Message.Valid_Structure (Definite_Message) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_Invariant);
@@ -249,7 +249,7 @@ is
             goto Finalize_Process_2;
          end if;
          Universal.Message.Data (Ctx.P.Message_Ctx, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length + 1) - 2));
-         Create_Message (Ctx.F, (Known => True, Enum => Universal.OT_Data), Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length + 1) - 2), Definite_Message);
+         Create_Message (Ctx.E, (Known => True, Enum => Universal.OT_Data), Length, RFLX_Create_Message_Arg_2_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Create_Message_Arg_2_Message_Length + 1) - 2), Definite_Message);
          if not Test.Definite_Message.Valid_Structure (Definite_Message) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_2_Invariant);
@@ -304,7 +304,7 @@ is
    begin
       pragma Assert (Process_3_Invariant);
       -- tests/feature/session_functions/test.rflx:99:10
-      Create_Message (Ctx.F, (Known => True, Enum => Universal.OT_Data), 2, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)), Local_Message);
+      Create_Message (Ctx.E, (Known => True, Enum => Universal.OT_Data), 2, (RFLX_Types.Byte'Val (3), RFLX_Types.Byte'Val (4)), Local_Message);
       if not Test.Definite_Message.Valid_Structure (Local_Message) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_3_Invariant);

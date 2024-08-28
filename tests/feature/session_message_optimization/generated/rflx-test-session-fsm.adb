@@ -150,7 +150,7 @@ is
             goto Finalize_Process;
          end if;
          Universal.Message.Get_Data (Ctx.P.Message_Ctx, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2));
-         Get_Option_Data (Ctx.F, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2), Option_Data);
+         Get_Option_Data (Ctx.E, RFLX_Get_Option_Data_Arg_0_Message (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Index (RFLX_Get_Option_Data_Arg_0_Message_Length) - 2), Option_Data);
          if not Test.Option_Data.Valid_Structure (Option_Data) then
             Ctx.P.Next_State := S_Final;
             pragma Assert (Process_Invariant);
@@ -296,7 +296,7 @@ is
    begin
       pragma Assert (Trigger_Error_Invariant);
       -- tests/feature/session_message_optimization/test.rflx:78:10
-      Get_Option_Data (Ctx.F, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (0)), Null_Option_Data);
+      Get_Option_Data (Ctx.E, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (0)), Null_Option_Data);
       if not Test.Option_Data.Valid_Structure (Null_Option_Data) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Trigger_Error_Invariant);

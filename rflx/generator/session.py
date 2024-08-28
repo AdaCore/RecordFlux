@@ -235,8 +235,8 @@ class SessionGenerator:
     def _create_function(self, function: ir.FuncDecl) -> Sequence[SubprogramDeclaration]:
         procedure_parameters: list[Parameter] = [
             InOutParameter(
-                ["Ctx"],
-                functions_package(self._prefix, self._session.identifier) * "Context",
+                ["State"],
+                environment_package(self._prefix, self._session.identifier) * "State",
             ),
         ]
 
@@ -343,7 +343,7 @@ class SessionGenerator:
 
         if functions:
             declaration_context.append(
-                WithClause(functions_package(self._prefix, self._session.identifier)),
+                WithClause(environment_package(self._prefix, self._session.identifier)),
             )
 
         if any(
@@ -792,9 +792,9 @@ class FSMGenerator:
                         *(
                             [
                                 Component(
-                                    "F",
-                                    functions_package(self._prefix, self._session.identifier)
-                                    * "Context",
+                                    "E",
+                                    environment_package(self._prefix, self._session.identifier)
+                                    * "State",
                                 ),
                             ]
                             if has_functions
@@ -4119,7 +4119,7 @@ class FSMGenerator:
             CallStatement(
                 call_expr.identifier,
                 [
-                    Variable("Ctx.F"),
+                    Variable("Ctx.E"),
                     *arguments,
                     Variable(target_id),
                 ],
@@ -6367,8 +6367,8 @@ def state_id(identifier: ID) -> ID:
     return "S_" + identifier
 
 
-def functions_package(prefix: str, session_id: ID) -> ID:
-    return prefix * session_id + "_Functions"
+def environment_package(prefix: str, session_id: ID) -> ID:
+    return prefix * session_id + "_Environment"
 
 
 def _unexpected_expression(expression: ir.Expr, context: str) -> NoReturn:

@@ -12,7 +12,7 @@ pragma Restrictions (No_Streams);
 pragma Ada_2012;
 pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
 pragma Warnings (Off, "redundant conversion");
-with RFLX.Test.Session_Functions;
+with RFLX.Test.Session_Environment;
 with RFLX.RFLX_Types;
 with RFLX.Test.Option_Data;
 
@@ -20,6 +20,6 @@ package RFLX.Test.Session with
   SPARK_Mode
 is
 
-   procedure Get_Option_Data (Ctx : in out RFLX.Test.Session_Functions.Context; Data : RFLX_Types.Bytes; RFLX_Result : out RFLX.Test.Option_Data.Structure);
+   procedure Get_Option_Data (State : in out RFLX.Test.Session_Environment.State; Data : RFLX_Types.Bytes; RFLX_Result : out RFLX.Test.Option_Data.Structure);
 
 end RFLX.Test.Session;

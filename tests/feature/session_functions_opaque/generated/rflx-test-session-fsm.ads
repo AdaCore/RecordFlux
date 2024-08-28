@@ -25,7 +25,7 @@ is
    type Context is limited
       record
          P : Private_Context;
-         F : RFLX.Test.Session_Functions.Context;
+         E : RFLX.Test.Session_Environment.State;
       end record;
 
    function Uninitialized (Ctx : Context) return Boolean;
