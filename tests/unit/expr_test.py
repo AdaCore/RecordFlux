@@ -680,14 +680,34 @@ def test_neg_substituted() -> None:
     )
 
 
-def test_neg_simplified() -> None:
-    assert Neg(Variable("X")).simplified() == Neg(Variable("X")).simplified()
-    assert Neg(Neg(Variable("X"))).simplified() == Variable("X").simplified()
-    assert Neg(Neg(Neg(Variable("X")))).simplified() == Neg(Variable("X").simplified())
-    assert Neg(Neg(Neg(Neg(Variable("X"))))).simplified() == Variable("X").simplified()
-    assert Neg(Number(42)).simplified() == Number(-42)
-    assert Neg(Neg(Number(42))).simplified() == Number(42)
-    assert Neg(Neg(Neg(Number(42)))).simplified() == Number(-42)
+@pytest.mark.parametrize(
+    ("expr", "expected"),
+    [
+        # Argument is Neg
+        (Neg(Neg(Variable("X"))), Variable("X")),
+        # Argument simplifies to Neg
+        (Neg(Neg(Neg(Variable("X")))), Neg(Variable("X"))),
+        (Neg(Neg(Neg(Neg(Variable("X"))))), Variable("X")),
+        # Argument is Number
+        (Neg(Number(42)), Number(-42)),
+        (Neg(Number(-42)), Number(42)),
+        # Argument simplifies to Number
+        (Neg(Neg(Number(42))), Number(42)),
+        (Neg(Neg(Neg(Number(42)))), Number(-42)),
+        (Neg(Mul(Number(3), Neg(Number(2)))), Number(6)),
+        (Neg(Mul(Number(3), Neg(Number(-2)))), Number(-6)),
+        (Sub(Number(0), Neg(Add(Number(8), Number(7)))), Number(15)),
+        # Argument simplifies to some other expression
+        (
+            Neg(Mul(Variable("X"), Add(Number(2), Number(3)))),
+            Neg(Mul(Variable("X"), Number(5))),
+        ),
+        # Argument cannot be simplified
+        (Neg(Variable("X")), Neg(Variable("X"))),
+    ],
+)
+def test_neg_simplified(expr: Expr, expected: Expr) -> None:
+    assert expr.simplified() == expected
 
 
 def test_add_str() -> None:
