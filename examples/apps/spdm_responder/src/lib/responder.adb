@@ -1,4 +1,5 @@
 with RFLX.SPDM_Responder.Session.FSM;
+with RFLX.SPDM_Responder.Session_Environment;
 with RFLX.RFLX_Types;
 with RFLX.RFLX_Types.Operators;
 
@@ -9,8 +10,11 @@ is
    use RFLX.RFLX_Types;
    use RFLX.RFLX_Types.Operators;
 
+   package SR renames RFLX.SPDM_Responder.Session.FSM;
+   package Session_Environment renames RFLX.SPDM_Responder.Session_Environment;
+
    Buffer : Bytes (Index'First .. Index'First + 1279) := (others => 0);
-   Context : RFLX.SPDM_Responder.Session.FSM.Context;
+   Context : SR.Context;
 
    function Uninitialized return Boolean is (RFLX.SPDM_Responder.Session.FSM.Uninitialized (Context));
 
@@ -29,13 +33,11 @@ is
 
    procedure Responder_Main
    is
-      package SR renames RFLX.SPDM_Responder.Session.FSM;
    begin
       loop
-         --  Eng/RecordFlux/RecordFlux#1032
-         --  Context.Plat_Initialize;
          pragma Loop_Invariant (SR.Uninitialized (Context));
 
+         Session_Environment.Plat_Initialize (Context.E);
          SR.Initialize (Context);
 
          while SR.Active (Context) loop
@@ -70,5 +72,6 @@ is
          SR.Finalize (Context);
       end loop;
    end Responder_Main;
-
+begin
+   Session_Environment.Plat_Initialize (Context.E);
 end Responder;

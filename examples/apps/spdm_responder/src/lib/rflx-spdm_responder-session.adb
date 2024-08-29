@@ -18,28 +18,6 @@ with RFLX.SPDM_Responder.Session_Environment;
 package body RFLX.SPDM_Responder.Session with
    SPARK_Mode
 is
-
-   --  Ensure initialization of State.Instance.
-   --
-   --  This procedure is both implemented and called by the platform code. It is
-   --  called before the start of the state machine and ensures that
-   --  RFLX.SPDM_Responder.Session_Environment.State.Instance is initialized. It
-   --  is not necessary for the state machine to function. If the platform code
-   --  has other means of initializing the
-   --  RFLX.SPDM_Responder.Session_Environment.State this procedure can be
-   --  removed.
-   --
-   --  @param State RFLX.SPDM_Responder.Session_Environment.State.
-   procedure Plat_Initialize (State : in out RFLX.SPDM_Responder.Session_Environment.State)
-   is
-      procedure C_Interface (Instance : out System.Address) with
-         Import,
-         Convention => C,
-         External_Name => "spdm_platform_initialize";
-   begin
-      C_Interface (State.Instance);
-   end Plat_Initialize;
-
    --  Return CT exponent (DSP0274_1.1.0 [178]).
    --
    --  @param State RFLX.SPDM_Responder.Session_Environment.State.
