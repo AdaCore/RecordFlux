@@ -714,3 +714,19 @@ installation_from_testpypi:
     - *setup_gnat
     - *setup_python_venv
     - make test_package PIP_ARGS="--index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ --pre" PACKAGE=RecordFlux
+
+###############
+# Manual jobs #
+###############
+
+rust_crates:
+  services:
+    - image:recordflux
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
+  script:
+    - cargo vendor
+    - tar -czf recordflux-$(date '+%Y%m%d')-rust-crates.tar.gz vendor
+  artifacts:
+    paths:
+      - recordflux-*-rust-crates.tar.gz
+  when: manual
