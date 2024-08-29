@@ -2216,7 +2216,7 @@ def create_field_condition_function(prefix: str, message: Message) -> UnitPart:
                             ty.BIT_LENGTH,
                             [
                                 expr.Variable("Ctx"),
-                                expr.Variable(field.affixed_name, immutable=True),
+                                expr.Variable(field.affixed_name),
                             ],
                         ),
                     ],

@@ -958,12 +958,10 @@ class Rem(MathBinExpr):
 class Name(Expr):
     def __init__(
         self,
-        immutable: bool = False,
         type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(type_, location)
-        self.immutable = immutable
         self._update_str()
 
     def _update_str(self) -> None:
@@ -983,8 +981,6 @@ class Name(Expr):
         func: Callable[[Expr], Expr] | None = None,
         mapping: Mapping[Name, Expr] | None = None,
     ) -> Expr:
-        if self.immutable:
-            return self
         func = substitution(mapping or {}, func)
         return func(self)
 
@@ -1000,7 +996,7 @@ class TypeName(Name):
         location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
-        super().__init__(immutable=False, type_=type_, location=location)
+        super().__init__(type_=type_, location=location)
 
     def __neg__(self) -> Literal:
         raise NotImplementedError
@@ -1028,7 +1024,7 @@ class Literal(Name):
         location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
-        super().__init__(immutable=False, type_=type_, location=location)
+        super().__init__(type_=type_, location=location)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -1072,12 +1068,11 @@ class Variable(Name):
     def __init__(
         self,
         identifier: StrID,
-        immutable: bool = False,
         type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
-        super().__init__(immutable, type_, location)
+        super().__init__(type_, location)
         self._location = location or self.identifier.location
 
     def __eq__(self, other: object) -> bool:
@@ -1108,13 +1103,11 @@ class Variable(Name):
     def copy(
         self,
         identifier: StrID | None = None,
-        immutable: bool | None = None,
         type_: ty.Type | None = None,
         location: Location | None = None,
     ) -> Variable:
         return self.__class__(
             ID(identifier) if identifier is not None else self.identifier,
-            immutable if immutable is not None else self.immutable,
             type_ if type_ is not None else self.type_,
             location if location is not None else self.location,
         )
@@ -1378,13 +1371,12 @@ class Selected(Name):
         self,
         prefix: Expr,
         selector: StrID,
-        immutable: bool = False,
         type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         self.prefix = prefix
         self.selector = ID(selector)
-        super().__init__(immutable, type_, location)
+        super().__init__(type_, location)
 
     def __neg__(self) -> Neg:
         return Neg(self)
@@ -1439,7 +1431,6 @@ class Selected(Name):
             return expr.__class__(
                 expr.prefix.substituted(func),
                 expr.selector,
-                expr.immutable,
                 expr.type_,
                 expr.location,
             )
@@ -1449,33 +1440,30 @@ class Selected(Name):
         self,
         prefix: Expr | None = None,
         selector: StrID | None = None,
-        immutable: bool | None = None,
         type_: ty.Type | None = None,
         location: Location | None = None,
     ) -> Selected:
         return self.__class__(
             prefix if prefix is not None else self.prefix,
             ID(selector) if selector is not None else self.selector,
-            immutable if immutable is not None else self.immutable,
             type_ if type_ is not None else self.type_,
             location if location is not None else self.location,
         )
 
 
 class Call(Name):
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         identifier: StrID,
         type_: ty.Type,
         args: Sequence[Expr] | None = None,
-        immutable: bool = False,
         argument_types: Sequence[ty.Type] | None = None,
         location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.args = args or []
         self.argument_types = argument_types or []
-        super().__init__(immutable, type_, location)
+        super().__init__(type_, location)
 
     def __neg__(self) -> Neg:
         return Neg(self)
@@ -1538,7 +1526,6 @@ class Call(Name):
             expr.identifier,
             expr.type_,
             [a.substituted(func) for a in expr.args],
-            expr.immutable,
             expr.argument_types,
             expr.location,
         )

@@ -1194,7 +1194,7 @@ class ParserGenerator:
                             ty.BOOLEAN,
                             [
                                 expr.Variable("Ctx"),
-                                expr.Variable(l.source.affixed_name, immutable=True),
+                                expr.Variable(l.source.affixed_name),
                             ],
                         ),
                         l.condition,

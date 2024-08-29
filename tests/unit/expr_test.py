@@ -1088,11 +1088,6 @@ def test_mutable_variable_substituted() -> None:
     assert_equal(x.substituted(mapping={Variable("X"): Number(42)}), Number(42))
 
 
-def test_immutable_variable_substituted() -> None:
-    x = Variable("X", immutable=True)
-    assert_equal(x.substituted(mapping={Variable("X"): Number(42)}), Variable("X"))
-
-
 def test_variable_simplified() -> None:
     assert Variable("X").simplified() == Variable("X")
 

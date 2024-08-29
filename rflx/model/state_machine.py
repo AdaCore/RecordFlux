@@ -1111,13 +1111,11 @@ def normalize_identifiers(
                 ID(functions_map[expression.identifier], location=expression.identifier.location),
                 expression.type_,
                 [],
-                expression.immutable,
                 location=expression.location,
             )
         if expression.identifier in variables_map:
             return expr.Variable(
                 ID(variables_map[expression.identifier], location=expression.identifier.location),
-                expression.immutable,
                 expression.type_,
                 location=expression.location,
             )
@@ -1127,7 +1125,6 @@ def normalize_identifiers(
             ID(functions_map[expression.identifier], location=expression.identifier.location),
             expression.type_,
             expression.args,
-            expression.immutable,
             expression.argument_types,
             location=expression.location,
         )
