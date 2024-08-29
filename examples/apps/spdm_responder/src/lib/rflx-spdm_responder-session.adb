@@ -7,11 +7,8 @@ with RFLX.SPDM_Responder.Session_Environment;
 --
 --  @description
 --  This package serves as both an example and a default C binding for the
---  platform code required by SPDM. It includes the minimum required
---  implementation that consists of a
---  RFLX.SPDM_Responder.Session_Environment.State type derived from the SPDM
---  responder session RFLX.SPDM_Responder.Session_Environment.State and
---  implementations for all of its abstract subprograms.
+--  platform code required by the SPDM responder. It includes the minimum required
+--  implementation for all subprograms declared in RFLX.SPDM_Responder.Session.
 --  The implementations of these subprograms contain a binding for a C
 --  interface. This binding is not required for pure SPARK/Ada projects and can
 --  be replaced. Additionally it contains an initialization procedure that is
