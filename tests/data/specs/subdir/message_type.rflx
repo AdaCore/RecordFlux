@@ -1,6 +1,6 @@
 package Message_Type is
 
-   type T is range 0 .. 255 with Size => 8;
+   type T is unsigned 8;
 
    type Simple_PDU is
       message

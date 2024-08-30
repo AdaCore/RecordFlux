@@ -25,7 +25,7 @@ def test_tokenization_with_empty_model() -> None:
     lexer.tokenize((DATA_DIR / "state_machine.rflx").read_text())
     tokens = lexer.tokens
 
-    assert len(tokens) == 274
+    assert len(tokens) == 272
 
 
 def test_tokenization_with_model(model: LSModel) -> None:
@@ -35,7 +35,7 @@ def test_tokenization_with_model(model: LSModel) -> None:
 
     tokens = lexer.tokens
 
-    assert len(tokens) == 274
+    assert len(tokens) == 272
 
 
 def test_search_token(model: LSModel) -> None:
@@ -71,6 +71,14 @@ def test_search_token(model: LSModel) -> None:
         line_number=21,
         character_offset=8,
     )
+    # Search for a token that isn't the first token in its line to cover the line traversal branch
+    assert lexer.search_token(17, 70) == Token(
+        symbol=None,
+        lexeme="Always_Valid",
+        line_number=17,
+        character_offset=68,
+    )
+
     assert lexer.search_token(1, 0) is None
     assert lexer.search_token(1, 10) is None
     assert lexer.search_token(3, 0) is None

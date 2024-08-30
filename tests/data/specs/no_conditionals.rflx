@@ -1,6 +1,6 @@
 package No_Conditionals is
 
-   type Tag is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Tag is unsigned 16;
 
    type Message is
       message

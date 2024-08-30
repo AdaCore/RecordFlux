@@ -1,6 +1,6 @@
 package HTTP_2 is
 
-   type Payload_Length is range 0 .. 2 ** 24 - 1 with Size => 24;
+   type Payload_Length is unsigned 24;
 
    type Frame_Type is
       (DATA          => 0,
@@ -24,14 +24,14 @@ package HTTP_2 is
        MAX_HEADER_LIST_SIZE   => 16#06#)
    with Size => 16;
 
-   type Settings_Value_Generic is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Settings_Value_Generic is unsigned 32;
    type Settings_Value_Enable_Push is range 0 .. 1 with Size => 32;
    type Settings_Value_Initial_Window_Size is range 0 .. 2 ** 31 - 1 with Size => 32;
    type Settings_Value_Max_Frame_Size is range 2 ** 14 .. 2 ** 24 - 1 with Size => 32;
 
    type Zero_Bit is range 0 .. 0 with Size => 1;
-   type Stream_ID is range 0 .. 2 ** 31 - 1 with Size => 31;
-   type Weight is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Stream_ID is unsigned 31;
+   type Weight is unsigned 8;
    type Error_Code is
       (NO_ERROR            => 16#00#,
        PROTOCOL_ERROR      => 16#01#,
@@ -50,7 +50,7 @@ package HTTP_2 is
    with Size => 32;
 
    type Window_Size_Increment is range 1 .. 2 ** 31 - 1 with Size => 31;
-   type Pad_Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Pad_Length is unsigned 8;
 
    type Settings_Parameter is
       message

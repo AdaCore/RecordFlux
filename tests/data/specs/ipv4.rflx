@@ -2,18 +2,18 @@ package IPv4 is
 
    type Version is range 4 .. 4 with Size => 4;
    type IHL is range 5 .. 15 with Size => 4;
-   type DCSP is range 0 .. 2 ** 6 - 1 with Size => 6;
-   type ECN is range 0 .. 2 ** 2 - 1 with Size => 2;
-   type Total_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Identification is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Fragment_Offset is range 0 .. 2 ** 13 - 1 with Size => 13;
-   type TTL is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type DCSP is unsigned 6;
+   type ECN is unsigned 2;
+   type Total_Length is unsigned 16;
+   type Identification is unsigned 16;
+   type Fragment_Offset is unsigned 13;
+   type TTL is unsigned 8;
    type Protocol is (P_ICMP => 1, P_UDP => 17) with Size => 8, Always_Valid;
-   type Header_Checksum is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Address is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Header_Checksum is unsigned 16;
+   type Address is unsigned 32;
 
    type Option_Class is (Control => 0, Debugging_And_Measurement => 2) with Size => 2;
-   type Option_Number is range 0 .. 2 ** 5 - 1 with Size => 5;
+   type Option_Number is unsigned 5;
    type Option_Length is range 2 .. 2 ** 8 - 1 with Size => 8;
 
    type Option is

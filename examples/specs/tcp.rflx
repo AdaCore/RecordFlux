@@ -2,14 +2,14 @@ package TCP is
 
    -- RFC 793
 
-   type Port is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Sequence_Number is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type Acknowledgment_Number is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Port is unsigned 16;
+   type Sequence_Number is unsigned 32;
+   type Acknowledgment_Number is unsigned 32;
    type Data_Offset is range 5 .. 2 ** 4 - 1 with Size => 4;
    type Reserved is range 0 .. 0 with Size => 3;
-   type Window is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Checksum is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Urgent_Pointer is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Window is unsigned 16;
+   type Checksum is unsigned 16;
+   type Urgent_Pointer is unsigned 16;
 
    type Kind is
       (End_Of_Option_List   => 0,
@@ -22,11 +22,11 @@ package TCP is
    with Size => 8;
 
    type Length is range 2 .. 2 ** 8 - 1 with Size => 8;
-   type TSval is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type TSecr is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type Shift_Cnt is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type Max_Seg_Size is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type SACK_Edge is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type TSval is unsigned 32;
+   type TSecr is unsigned 32;
+   type Shift_Cnt is unsigned 8;
+   type Max_Seg_Size is unsigned 16;
+   type SACK_Edge is unsigned 32;
 
    type SACK_Block is
       message

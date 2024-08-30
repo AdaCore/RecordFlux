@@ -46,7 +46,7 @@ package IPv6 is
          Value : Option_Value;
       end message;
 
-   type Data_Len is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Data_Len is unsigned 8;
 
    type Option is
       message
@@ -101,7 +101,7 @@ package IPv6 is
        RT_Reserved         => 255)
    with Size => 8, Always_Valid;
 
-   type Segments_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Segments_Count is unsigned 8;
 
    type Routing_Base_Header is
       message
@@ -131,8 +131,8 @@ package IPv6 is
 
    -- RPL Routing Header (RFC 6554, 3)
 
-   type Cmpr_Length is range 0 .. 15 with Size => 4;
-   type Pad_Length is range 0 .. 15 with Size => 4;
+   type Cmpr_Length is unsigned 4;
+   type Pad_Length is unsigned 4;
 
    -- Eng/RecordFlux/RecordFlux#608
    -- As per RFC 6554, section 3, the segments sent in the RPL routing header actually are a
@@ -169,8 +169,8 @@ package IPv6 is
 
    -- Segment Routing Header, SRH (RFC 8754, 2)
 
-   type SRH_Last_Entry_Index is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type SRH_Tag is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type SRH_Last_Entry_Index is unsigned 8;
+   type SRH_Tag is unsigned 16;
 
    type SRH_TLV_Kind is
       (SRH_TK_Pad1         =>   0,
@@ -201,7 +201,7 @@ package IPv6 is
             with Size => 8 * Length;
       end message;
 
-   type SRH_HMAC_Key_ID is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type SRH_HMAC_Key_ID is unsigned 32;
 
    type SRH_HMAC_TLV is
       message
@@ -244,8 +244,8 @@ package IPv6 is
 
    -- Fragment Header (RFC 8200, 4.5)
 
-   type FH_Offset is range 0 .. 2 ** 13 - 1 with Size => 13;
-   type FH_Identification is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type FH_Offset is unsigned 13;
+   type FH_Identification is unsigned 32;
 
    type Fragment_Header is
       message
@@ -267,10 +267,10 @@ package IPv6 is
    -- Packet (RFC 8200, 3)
 
    type Version is range 6 .. 6 with Size => 4;
-   type Traffic_Class is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type Flow_Label is range 0 .. 2 ** 20 - 1 with Size => 20;
-   type Payload_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Hop_Limit is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Traffic_Class is unsigned 8;
+   type Flow_Label is unsigned 20;
+   type Payload_Length is unsigned 16;
+   type Hop_Limit is unsigned 8;
 
    type Packet is
       message

@@ -17,7 +17,7 @@ package RFLX.Test with
   SPARK_Mode
 is
 
-   type T is range 0 .. 127 with
+   type T is range 0 .. 2**7 - 1 with
      Size =>
        7;
 

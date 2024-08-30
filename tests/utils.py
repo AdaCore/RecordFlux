@@ -27,7 +27,7 @@ from rflx.model import (
     TypeDecl,
     declaration as decl,
 )
-from rflx.model.type_decl import UncheckedInteger
+from rflx.model.type_decl import UncheckedInteger, UncheckedUnsignedInteger
 from rflx.rapidflux import Location, RecordFluxError
 from rflx.specification import Parser
 from rflx.specification.parser import (
@@ -1260,13 +1260,13 @@ def parse_unsigned_type(
     data: str,
     rule: str = lang.GrammarRule.extended_expression_rule,
     name: str = "T",
-) -> UncheckedInteger:
+) -> UncheckedUnsignedInteger:
     ast_node, filename = parse(data, rule)
     assert isinstance(ast_node, lang.UnsignedTypeDef)
     error = RecordFluxError()
     unsigned_type = create_unsigned(error, ID(name, Location((1, 1), filename)), ast_node, filename)
     error.propagate()
-    assert isinstance(unsigned_type, UncheckedInteger)
+    assert isinstance(unsigned_type, UncheckedUnsignedInteger)
     return unsigned_type
 
 

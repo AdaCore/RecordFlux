@@ -9,9 +9,9 @@ package Message is
                          MT_Unconstrained_Data => 6,
                          MT_Unconstrained_Options => 7) with Size => 8;
 
-   type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Length is unsigned 16;
 
-   type Value is range 0 .. 255 with Size => 8;
+   type Value is range 0 .. 100 with Size => 8;
 
    type Values is sequence of Value;
 

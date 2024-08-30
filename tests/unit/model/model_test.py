@@ -258,7 +258,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 
 
 def test_write_specification_files(tmp_path: Path) -> None:
-    u = Integer("P::U", Number(0), Number(255), Number(8))
+    u = type_decl.UnsignedInteger("P::U", Number(8))
     i = Integer("P::I", Number(2), Number(42), Number(16))
     s = StateMachine("P::S", [State("A", [Transition("null")])], [], [], [])
     v = type_decl.Sequence("P::V", element_type=i)
@@ -304,8 +304,8 @@ def test_write_specification_files(tmp_path: Path) -> None:
 
 
 def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
-    s = Integer("P::S", Number(0), Number(65535), Number(16))
-    t = Integer("P::T", Number(0), Number(255), Number(8))
+    s = type_decl.UnsignedInteger("P::S", Number(16))
+    t = type_decl.UnsignedInteger("P::T", Number(8))
     v = type_decl.Sequence("P::V", element_type=t)
     m = Message(
         ID("P::M", Location((1, 1))),
@@ -339,10 +339,10 @@ def test_write_specification_files_missing_deps(tmp_path: Path) -> None:
 
 
 def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
-    t = Integer("P::T", Number(0), Number(255), Number(8))
+    t = type_decl.UnsignedInteger("P::T", Number(8))
     u = type_decl.Sequence("Q::U", element_type=t)
     u1 = type_decl.Sequence("Q::U1", element_type=t)
-    v = Integer("R::V", Number(0), Number(65535), Number(16))
+    v = type_decl.UnsignedInteger("R::V", Number(16))
     links = [
         Link(INITIAL, Field("Victor"), location=Location((1, 1))),
         Link(Field("Victor"), Field("Uniform"), location=Location((2, 2))),
@@ -397,10 +397,10 @@ def test_write_specification_file_multiple_packages(tmp_path: Path) -> None:
 
 
 def test_write_specification_file_multiple_packages_missing_deps(tmp_path: Path) -> None:
-    t = Integer("P::T", Number(0), Number(255), Number(8))
+    t = type_decl.UnsignedInteger("P::T", Number(8))
     u = type_decl.Sequence("R::U", element_type=t)
     u1 = type_decl.Sequence("Q::U1", element_type=t)
-    v = Integer("R::V", Number(0), Number(65535), Number(16))
+    v = type_decl.UnsignedInteger("R::V", Number(16))
     links = [
         Link(INITIAL, Field("Victor"), location=Location((1, 1))),
         Link(Field("Victor"), Field("Uniform"), location=Location((2, 2))),

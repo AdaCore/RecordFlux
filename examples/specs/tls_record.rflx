@@ -53,9 +53,9 @@ package TLS_Record is
    --  In DTLS 1.3 a plaintext epoch can only have value 0 (see RFC 9147
    --  Section 4). In DTLS 1.2 such a limitation does not exist (see RFC 6347).
    --  Hence, the allowed values are not constrained here.
-   type Plaintext_Epoch is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Plaintext_Epoch is unsigned 16;
 
-   type Plaintext_Sequence_Number is range 0 .. 2 ** 48 - 1 with Size => 48;
+   type Plaintext_Sequence_Number is unsigned 48;
 
    -- Represents both RFC 8446 TLSPlaintext and RFC 9147 DTLSPlaintext
    type TLS_Plaintext is
@@ -129,14 +129,14 @@ package TLS_Record is
    type Ciphertext_Prefix is range 1 .. 1 with Size => 3;
 
    --  Two lower bits of the Epoch value.
-   type Epoch_Low is range 0 .. 3 with Size => 2;
+   type Epoch_Low is unsigned 2;
 
    --  RFC 9146
-   type CID is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type CID is unsigned 8;
 
-   type Ciphertext_Sequence_Number_8 is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Ciphertext_Sequence_Number_8 is unsigned 8;
 
-   type Ciphertext_Sequence_Number_16 is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Ciphertext_Sequence_Number_16 is unsigned 16;
 
    --  RFC 8446 5.2
    type Ciphertext_Length is range 0 .. 2 ** 14 + 256 with Size => 16;

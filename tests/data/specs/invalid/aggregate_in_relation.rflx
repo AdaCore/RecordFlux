@@ -1,10 +1,10 @@
 package Aggregate_In_Relation is
 
-   type B is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type C is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type D is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type B is unsigned 8;
+   type C is unsigned 8;
+   type D is unsigned 8;
 
-   type E is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type E is unsigned 8;
    type S is sequence of E;
 
    type Aggregate_In_Relation_Msg is

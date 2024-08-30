@@ -15,14 +15,14 @@
 
 package DCCP is
 
-   type Port_Type is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Port_Type is unsigned 16;
 
    -- start offset at 3 since this is the smallest packet size possible
    type Data_Offset_Type is range 3 .. 2 ** 8 - 1 with Size => 8;
-   type Checksum_Type is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type CCVal_Type is range 0 .. 2 ** 4 - 1 with Size => 4;
-   type Checksum_Coverage_Type is range 0 .. 2 ** 4 - 1 with Size => 4;
-   type Reserved_3_Type is range 0 .. 2 ** 3 - 1 with Size => 3;
+   type Checksum_Type is unsigned 16;
+   type CCVal_Type is unsigned 4;
+   type Checksum_Coverage_Type is unsigned 4;
+   type Reserved_3_Type is unsigned 3;
 
    type Type_Field is
    (
@@ -38,7 +38,7 @@ package DCCP is
       DCCP_SYNCACK => 9
    ) with Size => 4;
 
-   type CsCov_Type is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type CsCov_Type is unsigned 4;
 
    type Ext_Seq_Type is
    (
@@ -46,15 +46,15 @@ package DCCP is
       NOT_EXTENDED => 0
    ) with Size => 1;
 
-   type Sequence_Number_Long_Type is range 0 .. 2 ** 48 - 1 with Size => 48;
-   type Sequence_Number_Short_Type is range 0 .. 2 ** 24 - 1 with Size => 24;
+   type Sequence_Number_Long_Type is unsigned 48;
+   type Sequence_Number_Short_Type is unsigned 24;
 
-   type Reserved_8_Type is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type Reserved_16_Type is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Ack_Number_Long_Type is range 0 .. 2 ** 48 - 1 with Size => 48;
-   type Ack_Number_Short_Type is range 0 .. 2 ** 24 - 1 with Size => 24;
+   type Reserved_8_Type is unsigned 8;
+   type Reserved_16_Type is unsigned 16;
+   type Ack_Number_Long_Type is unsigned 48;
+   type Ack_Number_Short_Type is unsigned 24;
 
-   type Service_Code_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Service_Code_Type is unsigned 32;
 
    type Reset_Code_Type is
    (
@@ -74,7 +74,7 @@ package DCCP is
       --  128 - 255 are CCID-specific codes
    ) with Size => 8;
 
-   type Data_Type is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Data_Type is unsigned 8;
 
    type Opt_Type is
    (
@@ -104,7 +104,7 @@ package DCCP is
       CCID3_RCV_RATE => 194
    ) with Size => 8;
 
-   type Option_Length_Type is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Option_Length_Type is unsigned 8;
    type Option_Feature_Type is
    (
       FEATURE_RESERVED => 0,
@@ -121,10 +121,10 @@ package DCCP is
       --  128 - 255 CCID-Specific Features
    ) with Size => 8;
 
-   type Receive_Rate_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type Loss_Rate_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type Timestamp_Option_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type Timestamp_Echo_Option_Type is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Receive_Rate_Type is unsigned 32;
+   type Loss_Rate_Type is unsigned 32;
+   type Timestamp_Option_Type is unsigned 32;
+   type Timestamp_Echo_Option_Type is unsigned 32;
 
    type Option is
       message

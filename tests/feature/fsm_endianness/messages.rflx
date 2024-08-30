@@ -1,6 +1,6 @@
 package Messages is
 
-   type Integer is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Integer is unsigned 32;
 
    type Enum_T is
       (Enum_A => 0,

@@ -129,7 +129,7 @@ def test_multiple_errors() -> None:
             f'{path}:220:29: error: fixed size field "F1" does not permit a size aspect',
             f"{path}:219:18: help: modify this field's type, or alternatively, "
             "remove the size aspect",
-            f"{path}:187:52: note: associated type size defined here",
+            f"{path}:187:25: note: associated type size defined here",
             f"{path}:229:30: error: illegal first aspect on initial link",
             f'{path}:238:19: error: undefined variable "F1"',
             f'{path}:247:29: error: negative size for field "F2"',

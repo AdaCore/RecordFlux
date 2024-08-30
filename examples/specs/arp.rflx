@@ -13,7 +13,7 @@ package ARP is
 
    type Opcode is (OP_REQUEST => 1, OP_REPLY => 2) with Size => 16;
 
-   type Address_Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Address_Length is unsigned 8;
 
    type Packet_IPv4 is
       message

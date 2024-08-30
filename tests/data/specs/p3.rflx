@@ -2,7 +2,7 @@ with P2;
 
 package P3 is
 
-   type T is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type T is unsigned 32;
 
    type Packet is
       message

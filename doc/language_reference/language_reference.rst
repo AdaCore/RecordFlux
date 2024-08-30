@@ -304,8 +304,8 @@ At the moment only non-negative integers are supported.
 
 The set of values of a range integer type consists of all numbers from the lower bound to the upper bound.
 The lower bound must be >= 0 and \<= the upper bound.
-The bit size has to be specified explicitly and must be a value between 1 and 63 (included).
-It can also be larger and does not have to be a multiple of 8 bits.
+The bit size has to be specified explicitly and must be a value between 1 and 63 (inclusive).
+It does not have to be a multiple of 8 bits.
 However, the size of the type must be able to accommodate the upper bound.
 
 ..

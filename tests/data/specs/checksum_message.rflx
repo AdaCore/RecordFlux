@@ -1,8 +1,8 @@
 package Checksum_Message is
 
-   type A is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type B is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type C is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type A is unsigned 8;
+   type B is unsigned 8;
+   type C is unsigned 8;
 
    type Message is
       message

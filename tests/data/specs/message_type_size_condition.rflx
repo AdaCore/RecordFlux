@@ -1,6 +1,6 @@
 package Message_Type_Size_Condition is
 
-   type T1 is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type T1 is unsigned 8;
    type Message is
       message
          F1 : T1

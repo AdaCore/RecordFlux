@@ -2,7 +2,7 @@ with P4;
 
 package P2 is
 
-   type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Length is unsigned 16;
 
    type Packet is
       message

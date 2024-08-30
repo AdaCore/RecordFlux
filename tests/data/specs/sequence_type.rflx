@@ -1,6 +1,6 @@
 package Sequence_Type is
 
-   type Byte is range 0 .. 255 with Size => 8;
+   type Byte is unsigned 8;
    type Bytes is sequence of Byte;
 
    type Foo is

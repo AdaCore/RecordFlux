@@ -2,7 +2,7 @@ package TLV is
 
    type Tag is (Msg_Data => 1, Msg_Error => 3) with Size => 8;
 
-   type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Length is unsigned 16;
 
    type Message is
       message

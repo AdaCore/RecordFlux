@@ -6,9 +6,9 @@ package SPDM is
 
    -- Base types
 
-   type Length_16 is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Length_24 is range 0 .. 2 ** 24 - 1 with Size => 24;
-   type Index is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Length_16 is unsigned 16;
+   type Length_24 is unsigned 24;
+   type Index is unsigned 8;
 
    -- Eng/RecordFlux/RecordFlux#1058
    -- Signature_Length should be 64 .. 512
@@ -35,10 +35,10 @@ package SPDM is
 
    -- 2.5.1 Version encoding
 
-   type Major_Version is range 0 .. 2 ** 4 - 1 with Size => 4;
-   type Minor_Version is range 0 .. 2 ** 4 - 1 with Size => 4;
-   type Update_Version_Number is range 0 .. 2 ** 4 - 1 with Size => 4;
-   type Alpha is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type Major_Version is unsigned 4;
+   type Minor_Version is unsigned 4;
+   type Update_Version_Number is unsigned 4;
+   type Alpha is unsigned 4;
 
    -- 8.3 SPDM request codes
 
@@ -88,7 +88,7 @@ package SPDM is
 
    --  Common types
 
-   type Slot_Present is range 0 .. 1 with Size => 1;
+   type Slot_Present is unsigned 1;
 
    type Slot_Mask is
       message
@@ -139,7 +139,7 @@ package SPDM is
 
    -- 10.3 GET_CAPABILITIES request and CAPABILITIES response messages
 
-   type CT_Exponent is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type CT_Exponent is unsigned 8;
    type PSK_Request_Cap is
       (PSK_Req_Unsupported => 0,
        PSK_Req_Supported   => 1)
@@ -355,9 +355,9 @@ package SPDM is
 
    type Measurement_Record is sequence of Measurement_Block;
 
-   type Measurement_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Measurement_Count is unsigned 8;
 
-   type Block_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Block_Count is unsigned 8;
 
    type Measurements_Response (Signature_Length : Signature_Length;
                                Has_Signature    : Boolean) is
@@ -396,8 +396,8 @@ package SPDM is
        Reg_JEDEC     => 8)
    with Size => 8;
 
-   type Algorithm_ID_16 is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Algorithm_ID_32 is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Algorithm_ID_16 is unsigned 16;
+   type Algorithm_ID_32 is unsigned 32;
 
    type Ext_Alg is
       message
@@ -432,7 +432,7 @@ package SPDM is
        Key_Schedule      => 5)
    with Size => 8;
 
-   type Alg_Count is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type Alg_Count is unsigned 4;
 
    type Alg_Struct is
       message
@@ -487,9 +487,9 @@ package SPDM is
 
    -- 10.4 NEGOTIATE_ALGORITHMS request and ALGORITHMS response messages
 
-   type Alg_Struct_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type Ext_Asym_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type Ext_Hash_Count is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Alg_Struct_Count is unsigned 8;
+   type Ext_Asym_Count is unsigned 8;
+   type Ext_Hash_Count is unsigned 8;
 
    type Negotiate_Algorithms_Request is
       message
@@ -662,7 +662,7 @@ package SPDM is
        Trusted_Environment => 16#FF#)
    with Size => 8;
 
-   type Offset is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Offset is unsigned 16;
 
    type Get_Certificate_Request is
       message
@@ -756,10 +756,10 @@ package SPDM is
        Vendor                 => 16#FF#)
    with Size => 8;
 
-   type Error_Session_ID is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Error_Session_ID is unsigned 8;
 
-   type RDT_Exponent is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type Token is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type RDT_Exponent is unsigned 8;
+   type Token is unsigned 8;
    type RDTM is range 1 .. 2 ** 8 - 1 with Size => 8;
 
    type Response_Not_Ready_Data is
@@ -772,9 +772,9 @@ package SPDM is
 
    type Zero_Error_Data is range 0 .. 0 with Size => 8;
 
-   type Vendor_ID_Len is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type Vendor_ID_Double is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Vendor_ID_Quad is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Vendor_ID_Len is unsigned 8;
+   type Vendor_ID_Double is unsigned 16;
+   type Vendor_ID_Quad is unsigned 32;
 
    type Error_Response is
       message
@@ -846,7 +846,7 @@ package SPDM is
       end message;
    -- 10.16 KEY_EXCHANGE request and KEY_EXCHANGE_RSP response messages
 
-   type Session_ID is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Session_ID is unsigned 16;
 
    type Key_Exchange_Request (Exchange_Data_Length : Exchange_Data_Length) is
       message
@@ -864,7 +864,7 @@ package SPDM is
       end message
          with Byte_Order => Low_Order_First;
 
-   type Heartbeat_Period is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Heartbeat_Period is unsigned 8;
 
    type Key_Exchange_Response (Exchange_Data_Length   : Exchange_Data_Length;
                                Hash_Length            : Hash_Length;
@@ -959,7 +959,7 @@ package SPDM is
 
    type Key_Operation is (Update_Key => 1, Update_All_Keys => 2, Verify_New_Key => 3) with Size => 8;
 
-   type Key_Update_Tag is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Key_Update_Tag is unsigned 8;
 
    type Key_Update_Request is
       message

@@ -16,7 +16,7 @@ package Pub_Sub is
       SUCCESS => 15
    ) with Size => 4;
 
-   type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Length is unsigned 8;
 
    type Message is
       message

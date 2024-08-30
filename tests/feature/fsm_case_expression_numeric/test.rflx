@@ -9,7 +9,7 @@ package Test is
          Value : Tiny_Int;
       end message;
 
-   type Int is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Int is unsigned 16;
 
    generic
       Channel : Channel with Readable, Writable;

@@ -1,7 +1,7 @@
 package Unaligned_Field is
 
-   type T1 is range 0 .. 2 ** 7 - 1 with Size => 7;
-   type T2 is range 0 .. 2 ** 18 - 1 with Size => 18;
+   type T1 is unsigned 7;
+   type T2 is unsigned 18;
 
    type M1 is
       message

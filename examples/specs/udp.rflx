@@ -1,8 +1,8 @@
 package UDP is
 
-   type Port is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Port is unsigned 16;
    type Length is range 8 .. 2 ** 16 - 1 with Size => 16;
-   type Checksum is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Checksum is unsigned 16;
 
    type Datagram is
       message

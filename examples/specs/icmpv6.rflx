@@ -4,7 +4,7 @@ package ICMPv6 is
 
    type Reserved_8 is range 0 .. 0 with Size => 8;
    type Reserved_32 is range 0 .. 0 with Size => 32;
-   type Checksum is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Checksum is unsigned 16;
 
    type Tag is
       (Destination_Unreachable     =>   1,
@@ -43,9 +43,9 @@ package ICMPv6 is
    with Size => 8;
 
    type MTU is range 1280 .. 2 ** 32 - 1 with Size => 32;
-   type Pointer is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type Identifier is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Sequence_Number is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Pointer is unsigned 32;
+   type Identifier is unsigned 16;
+   type Sequence_Number is unsigned 16;
 
    type Message is
       message

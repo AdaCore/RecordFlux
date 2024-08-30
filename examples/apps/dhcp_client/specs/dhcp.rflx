@@ -35,7 +35,7 @@ package DHCP is
    with Size => 8;
 
    type Len is range 1 .. 255 with Size => 8;
-   type Subnet_Mask is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Subnet_Mask is unsigned 32;
    type Routers is sequence of IPv4::Address;
    type Time_Servers is sequence of IPv4::Address;
    type Name_Servers is sequence of IPv4::Address;
@@ -66,7 +66,7 @@ package DHCP is
 
    type X_Window_System_Font_Servers is sequence of IPv4::Address;
    type X_Window_System_Display_Managers is sequence of IPv4::Address;
-   type Lease_Time is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Lease_Time is unsigned 32;
 
    type Option_Overload is
       (File_Overload           => 1,
@@ -89,7 +89,7 @@ package DHCP is
 
    type Option_Codes is sequence of Code;
    type Maximum_DHCP_Message_Size is range 576 .. 2 ** 16 - 1 with Size => 16;
-   type Time_Interval is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Time_Interval is unsigned 32;
 
    type Option is
       message
@@ -184,9 +184,9 @@ package DHCP is
    -- https://www.iana.org/assignments/arp-parameters/arp-parameters.xml#arp-parameters-2.
    type Hardware_Address_Type is (HT_Reserved => 0, HT_Ethernet_10 => 1) with Size => 8, Always_Valid;
    type Hardware_Address_Length is (HL_Ethernet => 6) with Size => 8;
-   type Hops is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type Transaction_ID is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type Secs is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Hops is unsigned 8;
+   type Transaction_ID is unsigned 32;
+   type Secs is unsigned 16;
    type Reserved_Flags is range 0 .. 0 with Size => 15;
    type Magic_Cookie is range 16#63825363# .. 16#63825363# with Size => 32;
    type Options is sequence of Option;

@@ -1,12 +1,12 @@
 package Multiple_Errors is
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type INVALID is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type INVALID is unsigned 8;
+   type INVALID is unsigned 8;
+   type INVALID is unsigned 8;
+   type INVALID is unsigned 8;
+   type INVALID is unsigned 8;
+   type INVALID is unsigned 8;
+   type INVALID is unsigned 8;
+   type INVALID is unsigned 8;
+   type INVALID is unsigned 8;
+   type INVALID is unsigned 8;
 end Multiple_Errors;

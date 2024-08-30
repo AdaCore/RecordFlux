@@ -90,7 +90,7 @@ is
      Pre =>
        Valid_Length (Val);
 
-   type Value is range 0 .. 255 with
+   type Value is range 0 .. 2**8 - 1 with
      Size =>
        8;
 

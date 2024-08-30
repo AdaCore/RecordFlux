@@ -1,8 +1,8 @@
 package TLV_With_Checksum is
 
    type Tag is (Msg_Undefined => 0, Msg_Data => 1, Msg_Error => 3) with Size => 8;
-   type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Checksum is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Length is unsigned 16;
+   type Checksum is unsigned 32;
 
    type Message is
       message

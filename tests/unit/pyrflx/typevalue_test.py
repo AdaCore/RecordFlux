@@ -685,7 +685,7 @@ def test_sequence_preserve_value(enum_value: EnumValue) -> None:
     assert type_sequence.value == [intval]
     with pytest.raises(
         PyRFLXError,
-        match="^error: cannot assign EnumValue to an sequence of Integer$",
+        match="^error: cannot assign EnumValue to a sequence of Integer$",
     ):
         type_sequence.assign([enum_value])
     assert type_sequence.value == [intval]
@@ -722,7 +722,7 @@ def test_sequence_assign_invalid(
     enum_value.assign("One")
     with pytest.raises(
         PyRFLXError,
-        match="^error: cannot assign EnumValue to an sequence of Integer$",
+        match="^error: cannot assign EnumValue to a sequence of Integer$",
     ):
         type_sequence.assign([enum_value])
 
@@ -740,7 +740,7 @@ def test_sequence_assign_invalid(
 
     with pytest.raises(
         PyRFLXError,
-        match="^error: cannot assign EnumValue to an sequence of Message$",
+        match="^error: cannot assign EnumValue to a sequence of Message$",
     ):
         msg_sequence.assign([enum_value])
 
@@ -756,7 +756,7 @@ def test_sequence_assign_invalid(
 
     with pytest.raises(
         PyRFLXError,
-        match='^error: cannot assign "Frame" to an sequence of "Message"$',
+        match='^error: cannot assign "Frame" to a sequence of "Message"$',
     ):
         msg_sequence.assign([tlv_message_value, ethernet_frame_value])
 

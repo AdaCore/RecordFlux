@@ -8,14 +8,14 @@ package ATM is
        NNI)
    with Size => 1;
 
-   type Generic_Flow_Control is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type Generic_Flow_Control is unsigned 4;
    type Virtual_Path_Identifier_UNI is range 0 .. 8 - 1 with Size => 8;
-   type Virtual_Channel_Identifier is range 0 .. 2 ** 16 - 1 with Size => 16;
-   type Header_Error_Control is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Virtual_Channel_Identifier is unsigned 16;
+   type Header_Error_Control is unsigned 8;
 
    -- The virtual path identifier is different between user-network interface
    -- and network-network interface
-   type Virtual_Path_Identifier_NNI is range 0 .. 2 ** 12 - 1 with Size => 12;
+   type Virtual_Path_Identifier_NNI is unsigned 12;
 
    type Cell (Cell_Format : Cell_Type) is
       message

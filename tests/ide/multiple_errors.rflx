@@ -73,7 +73,7 @@ package RFLX_Invalid is
       end message;
 
    -- error: unsupported element type size
-   type E6 is range 0 .. 2 ** 4 - 1 with Size => 4;
+   type E6 is unsigned 4;
    type A3 is sequence of E6;
 
    type SDU1 is
@@ -184,7 +184,7 @@ package RFLX_Invalid is
                if Data = [1, 7, 1000];
       end message;
 
-   type U32 is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type U32 is unsigned 32;
 
    -- error: conflicting condition
    type M8 is
@@ -255,8 +255,8 @@ package RFLX_Invalid is
          F2 : Opaque;
       end message;
 
-   type U8 is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type U16 is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type U8 is unsigned 8;
+   type U16 is unsigned 16;
    type M16 is
       message
          F1 : U8;

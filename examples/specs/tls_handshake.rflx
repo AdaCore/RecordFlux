@@ -16,10 +16,10 @@ package TLS_Handshake is
    -- this specification could potentially still be used for older versions of
    -- TLS / DTLS provided that these constraints have been met.
 
-   type Length is range 0 .. 2 ** 24 - 1 with Size => 24;
+   type Length is unsigned 24;
 
    -- DTLS 1.3 (RFC 9147)
-   type Message_Seq is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Message_Seq is unsigned 16;
 
    type TLS_Handshake is
       message
@@ -76,7 +76,7 @@ package TLS_Handshake is
    -- derived semi-automatically from the IANA Tls_Extensiontype_Values
    -- registry.
 
-   type Data_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Data_Length is unsigned 16;
 
    -- TODO(eng/recordflux/RecordFlux#1440): See the referenced ticket for a
    -- potential way to slightly reduce the copyied contents of the extension
@@ -432,7 +432,7 @@ package TLS_Handshake is
    type Legacy_Session_ID_Length is range 0 .. 32 with Size => 8;
 
    -- DTLS 1.3 (RFC 9147)
-   type Legacy_Cookie_Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Legacy_Cookie_Length is unsigned 8;
 
    type Cipher_Suites_Length is range 2 .. 2 ** 16 - 2 with Size => 16;
 
@@ -690,7 +690,7 @@ package TLS_Handshake is
 
    -- Server Parameters
 
-   type Encrypted_Extensions_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Encrypted_Extensions_Length is unsigned 16;
 
    type Encrypted_Extensions is
       message
@@ -705,7 +705,7 @@ package TLS_Handshake is
    for DTLS_Handshake use (Payload => Encrypted_Extensions)
       if Tag = Tls_Parameters::Encrypted_Extensions;
 
-   type Certificate_Request_Context_Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Certificate_Request_Context_Length is unsigned 8;
    type Certificate_Request_Extensions_Length is range 2 .. 2 ** 16 - 1 with Size => 16;
 
    type Certificate_Request is
@@ -728,7 +728,7 @@ package TLS_Handshake is
 
    type ASN1_Subject_Public_Key_Info_Length is range 1 .. 2 ** 24 - 1 with Size => 24;
    type Cert_Data_Length is range 1 .. 2 ** 24 - 1 with Size => 24;
-   type Certificate_Extensions_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Certificate_Extensions_Length is unsigned 16;
 
    type Certificate_Entry is
       message
@@ -740,7 +740,7 @@ package TLS_Handshake is
             with Size => Extensions_Length * 8;
       end message;
 
-   type Certificate_List_Length is range 0 .. 2 ** 24 - 1 with Size => 24;
+   type Certificate_List_Length is unsigned 24;
    type Certificate_Entries is sequence of Certificate_Entry;
 
    type Certificate is
@@ -759,7 +759,7 @@ package TLS_Handshake is
    for DTLS_Handshake use (Payload => Certificate)
       if Tag = Tls_Parameters::Certificate;
 
-   type Signature_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Signature_Length is unsigned 16;
 
    type Certificate_Verify is
       message
@@ -799,9 +799,9 @@ package TLS_Handshake is
 
    -- Post-TLS_Handshake Messages
 
-   type Ticket_Lifetime is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type Ticket_Age_Add is range 0 .. 2 ** 32 - 1 with Size => 32;
-   type Ticket_Nonce_Length is range 0 .. 255 with Size => 8;
+   type Ticket_Lifetime is unsigned 32;
+   type Ticket_Age_Add is unsigned 32;
+   type Ticket_Nonce_Length is unsigned 8;
    type Ticket_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
    type New_Session_Ticket_Extensions_Length is range 0 .. 2 ** 16 - 2 with Size => 16;
 
@@ -1013,9 +1013,9 @@ package TLS_Handshake is
 
    -- OID Filters Extension
 
-   type Filters_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Filters_Length is unsigned 16;
    type OID_Length is range 1 .. 2 ** 8 - 1 with Size => 8;
-   type Values_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Values_Length is unsigned 16;
 
    type Filter is
       message
@@ -1082,7 +1082,7 @@ package TLS_Handshake is
 
    type Key_Share_Entries is sequence of Key_Share_Entry;
 
-   type Key_Shares_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Key_Shares_Length is unsigned 16;
 
    type Key_Share_CH is
       message
@@ -1131,7 +1131,7 @@ package TLS_Handshake is
 
    -- Early Data Indication Extension
 
-   type Max_Early_Data_Size is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Max_Early_Data_Size is unsigned 32;
 
    type Early_Data_Indication is
       message
@@ -1151,7 +1151,7 @@ package TLS_Handshake is
    -- Pre-Shared Key Extension
 
    type Identity_Length is range 1 .. 2 ** 16 - 1 with Size => 16;
-   type Obfuscated_Ticket_Age is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Obfuscated_Ticket_Age is unsigned 32;
 
    type PSK_Identity is
       message
@@ -1187,7 +1187,7 @@ package TLS_Handshake is
             with Size => 8 * Binders_Length;
       end message;
 
-   type Identity_Index is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Identity_Index is unsigned 16;
 
    type Pre_Shared_Key_SH is
       message

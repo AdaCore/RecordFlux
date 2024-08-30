@@ -2,7 +2,7 @@ with Universal;
 
 package Test is
 
-   type Size is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Size is unsigned 32;
 
    generic
       with function Check_Size (Size : Size; Data : Opaque) return Boolean;

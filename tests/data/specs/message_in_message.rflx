@@ -1,6 +1,6 @@
 package Message_In_Message is
 
-   type Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Length is unsigned 16;
 
    type Length_Value is
       message

@@ -12,7 +12,7 @@ package Always_Valid_Aspect is
        V6 => 6)
    with Size => 8, Always_Valid;
 
-   type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type T is unsigned 8;
 
    type Message is
       message

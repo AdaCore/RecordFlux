@@ -1,5 +1,5 @@
 package Negation is
-   type T is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type T is unsigned 8;
    type M is
       message
          L1 : T;

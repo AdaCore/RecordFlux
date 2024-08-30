@@ -59,7 +59,7 @@ package SPDM_Responder is
             with Size => Length * 8;
       end message;
 
-   type Transcript_ID is range 0 .. 2 ** 32 - 1 with Size => 32;
+   type Transcript_ID is unsigned 32;
 
    type Transcript_Kind is
       (Session_Transcript     => 0,

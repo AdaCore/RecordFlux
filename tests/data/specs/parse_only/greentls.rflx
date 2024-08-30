@@ -16,7 +16,7 @@ package GreenTLS is
    for Content use (Data => TLS_Alert::Alert);
 
    type Control_Message_Type is (Key_Update_Client, Key_Update_Server, Heartbeat, Alert) with Size => 8;
-   type Control_Message_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Control_Message_Length is unsigned 16;
 
    type Control_Message is
       message
@@ -70,7 +70,7 @@ package GreenTLS is
        Application_No_Early_Data)
    with Size => 8;
 
-   type Application_Control_Message_Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Application_Control_Message_Length is unsigned 8;
 
    type Application_Control_Message is
       message
@@ -162,7 +162,7 @@ package GreenTLS is
        Keystore_Request_Signature,
        Keystore_Request_New_Session_Ticket)
    with Size => 8;
-   type Keystore_Payload_Length is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Keystore_Payload_Length is unsigned 16;
 
    type Keystore_Message is
       message
@@ -218,7 +218,7 @@ package GreenTLS is
    for Keystore_Message use (Payload => Certificate_Query)
       if Tag = Keystore_Request and Request = Keystore_Request_Certificates;
 
-   type Certificate_ID is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Certificate_ID is unsigned 16;
 
    type Certificate is
       message
@@ -294,6 +294,6 @@ package GreenTLS is
          Data : Opaque;
       end message;
 
-   type Sequence_Number is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Sequence_Number is unsigned 16;
 
 end GreenTLS;

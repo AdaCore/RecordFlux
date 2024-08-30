@@ -1,5 +1,5 @@
 package P4 is
 
-   type Protocol_Number is range 0 .. 2 ** 16 - 1 with Size => 16;
+   type Protocol_Number is unsigned 16;
 
 end P4;

@@ -2,8 +2,8 @@ with TLV_With_Checksum;
 
 package Refinement_With_Checksum is
 
-   type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
-   type Checksum is range 0 .. 2 **  8 - 1 with Size =>  8;
+   type Length is unsigned 8;
+   type Checksum is unsigned 8;
 
    type Message is
       message

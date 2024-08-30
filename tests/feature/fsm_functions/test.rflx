@@ -4,7 +4,7 @@ package Test is
 
    type Result is (M_Valid, M_Invalid) with Size => 2;
 
-   type Length is range 0 .. 2 ** 8 - 1 with Size => 8;
+   type Length is unsigned 8;
 
    type Definite_Message is
       message

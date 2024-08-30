@@ -1,5 +1,5 @@
 package Low_Order is
-   type Reserved_7 is range 0 .. 2 ** 7 - 1 with Size => 7;
+   type Reserved_7 is unsigned 7;
    type M1 is
       message
          R1 : Reserved_7;
