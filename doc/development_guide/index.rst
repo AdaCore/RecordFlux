@@ -186,35 +186,11 @@ It is advised to `configure <https://rust-analyzer.github.io/manual.html#install
 VS Code extension
 =================
 
-To build the VS Code extension and install it to VS Code there are several options.
-Below are two possible workflows.
-
-Option 1
---------
-
-To build the ``recordflux.vsix`` package and install it to VS Code directly in one step execute the following command at the project root:
+To build the VS Code extension, execute the following command at the project root:
 
 .. code:: console
 
-   make -C ide/vscode install
-
-**Note:**
-In this workflow the editable installation of RecordFlux is not made aware of the built extension.
-
-Option 2
---------
-
-Alternatively, execute the following command at the project root to just build the ``recordflux.vsix`` package:
-
-.. code:: console
-
-   make -C ide/vscode dist
-
-Then, make this available to the editable installation of RecordFlux by executing:
-
-.. code:: console
-
-   make install
+   make vscode
 
 Finally, use the dedicated ``rflx install`` sub-command to install the extension into VS Code:
 

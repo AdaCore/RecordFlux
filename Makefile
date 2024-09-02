@@ -621,9 +621,12 @@ anod_dist: $(BUILD_DEPS) $(PARSER) $(RAPIDFLUX) pyproject.toml $(PACKAGE_SRC)
 
 # --- Build: VS Code extension ---
 
-$(VSIX):
-	@echo $(VSIX)
-	$(MAKE) -C rflx/ide/vscode dist
+.PHONY: vscode
+
+vscode: $(VSIX)
+
+$(VSIX): $(RFLX)
+	$(MAKE) -C rflx/ide/vscode dist VERSION=$(VERSION)
 
 # --- Audit ---
 

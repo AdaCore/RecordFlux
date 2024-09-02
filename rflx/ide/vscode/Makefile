@@ -12,6 +12,7 @@ dist: $(VSIX)
 
 $(VSIX): export PATH := $(dir $(abspath Makefile))/node_modules/.bin:$(PATH)
 $(VSIX): node_modules out/extension.js
+	$(if $(value VERSION),,$(error VERSION is not set))
 	sed -i "s/\"version\": \".*\"/\"version\": \"$$(echo $(VERSION) | sed 's/\.dev/-dev/')\"/" package.json && vsce package -o recordflux.vsix && sed -i "s/\"version\": \".*\"/\"version\": \"0.0.0\"/" package.json
 
 .PHONY: install
