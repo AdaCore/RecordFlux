@@ -32,13 +32,13 @@
                 },
                 {
                     "name": "keyword.other.recordflux",
-                    "match": "\\b(begin|end|with|message|session|package|type|function|is|of|for|use|new|state|transition|exception|generic)"
+                    "match": "\\b(begin|end|with|message|session|package|type|function|is|of|for|use|new|state|transition|exception|generic)\\b"
                 }
             ]
         },
         "operators": {
             "name": "entity.name.operator.recordflux",
-            "match": "=>|=|\\*|\\+|\\-|/=|\\.\\.|<|<=|>|>=|:=|\\b(or|and|range|sequence|'First|'Size|'Last|'Valid_Checksum|'Valid|'Write|'Read)"
+            "match": "=>|=|\\*|\\+|\\-|/=|\\.\\.|<|<=|>|>=|:=|\\b(or|and|range|sequence|'First|'Size|'Last|'Valid_Checksum|'Valid|'Write|'Read)\\b"
         },
         "strings": {
             "name": "string.quoted.double.recordflux",
@@ -54,15 +54,15 @@
             "patterns": [
                 {
                     "name": "constant.language.recordflux",
-                    "match": "\\b(null|Low_Order_First|High_Order_First|Always_Valid|Readable|Writable)"
+                    "match": "\\b(null|Low_Order_First|High_Order_First|Always_Valid|Readable|Writable)\\b"
                 },
                 {
                     "name": "constant.numeric.recordflux",
-                    "match": "\\d[0-9_]*(\\.\\d[0-9_]*)?([eE]([-+])?\\d[0-9_]*)?"
+                    "match": "\\b(\\d[0-9_]*(\\.\\d[0-9_]*)?([eE]([-+])?\\d[0-9_]*)?)\\b"
                 },
                 {
                     "name": "variable.language.recordflux",
-                    "match": "\\b(Size|Byte_Order|Checksum)"
+                    "match": "\\b(Size|Byte_Order|Checksum)\\b"
                 }
             ]
         },
