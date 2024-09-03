@@ -7,12 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-import rflx.typing_ as rty
-from rflx import const, expr
+from rflx import const, expr, ty
 from rflx.common import indent_next, verbose_repr
 from rflx.error import fail
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity, ty
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 from . import message
 from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclaration
@@ -20,8 +19,8 @@ from .top_level_declaration import TopLevelDeclaration, UncheckedTopLevelDeclara
 
 class TypeDecl(TopLevelDeclaration):
     @property
-    def type_(self) -> rty.Type:
-        return rty.Undefined()
+    def type_(self) -> ty.Type:
+        return ty.Undefined()
 
     @property
     def direct_dependencies(self) -> list[TypeDecl]:
@@ -216,8 +215,8 @@ class Integer(Scalar):
         )
 
     @property
-    def type_(self) -> rty.Type:
-        return rty.Integer(
+    def type_(self) -> ty.Type:
+        return ty.Integer(
             self.full_name,
             ty.Bounds(self.first.value, self.last.value),
             location=self.location,
@@ -432,8 +431,8 @@ class Enumeration(Scalar):
         return result
 
     @property
-    def type_(self) -> rty.Type:
-        return rty.Enumeration(
+    def type_(self) -> ty.Type:
+        return ty.Enumeration(
             self.full_name,
             list(map(ID, self.literals.keys())),
             self.always_valid,
@@ -610,8 +609,8 @@ class Sequence(Composite):
         return f"type {self.name} is sequence of {self.element_type.qualified_identifier}"
 
     @property
-    def type_(self) -> rty.Type:
-        return rty.Sequence(self.full_name, self.element_type.type_)
+    def type_(self) -> ty.Type:
+        return ty.Sequence(self.full_name, self.element_type.type_)
 
     @property
     def element_size(self) -> expr.Expr:
@@ -637,8 +636,8 @@ class Opaque(Composite):
         return ""
 
     @property
-    def type_(self) -> rty.Type:
-        return rty.OPAQUE
+    def type_(self) -> ty.Type:
+        return ty.OPAQUE
 
     @property
     def element_size(self) -> expr.Expr:
@@ -760,7 +759,7 @@ UNCHECKED_BOOLEAN = UncheckedEnumeration(
     ],
     expr.Number(1),
     always_valid=False,
-    location=rty.BOOLEAN.location,
+    location=ty.BOOLEAN.location,
 )
 BOOLEAN = UNCHECKED_BOOLEAN.checked([])
 

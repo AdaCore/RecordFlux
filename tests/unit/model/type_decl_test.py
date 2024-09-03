@@ -2,7 +2,7 @@ from typing import Callable
 
 import pytest
 
-import rflx.typing_ as rty
+from rflx import ty
 from rflx.expr import Add, Aggregate, Equal, Mul, Number, Pow, Size, Sub, Variable
 from rflx.identifier import ID
 from rflx.model import (
@@ -48,7 +48,7 @@ def test_type_type() -> None:
     class NewType(TypeDecl):
         pass
 
-    assert NewType("P::T").type_ == rty.Undefined()
+    assert NewType("P::T").type_ == ty.Undefined()
 
 
 def test_type_dependencies() -> None:

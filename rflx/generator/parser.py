@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-from rflx import expr, expr_conv, typing_ as rty
+from rflx import expr, expr_conv, ty
 from rflx.ada import (
     TRUE,
     Add,
@@ -1191,7 +1191,7 @@ class ParserGenerator:
                                 and isinstance(message.field_types[l.source], Composite)
                                 else "Valid"
                             ),
-                            rty.BOOLEAN,
+                            ty.BOOLEAN,
                             [
                                 expr.Variable("Ctx"),
                                 expr.Variable(l.source.affixed_name, immutable=True),

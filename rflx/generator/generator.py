@@ -7,7 +7,7 @@ from datetime import date
 from functools import cached_property
 from pathlib import Path
 
-from rflx import __version__, expr, expr_conv, typing_ as rty
+from rflx import __version__, expr, expr_conv, ty
 from rflx.ada import (
     FALSE,
     TRUE,
@@ -1650,7 +1650,7 @@ class Generator:
         pdu_identifier = self._prefix * refinement.pdu.identifier
 
         conditions: list[expr.Expr] = [
-            expr.Call(pdu_identifier * "Has_Buffer", rty.BOOLEAN, [expr.Variable(pdu_context)]),
+            expr.Call(pdu_identifier * "Has_Buffer", ty.BOOLEAN, [expr.Variable(pdu_context)]),
         ]
 
         if null_sdu:
@@ -1658,7 +1658,7 @@ class Generator:
                 [
                     expr.Call(
                         pdu_identifier * "Well_Formed",
-                        rty.BOOLEAN,
+                        ty.BOOLEAN,
                         [
                             expr.Variable(pdu_context),
                             expr.Variable(pdu_identifier * refinement.field.affixed_name),
@@ -1667,7 +1667,7 @@ class Generator:
                     expr.Not(
                         expr.Call(
                             pdu_identifier * "Present",
-                            rty.BOOLEAN,
+                            ty.BOOLEAN,
                             [
                                 expr.Variable(pdu_context),
                                 expr.Variable(pdu_identifier * refinement.field.affixed_name),
@@ -1680,7 +1680,7 @@ class Generator:
             conditions.append(
                 expr.Call(
                     pdu_identifier * "Present",
-                    rty.BOOLEAN,
+                    ty.BOOLEAN,
                     [
                         expr.Variable(pdu_context),
                         expr.Variable(pdu_identifier * refinement.field.affixed_name),
@@ -1692,7 +1692,7 @@ class Generator:
             [
                 expr.Call(
                     pdu_identifier * "Valid",
-                    rty.BOOLEAN,
+                    ty.BOOLEAN,
                     [
                         expr.Variable(pdu_context),
                         expr.Variable(pdu_identifier * f.affixed_name),

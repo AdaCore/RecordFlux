@@ -9,7 +9,7 @@ import pytest
 import z3
 from attr import define
 
-from rflx import ada, ir, typing_ as rty
+from rflx import ada, ir, ty
 from rflx.error import FatalError
 from rflx.generator import const
 from rflx.generator.allocator import AllocatorGenerator
@@ -22,12 +22,12 @@ from rflx.generator.state_machine import (
 )
 from rflx.identifier import ID, id_generator
 from rflx.integration import Integration
-from rflx.rapidflux import Location, RecordFluxError, ty
+from rflx.rapidflux import Location, RecordFluxError
 from tests.data import models
 
-INT_TY = rty.Integer("I", ty.Bounds(1, 100))
-MSG_TY = rty.Message(ID("M", Location((1, 1))))
-SEQ_TY = rty.Sequence("S", rty.Message(ID("M", Location((1, 1)))))
+INT_TY = ty.Integer("I", ty.Bounds(1, 100))
+MSG_TY = ty.Message(ID("M", Location((1, 1))))
+SEQ_TY = ty.Sequence("S", ty.Message(ID("M", Location((1, 1)))))
 
 
 @lru_cache
@@ -56,7 +56,7 @@ def dummy_state_machine() -> ir.StateMachine:
     ("parameter", "expected"),
     [
         (
-            ir.FuncDecl("F", [], "T", type_=rty.BOOLEAN, location=None),
+            ir.FuncDecl("F", [], "T", type_=ty.BOOLEAN, location=None),
             [
                 ada.SubprogramDeclaration(
                     specification=ada.ProcedureSpecification(
@@ -73,18 +73,18 @@ def dummy_state_machine() -> ir.StateMachine:
             ir.FuncDecl(
                 "F",
                 [
-                    ir.Argument("P1", "Boolean", type_=rty.BOOLEAN),
-                    ir.Argument("P2", "T2", type_=rty.OPAQUE),
+                    ir.Argument("P1", "Boolean", type_=ty.BOOLEAN),
+                    ir.Argument("P2", "T2", type_=ty.OPAQUE),
                     ir.Argument(
                         "P3",
                         "T3",
-                        type_=rty.Enumeration("T4", [ID("E1")], always_valid=True),
+                        type_=ty.Enumeration("T4", [ID("E1")], always_valid=True),
                     ),
                     ir.Argument("P4", "T4", type_=INT_TY),
-                    ir.Argument("P5", "T5", type_=rty.Message("T5", is_definite=True)),
+                    ir.Argument("P5", "T5", type_=ty.Message("T5", is_definite=True)),
                 ],
                 "T",
-                type_=rty.Message("T", is_definite=True),
+                type_=ty.Message("T", is_definite=True),
                 location=None,
             ),
             [
@@ -123,7 +123,7 @@ class UnknownDeclaration(ir.FormalDecl):
         raise NotImplementedError
 
     @property
-    def type_(self) -> rty.Type:
+    def type_(self) -> ty.Type:
         raise NotImplementedError
 
 
@@ -159,7 +159,7 @@ def test_state_machine_verify_formal_parameters(
                 "F",
                 [],
                 "T",
-                rty.Undefined(),
+                ty.Undefined(),
                 Location((10, 20)),
             ),
             FatalError,
@@ -170,7 +170,7 @@ def test_state_machine_verify_formal_parameters(
                 "F",
                 [],
                 "T",
-                rty.OPAQUE,
+                ty.OPAQUE,
                 Location((10, 20)),
             ),
             FatalError,
@@ -181,7 +181,7 @@ def test_state_machine_verify_formal_parameters(
                 "F",
                 [],
                 "T",
-                rty.Sequence("A", INT_TY),
+                ty.Sequence("A", INT_TY),
                 Location((10, 20)),
             ),
             RecordFluxError,
@@ -192,7 +192,7 @@ def test_state_machine_verify_formal_parameters(
                 "F",
                 [],
                 "T",
-                rty.Message("A", is_definite=False),
+                ty.Message("A", is_definite=False),
                 Location((10, 20)),
             ),
             FatalError,
@@ -203,10 +203,10 @@ def test_state_machine_verify_formal_parameters(
                 "F",
                 [],
                 "T",
-                rty.Message(
+                ty.Message(
                     "M",
                     {("F",)},
-                    {ID("F"): rty.Sequence("A", INT_TY)},
+                    {ID("F"): ty.Sequence("A", INT_TY)},
                     is_definite=True,
                 ),
                 Location((10, 20)),
@@ -217,9 +217,9 @@ def test_state_machine_verify_formal_parameters(
         (
             ir.FuncDecl(
                 "F",
-                [ir.Argument("P", "T", rty.Sequence("A", INT_TY))],
+                [ir.Argument("P", "T", ty.Sequence("A", INT_TY))],
                 "T",
-                rty.BOOLEAN,
+                ty.BOOLEAN,
                 Location((10, 20)),
             ),
             RecordFluxError,
@@ -245,7 +245,7 @@ def test_state_machine_create_functions_error(
     ("declaration", "state_machine_global", "expected"),
     [
         (
-            ir.VarDecl("X", rty.BOOLEAN),
+            ir.VarDecl("X", ty.BOOLEAN),
             False,
             EvaluatedDeclaration(global_declarations=[ada.ObjectDeclaration("X", "Boolean")]),
         ),
@@ -276,7 +276,7 @@ def test_state_machine_create_functions_error(
         (
             ir.VarDecl(
                 "X",
-                rty.Message("T"),
+                ty.Message("T"),
                 origin=ir.ConstructedOrigin("X : T", Location((1, 1))),
             ),
             False,
@@ -365,7 +365,7 @@ def test_state_machine_create_functions_error(
         (
             ir.VarDecl(
                 "X",
-                rty.Message("T"),
+                ty.Message("T"),
                 origin=ir.ConstructedOrigin("X : T", Location((1, 1))),
             ),
             True,
@@ -531,7 +531,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.Message("T"),
+            ty.Message("T"),
             None,
             False,
             False,
@@ -559,7 +559,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.Message("T"),
+            ty.Message("T"),
             None,
             True,
             False,
@@ -587,7 +587,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.Message("T"),
+            ty.Message("T"),
             None,
             False,
             True,
@@ -615,7 +615,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             ir.ComplexExpr([], ir.Agg([])),
             False,
             False,
@@ -626,7 +626,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             ir.ComplexExpr([], ir.Agg([])),
             True,
             False,
@@ -637,7 +637,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             ir.ComplexExpr([], ir.Agg([ir.IntVal(1)])),
             False,
             False,
@@ -649,7 +649,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             ir.ComplexExpr([], ir.Agg([ir.IntVal(1)])),
             True,
             False,
@@ -662,7 +662,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             ir.ComplexExpr([], ir.Agg([ir.IntVal(1), ir.IntVal(2)])),
             False,
             False,
@@ -674,7 +674,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             ir.ComplexExpr([], ir.Agg([ir.IntVal(1), ir.IntVal(2)])),
             False,
             True,
@@ -686,7 +686,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             ir.ComplexExpr([], ir.Agg([ir.IntVal(1), ir.IntVal(2)])),
             True,
             False,
@@ -699,7 +699,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             None,
             False,
             False,
@@ -708,7 +708,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             None,
             False,
             True,
@@ -717,7 +717,7 @@ class EvaluatedDeclarationStr:
             ),
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             None,
             True,
             False,
@@ -728,7 +728,7 @@ class EvaluatedDeclarationStr:
     ],
 )
 def test_state_machine_declare(
-    type_: rty.Type,
+    type_: ty.Type,
     expression: ir.ComplexExpr | None,
     constant: bool,
     state_machine_global: bool,
@@ -782,7 +782,7 @@ def test_state_machine_declare(
             r"initialization using function call not yet supported",
         ),
         (
-            rty.OPAQUE,
+            ty.OPAQUE,
             ir.ComplexExpr(
                 [ir.Assign("X", ir.IntVal(0), INT_TY)],
                 ir.IntVar(
@@ -795,12 +795,12 @@ def test_state_machine_declare(
             r"initialization not yet supported",
         ),
         (
-            rty.Message("T"),
+            ty.Message("T"),
             ir.ComplexExpr(
                 [],
                 ir.EnumLit(
                     "True",
-                    rty.BOOLEAN,
+                    ty.BOOLEAN,
                     origin=ir.ConstructedOrigin("True", Location((10, 20))),
                 ),
             ),
@@ -821,7 +821,7 @@ def test_state_machine_declare(
             r"initialization with complex expression not yet supported",
         ),
         (
-            rty.Undefined(),
+            ty.Undefined(),
             None,
             FatalError,
             r"unexpected variable declaration for undefined type",
@@ -829,7 +829,7 @@ def test_state_machine_declare(
     ],
 )
 def test_state_machine_declare_error(
-    type_: rty.Type,
+    type_: ty.Type,
     expression: ir.ComplexExpr | None,
     error_type: type[RecordFluxError],
     error_msg: str,
@@ -882,20 +882,20 @@ class UnknownStatement(ir.Stmt):
                     {
                         ID("Message_Type"): ir.EnumLit(
                             ID("Universal::MT_Data"),
-                            rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
+                            ty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                         ),
                         ID("Length"): ir.IntVal(0),
                         ID("Data"): ir.Agg([]),
                     },
-                    type_=rty.Message(
+                    type_=ty.Message(
                         "Universal::Message",
                         field_types={
-                            ID("Message_Type"): rty.Enumeration(
+                            ID("Message_Type"): ty.Enumeration(
                                 "Universal::Message_Type",
                                 [ID("Universal::MT_Data")],
                             ),
-                            ID("Length"): rty.Integer("Universal::Length", ty.Bounds(0, 100)),
-                            ID("Data"): rty.OPAQUE,
+                            ID("Length"): ty.Integer("Universal::Length", ty.Bounds(0, 100)),
+                            ID("Data"): ty.OPAQUE,
                         },
                     ),
                 ),
@@ -946,13 +946,13 @@ Universal.Message.Set_Data_Empty (X_Ctx);\
                 ir.BoolCall(
                     "F",
                     [
-                        ir.ObjVar("A", rty.Message("Universal::Message")),
+                        ir.ObjVar("A", ty.Message("Universal::Message")),
                     ],
                     [
-                        rty.Message("Universal::Message"),
+                        ty.Message("Universal::Message"),
                     ],
                 ),
-                rty.BOOLEAN,
+                ty.BOOLEAN,
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             """\
@@ -971,14 +971,14 @@ end;\
                 ir.ObjCall(
                     "F",
                     [
-                        ir.ObjVar("A", rty.Message("Universal::Message")),
+                        ir.ObjVar("A", ty.Message("Universal::Message")),
                     ],
                     [
-                        rty.Message("Universal::Message"),
+                        ty.Message("Universal::Message"),
                     ],
-                    rty.Message("Universal::Option"),
+                    ty.Message("Universal::Option"),
                 ),
-                rty.Message("Universal::Option"),
+                ty.Message("Universal::Option"),
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             """\
@@ -1012,7 +1012,7 @@ end;\
                     ir.BoolVar("A"),
                     ir.BoolVar("B"),
                 ),
-                rty.BOOLEAN,
+                ty.BOOLEAN,
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nX := A\nand then B;",
@@ -1021,7 +1021,7 @@ end;\
             ir.Reset(
                 "X",
                 {},
-                rty.Message("P::M"),
+                ty.Message("P::M"),
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.M.Reset (X_Ctx);",
@@ -1030,7 +1030,7 @@ end;\
             ir.Reset(
                 "X",
                 {},
-                rty.Sequence("P::S", INT_TY),
+                ty.Sequence("P::S", INT_TY),
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.S.Reset (X_Ctx);",
@@ -1038,7 +1038,7 @@ end;\
         (
             ir.Read(
                 "X",
-                ir.ObjVar("Y", rty.Message("P::M")),
+                ir.ObjVar("Y", ty.Message("P::M")),
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1\nP.M.Verify_Message (Y_Ctx);",
@@ -1046,7 +1046,7 @@ end;\
         (
             ir.Write(
                 "X",
-                ir.ObjVar("Y", rty.Message("P::M")),
+                ir.ObjVar("Y", ty.Message("P::M")),
                 origin=ir.ConstructedOrigin("", Location((1, 1))),
             ),
             "-- <stdin>:1:1",
@@ -1136,8 +1136,8 @@ def test_state_machine_state_action_error(
 @define
 class UnknownExpr(ir.Expr):
     @property
-    def type_(self) -> rty.Any:
-        return rty.Message("T")
+    def type_(self) -> ty.Any:
+        return ty.Message("T")
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -1157,22 +1157,22 @@ class UnknownExpr(ir.Expr):
     ("type_", "expression", "error_type", "error_msg"),
     [
         (
-            rty.Sequence("A", INT_TY),
+            ty.Sequence("A", INT_TY),
             ir.ObjFieldAccess(
                 "Z",
                 "Z",
-                rty.Message("C", {("Z",)}, {}, {ID("Z"): rty.Sequence("A", INT_TY)}),
+                ty.Message("C", {("Z",)}, {}, {ID("Z"): ty.Sequence("A", INT_TY)}),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r"copying of sequence not yet supported",
         ),
         (
-            rty.Aggregate(INT_TY),
+            ty.Aggregate(INT_TY),
             ir.ObjFieldAccess(
                 "Z",
                 "Z",
-                rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Aggregate(INT_TY)}),
+                ty.Message("B", {("Z",)}, {}, {ID("Z"): ty.Aggregate(INT_TY)}),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
@@ -1180,30 +1180,30 @@ class UnknownExpr(ir.Expr):
             r' in assignment of "X"',
         ),
         (
-            rty.Message("A"),
+            ty.Message("A"),
             ir.MsgAgg(
                 "Universal::Message",
                 {
                     ID("Message_Type"): ir.EnumLit(
                         "Universal::MT_Data",
-                        rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
+                        ty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                     ),
                     ID("Length"): ir.IntVal(1),
                     ID("Data"): ir.ObjVar(
                         "Z",
-                        rty.Message("Universal::Option"),
+                        ty.Message("Universal::Option"),
                         origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 },
-                rty.Message(
+                ty.Message(
                     "Universal::Message",
                     field_types={
-                        ID("Message_Type"): rty.Enumeration(
+                        ID("Message_Type"): ty.Enumeration(
                             "Universal::Message_Type",
                             [ID("Universal::MT_Data")],
                         ),
-                        ID("Length"): rty.Integer("Universal::Length", ty.Bounds(0, 100)),
-                        ID("Data"): rty.OPAQUE,
+                        ID("Length"): ty.Integer("Universal::Length", ty.Bounds(0, 100)),
+                        ID("Data"): ty.OPAQUE,
                     },
                 ),
             ),
@@ -1212,34 +1212,34 @@ class UnknownExpr(ir.Expr):
             r" not yet supported",
         ),
         (
-            rty.Message("A"),
+            ty.Message("A"),
             ir.MsgAgg(
                 "Universal::Message",
                 {
                     ID("Message_Type"): ir.EnumLit(
                         "Universal::MT_Data",
-                        rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
+                        ty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                     ),
                     ID("Length"): ir.Last(
                         "Z",
-                        rty.Message("Universal::Option"),
+                        ty.Message("Universal::Option"),
                         origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                     ID("Data"): ir.ObjVar(
                         "Z",
-                        rty.Message("Universal::Option"),
+                        ty.Message("Universal::Option"),
                         origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 },
-                rty.Message(
+                ty.Message(
                     "Universal::Message",
                     field_types={
-                        ID("Message_Type"): rty.Enumeration(
+                        ID("Message_Type"): ty.Enumeration(
                             "Universal::Message_Type",
                             [ID("Universal::MT_Data")],
                         ),
-                        ID("Length"): rty.Integer("Universal::Length", ty.Bounds(0, 100)),
-                        ID("Data"): rty.OPAQUE,
+                        ID("Length"): ty.Integer("Universal::Length", ty.Bounds(0, 100)),
+                        ID("Data"): ty.OPAQUE,
                     },
                 ),
             ),
@@ -1248,30 +1248,30 @@ class UnknownExpr(ir.Expr):
             r" field not yet supported",
         ),
         (
-            rty.Message("A"),
+            ty.Message("A"),
             ir.MsgAgg(
                 "Universal::Message",
                 {
                     ID("Message_Type"): ir.EnumLit(
                         "Universal::MT_Data",
-                        rty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
+                        ty.Enumeration("Universal::Message_Type", [ID("Universal::MT_Data")]),
                     ),
                     ID("Length"): ir.IntVal(1),
                     ID("Data"): ir.Head(
                         "Z",
-                        rty.Sequence("Universal::Options", rty.Message("Universal::Option")),
+                        ty.Sequence("Universal::Options", ty.Message("Universal::Option")),
                         origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 },
-                rty.Message(
+                ty.Message(
                     "Universal::Message",
                     field_types={
-                        ID("Message_Type"): rty.Enumeration(
+                        ID("Message_Type"): ty.Enumeration(
                             "Universal::Message_Type",
                             [ID("Universal::MT_Data")],
                         ),
-                        ID("Length"): rty.Integer("Universal::Length", ty.Bounds(0, 100)),
-                        ID("Data"): rty.OPAQUE,
+                        ID("Length"): ty.Integer("Universal::Length", ty.Bounds(0, 100)),
+                        ID("Data"): ty.OPAQUE,
                     },
                 ),
             ),
@@ -1279,12 +1279,12 @@ class UnknownExpr(ir.Expr):
             r'Head with message type "Universal::Option" in expression not yet supported',
         ),
         (
-            rty.Sequence("A", rty.Message("B")),
+            ty.Sequence("A", ty.Message("B")),
             ir.Comprehension(
                 "E",
                 ir.ObjVar(
                     "L",
-                    rty.Sequence("A", rty.Message("B")),
+                    ty.Sequence("A", ty.Message("B")),
                 ),
                 ir.ComplexExpr(
                     [],
@@ -1292,7 +1292,7 @@ class UnknownExpr(ir.Expr):
                         "F",
                         [],
                         [],
-                        rty.Message("B"),
+                        ty.Message("B"),
                         origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ),
@@ -1302,20 +1302,20 @@ class UnknownExpr(ir.Expr):
             "expressions other than variables not yet supported as selector for message types",
         ),
         (
-            rty.Message("B"),
+            ty.Message("B"),
             ir.Find(
                 "E",
                 ir.ObjFieldAccess(
                     "Y",
                     "Z",
-                    rty.Message("C", {("Z",)}, {}, {ID("Z"): rty.Sequence("D", rty.Message("B"))}),
+                    ty.Message("C", {("Z",)}, {}, {ID("Z"): ty.Sequence("D", ty.Message("B"))}),
                 ),
                 ir.ComplexExpr(
                     [],
                     ir.ObjFieldAccess(
                         "E",
                         "Z",
-                        rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.Message("B")}),
+                        ty.Message("B", {("Z",)}, {}, {ID("Z"): ty.Message("B")}),
                         origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ),
@@ -1327,7 +1327,7 @@ class UnknownExpr(ir.Expr):
                             ir.IntFieldAccess(
                                 "E",
                                 "Z",
-                                rty.Message("B", {("Z",)}, {}, {ID("Z"): INT_TY}),
+                                ty.Message("B", {("Z",)}, {}, {ID("Z"): INT_TY}),
                             ),
                             INT_TY,
                             origin=ir.ConstructedOrigin("", Location((20, 30))),
@@ -1343,12 +1343,12 @@ class UnknownExpr(ir.Expr):
             "expressions other than variables not yet supported as selector for message types",
         ),
         (
-            rty.Message("B"),
+            ty.Message("B"),
             ir.Find(
                 "E",
                 ir.ObjVar(
                     "L",
-                    rty.Sequence("A", rty.Message("B")),
+                    ty.Sequence("A", ty.Message("B")),
                 ),
                 ir.ComplexExpr(
                     [],
@@ -1356,7 +1356,7 @@ class UnknownExpr(ir.Expr):
                         "F",
                         [],
                         [],
-                        rty.Message("B"),
+                        ty.Message("B"),
                         origin=ir.ConstructedOrigin("", Location((10, 20))),
                     ),
                 ),
@@ -1368,7 +1368,7 @@ class UnknownExpr(ir.Expr):
                             ir.IntFieldAccess(
                                 "E",
                                 "Z",
-                                rty.Message("B", {("Z",)}, {}, {ID("Z"): INT_TY}),
+                                ty.Message("B", {("Z",)}, {}, {ID("Z"): INT_TY}),
                             ),
                             INT_TY,
                             origin=ir.ConstructedOrigin("", Location((20, 30))),
@@ -1384,12 +1384,12 @@ class UnknownExpr(ir.Expr):
             "expressions other than variables not yet supported as selector for message types",
         ),
         (
-            rty.Sequence("A", INT_TY),
+            ty.Sequence("A", INT_TY),
             ir.Comprehension(
                 "E",
                 ir.ObjVar(
                     "L",
-                    rty.Sequence("A", INT_TY),
+                    ty.Sequence("A", INT_TY),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
                 ir.ComplexExpr([], ir.ObjVar("E", INT_TY)),
@@ -1405,7 +1405,7 @@ class UnknownExpr(ir.Expr):
                 "E",
                 ir.ObjVar(
                     "L",
-                    rty.Sequence("A", INT_TY),
+                    ty.Sequence("A", INT_TY),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
                 ir.ComplexExpr([], ir.ObjVar("E", INT_TY)),
@@ -1419,7 +1419,7 @@ class UnknownExpr(ir.Expr):
             r" not yet supported",
         ),
         (
-            rty.Sequence("A", INT_TY),
+            ty.Sequence("A", INT_TY),
             ir.BoolCall(
                 "F",
                 [
@@ -1437,37 +1437,37 @@ class UnknownExpr(ir.Expr):
             r'IntCall with integer type "I" \(1 \.\. 100\) as function argument not yet supported',
         ),
         (
-            rty.Message("A"),
+            ty.Message("A"),
             ir.Conversion(
-                rty.Message("A"),
-                ir.ObjFieldAccess("Z", "Z", rty.Message("B", {("Z",)}, {}, {ID("Z"): rty.OPAQUE})),
+                ty.Message("A"),
+                ir.ObjFieldAccess("Z", "Z", ty.Message("B", {("Z",)}, {}, {ID("Z"): ty.OPAQUE})),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
             r'no refinement for field "Z" of message "B" leads to "A"',
         ),
         (
-            rty.Message("A"),
+            ty.Message("A"),
             ir.ObjVar(
                 "X",
-                rty.Message("A"),
+                ty.Message("A"),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r'referencing assignment target "X" of type message in expression not yet supported',
         ),
         (
-            rty.Message("A"),
+            ty.Message("A"),
             ir.ObjVar(
                 "Y",
-                rty.Message("A"),
+                ty.Message("A"),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             RecordFluxError,
             r'ObjVar with message type "A" in assignment not yet supported',
         ),
         (
-            rty.Message("A"),
+            ty.Message("A"),
             UnknownExpr(
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
@@ -1475,10 +1475,10 @@ class UnknownExpr(ir.Expr):
             r'unexpected expression "UnknownExpr" with message type "T" in assignment',
         ),
         (
-            rty.Message("A"),
+            ty.Message("A"),
             ir.Head(
                 "X",
-                rty.Sequence("B", rty.OPAQUE),
+                ty.Sequence("B", ty.OPAQUE),
                 origin=ir.ConstructedOrigin("", Location((10, 20))),
             ),
             FatalError,
@@ -1488,7 +1488,7 @@ class UnknownExpr(ir.Expr):
     ],
 )
 def test_state_machine_assign_error(
-    type_: rty.Type,
+    type_: ty.Type,
     expression: ir.Expr,
     error_type: type[RecordFluxError],
     error_msg: str,
@@ -1535,10 +1535,10 @@ def test_state_machine_assign_error(
                 "L",
                 ir.ObjVar(
                     "X",
-                    rty.Message("A"),
+                    ty.Message("A"),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
-                rty.Sequence("B", rty.Message("A")),
+                ty.Sequence("B", ty.Message("A")),
             ),
             RecordFluxError,
             r'ObjVar with message type "A" in Append statement not yet supported',
@@ -1547,7 +1547,7 @@ def test_state_machine_assign_error(
             ir.Append(
                 "L",
                 ir.ObjVar("X", MSG_TY, origin=ir.ConstructedOrigin("", Location((10, 20)))),
-                rty.Sequence("B", rty.Undefined()),
+                ty.Sequence("B", ty.Undefined()),
             ),
             FatalError,
             r"unexpected element type undefined type in Append statement",
@@ -1562,7 +1562,7 @@ def test_state_machine_assign_error(
                     INT_TY,
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
-                rty.Sequence("B", INT_TY),
+                ty.Sequence("B", INT_TY),
             ),
             RecordFluxError,
             r'IntCall with integer type "I" \(1 \.\. 100\) in Append statement not yet supported',
@@ -1608,7 +1608,7 @@ def test_state_machine_append_error(
                 "L",
                 ir.EnumLit(
                     "E",
-                    rty.Enumeration("A", [ID("E")]),
+                    ty.Enumeration("A", [ID("E")]),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
             ),
@@ -1644,7 +1644,7 @@ def test_state_machine_read_error(
                 "L",
                 ir.EnumLit(
                     "E",
-                    rty.Enumeration("A", [ID("E")]),
+                    ty.Enumeration("A", [ID("E")]),
                     origin=ir.ConstructedOrigin("", Location((10, 20))),
                 ),
             ),
@@ -1707,8 +1707,8 @@ def test_state_machine_write_error(
         ),
         (
             ir.Equal(
-                ir.ObjVar("X", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
-                ir.EnumLit("P::E1", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                ir.ObjVar("X", ty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                ir.EnumLit("P::E1", ty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             ),
             ada.Equal(
                 ada.Variable("X"),
@@ -1717,8 +1717,8 @@ def test_state_machine_write_error(
         ),
         (
             ir.NotEqual(
-                ir.EnumLit("P::E1", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
-                ir.ObjVar("X", rty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                ir.EnumLit("P::E1", ty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
+                ir.ObjVar("X", ty.Enumeration("P::E", [ID("P::E1")], always_valid=True)),
             ),
             ada.NotEqual(
                 ada.NamedAggregate(("Known", ada.Literal("True")), ("Enum", ada.Literal("P::E1"))),

@@ -14,12 +14,12 @@ from typing import TYPE_CHECKING, Protocol, TypeVar
 import z3
 from attr import define, field, frozen
 
-from rflx import typing_ as rty
+from rflx import ty
 from rflx.common import Base
 from rflx.const import MAX_SCALAR_SIZE, MP_CONTEXT
 from rflx.error import info
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Location, ty
+from rflx.rapidflux import Location
 
 if TYPE_CHECKING:
     from rflx.model import type_decl
@@ -170,7 +170,7 @@ class Stmt(Base):
 @define(eq=False)
 class VarDecl(Stmt):
     identifier: ID = field(converter=ID)
-    type_: rty.NamedType
+    type_: ty.NamedType
     expression: ComplexExpr | None = None
     origin: Origin | None = None
 
@@ -182,7 +182,7 @@ class VarDecl(Stmt):
         return []
 
     def to_z3_expr(self) -> z3.BoolRef:
-        if isinstance(self.type_, rty.Integer):
+        if isinstance(self.type_, ty.Integer):
             first = z3.Int(str(First(self.type_.identifier, self.type_)))
             last = z3.Int(str(Last(self.type_.identifier, self.type_)))
             return z3.And(
@@ -202,7 +202,7 @@ class VarDecl(Stmt):
 class Assign(Stmt):
     target: ID = field(converter=ID)
     expression: Expr
-    type_: rty.NamedType
+    type_: ty.NamedType
     origin: Origin | None = None
 
     @property
@@ -252,7 +252,7 @@ class FieldAssign(Stmt):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
     expression: Expr
-    type_: rty.Message
+    type_: ty.Message
     origin: Origin | None = None
 
     @property
@@ -293,7 +293,7 @@ class FieldAssign(Stmt):
 class Append(Stmt):
     sequence: ID = field(converter=ID)
     expression: Expr
-    type_: rty.Sequence
+    type_: ty.Sequence
     origin: Origin | None = None
 
     @property
@@ -326,7 +326,7 @@ class Append(Stmt):
 class Extend(Stmt):
     sequence: ID = field(converter=ID)
     expression: Expr
-    type_: rty.Sequence
+    type_: ty.Sequence
     origin: Origin | None = None
 
     @property
@@ -355,7 +355,7 @@ class Extend(Stmt):
 class Reset(Stmt):
     identifier: ID = field(converter=ID)
     parameter_values: Mapping[ID, Expr]
-    type_: rty.Any
+    type_: ty.Any
     origin: Origin | None = None
 
     @property
@@ -477,7 +477,7 @@ class Expr(Base):
 
     @property
     @abstractmethod
-    def type_(self) -> rty.Any:
+    def type_(self) -> ty.Any:
         raise NotImplementedError
 
     @property
@@ -517,7 +517,7 @@ class BasicExpr(Expr):
 class IntExpr(Expr):
     @property
     @abstractmethod
-    def type_(self) -> rty.AnyInteger:
+    def type_(self) -> ty.AnyInteger:
         raise NotImplementedError
 
     @abstractmethod
@@ -527,8 +527,8 @@ class IntExpr(Expr):
 
 class BoolExpr(Expr):
     @property
-    def type_(self) -> rty.Enumeration:
-        return rty.BOOLEAN
+    def type_(self) -> ty.Enumeration:
+        return ty.BOOLEAN
 
     @abstractmethod
     def to_z3_expr(self) -> z3.BoolRef:
@@ -538,7 +538,7 @@ class BoolExpr(Expr):
 class BasicIntExpr(BasicExpr, IntExpr):
     @property
     @abstractmethod
-    def type_(self) -> rty.AnyInteger:
+    def type_(self) -> ty.AnyInteger:
         raise NotImplementedError
 
 
@@ -562,11 +562,11 @@ class Var(BasicExpr):
 @define(eq=False)
 class IntVar(Var, BasicIntExpr):
     identifier: ID = field(converter=ID)
-    var_type: rty.AnyInteger
+    var_type: ty.AnyInteger
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.AnyInteger:
+    def type_(self) -> ty.AnyInteger:
         return self.var_type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntVar:
@@ -584,8 +584,8 @@ class BoolVar(Var, BasicBoolExpr):
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Enumeration:
-        return rty.BOOLEAN
+    def type_(self) -> ty.Enumeration:
+        return ty.BOOLEAN
 
     def substituted(self, mapping: Mapping[ID, ID]) -> BoolVar:
         if self.identifier in mapping:
@@ -599,11 +599,11 @@ class BoolVar(Var, BasicBoolExpr):
 @define(eq=False)
 class ObjVar(Var):
     identifier: ID = field(converter=ID)
-    var_type: rty.Any
+    var_type: ty.Any
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Any:
+    def type_(self) -> ty.Any:
         return self.var_type
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjVar:
@@ -618,11 +618,11 @@ class ObjVar(Var):
 @define(eq=False)
 class EnumLit(BasicExpr):
     identifier: ID = field(converter=ID)
-    enum_type: rty.Enumeration
+    enum_type: ty.Enumeration
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Enumeration:
+    def type_(self) -> ty.Enumeration:
         return self.enum_type
 
     @property
@@ -645,8 +645,8 @@ class IntVal(BasicIntExpr):
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.UniversalInteger:
-        return rty.UniversalInteger(ty.Bounds(self.value, self.value))
+    def type_(self) -> ty.UniversalInteger:
+        return ty.UniversalInteger(ty.Bounds(self.value, self.value))
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -684,7 +684,7 @@ class BoolVal(BasicBoolExpr):
 @define(eq=False)
 class Attr(Expr):
     prefix: ID = field(converter=ID)
-    prefix_type: rty.Any
+    prefix_type: ty.Any
     origin: Origin | None = None
 
     @property
@@ -706,7 +706,7 @@ class Attr(Expr):
 @define(eq=False)
 class IntAttr(Attr, IntExpr):
     prefix: ID = field(converter=ID)
-    prefix_type: rty.Any
+    prefix_type: ty.Any
     origin: Origin | None = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntAttr:
@@ -723,33 +723,33 @@ class IntAttr(Attr, IntExpr):
 @define(eq=False)
 class Size(IntAttr):
     @property
-    def type_(self) -> rty.AnyInteger:
+    def type_(self) -> ty.AnyInteger:
         return (
-            rty.BIT_LENGTH
-            if isinstance(self.prefix_type, (rty.Composite, rty.Compound))
-            else rty.UNIVERSAL_INTEGER
+            ty.BIT_LENGTH
+            if isinstance(self.prefix_type, (ty.Composite, ty.Compound))
+            else ty.UNIVERSAL_INTEGER
         )
 
 
 @define(eq=False)
 class Length(IntAttr):
     @property
-    def type_(self) -> rty.UniversalInteger:
-        return rty.UNIVERSAL_INTEGER
+    def type_(self) -> ty.UniversalInteger:
+        return ty.UNIVERSAL_INTEGER
 
 
 @define(eq=False)
 class First(IntAttr):
     @property
-    def type_(self) -> rty.UniversalInteger:
-        return rty.UNIVERSAL_INTEGER
+    def type_(self) -> ty.UniversalInteger:
+        return ty.UNIVERSAL_INTEGER
 
 
 @define(eq=False)
 class Last(IntAttr):
     @property
-    def type_(self) -> rty.UniversalInteger:
-        return rty.UNIVERSAL_INTEGER
+    def type_(self) -> ty.UniversalInteger:
+        return ty.UNIVERSAL_INTEGER
 
 
 @define(eq=False)
@@ -767,8 +767,8 @@ class Valid(Attr, BoolExpr):
 @define(eq=False)
 class Present(Attr):
     @property
-    def type_(self) -> rty.Enumeration:
-        return rty.BOOLEAN
+    def type_(self) -> ty.Enumeration:
+        return ty.BOOLEAN
 
     def to_z3_expr(self) -> z3.ExprRef:
         return z3.Bool(str(self))
@@ -783,12 +783,12 @@ class HasData(Attr, BoolExpr):
 @define(eq=False)
 class Head(Attr):
     prefix: ID = field(converter=ID)
-    prefix_type: rty.Composite
+    prefix_type: ty.Composite
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Any:
-        assert isinstance(self.prefix_type.element, rty.Any)
+    def type_(self) -> ty.Any:
+        assert isinstance(self.prefix_type.element, ty.Any)
         return self.prefix_type.element
 
     def to_z3_expr(self) -> z3.ExprRef:
@@ -798,12 +798,12 @@ class Head(Attr):
 @define(eq=False)
 class Opaque(Attr):
     prefix: ID = field(converter=ID)
-    prefix_type: rty.Message | rty.Sequence
+    prefix_type: ty.Message | ty.Sequence
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Sequence:
-        return rty.OPAQUE
+    def type_(self) -> ty.Sequence:
+        return ty.OPAQUE
 
     def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return [
@@ -818,7 +818,7 @@ class Opaque(Attr):
 class FieldAccessAttr(Expr):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
-    message_type: rty.Compound
+    message_type: ty.Compound
     origin: Origin | None = None
 
     @property
@@ -826,9 +826,9 @@ class FieldAccessAttr(Expr):
         return [self.message]
 
     @property
-    def field_type(self) -> rty.Any:
+    def field_type(self) -> ty.Any:
         type_ = self.message_type.field_types[self.field]
-        assert isinstance(type_, rty.Any)
+        assert isinstance(type_, ty.Any)
         return type_
 
     def substituted(self, mapping: Mapping[ID, ID]) -> FieldAccessAttr:
@@ -880,15 +880,15 @@ class FieldPresent(FieldAccessAttr, BoolExpr):
 @define(eq=False)
 class FieldSize(FieldAccessAttr, IntExpr):
     @property
-    def type_(self) -> rty.Integer:
-        return rty.BIT_LENGTH
+    def type_(self) -> ty.Integer:
+        return ty.BIT_LENGTH
 
     def preconditions(self, _variable_id: Generator[ID, None, None]) -> list[Cond]:
         return (
             [
                 Cond(FieldValidNext(self.message, self.field, self.message_type)),
             ]
-            if isinstance(self.message_type, rty.Message)
+            if isinstance(self.message_type, ty.Message)
             else []
         )
 
@@ -919,7 +919,7 @@ class UnaryIntExpr(UnaryExpr, IntExpr):
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.AnyInteger:
+    def type_(self) -> ty.AnyInteger:
         return self.expression.type_
 
 
@@ -978,14 +978,14 @@ class BinaryIntExpr(BinaryExpr, IntExpr):
     def preconditions(
         self,
         variable_id: Generator[ID, None, None],
-        target_type: rty.Type | None = None,
+        target_type: ty.Type | None = None,
     ) -> list[Cond]:
         raise NotImplementedError
 
     @property
-    def type_(self) -> rty.AnyInteger:
+    def type_(self) -> ty.AnyInteger:
         type_ = self.left.type_.common_type(self.right.type_)
-        assert isinstance(type_, rty.AnyInteger)
+        assert isinstance(type_, ty.AnyInteger)
         return type_
 
 
@@ -1013,14 +1013,14 @@ class Add(BinaryIntExpr):
     def preconditions(
         self,
         variable_id: Generator[ID, None, None],
-        target_type: rty.Type | None = None,
+        target_type: ty.Type | None = None,
     ) -> list[Cond]:
         target_type = target_type or self.type_
         v_id = next(variable_id)
-        v_type = rty.BASE_INTEGER
+        v_type = ty.BASE_INTEGER
         upper_bound = (
             target_type.bounds.upper
-            if isinstance(target_type, rty.AnyInteger) and target_type.bounds is not None
+            if isinstance(target_type, ty.AnyInteger) and target_type.bounds is not None
             else INT_MAX
         )
         return [
@@ -1051,11 +1051,11 @@ class Add(BinaryIntExpr):
                             IntVal(upper_bound),
                             (
                                 IntConversion(
-                                    rty.BASE_INTEGER,
+                                    ty.BASE_INTEGER,
                                     self.right,
                                 )
-                                if self.right.type_ != rty.BASE_INTEGER
-                                and not isinstance(self.right.type_, rty.UniversalInteger)
+                                if self.right.type_ != ty.BASE_INTEGER
+                                and not isinstance(self.right.type_, ty.UniversalInteger)
                                 else self.right
                             ),
                         ),
@@ -1079,7 +1079,7 @@ class Sub(BinaryIntExpr):
     def preconditions(
         self,
         variable_id: Generator[ID, None, None],
-        _target_type: rty.Type | None = None,
+        _target_type: ty.Type | None = None,
     ) -> list[Cond]:
         return [
             *self.left.preconditions(variable_id),
@@ -1101,14 +1101,14 @@ class Mul(BinaryIntExpr):
     def preconditions(
         self,
         variable_id: Generator[ID, None, None],
-        target_type: rty.Type | None = None,
+        target_type: ty.Type | None = None,
     ) -> list[Cond]:
         target_type = target_type or self.type_
         v_id = next(variable_id)
-        v_type = rty.BASE_INTEGER
+        v_type = ty.BASE_INTEGER
         upper_bound = (
             target_type.bounds.upper
-            if isinstance(target_type, rty.AnyInteger) and target_type.bounds is not None
+            if isinstance(target_type, ty.AnyInteger) and target_type.bounds is not None
             else INT_MAX
         )
         return [
@@ -1151,7 +1151,7 @@ class Div(BinaryIntExpr):
     def preconditions(
         self,
         variable_id: Generator[ID, None, None],
-        _target_type: rty.Type | None = None,
+        _target_type: ty.Type | None = None,
     ) -> list[Cond]:
         return [
             *self.left.preconditions(variable_id),
@@ -1173,14 +1173,14 @@ class Pow(BinaryIntExpr):
     def preconditions(
         self,
         variable_id: Generator[ID, None, None],
-        target_type: rty.Type | None = None,
+        target_type: ty.Type | None = None,
     ) -> list[Cond]:
         target_type = target_type or self.type_
         v_id = next(variable_id)
-        v_type = rty.BASE_INTEGER
+        v_type = ty.BASE_INTEGER
         upper_bound = (
             target_type.bounds.upper
-            if isinstance(target_type, rty.AnyInteger) and target_type.bounds is not None
+            if isinstance(target_type, ty.AnyInteger) and target_type.bounds is not None
             else INT_MAX
         )
         return [
@@ -1212,7 +1212,7 @@ class Mod(BinaryIntExpr):
     def preconditions(
         self,
         variable_id: Generator[ID, None, None],
-        _target_type: rty.Type | None = None,
+        _target_type: ty.Type | None = None,
     ) -> list[Cond]:
         return [
             *self.left.preconditions(variable_id),
@@ -1342,7 +1342,7 @@ class NotEqual(Relation):
 class Call(Expr):
     identifier: ID = field(converter=ID)
     arguments: Sequence[Expr]
-    argument_types: Sequence[rty.Any]
+    argument_types: Sequence[ty.Any]
     origin: Origin | None = None
     _preconditions: list[Cond] = field(init=False, factory=list)
 
@@ -1370,8 +1370,8 @@ class Call(Expr):
 class IntCall(Call, IntExpr):
     identifier: ID = field(converter=ID)
     arguments: Sequence[Expr]
-    argument_types: Sequence[rty.Any]
-    type_: rty.AnyInteger
+    argument_types: Sequence[ty.Any]
+    type_: ty.AnyInteger
     origin: Origin | None = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntCall:
@@ -1415,8 +1415,8 @@ class BoolCall(Call, BoolExpr):
 class ObjCall(Call):
     identifier: ID = field(converter=ID)
     arguments: Sequence[Expr]
-    argument_types: Sequence[rty.Any]
-    type_: rty.Any
+    argument_types: Sequence[ty.Any]
+    type_: ty.Any
     origin: Origin | None = None
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjCall:
@@ -1436,7 +1436,7 @@ class ObjCall(Call):
 class FieldAccess(Expr):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
-    message_type: rty.Compound
+    message_type: ty.Compound
     origin: Origin | None = None
 
     @property
@@ -1454,7 +1454,7 @@ class FieldAccess(Expr):
     def preconditions(self, _: Generator[ID, None, None]) -> list[Cond]:
         return (
             [Cond(FieldValid(self.message, self.field, self.message_type, self.origin))]
-            if isinstance(self.message_type, rty.Message)
+            if isinstance(self.message_type, ty.Message)
             and self.field in self.message_type.field_types
             else []
         )
@@ -1467,13 +1467,13 @@ class FieldAccess(Expr):
 class IntFieldAccess(FieldAccess, IntExpr):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
-    message_type: rty.Compound
+    message_type: ty.Compound
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.AnyInteger:
+    def type_(self) -> ty.AnyInteger:
         type_ = self.message_type.types[self.field]
-        assert isinstance(type_, rty.AnyInteger)
+        assert isinstance(type_, ty.AnyInteger)
         return type_
 
     def substituted(self, mapping: Mapping[ID, ID]) -> IntFieldAccess:
@@ -1501,13 +1501,13 @@ class BoolFieldAccess(FieldAccess, BoolExpr):
 class ObjFieldAccess(FieldAccess):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
-    message_type: rty.Compound
+    message_type: ty.Compound
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Any:
+    def type_(self) -> ty.Any:
         type_ = self.message_type.field_types[self.field]
-        assert isinstance(type_, rty.Any)
+        assert isinstance(type_, ty.Any)
         return type_
 
     def substituted(self, mapping: Mapping[ID, ID]) -> ObjFieldAccess:
@@ -1562,11 +1562,11 @@ class IntIfExpr(IfExpr, IntExpr):
     condition: BasicBoolExpr
     then_expr: ComplexIntExpr
     else_expr: ComplexIntExpr
-    return_type: rty.AnyInteger
+    return_type: ty.AnyInteger
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.AnyInteger:
+    def type_(self) -> ty.AnyInteger:
         return self.return_type
 
     def to_z3_expr(self) -> z3.ArithRef:
@@ -1583,8 +1583,8 @@ class BoolIfExpr(IfExpr, BoolExpr):
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Enumeration:
-        return rty.BOOLEAN
+    def type_(self) -> ty.Enumeration:
+        return ty.BOOLEAN
 
     def to_z3_expr(self) -> z3.BoolRef:
         result = super().to_z3_expr()
@@ -1594,12 +1594,12 @@ class BoolIfExpr(IfExpr, BoolExpr):
 
 @define(eq=False)
 class Conversion(Expr):
-    target_type: rty.NamedType
+    target_type: ty.NamedType
     argument: Expr
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Any:
+    def type_(self) -> ty.Any:
         return self.target_type
 
     @property
@@ -1625,12 +1625,12 @@ class Conversion(Expr):
 
 @define(eq=False)
 class IntConversion(Conversion, BasicIntExpr):
-    target_type: rty.Integer
+    target_type: ty.Integer
     argument: IntExpr
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Integer:
+    def type_(self) -> ty.Integer:
         return self.target_type
 
     def preconditions(self, variable_id: Generator[ID, None, None]) -> list[Cond]:
@@ -1640,11 +1640,11 @@ class IntConversion(Conversion, BasicIntExpr):
             Cond(
                 LessEqual(
                     IntConversion(
-                        rty.BASE_INTEGER,
+                        ty.BASE_INTEGER,
                         First(self.target_type.identifier, self.argument.type_),
                     ),
                     IntConversion(
-                        rty.BASE_INTEGER,
+                        ty.BASE_INTEGER,
                         self.argument,
                     ),
                 ),
@@ -1653,11 +1653,11 @@ class IntConversion(Conversion, BasicIntExpr):
             Cond(
                 LessEqual(
                     IntConversion(
-                        rty.BASE_INTEGER,
+                        ty.BASE_INTEGER,
                         self.argument,
                     ),
                     IntConversion(
-                        rty.BASE_INTEGER,
+                        ty.BASE_INTEGER,
                         Last(self.target_type.identifier, self.argument.type_),
                     ),
                 ),
@@ -1677,8 +1677,8 @@ class Comprehension(Expr):
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Aggregate:
-        return rty.Aggregate(self.selector.expr.type_)
+    def type_(self) -> ty.Aggregate:
+        return ty.Aggregate(self.selector.expr.type_)
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -1724,7 +1724,7 @@ class Find(Expr):
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Any:
+    def type_(self) -> ty.Any:
         return self.selector.expr.type_
 
     @property
@@ -1768,8 +1768,8 @@ class Agg(Expr):
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Aggregate:
-        return rty.Aggregate(rty.common_type([e.type_ for e in self.elements]))
+    def type_(self) -> ty.Aggregate:
+        return ty.Aggregate(ty.common_type([e.type_ for e in self.elements]))
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -1807,7 +1807,7 @@ class NamedAgg(Expr):
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Any:
+    def type_(self) -> ty.Any:
         raise NotImplementedError
 
     @property
@@ -1833,8 +1833,8 @@ class Str(Expr):
     origin: Origin | None = None
 
     @property
-    def type_(self) -> rty.Sequence:
-        return rty.OPAQUE
+    def type_(self) -> ty.Sequence:
+        return ty.OPAQUE
 
     @property
     def accessed_vars(self) -> list[ID]:
@@ -1857,7 +1857,7 @@ class Str(Expr):
 class MsgAgg(Expr):
     identifier: ID = field(converter=ID)
     field_values: Mapping[ID, Expr]
-    type_: rty.Message
+    type_: ty.Message
     origin: Origin | None = None
 
     @property
@@ -1891,7 +1891,7 @@ class MsgAgg(Expr):
 class DeltaMsgAgg(Expr):
     identifier: ID = field(converter=ID)
     field_values: Mapping[ID, Expr]
-    type_: rty.Message
+    type_: ty.Message
     origin: Origin | None = None
 
     @property
@@ -1925,7 +1925,7 @@ class DeltaMsgAgg(Expr):
 class CaseExpr(Expr):
     expression: BasicExpr
     choices: Sequence[tuple[Sequence[BasicExpr], BasicExpr]]
-    type_: rty.Any
+    type_: ty.Any
     origin: Origin | None = None
 
     @property
@@ -1964,7 +1964,7 @@ class CaseExpr(Expr):
 class SufficientSpace(FieldAccessAttr, BoolExpr):
     message: ID = field(converter=ID)
     field: ID = field(converter=ID)
-    message_type: rty.Message
+    message_type: ty.Message
     origin: Origin | None = None
 
     def to_z3_expr(self) -> z3.BoolRef:
@@ -1974,7 +1974,7 @@ class SufficientSpace(FieldAccessAttr, BoolExpr):
 @define(eq=False)
 class HasElement(Attr, BoolExpr):
     prefix: ID = field(converter=ID)
-    prefix_type: rty.Sequence
+    prefix_type: ty.Sequence
     origin: Origin | None = None
 
     def to_z3_expr(self) -> z3.BoolRef:
@@ -1996,7 +1996,7 @@ class FormalDecl(Decl):
 class Argument:
     identifier: ID = field(converter=ID)
     type_identifier: ID = field(converter=ID)
-    type_: rty.Type
+    type_: ty.Type
 
 
 @frozen
@@ -2004,7 +2004,7 @@ class FuncDecl(FormalDecl):
     identifier: ID = field(converter=ID)
     arguments: Sequence[Argument]
     return_type: ID = field(converter=ID)
-    type_: rty.Type
+    type_: ty.Type
     location: Location | None
 
 
@@ -2117,7 +2117,7 @@ class StateMachine:
                                     Assign(
                                         "RFLX_Transition_Condition",
                                         t.condition.expr,
-                                        rty.BOOLEAN,
+                                        ty.BOOLEAN,
                                     ),
                                 ],
                                 variable_id,
@@ -2202,7 +2202,7 @@ def add_conversions(statements: Sequence[Stmt]) -> list[Stmt]:
 @singledispatch
 def _convert_expression(
     expression: Expr,  # noqa: ARG001
-    target_type: rty.Type,  # noqa: ARG001
+    target_type: ty.Type,  # noqa: ARG001
 ) -> Expr:
     raise NotImplementedError
 
@@ -2211,7 +2211,7 @@ def _convert_expression(
 @_convert_expression.register(DeltaMsgAgg)
 def _(
     expression: MsgAgg | DeltaMsgAgg,
-    target_type: rty.Type,  # noqa: ARG001
+    target_type: ty.Type,  # noqa: ARG001
 ) -> Expr:
     field_values: dict[ID, Expr] = {
         f: _convert_expression(v, expression.type_.types[f])
@@ -2231,19 +2231,19 @@ def _(
 @_convert_expression.register(Expr)
 def _(
     expression: BinaryIntExpr | IntExpr | Expr,
-    target_type: rty.Type,
+    target_type: ty.Type,
 ) -> Expr:
     result: Expr
 
     if (
         target_type.is_compatible_strong(expression.type_)
         and not isinstance(expression, BinaryIntExpr)
-        or not isinstance(target_type, (rty.Integer, rty.Enumeration))
+        or not isinstance(target_type, (ty.Integer, ty.Enumeration))
     ):
         return expression
 
     if isinstance(expression, BinaryIntExpr):
-        assert isinstance(target_type, rty.Integer)
+        assert isinstance(target_type, ty.Integer)
         left = (
             expression.left
             if target_type.is_compatible_strong(expression.left.type_)
@@ -2269,7 +2269,7 @@ def _(
         )
 
     elif isinstance(expression, IntExpr):
-        assert isinstance(target_type, rty.Integer)
+        assert isinstance(target_type, ty.Integer)
         result = IntConversion(
             target_type,
             expression,
@@ -2367,5 +2367,5 @@ def add_required_checks(
     return result
 
 
-def to_integer(type_: rty.AnyInteger) -> rty.Integer:
-    return type_ if isinstance(type_, rty.Integer) else rty.BASE_INTEGER
+def to_integer(type_: ty.AnyInteger) -> ty.Integer:
+    return type_ if isinstance(type_, ty.Integer) else ty.BASE_INTEGER

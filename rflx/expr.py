@@ -13,11 +13,11 @@ from pathlib import Path
 from sys import intern
 from typing import TYPE_CHECKING, Final
 
-from rflx import const, typing_ as rty
+from rflx import const, ty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.error import are_all_locations_present
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity, ty
+from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
 if TYPE_CHECKING:
     from _typeshed import SupportsAllComparisons
@@ -41,7 +41,7 @@ class Expr(Base):
 
     def __init__(
         self,
-        type_: rty.Type = rty.UNDEFINED,
+        type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ):
         self.type_ = type_
@@ -98,11 +98,11 @@ class Expr(Base):
         """Initialize and check the types of sub-expressions."""
         raise NotImplementedError
 
-    def check_type(self, expected: rty.Type | tuple[rty.Type, ...]) -> RecordFluxError:
+    def check_type(self, expected: ty.Type | tuple[ty.Type, ...]) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
         error = self._check_type_subexpr()
         error.extend(
-            rty.check_type(
+            ty.check_type(
                 self.type_,
                 expected,
                 self.location,
@@ -113,12 +113,12 @@ class Expr(Base):
 
     def check_type_instance(
         self,
-        expected: type[rty.Type] | tuple[type[rty.Type], ...],
+        expected: type[ty.Type] | tuple[type[ty.Type], ...],
     ) -> RecordFluxError:
         """Initialize and check the types of the expression and all sub-expressions."""
         error = self._check_type_subexpr()
         error.extend(
-            rty.check_type_instance(
+            ty.check_type_instance(
                 self.type_,
                 expected,
                 self.location,
@@ -158,14 +158,14 @@ class Expr(Base):
 
 class Not(Expr):
     def __init__(self, expr: Expr, location: Location | None = None) -> None:
-        super().__init__(rty.BOOLEAN, location)
+        super().__init__(ty.BOOLEAN, location)
         self.expr = expr
 
     def _update_str(self) -> None:
         self._str = intern(f"not {self.parenthesized(self.expr)}")
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.expr.check_type(rty.BOOLEAN)
+        return self.expr.check_type(ty.BOOLEAN)
 
     def __neg__(self) -> Expr:
         return self.expr
@@ -233,7 +233,7 @@ class BinExpr(Expr):
         self,
         left: Expr,
         right: Expr,
-        type_: rty.Type = rty.UNDEFINED,
+        type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(type_, location)
@@ -303,7 +303,7 @@ class BinExpr(Expr):
 
 class AssExpr(Expr):
     def __init__(self, *terms: Expr, location: Location | None = None) -> None:
-        super().__init__(rty.UNDEFINED, location=location)
+        super().__init__(ty.UNDEFINED, location=location)
         self.terms = list(terms)
 
     def __repr__(self) -> str:
@@ -468,7 +468,7 @@ class AssExpr(Expr):
 class BoolAssExpr(AssExpr):
     def __init__(self, *terms: Expr, location: Location | None = None) -> None:
         super().__init__(*terms, location=location)
-        self.type_ = rty.BOOLEAN
+        self.type_ = ty.BOOLEAN
 
     def _update_str(self) -> None:
         if not self.terms:
@@ -490,7 +490,7 @@ class BoolAssExpr(AssExpr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for t in self.terms:
-            error.extend(t.check_type(rty.BOOLEAN).entries)
+            error.extend(t.check_type(ty.BOOLEAN).entries)
         return error
 
     @abstractmethod
@@ -570,10 +570,10 @@ class OrElse(Or):
 
 
 class Number(Expr):
-    type_: rty.UniversalInteger
+    type_: ty.UniversalInteger
 
     def __init__(self, value: int, base: int = 0, location: Location | None = None) -> None:
-        super().__init__(rty.UniversalInteger(ty.Bounds(value, value)), location)
+        super().__init__(ty.UniversalInteger(ty.Bounds(value, value)), location)
         self.value = value
         self.base = base
 
@@ -692,7 +692,7 @@ class Neg(Expr):
         self._str = intern(f"-{self.parenthesized(self.expr)}")
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.expr.check_type_instance(rty.AnyInteger)
+        return self.expr.check_type_instance(ty.AnyInteger)
 
     def __neg__(self) -> Expr:
         return self.expr
@@ -735,13 +735,13 @@ class Neg(Expr):
 class MathAssExpr(AssExpr):
     def __init__(self, *terms: Expr, location: Location | None = None) -> None:
         super().__init__(*terms, location=location)
-        common_type = rty.common_type([t.type_ for t in terms])
-        self.type_ = common_type if common_type != rty.UNDEFINED else rty.BASE_INTEGER
+        common_type = ty.common_type([t.type_ for t in terms])
+        self.type_ = common_type if common_type != ty.UNDEFINED else ty.BASE_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for t in self.terms:
-            error.extend(t.check_type_instance(rty.AnyInteger).entries)
+            error.extend(t.check_type_instance(ty.AnyInteger).entries)
         return error
 
 
@@ -816,14 +816,14 @@ class Mul(MathAssExpr):
 
 class MathBinExpr(BinExpr):
     def __init__(self, left: Expr, right: Expr, location: Location | None = None) -> None:
-        super().__init__(left, right, rty.common_type([left.type_, right.type_]), location)
+        super().__init__(left, right, ty.common_type([left.type_, right.type_]), location)
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.AnyInteger).entries)
+            error.extend(e.check_type_instance(ty.AnyInteger).entries)
 
-        self.type_ = rty.common_type([self.left.type_, self.right.type_])
+        self.type_ = ty.common_type([self.left.type_, self.right.type_])
 
         return error
 
@@ -936,7 +936,7 @@ class Name(Expr):
     def __init__(
         self,
         immutable: bool = False,
-        type_: rty.Type = rty.UNDEFINED,
+        type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(type_, location)
@@ -973,7 +973,7 @@ class TypeName(Name):
     def __init__(
         self,
         identifier: StrID,
-        type_: rty.Type = rty.UNDEFINED,
+        type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
@@ -1001,7 +1001,7 @@ class Literal(Name):
     def __init__(
         self,
         identifier: StrID,
-        type_: rty.Type = rty.UNDEFINED,
+        type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
@@ -1035,7 +1035,7 @@ class Literal(Name):
     def copy(
         self,
         identifier: StrID | None = None,
-        type_: rty.Type | None = None,
+        type_: ty.Type | None = None,
         location: Location | None = None,
     ) -> Literal:
         return self.__class__(
@@ -1050,7 +1050,7 @@ class Variable(Name):
         self,
         identifier: StrID,
         immutable: bool = False,
-        type_: rty.Type = rty.UNDEFINED,
+        type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
@@ -1086,7 +1086,7 @@ class Variable(Name):
         self,
         identifier: StrID | None = None,
         immutable: bool | None = None,
-        type_: rty.Type | None = None,
+        type_: ty.Type | None = None,
         location: Location | None = None,
     ) -> Variable:
         return self.__class__(
@@ -1099,12 +1099,12 @@ class Variable(Name):
 
 TRUE = Literal(
     "True",
-    type_=rty.BOOLEAN,
+    type_=ty.BOOLEAN,
     location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 FALSE = Literal(
     "False",
-    type_=rty.BOOLEAN,
+    type_=ty.BOOLEAN,
     location=Location((1, 1), Path(str(const.BUILTINS_PACKAGE)), (1, 1)),
 )
 
@@ -1160,46 +1160,46 @@ class Attribute(Name):
 class Size(Attribute):
     def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
-        self.type_ = rty.UNIVERSAL_INTEGER
+        self.type_ = ty.UNIVERSAL_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type_instance(rty.Any)
+        return self.prefix.check_type_instance(ty.Any)
 
 
 class Length(Attribute):
     def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
-        self.type_ = rty.UNIVERSAL_INTEGER
+        self.type_ = ty.UNIVERSAL_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type_instance(rty.Any)
+        return self.prefix.check_type_instance(ty.Any)
 
 
 class First(Attribute):
     def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
-        self.type_ = rty.UNIVERSAL_INTEGER
+        self.type_ = ty.UNIVERSAL_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type_instance(rty.Any)
+        return self.prefix.check_type_instance(ty.Any)
 
 
 class Last(Attribute):
     def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
-        self.type_ = rty.UNIVERSAL_INTEGER
+        self.type_ = ty.UNIVERSAL_INTEGER
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type_instance(rty.Any)
+        return self.prefix.check_type_instance(ty.Any)
 
 
 class ValidChecksum(Attribute):
     def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
-        self.type_ = rty.BOOLEAN
+        self.type_ = ty.BOOLEAN
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type_instance(rty.Any)
+        return self.prefix.check_type_instance(ty.Any)
 
     @property
     def representation(self) -> str:
@@ -1209,22 +1209,22 @@ class ValidChecksum(Attribute):
 class Valid(Attribute):
     def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
-        self.type_ = rty.BOOLEAN
+        self.type_ = ty.BOOLEAN
 
     def _check_type_subexpr(self) -> RecordFluxError:
         return self.prefix.check_type_instance(
-            (rty.Sequence, rty.Message) if isinstance(self.prefix, Variable) else rty.Any,
+            (ty.Sequence, ty.Message) if isinstance(self.prefix, Variable) else (ty.Any,),
         )
 
 
 class Present(Attribute):
     def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
-        self.type_ = rty.BOOLEAN
+        self.type_ = ty.BOOLEAN
 
     def _check_type_subexpr(self) -> RecordFluxError:
         if isinstance(self.prefix, Selected):
-            error = self.prefix.prefix.check_type_instance(rty.Message)
+            error = self.prefix.prefix.check_type_instance(ty.Message)
         else:
             error = RecordFluxError(
                 [
@@ -1241,29 +1241,29 @@ class Present(Attribute):
 class HasData(Attribute):
     def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
-        self.type_ = rty.BOOLEAN
+        self.type_ = ty.BOOLEAN
 
     @property
     def symbol(self) -> str:
         return "Has_Data"
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type_instance(rty.Message)
+        return self.prefix.check_type_instance(ty.Message)
 
 
 class Head(Attribute):
     def __init__(
         self,
         prefix: StrID | Expr,
-        type_: rty.Type = rty.UNDEFINED,
+        type_: ty.Type = ty.UNDEFINED,
     ):
         super().__init__(prefix)
         self.type_ = type_
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        error = self.prefix.check_type_instance(rty.Composite)
+        error = self.prefix.check_type_instance(ty.Composite)
         self.type_ = (
-            self.prefix.type_.element if isinstance(self.prefix.type_, rty.Composite) else rty.Any()
+            self.prefix.type_.element if isinstance(self.prefix.type_, ty.Composite) else ty.Any()
         )
         if not isinstance(self.prefix, (Variable, Selected, Comprehension)):
             error.push(
@@ -1279,10 +1279,10 @@ class Head(Attribute):
 class Opaque(Attribute):
     def __init__(self, prefix: StrID | Expr) -> None:
         super().__init__(prefix)
-        self.type_ = rty.OPAQUE
+        self.type_ = ty.OPAQUE
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        return self.prefix.check_type_instance((rty.Sequence, rty.Message))
+        return self.prefix.check_type_instance((ty.Sequence, ty.Message))
 
 
 class Constrained(Attribute):
@@ -1356,7 +1356,7 @@ class Selected(Name):
         prefix: Expr,
         selector: StrID,
         immutable: bool = False,
-        type_: rty.Type = rty.UNDEFINED,
+        type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         self.prefix = prefix
@@ -1374,7 +1374,7 @@ class Selected(Name):
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
-        if isinstance(self.prefix.type_, rty.Message):
+        if isinstance(self.prefix.type_, ty.Message):
             if self.selector in self.prefix.type_.types:
                 self.type_ = self.prefix.type_.types[self.selector]
             else:
@@ -1392,10 +1392,10 @@ class Selected(Name):
                         ),
                     ],
                 )
-                self.type_ = rty.Any()
+                self.type_ = ty.Any()
         else:
-            self.type_ = rty.Any()
-        error.extend(self.prefix.check_type_instance(rty.Message).entries)
+            self.type_ = ty.Any()
+        error.extend(self.prefix.check_type_instance(ty.Message).entries)
         return error
 
     @property
@@ -1427,7 +1427,7 @@ class Selected(Name):
         prefix: Expr | None = None,
         selector: StrID | None = None,
         immutable: bool | None = None,
-        type_: rty.Type | None = None,
+        type_: ty.Type | None = None,
         location: Location | None = None,
     ) -> Selected:
         return self.__class__(
@@ -1443,10 +1443,10 @@ class Call(Name):
     def __init__(  # noqa: PLR0913
         self,
         identifier: StrID,
-        type_: rty.Type,
+        type_: ty.Type,
         args: Sequence[Expr] | None = None,
         immutable: bool = False,
-        argument_types: Sequence[rty.Type] | None = None,
+        argument_types: Sequence[ty.Type] | None = None,
         location: Location | None = None,
     ) -> None:
         self.identifier = ID(identifier)
@@ -1461,9 +1461,9 @@ class Call(Name):
         error = RecordFluxError()
 
         for a, t in itertools.zip_longest(self.args, self.argument_types[: len(self.args)]):
-            error.extend(a.check_type(t if t is not None else rty.Any()).entries)
+            error.extend(a.check_type(t if t is not None else ty.Any()).entries)
 
-        if self.type_ != rty.UNDEFINED:
+        if self.type_ != ty.UNDEFINED:
             if len(self.args) < len(self.argument_types):
                 error.push(
                     ErrorEntry(
@@ -1558,7 +1558,7 @@ UNDEFINED = UndefinedExpr(location=Location((1, 1)))
 
 class Aggregate(Expr):
     def __init__(self, *elements: Expr, location: Location | None = None) -> None:
-        super().__init__(rty.Aggregate(rty.common_type([e.type_ for e in elements])), location)
+        super().__init__(ty.Aggregate(ty.common_type([e.type_ for e in elements])), location)
         self.elements = list(elements)
 
     def __eq__(self, other: object) -> bool:
@@ -1575,7 +1575,7 @@ class Aggregate(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in self.elements:
-            error.extend(e.check_type_instance(rty.Any).entries)
+            error.extend(e.check_type_instance(ty.Any).entries)
         return error
 
     def __neg__(self) -> Expr:
@@ -1663,7 +1663,7 @@ class NamedAggregate(Expr):
 
 class Relation(BinExpr):
     def __init__(self, left: Expr, right: Expr, location: Location | None = None) -> None:
-        super().__init__(left, right, rty.BOOLEAN, location)
+        super().__init__(left, right, ty.BOOLEAN, location)
 
     @abstractmethod
     def __neg__(self) -> Expr:
@@ -1735,7 +1735,7 @@ class Less(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.AnyInteger).entries)
+            error.extend(e.check_type_instance(ty.AnyInteger).entries)
         return error
 
     @property
@@ -1753,7 +1753,7 @@ class LessEqual(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.AnyInteger).entries)
+            error.extend(e.check_type_instance(ty.AnyInteger).entries)
         return error
 
     @property
@@ -1769,7 +1769,7 @@ class Equal(Relation):
         return NotEqual(self.left, self.right)
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        error = self.left.check_type_instance(rty.Any)
+        error = self.left.check_type_instance(ty.Any)
         error.extend(self.right.check_type(self.left.type_).entries)
         return error
 
@@ -1788,7 +1788,7 @@ class GreaterEqual(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.AnyInteger).entries)
+            error.extend(e.check_type_instance(ty.AnyInteger).entries)
         return error
 
     @property
@@ -1806,7 +1806,7 @@ class Greater(Relation):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.left, self.right]:
-            error.extend(e.check_type_instance(rty.AnyInteger).entries)
+            error.extend(e.check_type_instance(ty.AnyInteger).entries)
         return error
 
     @property
@@ -1822,7 +1822,7 @@ class NotEqual(Relation):
         return Equal(self.left, self.right)
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        error = self.left.check_type_instance(rty.Any)
+        error = self.left.check_type_instance(ty.Any)
         error.extend(self.right.check_type(self.left.type_).entries)
         return error
 
@@ -1839,10 +1839,10 @@ class In(Relation):
         return NotIn(self.left, self.right)
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        error = self.left.check_type_instance(rty.Any)
+        error = self.left.check_type_instance(ty.Any)
         error.extend(
             self.right.check_type(
-                rty.Aggregate(self.left.type_),
+                ty.Aggregate(self.left.type_),
             ).entries,
         )
         return error
@@ -1857,10 +1857,10 @@ class NotIn(Relation):
         return In(self.left, self.right)
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        error = self.left.check_type_instance(rty.Any)
+        error = self.left.check_type_instance(ty.Any)
         error.extend(
             self.right.check_type(
-                rty.Aggregate(self.left.type_),
+                ty.Aggregate(self.left.type_),
             ).entries,
         )
         return error
@@ -1877,7 +1877,7 @@ class IfExpr(Expr):
         else_expression: Expr | None = None,
     ) -> None:
         super().__init__(
-            rty.common_type(
+            ty.common_type(
                 [
                     *[e.type_ for _, e in condition_expressions],
                     *([else_expression.type_] if else_expression else []),
@@ -1966,7 +1966,7 @@ class QuantifiedExpr(Expr):
         predicate: Expr,
         location: Location | None = None,
     ) -> None:
-        super().__init__(rty.BOOLEAN, location)
+        super().__init__(ty.BOOLEAN, location)
         self.parameter_identifier = ID(parameter_identifier)
         self.iterable = iterable
         self.predicate = predicate
@@ -1980,17 +1980,17 @@ class QuantifiedExpr(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         def typify_variable(expr: Expr) -> Expr:
             if isinstance(expr, Variable) and expr.identifier == self.parameter_identifier:
-                if isinstance(self.iterable.type_, (rty.Aggregate, rty.Sequence)):
+                if isinstance(self.iterable.type_, (ty.Aggregate, ty.Sequence)):
                     expr.type_ = self.iterable.type_.element
                 else:
-                    expr.type_ = rty.Any()
+                    expr.type_ = ty.Any()
             return expr
 
-        error = self.iterable.check_type_instance(rty.Composite)
+        error = self.iterable.check_type_instance(ty.Composite)
 
         self.predicate = self.predicate.substituted(typify_variable)
 
-        error.extend(self.predicate.check_type(rty.BOOLEAN).entries)
+        error.extend(self.predicate.check_type(ty.BOOLEAN).entries)
         return error
 
     @property
@@ -2081,7 +2081,7 @@ class ForSomeIn(QuantifiedExpr):
 
 class ValueRange(Expr):
     def __init__(self, lower: Expr, upper: Expr, location: Location | None = None):
-        super().__init__(rty.Any(), location)
+        super().__init__(ty.Any(), location)
         self.lower = lower
         self.upper = upper
 
@@ -2091,7 +2091,7 @@ class ValueRange(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
         for e in [self.lower, self.upper]:
-            error.extend(e.check_type_instance(rty.AnyInteger).entries)
+            error.extend(e.check_type_instance(ty.AnyInteger).entries)
         return error
 
     def __neg__(self) -> Expr:
@@ -2125,8 +2125,8 @@ class Conversion(Expr):
         self,
         identifier: StrID,
         argument: Expr,
-        type_: rty.Type = rty.UNDEFINED,
-        argument_types: Sequence[rty.Type] | None = None,
+        type_: ty.Type = ty.UNDEFINED,
+        argument_types: Sequence[ty.Type] | None = None,
         location: Location | None = None,
     ) -> None:
         super().__init__(type_, location)
@@ -2138,7 +2138,7 @@ class Conversion(Expr):
         self._str = intern(f"{self.identifier} ({self.argument})")
 
     def _check_type_subexpr(self) -> RecordFluxError:
-        error = self.argument.check_type(rty.OPAQUE)
+        error = self.argument.check_type(ty.OPAQUE)
 
         if isinstance(self.argument, Selected):
             if self.argument_types:
@@ -2160,7 +2160,7 @@ class Conversion(Expr):
                                     self.location,
                                 ),
                             ]
-                            if isinstance(self.argument.prefix.type_, rty.Message)
+                            if isinstance(self.argument.prefix.type_, ty.Message)
                             else []
                         ),
                     ),
@@ -2244,7 +2244,7 @@ class QualifiedExpr(Expr):
 
 
 class Comprehension(Expr):
-    type_: rty.Aggregate
+    type_: ty.Aggregate
 
     def __init__(
         self,
@@ -2254,7 +2254,7 @@ class Comprehension(Expr):
         condition: Expr,
         location: Location | None = None,
     ) -> None:
-        super().__init__(rty.Aggregate(selector.type_), location)
+        super().__init__(ty.Aggregate(selector.type_), location)
         self.iterator = ID(iterator)
         self.sequence = sequence
         self.selector = selector
@@ -2268,21 +2268,21 @@ class Comprehension(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         def typify_variable(expr: Expr) -> Expr:
             if isinstance(expr, Variable) and expr.identifier == self.iterator:
-                if isinstance(self.sequence.type_, (rty.Aggregate, rty.Sequence)):
+                if isinstance(self.sequence.type_, (ty.Aggregate, ty.Sequence)):
                     expr.type_ = self.sequence.type_.element
                 else:
-                    expr.type_ = rty.Any()
+                    expr.type_ = ty.Any()
             return expr
 
-        error = self.sequence.check_type_instance(rty.Composite)
+        error = self.sequence.check_type_instance(ty.Composite)
 
         self.selector = self.selector.substituted(typify_variable)
         self.condition = self.condition.substituted(typify_variable)
 
-        error.extend(self.selector.check_type_instance(rty.Any).entries)
-        error.extend(self.condition.check_type(rty.BOOLEAN).entries)
+        error.extend(self.selector.check_type_instance(ty.Any).entries)
+        error.extend(self.condition.check_type(ty.BOOLEAN).entries)
 
-        self.type_ = rty.Aggregate(self.selector.type_)
+        self.type_ = ty.Aggregate(self.selector.type_)
 
         return error
 
@@ -2334,7 +2334,7 @@ class MessageAggregate(Expr):
         self,
         identifier: StrID,
         field_values: Mapping[StrID, Expr],
-        type_: rty.Type = rty.UNDEFINED,
+        type_: ty.Type = ty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(type_, location)
@@ -2352,9 +2352,9 @@ class MessageAggregate(Expr):
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
 
-        if not isinstance(self.type_, rty.Message):
+        if not isinstance(self.type_, ty.Message):
             for d in self.field_values.values():
-                error.extend(d.check_type_instance(rty.Any).entries)
+                error.extend(d.check_type_instance(ty.Any).entries)
 
             return error
 
@@ -2363,7 +2363,7 @@ class MessageAggregate(Expr):
         return error
 
     def _field_combinations(self) -> set[tuple[str, ...]]:
-        assert isinstance(self.type_, rty.Message)
+        assert isinstance(self.type_, ty.Message)
 
         return set(self.type_.field_combinations)
 
@@ -2376,7 +2376,7 @@ class MessageAggregate(Expr):
         }
 
     def _check_for_invalid_fields(self) -> RecordFluxError:
-        assert isinstance(self.type_, rty.Message)
+        assert isinstance(self.type_, ty.Message)
 
         error = RecordFluxError()
 
@@ -2396,7 +2396,7 @@ class MessageAggregate(Expr):
 
             field_type = self.type_.types[field]
 
-            if field_type == rty.OPAQUE:
+            if field_type == ty.OPAQUE:
                 if not any(
                     r.field == field and expr.type_.is_compatible(r.sdu)
                     for r in self.type_.refinements
@@ -2567,7 +2567,7 @@ class CaseExpr(Expr):
         choices: Sequence[tuple[Sequence[ID | Number], Expr]],
         location: Location | None = None,
     ) -> None:
-        super().__init__(rty.common_type([e.type_ for _, e in choices]), location)
+        super().__init__(ty.common_type([e.type_ for _, e in choices]), location)
         self.expr = expr
         self.choices = choices
 
@@ -2576,7 +2576,7 @@ class CaseExpr(Expr):
         self._str = intern(f"(case {self.expr} is\n{data})")
 
     def _check_enumeration(self) -> RecordFluxError:
-        assert isinstance(self.expr.type_, rty.Enumeration)
+        assert isinstance(self.expr.type_, ty.Enumeration)
         assert self.expr.type_.literals
 
         error = RecordFluxError()
@@ -2628,7 +2628,7 @@ class CaseExpr(Expr):
         return error
 
     def _check_integer(self) -> RecordFluxError:
-        assert isinstance(self.expr.type_, rty.Integer)
+        assert isinstance(self.expr.type_, ty.Integer)
         assert self.expr.type_.bounds.lower
         assert self.expr.type_.bounds.upper
 
@@ -2694,11 +2694,11 @@ class CaseExpr(Expr):
 
     def _check_type_subexpr(self) -> RecordFluxError:
         error = RecordFluxError()
-        result_type: rty.Type = rty.Any()
+        result_type: ty.Type = ty.Any()
         literals = [c for (choice, _) in self.choices for c in choice]
 
         for _, expr in self.choices:
-            error.extend(expr.check_type_instance(rty.Any).entries)
+            error.extend(expr.check_type_instance(ty.Any).entries)
             result_type = result_type.common_type(expr.type_)
 
         for i1, (_, e1) in enumerate(self.choices):
@@ -2720,7 +2720,7 @@ class CaseExpr(Expr):
                         ),
                     )
 
-        error.extend(self.expr.check_type_instance(rty.Any).entries)
+        error.extend(self.expr.check_type_instance(ty.Any).entries)
         error.propagate()
 
         duplicates = [
@@ -2749,9 +2749,9 @@ class CaseExpr(Expr):
                 ),
             )
 
-        if isinstance(self.expr.type_, rty.Enumeration):
+        if isinstance(self.expr.type_, ty.Enumeration):
             error.extend(self._check_enumeration().entries)
-        elif isinstance(self.expr.type_, rty.Integer):
+        elif isinstance(self.expr.type_, ty.Integer):
             error.extend(self._check_integer().entries)
         else:
             assert self.expr.location is not None
