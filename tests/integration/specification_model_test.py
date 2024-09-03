@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from rflx import expr, typing_ as rty
+from rflx import expr, ty
 from rflx.const import RESERVED_WORDS
 from rflx.identifier import ID
 from rflx.model import (
@@ -646,7 +646,7 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                         condition=expr.And(
                             expr.Equal(expr.Variable("Z"), expr.TRUE),
                             expr.Equal(
-                                expr.Call("G", rty.BOOLEAN, [expr.Variable("F")]),
+                                expr.Call("G", ty.BOOLEAN, [expr.Variable("F")]),
                                 expr.TRUE,
                             ),
                         ),

@@ -4,7 +4,7 @@ from typing import Callable
 
 import pytest
 
-from rflx import ir, typing_ as rty
+from rflx import ir, ty
 from rflx.generator.allocator import AllocatorGenerator
 from rflx.identifier import ID, id_generator
 from rflx.integration import Integration, IntegrationFile, StateMachineIntegration
@@ -41,7 +41,7 @@ from tests.unit.generator.state_machine_test import dummy_state_machine
                         [
                             ir.VarDecl(
                                 "Y",
-                                rty.Message("T"),
+                                ty.Message("T"),
                                 origin=ir.ConstructedOrigin("X : T", Location((2, 2))),
                             ),
                         ],
@@ -52,7 +52,7 @@ from tests.unit.generator.state_machine_test import dummy_state_machine
                 declarations=[
                     ir.VarDecl(
                         "X",
-                        rty.Message("T"),
+                        ty.Message("T"),
                         origin=ir.ConstructedOrigin("X : T", Location((1, 1))),
                     ),
                 ],
@@ -80,7 +80,7 @@ from tests.unit.generator.state_machine_test import dummy_state_machine
                             ),
                         ],
                         None,
-                        [ir.Read("C", ir.ObjVar("X", rty.Message("T")))],
+                        [ir.Read("C", ir.ObjVar("X", ty.Message("T")))],
                         None,
                         None,
                     ),
@@ -88,7 +88,7 @@ from tests.unit.generator.state_machine_test import dummy_state_machine
                 declarations=[
                     ir.VarDecl(
                         "X",
-                        rty.Message("T"),
+                        ty.Message("T"),
                         origin=ir.ConstructedOrigin("X : T", Location((1, 1))),
                     ),
                 ],
@@ -133,7 +133,7 @@ def test_allocator(
                             ),
                         ],
                         None,
-                        [ir.Read("C", ir.ObjVar("X", rty.Message("T")))],
+                        [ir.Read("C", ir.ObjVar("X", ty.Message("T")))],
                         None,
                         None,
                     ),
@@ -141,7 +141,7 @@ def test_allocator(
                 declarations=[
                     ir.VarDecl(
                         "X",
-                        rty.Message("T"),
+                        ty.Message("T"),
                         origin=ir.ConstructedOrigin("X : T", Location((1, 1))),
                     ),
                 ],
@@ -169,7 +169,7 @@ def test_allocator(
                             ),
                         ],
                         None,
-                        [ir.Read("C", ir.ObjVar("X", rty.Message("T")))],
+                        [ir.Read("C", ir.ObjVar("X", ty.Message("T")))],
                         None,
                         None,
                     ),
@@ -177,12 +177,12 @@ def test_allocator(
                 declarations=[
                     ir.VarDecl(
                         "X",
-                        rty.Message("T"),
+                        ty.Message("T"),
                         origin=ir.ConstructedOrigin("X : T", Location((1, 1))),
                     ),
                     ir.VarDecl(
                         "Y",
-                        rty.Message("T"),
+                        ty.Message("T"),
                         origin=ir.ConstructedOrigin("X : T", Location((2, 2))),
                     ),
                 ],

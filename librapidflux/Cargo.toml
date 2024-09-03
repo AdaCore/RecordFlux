@@ -11,6 +11,7 @@ indexmap = { workspace = true, features = ["serde"] }
 lazy_static = { workspace = true }
 owo-colors = "4.0.0"
 serde = { workspace = true }
+strum = { version = "0.26.3", features = ["derive"] }
 thiserror = "1.0.61"
 
 [dev-dependencies]

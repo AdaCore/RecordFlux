@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Final
 
-from rflx import expr, expr_conv, ir, typing_ as rty
+from rflx import expr, expr_conv, ir, ty
 from rflx.common import Base, indent, indent_next, verbose_repr
 from rflx.identifier import ID, StrID, id_generator
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
@@ -159,7 +159,7 @@ class State(Base):
             isinstance(a, (stmt.Append, stmt.Extend, stmt.MessageFieldAssignment))
             or (
                 isinstance(a, stmt.VariableAssignment)
-                and (isinstance(a.type_, rty.Message) or (has_expression_exceptions(a.expression)))
+                and (isinstance(a.type_, ty.Message) or (has_expression_exceptions(a.expression)))
             )
             for a in self._actions
         ) or any(has_expression_exceptions(t.condition) for t in self._transitions)
@@ -277,11 +277,11 @@ class State(Base):
                 ),
             )
 
-        def substituted(expression: expr.Expr, structure: rty.Structure) -> expr.Expr:
+        def substituted(expression: expr.Expr, structure: ty.Structure) -> expr.Expr:
             def replace_expression_type(expression: expr.Expr) -> expr.Expr:
                 if (
                     isinstance(expression, (expr.Variable, expr.Call))
-                    and isinstance(expression.type_, rty.Message)
+                    and isinstance(expression.type_, ty.Message)
                     and expression.type_.identifier == structure.identifier
                 ):
                     expression.type_ = structure
@@ -308,7 +308,7 @@ class State(Base):
         for name, declaration in self.declarations.items():
             if (
                 not isinstance(declaration, decl.VariableDeclaration)
-                or not isinstance(declaration.type_, rty.Message)
+                or not isinstance(declaration.type_, ty.Message)
                 or not declaration.type_.is_definite
                 or (
                     isinstance(declaration, decl.VariableDeclaration)
@@ -325,7 +325,7 @@ class State(Base):
                     identifier=declaration.identifier,
                     type_identifier=declaration.type_identifier,
                     expression=declaration.expression,
-                    type_=rty.Structure(
+                    type_=ty.Structure(
                         identifier=declaration.type_.identifier,
                         field_combinations=declaration.type_.field_combinations,
                         parameter_types=declaration.type_.parameter_types,
@@ -333,7 +333,7 @@ class State(Base):
                     ),
                     location=declaration.location,
                 )
-                assert isinstance(message_decl.type_, rty.Structure)
+                assert isinstance(message_decl.type_, ty.Structure)
                 self.declarations[name] = message_decl
 
                 for action in self._actions:
@@ -725,7 +725,7 @@ class StateMachine(TopLevelDeclaration):
                     )
                 else:
                     undefined_type(d.type_identifier, d.location)
-                    d.type_ = rty.Any()
+                    d.type_ = ty.Any()
 
                 if isinstance(d, decl.FunctionDeclaration):
                     for p in d.parameters:
@@ -738,7 +738,7 @@ class StateMachine(TopLevelDeclaration):
                             p.type_ = argument_type.type_
                             self._validate_function_parameter_type(parameter_id)
                         else:
-                            p.type_ = rty.Any()
+                            p.type_ = ty.Any()
                             undefined_type(p.type_identifier, d.location)
 
                     return_type_id = type_decl.internal_type_identifier(
@@ -772,7 +772,7 @@ class StateMachine(TopLevelDeclaration):
             )
         if (
             not isinstance(parameter_type, (type_decl.Scalar, Message))
-            and parameter_type.identifier != rty.OPAQUE.identifier
+            and parameter_type.identifier != ty.OPAQUE.identifier
         ):
             assert type_identifier.location
             self.error.extend(
@@ -843,7 +843,7 @@ class StateMachine(TopLevelDeclaration):
             try:
                 type_ = declarations[a.identifier].type_
             except KeyError:
-                type_ = rty.Undefined()
+                type_ = ty.Undefined()
 
             self.error.extend(
                 a.check_type(
@@ -952,7 +952,7 @@ class StateMachine(TopLevelDeclaration):
     ) -> None:
         for t in state.transitions:
             t.condition = t.condition.substituted(lambda x: self._typify_variable(x, declarations))
-            self.error.extend(t.condition.check_type(rty.BOOLEAN).entries)
+            self.error.extend(t.condition.check_type(ty.BOOLEAN).entries)
             self._reference_variable_declaration(t.condition.variables(), declarations)
 
             t.condition.substituted(lambda e: error_on_unsupported_expression(e, self.error))
@@ -1149,7 +1149,7 @@ def error_on_unsupported_expression(expression: expr.Expr, error: RecordFluxErro
     # TODO(eng/recordflux/RecordFlux#1497): Support comparisons of opaque fields
     if isinstance(expression, (expr.Equal, expr.NotEqual)):
         for e in [expression.left, expression.right]:
-            if isinstance(e, expr.Selected) and e.type_ == rty.OPAQUE:
+            if isinstance(e, expr.Selected) and e.type_ == ty.OPAQUE:
                 error.push(
                     ErrorEntry(
                         "comparisons of opaque fields not yet supported",

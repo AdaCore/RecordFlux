@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 import pytest
 
-from rflx import ada, expr, typing_ as rty
+from rflx import ada, expr, ty
 from rflx.identifier import ID
 from tests.utils import assert_equal
 
@@ -203,7 +203,7 @@ def test_indexed_rflx_expr() -> None:
 def test_call_rflx_expr() -> None:
     assert ada.Call("X", [ada.Variable("Y"), ada.Variable("Z")]).rflx_expr() == expr.Call(
         "X",
-        rty.UNDEFINED,
+        ty.UNDEFINED,
         [expr.Variable("Y"), expr.Variable("Z")],
     )
 

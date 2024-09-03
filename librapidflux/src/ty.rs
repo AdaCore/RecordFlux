@@ -3,31 +3,59 @@ use std::{collections::HashSet, fmt::Display, path::PathBuf, str::FromStr};
 use indexmap::IndexMap;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use strum::EnumDiscriminants;
 
 use crate::{
     consts, create_id,
-    diagnostics::{FilePosition, Location},
+    diagnostics::{Annotation, ErrorEntry, FilePosition, Location, RapidFluxError, Severity},
     identifier::ID,
 };
 
 #[must_use]
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(EnumDiscriminants, Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[strum_discriminants(derive(strum::Display))]
 pub enum Ty {
+    #[strum_discriminants(strum(to_string = "undefined type"))]
     Undefined,
+    #[strum_discriminants(strum(to_string = "any type"))]
     Any,
+    #[strum_discriminants(strum(to_string = "enumeration type"))]
     Enumeration(Enumeration),
+    #[strum_discriminants(strum(to_string = "integer type"))]
+    AnyInteger,
+    #[strum_discriminants(strum(to_string = "type universal integer"))]
     UniversalInteger(UniversalInteger),
+    #[strum_discriminants(strum(to_string = "integer type"))]
     Integer(Integer),
+    #[strum_discriminants(strum(to_string = "composite type"))]
+    Composite,
+    #[strum_discriminants(strum(to_string = "aggregate"))]
     Aggregate(Aggregate),
+    #[strum_discriminants(strum(to_string = "sequence type"))]
     Sequence(Sequence),
+    #[strum_discriminants(strum(to_string = "compound type"))]
+    Compound,
+    #[strum_discriminants(strum(to_string = "structure type"))]
     Structure(Structure),
+    #[strum_discriminants(strum(to_string = "message type"))]
     Message(Message),
+    #[strum_discriminants(strum(to_string = "channel"))]
     Channel(Channel),
 }
 
 impl Ty {
+    /// Check compatibility to another type.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if `self` or `other` is an instance of `AnyInteger`, `Composite` or `Compound`.
     pub fn is_compatible(&self, other: &Ty) -> bool {
         match (&self, other) {
+            (Ty::AnyInteger | Ty::Composite | Ty::Compound, _)
+            | (_, Ty::AnyInteger | Ty::Composite | Ty::Compound) => {
+                panic!("unexpected type instance")
+            }
+
             (Ty::Undefined, _) | (_, Ty::Undefined) => false,
 
             (Ty::Any, _)
@@ -36,6 +64,7 @@ impl Ty {
                 Ty::UniversalInteger(..) | Ty::Integer(..),
                 Ty::UniversalInteger(..) | Ty::Integer(..),
             ) => true,
+
             (Ty::Enumeration(enumeration), Ty::Enumeration(other)) => enumeration.id == other.id,
             (Ty::Aggregate(aggregate), Ty::Aggregate(other)) => {
                 aggregate.element.is_compatible(&other.element)
@@ -75,8 +104,17 @@ impl Ty {
         }
     }
 
+    /// Determine common type.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if `self` or `other` is an instance of `AnyInteger`, `Composite` or `Compound`.
     pub fn common_type(&self, other: &Ty) -> Ty {
         match (self, other) {
+            (Ty::AnyInteger | Ty::Composite | Ty::Compound, _)
+            | (_, Ty::AnyInteger | Ty::Composite | Ty::Compound) => {
+                panic!("unexpected type instance")
+            }
             (Ty::Undefined, _) | (_, Ty::Undefined) => Ty::Undefined,
             (_, Ty::Any) => self.to_owned(),
             (Ty::Any, _) => other.to_owned(),
@@ -138,6 +176,31 @@ impl Ty {
     }
 }
 
+impl TyDiscriminants {
+    pub fn is_instance(&self, other: &TyDiscriminants) -> bool {
+        match (&self, other) {
+            (TyDiscriminants::Undefined, TyDiscriminants::Any)
+            | (TyDiscriminants::Any, TyDiscriminants::Undefined) => false,
+
+            (_, TyDiscriminants::Any)
+            | (TyDiscriminants::Any, _)
+            | (
+                TyDiscriminants::UniversalInteger | TyDiscriminants::Integer,
+                TyDiscriminants::AnyInteger,
+            )
+            | (
+                TyDiscriminants::Aggregate | TyDiscriminants::Sequence,
+                TyDiscriminants::Composite,
+            )
+            | (TyDiscriminants::Structure | TyDiscriminants::Message, TyDiscriminants::Compound) => {
+                true
+            }
+
+            _ => self == other,
+        }
+    }
+}
+
 impl Display for Ty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -157,14 +220,129 @@ impl Display for Ty {
                 Ty::Message(message) => message.to_string(),
                 Ty::Channel(channel) => channel.to_string(),
                 Ty::Any => {
-                    "any type".to_string()
+                    TyDiscriminants::Any.to_string()
+                }
+                Ty::AnyInteger => {
+                    TyDiscriminants::AnyInteger.to_string()
+                }
+                Ty::Composite => {
+                    TyDiscriminants::Composite.to_string()
+                }
+                Ty::Compound => {
+                    TyDiscriminants::Compound.to_string()
                 }
                 Ty::Undefined => {
-                    "undefined type".to_string()
+                    TyDiscriminants::Undefined.to_string()
                 }
             }
         )
     }
+}
+
+pub fn common_type(types: &[Ty]) -> Ty {
+    types.iter().fold(Ty::Any, |r, t| r.common_type(t))
+}
+
+/// Check if the given type is compatible to the expected types.
+///
+/// # Panics
+///
+/// Will panic if `expected` is empty or location is `None`.
+pub fn check_type(
+    actual: &Ty,
+    expected: &[Ty],
+    location: Option<&Location>,
+    description: &str,
+) -> RapidFluxError {
+    assert!(!expected.is_empty());
+
+    if *actual == Ty::Undefined {
+        return undefined_type(location, description);
+    }
+    let mut error = RapidFluxError::default();
+
+    if !expected.contains(&Ty::Undefined) && !expected.iter().any(|e| actual.is_compatible(e)) {
+        let desc = expected
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" or ");
+        error.push(ErrorEntry::new(
+            format!("expected {desc}"),
+            Severity::Error,
+            location.cloned(),
+            vec![Annotation::new(
+                Some(format!("found {actual}")),
+                Severity::Error,
+                location.cloned().unwrap(),
+            )],
+            false,
+        ));
+    }
+
+    error
+}
+
+/// Check if the given type is an instance of the expected types.
+///
+/// # Panics
+///
+/// Will panic if `expected` is empty or if an unexpected type was found and location is `None`.
+pub fn check_type_instance(
+    actual: &Ty,
+    expected: &[TyDiscriminants],
+    location: Option<&Location>,
+    description: &str,
+    additional_annotations: &[Annotation],
+) -> RapidFluxError {
+    assert!(!expected.is_empty());
+
+    if *actual == Ty::Undefined {
+        return undefined_type(location, description);
+    }
+    let mut error = RapidFluxError::default();
+
+    if !expected
+        .iter()
+        .any(|e| TyDiscriminants::from(actual).is_instance(e))
+    {
+        let desc = expected
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" or ");
+        let mut annotations = vec![];
+        annotations.push(Annotation::new(
+            Some(format!("found {actual}")),
+            Severity::Error,
+            location.cloned().unwrap(),
+        ));
+        annotations.extend(additional_annotations.iter().cloned());
+        error.push(ErrorEntry::new(
+            format!("expected {desc}"),
+            Severity::Error,
+            location.cloned(),
+            annotations,
+            false,
+        ));
+    }
+
+    error
+}
+
+fn undefined_type(location: Option<&Location>, description: &str) -> RapidFluxError {
+    let description = if description.is_empty() {
+        String::new()
+    } else {
+        format!(" {description}")
+    };
+    RapidFluxError::from(vec![ErrorEntry::new(
+        format!("undefined{description}"),
+        Severity::Error,
+        location.cloned(),
+        vec![],
+        true,
+    )])
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -519,6 +697,7 @@ mod tests {
     use std::collections::HashSet;
 
     use indexmap::IndexMap;
+    use indoc::indoc;
     use lazy_static::lazy_static;
     use pretty_assertions::assert_eq;
     use rstest::rstest;
@@ -526,9 +705,10 @@ mod tests {
     use crate::create_id;
 
     use super::{
-        Aggregate, Bounds, Channel, Enumeration, Integer, Message, Refinement, Sequence, Structure,
-        Ty, UniversalInteger, BASE_INTEGER, BIT_LENGTH_BOUNDS, ID, LENGTH_BOUNDS, OPAQUE,
-        UNIVERSAL_INTEGER,
+        check_type, check_type_instance, common_type, Aggregate, Bounds, Channel, Enumeration,
+        FilePosition, Integer, Location, Message, Refinement, Sequence, Structure, Ty,
+        TyDiscriminants, UniversalInteger, BASE_INTEGER, BIT_LENGTH_BOUNDS, ID, LENGTH_BOUNDS,
+        OPAQUE, UNIVERSAL_INTEGER,
     };
 
     lazy_static! {
@@ -660,10 +840,13 @@ mod tests {
     #[case::undefined(&Ty::Undefined, "undefined type")]
     #[case::any(&Ty::Any, "any type")]
     #[case::enumeration(&ENUM_A, "enumeration type \"A\"")]
+    #[case::any_integer(&Ty::AnyInteger, "integer type")]
     #[case::universal_integer(&UNIV_INT_1_3, "type universal integer (1 .. 3)")]
     #[case::integer(&INT_A, "integer type \"A\" (1 .. 5)")]
+    #[case::composite(&Ty::Composite, "composite type")]
     #[case::aggregate(&AGG_INT_A, "aggregate with element integer type \"A\" (1 .. 5)")]
     #[case::sequence(&SEQ_A, "sequence type \"A\" with element integer type \"A\" (1 .. 5)")]
+    #[case::compound(&Ty::Compound, "compound type")]
     #[case::structure(&STRUCT_A, "structure type \"A\"")]
     #[case::message(&MSG_A, "message type \"A\"")]
     #[case::channel(&CHAN, "channel")]
@@ -740,6 +923,30 @@ mod tests {
     }
 
     #[rstest]
+    #[case(&Ty::AnyInteger, &Ty::Any)]
+    #[case(&Ty::Composite, &Ty::Any)]
+    #[case(&Ty::Compound, &Ty::Any)]
+    #[case(&Ty::Any, &Ty::AnyInteger)]
+    #[case(&Ty::Any, &Ty::Composite)]
+    #[case(&Ty::Any, &Ty::Compound)]
+    #[should_panic(expected = "unexpected type instance")]
+    fn test_ty_is_compatible_panic(#[case] ty: &Ty, #[case] other: &Ty) {
+        ty.is_compatible(other);
+    }
+
+    #[rstest]
+    #[case(&Ty::AnyInteger, &Ty::Any)]
+    #[case(&Ty::Composite, &Ty::Any)]
+    #[case(&Ty::Compound, &Ty::Any)]
+    #[case(&Ty::Any, &Ty::AnyInteger)]
+    #[case(&Ty::Any, &Ty::Composite)]
+    #[case(&Ty::Any, &Ty::Compound)]
+    #[should_panic(expected = "unexpected type instance")]
+    fn test_ty_common_type_panic(#[case] ty: &Ty, #[case] other: &Ty) {
+        let _ = ty.common_type(other);
+    }
+
+    #[rstest]
     #[case::undefined(&Ty::Undefined)]
     #[case::any(&Ty::Any)]
     #[case::enumeration(&ENUM_A)]
@@ -754,6 +961,111 @@ mod tests {
         let bytes = bincode::serialize(ty).expect("failed to serialize");
         let deserialized_ty: Ty = bincode::deserialize(&bytes).expect("failed to deserialize");
         assert_eq!(*ty, deserialized_ty);
+    }
+
+    #[rstest]
+    #[case(&TyDiscriminants::Undefined, &TyDiscriminants::Any, false)]
+    #[case(&TyDiscriminants::Any, &TyDiscriminants::Undefined, false)]
+    #[case(&TyDiscriminants::Integer, &TyDiscriminants::Enumeration, false)]
+    #[case(&TyDiscriminants::Enumeration, &TyDiscriminants::Enumeration, true)]
+    #[case(&TyDiscriminants::UniversalInteger, &TyDiscriminants::AnyInteger, true)]
+    #[case(&TyDiscriminants::Integer, &TyDiscriminants::AnyInteger, true)]
+    #[case(&TyDiscriminants::Aggregate, &TyDiscriminants::Composite, true)]
+    #[case(&TyDiscriminants::Sequence, &TyDiscriminants::Composite, true)]
+    #[case(&TyDiscriminants::Structure, &TyDiscriminants::Compound, true)]
+    #[case(&TyDiscriminants::Message, &TyDiscriminants::Compound, true)]
+    fn test_ty_discriminants_is_instance(
+        #[case] ty: &TyDiscriminants,
+        #[case] other: &TyDiscriminants,
+        #[case] expected: bool,
+    ) {
+        assert_eq!(ty.is_instance(other), expected);
+    }
+
+    #[rstest]
+    #[case::empty(&[], &Ty::Any)]
+    #[case::undefined(&[&CHAN_R, &*MSG_A], &Ty::Undefined)]
+    #[case::integer(&[&*INT_A, &*UNIV_INT_1_3], &BASE_INTEGER)]
+    #[case::aggregate(&[&*AGG_INT_A, &*AGG_INT_B], &AGG_BASE_INT)]
+    fn test_common_type(#[case] types: &[&Ty], #[case] expected: &Ty) {
+        assert_eq!(
+            common_type(&types.iter().copied().cloned().collect::<Vec<Ty>>()),
+            *expected
+        );
+    }
+
+    #[rstest]
+    #[case::valid(&Ty::Any, &[&Ty::Any], "")]
+    #[case::expected_undefined(&*INT_A, &[&Ty::Undefined], "")]
+    #[case::actual_undefined(
+        &Ty::Undefined,
+        &[&*INT_A],
+        indoc! {r"
+            <stdin>:1:1: error: undefined foo
+        "},
+    )]
+    #[case::invalid(
+        &ENUM_A,
+        &[&*INT_A],
+        indoc! {r#"
+            <stdin>:1:1: error: expected integer type "A" (1 .. 5)
+            <stdin>:1:1: error: found enumeration type "A"
+        "#},
+    )]
+    fn test_check_type(#[case] actual: &Ty, #[case] types: &[&Ty], #[case] expected: &str) {
+        assert_eq!(
+            check_type(
+                actual,
+                &types.iter().copied().cloned().collect::<Vec<Ty>>(),
+                Some(&Location {
+                    start: FilePosition::new(1, 1),
+                    end: None,
+                    source: None,
+                }),
+                "foo"
+            )
+            .to_string(),
+            *expected.trim()
+        );
+    }
+
+    #[rstest]
+    #[case::valid(&Ty::Any, &[TyDiscriminants::Any], "")]
+    #[case::actual_undefined(
+        &Ty::Undefined,
+        &[TyDiscriminants::AnyInteger],
+        indoc! {r"
+            <stdin>:1:1: error: undefined
+        "},
+    )]
+    #[case::invalid(
+        &ENUM_A,
+        &[TyDiscriminants::AnyInteger],
+        indoc! {r#"
+            <stdin>:1:1: error: expected integer type
+            <stdin>:1:1: error: found enumeration type "A"
+        "#},
+    )]
+    fn test_check_type_instance(
+        #[case] actual: &Ty,
+        #[case] types: &[TyDiscriminants],
+        #[case] expected: &str,
+    ) {
+        assert_eq!(
+            check_type_instance(
+                actual,
+                types,
+                Some(&Location {
+                    start: FilePosition::new(1, 1),
+                    end: None,
+                    source: None,
+                }),
+                "",
+                &[]
+            )
+            .to_string(),
+            *expected.trim()
+        );
     }
 
     #[rstest]

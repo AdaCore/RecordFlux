@@ -1,13 +1,13 @@
 import pytest
 
-from rflx import expr, ir, typing_ as rty
+from rflx import expr, ir, ty
 from rflx.identifier import ID, id_generator
 from rflx.model import statement as stmt
-from rflx.rapidflux import Location, RecordFluxError, ty
+from rflx.rapidflux import Location, RecordFluxError
 
-INT_TY = rty.Integer("I", ty.Bounds(10, 100))
-MSG_TY = rty.Message("M")
-SEQ_TY = rty.Sequence("S", rty.Message("M"))
+INT_TY = ty.Integer("I", ty.Bounds(10, 100))
+MSG_TY = ty.Message("M")
+SEQ_TY = ty.Sequence("S", ty.Message("M"))
 
 
 def test_variable_assignment_to_ir() -> None:
@@ -16,7 +16,7 @@ def test_variable_assignment_to_ir() -> None:
         expr.Add(expr.Variable("Y", type_=INT_TY), expr.Number(1)),
         INT_TY,
     ).to_ir(id_generator()) == [
-        ir.Assign("X", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
+        ir.Assign("X", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), ty.BASE_INTEGER),
     ]
     assert stmt.VariableAssignment(
         "X",
@@ -26,12 +26,12 @@ def test_variable_assignment_to_ir() -> None:
         ),
         INT_TY,
     ).to_ir(id_generator()) == [
-        ir.VarDecl("T_0", rty.BASE_INTEGER),
-        ir.Assign("T_0", ir.Sub(ir.IntVar("Z", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
+        ir.VarDecl("T_0", ty.BASE_INTEGER),
+        ir.Assign("T_0", ir.Sub(ir.IntVar("Z", INT_TY), ir.IntVal(1)), ty.BASE_INTEGER),
         ir.Assign(
             "X",
-            ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
-            rty.BASE_INTEGER,
+            ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", ty.BASE_INTEGER)),
+            ty.BASE_INTEGER,
         ),
     ]
 
@@ -50,12 +50,12 @@ def test_message_field_assignment_to_ir() -> None:
         ),
         MSG_TY,
     ).to_ir(id_generator()) == [
-        ir.VarDecl("T_0", rty.BASE_INTEGER),
-        ir.Assign("T_0", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
+        ir.VarDecl("T_0", ty.BASE_INTEGER),
+        ir.Assign("T_0", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), ty.BASE_INTEGER),
         ir.FieldAssign(
             "X",
             "Y",
-            ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
+            ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", ty.BASE_INTEGER)),
             MSG_TY,
         ),
     ]
@@ -74,9 +74,9 @@ def test_append_to_ir() -> None:
         ),
         SEQ_TY,
     ).to_ir(id_generator()) == [
-        ir.VarDecl("T_0", rty.BASE_INTEGER),
-        ir.Assign("T_0", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
-        ir.Append("X", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)), SEQ_TY),
+        ir.VarDecl("T_0", ty.BASE_INTEGER),
+        ir.Assign("T_0", ir.Add(ir.IntVar("Z", INT_TY), ir.IntVal(1)), ty.BASE_INTEGER),
+        ir.Append("X", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVar("T_0", ty.BASE_INTEGER)), SEQ_TY),
     ]
 
 
@@ -89,10 +89,10 @@ def test_extend_to_ir() -> None:
 def test_reset_check_type() -> None:
     def typify_variable(expression: expr.Expr) -> expr.Expr:
         if isinstance(expression, expr.Variable) and expression.identifier == ID("M"):
-            return expr.Variable("M", type_=rty.Message("M", {("F",)}, {ID("F"): INT_TY}))
+            return expr.Variable("M", type_=ty.Message("M", {("F",)}, {ID("F"): INT_TY}))
         return expression
 
-    t = rty.Message("T", parameter_types={ID("Y"): INT_TY})
+    t = ty.Message("T", parameter_types={ID("Y"): INT_TY})
 
     reset = stmt.Reset("X", {ID("Y"): expr.Selected(expr.Variable("M"), "F")})
     reset.check_type(t, typify_variable).propagate()
@@ -114,7 +114,7 @@ def test_reset_check_type_error_undefined_argument_type() -> None:
         match=r'^<stdin>:1:2: error: undefined variable "M"$',
     ):
         reset.check_type(
-            rty.Message("T", parameter_types={ID("Y"): INT_TY}),
+            ty.Message("T", parameter_types={ID("Y"): INT_TY}),
             typify_variable,
         ).propagate()
 
@@ -122,7 +122,7 @@ def test_reset_check_type_error_undefined_argument_type() -> None:
 def test_reset_check_type_error_invalid_arguments() -> None:
     def typify_variable(expression: expr.Expr) -> expr.Expr:
         if isinstance(expression, expr.Variable) and expression.identifier == ID("M"):
-            return expr.Variable("M", type_=rty.Message("M", {("F",)}, {ID("F"): INT_TY}))
+            return expr.Variable("M", type_=ty.Message("M", {("F",)}, {ID("F"): INT_TY}))
         return expression
 
     reset = stmt.Reset(
@@ -140,7 +140,7 @@ def test_reset_check_type_error_invalid_arguments() -> None:
         ),
     ):
         reset.check_type(
-            rty.Message("T", parameter_types={ID("Y"): INT_TY}),
+            ty.Message("T", parameter_types={ID("Y"): INT_TY}),
             typify_variable,
         ).propagate()
 
@@ -148,7 +148,7 @@ def test_reset_check_type_error_invalid_arguments() -> None:
 def test_reset_check_type_error_unexpected_arguments() -> None:
     def typify_variable(expression: expr.Expr) -> expr.Expr:
         if isinstance(expression, expr.Variable) and expression.identifier == ID("M"):
-            return expr.Variable("M", type_=rty.Message("M", {("F",)}, {ID("F"): INT_TY}))
+            return expr.Variable("M", type_=ty.Message("M", {("F",)}, {ID("F"): INT_TY}))
         return expression
 
     reset = stmt.Reset(
@@ -160,7 +160,7 @@ def test_reset_check_type_error_unexpected_arguments() -> None:
         match=r'^<stdin>:1:2: error: unexpected argument "Z"$',
     ):
         reset.check_type(
-            rty.Sequence("T", INT_TY),
+            ty.Sequence("T", INT_TY),
             typify_variable,
         ).propagate()
 
@@ -185,7 +185,7 @@ def test_read_to_ir() -> None:
     assert stmt.Read("X", expr.Variable("M", type_=MSG_TY)).to_ir(id_generator()) == [
         ir.Read("X", ir.ObjVar("M", MSG_TY)),
     ]
-    assert stmt.Read("X", expr.Call("Y", type_=rty.Message("M"))).to_ir(id_generator()) == [
+    assert stmt.Read("X", expr.Call("Y", type_=ty.Message("M"))).to_ir(id_generator()) == [
         ir.VarDecl("T_0", MSG_TY),
         ir.Assign("T_0", ir.ObjCall("Y", [], [], MSG_TY), MSG_TY),
         ir.Read("X", ir.ObjVar("T_0", MSG_TY)),
@@ -196,7 +196,7 @@ def test_write_to_ir() -> None:
     assert stmt.Write("X", expr.Variable("M", type_=MSG_TY)).to_ir(id_generator()) == [
         ir.Write("X", ir.ObjVar("M", MSG_TY)),
     ]
-    assert stmt.Write("X", expr.Call("Y", type_=rty.Message("M"))).to_ir(id_generator()) == [
+    assert stmt.Write("X", expr.Call("Y", type_=ty.Message("M"))).to_ir(id_generator()) == [
         ir.VarDecl("T_0", MSG_TY),
         ir.Assign("T_0", ir.ObjCall("Y", [], [], MSG_TY), MSG_TY),
         ir.Write("X", ir.ObjVar("T_0", MSG_TY)),
