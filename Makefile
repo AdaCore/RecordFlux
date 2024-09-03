@@ -382,7 +382,7 @@ test_rapidflux_doc: rapidflux_devel
 test_rapidflux: test_rapidflux_coverage test_rapidflux_mutation test_rapidflux_doc
 
 test_rapidflux_mutation: rapidflux_devel
-	cargo mutants -j 0 --package librapidflux --timeout 300 --output $(BUILD_DIR)
+	cargo mutants -j 4 --package librapidflux --timeout 300 --output $(BUILD_DIR)
 
 test_examples: test_specs test_apps
 
