@@ -730,3 +730,16 @@ rust_crates:
     paths:
       - recordflux-*-rust-crates.tar.gz
   when: manual
+
+python_wheels:
+  services:
+    - image:recordflux
+    - security_group:GitLabRunnerTasksExecPrivilegedSG
+  variables:
+    PYTHON: "python3.9"
+  script:
+    - make python_wheels_archive
+  artifacts:
+    paths:
+      - build/recordflux-*-python-wheels.tar.gz
+  when: manual

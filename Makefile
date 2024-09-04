@@ -530,7 +530,13 @@ generate: $(RFLX)
 generate_apps: $(RFLX)
 	$(foreach app,$(APPS),$(POETRY) run $(MAKE) -C examples/apps/$(app) generate || exit;)
 
-.PHONY: anod_build_dependencies anod_poetry_dependencies
+.PHONY: python_wheels_archive anod_build_dependencies anod_poetry_dependencies
+
+python_wheels_archive: TARGET_DIR=$(BUILD_DIR)
+python_wheels_archive: ARCHIVE_NAME=recordflux-$(shell date '+%Y%m%d')-python-wheels.tar.gz
+python_wheels_archive: export PYTHON_EXECUTABLE=$(POETRY) run $(PYTHON)
+python_wheels_archive: $(PROJECT_MANAGEMENT) $(CONTRIB)
+	tools/create_python_wheels_archive.sh $(TARGET_DIR) $(ARCHIVE_NAME)
 
 anod_rflx_dependencies: $(POETRY)
 	@$(POETRY) export --with=build --without=dev --without-hashes | grep -v "@ file"
