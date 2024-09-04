@@ -1773,7 +1773,7 @@ files = [
 
 [[package]]
 name = "RecordFlux-devutils"
-version = "0.1.dev73+g1194823"
+version = "0.1.dev75+g99579f4"
 description = "Linter configs and custom checkers"
 optional = false
 python-versions = ">=3.8"
@@ -2412,4 +2412,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8, <3.12"
-content-hash = "70eb62c68f61f88530618a0a1448e71c4b03d34bf116391e737581985ba64827"
+content-hash = "300e70314bf032a043d0f6a60e91a3688040db15354c56733a41edc44d2b48bb"
