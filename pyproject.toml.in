@@ -83,6 +83,9 @@ z3-solver = ">=4, <4.12.3"
 [tool.poetry.group.build.dependencies]
 langkit = {path = "contrib/langkit"}
 
+[tool.poetry.group.pytest.dependencies]
+pytest = ">=8, <9"
+
 [tool.poetry.group.dev.dependencies]
 recordflux-devutils = {path = "devutils", extras = ["devel"]}
 cobrafuzz = ">=2.2, <2.3"

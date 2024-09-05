@@ -539,7 +539,7 @@ python_wheels_archive: $(PROJECT_MANAGEMENT) $(CONTRIB)
 	tools/create_python_wheels_archive.sh $(TARGET_DIR) $(ARCHIVE_NAME)
 
 anod_rflx_dependencies: $(POETRY)
-	@$(POETRY) export --with=build --without=dev --without-hashes | grep -v "@ file"
+	@$(POETRY) export --with=build --with=pytest --without=dev --without-hashes | grep -v "@ file"
 
 anod_extra_dependencies: $(POETRY)
 	@echo "poetry==$(POETRY_VERSION)"
@@ -640,7 +640,7 @@ $(VSIX): $(RFLX)
 
 audit: $(RFLX) rapidflux_devel
 	@mkdir -p $(BUILD_DIR)
-	@$(POETRY) export --with=build --with=dev | grep -v "@ file" > $(BUILD_DIR)/requirements.txt
+	@$(POETRY) export --with=build --with=pytest --with=dev | grep -v "@ file" > $(BUILD_DIR)/requirements.txt
 	@echo Auditing Python dependencies
 	@$(POETRY) run pip-audit --disable-pip -r $(BUILD_DIR)/requirements.txt
 	@echo Auditing Rust dependencies
