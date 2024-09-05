@@ -39,17 +39,19 @@ from rflx.expr import (
     Variable,
 )
 from rflx.expr_proof import Proof, ProofResult, Z3TypeError, _to_z3
+from rflx.rapidflux import Location
 from tests.utils import assert_equal
 
 
 def test_proof_invalid_logic() -> None:
-    expr = Less(Mod(Variable("X"), Variable("Y")), Number(100))
+    location = Location((1, 2))
+    expr = Less(Mod(Variable("X"), Variable("Y")), Number(100), location=location)
     p = Proof(expr, logic="QF_IDL")
     assert p.result == ProofResult.UNKNOWN
     assert p.error == [
         (
             "Benchmark is not in QF_IDL (integer difference logic).",
-            None,
+            location,
         ),
     ]
 

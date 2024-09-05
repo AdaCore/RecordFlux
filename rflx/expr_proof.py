@@ -62,7 +62,8 @@ class Proof:
 
         if self._result == ProofResult.UNKNOWN:
             assert self._unknown_reason is not None
-            return [(self._unknown_reason, None)]
+            assert self._expr.location is not None
+            return [(self._unknown_reason, self._expr.location)]
 
         solver = z3.SolverFor(self._logic)
         solver.set(unsat_core=True)

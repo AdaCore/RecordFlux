@@ -477,7 +477,7 @@ class Enumeration(Scalar):
                 *[
                     expr.Equal(
                         expr.Variable(name, type_=self.type_),
-                        expr.Literal(l),
+                        expr.Literal(l, location=l.location),
                         self.location,
                     )
                     for l in literals
@@ -487,7 +487,7 @@ class Enumeration(Scalar):
         ]
         result.extend(
             [
-                expr.Equal(expr.Literal(l, type_=self.type_), v, self.location)
+                expr.Equal(expr.Literal(l, type_=self.type_, location=l.location), v, self.location)
                 for l, v in literals.items()
             ],
         )

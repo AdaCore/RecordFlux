@@ -1965,7 +1965,14 @@ class Message(type_decl.TypeDecl):
 
                 facts = self._path_constraints(path)
                 outgoing = self.outgoing(path[-1].target)
-                condition = expr.Or(*[o.condition for o in outgoing]) if outgoing else expr.TRUE
+                condition = (
+                    expr.Or(
+                        *[o.condition for o in outgoing],
+                        location=Location.merge([o.condition.location for o in outgoing]),
+                    )
+                    if outgoing
+                    else expr.TRUE
+                )
                 proof = expr_proof.Proof(
                     condition,
                     [
@@ -1974,7 +1981,7 @@ class Message(type_decl.TypeDecl):
                         *self.message_constraints,
                     ],
                 )
-                assert proof.result != expr_proof.ProofResult.SAT
+                assert proof.result != expr_proof.ProofResult.SAT, proof.result
 
                 paths.append((path, proof.error))
                 unreachable_paths.add(path)
@@ -2255,7 +2262,11 @@ class Message(type_decl.TypeDecl):
                 ],
             )
             proofs.add(
-                expr.NotEqual(expr.Mod(message_size, expr.Number(8)), expr.Number(0)),
+                expr.NotEqual(
+                    expr.Mod(message_size, expr.Number(8)),
+                    expr.Number(0),
+                    location=self.location,
+                ),
                 facts,
                 sat_error=error.entries,
                 unknown_error=error.entries,
