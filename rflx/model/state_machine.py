@@ -734,12 +734,102 @@ class StateMachine(TopLevelDeclaration):
                             self.package,
                         )
                         if type_identifier in self.types:
-                            a.type_ = self.types[type_identifier].type_
+                            argument_type = self.types[type_identifier]
+                            a.type_ = argument_type.type_
+                            self._validate_function_parameter_type(type_identifier)
                         else:
                             a.type_ = rty.Any()
                             undefined_type(a.type_identifier, d.location)
 
+                    return_type_id = type_decl.internal_type_identifier(
+                        d.return_type,
+                        self.package,
+                    )
+                    if return_type_id in self.types:
+                        self._validate_function_return_type(
+                            return_type_id,
+                        )
+
             visible_declarations[k] = d
+
+    def _validate_function_parameter_type(self, type_identifier: ID) -> None:
+        parameter_type = self.types[type_identifier]
+        if isinstance(parameter_type, Message) and not parameter_type.is_definite:
+            assert parameter_type.location
+            self.error.extend(
+                [
+                    ErrorEntry(
+                        "only definite messages can be used as function parameters",
+                        Severity.ERROR,
+                        type_identifier.location,
+                    ),
+                    ErrorEntry(
+                        "message type defined here",
+                        Severity.NOTE,
+                        parameter_type.location,
+                    ),
+                ],
+            )
+        if (
+            not isinstance(parameter_type, (type_decl.Scalar, Message))
+            and parameter_type.identifier != rty.OPAQUE.identifier
+        ):
+            assert type_identifier.location
+            self.error.extend(
+                [
+                    ErrorEntry(
+                        "invalid parameter type",
+                        Severity.ERROR,
+                        type_identifier.location,
+                        [
+                            Annotation(
+                                "only scalars, definite messages and Opaque are allowed",
+                                Severity.HELP,
+                                type_identifier.location,
+                            ),
+                        ],
+                        generate_default_annotation=False,
+                    ),
+                ],
+            )
+
+    def _validate_function_return_type(self, type_identifier: ID) -> None:
+        return_type = self.types[type_identifier]
+        if isinstance(return_type, Message) and not return_type.is_definite:
+            assert return_type.location
+            self.error.extend(
+                [
+                    ErrorEntry(
+                        "only a definite message can be used as return type",
+                        Severity.ERROR,
+                        type_identifier.location,
+                    ),
+                    ErrorEntry(
+                        "message type defined here",
+                        Severity.NOTE,
+                        return_type.location,
+                    ),
+                ],
+            )
+        if not isinstance(return_type, (type_decl.Scalar, Message)):
+            assert type_identifier.location
+            self.error.extend(
+                [
+                    ErrorEntry(
+                        "invalid return type",
+                        Severity.ERROR,
+                        type_identifier.location,
+                        [
+                            Annotation(
+                                "only scalars and definite messages are allowed",
+                                Severity.HELP,
+                                type_identifier.location,
+                            ),
+                        ],
+                        generate_default_annotation=False,
+                    ),
+                ],
+            )
 
     def _validate_actions(
         self,

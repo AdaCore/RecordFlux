@@ -831,6 +831,110 @@ def test_reset_incompatible() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("parameter_type", "expected_error"),
+    [
+        (
+            "TLV::Message",
+            r"<stdin>:1:2: error: only definite messages can be used as function parameters\n"
+            r"<stdin>:1:1: note: message type defined here",
+        ),
+        (
+            "TLV::Messages",
+            r"<stdin>:1:2: error: invalid parameter type\n"
+            r"<stdin>:1:2: help: only scalars, definite messages and Opaque are allowed",
+        ),
+    ],
+)
+def test_function_declaration_invalid_parameter_type(
+    parameter_type: str,
+    expected_error: str,
+) -> None:
+    assert_state_machine_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=(Transition(target=ID("null"))),
+                declarations=[],
+                actions=[
+                    stmt.VariableAssignment(
+                        "Result",
+                        expr.Call("Function", rty.BOOLEAN, [expr.Variable("M")]),
+                    ),
+                ],
+            ),
+        ],
+        declarations=[
+            decl.VariableDeclaration("M", parameter_type),
+            decl.VariableDeclaration("Result", "Boolean"),
+        ],
+        parameters=[
+            decl.FunctionDeclaration(
+                "Function",
+                [decl.Argument("M", ID(parameter_type, location=Location((1, 2))))],
+                "Boolean",
+            ),
+        ],
+        types=[BOOLEAN, models.tlv_message(), models.tlv_messages()],
+        regex=rf"^{expected_error}$",
+    )
+
+
+@pytest.mark.parametrize(
+    ("return_type", "expected_error", "needs_exception_transition"),
+    [
+        (
+            "TLV::Message",
+            r"<stdin>:1:2: error: only a definite message can be used as return type\n"
+            r"<stdin>:1:1: note: message type defined here",
+            True,
+        ),
+        (
+            "TLV::Messages",
+            r"<stdin>:1:2: error: invalid return type\n"
+            r"<stdin>:1:2: help: only scalars and definite messages are allowed",
+            False,
+        ),
+    ],
+)
+def test_function_declaration_invalid_return_type(
+    return_type: str,
+    expected_error: str,
+    needs_exception_transition: bool,
+) -> None:
+    assert_state_machine_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[Transition(target=ID("null"))],
+                exception_transition=(
+                    Transition(target=ID("null")) if needs_exception_transition else None
+                ),
+                declarations=[],
+                actions=[
+                    stmt.VariableAssignment(
+                        "Result",
+                        expr.Call("Function", rty.BOOLEAN, []),
+                    ),
+                ],
+            ),
+        ],
+        declarations=[
+            decl.VariableDeclaration("Result", return_type),
+        ],
+        parameters=[
+            decl.FunctionDeclaration(
+                "Function",
+                [],
+                ID(return_type, location=Location((1, 2))),
+            ),
+        ],
+        types=[BOOLEAN, models.tlv_message(), models.tlv_messages()],
+        regex=rf"^{expected_error}$",
+    )
+
+
 def test_call_to_undeclared_function() -> None:
     assert_state_machine_model_error(
         states=[
@@ -1650,66 +1754,6 @@ def test_comprehension() -> None:
         ],
         parameters=[],
         types=[BOOLEAN, models.tlv_messages(), models.tlv_tags()],
-    )
-
-
-def test_assignment_opaque_function_undef_parameter() -> None:
-    assert_state_machine_model_error(
-        states=[
-            State(
-                "Start",
-                transitions=[Transition(target=ID("null"))],
-                exception_transition=Transition(target=ID("null")),
-                actions=[
-                    stmt.VariableAssignment(
-                        "Data",
-                        expr.Opaque(
-                            expr.Call(
-                                "Sub",
-                                rty.OPAQUE,
-                                [expr.Variable("UndefData", location=Location((10, 20)))],
-                            ),
-                        ),
-                    ),
-                ],
-            ),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Data", "Opaque"),
-        ],
-        parameters=[
-            decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
-        ],
-        types=[BOOLEAN, OPAQUE, models.tlv_message()],
-        regex=r'^<stdin>:10:20: error: undefined variable "UndefData"$',
-    )
-
-
-def test_assignment_opaque_function_result() -> None:
-    StateMachine(
-        identifier="P::S",
-        states=[
-            State(
-                "Start",
-                transitions=[Transition(target=ID("null"))],
-                exception_transition=Transition(target=ID("null")),
-                actions=[
-                    stmt.VariableAssignment(
-                        "Data",
-                        expr.Opaque(
-                            expr.Call("Sub", rty.OPAQUE, [expr.Variable("Data")]),
-                        ),
-                    ),
-                ],
-            ),
-        ],
-        declarations=[
-            decl.VariableDeclaration("Data", "Opaque"),
-        ],
-        parameters=[
-            decl.FunctionDeclaration("Sub", [decl.Argument("Param", "Opaque")], "TLV::Message"),
-        ],
-        types=[BOOLEAN, OPAQUE, models.tlv_message()],
     )
 
 
