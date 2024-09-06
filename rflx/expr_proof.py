@@ -12,7 +12,6 @@ import z3
 
 from rflx import expr, ty
 from rflx.const import MP_CONTEXT
-from rflx.error import are_all_locations_present
 from rflx.identifier import ID
 from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
 
@@ -57,12 +56,11 @@ class Proof:
         return self._result
 
     @property
-    def error(self) -> list[tuple[str, Location | None]]:
+    def error(self) -> list[tuple[str, Location]]:
         assert self._result != ProofResult.SAT
 
         if self._result == ProofResult.UNKNOWN:
             assert self._unknown_reason is not None
-            assert self._expr.location is not None
             return [(self._unknown_reason, self._expr.location)]
 
         solver = z3.SolverFor(self._logic)
@@ -151,8 +149,6 @@ class ParallelProofs:
         if (
             job.add_unsat and proof.result == ProofResult.UNSAT
         ) or proof.result == ProofResult.UNKNOWN:
-            locations = [locn for (_, locn) in proof.error]
-            assert are_all_locations_present(locations)
             result.extend(
                 [
                     Annotation(
@@ -162,9 +158,9 @@ class ParallelProofs:
                             else f"reason: {m}"
                         ),
                         Severity.NOTE,
-                        locn,
+                        l,
                     )
-                    for (m, _), locn in zip(proof.error, locations)
+                    for m, l in proof.error
                 ],
             )
         return job.results[proof.result], result

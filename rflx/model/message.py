@@ -1160,7 +1160,6 @@ class Message(type_decl.TypeDecl):
                         ]
                     )
                     if link.size not in valid_definitions:
-                        assert link.size.location is not None
                         self.error.push(
                             ErrorEntry(
                                 'invalid use of "Message" in size aspect',
@@ -1688,8 +1687,6 @@ class Message(type_decl.TypeDecl):
             unconstrained = isinstance(t, (type_decl.Opaque, type_decl.Sequence))
             if not unconstrained and link.size != expr.UNDEFINED:
                 assert isinstance(t, type_decl.Scalar)
-                assert t.size_expr.location is not None
-                assert link.size.location is not None
                 self.error.extend(
                     [
                         ErrorEntry(
@@ -1848,7 +1845,6 @@ class Message(type_decl.TypeDecl):
                 *self.message_constraints,
                 *self.aggregate_constraints(l.condition),
             ]
-            assert l.condition.location is not None
 
             unsat_error = RecordFluxError(
                 [
@@ -1897,9 +1893,6 @@ class Message(type_decl.TypeDecl):
             for i1, c1 in enumerate(self.outgoing(f)):
                 for i2, c2 in enumerate(self.outgoing(f)):
                     if i1 < i2:
-                        assert c1.condition.location is not None
-                        assert c2.condition.location is not None
-
                         conflict = expr.And(
                             c1.condition,
                             c2.condition,

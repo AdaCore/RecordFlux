@@ -169,7 +169,6 @@ class Integer(Scalar):
             )
 
         if int(last_num).bit_length() > int(size_num):
-            assert last_num.location is not None
             self.error.push(
                 ErrorEntry(
                     f'size of "{self.name}" too small',
@@ -287,7 +286,6 @@ class Integer(Scalar):
                 ),
             )
         else:
-            assert invalid_expr.location is not None
             self.error.push(
                 ErrorEntry(
                     f'{position} of "{self.name}" is not an integer',
@@ -413,7 +411,6 @@ class Enumeration(Scalar):
         for i1, v1 in enumerate(self.literals.values()):
             for i2, v2 in enumerate(self.literals.values()):
                 if i1 < i2 and v1 == v2:
-                    assert v1.location is not None
                     self.error.push(
                         ErrorEntry(
                             f'duplicate enumeration value "{v1}"',

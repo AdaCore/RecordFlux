@@ -218,7 +218,6 @@ class Append(ListAttributeStatement):
                 self.parameter,
                 Variable,
             ):
-                assert self.parameter.location is not None
                 error.push(
                     ErrorEntry(
                         "appending independently created message not supported",

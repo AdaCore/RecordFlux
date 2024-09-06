@@ -942,7 +942,6 @@ class StateMachine(TopLevelDeclaration):
                     and isinstance(s2.parameter, expr.Variable)
                     and s1.parameter.identifier == s2.parameter.identifier
                 ):
-                    assert s2.parameter.location is not None
                     self.error.push(
                         ErrorEntry(
                             f'message "{s1.parameter.identifier}" may be read or written'

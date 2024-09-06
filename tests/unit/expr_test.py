@@ -2899,14 +2899,14 @@ def test_case_invalid() -> None:
 def test_invalid_division_by_zero() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(r"^error: division by zero$"),
+        match=(r"^<stdin>:1:2: error: division by zero$"),
     ):
-        Div(Number(255), Number(0)).simplified()
+        Div(Number(255), Number(0), location=Location((1, 2))).simplified()
 
 
 def test_invalid_modulo_by_zero() -> None:
     with pytest.raises(
         RecordFluxError,
-        match=(r"^error: modulo by zero$"),
+        match=(r"^<stdin>:1:2: error: modulo by zero$"),
     ):
-        Mod(Number(255), Number(0)).simplified()
+        Mod(Number(255), Number(0), location=Location((1, 2))).simplified()

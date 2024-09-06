@@ -17,7 +17,14 @@ from rflx import const, ty
 from rflx.common import Base, indent, indent_next, unique
 from rflx.error import are_all_locations_present
 from rflx.identifier import ID, StrID
-from rflx.rapidflux import Annotation, ErrorEntry, Location, RecordFluxError, Severity
+from rflx.rapidflux import (
+    UNKNOWN_LOCATION,
+    Annotation,
+    ErrorEntry,
+    Location,
+    RecordFluxError,
+    Severity,
+)
 
 if TYPE_CHECKING:
     from _typeshed import SupportsAllComparisons
@@ -45,7 +52,7 @@ class Expr(Base):
         location: Location | None = None,
     ):
         self.type_ = type_
-        self.location = location
+        self._location = location
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -88,6 +95,10 @@ class Expr(Base):
     @abstractmethod
     def __neg__(self) -> Expr:
         raise NotImplementedError
+
+    @property
+    def location(self) -> Location:
+        return self._location or UNKNOWN_LOCATION
 
     @abstractmethod
     def _update_str(self) -> None:
@@ -1068,7 +1079,7 @@ class Variable(Name):
     ) -> None:
         self.identifier = ID(identifier)
         super().__init__(immutable, type_, location)
-        self.location = location or self.identifier.location
+        self._location = location or self.identifier.location
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
@@ -2157,7 +2168,6 @@ class Conversion(Expr):
             if self.argument_types:
                 error.extend(self.argument.prefix.check_type(tuple(self.argument_types)).entries)
             else:
-                assert self.location is not None
                 error.push(
                     ErrorEntry(
                         f'invalid conversion to "{self.identifier}"',
@@ -2436,7 +2446,6 @@ class MessageAggregate(Expr):
         if self._field_combinations() and all(
             len(c) > len(self.field_values) for c in self._field_combinations()
         ):
-            assert self.location is not None
             error.push(
                 ErrorEntry(
                     f"missing fields for {self.type_}",
@@ -2717,7 +2726,6 @@ class CaseExpr(Expr):
         for i1, (_, e1) in enumerate(self.choices):
             for i2, (_, e2) in enumerate(self.choices):
                 if i1 < i2 and not e1.type_.is_compatible(e2.type_):
-                    assert e2.location is not None
                     error.push(
                         ErrorEntry(
                             f'dependent expression "{e1}" has incompatible {e1.type_}',
@@ -2767,7 +2775,6 @@ class CaseExpr(Expr):
         elif isinstance(self.expr.type_, ty.Integer):
             error.extend(self._check_integer().entries)
         else:
-            assert self.expr.location is not None
             error.push(
                 ErrorEntry(
                     f"invalid discrete choice with {self.expr.type_}",
