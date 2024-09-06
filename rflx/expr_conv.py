@@ -344,9 +344,9 @@ def _(expression: expr.Literal, _variable_id: Generator[ID, None, None]) -> ir.C
 
     if expression.type_ == rty.BOOLEAN:
         if expression.identifier == ID("True"):
-            return ir.ComplexExpr([], ir.BoolVal(value=True, origin=expression))
+            return ir.ComplexBoolExpr([], ir.BoolVal(value=True, origin=expression))
         assert expression.identifier == ID("False")
-        return ir.ComplexExpr([], ir.BoolVal(value=False, origin=expression))
+        return ir.ComplexBoolExpr([], ir.BoolVal(value=False, origin=expression))
 
     return ir.ComplexExpr([], ir.EnumLit(expression.name, expression.type_, origin=expression))
 
@@ -807,9 +807,9 @@ def _(
 def _(expression: expr.Comprehension, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
     sequence = to_ir(expression.sequence, variable_id)
     selector = to_ir(expression.selector, variable_id)
-    condition = to_ir(expression.condition, variable_id)
+    condition = to_ir(expression.condition.simplified(), variable_id)
     assert isinstance(sequence.expr, (ir.Var, ir.FieldAccess))
-    assert isinstance(condition, ir.ComplexBoolExpr), condition
+    assert isinstance(condition, ir.ComplexBoolExpr)
     return ir.ComplexExpr(
         sequence.stmts,
         ir.Comprehension(

@@ -134,11 +134,11 @@ def test_to_ada_qualified_expr() -> None:
 
 
 def test_to_ir_true() -> None:
-    assert expr_conv.to_ir(TRUE, id_generator()) == ir.ComplexExpr([], ir.BoolVal(value=True))
+    assert expr_conv.to_ir(TRUE, id_generator()) == ir.ComplexBoolExpr([], ir.BoolVal(value=True))
 
 
 def test_to_ir_false() -> None:
-    assert expr_conv.to_ir(FALSE, id_generator()) == ir.ComplexExpr([], ir.BoolVal(value=False))
+    assert expr_conv.to_ir(FALSE, id_generator()) == ir.ComplexBoolExpr([], ir.BoolVal(value=False))
 
 
 def test_to_ir_not() -> None:
@@ -609,7 +609,7 @@ def test_to_ir_comprehension() -> None:
             ir.ComplexBoolExpr(
                 [
                     ir.VarDecl("T_1", rty.BASE_INTEGER),
-                    ir.Assign("T_1", ir.Sub(ir.IntVar("X", INT_TY), ir.IntVal(1)), rty.BOOLEAN),
+                    ir.Assign("T_1", ir.Add(ir.IntVar("X", INT_TY), ir.IntVal(-1)), rty.BOOLEAN),
                 ],
                 ir.Less(ir.IntVar("T_1", rty.BASE_INTEGER), ir.IntVal(ir.INT_MAX)),
             ),

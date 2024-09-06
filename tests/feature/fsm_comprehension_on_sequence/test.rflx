@@ -27,9 +27,10 @@ package Test is
          Option_Types : Universal::Option_Types; -- §S-S-D-V-T-SS, §S-S-D-V-E-N
          Message_Options : Universal::Options; -- §S-S-D-V-T-MS, §S-S-D-V-E-N
       begin
+         Option_Types := [for E in Options => E.Option_Type];
+         Option_Types := [for E in Options if True => E.Option_Type];
+         Option_Types := [for E in Options if True = True => E.Option_Type];
          -- §S-S-A-A-LC, §S-E-LC-V, §S-E-LC-SMS, §S-E-LC-TSS, §S-E-LC-CS, §S-E-LC-A, §S-E-S-V
-         Option_Types := [for E in Options if E.Option_Type = Universal::OT_Data => E.Option_Type];
-         -- Test that target sequence is reset by assignment
          Option_Types := [for E in Options if E.Option_Type = Universal::OT_Data => E.Option_Type];
          -- §S-S-A-A-MA
          Message_1 := Universal::Message'(Message_Type => Universal::MT_Option_Types,

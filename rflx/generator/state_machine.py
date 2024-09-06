@@ -5945,6 +5945,30 @@ class FSMGenerator:
                 ),
             ]
 
+        handle_element = (
+            self._comprehension_append_element(
+                target_identifier,
+                target_type,
+                selector_stmts,
+                selector,
+                update_context,
+                local_exception_handler,
+                is_global,
+                state,
+            )
+            if isinstance(target_type, rty.Sequence)
+            else self._comprehension_assign_element(
+                target_identifier,
+                target_type,
+                selector_stmts,
+                selector,
+                update_context,
+                local_exception_handler,
+                is_global,
+                state,
+            )
+        )
+
         return While(
             Call(
                 sequence_type * "Has_Element",
@@ -6000,35 +6024,16 @@ class FSMGenerator:
                                 is_global,
                             )
                         ],
-                        IfStatement(
-                            [
-                                (
-                                    self._to_ada_expr(condition, is_global),
-                                    (
-                                        self._comprehension_append_element(
-                                            target_identifier,
-                                            target_type,
-                                            selector_stmts,
-                                            selector,
-                                            update_context,
-                                            local_exception_handler,
-                                            is_global,
-                                            state,
-                                        )
-                                        if isinstance(target_type, rty.Sequence)
-                                        else self._comprehension_assign_element(
-                                            target_identifier,
-                                            target_type,
-                                            selector_stmts,
-                                            selector,
-                                            update_context,
-                                            local_exception_handler,
-                                            is_global,
-                                            state,
-                                        )
-                                    ),
+                        *(
+                            handle_element
+                            if condition == ir.BoolVal(value=True)
+                            else [
+                                IfStatement(
+                                    [
+                                        (self._to_ada_expr(condition, is_global), handle_element),
+                                    ],
                                 ),
-                            ],
+                            ]
                         ),
                         *update_context,
                     ],

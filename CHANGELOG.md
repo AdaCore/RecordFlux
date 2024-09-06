@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Copying of sequence fields for external IO buffers (eng/recordflux/RecordFlux#1704)
 - Syntax highlighting for identifiers with numbers or keywords (AdaCore/RecordFlux#1301, eng/recordflux/RecordFlux#1776)
 - Fatal errors caused by missing locations after proof timeouts (eng/recordflux/RecordFlux#1782)
+- Fatal errors when generating code for list comprehensions without condition or `True` condition (AdaCore/RecordFlux#1302, eng/recordflux/RecordFlux#1786)
 
 ## [0.23.0] - 2024-08-23
 
