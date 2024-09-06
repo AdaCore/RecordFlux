@@ -202,7 +202,7 @@ class LSModel:
                 )
                 for function in declaration.parameters
                 if isinstance(function, FunctionDeclaration)
-                for argument in function.arguments
+                for argument in function.parameters
             ]
             declarations = [
                 Symbol(

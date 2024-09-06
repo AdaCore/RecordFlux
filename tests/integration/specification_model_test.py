@@ -665,7 +665,7 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
         [
             decl.ChannelDeclaration("X", readable=True, writable=True),
             decl.FunctionDeclaration("F", [], "Test::Tag"),
-            decl.FunctionDeclaration("G", [decl.Argument("P", "Test::Tag")], BOOLEAN.identifier),
+            decl.FunctionDeclaration("G", [decl.Parameter("P", "Test::Tag")], BOOLEAN.identifier),
         ],
         [BOOLEAN, OPAQUE, tag, length, message],
     )

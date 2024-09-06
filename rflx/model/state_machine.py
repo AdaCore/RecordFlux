@@ -712,14 +712,14 @@ class StateMachine(TopLevelDeclaration):
             self._reference_variable_declaration(d.variables(), visible_declarations)
 
             if isinstance(d, decl.TypeCheckableDeclaration):
-                type_identifier = type_decl.internal_type_identifier(
+                declaration_id = type_decl.internal_type_identifier(
                     d.type_identifier,
                     self.package,
                 )
-                if type_identifier in self.types:
+                if declaration_id in self.types:
                     self.error.extend(
                         d.check_type(
-                            self.types[type_identifier].type_,
+                            self.types[declaration_id].type_,
                             lambda x: self._typify_variable(x, visible_declarations),
                         ).entries,
                     )
@@ -728,18 +728,18 @@ class StateMachine(TopLevelDeclaration):
                     d.type_ = rty.Any()
 
                 if isinstance(d, decl.FunctionDeclaration):
-                    for a in d.arguments:
-                        type_identifier = type_decl.internal_type_identifier(
-                            a.type_identifier,
+                    for p in d.parameters:
+                        parameter_id = type_decl.internal_type_identifier(
+                            p.type_identifier,
                             self.package,
                         )
-                        if type_identifier in self.types:
-                            argument_type = self.types[type_identifier]
-                            a.type_ = argument_type.type_
-                            self._validate_function_parameter_type(type_identifier)
+                        if parameter_id in self.types:
+                            argument_type = self.types[parameter_id]
+                            p.type_ = argument_type.type_
+                            self._validate_function_parameter_type(parameter_id)
                         else:
-                            a.type_ = rty.Any()
-                            undefined_type(a.type_identifier, d.location)
+                            p.type_ = rty.Any()
+                            undefined_type(p.type_identifier, d.location)
 
                     return_type_id = type_decl.internal_type_identifier(
                         d.return_type,
@@ -1019,7 +1019,7 @@ class StateMachine(TopLevelDeclaration):
                 expression.type_ = declarations[identifier].type_
                 declaration = declarations[identifier]
                 assert isinstance(declaration, decl.FunctionDeclaration)
-                expression.argument_types = [a.type_ for a in declaration.arguments]
+                expression.argument_types = [a.type_ for a in declaration.parameters]
             if isinstance(expression, expr.Conversion) and identifier in self.types:
                 expression.type_ = self.types[identifier].type_
                 expression.argument_types = [

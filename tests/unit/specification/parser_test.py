@@ -4568,7 +4568,7 @@ def test_expression_complex(string: str, expected: expr.Expr) -> None:
             "with function X (A : B; C : D) return Y",
             decl.FunctionDeclaration(
                 "X",
-                [decl.Argument("A", "Package::B"), decl.Argument("C", "Package::D")],
+                [decl.Parameter("A", "Package::B"), decl.Parameter("C", "Package::D")],
                 "Package::Y",
             ),
         ),
@@ -4576,7 +4576,7 @@ def test_expression_complex(string: str, expected: expr.Expr) -> None:
             "with function X (A : Boolean) return Boolean",
             decl.FunctionDeclaration(
                 "X",
-                [decl.Argument("A", str(model.BOOLEAN.identifier))],
+                [decl.Parameter("A", str(model.BOOLEAN.identifier))],
                 str(model.BOOLEAN.identifier),
             ),
         ),

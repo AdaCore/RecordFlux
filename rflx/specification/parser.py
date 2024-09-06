@@ -795,7 +795,7 @@ def create_function_decl(
     arguments = []
     if declaration.f_parameters:
         arguments = [
-            decl.Argument(
+            decl.Parameter(
                 create_id(error, p.f_identifier, filename),
                 model.internal_type_identifier(
                     create_id(error, p.f_type_identifier, filename),

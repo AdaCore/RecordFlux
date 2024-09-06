@@ -215,7 +215,7 @@ class FormalDeclaration(Declaration):
         raise NotImplementedError
 
 
-class Argument(Base):
+class Parameter(Base):
     def __init__(self, identifier: StrID, type_identifier: StrID, type_: rty.Type = rty.UNDEFINED):
         super().__init__()
         self._identifier = ID(identifier)
@@ -243,19 +243,21 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
     def __init__(
         self,
         identifier: StrID,
-        arguments: Sequence[Argument],
+        parameters: Sequence[Parameter],
         return_type: StrID,
         type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ):
         super().__init__(identifier, return_type, type_, location)
-        self._arguments = arguments
+        self._parameters = parameters
         self._return_type = ID(return_type)
 
     def __str__(self) -> str:
-        arguments = (" (" + "; ".join(map(str, self._arguments)) + ")") if self._arguments else ""
+        parameters = (
+            (" (" + "; ".join(map(str, self._parameters)) + ")") if self._parameters else ""
+        )
         return (
-            f"with function {self.identifier}{arguments} return {ada_type_name(self._return_type)}"
+            f"with function {self.identifier}{parameters} return {ada_type_name(self._return_type)}"
         )
 
     def check_type(
@@ -267,8 +269,8 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         return RecordFluxError()
 
     @property
-    def arguments(self) -> Sequence[Argument]:
-        return self._arguments
+    def parameters(self) -> Sequence[Parameter]:
+        return self._parameters
 
     @property
     def return_type(self) -> ID:
@@ -277,7 +279,7 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
     def to_ir(self) -> ir.FuncDecl:
         return ir.FuncDecl(
             self.identifier,
-            [a.to_ir() for a in self.arguments],
+            [a.to_ir() for a in self.parameters],
             self.return_type,
             self.type_,
             self.location,

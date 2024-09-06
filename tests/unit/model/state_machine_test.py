@@ -71,7 +71,7 @@ def test_str() -> None:
                     decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
                     decl.FunctionDeclaration(
                         "G",
-                        [decl.Argument("P", BOOLEAN.identifier)],
+                        [decl.Parameter("P", BOOLEAN.identifier)],
                         BOOLEAN.identifier,
                     ),
                 ],
@@ -159,7 +159,7 @@ def test_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> None:
                 decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
                 decl.FunctionDeclaration(
                     "G",
-                    [decl.Argument("P", BOOLEAN.identifier)],
+                    [decl.Parameter("P", BOOLEAN.identifier)],
                     BOOLEAN.identifier,
                 ),
             ],
@@ -305,7 +305,7 @@ def test_inconsistent_identifier_casing() -> None:
                 ),
                 decl.FunctionDeclaration(
                     ID("G", location=Location((17, 17))),
-                    [decl.Argument("P", BOOLEAN.identifier)],
+                    [decl.Parameter("P", BOOLEAN.identifier)],
                     BOOLEAN.identifier,
                 ),
             ],
@@ -872,7 +872,7 @@ def test_function_declaration_invalid_parameter_type(
         parameters=[
             decl.FunctionDeclaration(
                 "Function",
-                [decl.Argument("M", ID(parameter_type, location=Location((1, 2))))],
+                [decl.Parameter("M", ID(parameter_type, location=Location((1, 2))))],
                 "Boolean",
             ),
         ],
@@ -995,7 +995,7 @@ def test_call_undeclared_variable() -> None:
             decl.VariableDeclaration("Result", "Boolean"),
         ],
         parameters=[
-            decl.FunctionDeclaration("SubProg", [decl.Argument("P", "Boolean")], "Boolean"),
+            decl.FunctionDeclaration("SubProg", [decl.Parameter("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
         regex=r'^<stdin>:10:20: error: undefined variable "Undefined"$',
@@ -1026,7 +1026,7 @@ def test_call_invalid_argument_type() -> None:
             decl.VariableDeclaration("Result", "Boolean"),
         ],
         parameters=[
-            decl.FunctionDeclaration("Function", [decl.Argument("P", "Boolean")], "Boolean"),
+            decl.FunctionDeclaration("Function", [decl.Parameter("P", "Boolean")], "Boolean"),
             decl.ChannelDeclaration("Channel", readable=True, writable=False),
         ],
         types=[BOOLEAN],
@@ -1062,7 +1062,7 @@ def test_call_missing_arguments() -> None:
             decl.VariableDeclaration("Result", "Boolean"),
         ],
         parameters=[
-            decl.FunctionDeclaration("Function", [decl.Argument("P", "Boolean")], "Boolean"),
+            decl.FunctionDeclaration("Function", [decl.Parameter("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
         regex=r"^<stdin>:10:20: error: missing function arguments$",
@@ -1093,7 +1093,7 @@ def test_call_too_many_arguments() -> None:
             decl.VariableDeclaration("Result", "Boolean"),
         ],
         parameters=[
-            decl.FunctionDeclaration("Function", [decl.Argument("P", "Boolean")], "Boolean"),
+            decl.FunctionDeclaration("Function", [decl.Parameter("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
         regex=r"^<stdin>:10:20: error: too many function arguments$",
@@ -1301,7 +1301,7 @@ def test_undeclared_variable_in_function_call() -> None:
             decl.VariableDeclaration("Result", "Boolean"),
         ],
         parameters=[
-            decl.FunctionDeclaration("SubProg", [decl.Argument("P", "Boolean")], "Boolean"),
+            decl.FunctionDeclaration("SubProg", [decl.Parameter("P", "Boolean")], "Boolean"),
         ],
         types=[BOOLEAN],
         regex=r'^<stdin>:10:20: error: undefined variable "Undefined"$',
@@ -2007,7 +2007,7 @@ def test_conversion_invalid() -> None:
         [
             decl.FunctionDeclaration(
                 "X",
-                [decl.Argument("Y", "Boolean")],
+                [decl.Parameter("Y", "Boolean")],
                 "Undefined",
                 location=Location((10, 20)),
             ),
@@ -2015,7 +2015,7 @@ def test_conversion_invalid() -> None:
         [
             decl.FunctionDeclaration(
                 "X",
-                [decl.Argument("Y", "Undefined")],
+                [decl.Parameter("Y", "Undefined")],
                 "Boolean",
                 location=Location((10, 20)),
             ),
@@ -3200,7 +3200,7 @@ def test_unchecked_state_machine_checked() -> None:
             decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
             decl.FunctionDeclaration(
                 "G",
-                [decl.Argument("P", BOOLEAN.identifier)],
+                [decl.Parameter("P", BOOLEAN.identifier)],
                 BOOLEAN.identifier,
             ),
         ],
@@ -3250,7 +3250,7 @@ def test_unchecked_state_machine_checked() -> None:
             decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
             decl.FunctionDeclaration(
                 "G",
-                [decl.Argument("P", BOOLEAN.identifier)],
+                [decl.Parameter("P", BOOLEAN.identifier)],
                 BOOLEAN.identifier,
             ),
         ],
