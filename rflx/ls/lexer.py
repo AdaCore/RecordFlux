@@ -38,7 +38,7 @@ class State:
     current_package: ID | None
     declarations: list[ID]
     foreign_package: ID | None
-    current_session: ID | None
+    current_state_machine: ID | None
     top_level: bool
 
 
@@ -204,8 +204,13 @@ class LSLexer:
 
     # Python 3.11 directly supports single dispatch with typing.Union
     @_process_ast_node.register(lang.TypeDecl)
+    @_process_ast_node.register(lang.StateMachineDecl)
     @_process_ast_node.register(lang.SessionDecl)
-    def _(self, node: lang.TypeDecl | lang.SessionDecl, state: State) -> None:
+    def _(
+        self,
+        node: lang.TypeDecl | lang.StateMachineDecl | lang.SessionDecl,
+        state: State,
+    ) -> None:
         partial_identifier = ID(node.f_identifier.text)
         identifier = (
             state.current_package * partial_identifier
@@ -213,15 +218,15 @@ class LSLexer:
             else partial_identifier
         )
 
-        if node.is_a(lang.SessionDecl):
-            state.current_session = identifier
+        if node.is_a(lang.StateMachineDecl) or node.is_a(lang.SessionDecl):
+            state.current_state_machine = identifier
 
         state.declarations.append(identifier)
         self._process_children(node, state)
         state.declarations.pop()
 
-        if node.is_a(lang.SessionDecl):
-            state.current_session = None
+        if node.is_a(lang.StateMachineDecl) or node.is_a(lang.SessionDecl):
+            state.current_state_machine = None
 
     @_process_ast_node.register
     def _(self, node: lang.MessageField, state: State) -> None:
@@ -252,14 +257,14 @@ class LSLexer:
 
     @_process_ast_node.register
     def _(self, node: lang.FormalFunctionDecl, state: State) -> None:
-        assert state.current_session is not None
-        state.declarations.append(state.current_session * ID(node.f_identifier.text))
+        assert state.current_state_machine is not None
+        state.declarations.append(state.current_state_machine * ID(node.f_identifier.text))
         self._process_children(node, state)
         state.declarations.pop()
 
     @_process_ast_node.register
     def _(self, node: lang.State, state: State) -> None:
-        assert state.current_session is not None
-        state.declarations.append(state.current_session * ID(node.f_identifier.text))
+        assert state.current_state_machine is not None
+        state.declarations.append(state.current_state_machine * ID(node.f_identifier.text))
         self._process_children(node, state)
         state.declarations.pop()

@@ -1,0 +1,7 @@
+Machine:
+  S:
+    Buffer_Size:
+      Default: 4096
+      Local:
+        Process:
+          Option_Types: 8096

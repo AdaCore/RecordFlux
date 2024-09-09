@@ -4,7 +4,7 @@ package Test is
 
    generic
       Channel : Channel with Readable, Writable; -- §S-P-C-RW
-   session Session is
+   machine S is
       M_R : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
       M_S : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
    begin
@@ -31,6 +31,6 @@ package Test is
       transition
          goto null -- §S-S-T-N
       end Reply;
-   end Session;
+   end S;
 
 end Test;

@@ -265,38 +265,67 @@ def create_state(
     )
 
 
-def _check_session_identifier(
+def _check_state_machine_identifier(
     error: RecordFluxError,
-    session: lang.SessionDecl,
+    state_machine: lang.StateMachineDecl | lang.SessionDecl,
     filename: Path,
 ) -> None:
-    if session.f_identifier.text != session.f_end_identifier.text:
+    if state_machine.f_identifier.text != state_machine.f_end_identifier.text:
         error.extend(
             [
                 ErrorEntry(
-                    "inconsistent session identifier: "
-                    f"{session.f_identifier.text} /= {session.f_end_identifier.text}",
+                    "inconsistent state machine identifier: "
+                    f"{state_machine.f_identifier.text} /= {state_machine.f_end_identifier.text}",
                     Severity.ERROR,
-                    node_location(session, filename),
+                    node_location(state_machine, filename),
                 ),
             ],
         )
 
 
-def create_session(
+def create_state_machine(
     error: RecordFluxError,
-    session: lang.SessionDecl,
+    state_machine: lang.StateMachineDecl,
     package: ID,
     filename: Path,
-) -> model.UncheckedSession:
-    _check_session_identifier(error, session, filename)
+) -> model.UncheckedStateMachine:
+    _check_state_machine_identifier(error, state_machine, filename)
 
-    return model.UncheckedSession(
-        package * create_id(error, session.f_identifier, filename),
-        [create_state(error, s, package, filename) for s in session.f_states],
-        [create_declaration(error, d, package, filename) for d in session.f_declarations],
-        [create_formal_declaration(error, p, package, filename) for p in session.f_parameters],
-        node_location(session, filename),
+    return model.UncheckedStateMachine(
+        package * create_id(error, state_machine.f_identifier, filename),
+        [create_state(error, s, package, filename) for s in state_machine.f_states],
+        [create_declaration(error, d, package, filename) for d in state_machine.f_declarations],
+        [
+            create_formal_declaration(error, p, package, filename)
+            for p in state_machine.f_parameters
+        ],
+        node_location(state_machine, filename),
+    )
+
+
+def add_error_for_deprecated_session(
+    error: RecordFluxError,
+    session: lang.SessionDecl,
+    filename: Path,
+) -> None:
+    _check_state_machine_identifier(error, session, filename)
+
+    error.extend(
+        [
+            ErrorEntry(
+                '"session" keyword is deprecated',
+                Severity.ERROR,
+                node_location(session.f_session_keyword, filename),
+                [
+                    Annotation(
+                        'use "machine" instead',
+                        Severity.HELP,
+                        node_location(session.f_session_keyword, filename),
+                    ),
+                ],
+                generate_default_annotation=False,
+            ),
+        ],
     )
 
 
@@ -1953,8 +1982,10 @@ class Parser:
                     declarations.append(new_type)
             elif isinstance(t, lang.RefinementDecl):
                 declarations.append(create_refinement(error, t, package_id, filename))
+            elif isinstance(t, lang.StateMachineDecl):
+                declarations.append(create_state_machine(error, t, package_id, filename))
             elif isinstance(t, lang.SessionDecl):
-                declarations.append(create_session(error, t, package_id, filename))
+                add_error_for_deprecated_session(error, t, filename)
             else:
                 raise NotImplementedError(f"Declaration kind {t.kind_name} unsupported")
 

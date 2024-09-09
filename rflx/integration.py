@@ -12,7 +12,7 @@ from typing_extensions import Annotated
 
 from rflx.identifier import ID
 from rflx.model import Model
-from rflx.model.session import Session
+from rflx.model.state_machine import StateMachine
 from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 
 # TODO(eng/recordflux/RecordFlux#1359): Replace ty.* by collections.abc.*
@@ -31,7 +31,7 @@ from rflx.rapidflux import ErrorEntry, Location, RecordFluxError, Severity
 IntSize = Annotated[int, Gt(0)]
 
 
-class SessionSize(BaseModel):  # type: ignore[misc]
+class StateMachineSize(BaseModel):  # type: ignore[misc]
     default: Optional[IntSize] = Field(None, alias="Default")  # noqa: UP007
     global_: Optional[ty.Mapping[str, IntSize]] = Field(None, alias="Global")  # noqa: UP007
     local_: Optional[ty.Mapping[str, ty.Mapping[str, IntSize]]] = Field(  # noqa: UP007
@@ -42,15 +42,18 @@ class SessionSize(BaseModel):  # type: ignore[misc]
     model_config = ConfigDict(extra="forbid")
 
 
-class SessionIntegration(BaseModel):  # type: ignore[misc]
-    buffer_size: Optional[SessionSize] = Field(alias="Buffer_Size", default=None)  # noqa: UP007
+class StateMachineIntegration(BaseModel):  # type: ignore[misc]
+    buffer_size: Optional[StateMachineSize] = Field(  # noqa: UP007
+        alias="Buffer_Size",
+        default=None,
+    )
     external_io_buffers: bool = Field(alias="External_IO_Buffers", default=False)
 
     model_config = ConfigDict(extra="forbid")
 
 
 class IntegrationFile(BaseModel):  # type: ignore[misc]
-    session: ty.Mapping[str, SessionIntegration] = Field(alias="Session")
+    state_machine: ty.Mapping[str, StateMachineIntegration] = Field(alias="Machine")
 
     model_config = ConfigDict(extra="forbid")
 
@@ -89,45 +92,48 @@ class Integration:
 
     def validate(self, model: Model, error: RecordFluxError) -> None:
         for package, integration_file in self._packages.items():
-            for session_name, integration in integration_file.session.items():
-                matching_sessions = [
+            for state_machine_name, integration in integration_file.state_machine.items():
+                matching_state_machines = [
                     s
-                    for s in model.sessions
-                    if package == str(s.package).lower() and str(s.identifier.name) == session_name
+                    for s in model.state_machines
+                    if package == str(s.package).lower()
+                    and str(s.identifier.name) == state_machine_name
                 ]
-                if not matching_sessions:
+                if not matching_state_machines:
                     error.push(
                         ErrorEntry(
-                            f'unknown session "{session_name}"',
+                            f'unknown state machine "{state_machine_name}"',
                             Severity.ERROR,
                             Integration._to_location(package),
                         ),
                     )
                     return
-                assert len(matching_sessions) == 1
-                session = matching_sessions[0]
-                self._validate_globals(package, integration, session, error)
-                self._validate_states(package, integration, session, error)
+                assert len(matching_state_machines) == 1
+                state_machine = matching_state_machines[0]
+                self._validate_globals(package, integration, state_machine, error)
+                self._validate_states(package, integration, state_machine, error)
 
-    def get_size(self, session: ID, variable: ID | None, state: ID | None) -> int:
+    def get_size(self, state_machine: ID, variable: ID | None, state: ID | None) -> int:
         """
-        Return the requested buffer size for a variable of a given session and state.
+        Return the requested buffer size for a variable of a given state machine and state.
 
         If state is None, the variable is assumed to be a global variable. If variable is None or no
         specific buffer size was requested for the variable, return the default buffer size for the
-        session, if present, or the default buffer size for RecordFlux.
+        state machine, if present, or the default buffer size for RecordFlux.
 
         The returned size is in bytes.
         """
-        integration_package = str(session.parent).lower()
+        integration_package = str(state_machine.parent).lower()
         if integration_package not in self._packages:
             return self.defaultsize
 
-        session_name = str(session.name)
-        if session_name not in self._packages[integration_package].session:
+        state_machine_name = str(state_machine.name)
+        if state_machine_name not in self._packages[integration_package].state_machine:
             return self.defaultsize
 
-        buffer_size = self._packages[integration_package].session[session_name].buffer_size
+        buffer_size = (
+            self._packages[integration_package].state_machine[state_machine_name].buffer_size
+        )
         if buffer_size is None:
             return self.defaultsize
 
@@ -155,16 +161,20 @@ class Integration:
 
         return default_size
 
-    def use_external_io_buffers(self, session: ID) -> bool:
-        integration_package = str(session.parent).lower()
+    def use_external_io_buffers(self, state_machine: ID) -> bool:
+        integration_package = str(state_machine.parent).lower()
         if integration_package not in self._packages:
             return False
 
-        session_name = str(session.name)
-        if session_name not in self._packages[integration_package].session:
+        state_machine_name = str(state_machine.name)
+        if state_machine_name not in self._packages[integration_package].state_machine:
             return False
 
-        return self._packages[integration_package].session[session_name].external_io_buffers
+        return (
+            self._packages[integration_package]
+            .state_machine[state_machine_name]
+            .external_io_buffers
+        )
 
     def add_integration_file(self, package_name: str, integration_file: IntegrationFile) -> None:
         self._packages[package_name] = integration_file
@@ -187,20 +197,20 @@ class Integration:
     @staticmethod
     def _validate_globals(
         package: str,
-        integration: SessionIntegration,
-        session: Session,
+        integration: StateMachineIntegration,
+        state_machine: StateMachine,
         error: RecordFluxError,
     ) -> None:
         if integration.buffer_size is None or integration.buffer_size.global_ is None:
             return
-        session_decl_vars = [str(x.name) for x in session.declarations]
+        state_machine_decl_vars = [str(x.name) for x in state_machine.declarations]
         for var_name in integration.buffer_size.global_:
-            if var_name not in session_decl_vars:
+            if var_name not in state_machine_decl_vars:
                 error.push(
                     ErrorEntry(
                         (
                             f'unknown global variable "{var_name}" '
-                            f'in session "{session.identifier.name}"'
+                            f'in state machine "{state_machine.identifier.name}"'
                         ),
                         Severity.ERROR,
                         Integration._to_location(package),
@@ -210,23 +220,23 @@ class Integration:
     @staticmethod
     def _validate_states(
         package: str,
-        integration: SessionIntegration,
-        session: Session,
+        integration: StateMachineIntegration,
+        state_machine: StateMachine,
         error: RecordFluxError,
     ) -> None:
         if integration.buffer_size is None or integration.buffer_size.local_ is None:
             return
         for state_name, state_entry in integration.buffer_size.local_.items():
             state = None
-            for s in session.states:
+            for s in state_machine.states:
                 if str(s.identifier.name) == state_name:
                     state = s
             if state is None:
                 error.push(
                     ErrorEntry(
                         (
-                            f'unknown state "{state_name}" in session '
-                            f'"{session.identifier.name}"'
+                            f'unknown state "{state_name}" in state machine '
+                            f'"{state_machine.identifier.name}"'
                         ),
                         Severity.ERROR,
                         Integration._to_location(package),
@@ -240,7 +250,7 @@ class Integration:
                         ErrorEntry(
                             (
                                 f'unknown variable "{var_name}" in state '
-                                f'"{state_name}" of session "{session.identifier.name}"'
+                                f'"{state_name}" of state machine "{state_machine.identifier.name}"'
                             ),
                             Severity.ERROR,
                             Integration._to_location(package),

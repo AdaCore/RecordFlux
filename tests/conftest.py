@@ -65,9 +65,13 @@ def pytest_assertrepr_compare(op: str, left: object, right: object) -> Sequence[
             "    Actual:   " + re.sub(r"\n +", " ", str(left)),
             "    Expected: " + re.sub(r"\n +", " ", str(right)),
         ]
-    if isinstance(left, model.Session) and isinstance(right, model.Session) and op == "==":
+    if (
+        isinstance(left, model.StateMachine)
+        and isinstance(right, model.StateMachine)
+        and op == "=="
+    ):
         return [
-            "Session instances",
+            "State machine instances",
             "repr:",
             *[f"    {l}" for l in ("Actual:   " + repr(left)).split("\n")],
             *[f"    {l}" for l in ("Expected: " + repr(right)).split("\n")],

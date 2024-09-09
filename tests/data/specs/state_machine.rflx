@@ -1,0 +1,13 @@
+package State_Machine is
+
+   generic
+   machine S is
+   begin
+      state Start is
+      begin
+      transition
+         goto null
+      end Start;
+   end S;
+
+end State_Machine;

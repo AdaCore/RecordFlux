@@ -222,7 +222,7 @@ Extended Boolean Expressions
 ----------------------------
 
 Expressions of this category yield a boolean result.
-Extended boolean expressions are used in sessions.
+Extended boolean expressions are used in state machines.
 
 **Syntax**
 
@@ -638,29 +638,29 @@ Scalar types as well as message types can be used as element type.
 
    type Options is sequence of Option
 
-Protocol Sessions
-=================
+State Machines
+==============
 
 ..
-    Protocol Sessions [§S]
+    State Machines [§S]
 
-A session defines the dynamic behavior of a protocol using a finite state machine.
+A state machine defines the dynamic behavior of a protocol using a finite state machine.
 The first defined state is considered the initial state.
-The external interface of a session is defined by parameters.
-The declaration part enables the declaration of session global variables.
-The main part of a session definition are the state definitions.
+The external interface of a state machine is defined by parameters.
+The declaration part enables the declaration of state machine global variables.
+The main part of a state machine definition is the state definitions.
 
 **Syntax**
 
 .. productionlist::
-   session: "generic"
-          : { `session_parameter` }
-          : "session" `name` "is"
-          : { `session_declaration` }
-          : "begin"
-          : `state`
-          : { `state` }
-          : "end" `name`
+   state_machine: "generic"
+                : { `state_machine_parameter` }
+                : "machine" `name` "is"
+                : { `state_machine_declaration` }
+                : "begin"
+                : `state`
+                : { `state` }
+                : "end" `name`
 
 **Example**
 
@@ -671,7 +671,7 @@ The main part of a session definition are the state definitions.
       X : Channel with Readable, Writable;
       with function F return T;
       with function G (P : T) return Boolean;
-   session S is
+   machine S is
       Y : Boolean := False;
    begin
       state A
@@ -690,20 +690,20 @@ The main part of a session definition are the state definitions.
       end A;
    end S
 
-Session Parameters
-------------------
+State Machine Parameters
+------------------------
 
 ..
-    Session Parameters [§S-P]
+    State Machine Parameters [§S-P]
 
-Functions and channels can be defined as session parameters.
+Functions and channels can be defined as state machine parameters.
 
 **Syntax**
 
 .. productionlist::
-   session_parameter: ( `function_declaration`
-                    : | `channel_declaration`
-                    : ) ";"
+   state_machine_parameter: ( `function_declaration`
+                          : | `channel_declaration`
+                          : ) ";"
 
 Functions
 ^^^^^^^^^
@@ -750,12 +750,12 @@ Definite messages are messages with no optional fields and an explicit size (i.e
 
 **SPARK**
 
-For each function declaration in the session specification a formal procedure declaration is added to the corresponding generic session package.
+For each function declaration in the state machine specification a formal procedure declaration is added to the corresponding generic state machine package.
 The return type and parameters of a function are represented by the first and subsequent parameters of the generated procedure declaration.
 
 **Example**
 
-.. doc-check: rflx,session_parameter
+.. doc-check: rflx,state_machine_parameter
 .. code:: rflx
 
    with function Decrypt
@@ -792,7 +792,7 @@ Channels can be readable or writable (non-exclusive).
 
 **Example**
 
-.. doc-check: rflx,session_parameter
+.. doc-check: rflx,state_machine_parameter
 .. code:: rflx
 
    Data_Channel : Channel with Readable, Writable
@@ -803,14 +803,14 @@ Declarations
 ..
     Declarations [§S-D]
 
-Variables and renamings can be globally declared (i.e. for the scope of the complete session).
+Variables and renamings can be globally declared (i.e. for the scope of the complete state machine).
 
 **Syntax**
 
 .. productionlist::
-   session_declaration: ( `variable_declaration`
-                      : | `renaming_declaration`
-                      : ) ";"
+   state_machine_declaration: ( `variable_declaration`
+                            : | `renaming_declaration`
+                            : ) ";"
 
 Variable Declaration
 ^^^^^^^^^^^^^^^^^^^^
@@ -902,7 +902,7 @@ Variable declarations and renaming declarations in a state have a state-local sc
    state: "state" `name`
         : [ "with" `description_aspect` ]
         : "is"
-        : { local_`session_declaration` }
+        : { local_`state_machine_declaration` }
         : "begin"
         : { `state_action` }
         : "transition"
@@ -1709,7 +1709,7 @@ Calls
 ..
     Calls [§S-E-CL]
 
-All functions which are declared in the session parameters can be called.
+All functions which are declared in the state machine parameters can be called.
 
 **Syntax**
 
@@ -1847,11 +1847,11 @@ A package is used to structure a specification.
                     :  | `type_refinement`
                     :  | `type_derivation`
                     :  | `sequence_type`
-                    :  | `session` ) ";"
+                    :  | `state_machine` ) ";"
 
 **Static Semantics**
 
-A package is a collection of types and sessions.
+A package is a collection of types and state machines.
 By convention one protocol is specified in one package.
 
 **Example**
@@ -1898,7 +1898,7 @@ By convention one protocol is specified in one package.
       generic
          Input : Channel with Readable;
          Output : Channel with Writable;
-      session Validator is
+      machine Validator is
          Frame : Ethernet::Frame;
       begin
          state Validate

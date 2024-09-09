@@ -10,7 +10,7 @@ from rflx.identifier import ID
 from rflx.model import UncheckedModel
 from rflx.model.declaration import ChannelDeclaration, FunctionDeclaration
 from rflx.model.message import UncheckedMessage
-from rflx.model.session import UncheckedSession
+from rflx.model.state_machine import UncheckedStateMachine
 from rflx.model.top_level_declaration import UncheckedTopLevelDeclaration
 from rflx.model.type_decl import (
     UncheckedEnumeration,
@@ -28,13 +28,13 @@ class SymbolCategory(Enum):
     SEQUENCE = auto()
     MESSAGE = auto()
     MESSAGE_FIELD = auto()
-    SESSION = auto()
-    SESSION_MEMBER = auto()
-    SESSION_CHANNEL = auto()
-    SESSION_FUNCTION = auto()
-    SESSION_FUNCTION_PARAMETER = auto()
-    SESSION_STATE = auto()
-    SESSION_STATE_VARIABLE = auto()
+    STATE_MACHINE = auto()
+    STATE_MACHINE_MEMBER = auto()
+    STATE_MACHINE_CHANNEL = auto()
+    STATE_MACHINE_FUNCTION = auto()
+    STATE_MACHINE_FUNCTION_PARAMETER = auto()
+    STATE_MACHINE_STATE = auto()
+    STATE_MACHINE_STATE_VARIABLE = auto()
     PACKAGE = auto()
 
     def to_lsp_token(self) -> str:  # noqa: PLR0911
@@ -48,19 +48,22 @@ class SymbolCategory(Enum):
             return "enumMember"
         if self is SymbolCategory.MESSAGE:
             return "struct"
-        if self is SymbolCategory.MESSAGE_FIELD or self is SymbolCategory.SESSION_MEMBER:
+        if self is SymbolCategory.MESSAGE_FIELD or self is SymbolCategory.STATE_MACHINE_MEMBER:
             return "property"
-        if self is SymbolCategory.SESSION:
+        if self is SymbolCategory.STATE_MACHINE:
             return "class"
-        if self is SymbolCategory.SESSION_STATE or self is SymbolCategory.SESSION_CHANNEL:
+        if (
+            self is SymbolCategory.STATE_MACHINE_STATE
+            or self is SymbolCategory.STATE_MACHINE_CHANNEL
+        ):
             return "event"
-        if self is SymbolCategory.SESSION_STATE_VARIABLE:
+        if self is SymbolCategory.STATE_MACHINE_STATE_VARIABLE:
             return "variable"
-        if self is SymbolCategory.SESSION_FUNCTION:
+        if self is SymbolCategory.STATE_MACHINE_FUNCTION:
             return "method"
         if self is SymbolCategory.PACKAGE:
             return "namespace"
-        if self is SymbolCategory.SESSION_FUNCTION_PARAMETER:
+        if self is SymbolCategory.STATE_MACHINE_FUNCTION_PARAMETER:
             return "parameter"
         assert self is not SymbolCategory.UNDEFINED
         assert_never(self)  # pragma: no cover
@@ -74,7 +77,7 @@ class Symbol:
     Arguments:
     ---------
         identifier: The unique identifier associated to the symbol.
-        category: A SymbolCategory indicating the type (message, session, numeric, enumeration...)
+        category: A SymbolCategory indicating the type (message, state machine, enumeration, ...)
                   of the symbol.
         definition_location: A Location indicating where the symbol is defined.
         parent: A optional ID indicating if the cur
@@ -169,11 +172,11 @@ class LSModel:
             )
             return result
 
-        if isinstance(declaration, UncheckedSession):
+        if isinstance(declaration, UncheckedStateMachine):
             channels = [
                 Symbol(
                     declaration.identifier * channel.identifier,
-                    SymbolCategory.SESSION_CHANNEL,
+                    SymbolCategory.STATE_MACHINE_CHANNEL,
                     channel.location,
                     declaration.identifier,
                 )
@@ -183,7 +186,7 @@ class LSModel:
             functions = [
                 Symbol(
                     declaration.identifier * function.identifier,
-                    SymbolCategory.SESSION_FUNCTION,
+                    SymbolCategory.STATE_MACHINE_FUNCTION,
                     function.location,
                     declaration.identifier,
                 )
@@ -193,7 +196,7 @@ class LSModel:
             function_arguments = [
                 Symbol(
                     declaration.identifier * function.identifier * argument.identifier,
-                    SymbolCategory.SESSION_FUNCTION_PARAMETER,
+                    SymbolCategory.STATE_MACHINE_FUNCTION_PARAMETER,
                     argument.identifier.location,
                     declaration.identifier * function.identifier,
                 )
@@ -203,17 +206,17 @@ class LSModel:
             ]
             declarations = [
                 Symbol(
-                    declaration.identifier * session_declaration.identifier,
-                    SymbolCategory.SESSION_MEMBER,
-                    session_declaration.location,
+                    declaration.identifier * state_machine_declaration.identifier,
+                    SymbolCategory.STATE_MACHINE_MEMBER,
+                    state_machine_declaration.location,
                     declaration.identifier,
                 )
-                for session_declaration in declaration.declarations
+                for state_machine_declaration in declaration.declarations
             ]
             states = [
                 Symbol(
                     declaration.identifier * state.identifier,
-                    SymbolCategory.SESSION_STATE,
+                    SymbolCategory.STATE_MACHINE_STATE,
                     state.location,
                     declaration.identifier,
                 )
@@ -222,7 +225,7 @@ class LSModel:
             state_declarations = [
                 Symbol(
                     declaration.identifier * state.identifier * state_declaration.name,
-                    SymbolCategory.SESSION_STATE_VARIABLE,
+                    SymbolCategory.STATE_MACHINE_STATE_VARIABLE,
                     state_declaration.location,
                     declaration.identifier * state.identifier,
                 )
@@ -232,7 +235,7 @@ class LSModel:
             result = [
                 Symbol(
                     declaration.identifier,
-                    SymbolCategory.SESSION,
+                    SymbolCategory.STATE_MACHINE,
                     declaration.location,
                     None,
                 ),

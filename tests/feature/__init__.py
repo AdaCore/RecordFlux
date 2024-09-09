@@ -11,7 +11,7 @@ from rflx.integration import Integration
 from rflx.model import Model
 from rflx.specification import Parser
 from tests.const import FEATURE_DIR, MAIN
-from tests.utils import session_main
+from tests.utils import state_machine_main
 
 FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pycache__"]
 
@@ -89,7 +89,7 @@ def create_model(feature: str) -> tuple[Model, Integration]:
 
 
 def create_complement(config: Config, feature: str, tmp_path: Path) -> list[str]:
-    complement = session_main(
+    complement = state_machine_main(
         config.inp,
         config.out,
         external_io_buffers=config.external_io_buffers,

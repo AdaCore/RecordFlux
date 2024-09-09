@@ -1,0 +1,51 @@
+with Universal;
+
+package Test is
+
+   generic
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+   machine S is
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+   begin
+      state Start is
+      begin
+         Channel'Read (Message); -- §S-S-A-RD-V
+      transition
+         goto Prepare
+            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Start;
+
+      state Prepare is
+         Recv_Type : Universal::Message_Type; -- §S-D-V-T-SC
+      begin
+         Recv_Type := Message.Message_Type; -- §S-S-A-A-V
+         -- §S-S-A-A-MA
+         Message := Universal::Message'(Message_Type => Universal::MT_Value,
+                                        Length       => 1,
+                                        Value        => -- §S-E-CE
+                                                        (case Recv_Type is
+                                                            when Universal::MT_Null | Universal::MT_Data =>   2,
+                                                            when Universal::MT_Value                     =>   4,
+                                                            when Universal::MT_Values                    =>   8,
+                                                            when Universal::MT_Option_Types              =>  16,
+                                                            when Universal::MT_Options                   =>  32,
+                                                            when Universal::MT_Unconstrained_Data        =>  64,
+                                                            when Universal::MT_Unconstrained_Options     => 128));
+      transition
+         goto Reply -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Prepare;
+
+      state Reply is
+      begin
+         Channel'Write (Message); -- §S-S-A-WR-V
+      transition
+         goto null -- §S-S-T-N
+      end Reply;
+   end S;
+
+end Test;

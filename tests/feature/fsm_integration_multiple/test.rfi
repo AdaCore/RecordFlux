@@ -1,0 +1,5 @@
+Machine:
+  S:
+    Buffer_Size:
+      Global:
+        M: 1024

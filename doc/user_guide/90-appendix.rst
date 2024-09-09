@@ -69,19 +69,19 @@ Integration Files
 ^^^^^^^^^^^^^^^^^
 
 For each RecordFlux specification file with the ``.rflx`` file extension, users may provide a file with the same name but the ``.rfi`` file extension.
-This is useful to specify buffer sizes for sessions.
+This is useful to specify buffer sizes for state machines.
 This file is in the YAML data format.
 Buffer sizes are provided in bytes.
 If no such file is provided, RecordFlux uses a default buffer size of 4096 bytes.
 
 **Integration file structure**
 
-The following example of an integration file defines, for the session ``My_Session``, a default buffer size of 4096 bytes, a buffer size of 2048 bytes for the global variable ``My_Global_Var``, and a buffer size of 1024 bytes for the variable ``My_State_Variable`` defined in the state ``My_State``.
+The following example of an integration file defines, for the state machine ``My_State_Machine``, a default buffer size of 4096 bytes, a buffer size of 2048 bytes for the global variable ``My_Global_Var``, and a buffer size of 1024 bytes for the variable ``My_State_Variable`` defined in the state ``My_State``.
 
 .. code:: yaml
 
-   Session:
-     My_Session:
+   Machine:
+     My_State_Machine:
        Buffer_Size:
          Default: 4096
          Global:
@@ -93,21 +93,21 @@ The following example of an integration file defines, for the session ``My_Sessi
 External IO Buffers
 -------------------
 
-By default, all message buffers of a state machine are stored inside the session's ``Context`` type.
+By default, all message buffers of a state machine are stored inside the state machine's ``Context`` type.
 The ``Read`` and ``Write`` primitives give access to a message buffer when the state machine reaches an IO state.
 An alternative is to use externally defined buffers.
 This approach can save memory and prevent copy operations, but it removes some safety guarantees (see the notes at the end of the section).
 
-External IO buffers can be enabled for a session by setting the ``External_IO_Buffers`` option in the integration file.
+External IO buffers can be enabled for a state machine by setting the ``External_IO_Buffers`` option in the integration file.
 
 .. code:: yaml
 
-   Session:
-     My_Session:
+   Machine:
+     My_State_Machine:
        External_IO_Buffers: True
 
-If external IO buffers are enabled, the buffer for all messages that are accessed in any IO state must be allocated externally and provided during the initialization of the session context as arguments to the ``Initialize`` procedure.
-When an IO state is reached, the corresponding buffer of the accessed message can be removed from the session context.
+If external IO buffers are enabled, the buffer for all messages that are accessed in any IO state must be allocated externally and provided during the initialization of the state machine context as arguments to the ``Initialize`` procedure.
+When an IO state is reached, the corresponding buffer of the accessed message can be removed from the state machine context.
 The buffer must be added again before the state machine can be continued.
 
 .. doc-check: ignore

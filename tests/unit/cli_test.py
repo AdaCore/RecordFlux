@@ -25,7 +25,7 @@ from tests.const import DATA_DIR, GITHUB_TRACKER_REF_PATTERN, GNAT_TRACKER_REF_P
 from tests.utils import assert_stderr_regex, raise_fatal_error
 
 MESSAGE_SPEC_FILE = str(SPEC_DIR / "tlv.rflx")
-SESSION_SPEC_FILE = str(SPEC_DIR / "session.rflx")
+STATE_MACHINE_SPEC_FILE = str(SPEC_DIR / "state_machine.rflx")
 IANA_XML_FILE = str(DATA_DIR / "bootp-dhcp-parameters.xml")
 
 
@@ -81,12 +81,12 @@ def test_main_version() -> None:
 
 
 def test_main_check() -> None:
-    assert cli.main(["rflx", "check", MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]) == 0
+    assert cli.main(["rflx", "check", MESSAGE_SPEC_FILE, STATE_MACHINE_SPEC_FILE]) == 0
 
 
 def test_main_check_quiet() -> None:
-    assert cli.main(["rflx", "-q", "check", MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]) == 0
-    assert cli.main(["rflx", "--quiet", "check", MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]) == 0
+    assert cli.main(["rflx", "-q", "check", MESSAGE_SPEC_FILE, STATE_MACHINE_SPEC_FILE]) == 0
+    assert cli.main(["rflx", "--quiet", "check", MESSAGE_SPEC_FILE, STATE_MACHINE_SPEC_FILE]) == 0
     logging.set_quiet(False)
 
 
@@ -132,7 +132,9 @@ def test_main_check_non_existent_file(
 
 def test_main_generate(tmp_path: Path) -> None:
     assert (
-        cli.main(["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE])
+        cli.main(
+            ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, STATE_MACHINE_SPEC_FILE],
+        )
         == 0
     )
     top_level_package = Path(tmp_path) / (cli.DEFAULT_PREFIX.lower() + ".ads")
@@ -172,7 +174,7 @@ def test_main_generate_prefix(tmp_path: Path) -> None:
                     "-p",
                     prefix,
                     MESSAGE_SPEC_FILE,
-                    SESSION_SPEC_FILE,
+                    STATE_MACHINE_SPEC_FILE,
                 ],
             )
             == 0
@@ -197,7 +199,7 @@ def test_main_generate_invalid_prefix(
                 "-p",
                 prefix,
                 MESSAGE_SPEC_FILE,
-                SESSION_SPEC_FILE,
+                STATE_MACHINE_SPEC_FILE,
             ],
         )
         == 1
@@ -221,7 +223,7 @@ def test_main_generate_non_existent_directory(capfd: pytest.CaptureFixture[str])
                 "-d",
                 "non-existent directory",
                 MESSAGE_SPEC_FILE,
-                SESSION_SPEC_FILE,
+                STATE_MACHINE_SPEC_FILE,
             ],
         )
         == 1
@@ -263,7 +265,15 @@ def test_main_generate_debug(
     )
     assert (
         cli.main(
-            ["rflx", "generate", "-d", str(tmp_path), *args, MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+            [
+                "rflx",
+                "generate",
+                "-d",
+                str(tmp_path),
+                *args,
+                MESSAGE_SPEC_FILE,
+                STATE_MACHINE_SPEC_FILE,
+            ],
         )
         == 0
     )
@@ -303,7 +313,15 @@ def test_main_generate_reproducible(
     )
     assert (
         cli.main(
-            ["rflx", "generate", "-d", str(tmp_path), *args, MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+            [
+                "rflx",
+                "generate",
+                "-d",
+                str(tmp_path),
+                *args,
+                MESSAGE_SPEC_FILE,
+                STATE_MACHINE_SPEC_FILE,
+            ],
         )
         == 0
     )
@@ -340,7 +358,8 @@ def test_main_optimize_non_existent_project_file(capfd: pytest.CaptureFixture[st
 
 def test_main_graph(tmp_path: Path) -> None:
     assert (
-        cli.main(["rflx", "graph", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE]) == 0
+        cli.main(["rflx", "graph", "-d", str(tmp_path), MESSAGE_SPEC_FILE, STATE_MACHINE_SPEC_FILE])
+        == 0
     )
 
 
@@ -389,7 +408,14 @@ def test_main_graph_non_existent_directory(
 ) -> None:
     assert (
         cli.main(
-            ["rflx", "graph", "-d", "non-existent directory", MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+            [
+                "rflx",
+                "graph",
+                "-d",
+                "non-existent directory",
+                MESSAGE_SPEC_FILE,
+                STATE_MACHINE_SPEC_FILE,
+            ],
         )
         == 1
     )
@@ -616,7 +642,7 @@ def test_main_unexpected_exception(
     monkeypatch.setattr(fatal_error, "is_gnat_tracker_release", lambda: gnat_tracker_release)
     with pytest.raises(SystemExit, match="^2$"):
         cli.main(
-            ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+            ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, STATE_MACHINE_SPEC_FILE],
         )
     assert re.fullmatch(
         rf"\n-* RecordFlux Bug -*.*Traceback.*-*.*{tracker_ref_pattern}.*",
@@ -862,7 +888,7 @@ def test_exception_in_unsafe_mode(
                 "-d",
                 str(tmp_path),
                 MESSAGE_SPEC_FILE,
-                SESSION_SPEC_FILE,
+                STATE_MACHINE_SPEC_FILE,
             ],
         )
     assert re.fullmatch(

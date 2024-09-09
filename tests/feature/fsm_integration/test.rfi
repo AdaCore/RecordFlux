@@ -1,0 +1,9 @@
+Machine:
+  S:
+    Buffer_Size:
+      Default: 2048
+      Global:
+        Message: 1024
+      Local:
+        Next:
+          M: 8192

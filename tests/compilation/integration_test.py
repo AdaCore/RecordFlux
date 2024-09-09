@@ -5,7 +5,7 @@ import pytest
 
 from rflx.generator import Debug
 from rflx.integration import Integration
-from rflx.model import Model, Session, State, Transition
+from rflx.model import Model, State, StateMachine, Transition
 from rflx.rapidflux import RecordFluxError
 from rflx.specification import Parser
 from tests import utils
@@ -18,10 +18,10 @@ from tests.data.specs import (
 from tests.utils import assert_compilable_code
 
 
-def test_session_with_only_null_state(tmp_path: Path) -> None:
+def test_state_machine_with_only_null_state(tmp_path: Path) -> None:
     state = State("St", [Transition("null")])
-    session = Session("P::S", states=[state], declarations=[], parameters=[], types=[])
-    model = Model([session])
+    state_machine = StateMachine("P::S", states=[state], declarations=[], parameters=[], types=[])
+    model = Model([state_machine])
     assert_compilable_code(model, Integration(), tmp_path)
 
 
@@ -540,7 +540,7 @@ def test_definite_parameterized_message(tmp_path: Path) -> None:
     utils.assert_compilable_code_string(DEFINITE_PARAMETERIZED_MESSAGE_SPEC, tmp_path)
 
 
-def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
+def test_state_machine_type_conversion_in_assignment(tmp_path: Path) -> None:
     spec = """\
        package Test is
 
@@ -555,7 +555,7 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
 
           generic
              Transport : Channel with Readable, Writable;
-          session Session is
+          machine Machine is
              Packet : Packet;
           begin
              state Receive
@@ -590,14 +590,14 @@ def test_session_type_conversion_in_assignment(tmp_path: Path) -> None:
              transition
                 goto Receive
              end Send;
-          end Session;
+          end Machine;
 
        end Test;
        """
     utils.assert_compilable_code_string(spec, tmp_path)
 
 
-def test_session_type_conversion_in_message_size_calculation(tmp_path: Path) -> None:
+def test_state_machine_type_conversion_in_message_size_calculation(tmp_path: Path) -> None:
     spec = """\
         package Test is
 
@@ -619,7 +619,7 @@ def test_session_type_conversion_in_message_size_calculation(tmp_path: Path) -> 
               end message;
 
            generic
-           session S is
+           machine S is
               M : Message;
               D : Data;
               E : Elems;
@@ -642,7 +642,7 @@ def test_session_type_conversion_in_message_size_calculation(tmp_path: Path) -> 
     utils.assert_compilable_code_string(spec, tmp_path)
 
 
-def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
+def test_state_machine_move_content_of_opaque_field(tmp_path: Path) -> None:
     spec = """\
         package Test is
 
@@ -669,7 +669,7 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
            generic
               Channel : Channel with Readable;
               Output : Channel with Writable;
-           session Session is
+           machine Machine is
              Incoming : M1;
              Outgoing : M2;
            begin
@@ -695,7 +695,7 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
               transition
                  goto null
               end Write;
-           end Session;
+           end Machine;
 
         end Test;
     """
@@ -709,7 +709,7 @@ def test_session_move_content_of_opaque_field(tmp_path: Path) -> None:
         ("Writable", "Write"),
     ],
 )
-def test_session_single_channel(mode: str, action: str, tmp_path: Path) -> None:
+def test_state_machine_single_channel(mode: str, action: str, tmp_path: Path) -> None:
     spec = f"""\
         package Test is
 
@@ -720,7 +720,7 @@ def test_session_single_channel(mode: str, action: str, tmp_path: Path) -> None:
 
            generic
               Channel : Channel with {mode};
-           session Session is
+           machine Machine is
              Message : Message;
            begin
               state Init is
@@ -729,7 +729,7 @@ def test_session_single_channel(mode: str, action: str, tmp_path: Path) -> None:
               transition
                  goto null
               end Init;
-           end Session;
+           end Machine;
 
         end Test;
     """
@@ -744,12 +744,12 @@ def test_session_single_channel(mode: str, action: str, tmp_path: Path) -> None:
         (Debug.EXTERNAL, "XState: A\nXState: B\nXState: C\n"),
     ],
 )
-def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Path) -> None:
+def test_state_machine_external_debug_output(debug: Debug, expected: str, tmp_path: Path) -> None:
     spec = """\
         package Test is
 
            generic
-           session Session is
+           machine S is
            begin
               state A is
               begin
@@ -768,7 +768,7 @@ def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Pa
               transition
                  goto null
               end C;
-           end Session;
+           end S;
 
         end Test;
     """
@@ -780,7 +780,7 @@ def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Pa
     src_dir = tmp_path / "src"
     src_dir.mkdir()
 
-    for filename, content in utils.session_main().items():
+    for filename, content in utils.state_machine_main().items():
         (src_dir / filename).write_text(content)
 
     (src_dir / "rflx-rflx_debug.adb").write_text(
@@ -808,12 +808,12 @@ def test_session_external_debug_output(debug: Debug, expected: str, tmp_path: Pa
     ("global_rel", "local_rel"),
     [("Global", "Local"), ("Global = True", "Local = True"), ("Global = False", "Local = False")],
 )
-def test_session_boolean_relations(global_rel: str, local_rel: str, tmp_path: Path) -> None:
+def test_state_machine_boolean_relations(global_rel: str, local_rel: str, tmp_path: Path) -> None:
     spec = f"""\
         package Test is
 
            generic
-           session Session is
+           machine Machine is
               Global : Boolean := False;
            begin
               state Init is
@@ -828,14 +828,14 @@ def test_session_boolean_relations(global_rel: str, local_rel: str, tmp_path: Pa
               exception
                  goto null
               end Init;
-           end Session;
+           end Machine;
 
         end Test;
     """
     utils.assert_compilable_code_string(spec, tmp_path)
 
 
-def test_session_indirect_use_of_enum_type(tmp_path: Path) -> None:
+def test_state_machine_indirect_use_of_enum_type(tmp_path: Path) -> None:
     a = tmp_path / "a.rflx"
     a.write_text(
         textwrap.dedent(
@@ -846,7 +846,7 @@ def test_session_indirect_use_of_enum_type(tmp_path: Path) -> None:
             package A is
 
                generic
-               session S is
+               machine S is
                begin
                   state S is
                      M : B::M;
@@ -895,7 +895,7 @@ def test_session_indirect_use_of_enum_type(tmp_path: Path) -> None:
     utils.assert_compilable_code_specs([a], tmp_path)
 
 
-def test_session_message_field_access_in_transition(tmp_path: Path) -> None:
+def test_state_machine_message_field_access_in_transition(tmp_path: Path) -> None:
     utils.assert_compilable_code_string(
         """\
             package Test is
@@ -908,7 +908,7 @@ def test_session_message_field_access_in_transition(tmp_path: Path) -> None:
                   end message;
 
                generic
-               session S is
+               machine S is
                begin
                   state S is
                      M : M;
@@ -937,7 +937,7 @@ def test_session_message_field_access_in_transition(tmp_path: Path) -> None:
         ("", "", "[0, 1, 0]"),
     ],
 )
-def test_session_comparing_opaque_values_in_comprehension(
+def test_state_machine_comparing_opaque_values_in_comprehension(
     global_decl: str,
     local_decl: str,
     value: str,
@@ -955,7 +955,7 @@ package Test is
    type Messages is sequence of Message;
 
    generic
-   session Session is
+   machine Machine is
       {global_decl}
    begin
       state S is
@@ -973,7 +973,7 @@ package Test is
          goto null
       end S;
 
-   end Session;
+   end Machine;
 
 end Test;
     """

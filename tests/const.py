@@ -13,6 +13,7 @@ VALIDATOR_DIR = DATA_DIR / "validator"
 
 EX_SPEC_DIR = Path("examples/specs")
 MAIN = "main.adb"
+STATE_MACHINE_NAME = "S"
 
 GITHUB_TRACKER_REF_PATTERN: Final = (
     r".*GitHub.*https://github.com/AdaCore/RecordFlux/issues/new\?labels=bug.*"

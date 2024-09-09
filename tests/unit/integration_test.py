@@ -16,62 +16,62 @@ from rflx.rapidflux import RecordFluxError
     ("rfi_content", "match_error"),
     [
         ("garbage", "Input should be a valid dictionary"),
-        ("Session: garbage", "Session.*Input should be a valid dictionary"),
-        ("{}", "Session.*Field required"),
+        ("Machine: garbage", "Machine.*Input should be a valid dictionary"),
+        ("{}", "Machine.*Field required"),
         (
-            """Session:
-                Session: 1
+            """Machine:
+                State_Machine: 1
           """,
-            "Session.Session.*Input should be a valid dictionary",
+            "Machine.State_Machine.*Input should be a valid dictionary",
         ),
         (
-            """Session:
-                Session:
+            """Machine:
+                State_Machine:
                     Buffer_Size:
                         Default: -1024
           """,
             "Input should be greater than 0",
         ),
         (
-            """Session:
-                Session:
+            """Machine:
+                State_Machine:
                     Buffer_Size:
                         Default: Hello
                         Global:
                             Msg: 2048
           """,
-            "Session.Session.Buffer_Size.Default.*Input should be a valid integer",
+            "Machine.State_Machine.Buffer_Size.Default.*Input should be a valid integer",
         ),
         (
-            """Session:
-                Session:
+            """Machine:
+                State_Machine:
                     Buffer_Size:
                         Default: 1024
                         Global:
                             Msg: Hello
           """,
-            "Session.Session.Buffer_Size.Global.Msg.*Input should be a valid integer",
+            "Machine.State_Machine.Buffer_Size.Global.Msg.*Input should be a valid integer",
         ),
         (
-            """Session:
-                Session:
+            """Machine:
+                State_Machine:
                     Buffer_Size:
                         Default: 1024
                         Global:
                             Msg: -10
           """,
-            "Session.Session.Buffer_Size.Global.Msg.*Input should be greater than 0",
+            "Machine.State_Machine.Buffer_Size.Global.Msg.*Input should be greater than 0",
         ),
         (
-            """Session:
-                Session:
+            """Machine:
+                State_Machine:
                     Buffer_Size: 2
           """,
-            "Session.Session.Buffer_Size.*Input should be a valid dictionary",
+            "Machine.State_Machine.Buffer_Size.*Input should be a valid dictionary",
         ),
         (
-            """Session:
-                Session:
+            """Machine:
+                State_Machine:
                     Buffer_Size:
                         Default: 1024
                         Global:
@@ -80,16 +80,16 @@ from rflx.rapidflux import RecordFluxError
                             Next:
                                 Msg2: -10
           """,
-            "Session.Session.Buffer_Size.Local.Next.Msg2.*Input should be greater than 0",
+            "Machine.State_Machine.Buffer_Size.Local.Next.Msg2.*Input should be greater than 0",
         ),
         (
-            """Session:
-                Session:
+            """Machine:
+                State_Machine:
                     Buffer_Size:
                         Default: 1024
                     Other: 1
           """,
-            "Session.Session.Other.*Extra inputs are not permitted",
+            "Machine.State_Machine.Other.*Extra inputs are not permitted",
         ),
     ],
 )
@@ -114,7 +114,7 @@ def test_rfi_get_size() -> None:
     integration._add_integration_object(  # noqa: SLF001
         Path("p.rfi"),
         {
-            "Session": {
+            "Machine": {
                 "S": {},
             },
         },
@@ -130,7 +130,7 @@ def test_rfi_get_size() -> None:
     integration._add_integration_object(  # noqa: SLF001
         Path("p.rfi"),
         {
-            "Session": {
+            "Machine": {
                 "S": {
                     "Buffer_Size": {
                         "Default": 1024,
@@ -163,17 +163,17 @@ def test_rfi_get_size() -> None:
 
 
 @pytest.mark.parametrize(
-    ("session_object", "result"),
+    ("state_machine_object", "result"),
     [
         (
             {
-                "Session": {},
+                "Machine": {},
             },
             False,
         ),
         (
             {
-                "Session": {
+                "Machine": {
                     "S": {},
                 },
             },
@@ -181,7 +181,7 @@ def test_rfi_get_size() -> None:
         ),
         (
             {
-                "Session": {
+                "Machine": {
                     "S": {
                         "External_IO_Buffers": False,
                     },
@@ -191,7 +191,7 @@ def test_rfi_get_size() -> None:
         ),
         (
             {
-                "Session": {
+                "Machine": {
                     "S": {
                         "External_IO_Buffers": True,
                     },
@@ -201,7 +201,10 @@ def test_rfi_get_size() -> None:
         ),
     ],
 )
-def test_rfi_use_external_io_buffers(session_object: dict[object, object], result: bool) -> None:
+def test_rfi_use_external_io_buffers(
+    state_machine_object: dict[object, object],
+    result: bool,
+) -> None:
     integration = Integration()
 
     assert not integration.use_external_io_buffers(ID("P::S"))
@@ -209,7 +212,7 @@ def test_rfi_use_external_io_buffers(session_object: dict[object, object], resul
     error = RecordFluxError()
     integration._add_integration_object(  # noqa: SLF001
         Path("p.rfi"),
-        session_object,
+        state_machine_object,
         error,
     )
     error.propagate()
@@ -221,10 +224,10 @@ def test_rfi_use_external_io_buffers(session_object: dict[object, object], resul
     ("content", "error_msg", "line", "column"),
     [
         ('"', ["while scanning a quoted scalar", "unexpected end of stream"], 1, 2),
-        ("Session: 1, Session : 1", ["mapping values are not allowed here"], 1, 21),
+        ("Machine: 1, Machine : 1", ["mapping values are not allowed here"], 1, 21),
         (
-            "Session: 1\nSession : 1",
-            ["while constructing a mapping", 'found duplicate key "Session" with value "1"'],
+            "Machine: 1\nMachine : 1",
+            ["while constructing a mapping", 'found duplicate key "Machine" with value "1"'],
             2,
             1,
         ),
@@ -256,7 +259,7 @@ def test_load_integration_path(tmp_path: Path) -> None:
     subfolder = tmp_path / "sub"
     subfolder.mkdir()
     test_rfi = subfolder / "test.rfi"
-    test_rfi.write_text("{ Session: { Session : { Buffer_Size : 0 }}}")
+    test_rfi.write_text("{ Machine: { State_Machine : { Buffer_Size : 0 }}}")
     integration = Integration(integration_files_dir=subfolder)
     error = RecordFluxError()
     regex = re.compile(

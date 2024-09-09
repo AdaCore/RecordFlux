@@ -234,7 +234,7 @@ package SPDM_Responder is
 
       with function Null_Hash (Length : SPDM::Hash_Length) return Hash;
       with function Null_Signature (Length : SPDM::Signature_Length) return Signature;
-   session Session is
+   machine Session is
       Request                : SPDM::Request;
       Response               : SPDM::Response;
       Supp_Versions          : SPDM::Version_Number_Entries;

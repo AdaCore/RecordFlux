@@ -11,7 +11,7 @@ from rflx.error import are_all_locations_present
 from rflx.identifier import ID
 from rflx.rapidflux import Annotation, ErrorEntry, RecordFluxError, Severity, logging
 
-from . import message, session, top_level_declaration, type_decl
+from . import message, state_machine, top_level_declaration, type_decl
 from .cache import Cache, Digest
 from .package import Package
 from .type_decl import BUILTIN_TYPES
@@ -89,8 +89,8 @@ class Model(Base):
         return [d for d in self._declarations if isinstance(d, message.Refinement)]
 
     @property
-    def sessions(self) -> list[session.Session]:
-        return [d for d in self._declarations if isinstance(d, session.Session)]
+    def state_machines(self) -> list[state_machine.StateMachine]:
+        return [d for d in self._declarations if isinstance(d, state_machine.StateMachine)]
 
     @property
     def packages(self) -> dict[ID, list[top_level_declaration.TopLevelDeclaration]]:
@@ -132,7 +132,7 @@ class Model(Base):
                 result.extend(d.dependencies)
                 result.append(d)
 
-            if isinstance(d, session.Session):
+            if isinstance(d, state_machine.StateMachine):
                 result.extend(d.direct_dependencies.values())
                 result.append(d)
 
@@ -172,7 +172,7 @@ def _check_duplicates(
                         else (
                             f'name conflict for type "{d.identifier}"'
                             if isinstance(d, type_decl.TypeDecl)
-                            else f'name conflict for session "{d.identifier}"'
+                            else f'name conflict for state machine "{d.identifier}"'
                         )
                     ),
                     Severity.ERROR,

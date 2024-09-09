@@ -1,0 +1,29 @@
+with Universal;
+
+package Test is
+
+   generic
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+   machine S is
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+   begin
+      state Start is
+      begin
+         Channel'Read (Message); -- §S-S-A-RD-V
+      transition
+         goto Reply
+            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Start;
+
+      state Reply is
+      begin
+         Channel'Write (Message); -- §S-S-A-WR-V
+      transition
+         goto null -- §S-S-T-N
+      end Reply;
+   end S;
+
+end Test;

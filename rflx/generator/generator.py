@@ -95,7 +95,7 @@ from rflx.model import (
     Refinement,
     Scalar,
     Sequence,
-    Session,
+    StateMachine,
     TypeDecl,
 )
 from rflx.rapidflux import ErrorEntry, FatalError, RecordFluxError, Severity, logging
@@ -104,7 +104,7 @@ from . import common, const, message as message_generator
 from .allocator import AllocatorGenerator
 from .parser import ParserGenerator
 from .serializer import SerializerGenerator
-from .session import FSMGenerator, SessionGenerator
+from .state_machine import FSMGenerator, StateMachineGenerator
 
 
 @dataclass(frozen=True)
@@ -305,17 +305,21 @@ class Generator:
             elif isinstance(d, Refinement):
                 units.update(self._create_refinement(d, units))
 
-            elif isinstance(d, Session):
-                units.update(self._create_session(d, integration))
+            elif isinstance(d, StateMachine):
+                units.update(self._create_state_machine(d, integration))
 
             else:
                 assert False, f'unexpected declaration "{type(d).__name__}"'
 
         return units
 
-    def _create_session(self, session: Session, integration: Integration) -> dict[ID, Unit]:
+    def _create_state_machine(
+        self,
+        state_machine: StateMachine,
+        integration: Integration,
+    ) -> dict[ID, Unit]:
         units: dict[ID, Unit] = {}
-        allocator_generator = AllocatorGenerator(session.to_ir(), integration, self._prefix)
+        allocator_generator = AllocatorGenerator(state_machine.to_ir(), integration, self._prefix)
 
         if allocator_generator.required:
             unit = self._create_unit(
@@ -328,7 +332,7 @@ class Generator:
             units[allocator_generator.unit_identifier] = unit
 
         fsm_generator = FSMGenerator(
-            session.to_ir(),
+            state_machine.to_ir(),
             integration,
             allocator_generator,
             self._prefix,
@@ -345,20 +349,20 @@ class Generator:
         unit += fsm_generator.unit_part
         units[fsm_generator.unit_identifier] = unit
 
-        session_generator = SessionGenerator(
-            session.to_ir(),
+        state_machine_generator = StateMachineGenerator(
+            state_machine.to_ir(),
             allocator_generator,
             self._prefix,
         )
         unit = self._create_unit(
             self._prefix,
-            session_generator.unit_identifier,
-            session_generator.declaration_context,
+            state_machine_generator.unit_identifier,
+            state_machine_generator.declaration_context,
             configuration_pragmas=[Pragma("Restrictions", [Variable("No_Streams")])],
             terminating=False,
         )
-        unit += session_generator.unit_part
-        units[session_generator.unit_identifier] = unit
+        unit += state_machine_generator.unit_part
+        units[state_machine_generator.unit_identifier] = unit
 
         return units
 

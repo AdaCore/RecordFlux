@@ -4,7 +4,7 @@ import pytest
 from pydotplus import Dot, InvocationException  # type: ignore[attr-defined]
 
 from rflx.expr import FALSE, TRUE, Equal, Greater, Less, Number, Pow, Sub, Variable
-from rflx.graph import create_message_graph, create_session_graph, write_graph
+from rflx.graph import create_message_graph, create_state_machine_graph, write_graph
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -15,8 +15,8 @@ from rflx.model import (
     Integer,
     Link,
     Message,
-    Session,
     State,
+    StateMachine,
     Transition,
     declaration as decl,
     statement as stmt,
@@ -206,8 +206,8 @@ def test_dot_graph_with_double_edge(tmp_path: Path) -> None:
     assert_graph(create_message_graph(m), expected, tmp_path)
 
 
-def test_session_graph(tmp_path: Path) -> None:
-    s = Session(
+def test_state_machine_graph(tmp_path: Path) -> None:
+    s = StateMachine(
         identifier="P::S",
         states=[
             State(
@@ -253,7 +253,7 @@ def test_session_graph(tmp_path: Path) -> None:
         }
         """
 
-    assert_graph(create_session_graph(s), expected_full, tmp_path)
+    assert_graph(create_state_machine_graph(s), expected_full, tmp_path)
 
     expected_filtered = r"""
         digraph "P::S" {
@@ -271,7 +271,7 @@ def test_session_graph(tmp_path: Path) -> None:
         }
         """
 
-    assert_graph(create_session_graph(s, ignore=[r"^IGNORED_"]), expected_filtered, tmp_path)
+    assert_graph(create_state_machine_graph(s, ignore=[r"^IGNORED_"]), expected_filtered, tmp_path)
 
 
 def test_missing_graphviz(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

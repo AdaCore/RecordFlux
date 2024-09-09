@@ -10,6 +10,10 @@ class RFLXNode(ASTNode):  # type: ignore[misc]
     """Root node class for the RecordFlux language."""
 
 
+class Keyword(RFLXNode):
+    token_node = True
+
+
 @abstract
 class AbstractID(RFLXNode):
     """Base class for identifiers."""
@@ -39,7 +43,7 @@ class Parameters(RFLXNode):
 
 @abstract
 class Declaration(RFLXNode):
-    """Base class for declarations (types, refinements, sessions)."""
+    """Base class for declarations (types, refinements, state machines)."""
 
 
 @abstract
@@ -136,16 +140,16 @@ class RefinementDecl(Declaration):
 
 @abstract
 class FormalDecl(RFLXNode):
-    """Base class for generic formal session declarations."""
+    """Base class for generic formal state machine declarations."""
 
 
 @abstract
 class LocalDecl(RFLXNode):
-    """Base class for session or state local declarations."""
+    """Base class for state machine or state local declarations."""
 
 
 class VariableDecl(LocalDecl):
-    """Session variable declaration."""
+    """State machine variable declaration."""
 
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
@@ -153,7 +157,7 @@ class VariableDecl(LocalDecl):
 
 
 class RenamingDecl(LocalDecl):
-    """Session renaming declaration."""
+    """State machine renaming declaration."""
 
     identifier = Field(type=UnqualifiedID)
     type_identifier = Field(type=ID)
@@ -242,20 +246,20 @@ class Description(RFLXNode):
 
 
 class Transition(RFLXNode):
-    """Unconditional session state transition."""
+    """Unconditional state machine state transition."""
 
     target = Field(type=UnqualifiedID)
     description = Field(type=Description)
 
 
 class ConditionalTransition(Transition):
-    """Conditional session state transition."""
+    """Conditional state machine state transition."""
 
     condition = Field(type=Expr)
 
 
 class StateBody(RFLXNode):
-    """Body of a session state."""
+    """Body of a state machine state."""
 
     declarations = Field(type=LocalDecl.list)
     actions = Field(type=Statement.list)
@@ -266,15 +270,26 @@ class StateBody(RFLXNode):
 
 
 class State(RFLXNode):
-    """Session state."""
+    """State machine state."""
 
     identifier = Field(type=UnqualifiedID)
     description = Field(type=Description)
     body = Field(type=StateBody)
 
 
-class SessionDecl(Declaration):
+class StateMachineDecl(Declaration):
     parameters = Field(type=FormalDecl.list)
+    identifier = Field(type=UnqualifiedID)
+    declarations = Field(type=LocalDecl.list)
+    states = Field(type=State.list)
+    end_identifier = Field(type=UnqualifiedID)
+
+
+class SessionDecl(Declaration):
+    """Deprecated state machine declaration."""
+
+    parameters = Field(type=FormalDecl.list)
+    session_keyword = Field(type=Keyword)
     identifier = Field(type=UnqualifiedID)
     declarations = Field(type=LocalDecl.list)
     states = Field(type=State.list)
@@ -304,6 +319,8 @@ class RangeTypeDef(IntegerTypeDef):
 
 
 class ModularTypeDef(IntegerTypeDef):
+    """Deprecated modular integer type definition."""
+
     mod = Field(type=Expr)
 
 

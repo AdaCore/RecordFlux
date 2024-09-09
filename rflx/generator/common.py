@@ -1069,7 +1069,7 @@ def byte_aligned_field(prefix: str, message: model.Message, field: model.Field) 
     )
 
 
-def external_io_buffers(session: ir.Session) -> list[Message]:
+def external_io_buffers(state_machine: ir.StateMachine) -> list[Message]:
     return sorted(
         {
             Message(
@@ -1077,7 +1077,7 @@ def external_io_buffers(session: ir.Session) -> list[Message]:
                 action.expression.type_.identifier,
                 tuple(action.expression.type_.parameter_types),
             )
-            for state in session.states
+            for state in state_machine.states
             for action in state.actions
             if (
                 isinstance(action, ir.ChannelStmt)

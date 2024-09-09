@@ -1,0 +1,70 @@
+with TLV;
+
+package Test is
+
+   generic
+      Channel : Channel with Writable; -- §S-P-C-W
+   machine S is
+      Messages : TLV::Messages; -- §S-D-V-T-MS, §S-D-V-E-N
+      Tags : TLV::Tags; -- §S-D-V-T-SS, §S-D-V-E-N
+      Message : TLV::Message; -- §S-D-V-T-M, §S-D-V-E-N
+   begin
+      state Global is
+         Message_Tag : TLV::Tag; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
+         Tag : TLV::Tag; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
+      begin
+         -- §S-S-A-AP-MA, §S-E-A-T-SC, §S-E-A-E-L
+         Messages'Append (TLV::Message'(Tag => TLV::Msg_Data, Length => 1, Value => [2]));
+         Tags'Append (TLV::Msg_Error); -- §S-S-A-AP-L
+         Message := Messages'Head; -- §S-S-A-A-HAT, §S-E-AT-H-V, §S-E-AT-H-MS
+         Message_Tag := Message.Tag; -- §S-S-A-A-S, §S-E-S-V
+         Tag := Tags'Head; -- §S-S-A-A-HAT, §S-E-AT-H-V, §S-E-AT-H-SS
+      transition
+         goto Reply_1
+            if Message_Tag = TLV::Msg_Data -- §S-S-T-V, §S-S-T-L
+               and Tag = TLV::Msg_Error -- §S-S-T-V, §S-S-T-L
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Global;
+
+      state Reply_1 is
+      begin
+         Channel'Write (Message); -- §S-S-A-WR-V
+      transition
+         goto Local -- §S-S-T-N
+      end Reply_1;
+
+      state Local is
+         Local_Messages : TLV::Messages; -- §S-S-D-V-T-MS, §S-D-V-E-N
+         Local_Tags : TLV::Tags; -- §S-S-D-V-T-SS, §S-D-V-E-N
+         Message_Tag : TLV::Tag; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
+         Tag : TLV::Tag; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
+      begin
+         -- §S-S-A-AP-MA, §S-E-A-T-SC, §S-E-A-E-L
+         Local_Messages'Append (TLV::Message'(Tag => TLV::Msg_Data, Length => 2, Value => [3, 4]));
+         -- §S-S-A-AP-MA, §S-E-A-T-SC, §S-E-A-E-L
+         Messages'Append (TLV::Message'(Tag => TLV::Msg_Data, Length => 1, Value => [2]));
+         Local_Tags'Append (TLV::Msg_Data); -- §S-S-A-AP-L
+         Local_Tags'Append (TLV::Msg_Error); -- §S-S-A-AP-L
+         Message := Local_Messages'Head; -- §S-S-A-A-HAT, §S-E-AT-H-V, §S-E-AT-H-MS
+         Message_Tag := Message.Tag; -- §S-S-A-A-S, §S-E-S-V
+         Tag := Local_Tags'Head; -- §S-S-A-A-HAT, §S-E-AT-H-V, §S-E-AT-H-SS
+      transition
+         goto Reply_2
+            if Message_Tag = TLV::Msg_Data -- §S-S-T-V, §S-S-T-L
+               and Tag = TLV::Msg_Data -- §S-S-T-V, §S-S-T-L
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Local;
+
+      state Reply_2 is
+      begin
+         Channel'Write (Message); -- §S-S-A-WR-V
+      transition
+         goto null -- §S-S-T-N
+      end Reply_2;
+   end S;
+
+end Test;

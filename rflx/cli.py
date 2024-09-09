@@ -23,10 +23,10 @@ from rflx.error import (
 )
 from rflx.fatal_error import FatalErrorHandler
 from rflx.generator import Debug, Generator, optimizer
-from rflx.graph import create_message_graph, create_session_graph, write_graph
+from rflx.graph import create_message_graph, create_state_machine_graph, write_graph
 from rflx.identifier import ID
 from rflx.integration import Integration
-from rflx.model import AlwaysVerify, Cache, Message, Model, NeverVerify, Session
+from rflx.model import AlwaysVerify, Cache, Message, Model, NeverVerify, StateMachine
 from rflx.pyrflx import PyRFLXError
 from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
 from rflx.specification import Parser
@@ -561,8 +561,8 @@ def graph(args: argparse.Namespace) -> None:
         filename = args.output_directory.joinpath(d.identifier.flat).with_suffix(f".{args.format}")
         if isinstance(d, Message):
             write_graph(create_message_graph(d), filename, fmt=args.format)
-        if isinstance(d, Session):
-            write_graph(create_session_graph(d, args.ignore), filename, fmt=args.format)
+        if isinstance(d, StateMachine):
+            write_graph(create_state_machine_graph(d, args.ignore), filename, fmt=args.format)
 
     locations: dict[str, dict[str, dict[str, dict[str, int]]]] = {
         str(package.location.source): {
@@ -571,7 +571,7 @@ def graph(args: argparse.Namespace) -> None:
                 "end": {"line": d.location.end[0], "column": d.location.end[1]},
             }
             for d in declarations
-            if isinstance(d, (Message, Session)) and d.location and d.location.end
+            if isinstance(d, (Message, StateMachine)) and d.location and d.location.end
         }
         for package, declarations in model.packages.items()
         if package.location

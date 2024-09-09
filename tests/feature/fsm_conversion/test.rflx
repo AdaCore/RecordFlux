@@ -1,0 +1,40 @@
+with Universal;
+
+package Test is
+
+   generic
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+   machine S is
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Inner_Message : Universal::Option; -- §S-D-V-T-M, §S-D-V-E-N
+   begin
+      state Start is
+      begin
+         Channel'Read (Message); -- §S-S-A-RD-V
+      transition
+         goto Process
+            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
+               and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Start;
+
+      state Process is
+      begin
+         Inner_Message := Universal::Option (Message.Data); -- §S-S-A-A-CV, §S-E-CV-V, §S-E-S-V
+      transition
+         goto Reply -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Process;
+
+      state Reply is
+      begin
+         Channel'Write (Inner_Message); -- §S-S-A-WR-V
+      transition
+         goto null -- §S-S-T-N
+      end Reply;
+   end S;
+
+end Test;

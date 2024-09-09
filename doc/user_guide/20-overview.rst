@@ -60,7 +60,7 @@ The RecordFlux Toolset
 As outlined above, a domain expert creates the formal representation of a protocol in the RecordFlux language.
 Having a text representation, RecordFlux specifications can be produced with any IDE or text editor, managed in version control systems, or compared using text comparison tools.
 However, the RecordFlux Modeller provides additional capabilities tailored to protocol specification development.
-A graphical representation of messages and sessions helps users to understand the structure of more complex specifications.
+A graphical representation of messages and state machines helps users to understand the structure of more complex specifications.
 The specification can be edited side-by-side with generated code, handwritten code, and other relevant artifacts.
 All specifications, or only a single specification file, can be checked, and SPARK code can be generated directly from within the Modeller.
 
@@ -116,9 +116,9 @@ An example of using the Simulator can be found in `examples/apps/ping/ping.py <h
 
 The Visualizer can be used to create graphical representations of a formal RecordFlux specification.
 It is available on the command line through the `rflx graph` command.
-It creates images for all messages and protocol sessions found in the specifications passed on the command line and stores them in the output directory specified by the `-d` switch.
+It creates images for all messages and state machines found in the specifications passed on the command line and stores them in the output directory specified by the `-d` switch.
 By default, SVG images are created, but the `-f` switch may be used to select alternative formats like JPG, PNG or PDF.
-The `-i` switch may be used to filter out protocol session states which must not be included in the output, which can be helpful, for example, to eliminate error states which may complicate the non-error case unnecessarily.
+The `-i` switch may be used to filter out state machine states which must not be included in the output, which can be helpful, for example, to eliminate error states which may complicate the non-error case unnecessarily.
 
 .. code:: console
 

@@ -233,7 +233,7 @@ def parse_declaration(data: str) -> decl.Declaration:
 
 def parse_formal_declaration(data: str) -> decl.Declaration:
     error = RecordFluxError()
-    parser_declaration, filename = parse(data, lang.GrammarRule.session_parameter_rule)
+    parser_declaration, filename = parse(data, lang.GrammarRule.state_machine_parameter_rule)
     assert isinstance(parser_declaration, lang.FormalDecl)
     declaration = parser.create_formal_declaration(
         error,
@@ -261,30 +261,30 @@ def check_diagnostics_error(unit: lang.AnalysisUnit, error: RecordFluxError) -> 
         error.propagate()
 
 
-def parse_session_error(string: str) -> None:
+def parse_state_machine_error(string: str) -> None:
     unit = lang.AnalysisContext().get_from_buffer(
         "<stdin>",
         string,
-        rule=lang.GrammarRule.session_declaration_rule,
+        rule=lang.GrammarRule.state_machine_declaration_rule,
     )
     error = RecordFluxError()
     check_diagnostics_error(unit, error)
-    assert isinstance(unit.root, lang.SessionDecl)
-    result = parser.create_session(error, unit.root, ID("Package"), Path("<stdin>"))
+    assert isinstance(unit.root, lang.StateMachineDecl)
+    result = parser.create_state_machine(error, unit.root, ID("Package"), Path("<stdin>"))
     error.propagate()
-    assert isinstance(result, model.UncheckedSession)
+    assert isinstance(result, model.UncheckedStateMachine)
 
 
-def parse_session(string: str) -> model.UncheckedSession:
+def parse_state_machine(string: str) -> model.UncheckedStateMachine:
     unit = lang.AnalysisContext().get_from_buffer(
         "<stdin>",
         string,
-        rule=lang.GrammarRule.session_declaration_rule,
+        rule=lang.GrammarRule.state_machine_declaration_rule,
     )
     error = RecordFluxError()
     check_diagnostics_error(unit, error)
-    assert isinstance(unit.root, lang.SessionDecl)
-    result = parser.create_session(error, unit.root, ID("Package"), Path("<stdin>"))
+    assert isinstance(unit.root, lang.StateMachineDecl)
+    result = parser.create_state_machine(error, unit.root, ID("Package"), Path("<stdin>"))
     error.propagate()
     return result
 
@@ -2310,12 +2310,12 @@ def test_parse_error_reserved_word_in_refinement_field() -> None:
     )
 
 
-def test_parse_error_reserved_word_in_session_identifier() -> None:
+def test_parse_error_reserved_word_in_state_machine_identifier() -> None:
     assert_error_string(
         """\
         package Test is
            generic
-           session End is
+           machine End is
            begin
               state S
               is
@@ -2390,12 +2390,12 @@ def test_parse_error_illegal_identifier_in_refinement_field(identifier: str) -> 
 
 
 @pytest.mark.parametrize("identifier", ILLEGAL_IDENTIFIERS)
-def test_parse_error_illegal_identifier_in_session_identifier(identifier: str) -> None:
+def test_parse_error_illegal_identifier_in_state_machine_identifier(identifier: str) -> None:
     assert_error_string(
         f"""\
         package Test is
            generic
-           session {identifier} is
+           machine {identifier} is
            begin
               state S
               is
@@ -2703,14 +2703,14 @@ def test_create_model_message_locations() -> None:
     ]
 
 
-def test_create_model_session_locations() -> None:
+def test_create_model_state_machine_locations() -> None:
     p = parser.Parser()
     p.parse_string(
         """\
         package Test is
            generic
               with function F return Boolean;
-           session Session is
+           machine S is
               Y : Boolean := F;
            begin
               state A is
@@ -2724,12 +2724,12 @@ def test_create_model_session_locations() -> None:
               exception
                  goto null
               end A;
-           end Session;
+           end S;
         end Test;
         """,
     )
     m = p.create_model()
-    assert [p.location for p in m.sessions[0].parameters] == [
+    assert [p.location for p in m.state_machines[0].parameters] == [
         Location((3, 21), Path("<stdin>"), (3, 22)),
     ]
 
@@ -3440,7 +3440,7 @@ def test_parse_reserved_word_as_channel_name() -> None:
         package Test is
            generic
               Channel : Channel with Readable, Writable;
-           session Session is
+           machine S is
            begin
               state A
               is
@@ -3450,7 +3450,7 @@ def test_parse_reserved_word_as_channel_name() -> None:
                  goto A if Avail
                  goto null
               end A;
-           end Session;
+           end S;
         end Test;
         """,
     )
@@ -3511,7 +3511,7 @@ def test_parse_error_duplicate_channel_decl_aspect() -> None:
               end message;
            generic
               C : Channel with Readable, Writable, Readable;
-           session S is
+           machine S is
               M : Test::Message;
            begin
               state I
@@ -3540,7 +3540,7 @@ def test_parse_error_unsupported_binding() -> None:
               end message;
            generic
               C : Channel with Writable;
-           session S is
+           machine S is
               M : Test::Message;
            begin
               state I
@@ -3644,7 +3644,7 @@ def test_parse_error_duplicate_state_desc() -> None:
               end message;
            generic
               C : Channel with Readable, Writable;
-           session S is
+           machine S is
               M : Test::Message;
            begin
               state I
@@ -3673,7 +3673,7 @@ def test_parse_error_duplicate_transition_desc() -> None:
               end message;
            generic
               C : Channel with Readable, Writable;
-           session S is
+           machine S is
               M : Test::Message;
            begin
               state I
@@ -3908,7 +3908,7 @@ def test_negated_case_expression() -> None:
         """\
         package Test is
            generic
-           session S is
+           machine S is
            begin
               state A is
               begin
@@ -4774,12 +4774,12 @@ def test_state_error() -> None:
         parse_state(string)
 
 
-def test_session_declaration() -> None:
+def test_state_machine_declaration() -> None:
     string = """
            generic
               X : Channel with Readable, Writable;
               with function F return Boolean;
-           session Session is
+           machine S is
               Y : Boolean := True;
            begin
               state A is
@@ -4791,11 +4791,11 @@ def test_session_declaration() -> None:
                     if Z = False
                  goto A
               end A;
-           end Session
+           end S
     """
-    actual = parse_session(string)
-    expected = model.UncheckedSession(
-        ID("Package::Session"),
+    actual = parse_state_machine(string)
+    expected = model.UncheckedStateMachine(
+        ID("Package::S"),
         [
             model.State(
                 "A",
@@ -4817,16 +4817,16 @@ def test_session_declaration() -> None:
             decl.ChannelDeclaration("X", readable=True, writable=True),
             decl.FunctionDeclaration("F", [], BOOLEAN.identifier),
         ],
-        location=Location((2, 12), common.STDIN, (17, 23)),
+        location=Location((2, 12), common.STDIN, (17, 17)),
     )
     assert actual == expected
     assert actual.location
 
 
-def test_parse_session() -> None:
+def test_parse_state_machine() -> None:
     string = """
        generic
-       session X is
+       machine X is
        begin
           state A is
           begin
@@ -4835,7 +4835,7 @@ def test_parse_session() -> None:
           end A;
        end X
     """
-    parse_session_error(string)
+    parse_state_machine_error(string)
 
 
 @pytest.mark.parametrize(
@@ -4844,7 +4844,7 @@ def test_parse_session() -> None:
         (
             """
                generic
-               session X is
+               machine X is
                begin
                   state A is
                   begin
@@ -4853,12 +4853,12 @@ def test_parse_session() -> None:
                   end A;
                end Y
          """,
-            "<stdin>:2:16: error: inconsistent session identifier: X /= Y.*",
+            "<stdin>:2:16: error: inconsistent state machine identifier: X /= Y.*",
         ),
         (
             """
                generic
-               session X is
+               machine X is
                begin
                   state A is
                   begin
@@ -4871,19 +4871,19 @@ def test_parse_session() -> None:
         ),
     ],
 )
-def test_session_error(string: str, error: str) -> None:
+def test_state_machine_error(string: str, error: str) -> None:
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
-        parse_session_error(string)
+        parse_state_machine_error(string)
 
 
-def test_session() -> None:
+def test_state_machine() -> None:
     p = parser.Parser()
     p.parse_string(
         """\
         package Test is
 
            generic
-           session Session is
+           machine S is
            begin
               state A is
               begin
@@ -4896,12 +4896,36 @@ def test_session() -> None:
               transition
                  goto null
               end B;
-           end Session;
+           end S;
 
         end Test;
         """,
     )
     p.create_model()
+
+
+def test_parse_error_deprecated_session_keyword() -> None:
+    assert_error_string(
+        """\
+        package Test is
+
+           generic
+           session S is
+           begin
+              state A is
+              begin
+              transition
+                 goto null
+              end A;
+           end S;
+
+        end Test;
+        """,
+        r"^"
+        r"<stdin>:4:4: error: \"session\" keyword is deprecated\n"
+        r'<stdin>:4:4: help: use "machine" instead'
+        r"$",
+    )
 
 
 def test_expression_aggregate_no_number() -> None:

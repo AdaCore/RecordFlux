@@ -18,12 +18,12 @@ from .message import (
     UncheckedRefinement as UncheckedRefinement,
 )
 from .model import Model as Model, UncheckedModel as UncheckedModel
-from .session import (
+from .state_machine import (
     FINAL_STATE as FINAL_STATE,
-    Session as Session,
     State as State,
+    StateMachine as StateMachine,
     Transition as Transition,
-    UncheckedSession as UncheckedSession,
+    UncheckedStateMachine as UncheckedStateMachine,
 )
 from .top_level_declaration import (
     TopLevelDeclaration as TopLevelDeclaration,

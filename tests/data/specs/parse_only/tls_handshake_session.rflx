@@ -105,7 +105,7 @@ package TLS_Handshake_Session is
           Connection : GreenTLS::Connection)
          return GreenTLS::Certificate_Validation_Result;
 
-   session Client is
+   machine Client is
       Application_Layer_Protocol_Negotiation_Received : Boolean := False;
       Binders : TLS_Handshake::PSK_Binder_Entries;
       Binders_Length : TLS_Handshake::Binders_Length;

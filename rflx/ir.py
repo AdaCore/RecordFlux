@@ -2083,7 +2083,7 @@ FINAL_STATE = State("Final", [], None, [], None, None)
 
 
 @frozen(init=False)
-class Session:
+class StateMachine:
     identifier: ID = field(converter=ID)
     states: Sequence[State]
     declarations: Sequence[VarDecl]

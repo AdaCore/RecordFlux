@@ -1,0 +1,6 @@
+Machine:
+  S:
+    Buffer_Size:
+      Default: 4096
+      Global:
+        Messages: 8096

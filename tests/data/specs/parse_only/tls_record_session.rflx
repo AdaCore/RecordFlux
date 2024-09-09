@@ -23,7 +23,7 @@ package TLS_Record_Session is
           Client_Sequence_Number : GreenTLS::Sequence_Number;
           Fragment : Opaque)
          return GreenTLS::Content;
-   session Client is
+   machine Client is
       Alert_Message : TLS_Alert::Alert;
       Application_Control_Message : GreenTLS::Application_Control_Message;
       Ciphertext : GreenTLS::Content;

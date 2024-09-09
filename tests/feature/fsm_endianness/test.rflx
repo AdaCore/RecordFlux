@@ -1,0 +1,69 @@
+with Messages;
+
+package Test is
+
+   generic
+      I : Channel with Readable;
+      O : Channel with Writable;
+   machine S is
+      In_Msg : Messages::Msg_LE_Nested;
+      In_Msg2 : Messages::Msg_LE;
+      Out_Msg : Messages::Msg_LE;
+      Out_Msg2 : Messages::Msg;
+   begin
+      state Start is
+      begin
+         I'Read (In_Msg);
+      transition
+         goto Copy
+            if In_Msg'Has_Data
+         goto null
+      exception
+         goto null -- §S-S-E
+      end Start;
+
+      state Copy is
+      begin
+         Out_Msg := Messages::Msg_LE'(C => In_Msg.X_A, D => In_Msg.X_B);
+      transition
+         goto Reply
+      exception
+         goto null
+      end Copy;
+
+      state Reply is
+      begin
+         O'Write (Out_Msg);
+      transition
+         goto Read2
+      end Reply;
+
+      state Read2 is
+      begin
+         I'Read (In_Msg2);
+      transition
+         goto Copy2
+          if In_Msg2'Has_Data
+         goto null
+      exception
+         goto null -- §S-S-E
+      end Read2;
+
+      state Copy2 is
+      begin
+         Out_Msg2 := Messages::Msg'(A => In_Msg2.C, B => In_Msg2.D);
+      transition
+         goto Reply2
+      exception
+         goto null
+      end Copy2;
+
+      state Reply2 is
+      begin
+         O'Write (Out_Msg2);
+      transition
+         goto Start
+      end Reply2;
+   end S;
+
+end Test;

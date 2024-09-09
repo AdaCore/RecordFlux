@@ -3,7 +3,7 @@ Introduction
 
 This document describes RecordFlux, a domain-specific language (DSL) and toolset for the creation of verifiable communication protocol implementations.
 After stating the problems RecordFlux helps solving, the manual outlines the required prerequisites and explains how to install and set up the tool.
-Subsequent sections give an introduction to the protocol verification process, describe the available tools and how they work together, and present introductory examples for message as well as protocol session formalization.
+Subsequent sections give an introduction to the protocol verification process, describe the available tools and how they work together, and present introductory examples for message as well as protocol state machine formalization.
 
 Binary Data Formats and Communication Protocols
 -----------------------------------------------

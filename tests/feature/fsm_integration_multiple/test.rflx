@@ -1,0 +1,18 @@
+with Universal;
+with B;
+package Test is
+
+   generic
+      Channel : Channel with Readable;
+   machine S is
+      M : Universal::Message;
+   begin
+      state Start is
+      begin
+         Channel'Read (M);
+      transition
+         goto null
+      end Start;
+   end S;
+
+end Test;

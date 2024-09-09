@@ -22,7 +22,7 @@ def model() -> LSModel:
 def test_tokenization_with_empty_model() -> None:
     lexer = LSLexer(LSModel(UncheckedModel([], RecordFluxError())))
     lexer.tokenize((DATA_DIR / "message.rflx").read_text())
-    lexer.tokenize((DATA_DIR / "session.rflx").read_text())
+    lexer.tokenize((DATA_DIR / "state_machine.rflx").read_text())
     tokens = lexer.tokens
 
     assert len(tokens) == 274
@@ -31,7 +31,7 @@ def test_tokenization_with_empty_model() -> None:
 def test_tokenization_with_model(model: LSModel) -> None:
     lexer = LSLexer(model)
     lexer.tokenize((DATA_DIR / "message.rflx").read_text())
-    lexer.tokenize((DATA_DIR / "session.rflx").read_text())
+    lexer.tokenize((DATA_DIR / "state_machine.rflx").read_text())
 
     tokens = lexer.tokens
 

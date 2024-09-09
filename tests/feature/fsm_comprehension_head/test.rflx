@@ -1,0 +1,78 @@
+with Universal;
+
+package Test is
+
+   generic
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+   machine S is
+      Options : Universal::Options; -- §S-D-V-T-MS, §S-D-V-E-N
+      First_Option : Universal::Option; -- §S-D-V-T-M, §S-D-V-E-N
+      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+   begin
+      state Start is
+      begin
+         -- §S-S-A-AP-MA, §S-E-A-T-SC, §S-E-A-E-L
+         Options'Append (Universal::Option'(Option_Type => Universal::OT_Data, Length => 1, Data => [2]));
+         -- §S-S-A-AP-MA
+         Options'Append (Universal::Option'(Option_Type => Universal::OT_Null));
+         -- §S-S-A-AP-MA, §S-E-A-T-SC, §S-E-A-E-L
+         Options'Append (Universal::Option'(Option_Type => Universal::OT_Data, Length => 2, Data => [2, 3]));
+      transition
+         goto Process_1 -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Start;
+
+      state Process_1 is
+         First_Option_Length : Universal::Length; -- §S-S-D-V-T-SC, §S-S-D-V-E-H
+      begin
+         -- §S-S-A-A-LC, §S-S-A-A-HAT, §S-E-AT-H-SS, §S-E-AT-H-LC, §S-E-S-LC, §S-E-S-BE, §S-E-LC-SSS, §S-E-LC-TSS
+         First_Option_Length := [for E in Options if E.Option_Type = Universal::OT_Data => E.Length]'Head;
+         -- §S-S-A-A-LC, §S-S-A-A-HAT, §S-E-AT-H-MS, §S-E-AT-H-LC, §S-E-S-LC, §S-E-S-BE, §S-E-LC-SMS, §S-E-LC-TMS
+         First_Option := [for E in Options if E.Option_Type = Universal::OT_Data => E]'Head;
+      transition
+         goto Send_1 -- §S-S-T-BE
+            if First_Option_Length > 0
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Process_1;
+
+      state Send_1 is
+      begin
+         -- §S-S-A-WR-V
+         Channel'Write (First_Option);
+      transition
+         goto Recv -- §S-S-T-N
+      end Send_1;
+
+      state Recv is
+      begin
+         -- §S-S-A-RD-V
+         Channel'Read (Message);
+      transition
+         goto Process_2 -- §S-S-T-N
+      end Recv;
+
+      state Process_2
+      is
+      begin
+         -- §S-S-A-A-LC, §S-S-A-A-HAT, §S-E-AT-H-MS, §S-E-AT-H-LC, §S-E-S-LC, §S-E-S-BE, §S-E-LC-S, §S-E-LC-TMS
+         First_Option := [for E in Message.Options if E.Option_Type = Universal::OT_Data => E]'Head;
+      transition
+         goto Send_2 -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Process_2;
+
+      state Send_2
+      is
+      begin
+         -- §S-S-A-WR-V
+         Channel'Write (First_Option);
+      transition
+         goto null -- §S-S-T-N
+      end Send_2;
+   end S;
+
+end Test;

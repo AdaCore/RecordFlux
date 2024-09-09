@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CLI subcommand `rflx optimize` expects project file instead of directory containing generated code (eng/recordflux/RecordFlux#1766)
 - Improve generation of predicate for single-field messages (eng/recordflux/RecordFlux#1761)
+- Rename Session to State Machine in documentation (eng/recordflux/RecordFlux#1772)
+- Rename `session` keyword to `machine` in specifications (eng/recordflux/RecordFlux#1772)
+- Rename `Session` keyword to `Machine` in integration files (eng/recordflux/RecordFlux#1772)
 - Rename `*_Functions.Context` to `*_Environment.State` to prevent confusions (eng/recordflux/RecordFlux#1769)
 - Exception transitions are required in more cases as result of fixing missing checks in state machine (eng/recordflux/RecordFlux#1704)
 

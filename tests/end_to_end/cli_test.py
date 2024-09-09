@@ -16,7 +16,7 @@ from tests.const import (
 from tests.utils import is_gnat_tracker_release_testing, raise_fatal_error
 
 MESSAGE_SPEC_FILE = str(SPEC_DIR / "tlv.rflx")
-SESSION_SPEC_FILE = str(SPEC_DIR / "session.rflx")
+STATE_MACHINE_SPEC_FILE = str(SPEC_DIR / "state_machine.rflx")
 
 
 def test_check() -> None:
@@ -336,7 +336,7 @@ def test_unexpected_exception(
     monkeypatch.setattr(cli, "generate", lambda _: raise_fatal_error())
     with pytest.raises(SystemExit, match="^2$"):
         cli.main(
-            ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, SESSION_SPEC_FILE],
+            ["rflx", "generate", "-d", str(tmp_path), MESSAGE_SPEC_FILE, STATE_MACHINE_SPEC_FILE],
         )
     tracker_ref_pattern = (
         GNAT_TRACKER_REF_PATTERN

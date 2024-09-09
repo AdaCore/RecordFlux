@@ -13,12 +13,12 @@ from rflx.generator import Generator, const
 from rflx.generator.common import Debug
 from rflx.generator.message import create_structure
 from rflx.identifier import ID
-from rflx.integration import Integration, IntegrationFile, SessionIntegration
+from rflx.integration import Integration, IntegrationFile, StateMachineIntegration
 from rflx.model import (
     BOOLEAN,
     Model,
-    Session,
     State,
+    StateMachine,
     Transition,
     declaration as decl,
     statement as stmt,
@@ -46,7 +46,7 @@ GENERATOR_TEST_CASES = [
         lambda: Model(
             [
                 models.tlv_message(),
-                Session(
+                StateMachine(
                     "P::S",
                     [
                         State(
@@ -83,7 +83,9 @@ GENERATOR_TEST_CASES = [
         lambda: create_integration(
             {
                 "p": IntegrationFile(
-                    Session={"S": SessionIntegration(Buffer_Size=None, External_IO_Buffers=True)},
+                    Machine={
+                        "S": StateMachineIntegration(Buffer_Size=None, External_IO_Buffers=True),
+                    },
                 ),
             },
         ),

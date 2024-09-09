@@ -29,14 +29,14 @@ Each subdirectory is considered as a feature test and must contain a `test.rflx`
 
 The checks are implemented in the `feature_test.py` in `tests/integration`, `tests/compilation` and `tests/verification`.
 
-The executability and provability tests require the definition of a session called `Session`. The actions can be configured in an optional `config.yml` file:
+The executability and provability tests require the definition of a state machine called `S`. The actions can be configured in an optional `config.yml` file:
 
 - `input`: A mapping of all readable channels to a list of messages. A message is represented by a space-separated list of bytes (decimal numerals in the range 0 to 255).
 - `output`: A list of all writable channels.
 - `sequence`: The expected sequence of entered states and IO actions (read and written messages).
-- `prove`: If the `prove` key exists, the generated SPARK code for `Session` and each additionally listed unit will be proved.
+- `prove`: If the `prove` key exists, the generated SPARK code for `S` and each additionally listed unit will be proved.
 
-Session functions can be defined by putting a custom implementation of the `Session` package inside the `src` directory.
+State machine functions can be defined by putting a custom implementation of the `S` package inside the `src` directory.
 
 ### End-to-End Tests (`tests/end_to_end`)
 
@@ -170,7 +170,7 @@ Depending on the nature of the bug, this can be a unit test or integration test.
 ### Adding a feature
 
 Adding a feature should be complemented by these tests (at least):
-- Add a corresponding unit test (e.g. if the new feature is in the session generator, add a unit test in `tests/unit/generator/generator_test.py`)
+- Add a corresponding unit test (e.g. if the new feature is in the state machine generator, add a unit test in `tests/unit/generator/generator_test.py`)
 - If related to code generation, add a test which exercises the feature in `tests/feature`)
 
 Integration testing ensures that different components of RecordFlux work together seamlessly. An integration test is required if a functionality is added or changed that depends on the interaction of multiple components (e.g., parsing of a specification and subsequent validation of the model).

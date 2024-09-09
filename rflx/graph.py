@@ -8,7 +8,7 @@ from pydotplus import Dot, Edge, InvocationException, Node  # type: ignore[attr-
 
 from rflx.expr import TRUE, UNDEFINED
 from rflx.identifier import ID
-from rflx.model import FINAL_STATE, Link, Message, Session
+from rflx.model import FINAL_STATE, Link, Message, StateMachine
 from rflx.rapidflux import ErrorEntry, RecordFluxError, Severity, logging
 
 
@@ -99,9 +99,12 @@ def create_message_graph(message: Message) -> Dot:
     return result
 
 
-def create_session_graph(session: Session, ignore: Sequence[str] | None = None) -> Dot:
+def create_state_machine_graph(
+    state_machine: StateMachine,
+    ignore: Sequence[str] | None = None,
+) -> Dot:
     """
-    Return pydot graph representation of session.
+    Return pydot graph representation of state machine.
 
     If present, the ignore parameter contains a list of regular expressions which are matched
     against state names and the names of edge targets in order. If a regular expression matches
@@ -114,12 +117,12 @@ def create_session_graph(session: Session, ignore: Sequence[str] | None = None) 
             return False
         return any(re.search(regex, str(name), re.IGNORECASE) for regex in ignore)
 
-    result = _graph_with_defaults(str(session.identifier))
-    for state in session.states:
+    result = _graph_with_defaults(str(state_machine.identifier))
+    for state in state_machine.states:
         if _is_ignored(state.identifier):
             continue
 
-        if state == session.initial_state:
+        if state == state_machine.initial_state:
             result.add_node(
                 Node(
                     name=str(state.identifier.name),

@@ -46,8 +46,8 @@ from rflx.model import (
     Model,
     Refinement,
     Sequence,
-    Session,
     State,
+    StateMachine,
     Transition,
 )
 
@@ -1181,8 +1181,8 @@ def definite_message() -> Message:
 
 
 @lru_cache
-def session() -> Session:
-    return Session(
+def state_machine() -> StateMachine:
+    return StateMachine(
         identifier="P::S",
         states=[
             State("A", transitions=[Transition(target="null")]),

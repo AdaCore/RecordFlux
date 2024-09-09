@@ -16,7 +16,7 @@ package Test is
 
    generic
       C : Channel with Readable, Writable;
-   session Session is
+   machine S is
       M_R : Message;
       M_S : Message;
       Extended : Boolean := False;
@@ -83,6 +83,6 @@ package Test is
       transition
          goto null
       end Error;
-   end Session;
+   end S;
 
 end Test;

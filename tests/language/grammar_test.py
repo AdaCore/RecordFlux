@@ -2653,7 +2653,7 @@ def test_expression_complex(string: str, expected: dict[str, str]) -> None:
     ],
 )
 def test_channel_declaration(string: str, expected: dict[str, str]) -> None:
-    actual = parse(string, GrammarRule.session_parameter_rule)
+    actual = parse(string, GrammarRule.state_machine_parameter_rule)
     assert actual == expected
 
 
@@ -2711,7 +2711,7 @@ def test_channel_declaration(string: str, expected: dict[str, str]) -> None:
     ],
 )
 def test_formal_function_declaration(string: str, expected: dict[str, str]) -> None:
-    actual = parse(string, GrammarRule.session_parameter_rule)
+    actual = parse(string, GrammarRule.state_machine_parameter_rule)
     assert actual == expected
 
 
@@ -3258,7 +3258,7 @@ def test_state(string: str, expected: dict[str, str]) -> None:
                generic
                   X : Channel with Readable, Writable;
                   with function F return Boolean;
-               session Session
+               machine S
                is
                   Y : Boolean := True;
                begin
@@ -3271,10 +3271,10 @@ def test_state(string: str, expected: dict[str, str]) -> None:
                         if Z = False
                      goto A
                   end A;
-               end Session
+               end S
          """,
             {
-                "_kind": "SessionDecl",
+                "_kind": "StateMachineDecl",
                 "declarations": [
                     {
                         "_kind": "VariableDecl",
@@ -3294,8 +3294,8 @@ def test_state(string: str, expected: dict[str, str]) -> None:
                         },
                     },
                 ],
-                "end_identifier": {"_kind": "UnqualifiedID", "_value": "Session"},
-                "identifier": {"_kind": "UnqualifiedID", "_value": "Session"},
+                "end_identifier": {"_kind": "UnqualifiedID", "_value": "S"},
+                "identifier": {"_kind": "UnqualifiedID", "_value": "S"},
                 "parameters": [
                     {
                         "_kind": "FormalChannelDecl",
@@ -3419,8 +3419,8 @@ def test_state(string: str, expected: dict[str, str]) -> None:
     ],
     ids=[1],
 )
-def test_session_declaration(string: str, expected: dict[str, str]) -> None:
-    actual = parse(string, GrammarRule.session_declaration_rule)
+def test_state_machine_declaration(string: str, expected: dict[str, str]) -> None:
+    actual = parse(string, GrammarRule.state_machine_declaration_rule)
     assert actual == expected
 
 

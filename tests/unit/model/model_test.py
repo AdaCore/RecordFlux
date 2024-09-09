@@ -23,8 +23,8 @@ from rflx.model import (
     Link,
     Message,
     Model,
-    Session,
     State,
+    StateMachine,
     Transition,
     TypeDecl,
     UncheckedMessage,
@@ -105,17 +105,17 @@ def test_conflicting_refinements() -> None:
         Model([models.message(), r1, r2])
 
 
-def test_name_conflict_sessions() -> None:
-    s1 = copy(models.session())
+def test_name_conflict_state_machines() -> None:
+    s1 = copy(models.state_machine())
     s1.location = Location((10, 20))
-    s2 = copy(models.session())
+    s2 = copy(models.state_machine())
     s2.location = Location((10, 30))
 
     with pytest.raises(
         RecordFluxError,
         match=(
             r"^"
-            r'<stdin>:10:30: error: name conflict for session "P::S"\n'
+            r'<stdin>:10:30: error: name conflict for state machine "P::S"\n'
             r'<stdin>:10:20: note: previous occurrence of "P::S"'
             r"$"
         ),
@@ -260,7 +260,7 @@ def test_invalid_enumeration_type_identical_literals() -> None:
 def test_write_specification_files(tmp_path: Path) -> None:
     t = Integer("P::T", Number(0), Number(255), Number(8))
     v = type_decl.Sequence("P::V", element_type=t)
-    s = Session("P::S", [State("A", [Transition("null")])], [], [], [])
+    s = StateMachine("P::S", [State("A", [Transition("null")])], [], [], [])
     m = Message(
         ID("P::M", Location((1, 1))),
         [
@@ -282,7 +282,7 @@ def test_write_specification_files(tmp_path: Path) -> None:
            type V is sequence of P::T;
 
            generic
-           session S is
+           machine S is
            begin
               state A is
               begin

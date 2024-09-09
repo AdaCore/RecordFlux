@@ -32,7 +32,7 @@
                 },
                 {
                     "name": "keyword.other.recordflux",
-                    "match": "\\b(begin|end|with|message|session|package|type|function|is|of|for|use|new|state|transition|exception|generic)\\b"
+                    "match": "\\b(begin|end|with|message|machine|package|type|function|is|of|for|use|new|state|transition|exception|generic)\\b"
                 }
             ]
         },

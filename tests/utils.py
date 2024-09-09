@@ -17,7 +17,16 @@ from rflx.expr import Expr
 from rflx.generator import Debug, Generator, const
 from rflx.identifier import ID
 from rflx.integration import Integration
-from rflx.model import Field, Link, Message, Model, Session, State, TypeDecl, declaration as decl
+from rflx.model import (
+    Field,
+    Link,
+    Message,
+    Model,
+    State,
+    StateMachine,
+    TypeDecl,
+    declaration as decl,
+)
 from rflx.rapidflux import Location, RecordFluxError
 from rflx.specification import Parser
 from rflx.specification.parser import (
@@ -26,7 +35,7 @@ from rflx.specification.parser import (
     create_math_expression,
     diagnostics_to_error,
 )
-from tests.const import MAIN, SPEC_DIR
+from tests.const import MAIN, SPEC_DIR, STATE_MACHINE_NAME
 
 
 def check_regex(regex: str) -> None:
@@ -59,7 +68,7 @@ def assert_message_model_error(
         )
 
 
-def assert_session_model_error(
+def assert_state_machine_model_error(
     states: Sequence[State],
     declarations: Sequence[decl.BasicDeclaration],
     parameters: Sequence[decl.FormalDeclaration],
@@ -68,7 +77,7 @@ def assert_session_model_error(
 ) -> None:
     check_regex(regex)
     with pytest.raises(RecordFluxError, match=regex):
-        Session(
+        StateMachine(
             "P::S",
             states,
             declarations,
@@ -318,14 +327,14 @@ def _create_files(  # noqa: PLR0913
     ).generate(model, integration, generated_dir)
 
 
-def session_main(
+def state_machine_main(
     input_channels: dict[str, Sequence[tuple[int, ...]]] | None = None,
     output_channels: Sequence[str] | None = None,
     external_io_buffers: int = 0,
 ) -> Mapping[str, str]:
     input_channels = input_channels or {}
     output_channels = output_channels or []
-    fsm_package = ID("RFLX.Test.Session.FSM")
+    fsm_package = ID(f"RFLX.Test.{STATE_MACHINE_NAME}.FSM")
 
     run_procedure_spec = ada.ProcedureSpecification("Run")
     run_procedure_decl = ada.SubprogramDeclaration(run_procedure_spec)
@@ -1061,27 +1070,27 @@ end Main;
     }
 
 
-def _external_io_buffer_arguments(session_package: ID, count: int) -> list[ada.Indexed]:
+def _external_io_buffer_arguments(state_machine_package: ID, count: int) -> list[ada.Indexed]:
     result = []
     e: ada.Expr = ada.First("Buffers")
 
     for _ in range(count):
         result.append(ada.Indexed(ada.Variable("Buffers"), e))
-        e = ada.Succ(session_package * "External_Buffer", e)
+        e = ada.Succ(state_machine_package * "External_Buffer", e)
 
     return result
 
 
-def _add_buffer_call(session_package: ID) -> ada.Statement:
+def _add_buffer_call(state_machine_package: ID) -> ada.Statement:
     return ada.CallStatement(
-        session_package * "Add_Buffer",
+        state_machine_package * "Add_Buffer",
         [
             ada.Variable("Ctx"),
             ada.Call(
-                session_package * "Accessible_Buffer",
+                state_machine_package * "Accessible_Buffer",
                 [
                     ada.Call(
-                        session_package * "Next_State",
+                        state_machine_package * "Next_State",
                         [
                             ada.Variable("Ctx"),
                         ],
@@ -1092,10 +1101,10 @@ def _add_buffer_call(session_package: ID) -> ada.Statement:
             ada.Indexed(
                 ada.Variable("Buffers"),
                 ada.Call(
-                    session_package * "Accessible_Buffer",
+                    state_machine_package * "Accessible_Buffer",
                     [
                         ada.Call(
-                            session_package * "Next_State",
+                            state_machine_package * "Next_State",
                             [
                                 ada.Variable("Ctx"),
                             ],
@@ -1105,14 +1114,14 @@ def _add_buffer_call(session_package: ID) -> ada.Statement:
                 ),
             ),
             ada.Call(
-                session_package * "Written_Last",
+                state_machine_package * "Written_Last",
                 [
                     ada.Variable("Ctx"),
                     ada.Call(
-                        session_package * "Accessible_Buffer",
+                        state_machine_package * "Accessible_Buffer",
                         [
                             ada.Call(
-                                session_package * "Next_State",
+                                state_machine_package * "Next_State",
                                 [
                                     ada.Variable("Ctx"),
                                 ],
@@ -1126,16 +1135,16 @@ def _add_buffer_call(session_package: ID) -> ada.Statement:
     )
 
 
-def _remove_buffer_call(session_package: ID) -> ada.Statement:
+def _remove_buffer_call(state_machine_package: ID) -> ada.Statement:
     return ada.CallStatement(
-        session_package * "Remove_Buffer",
+        state_machine_package * "Remove_Buffer",
         [
             ada.Variable("Ctx"),
             ada.Call(
-                session_package * "Accessible_Buffer",
+                state_machine_package * "Accessible_Buffer",
                 [
                     ada.Call(
-                        session_package * "Next_State",
+                        state_machine_package * "Next_State",
                         [
                             ada.Variable("Ctx"),
                         ],
@@ -1146,10 +1155,10 @@ def _remove_buffer_call(session_package: ID) -> ada.Statement:
             ada.Indexed(
                 ada.Variable("Buffers"),
                 ada.Call(
-                    session_package * "Accessible_Buffer",
+                    state_machine_package * "Accessible_Buffer",
                     [
                         ada.Call(
-                            session_package * "Next_State",
+                            state_machine_package * "Next_State",
                             [
                                 ada.Variable("Ctx"),
                             ],

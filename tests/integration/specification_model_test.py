@@ -20,8 +20,8 @@ from rflx.model import (
     Link,
     Message,
     Model,
-    Session,
     State,
+    StateMachine,
     Transition,
     declaration as decl,
     statement as stmt,
@@ -304,14 +304,14 @@ def test_model_name_conflict_derivations() -> None:
     )
 
 
-def test_model_name_conflict_sessions() -> None:
+def test_model_name_conflict_state_machines() -> None:
     assert_error_string(
         """\
         package Test is
            type X is range 0 .. 2 ** 8 - 1 with Size => 8;
 
            generic
-           session X is
+           machine X is
            begin
               state A is
               begin
@@ -321,7 +321,7 @@ def test_model_name_conflict_sessions() -> None:
            end X;
         end Test;
         """,
-        r'^<stdin>:4:4: error: name conflict for session "Test::X"\n'
+        r'^<stdin>:4:4: error: name conflict for state machine "Test::X"\n'
         r'<stdin>:2:9: note: previous occurrence of "Test::X"$',
     )
 
@@ -344,14 +344,14 @@ def test_model_illegal_first_aspect_on_initial_link() -> None:
     )
 
 
-def test_model_errors_in_type_and_session() -> None:
+def test_model_errors_in_type_and_state_machine() -> None:
     assert_error_string(
         """\
         package Test is
            type T is range 0 .. 2 ** 65 - 1 with Size => 65;
 
            generic
-           session S is
+           machine S is
            begin
            end S;
         end Test;
@@ -623,8 +623,8 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
         },
         location=Location((1, 1), end=(1, 2)),
     )
-    session = Session(
-        "Test::Session",
+    state_machine = StateMachine(
+        "Test::S",
         [
             State(
                 "A",
@@ -675,7 +675,7 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
         expr.Sub(expr.Pow(expr.Number(2), expr.Number(16)), expr.Number(1)),
         expr.Number(16),
     )
-    model = Model([BOOLEAN, OPAQUE, tag, length, message, session, t])
+    model = Model([BOOLEAN, OPAQUE, tag, length, message, state_machine, t])
     model.write_specification_files(tmp_path)
     p = parser.Parser()
     p.parse(tmp_path / "test.rflx")
@@ -688,28 +688,31 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
     ("rfi_content", "match_error"),
     [
         (
-            """Session:
-                No_Session:
+            """\
+            Machine:
+                No_S:
                     Buffer_Size:
                         Default: 1024
                         Global:
                             Message: 2048
           """,
-            'unknown session "No_Session"',
+            'unknown state machine "No_S"',
         ),
         (
-            """Session:
-                Session:
+            """\
+            Machine:
+                S:
                     Buffer_Size:
                         Default: 1024
                         Global:
                             Message: 2048
           """,
-            'unknown global variable "Message" in session "Session"',
+            'unknown global variable "Message" in state machine "S"',
         ),
         (
-            """Session:
-                Session:
+            """\
+            Machine:
+                S:
                     Buffer_Size:
                         Default: 1024
                         Global:
@@ -717,11 +720,12 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                         Local:
                             Unknown: {}
           """,
-            'unknown state "Unknown" in session "Session"',
+            'unknown state "Unknown" in state machine "S"',
         ),
         (
-            """Session:
-                Session:
+            """\
+            Machine:
+                S:
                     Buffer_Size:
                         Default: 1024
                         Global:
@@ -730,11 +734,12 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
                             Start:
                                 X : 12
           """,
-            'unknown variable "X" in state "Start" of session "Session"',
+            'unknown variable "X" in state "Start" of state machine "S"',
         ),
         (
-            """Session:
-                Session:
+            """\
+            Machine:
+                S:
                     Buffer_Size:
                         Default: 1024
                         Global:
@@ -745,8 +750,9 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
             "",
         ),
         (
-            """Session:
-                Session:
+            """\
+            Machine:
+                S:
                     Buffer_Size:
                         Default: 1024
                         Global:
@@ -758,8 +764,9 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
             "",
         ),
         (
-            """Session:
-                Session:
+            """
+            Machine:
+                S:
                     Buffer_Size:
                         Default: 1024
                         Local:
@@ -768,8 +775,9 @@ def test_consistency_specification_parsing_generation(tmp_path: Path) -> None:
             "",
         ),
         (
-            """Session:
-                Session:
+            """\
+            Machine:
+                S:
                     Buffer_Size:
                         Default: 1024
           """,
@@ -797,7 +805,7 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
 
            generic
                Channel : Channel with Readable, Writable;
-           session Session is
+           machine S is
                Msg : Message;
            begin
               state Start is
@@ -838,7 +846,7 @@ def test_rfi_files(tmp_path: Path, rfi_content: str, match_error: str) -> None:
               exception
                  goto null
               end Next;
-           end Session;
+           end S;
         end Test;
 """,
     )

@@ -32,7 +32,7 @@ syntax keyword rflxKeyword return
 syntax keyword rflxKeyword Channel
 syntax keyword rflxKeyword Readable
 syntax keyword rflxKeyword Writable
-syntax keyword rflxKeyword session
+syntax keyword rflxKeyword machine
 syntax keyword rflxKeyword renames
 syntax keyword rflxKeyword begin
 syntax keyword rflxKeyword state

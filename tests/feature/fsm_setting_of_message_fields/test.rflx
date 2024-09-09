@@ -1,0 +1,74 @@
+package Test is
+
+   type Length is range 0 .. 2 ** 7 - 1 with Size => 7;
+
+   type Message is
+      message
+         Has_Data : Boolean
+            then Length
+               if Has_Data = True;
+         Length : Length
+            then Data
+               with Size => Length * 8
+               if Length > 0;
+         Data : Opaque
+            then null
+               if Data /= [0, 0] and Data'Size > 0;
+      end message;
+
+   generic
+      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+   machine S is
+      Message : Test::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Has_Data : Boolean := True; -- §S-D-V-S, §S-D-V-E-L
+      Length : Test::Length := 1; -- §S-D-V-S, §S-D-V-E-L
+   begin
+      state Start is
+      begin
+         Channel'Read (Message); -- §S-S-A-RD-V
+      transition
+         goto Process
+            if Message'Valid = True -- §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
+               and Message.Has_Data = True -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+               and Message.Length = 2 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Start;
+
+      state Process is
+         Local_Message : Test::Message;
+      begin
+         -- §S-S-A-MFA-V
+         Message.Has_Data := Has_Data;
+         -- §S-S-A-MFA-V
+         Message.Length := Length;
+         -- §S-S-A-MFA-A
+         Message.Data := "A";
+         -- §S-S-A-MFA-L
+         Local_Message.Has_Data := True;
+         -- §S-S-A-MFA-L
+         Local_Message.Length := Message.Data'Size / 8;
+         -- §S-S-A-MFA-A
+         Local_Message.Data := Message.Data;
+      transition
+         goto Reply
+            if Message.Has_Data = Local_Message.Has_Data -- §S-S-T-S, §S-E-S-V
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Process;
+
+      state Reply is
+      begin
+         Channel'Write (Message); -- §S-S-A-WR-V
+      transition
+         goto null
+            if Message.Has_Data -- §S-S-T-S
+         goto null -- §S-S-T-N
+      exception
+         goto null -- §S-S-E
+      end Reply;
+   end S;
+
+end Test;

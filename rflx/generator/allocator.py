@@ -61,8 +61,13 @@ class NumberedSlotInfo(SlotInfo):
 
 
 class AllocatorGenerator:
-    def __init__(self, session: ir.Session, integration: Integration, prefix: str = "") -> None:
-        self._session = session
+    def __init__(
+        self,
+        state_machine: ir.StateMachine,
+        integration: Integration,
+        prefix: str = "",
+    ) -> None:
+        self._state_machine = state_machine
         self._prefix = prefix
         self._declaration_context: list[ContextItem] = []
         self._body_context: list[ContextItem] = []
@@ -71,8 +76,8 @@ class AllocatorGenerator:
         self._integration = integration
 
         self._external_io_buffers = (
-            common.external_io_buffers(session)
-            if integration.use_external_io_buffers(session.identifier)
+            common.external_io_buffers(state_machine)
+            if integration.use_external_io_buffers(state_machine.identifier)
             else []
         )
 
@@ -99,7 +104,7 @@ class AllocatorGenerator:
 
     @property
     def unit_identifier(self) -> ID:
-        return self._session.identifier * "FSM_Allocator"
+        return self._state_machine.identifier * "FSM_Allocator"
 
     @property
     def declaration_context(self) -> list[ContextItem]:
@@ -129,7 +134,7 @@ class AllocatorGenerator:
         return self._slot_name(slot_id)
 
     def get_size(self, variable: ID | None = None, state: ID | None = None) -> int:
-        return self._integration.get_size(self._session.identifier, variable, state)
+        return self._integration.get_size(self._state_machine.identifier, variable, state)
 
     def is_externally_managed(self, location: Location | None) -> bool:
         assert location is not None
@@ -357,7 +362,7 @@ class AllocatorGenerator:
         slots = []
         externally_managed_buffers = []
 
-        for d in self._session.declarations:
+        for d in self._state_machine.declarations:
             if self._needs_allocation(d.type_):
                 if all(d.identifier != b.identifier for b in external_io_buffers):
                     assert d.location is not None
@@ -374,7 +379,7 @@ class AllocatorGenerator:
         Return the scope of the variable var_id.
 
         Return the ID of the state if var_id was defined in that state, otherwise
-        return None to indicate that var_id is a global variable of the session.
+        return None to indicate that var_id is a global variable of the state machine.
         """
         if any(var_id == d.identifier for d in state.declarations):
             return state.identifier.name
@@ -473,7 +478,7 @@ class AllocatorGenerator:
 
         alloc_requirements_per_state = [
             determine_allocation_requirements(state.actions, state)
-            for state in self._session.states
+            for state in self._state_machine.states
         ]
 
         for state_requirements in alloc_requirements_per_state:

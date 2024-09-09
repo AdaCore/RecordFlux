@@ -34,10 +34,10 @@ def test_model_get_types(model: LSModel) -> None:
             None,
         ),
         Symbol(
-            ID("Session::Session::Message"),
-            SymbolCategory.SESSION_MEMBER,
+            ID("State_Machine::S::Message"),
+            SymbolCategory.STATE_MACHINE_MEMBER,
             Location((30, 7), PosixPath("<stdin>"), (30, 33)),
-            ID("Session::Session"),
+            ID("State_Machine::S"),
         ),
     ]
     assert model.get_symbols("Message_Type") == [
@@ -54,28 +54,28 @@ def test_model_get_types(model: LSModel) -> None:
             ID("Message::Message"),
         ),
         Symbol(
-            ID("Session::Definite_Message::Message_Type"),
+            ID("State_Machine::Definite_Message::Message_Type"),
             SymbolCategory.MESSAGE_FIELD,
             Location((11, 10), PosixPath("<stdin>"), (11, 22)),
-            ID("Session::Definite_Message"),
+            ID("State_Machine::Definite_Message"),
         ),
         Symbol(
-            ID("Session::Session::Create_Message::Message_Type"),
-            SymbolCategory.SESSION_FUNCTION_PARAMETER,
+            ID("State_Machine::S::Create_Message::Message_Type"),
+            SymbolCategory.STATE_MACHINE_FUNCTION_PARAMETER,
             Location((21, 11), PosixPath("<stdin>"), (21, 23)),
-            ID("Session::Session::Create_Message"),
+            ID("State_Machine::S::Create_Message"),
         ),
         Symbol(
-            ID("Session::Session::Valid_Message::Message_Type"),
-            SymbolCategory.SESSION_FUNCTION_PARAMETER,
+            ID("State_Machine::S::Valid_Message::Message_Type"),
+            SymbolCategory.STATE_MACHINE_FUNCTION_PARAMETER,
             Location((26, 11), PosixPath("<stdin>"), (26, 23)),
-            ID("Session::Session::Valid_Message"),
+            ID("State_Machine::S::Valid_Message"),
         ),
         Symbol(
-            ID("Session::Session::Process::Message_Type"),
-            SymbolCategory.SESSION_STATE_VARIABLE,
+            ID("State_Machine::S::Process::Message_Type"),
+            SymbolCategory.STATE_MACHINE_STATE_VARIABLE,
             Location((48, 10), PosixPath("<stdin>"), (48, 22)),
-            ID("Session::Session::Process"),
+            ID("State_Machine::S::Process"),
         ),
     ]
 
@@ -170,4 +170,4 @@ def test_model_complete(model: LSModel) -> None:
     assert "Result" in model
     assert "Length" in model
     assert "Definite_Message" in model
-    assert "Session" in model
+    assert "State_Machine" in model

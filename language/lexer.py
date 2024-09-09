@@ -45,6 +45,7 @@ class Token(LexerToken):  # type: ignore[misc]
     Return = WithText()
     Function = WithText()
     State = WithText()
+    Machine = WithText()
     Transition = WithText()
     Goto = WithText()
     Exception = WithText()
@@ -198,6 +199,7 @@ rflx_lexer.add_rules(
     (Literal("return"), Token.Return),
     (Literal("function"), Token.Function),
     (Literal("state"), Token.State),
+    (Literal("machine"), Token.Machine),
     (Literal("transition"), Token.Transition),
     (Literal("goto"), Token.Goto),
     (Literal("exception"), Token.Exception),

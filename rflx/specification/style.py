@@ -18,7 +18,7 @@ KEYWORD_INDENTATION = [
     ("is", [3, 6]),
     ("message", [6]),
     ("package", [0]),
-    ("session", [3]),
+    ("machine", [3]),
     ("state", [6]),
     ("then", [12]),
     ("transition", [6]),

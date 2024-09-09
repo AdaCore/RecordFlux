@@ -381,8 +381,8 @@ KEYWORD_TESTS = [
             lang.GrammarRule.state_body_rule,
         ),
         (
-            "generic session {keyword} is begin end {keyword}",
-            lang.GrammarRule.session_declaration_rule,
+            "generic machine {keyword} is begin end {keyword}",
+            lang.GrammarRule.state_machine_declaration_rule,
         ),
         (
             """

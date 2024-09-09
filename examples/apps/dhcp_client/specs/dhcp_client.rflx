@@ -7,7 +7,7 @@ package DHCP_Client is
 
    generic
       Channel : Channel with Readable, Writable;
-   session Session is
+   machine Session is
       Discover : DHCP::Message;
       Offer : DHCP::Message;
       Request : DHCP::Message;

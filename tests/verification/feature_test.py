@@ -4,8 +4,8 @@ import pytest
 
 from rflx.generator.common import external_io_buffers
 from rflx.identifier import ID
-from rflx.integration import IntegrationFile, SessionIntegration
-from tests.const import MAIN
+from rflx.integration import IntegrationFile, StateMachineIntegration
+from tests.const import MAIN, STATE_MACHINE_NAME
 from tests.feature import FEATURES, create_complement, create_model, get_config
 from tests.utils import assert_provable_code
 
@@ -17,12 +17,12 @@ def test_provability(feature: str, tmp_path: Path) -> None:
         pytest.skip()
     model, integration = create_model(feature)
     units = []
-    if model.sessions:
-        assert len(model.sessions) == 1
-        assert model.sessions[0].identifier == ID("Test::Session")
+    if model.state_machines:
+        assert len(model.state_machines) == 1
+        assert model.state_machines[0].identifier == ID(f"Test::{STATE_MACHINE_NAME}")
         units = [
-            "rflx.test.session",
-            "rflx.test.session.fsm",
+            f"rflx.test.{STATE_MACHINE_NAME.lower()}",
+            f"rflx.test.{STATE_MACHINE_NAME.lower()}.fsm",
             *config.proof.units,
         ]
         units.extend(create_complement(config, feature, tmp_path))
@@ -45,18 +45,25 @@ def test_provability_with_external_io_buffers(feature: str, tmp_path: Path) -> N
     if config.proof is None:
         pytest.skip()
     model, integration = create_model(feature)
-    if not model.sessions:
+    if not model.state_machines:
         pytest.skip()
     if integration._packages:  # noqa: SLF001
-        integration._packages["test"].session["Session"].external_io_buffers = True  # noqa: SLF001
+        integration._packages["test"].state_machine[  # noqa: SLF001
+            STATE_MACHINE_NAME
+        ].external_io_buffers = True
     else:
         integration.add_integration_file(
             "test",
             IntegrationFile(
-                Session={"Session": SessionIntegration(Buffer_Size=None, External_IO_Buffers=True)},
+                Machine={
+                    STATE_MACHINE_NAME: StateMachineIntegration(
+                        Buffer_Size=None,
+                        External_IO_Buffers=True,
+                    ),
+                },
             ),
         )
-    config.external_io_buffers = len(external_io_buffers(model.sessions[0].to_ir()))
+    config.external_io_buffers = len(external_io_buffers(model.state_machines[0].to_ir()))
     create_complement(config, feature, tmp_path)
     assert_provable_code(
         model,
@@ -67,8 +74,8 @@ def test_provability_with_external_io_buffers(feature: str, tmp_path: Path) -> N
         units=[
             "main",
             "lib",
-            "rflx.test.session",
-            "rflx.test.session.fsm",
+            f"rflx.test.{STATE_MACHINE_NAME.lower()}",
+            f"rflx.test.{STATE_MACHINE_NAME.lower()}.fsm",
             *config.proof.units,
         ],
     )
