@@ -373,7 +373,7 @@ def create_id(error: RecordFluxError, identifier: lang.AbstractID, filename: Pat
             return (
                 ID(
                     identifier.f_package.text,
-                    location=node_location(identifier.f_package, filename),
+                    location=node_location(identifier, filename),
                 )
                 * name
             )
