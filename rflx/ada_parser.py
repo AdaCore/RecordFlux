@@ -191,6 +191,7 @@ ADA_GRAMMAR = lark.Lark(
         name:                       direct_name
                                   | indexed_component
                                   | selected_component | attribute_reference
+                                  | qualified_expression
 
         # 4.1 (3)
         direct_name:                identifier
@@ -215,7 +216,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.1.4 (3/2)
         attribute_designator: \
-                                    identifier
+                                    identifier ( "(" expression ")" )?
 
         # 4.3 (2)
         aggregate:                  array_aggregate
@@ -312,6 +313,10 @@ ADA_GRAMMAR = lark.Lark(
         case_expression_alternative: \
                                     "when" discrete_choice_list "=>" \
                                     expression
+
+        # 4.7 (2)
+        qualified_expression: \
+                                    subtype_mark "'(" expression ")"
 
         # 5.1 (2/3)
         sequence_of_statements:     statement statement*
@@ -1177,6 +1182,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[list[ada.Expr], ada.Expr],
     ) -> tuple[list[ada.Expr], ada.Expr]:
         return data
+
+    def qualified_expression(self, data: tuple[ID, ada.Expr]) -> ada.Expr:
+        return ada.QualifiedExpr(type_identifier=data[0], expression=data[1])
 
     def sequence_of_statements(self, data: list[ada.Statement]) -> list[ada.Statement]:
         return data

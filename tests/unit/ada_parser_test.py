@@ -925,6 +925,16 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           procedure F (C : T) with
+             Pre =>
+               P (C) = L'(if V (C) then E (C) else F (C))'Old;
+
+        end P;
+        """,
     ],
 )
 def test_roundtrip_text(data: str) -> None:
