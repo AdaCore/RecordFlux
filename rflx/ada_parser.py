@@ -1097,13 +1097,25 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         if name == "Always_Terminates":
             return ada.AlwaysTerminates(expression=definition)
 
-        assert definition is not None
+        if name == "Global":
+            return ada.Global()
+
+        if name == "Import":
+            return ada.Import()
+
+        if name == "Ghost":
+            return ada.Ghost()
+
+        assert definition is not None, data
 
         if name == "Post":
             return ada.Postcondition(definition)
 
         if name == "Pre":
             return ada.Precondition(definition)
+
+        if name == "Convention":
+            return ada.Convention(ada.ConventionKind[str(definition)])
 
         raise NotImplementedError(data[0].name)
 
