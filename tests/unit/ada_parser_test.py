@@ -18,6 +18,21 @@ from rflx import ada, ada_parser
             body_context=[],
             body=ada.PackageBody("A.B.C"),
         ),
+        ada.PackageUnit(
+            declaration_context=[
+                ada.Pragma("Style_Checks", [ada.String("N3aAbCdefhiIklnOprStux")]),
+                ada.Pragma(
+                    "Warnings",
+                    [
+                        ada.Variable("Off"),
+                        ada.String('""Always_Terminates"" is not a valid aspect identifier'),
+                    ],
+                ),
+            ],
+            declaration=ada.PackageDeclaration("P"),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
 def test_roundtrip(unit: ada.Unit):

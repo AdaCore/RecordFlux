@@ -13,6 +13,23 @@ ADA_GRAMMAR = lark.Lark(
         # 2.3 (2/2)
         identifier:                 /[a-zA-Z][a-zA-Z0-9_]*/
 
+        # 2.6 (2)
+        string_literal:             /"(""|[^"])*"/
+
+        # 2.8 (2)
+        pragma:                     "pragma" identifier \
+                                        ( "(" \
+                                            pragma_argument_association \
+                                            ( "," pragma_argument_association )* \
+                                          ")" \
+                                        )? \
+                                        ";"
+
+        # 2.8 (3/3)
+        pragma_argument_association: \
+                                     name
+                                   | expression
+
         # 3.1 (4)
         defining_identifier:        identifier
 
@@ -24,6 +41,25 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.1 (3)
         direct_name:                identifier
+
+        # 4.4 (2)
+        expression:                 relation
+
+        # 4.4 (3/3)
+        relation:                   simple_expression
+
+        # 4.4 (4)
+        simple_expression:          term
+
+        # 4.4 (5)
+        term:                       factor
+
+        # 4.4 (6)
+        factor:                     primary
+
+        # 4.4 (7/3)
+        primary: \
+                                    string_literal
 
         # 6.1 (7)
         defining_program_unit_name: ( parent_unit_name "." )* defining_identifier
@@ -63,7 +99,7 @@ ADA_GRAMMAR = lark.Lark(
         context_clause:             context_item*
 
         # 10.1.2 (3)
-        context_item:               with_clause | use_clause
+        context_item:               with_clause | use_clause | pragma
 
         # 10.1.2 (4/2)
         with_clause:                limited_with_clause | nonlimited_with_clause
@@ -89,6 +125,15 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
     def identifier(self, data: list[lark.lexer.Token]) -> ID:
         return ID(data[0])
 
+    def string_literal(self, data: list[lark.lexer.Token]) -> ada.String:
+        return ada.String(data[0][1:-1])
+
+    def pragma(self, data: list[lark.lexer.Token]) -> ada.Pragma:
+        return ada.Pragma(identifier=data[0], parameters=data[1:])
+
+    def pragma_argument_association(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
     def defining_identifier(self, data: list[ID]) -> ID:
         return data[0]
 
@@ -96,6 +141,24 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.Unit]):
         return data[0]
 
     def direct_name(self, data: list[ID]) -> ID:
+        return data[0]
+
+    def expression(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def relation(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def simple_expression(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def term(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def factor(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
+
+    def primary(self, data: list[ada.Expr]) -> ada.Expr:
         return data[0]
 
     def defining_program_unit_name(self, data: list[ID]) -> ID:
