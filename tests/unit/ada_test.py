@@ -735,6 +735,10 @@ def test_discrete_type() -> None:
     assert str(ada.DiscreteType("A")) == "type A is (<>);"
 
 
+def test_signed_integer_type() -> None:
+    assert str(ada.SignedIntegerType("A")) == "type A is range <>;"
+
+
 def test_array_type() -> None:
     assert str(ada.ArrayType("A", "B", "C")) == "type A is array (B) of C;"
 

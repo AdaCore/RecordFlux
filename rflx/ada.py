@@ -1818,6 +1818,12 @@ class DiscreteType(TypeDeclaration):
         return " (<>)"
 
 
+class SignedIntegerType(TypeDeclaration):
+    @property
+    def type_definition(self) -> str:
+        return " range <>"
+
+
 class ArrayType(TypeDeclaration):
     def __init__(self, identifier: StrID, index_type: StrID, component_identifier: StrID) -> None:
         super().__init__(identifier)
