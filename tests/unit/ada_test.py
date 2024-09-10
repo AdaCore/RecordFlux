@@ -642,6 +642,7 @@ def test_conversion_rflx_expr() -> None:
         (ada.Import(), "Import"),
         (ada.Annotate("X"), "Annotate =>\n  (X)"),
         (ada.ElaborateBody(), "Elaborate_Body"),
+        (ada.Convention(ada.ConventionKind.Intrinsic), "Convention =>\n  Intrinsic"),
     ],
 )
 def test_aspects(aspect: ada.Aspect, expected: str) -> None:

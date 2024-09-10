@@ -1414,6 +1414,26 @@ class ElaborateBody(Aspect):
         return ""
 
 
+class ConventionKind(Enum):
+    Intrinsic = 0
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Convention(Aspect):
+    def __init__(self, convention: ConventionKind) -> None:
+        self.convention = convention
+
+    @property
+    def mark(self) -> str:
+        return "Convention"
+
+    @property
+    def definition(self) -> str:
+        return str(self.convention)
+
+
 class FormalDeclaration(Base):
     @abstractmethod
     def __str__(self) -> str:
