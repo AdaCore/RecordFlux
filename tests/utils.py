@@ -238,10 +238,19 @@ def assert_provable_code(  # noqa: PLR0913
     tmp_path: pathlib.Path,
     main: str | None = None,
     prefix: str | None = None,
-    timeout: int = 60,
+    timeout: int | None = None,
+    memlimit: int | None = None,
     units: Sequence[str] | None = None,
 ) -> None:
-    _create_files(tmp_path, model, integration, main, prefix, proof_timeout=timeout)
+    _create_files(
+        tmp_path,
+        model,
+        integration,
+        main,
+        prefix,
+        proof_timeout=timeout,
+        proof_memlimit=memlimit,
+    )
 
     def run(command: Sequence[str]) -> None:
         p = subprocess.run(
@@ -271,12 +280,15 @@ def _create_files(  # noqa: PLR0913
     main: str | None = None,
     prefix: str | None = None,
     debug: Debug = Debug.BUILTIN,
-    proof_timeout: int = 60,
+    proof_timeout: int | None = None,
+    proof_memlimit: int | None = None,
 ) -> None:
     shutil.copy("defaults.gpr", tmp_path)
     shutil.copy("defaults.adc", tmp_path)
     shutil.copy("defaults_backward_compatible.adc", tmp_path)
     main = f'"{main}"' if main else ""
+    timeout = f', "--timeout={proof_timeout}"' if proof_timeout else ""
+    memlimit = f', "--memlimit={proof_memlimit}"' if proof_memlimit else ""
     (tmp_path / "test.gpr").write_text(
         textwrap.dedent(
             f"""\
@@ -308,7 +320,7 @@ def _create_files(  # noqa: PLR0913
 
                package Prove is
                   for Proof_Switches ("Ada") use
-                     Defaults.Proof_Switches & ("--steps=0", "--timeout={proof_timeout}");
+                     Defaults.Proof_Switches & ("--steps=0"{timeout}{memlimit});
                end Prove;
             end Test;""",
         ),

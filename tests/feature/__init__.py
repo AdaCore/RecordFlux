@@ -32,6 +32,7 @@ FEATURES = [f for f in FEATURE_DIR.glob("*") if f.is_dir() and f.name != "__pyca
 class ProofConfig(BaseModel):  # type: ignore[misc]
     enabled: bool = Field(default=True)
     timeout: int = Field(default=60)
+    memlimit: int = Field(default=1500)
     units: ty.Sequence[str] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="forbid")

@@ -8,3 +8,4 @@ sequence: |
   Read Channel: 5 0 9 1 0 1 2 1 0 2 2 3
   State: Send_2
 proof:
+  memlimit: 3000

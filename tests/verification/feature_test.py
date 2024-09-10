@@ -35,6 +35,7 @@ def test_provability(feature: str, tmp_path: Path) -> None:
         tmp_path,
         main=main,
         timeout=config.proof.timeout,
+        memlimit=config.proof.memlimit,
         units=[*units, *config.proof.units],
     )
 
@@ -71,6 +72,7 @@ def test_provability_with_external_io_buffers(feature: str, tmp_path: Path) -> N
         tmp_path,
         main=MAIN,
         timeout=config.proof.timeout,
+        memlimit=config.proof.memlimit,
         units=[
             "main",
             "lib",
