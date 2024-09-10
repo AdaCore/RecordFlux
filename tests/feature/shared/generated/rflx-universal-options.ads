@@ -19,3 +19,4 @@ with RFLX.RFLX_Types;
 pragma Warnings (On, "unit ""*RFLX_Types"" is not referenced");
 
 package RFLX.Universal.Options is new RFLX.RFLX_Message_Sequence (RFLX.Universal.Option.Context, RFLX.Universal.Option.Initialize, RFLX.Universal.Option.Take_Buffer, RFLX.Universal.Option.Copy, RFLX.Universal.Option.Has_Buffer, RFLX.Universal.Option.Size, RFLX.Universal.Option.Message_Last, RFLX.Universal.Option.Initialized, RFLX.Universal.Option.Well_Formed_Message);
+

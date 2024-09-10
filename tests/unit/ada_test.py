@@ -657,7 +657,7 @@ def test_formal_package_declaration() -> None:
 
 def test_generic_package_instantiation() -> None:
     assert (
-        str(ada.GenericPackageInstantiation("A", "B", ["C", "D"])) == "package A is new B (C, D);"
+        str(ada.GenericPackageInstantiation("A", "B", ["C", "D"])) == "package A is new B (C, D);\n"
     )
 
 

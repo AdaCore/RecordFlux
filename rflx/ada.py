@@ -1532,7 +1532,7 @@ class PackageBody(Declaration):
         )
 
 
-class GenericPackageInstantiation(Declaration):
+class GenericPackageInstantiation(PackageDeclaration):
     def __init__(
         self,
         identifier: StrID,
@@ -1552,7 +1552,7 @@ class GenericPackageInstantiation(Declaration):
             associations = f" ({associations})"
         return (
             f"package {self.identifier.ada_str} is new {self.generic_package.ada_str}"
-            f"{associations};"
+            f"{associations};\n"
         )
 
 
