@@ -605,17 +605,26 @@ ADA_GRAMMAR = lark.Lark(
                                     formal_complete_type_declaration
 
         # 12.5 (2.1/3)
+        # As we need to treat "is (" as a token (cf. type_definition), we also need to treat
+        # formal_discrete_type_definition specially here.
         formal_complete_type_declaration: \
-                                    "type" defining_identifier optional_discriminant_part "is" \
-                                        formal_type_definition \
+                                    "type" defining_identifier optional_discriminant_part ("is" \
+                                        formal_type_definition | formal_discrete_type_definition)\
                                         optional_aspect_specification ";"
 
         # 12.5 (3/2)
-        formal_type_definition: \
+        ?formal_type_definition: \
                                     formal_private_type_definition
+                                  | formal_signed_integer_type_definition
 
         # 12.5.1 (2)
         !formal_private_type_definition: "private"
+
+        # 12.5.2 (2)
+        formal_discrete_type_definition: is_lpar "<>" ")"
+
+        # 12.5.2 (3)
+        formal_signed_integer_type_definition: "range" "<>"
 
         # 12.6 (2/2)
         formal_subprogram_declaration: formal_concrete_subprogram_declaration
@@ -1833,17 +1842,42 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def formal_complete_type_declaration(
         self,
-        data: tuple[ID, list[ada.Discriminant] | None, Literal["private"], list[ada.Aspect] | None],
-    ) -> ada.PrivateType:
-        identifier, discriminants, _, aspects = data
-        return ada.PrivateType(identifier=identifier, aspects=aspects, discriminants=discriminants)
+        data: tuple[
+            ID,
+            list[ada.Discriminant] | None,
+            Literal["private", "discrete", "signed_integer"],
+            list[ada.Aspect] | None,
+        ],
+    ) -> ada.PrivateType | ada.DiscreteType | ada.SignedIntegerType:
+        identifier, discriminants, kind, aspects = data
+        if kind == "private":
+            return ada.PrivateType(
+                identifier=identifier,
+                discriminants=discriminants,
+                aspects=aspects,
+            )
+        if kind == "discrete":
+            return ada.DiscreteType(
+                identifier=identifier,
+                discriminants=discriminants,
+                aspects=aspects,
+            )
+        if kind == "signed_integer":
+            return ada.SignedIntegerType(
+                identifier=identifier,
+                discriminants=discriminants,
+                aspects=aspects,
+            )
+        raise ParseError(f'unsupported formal type declaration "{kind}"')
 
-    def formal_type_definition(self, data: tuple[Literal["private"]]) -> Literal["private"]:
-        return data[0]
-
-    def formal_private_type_definition(self, data: tuple[lark.Token]) -> Literal["private"]:
-        assert data[0] == "private"
+    def formal_private_type_definition(self, _: None) -> Literal["private"]:
         return "private"
+
+    def formal_discrete_type_definition(self, _: None) -> Literal["discrete"]:
+        return "discrete"
+
+    def formal_signed_integer_type_definition(self, _: None) -> Literal["signed_integer"]:
+        return "signed_integer"
 
     def formal_subprogram_declaration(
         self,

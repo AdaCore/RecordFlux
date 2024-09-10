@@ -404,6 +404,12 @@ def procedure_body(
             formal_parameters=[ada.PrivateType("PT")],
         ),
         package(
+            formal_parameters=[ada.DiscreteType("DT")],
+        ),
+        package(
+            formal_parameters=[ada.SignedIntegerType("SIT")],
+        ),
+        package(
             formal_parameters=[
                 ada.SubprogramDeclaration(
                     ada.ProcedureSpecification("P", [ada.Parameter(["P1"], "T")]),
@@ -1021,6 +1027,22 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
              Pre =>
                V (C)
                and then (S (C) >= C.First + I (E)) - 1;
+
+        end P;
+        """,
+        """\
+        generic
+           type T is range <>;
+        package P
+        is
+
+        end P;
+        """,
+        """\
+        generic
+           type T is (<>);
+        package P
+        is
 
         end P;
         """,
