@@ -1004,6 +1004,17 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           procedure S (C : T) with
+             Pre =>
+               V (C)
+               and then (S (C) >= C.First + I (E)) - 1;
+
+        end P;
+        """,
     ],
 )
 def test_roundtrip_text(data: str) -> None:
