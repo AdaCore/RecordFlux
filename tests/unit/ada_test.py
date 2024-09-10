@@ -709,11 +709,21 @@ def test_range_subtype() -> None:
 
 
 def test_derived_type() -> None:
-    assert str(ada.DerivedType("A", "B")) == "type A is new B;"
-    assert str(ada.DerivedType("A", "B", [])) == "type A is new B with null record;"
+    assert str(ada.PlainDerivedType("A", "B")) == "type A is new B;"
+
+
+def test_derived_record_type() -> None:
+    assert str(ada.DerivedRecordType("A", "B", [])) == "type A is new B with null record;"
     assert (
-        str(ada.DerivedType("A", "B", [ada.Component("C", "D")]))
+        str(ada.DerivedRecordType("A", "B", [ada.Component("C", "D")]))
         == "type A is new B with\n   record\n      C : D;\n   end record;"
+    )
+
+
+def test_derived_range_type() -> None:
+    assert (
+        str(ada.DerivedRangeType("A", "B", ada.Number(1), ada.Number(2)))
+        == "type A is new B range 1 .. 2;"
     )
 
 

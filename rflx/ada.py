@@ -1748,32 +1748,62 @@ class RangeSubtype(Subtype):
 
 
 class DerivedType(TypeDeclaration):
+    def __init__(self, identifier: StrID, type_identifier: StrID) -> None:
+        super().__init__(identifier)
+        self.type_identifier = ID(type_identifier)
+
+    @property
+    @abstractmethod
+    def constraint(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def type_definition(self) -> str:
+        return f" new {self.type_identifier.ada_str}{self.constraint}"
+
+
+class PlainDerivedType(DerivedType):
+    @property
+    def constraint(self) -> str:
+        return ""
+
+
+class DerivedRangeType(DerivedType):
+    def __init__(self, identifier: StrID, type_identifier: StrID, first: Expr, last: Expr) -> None:
+        super().__init__(identifier, type_identifier)
+        self.first = first
+        self.last = last
+
+    @property
+    def constraint(self) -> str:
+        return f" range {self.first} .. {self.last}"
+
+
+class DerivedRecordType(DerivedType):
     def __init__(
         self,
         identifier: StrID,
         type_identifier: StrID,
-        record_extension: Sequence[Component] | None = None,
+        record_extension: Sequence[Component],
     ) -> None:
-        super().__init__(identifier)
-        self.type_identifier = ID(type_identifier)
+        super().__init__(identifier, type_identifier)
         self.record_extension = record_extension
 
     @property
-    def type_definition(self) -> str:
+    def constraint(self) -> str:
         extension = ""
 
-        if self.record_extension is not None:
-            if len(self.record_extension) == 0:
-                extension = " with null record"
-            else:
-                components = (
-                    (indent("\n".join(map(str, self.record_extension)), 6) + "\n")
-                    if self.record_extension
-                    else ""
-                )
-                extension = f" with\n   record\n{components}   end record"
+        if len(self.record_extension) == 0:
+            extension = " with null record"
+        else:
+            components = (
+                (indent("\n".join(map(str, self.record_extension)), 6) + "\n")
+                if self.record_extension
+                else ""
+            )
+            extension = f" with\n   record\n{components}   end record"
 
-        return f" new {self.type_identifier.ada_str}{extension}"
+        return f"{extension}"
 
 
 class PrivateType(TypeDeclaration):
