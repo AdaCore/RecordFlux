@@ -463,6 +463,36 @@ from rflx import ada, ada_parser
             body_context=[],
             body=ada.PackageBody("P"),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.PlainDerivedType(
+                        "T",
+                        "Natural",
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.PackageDeclaration(
+                "P",
+                declarations=[
+                    ada.DerivedRangeType(
+                        identifier="T",
+                        type_identifier="Natural",
+                        first=ada.Number(2),
+                        last=ada.Number(42),
+                    ),
+                ],
+            ),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -548,6 +578,22 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
                      True,
                   when others =>
                      False);
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           type T is new Natural;
+
+        end P;
+        """,
+        """\
+        package P
+        is
+
+           type T is new Natural range 1 .. 42;
 
         end P;
         """,

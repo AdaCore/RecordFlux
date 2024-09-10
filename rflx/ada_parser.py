@@ -63,12 +63,22 @@ ADA_GRAMMAR = lark.Lark(
         # 3.2.1 (4/2)
         type_definition: \
                                     integer_type_definition
+                                  | derived_type_definition
 
         # 3.2.2 (3/2)
-        subtype_indication:         subtype_mark
+        subtype_indication:         subtype_mark optional_constraint
+
+        optional_constraint:        constraint?
 
         # 3.2.2 (4)
         subtype_mark:               name
+
+        # 3.2.2 (5)
+        constraint:                  scalar_constraint
+
+        # 3.2.2 (6)
+        scalar_constraint: \
+                                    range_constraint
 
         # 3.3.1 (2/3)
         object_declaration: \
@@ -82,6 +92,13 @@ ADA_GRAMMAR = lark.Lark(
         # 3.3.1 (3)
         defining_identifier_list: \
                                     defining_identifier ("," defining_identifier)*
+
+        # 3.4 (2/2)
+        derived_type_definition: \
+                                    "new" subtype_indication
+
+        # 3.5 (2)
+        range_constraint:           "range" range
 
         # 3.5 (3)
         range: \
@@ -542,6 +559,20 @@ class ExpressionFunctionPart(FunctionPart):
         )
 
 
+class Constraint:
+    pass
+
+
+class ScalarConstraint(Constraint):
+    pass
+
+
+class RangeConstraint(ScalarConstraint):
+    def __init__(self, first: ada.Expr, last: ada.Expr):
+        self.first = first
+        self.last = last
+
+
 class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def identifier(self, data: list[lark.lexer.Token]) -> ID:
@@ -585,7 +616,15 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def full_type_declaration(
         self,
-        data: tuple[ID, Union[ada.ModularType, ada.RangeType], list[ada.Aspect]],
+        data: tuple[
+            ID,
+            ada.ModularType
+            | ada.RangeType
+            | ada.DerivedRecordType
+            | ada.DerivedRangeType
+            | ada.PlainDerivedType,
+            list[ada.Aspect],
+        ],
     ) -> ada.TypeDeclaration:
         identifier, definition, aspects = data
         if isinstance(definition, ada.ModularType):
@@ -603,23 +642,60 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
                 last=definition.last,
                 aspects=aspects,
             )
+        if isinstance(definition, ada.DerivedRecordType):
+            assert definition.identifier == ID("__INVALID__")
+            return ada.DerivedRecordType(
+                identifier=identifier,
+                type_identifier=definition.type_identifier,
+            )
+        if isinstance(definition, ada.DerivedRangeType):
+            assert definition.identifier == ID("__INVALID__")
+            return ada.DerivedRangeType(
+                identifier=identifier,
+                type_identifier=definition.type_identifier,
+                first=definition.first,
+                last=definition.last,
+            )
+        if isinstance(definition, ada.PlainDerivedType):
+            assert definition.identifier == ID("__INVALID__")
+            return ada.PlainDerivedType(
+                identifier=identifier,
+                type_identifier=definition.type_identifier,
+            )
+
+        assert False, data
 
     def type_definition(self, data: list[ada.Declaration]) -> ada.Declaration:
         return data[0]
 
-    def subtype_indication(self, data: list[ID]) -> ID:
+    def subtype_indication(
+        self,
+        data: tuple[ID, Optional[Constraint]],
+    ) -> tuple[ID, Optional[Constraint]]:
+        return data
+
+    def optional_constraint(self, data: list[Constraint]) -> Optional[Constraint]:
+        if len(data) == 0:
+            return None
         return data[0]
 
     def subtype_mark(self, data: list[ID]) -> ID:
         return data[0]
 
+    def constraint(self, data: tuple[ScalarConstraint]) -> Constraint:
+        return data[0]
+
+    def scalar_constraint(self, data: tuple[Union[RangeConstraint]]) -> ScalarConstraint:
+        return data[0]
+
     def object_declaration(
         self,
-        data: tuple[list[ID], bool, ID, Optional[ada.Expr]],
+        data: tuple[list[ID], bool, tuple[ID, Optional[Constraint]], Optional[ada.Expr]],
     ) -> ada.ObjectDeclaration:
+        assert data[2][1] is None
         return ada.ObjectDeclaration(
             identifiers=data[0],
-            type_identifier=data[2],
+            type_identifier=data[2][0],
             expression=data[3],
             constant=data[1],
         )
@@ -634,6 +710,28 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def defining_identifier_list(self, data: list[ID]) -> list[ID]:
         return data
+
+    def derived_type_definition(
+        self,
+        data: tuple[tuple[ID, Optional[Constraint]]],
+    ) -> ada.DerivedType:
+        identifier, constraint = data[0]
+        if constraint is None:
+            return ada.PlainDerivedType(
+                identifier="__INVALID__",
+                type_identifier=identifier,
+            )
+        if isinstance(constraint, RangeConstraint):
+            return ada.DerivedRangeType(
+                identifier="__INVALID__",
+                type_identifier=identifier,
+                first=constraint.first,
+                last=constraint.last,
+            )
+        assert False, data
+
+    def range_constraint(self, data: tuple[ada.ValueRange]) -> RangeConstraint:
+        return RangeConstraint(first=data[0].lower, last=data[0].upper)
 
     def range(self, data: tuple[ada.Number, ada.Number]) -> ada.ValueRange:
         return ada.ValueRange(lower=data[0], upper=data[1])
