@@ -56,8 +56,7 @@ ADA_GRAMMAR = lark.Lark(
         basic_declaration: \
                                     type_declaration | subtype_declaration \
                                   | object_declaration \
-                                  | subprogram_declaration \
-                                  | unified_function_declaration \
+                                  | unified_subprogram_declaration \
                                   | pragma
 
         # 3.1 (4)
@@ -220,23 +219,21 @@ ADA_GRAMMAR = lark.Lark(
         access_to_object_definition: \
                                     "access" subtype_indication
 
+        # 3.10 (5.1/2)
+        !null_exclusion:            "not" "null"
+
+        optional_null_exclusion:    null_exclusion?
+
         # 3.11 (2)
         declarative_part:           declarative_item*
 
         # 3.11 (3)
         declarative_item: \
-                                    basic_declarative_item | body
+                                    basic_declarative_item
 
         # 3.11 (4/1)
         basic_declarative_item: \
                                     basic_declaration | use_clause
-
-        # 3.11 (5)
-        body:                       proper_body
-
-        # 3.11 (5)
-        proper_body: \
-                                    subprogram_body
 
         # 4.1 (2/3)
         name:                       direct_name
@@ -413,17 +410,6 @@ ADA_GRAMMAR = lark.Lark(
         optional_else:              elsebranch?
         elsebranch:                 "else" sequence_of_statements
 
-        # 6.1 (2/3)
-        # Function specifications is special-cased in unified_function_declaration
-        subprogram_declaration: \
-                                    subprogram_specification \
-                                    is_abstract_or_renames? \
-                                    optional_aspect_specification ";"
-
-        # 6.1 (4/2)
-        subprogram_specification: \
-                                    procedure_specification
-
         # 6.1 (4.1/2)
         procedure_specification:    "procedure" defining_program_unit_name parameter_profile
 
@@ -432,6 +418,8 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (5)
         designator:                 name
+
+        optional_designator:        designator?
 
         # 6.1 (6)
         ?defining_designator:       defining_program_unit_name | defining_operator_symbol
@@ -460,6 +448,8 @@ ADA_GRAMMAR = lark.Lark(
         formal_part: \
                                     "(" parameter_specification (";" parameter_specification)* ")"
 
+        optional_formal_part:       formal_part?
+
         # 6.1 (15/3)
         parameter_specification: \
                                     defining_identifier_list ":" mode subtype_mark \
@@ -467,16 +457,6 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.1 (16)
         !mode:                       "in"? | "in" "out" | "out"
-
-        # 6.3 (2/3)
-        # function subprogram_body is special-cased in unified_function_declaration.
-        subprogram_body: \
-                                    procedure_specification \
-                                        optional_aspect_specification "is" \
-                                        declarative_part \
-                                    "begin" \
-                                        handled_sequence_of_statements \
-                                    "end" designator ";"
 
         # 6.4 (2)
         procedure_call_statement: \
@@ -499,9 +479,6 @@ ADA_GRAMMAR = lark.Lark(
 
         # 6.5 (2/2)
         simple_return_statement:    "return" expression? ";"
-
-        # 6.8 (2/3)
-        # expression_function_declaration is special-cased in unified_function_declaration.
 
         # 7.1 (2)
         package_declaration:        package_specification ";"
@@ -529,6 +506,12 @@ ADA_GRAMMAR = lark.Lark(
                                     optional_aspect_specification "is" \
                                     declarative_part \
                                     "end" defining_program_unit_name ";"
+
+        # 8.3.1 (2/2)
+        !overriding_indicator:       "not"? "overriding"
+
+        optional_overriding_indicator: \
+                                    overriding_indicator?
 
         # 8.4 (2)
         use_clause:                 use_package_clause | use_type_clause
@@ -652,12 +635,7 @@ ADA_GRAMMAR = lark.Lark(
 
         # 12.6 (2.1/3)
         formal_concrete_subprogram_declaration: \
-                                    "with" formal_concrete_subprogram_specification ";"
-
-        # Due to reduce/reduce conflict we cannot use subprogram_specification as stated in the
-        # LRM (cf. unified_function_declaration).
-        formal_concrete_subprogram_specification: \
-                                    procedure_specification | function_specification
+                                    "with" unified_subprogram_declaration
 
         # 13.1.1 (2/3)
         aspect_specification:       "with"  aspect_part ( "," aspect_part )*
@@ -714,23 +692,69 @@ ADA_GRAMMAR = lark.Lark(
 
         file:                       compilation_unit* /\0/
 
+        unified_subprogram_declaration: \
+                                    optional_overriding_indicator \
+                                        (unified_function_declaration
+                                        | unified_procedure_declaration)
+
         unified_function_declaration: \
-                                    function_specification \
-                                        ( function_declaration_part \
-                                        | function_body_part  \
-                                        | expression_function_part ) \
-                                    ";"
+                                    "function" defining_designator \
+                                        ( \
+                                            unified_generic_function_instantiation
+                                          | unified_function_declaration_part \
+                                        )
 
-        function_declaration_part:   is_abstract_or_renames? optional_aspect_specification
+        unified_generic_function_instantiation: \
+                                    "is" "new" name \
+                                        optional_generic_actual_part \
+                                            optional_aspect_specification ";"
 
-        function_body_part:         optional_aspect_specification \
-                                    "is" \
-                                        declarative_part \
+        unified_function_declaration_part: \
+                                    optional_formal_part "return" optional_null_exclusion \
+                                        subtype_mark optional_unified_function_part ";"
+
+        optional_unified_function_part: \
+                                    (unified_with | unified_function_is | unified_renames)?
+
+        unified_with:               "with" unified_aspect_parts optional_unified_body
+        unified_aspect_parts:      aspect_part ( "," aspect_part )*
+
+        optional_unified_body:      ("is" unified_body)?
+        unified_body:               declarative_part \
                                     "begin" \
                                         handled_sequence_of_statements \
-                                    "end" designator
+                                    "end" defining_designator
 
-        expression_function_part:   is_lpar expression ")" optional_aspect_specification
+        # As we need to treat "is (" as a token (cf. type_definition), we also need to treat
+        # unified_expression_function specially here.
+        ?unified_function_is:       unified_expression_function
+                                    | "is" ( unified_body | unified_abstract | unified_separate )
+
+        unified_expression_function: is_lpar expression ")" optional_aspect_specification
+
+        unified_abstract:           "abstract" optional_aspect_specification
+        unified_separate:           "separate" optional_aspect_specification
+        unified_renames:            "renames" name optional_aspect_specification
+
+        unified_procedure_declaration: \
+                                    "procedure" defining_program_unit_name optional_formal_part \
+                                        optional_unified_procedure_declaration_part ";"
+
+        optional_unified_procedure_declaration_part: \
+                                    (unified_renames | unified_with | unified_procedure_is)?
+
+        ?unified_procedure_is: \
+                                    "is" \
+                                    ( \
+                                        unified_body
+                                      | unified_generic_procedure_instantiation
+                                      | unified_separate
+                                      | unified_abstract \
+                                    )
+
+        unified_generic_procedure_instantiation: \
+                                    "new" name \
+                                        optional_generic_actual_part optional_aspect_specification
 
         combined_type_declaration: \
                                     "type" defining_identifier optional_discriminant_part \
@@ -796,11 +820,6 @@ ADA_GRAMMAR = lark.Lark(
 
         !box:                        "<>"
 
-        ?is_abstract_or_renames: \
-                                    is_abstract | renames
-
-        is_abstract:                /is\s+abstract/
-
         renames:                    "renames" name
 
         # Skip whitespace
@@ -814,51 +833,6 @@ ADA_GRAMMAR = lark.Lark(
     parser="lalr",
     propagate_positions=True,
 )
-
-
-class FunctionPart:
-    def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
-        raise NotImplementedError
-
-
-class FunctionDeclPart(FunctionPart):
-    def __init__(self, abstract: bool, aspects: list[ada.Aspect] | None, renaming: ID | None):
-        self.abstract = abstract
-        self.aspects = aspects
-        self.renaming = renaming
-
-    def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
-        assert not self.abstract or not self.renaming
-        if self.renaming:
-            return ada.SubprogramRenamingDeclaration(
-                specification=specification,
-                subprogram_identifier=self.renaming,
-            )
-        return ada.SubprogramDeclaration(
-            specification=specification,
-            aspects=self.aspects,
-            abstract=self.abstract,
-        )
-
-
-class FunctionBodyPart(FunctionPart):
-    def __init__(
-        self,
-        aspects: list[ada.Aspect] | None,
-        declarations: list[ada.Declaration],
-        statements: list[ada.Statement],
-    ):
-        self.aspects = aspects
-        self.declarations = declarations
-        self.statements = statements
-
-    def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
-        return ada.SubprogramBody(
-            specification=specification,
-            declarations=self.declarations,
-            statements=self.statements,
-            aspects=self.aspects,
-        )
 
 
 class PackagePart:
@@ -887,19 +861,6 @@ class PackageInstantiationPart(PackagePart):
         self.associations = associations
 
 
-class ExpressionFunctionPart(FunctionPart):
-    def __init__(self, expression: ada.Expr, aspects: list[ada.Aspect] | None):
-        self.expression = expression
-        self.aspects = aspects
-
-    def declaration(self, specification: ada.FunctionSpecification) -> ada.Declaration:
-        return ada.ExpressionFunctionDeclaration(
-            specification=specification,
-            expression=self.expression,
-            aspects=self.aspects,
-        )
-
-
 class Constraint:
     pass
 
@@ -922,17 +883,103 @@ class SignedIntegerConstraint(ScalarConstraint):
     pass
 
 
-class AbstractDeclaration:
-    pass
-
-
 @dataclass
 class RenamingDeclaration:
     identifier: ID
 
 
-class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
+@dataclass
+class Aspects:
+    aspects: list[ada.Aspect] | None = None
 
+
+@dataclass
+class UnifiedFunctionDeclaration:
+    designator: ID
+    part: UnifiedGenericFunctionInstantiationPart | UnifiedFunctionDeclarationPart
+
+
+@dataclass
+class UnifiedGenericFunctionInstantiationPart:
+    name: ID
+    actuals: list[tuple[ID | None, ada.Expr]] | None
+    aspects: list[ada.Aspect] | None
+
+
+@dataclass
+class UnifiedFunctionDeclarationPart:
+    formal_part: list[ada.Parameter] | None
+    null_exclusion: bool
+    return_type: ID
+    function_part: (
+        UnifiedWith
+        | UnifiedBody
+        | UnifiedExpressionFunction
+        | UnifiedAbstract
+        | UnifiedSeparate
+        | UnifiedRenames
+        | None
+    )
+
+
+@dataclass
+class UnifiedProcedureDeclaration:
+    name: ID
+    parameters: list[ada.Parameter] | None
+    part: (
+        UnifiedRenames
+        | UnifiedWith
+        | UnifiedBody
+        | UnifiedGenericProcedureInstantiation
+        | UnifiedSeparate
+        | UnifiedAbstract
+        | None
+    )
+
+
+@dataclass
+class UnifiedGenericProcedureInstantiation:
+    name: ID
+    actual_part: list[tuple[ID | None, ada.Expr]] | None
+    aspects: list[ada.Aspect] | None
+
+
+@dataclass
+class UnifiedBody:
+    declarations: list[ada.Declaration]
+    statements: list[ada.Statement]
+    name: ID
+
+
+@dataclass
+class UnifiedExpressionFunction:
+    expression: ada.Expr
+    aspects: list[ada.Aspect] | None
+
+
+@dataclass
+class UnifiedWith:
+    aspect_parts: list[ada.Aspect]
+    body: UnifiedBody | None
+
+
+@dataclass
+class UnifiedAbstract:
+    aspects: list[ada.Aspect] | None
+
+
+@dataclass
+class UnifiedSeparate:
+    aspects: list[ada.Aspect] | None
+
+
+@dataclass
+class UnifiedRenames:
+    name: ID
+    aspects: list[ada.Aspect] | None
+
+
+class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def __default__(self, token: lark.Token, _: None, meta: lark.tree.Meta) -> None:
         raise ParseError(f'missing handler for rule "{token}"')
 
@@ -1147,6 +1194,15 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         assert constraint is None
         return identifier
 
+    def null_exclusion(self, data: list[lark.Token]) -> bool:
+        assert len(data) > 0
+        return True
+
+    def optional_null_exclusion(self, data: list[bool]) -> bool:
+        if len(data) == 0:
+            return False
+        return True
+
     def declarative_part(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
         return data
 
@@ -1157,12 +1213,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0]
 
     def basic_declarative_item(self, data: list[ada.Declaration]) -> ada.Declaration:
-        return data[0]
-
-    def body(self, data: list[ada.SubprogramBody]) -> ada.SubprogramBody:
-        return data[0]
-
-    def proper_body(self, data: list[ada.SubprogramBody]) -> ada.SubprogramBody:
         return data[0]
 
     def name(self, data: list[ID | ada.Attribute]) -> ID | ada.Attribute:
@@ -1243,7 +1293,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0], data[1]
 
     def expression(self, data: list[ada.Expr | str]) -> ada.Expr:
-
         operators: dict[str, type[ada.BoolAssExpr]] = {
             "and": ada.And,
             "and then": ada.AndThen,
@@ -1282,7 +1331,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         raise NotImplementedError
 
     def relation(self, data: list[ada.Expr | str]) -> ada.Expr:
-
         operators: dict[str, type[ada.Relation]] = {
             "=": ada.Equal,
             "/=": ada.NotEqual,
@@ -1314,7 +1362,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0].to_value_range
 
     def simple_expression(self, data: list[ada.Expr | str]) -> ada.Expr:
-
         assert isinstance(data[-1], ada.Expr), data
 
         if len(data) == 1:
@@ -1339,7 +1386,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         raise NotImplementedError(f"simple expression with operator {data[:-2]}")
 
     def term(self, data: list[ada.Expr | str]) -> ada.Expr:
-
         assert isinstance(data[-1], ada.Expr), data
 
         if len(data) == 1:
@@ -1516,44 +1562,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     ) -> list[ada.Statement]:
         return data[0]
 
-    def subprogram_declaration(
-        self,
-        data: (
-            tuple[ada.ParameterizedSubprogramSpecification, list[ada.Aspect]]
-            | tuple[
-                ada.ParameterizedSubprogramSpecification,
-                RenamingDeclaration | AbstractDeclaration,
-                list[ada.Aspect],
-            ]
-        ),
-    ) -> ada.SubprogramDeclaration | ada.SubprogramRenamingDeclaration:
-        if len(data) == 2:
-            specification, aspects = data
-        else:
-            specification, decl_kind, aspects = data
-            if isinstance(decl_kind, RenamingDeclaration):
-                return ada.SubprogramRenamingDeclaration(
-                    specification=specification,
-                    subprogram_identifier=decl_kind.identifier,
-                )
-            if isinstance(decl_kind, AbstractDeclaration):
-                return ada.SubprogramDeclaration(
-                    specification=specification,
-                    aspects=aspects,
-                    abstract=True,
-                )
-        return ada.SubprogramDeclaration(
-            specification=specification,
-            aspects=aspects,
-            abstract=False,
-        )
-
-    def subprogram_specification(
-        self,
-        data: list[ada.SubprogramSpecification],
-    ) -> ada.SubprogramSpecification:
-        return data[0]
-
     def procedure_specification(
         self,
         data: tuple[ID, list[ada.Parameter] | None],
@@ -1577,6 +1585,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def designator(self, data: list[ID]) -> ID:
         return reduce(lambda l, r: l * r, data)
+
+    def optional_designator(self, data: list[ID]) -> ID | None:
+        if len(data) == 0:
+            return None
+        return data[0]
 
     def defining_program_unit_name(self, data: list[ID]) -> ID:
         return reduce(lambda l, r: l * r, data)
@@ -1614,6 +1627,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def formal_part(self, data: list[ada.Parameter]) -> list[ada.Parameter]:
         return data
+
+    def optional_formal_part(self, data: list[list[ada.Parameter]]) -> list[ada.Parameter] | None:
+        if len(data) == 0:
+            return None
+        return data[0]
 
     def parameter_specification(
         self,
@@ -1653,22 +1671,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             return "in"
         assert data == ["out"]
         return "out"
-
-    def subprogram_body(
-        self,
-        data: tuple[
-            ada.ProcedureSpecification,
-            list[ada.Aspect] | None,
-            list[ada.Declaration],
-            list[ada.Statement],
-        ],
-    ) -> ada.SubprogramBody:
-        return ada.SubprogramBody(
-            specification=data[0],
-            declarations=data[2],
-            statements=data[3],
-            aspects=data[1],
-        )
 
     def procedure_call_statement(
         self,
@@ -1782,13 +1784,13 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             list[ada.ContextItem],
             tuple[
                 ada.PackageDeclaration | ada.PackageBody,
-                list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+                list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
             ],
         ],
     ) -> tuple[
         list[ada.ContextItem],
         ada.PackageDeclaration | ada.PackageBody,
-        list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+        list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
     ]:
         return data[0], data[1][0], data[1][1]
 
@@ -1796,13 +1798,13 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: list[
             tuple[
-                list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+                list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
                 ada.PackageDeclaration | ada.PackageBody,
             ]
         ],
     ) -> tuple[
         ada.PackageDeclaration | ada.PackageBody,
-        list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+        list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
     ]:
         return data[0][1], data[0][0]
 
@@ -1810,12 +1812,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         self,
         data: tuple[
             tuple[
-                list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+                list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
                 ada.PackageDeclaration,
             ]
         ],
     ) -> tuple[
-        list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+        list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
         ada.PackageDeclaration,
     ]:
         return data[0]
@@ -1847,10 +1849,13 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def generic_declaration(
         self,
         data: tuple[
-            tuple[list[ada.SubprogramDeclaration | ada.TypeDeclaration], ada.PackageDeclaration]
+            tuple[
+                list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration],
+                ada.PackageDeclaration,
+            ]
         ],
     ) -> tuple[
-        list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+        list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
         ada.PackageDeclaration,
     ]:
         return data[0]
@@ -1858,27 +1863,27 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def generic_package_declaration(
         self,
         data: tuple[
-            list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+            list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
             ada.PackageDeclaration,
         ],
     ) -> tuple[
-        list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+        list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
         ada.PackageDeclaration,
     ]:
         return data
 
     def generic_formal_part(
         self,
-        data: list[tuple[ada.SubprogramDeclaration | ada.TypeDeclaration]],
-    ) -> list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None:
+        data: list[tuple[ada.FormalSubprogramDeclaration | ada.TypeDeclaration]],
+    ) -> list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None:
         if not data:
             return []
         return [d[0] for d in data]
 
     def generic_formal_parameter_declaration(
         self,
-        data: list[ada.SubprogramDeclaration | ada.TypeDeclaration | ada.ObjectDeclaration],
-    ) -> list[ada.SubprogramDeclaration | ada.TypeDeclaration | ada.ObjectDeclaration]:
+        data: list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration | ada.ObjectDeclaration],
+    ) -> list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration | ada.ObjectDeclaration]:
         return data
 
     def package_body(
@@ -1895,25 +1900,42 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             aspects=aspects,
         )
 
+    def overriding_indicator(self, data: list[lark.Token]) -> bool | None:
+        return len(data) == 1
+
+    def optional_overriding_indicator(self, data: list[bool | None]) -> bool | None:
+        if len(data) == 0:
+            return None
+        return data[0]
+
     def generic_package_instantiation_part(
         self,
         data: tuple[ID, list[ID] | None],
     ) -> PackageInstantiationPart:
         return PackageInstantiationPart(name=data[0], associations=data[1])
 
-    def optional_generic_actual_part(self, data: list[list[ID]]) -> list[ID] | None:
+    def optional_generic_actual_part(
+        self,
+        data: list[list[tuple[ID | None, ada.Expr]]],
+    ) -> list[tuple[ID | None, ada.Expr]] | None:
         if len(data) == 0:
             return None
         return data[0]
 
-    def generic_actual_part(self, data: list[ID]) -> list[ID]:
+    def generic_actual_part(
+        self,
+        data: list[tuple[ID | None, ada.Expr]],
+    ) -> list[tuple[ID | None, ada.Expr]]:
         return data
 
-    def generic_association(self, data: list[ID]) -> ID:
+    def generic_association(
+        self,
+        data: list[tuple[ID | None, ada.Expr]],
+    ) -> tuple[ID | None, ada.Expr]:
         return data[0]
 
-    def explicit_generic_actual_parameter(self, data: list[ID]) -> ID:
-        return data[0]
+    def explicit_generic_actual_parameter(self, data: list[ID]) -> tuple[None, ada.Expr]:
+        return (None, ada.Variable(data[0]))
 
     def formal_object_declaration(
         self,
@@ -2002,21 +2024,20 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def formal_subprogram_declaration(
         self,
-        data: tuple[ada.SubprogramDeclaration],
-    ) -> ada.SubprogramDeclaration:
+        data: tuple[ada.FormalSubprogramDeclaration],
+    ) -> ada.FormalSubprogramDeclaration:
         return data[0]
 
     def formal_concrete_subprogram_declaration(
         self,
-        data: tuple[ada.ParameterizedSubprogramSpecification],
-    ) -> ada.SubprogramDeclaration:
-        return ada.SubprogramDeclaration(specification=data[0])
-
-    def formal_concrete_subprogram_specification(
-        self,
-        data: tuple[ada.SubprogramSpecification],
-    ) -> ada.SubprogramSpecification:
-        return data[0]
+        data: tuple[ada.Declaration],
+    ) -> ada.FormalSubprogramDeclaration:
+        assert isinstance(data[0], ada.SubprogramDeclaration)
+        assert data[0].formal_parameters is None
+        return ada.FormalSubprogramDeclaration(
+            specification=data[0].specification,
+            aspects=data[0].aspects,
+        )
 
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
@@ -2109,42 +2130,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             return None
         return data[0]
 
-    def unified_function_declaration(
-        self,
-        data: tuple[ada.FunctionSpecification, FunctionPart],
-    ) -> ada.Declaration:
-        return data[1].declaration(data[0])
-
-    def function_declaration_part(
-        self,
-        data: (
-            tuple[list[ada.Aspect] | None]
-            | tuple[RenamingDeclaration | AbstractDeclaration, list[ada.Aspect] | None]
-        ),
-    ) -> FunctionDeclPart:
-        if len(data) == 1:
-            return FunctionDeclPart(abstract=False, aspects=data[0], renaming=None)
-
-        if isinstance(data[0], RenamingDeclaration):
-            return FunctionDeclPart(abstract=False, aspects=data[1], renaming=data[0].identifier)
-
-        if isinstance(data[0], AbstractDeclaration):
-            return FunctionDeclPart(abstract=True, aspects=data[1], renaming=None)
-
-        assert_never(data[0])
-
-    def function_body_part(
-        self,
-        data: tuple[list[ada.Aspect] | None, list[ada.Declaration], list[ada.Statement]],
-    ) -> FunctionBodyPart:
-        return FunctionBodyPart(declarations=data[1], statements=data[2], aspects=data[0])
-
-    def expression_function_part(
-        self,
-        data: tuple[lark.Token, ada.Expr, list[ada.Aspect] | None],
-    ) -> ExpressionFunctionPart:
-        return ExpressionFunctionPart(expression=data[1], aspects=data[2])
-
     def combined_type_declaration(
         self,
         data: tuple[
@@ -2182,6 +2167,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             return ada.DerivedRecordType(
                 identifier=identifier,
                 type_identifier=definition.type_identifier,
+                record_extension=definition.record_extension,
             )
         if isinstance(definition, ada.DerivedRangeType):
             return ada.DerivedRangeType(
@@ -2322,9 +2308,6 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def box(self, _: tuple[lark.Token]) -> SignedIntegerConstraint:
         return SignedIntegerConstraint()
 
-    def is_abstract(self, _: tuple[lark.Token]) -> AbstractDeclaration:
-        return AbstractDeclaration()
-
     def renames(self, data: tuple[ID]) -> RenamingDeclaration:
         return RenamingDeclaration(data[0])
 
@@ -2334,7 +2317,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             tuple[
                 list[ada.ContextItem],
                 ada.PackageDeclaration | ada.PackageBody,
-                list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None,
+                list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None,
             ]
         ],
     ) -> ada.PackageUnit:
@@ -2359,6 +2342,272 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             body=body,
             formal_parameters=formal_parameters,
         )
+
+    def unified_subprogram_declaration(  # noqa: PLR0911, PLR0912
+        self,
+        data: tuple[bool | None, UnifiedFunctionDeclaration | UnifiedProcedureDeclaration],
+    ) -> ada.Declaration:
+        overriding, declaration = data
+        if isinstance(declaration, UnifiedFunctionDeclaration):
+            if isinstance(declaration.part, UnifiedGenericFunctionInstantiationPart):
+                return ada.GenericFunctionInstantiation(
+                    identifier=declaration.designator,
+                    generic_name=declaration.part.name,
+                    associations=declaration.part.actuals,
+                    overriding=overriding,
+                    aspects=declaration.part.aspects,
+                )
+            if isinstance(declaration.part, UnifiedFunctionDeclarationPart):
+                function_specification = ada.FunctionSpecification(
+                    identifier=declaration.designator,
+                    return_type=declaration.part.return_type,
+                    parameters=declaration.part.formal_part,
+                    overriding=overriding,
+                    not_null=declaration.part.null_exclusion,
+                )
+                if declaration.part.function_part is None:
+                    return ada.SubprogramDeclaration(
+                        specification=function_specification,
+                    )
+                if isinstance(declaration.part.function_part, UnifiedWith):
+                    if declaration.part.function_part.body is None:
+                        return ada.SubprogramDeclaration(
+                            specification=function_specification,
+                            aspects=declaration.part.function_part.aspect_parts,
+                        )
+                    return ada.SubprogramBody(
+                        specification=function_specification,
+                        declarations=declaration.part.function_part.body.declarations,
+                        statements=declaration.part.function_part.body.statements,
+                        aspects=declaration.part.function_part.aspect_parts,
+                    )
+                if isinstance(declaration.part.function_part, UnifiedBody):
+                    assert function_specification.identifier == declaration.part.function_part.name
+                    return ada.SubprogramBody(
+                        specification=function_specification,
+                        declarations=declaration.part.function_part.declarations,
+                        statements=declaration.part.function_part.statements,
+                    )
+                if isinstance(declaration.part.function_part, UnifiedExpressionFunction):
+                    return ada.ExpressionFunctionDeclaration(
+                        specification=function_specification,
+                        expression=declaration.part.function_part.expression,
+                        aspects=declaration.part.function_part.aspects,
+                    )
+                if isinstance(declaration.part.function_part, UnifiedAbstract):
+                    return ada.SubprogramAbstractDeclaration(
+                        specification=function_specification,
+                        aspects=declaration.part.function_part.aspects,
+                    )
+                if isinstance(declaration.part.function_part, UnifiedSeparate):
+                    return ada.SubprogramSeparateDeclaration(
+                        specification=function_specification,
+                        aspects=declaration.part.function_part.aspects,
+                    )
+                if isinstance(declaration.part.function_part, UnifiedRenames):
+                    return ada.SubprogramRenamingDeclaration(
+                        specification=function_specification,
+                        subprogram_identifier=declaration.part.function_part.name,
+                        aspects=declaration.part.function_part.aspects,
+                    )
+                assert_never(declaration.part.function_part)
+            assert_never(declaration.part)
+        if isinstance(declaration, UnifiedProcedureDeclaration):
+            procedure_specification = ada.ProcedureSpecification(
+                identifier=declaration.name,
+                parameters=declaration.parameters,
+                overriding=overriding,
+            )
+            if declaration.part is None:
+                return ada.SubprogramDeclaration(
+                    specification=procedure_specification,
+                )
+            if isinstance(declaration.part, UnifiedRenames):
+                return ada.SubprogramRenamingDeclaration(
+                    specification=procedure_specification,
+                    subprogram_identifier=declaration.part.name,
+                    aspects=declaration.part.aspects,
+                )
+            if isinstance(declaration.part, UnifiedWith):
+                if declaration.part.body is None:
+                    return ada.SubprogramDeclaration(
+                        specification=procedure_specification,
+                        aspects=declaration.part.aspect_parts,
+                    )
+                return ada.SubprogramBody(
+                    specification=procedure_specification,
+                    declarations=declaration.part.body.declarations,
+                    statements=declaration.part.body.statements,
+                    aspects=declaration.part.aspect_parts,
+                )
+            if isinstance(declaration.part, UnifiedBody):
+                assert procedure_specification.identifier == declaration.part.name
+                return ada.SubprogramBody(
+                    specification=procedure_specification,
+                    declarations=declaration.part.declarations,
+                    statements=declaration.part.statements,
+                )
+            if isinstance(declaration.part, UnifiedGenericProcedureInstantiation):
+                return ada.GenericProcedureInstantiation(
+                    identifier=declaration.name,
+                    generic_name=declaration.part.name,
+                    associations=declaration.part.actual_part,
+                    overriding=overriding,
+                    aspects=declaration.part.aspects,
+                )
+            if isinstance(declaration.part, UnifiedSeparate):
+                return ada.SubprogramSeparateDeclaration(
+                    specification=procedure_specification,
+                    aspects=declaration.part.aspects,
+                )
+            if isinstance(declaration.part, UnifiedAbstract):
+                return ada.SubprogramAbstractDeclaration(
+                    specification=procedure_specification,
+                    aspects=declaration.part.aspects,
+                )
+            assert_never(declaration.part)
+        assert_never(declaration)
+
+    def unified_function_declaration(
+        self,
+        data: tuple[ID, UnifiedGenericFunctionInstantiationPart | UnifiedFunctionDeclarationPart],
+    ) -> UnifiedFunctionDeclaration:
+        return UnifiedFunctionDeclaration(data[0], data[1])
+
+    def unified_generic_function_instantiation(
+        self,
+        data: tuple[ID, list[tuple[ID | None, ada.Expr]] | None, list[ada.Aspect] | None],
+    ) -> UnifiedGenericFunctionInstantiationPart:
+        name, actuals, aspects = data
+        return UnifiedGenericFunctionInstantiationPart(name=name, actuals=actuals, aspects=aspects)
+
+    def unified_function_declaration_part(
+        self,
+        data: tuple[
+            list[ada.Parameter] | None,
+            bool,
+            ID,
+            UnifiedWith
+            | UnifiedBody
+            | UnifiedExpressionFunction
+            | UnifiedAbstract
+            | UnifiedSeparate
+            | UnifiedRenames
+            | None,
+        ],
+    ) -> UnifiedFunctionDeclarationPart:
+        formal_part, null_exclusion, return_type, function_part = data
+        return UnifiedFunctionDeclarationPart(
+            formal_part=formal_part,
+            null_exclusion=null_exclusion,
+            return_type=return_type,
+            function_part=function_part,
+        )
+
+    def optional_unified_function_part(
+        self,
+        data: list[
+            UnifiedWith
+            | UnifiedBody
+            | UnifiedExpressionFunction
+            | UnifiedAbstract
+            | UnifiedSeparate
+            | UnifiedRenames
+        ],
+    ) -> (
+        UnifiedWith
+        | UnifiedBody
+        | UnifiedExpressionFunction
+        | UnifiedAbstract
+        | UnifiedSeparate
+        | UnifiedRenames
+        | None
+    ):
+        if len(data) == 0:
+            return None
+        return data[0]
+
+    def unified_with(self, data: tuple[list[ada.Aspect], UnifiedBody | None]) -> UnifiedWith:
+        return UnifiedWith(aspect_parts=data[0], body=data[1])
+
+    def unified_aspect_parts(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
+        return data
+
+    def optional_unified_body(self, data: list[UnifiedBody]) -> UnifiedBody | None:
+        if len(data) == 0:
+            return None
+        return data[0]
+
+    def unified_body(
+        self,
+        data: tuple[list[ada.Declaration], list[ada.Statement], ID],
+    ) -> UnifiedBody:
+        return UnifiedBody(declarations=data[0], statements=data[1], name=data[2])
+
+    def unified_expression_function(
+        self,
+        data: tuple[None, ada.Expr, list[ada.Aspect] | None],
+    ) -> UnifiedExpressionFunction:
+        return UnifiedExpressionFunction(expression=data[1], aspects=data[2])
+
+    def unified_abstract(self, data: list[list[ada.Aspect] | None]) -> UnifiedAbstract:
+        return UnifiedAbstract(aspects=data[0])
+
+    def unified_separate(self, data: list[list[ada.Aspect] | None]) -> UnifiedSeparate:
+        return UnifiedSeparate(aspects=data[0])
+
+    def unified_renames(self, data: tuple[ID, list[ada.Aspect] | None]) -> UnifiedRenames:
+        return UnifiedRenames(name=data[0], aspects=data[1])
+
+    def unified_procedure_declaration(
+        self,
+        data: tuple[
+            ID,
+            list[ada.Parameter] | None,
+            UnifiedRenames
+            | UnifiedWith
+            | UnifiedBody
+            | UnifiedGenericProcedureInstantiation
+            | UnifiedSeparate
+            | UnifiedAbstract
+            | None,
+        ],
+    ) -> UnifiedProcedureDeclaration:
+        name, parameters, part = data
+        return UnifiedProcedureDeclaration(name, parameters, part)
+
+    def optional_unified_procedure_declaration_part(
+        self,
+        data: list[
+            UnifiedRenames
+            | UnifiedWith
+            | UnifiedBody
+            | UnifiedGenericProcedureInstantiation
+            | UnifiedSeparate
+            | UnifiedAbstract
+        ],
+    ) -> (
+        UnifiedRenames
+        | UnifiedWith
+        | UnifiedBody
+        | UnifiedGenericProcedureInstantiation
+        | UnifiedSeparate
+        | UnifiedAbstract
+        | None
+    ):
+        if len(data) == 0:
+            return None
+        return data[0]
+
+    def unified_generic_procedure_instantiation(
+        self,
+        data: tuple[
+            ID,
+            list[tuple[ID | None, ada.Expr]] | None,
+            list[ada.Aspect] | None,
+        ],
+    ) -> UnifiedGenericProcedureInstantiation:
+        return UnifiedGenericProcedureInstantiation(data[0], data[1], data[2])
 
 
 def parse(text: str, source: Path | None = None) -> ada.PackageUnit:

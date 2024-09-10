@@ -17,7 +17,7 @@ def package(  # noqa: PLR0913
     declaration_declarations: list[ada.Declaration] | None = None,
     declaration_private_declarations: list[ada.Declaration] | None = None,
     body_declarations: list[ada.Declaration] | None = None,
-    formal_parameters: list[ada.SubprogramDeclaration | ada.TypeDeclaration] | None = None,
+    formal_parameters: list[ada.FormalSubprogramDeclaration | ada.TypeDeclaration] | None = None,
 ) -> ada.PackageUnit:
     return ada.PackageUnit(
         declaration_context=declaration_context or [],
@@ -243,7 +243,7 @@ def procedure_body(
         ),
         package(
             declaration_declarations=[
-                ada.SubprogramDeclaration(
+                ada.SubprogramAbstractDeclaration(
                     specification=ada.FunctionSpecification(
                         identifier='"+"',
                         parameters=[
@@ -251,7 +251,6 @@ def procedure_body(
                         ],
                         return_type="T",
                     ),
-                    abstract=True,
                 ),
             ],
         ),
@@ -266,6 +265,42 @@ def procedure_body(
                         return_type="T",
                     ),
                     subprogram_identifier="U",
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
+                ada.GenericFunctionInstantiation(
+                    identifier="I",
+                    generic_name="S",
+                    associations=[("P1", ada.Variable("U")), ("P2", ada.Number(42))],
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
+                ada.GenericFunctionInstantiation(
+                    identifier="I",
+                    generic_name="S",
+                    associations=[(None, ada.Variable("U")), (None, ada.Number(42))],
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
+                ada.GenericProcedureInstantiation(
+                    identifier="I",
+                    generic_name="S",
+                    associations=[("P1", ada.Variable("U")), ("P2", ada.Number(42))],
+                ),
+            ],
+        ),
+        package(
+            declaration_declarations=[
+                ada.GenericProcedureInstantiation(
+                    identifier="I",
+                    generic_name="S",
+                    associations=[(None, ada.Variable("U")), (None, ada.Number(42))],
                 ),
             ],
         ),
@@ -397,7 +432,11 @@ def procedure_body(
             ],
         ),
         package(
-            declaration=ada.GenericPackageInstantiation("P", "G", ["A", "B", "F.C"]),
+            declaration=ada.GenericPackageInstantiation(
+                "P",
+                "G",
+                [(None, "A"), (None, "B"), (None, "F.C")],
+            ),
         ),
         package(
             declaration_declarations=[
@@ -453,14 +492,14 @@ def procedure_body(
         ),
         package(
             formal_parameters=[
-                ada.SubprogramDeclaration(
+                ada.FormalSubprogramDeclaration(
                     ada.ProcedureSpecification("P", [ada.Parameter(["P1"], "T")]),
                 ),
             ],
         ),
         package(
             formal_parameters=[
-                ada.SubprogramDeclaration(
+                ada.FormalSubprogramDeclaration(
                     ada.FunctionSpecification("F", "U", [ada.Parameter(["P1"], "T")]),
                 ),
             ],
@@ -468,10 +507,10 @@ def procedure_body(
         package(
             formal_parameters=[
                 ada.PrivateType("PT"),
-                ada.SubprogramDeclaration(
+                ada.FormalSubprogramDeclaration(
                     ada.ProcedureSpecification("P", [ada.Parameter(["P1"], "T")]),
                 ),
-                ada.SubprogramDeclaration(
+                ada.FormalSubprogramDeclaration(
                     ada.FunctionSpecification("F", "U", [ada.Parameter(["P1"], "T")]),
                 ),
             ],
@@ -1132,7 +1171,22 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           function F is new G (X, 42);
+
+           function F is new G (P1 => X, P2 => 42);
+
+           procedure P is new G (X, 42);
+
+           procedure P is new G (P1 => X, P2 => 42);
+
+        end P;
+        """,
     ],
+    ids=range(54),
 )
 def test_roundtrip_text(data: str) -> None:
     data = textwrap.dedent(data)
@@ -1162,3 +1216,93 @@ def test_parse_error(data: str, message: str) -> None:
     data = textwrap.dedent(data)
     with pytest.raises(RecordFluxError, match=rf"^{message}$"):
         ada_parser.parse(data)
+
+
+@pytest.mark.parametrize(
+    "aspect_specification",
+    [
+        "",
+        " with\n             Ghost",
+        " with\n             Convention =>\n               Intrinsic",
+        " with\n             Pre =>\n               P > 0",
+    ],
+    ids=range(4),
+)
+@pytest.mark.parametrize("declarative_part", ["", "\n              X : Natural;"], ids=range(2))
+@pytest.mark.parametrize("null_exclusion", ["", "not null "], ids=range(2))
+@pytest.mark.parametrize(
+    "overriding_indicator",
+    ["", "overriding ", "not overriding "],
+    ids=range(3),
+)
+@pytest.mark.parametrize(
+    "data",
+    [
+        "{overriding_indicator}function S is new G{aspect_specification};",
+        "{overriding_indicator}function S is new G (A, B){aspect_specification};",
+        "{overriding_indicator}function S return {null_exclusion}T{aspect_specification};",
+        '{overriding_indicator}function "+" (L, R : T) return {null_exclusion}T'
+        "{aspect_specification};",
+        "{overriding_indicator}function S return {null_exclusion}T{aspect_specification} is"
+        "{declarative_part}"
+        "\n           begin"
+        "\n              return 5;"
+        "\n           end S;",
+        '{overriding_indicator}function "+" (L, R : T) return {null_exclusion}T'
+        "{aspect_specification} is{declarative_part}"
+        "\n           begin"
+        "\n              return 5;"
+        '\n           end "+";',
+        "{overriding_indicator}function S return {null_exclusion}T is"
+        "\n             (42)"
+        "{aspect_specification};",
+        "{overriding_indicator}function S return {null_exclusion}T is abstract"
+        "{aspect_specification};",
+        "{overriding_indicator}function S return {null_exclusion}T is separate"
+        "{aspect_specification};",
+        "{overriding_indicator}function S return {null_exclusion}T renames U"
+        "{aspect_specification};",
+        "{overriding_indicator}procedure S renames G{aspect_specification};",
+        "{overriding_indicator}procedure S (P : T) renames G{aspect_specification};",
+        "{overriding_indicator}procedure S{aspect_specification};",
+        "{overriding_indicator}procedure S (P : T){aspect_specification};",
+        "{overriding_indicator}procedure S is new G (A, B){aspect_specification};",
+        "{overriding_indicator}procedure S is new G (A, 42){aspect_specification};",
+        "{overriding_indicator}procedure S is new G (P1 => A, P2 => 42){aspect_specification};",
+        "{overriding_indicator}procedure S{aspect_specification} is"
+        "\n           begin"
+        "\n              return;"
+        "\n           end S;",
+        "{overriding_indicator}procedure S (P : T){aspect_specification} is"
+        "\n           begin"
+        "\n              return;"
+        "\n           end S;",
+        "{overriding_indicator}procedure S is abstract{aspect_specification};",
+        "{overriding_indicator}procedure S is separate{aspect_specification};",
+    ],
+    ids=range(21),
+)
+def test_roundtrip_declarations(
+    aspect_specification: str,
+    declarative_part: str,
+    null_exclusion: str,
+    overriding_indicator: str,
+    data: str,
+) -> None:
+    text = textwrap.dedent(
+        f"""\
+        package P
+        is
+
+           {data}
+
+        end P;
+        """.format(
+            aspect_specification=aspect_specification,
+            null_exclusion=null_exclusion,
+            overriding_indicator=overriding_indicator,
+            declarative_part=declarative_part,
+        ),
+    )
+    result = ada_parser.parse(text)
+    assert result.ads + result.adb == text
