@@ -116,13 +116,16 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.1 (2/3)
         name:                       direct_name
-                                  | attribute_reference
+                                  | selected_component | attribute_reference
 
         # 4.1 (3)
         direct_name:                identifier
 
         # 4.1 (4)
         prefix:                     name
+
+        # 4.1.3 (2)
+        selected_component:         prefix "." selector_name
 
         # 4.1.3 (3)
         selector_name:              identifier
@@ -250,13 +253,13 @@ ADA_GRAMMAR = lark.Lark(
         function_specification:     "function" defining_designator parameter_and_result_profile
 
         # 6.1 (5)
-        designator:                 ( parent_unit_name "." )* identifier
+        designator:                 name
 
         # 6.1 (6)
         defining_designator:        defining_program_unit_name
 
         # 6.1 (7)
-        defining_program_unit_name: ( parent_unit_name "." )* defining_identifier
+        defining_program_unit_name: name
 
         # 6.1 (12)
         parameter_profile:          parameter_profile_formal_part
@@ -317,7 +320,12 @@ ADA_GRAMMAR = lark.Lark(
         # 7.1 (3/3)
         package_specification:      "package" defining_program_unit_name \
                                     optional_aspect_specification "is" \
-                                    package_spec_declarations \
+                                    ( \
+                                        package_specification_part \
+                                      | generic_package_instantiation_part \
+                                    )
+
+        package_specification_part: package_spec_declarations \
                                     "end" defining_program_unit_name
 
         package_spec_declarations:  basic_declarative_item*
@@ -347,7 +355,6 @@ ADA_GRAMMAR = lark.Lark(
         library_unit_body:          package_body
 
         # 10.1.1 (8)
-        parent_unit_name:           name
 
         # 10.1.2 (2)
         context_clause:             context_item*
@@ -356,13 +363,11 @@ ADA_GRAMMAR = lark.Lark(
         context_item:               with_clause | use_clause | pragma
 
         # 10.1.2 (4/2)
-        with_clause:                limited_with_clause | nonlimited_with_clause
-
-        # 10.1.2 (4.1/2)
-        limited_with_clause:        "limited" "private"? "with" name ("," name)* ";"
+        with_clause:                nonlimited_with_clause
 
         # 10.1.2 (4.2/2)
-        nonlimited_with_clause:     "private"? "with" name ("," name)* ";"
+        nonlimited_with_clause:     "with" name ("," name)* ";"
+
 
         # 11.2 (2)
         handled_sequence_of_statements: \
@@ -374,6 +379,24 @@ ADA_GRAMMAR = lark.Lark(
                                     optional_aspect_specification "is" \
                                     declarative_part \
                                     "end" defining_program_unit_name ";"
+
+        # 12.3 (2/3)
+        generic_package_instantiation_part: \
+                                        "new" name optional_generic_actual_part
+
+        optional_generic_actual_part:   generic_actual_part?
+
+        # 12.3 (3)
+        generic_actual_part: \
+                                    "(" generic_association ("," generic_association)* ")"
+
+        # 12.3 (4)
+        generic_association: \
+                                    explicit_generic_actual_parameter
+
+        # 12.3 (5)
+        explicit_generic_actual_parameter: name
+
 
         # 13.1.1 (2/3)
         aspect_specification:       "with"  aspect_part ( "," aspect_part )*
@@ -456,6 +479,26 @@ class FunctionBodyPart(FunctionPart):
             statements=self.statements,
             aspects=self.aspects,
         )
+
+
+class PackagePart:
+    pass
+
+
+class PackageSpecificationPart(PackagePart):
+    def __init__(self, declarations: list[ada.Declaration], identifier: ID):
+        self.declarations = declarations
+        self.identifier = identifier
+
+
+class PackageInstantiationPart(PackagePart):
+    def __init__(
+        self,
+        name: ID,
+        associations: Optional[list[ID]],
+    ):
+        self.name = name
+        self.associations = associations
 
 
 class ExpressionFunctionPart(FunctionPart):
@@ -604,6 +647,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         return data[0]
 
     def prefix(self, data: list[ID]) -> ID:
+        return data[0]
+
+    def selected_component(self, data: list[tuple[ID, ID]]) -> ID:
+        return data[0] * data[1]
+
+    def selector_name(self, data: list[ID]) -> ID:
         return data[0]
 
     def attribute_reference(self, data: tuple[ID, str]) -> ada.Attribute:
@@ -991,15 +1040,32 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def package_specification(
         self,
-        data: tuple[ID, list[ada.Aspect], list[ada.Declaration], ID],
+        data: tuple[ID, Optional[list[ada.Aspect]], PackagePart],
     ) -> ada.PackageDeclaration:
-        identifier, aspects, declarations, end_identifier = data
-        assert identifier == end_identifier
-        return ada.PackageDeclaration(
-            identifier=identifier,
-            declarations=declarations,
-            aspects=aspects,
-        )
+        identifier, aspects, part = data
+        if isinstance(part, PackageInstantiationPart):
+            assert aspects is None
+            return ada.GenericPackageInstantiation(
+                identifier=identifier,
+                generic_package=part.name,
+                associations=part.associations,
+            )
+
+        if isinstance(part, PackageSpecificationPart):
+            assert identifier == part.identifier
+            return ada.PackageDeclaration(
+                identifier=identifier,
+                declarations=part.declarations,
+                aspects=aspects,
+            )
+
+        raise NotImplementedError(type(part))
+
+    def package_specification_part(
+        self,
+        data: tuple[list[ada.Declaration], ID],
+    ) -> PackageSpecificationPart:
+        return PackageSpecificationPart(declarations=data[0], identifier=data[1])
 
     def package_spec_declarations(self, data: list[ada.Declaration]) -> list[ada.Declaration]:
         return data
@@ -1054,6 +1120,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def with_clause(self, data: list[ada.WithClause]) -> ada.WithClause:
         return data[0]
 
+    def nonlimited_with_clause(self, data: list[ID]) -> ada.WithClause:
+        return ada.WithClause(data[0])
+
     def handled_sequence_of_statements(
         self,
         data: list[list[ada.Statement]],
@@ -1073,6 +1142,26 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             statements=None,
             aspects=aspects,
         )
+
+    def generic_package_instantiation_part(
+        self,
+        data: tuple[ID, Optional[list[ID]]],
+    ) -> PackageInstantiationPart:
+        return PackageInstantiationPart(name=data[0], associations=data[1])
+
+    def optional_generic_actual_part(self, data: list[list[ID]]) -> Optional[list[ID]]:
+        if len(data) == 0:
+            return None
+        return data[0]
+
+    def generic_actual_part(self, data: list[ID]) -> list[ID]:
+        return data
+
+    def generic_association(self, data: list[ID]) -> ID:
+        return data[0]
+
+    def explicit_generic_actual_parameter(self, data: list[ID]) -> ID:
+        return data[0]
 
     def aspect_specification(self, data: list[ada.Aspect]) -> list[ada.Aspect]:
         return data
@@ -1156,6 +1245,11 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[lark.Token, ada.Expr, Optional[list[ada.Aspect]]],
     ) -> ExpressionFunctionPart:
         return ExpressionFunctionPart(expression=data[1], aspects=data[2])
+
+    def optional_private(self, data: list[lark.Token]) -> bool:
+        if len(data) > 0 and data[0] == "private":
+            return True
+        return False
 
     def file(
         self,

@@ -1,4 +1,5 @@
 import textwrap
+
 import pytest
 
 from rflx import ada, ada_parser
@@ -456,6 +457,12 @@ from rflx import ada, ada_parser
             body_context=[],
             body=ada.PackageBody("P"),
         ),
+        ada.PackageUnit(
+            declaration_context=[],
+            declaration=ada.GenericPackageInstantiation("P", "G", ["A", "B", "F.C"]),
+            body_context=[],
+            body=ada.PackageBody("P"),
+        ),
     ],
 )
 def test_roundtrip_model(unit: ada.Unit) -> None:
@@ -506,6 +513,28 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
                   V <= U64'Last - 2**Lower + 1);
 
         end P;
+        """,
+        """\
+        package P
+        is
+
+        end P;
+        package body P
+        is
+
+           function Mask_Upper (V : U64; Mask : Natural) return U64 is
+           begin
+              return V
+                     and 2**Mask - 1;
+           end Mask_Upper;
+
+        end P;
+        """,
+        """\
+        with F;
+        with G;
+
+        package P is new G (F.A, F.B, F.C);
         """,
     ],
 )

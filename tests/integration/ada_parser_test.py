@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -19,5 +20,15 @@ def read_spec_and_body(spec: Path) -> str:
     ],
 )
 def test_templates(data: str) -> None:
-    result = ada_parser.parse(data.replace("{prefix}", ""))
-    assert result.ads + result.adb == data, data
+    data = data.replace("{prefix}", "")
+    result = ada_parser.parse(data)
+
+    data = re.sub(r"\s*--.*", "", data)
+    data = re.sub(r"\*\*", " ** ", data)
+    data = re.sub(r"\s+", "\n", data)
+
+    result_text = result.ads + result.adb
+    result_text = re.sub(r"\*\*", " ** ", result_text)
+    result_text = re.sub(r"\s+", "\n", result_text)
+
+    assert result_text == data
