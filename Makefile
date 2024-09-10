@@ -642,11 +642,10 @@ audit: $(RFLX) rapidflux_devel
 
 # --- Clean ---
 
-.PHONY: clean clean_build clean_all
+.PHONY: clean clean_build clean_cache clean_all
 
-clean:
-	rm -rf $(BUILD_DIR) .coverage .coverage.* .hypothesis doc/language_reference/build doc/user_guide/build
-	find -name ".*_cache" -exec rm -vrf {} \;
+clean: clean_build clean_cache
+	rm -rf .coverage .coverage.* .hypothesis doc/language_reference/build doc/user_guide/build
 	$(MAKE) -C examples/apps/wireguard clean
 	$(MAKE) -C examples/apps/ping clean
 	$(MAKE) -C examples/apps/dhcp_client clean
@@ -658,7 +657,10 @@ clean:
 clean_build:
 	rm -rf $(BUILD_DIR)
 
-clean_all: clean clean_build
+clean_cache:
+	find -name ".*_cache" -type d -exec rm -vrf {} +
+
+clean_all: clean
 	$(RM) -r $(DEVEL_VENV) $(POETRY_VENV) $(BIN_DIR) $(GENERATED_DIR) $(CARGO_HOME) rflx/lang rflx/rapidflux*.so pyproject.toml
 	test -d $(LANGKIT_DIR) && touch $(LANGKIT_DIR)/langkit/py.typed || true
 	@$(call remove_repo,$(DEVUTILS_DIR))
