@@ -27,7 +27,7 @@ from rflx import ada, ada_parser
                     "Warnings",
                     [
                         ada.Variable("Off"),
-                        ada.String('""Always_Terminates"" is not a valid aspect identifier'),
+                        ada.String.escaped('"Always_Terminates" is not a valid aspect identifier'),
                     ],
                 ),
             ],
