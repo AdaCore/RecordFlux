@@ -4769,7 +4769,10 @@ def test_state_error() -> None:
           goto B
        end C
     """
-    error = "<stdin>:2:8: error: inconsistent state identifier: A /= C.*"
+    error = (
+        r'<stdin>:6:12: error: inconsistent state identifier "C"\n'
+        r'<stdin>:2:14: note: previous identifier was "A"'
+    )
     with pytest.raises(RecordFluxError, match=rf"^{error}$"):
         parse_state(string)
 
@@ -4853,7 +4856,8 @@ def test_parse_state_machine() -> None:
                   end A;
                end Y
          """,
-            "<stdin>:2:16: error: inconsistent state machine identifier: X /= Y.*",
+            r'<stdin>:10:20: error: inconsistent state machine identifier "Y"\n'
+            r'<stdin>:3:24: note: previous identifier was "X"',
         ),
         (
             """

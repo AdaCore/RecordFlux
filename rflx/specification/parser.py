@@ -226,17 +226,22 @@ def create_state(
     package: ID,
     filename: Path,
 ) -> model.State:
-    location = node_location(state, filename)
     identifier = create_id(error, state.f_identifier, filename)
     assert isinstance(state.f_body, lang.StateBody)
     if state.f_identifier.text != state.f_body.f_end_identifier.text:
         error.extend(
             [
                 ErrorEntry(
-                    "inconsistent state identifier: "
-                    f"{state.f_identifier.text} /= {state.f_body.f_end_identifier.text}",
+                    f'inconsistent state identifier "{state.f_body.f_end_identifier.text}"',
                     Severity.ERROR,
-                    location,
+                    node_location(state.f_body.f_end_identifier, filename),
+                    [
+                        Annotation(
+                            f'previous identifier was "{identifier}"',
+                            Severity.NOTE,
+                            node_location(state.f_identifier, filename),
+                        ),
+                    ],
                 ),
             ],
         )
@@ -274,10 +279,17 @@ def _check_state_machine_identifier(
         error.extend(
             [
                 ErrorEntry(
-                    "inconsistent state machine identifier: "
-                    f"{state_machine.f_identifier.text} /= {state_machine.f_end_identifier.text}",
+                    "inconsistent state machine identifier"
+                    f' "{state_machine.f_end_identifier.text}"',
                     Severity.ERROR,
-                    node_location(state_machine, filename),
+                    node_location(state_machine.f_end_identifier, filename),
+                    [
+                        Annotation(
+                            f'previous identifier was "{state_machine.f_identifier.text}"',
+                            Severity.NOTE,
+                            node_location(state_machine.f_identifier, filename),
+                        ),
+                    ],
                 ),
             ],
         )
