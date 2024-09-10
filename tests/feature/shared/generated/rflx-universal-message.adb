@@ -95,8 +95,7 @@ is
      (Ctx.Buffer /= null
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < RFLX_Types.Bit_Length'Last
       and Ctx.First <= Field_First (Ctx, Fld)
-      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
-    with
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last) with
      Pre =>
        RFLX.Universal.Message.Has_Buffer (Ctx)
        and RFLX.Universal.Message.Valid_Next (Ctx, Fld);
@@ -124,8 +123,7 @@ is
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
        and (for all F in Field =>
-               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F) else Invalid (Ctx, F)))
-   is
+               (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F) else Invalid (Ctx, F))) is
    begin
       for Fld_Loop in reverse Fld .. Field'Last loop
          pragma Loop_Invariant (Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Loop_Entry
@@ -144,8 +142,7 @@ is
        RFLX.Universal.Message.Has_Buffer (Ctx)
        and then RFLX.Universal.Message.Valid_Next (Ctx, Fld)
        and then RFLX.Universal.Message.Sufficient_Buffer_Length (Ctx, Fld)
-       and then not RFLX.Universal.Message.Composite_Field (Fld)
-   is
+       and then not RFLX.Universal.Message.Composite_Field (Fld) is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, Fld);
       Last : constant RFLX_Types.Bit_Index := Field_Last (Ctx, Fld);
       Buffer_First : constant RFLX_Types.Index := RFLX_Types.To_Index (First);
@@ -276,8 +273,7 @@ is
                            then
                               Message_Last (Ctx) = Field_Last (Ctx, Fld)))
        and then (for all F in Field =>
-                    (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F)))
-   is
+                    (if F < Fld then Ctx.Cursors (F) = Ctx.Cursors'Old (F))) is
       First : RFLX_Types.Bit_Index;
       Last : RFLX_Types.Bit_Length;
    begin
@@ -327,8 +323,7 @@ is
        and Ctx.First = Ctx.First'Old
        and Ctx.Last = Ctx.Last'Old
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
-       and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
-   is
+       and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old is
       Buffer_First, Buffer_Last : RFLX_Types.Index;
       Offset : RFLX_Types.Offset;
       Size : constant RFLX_Types.Bit_Length := Field_Size (Ctx, Fld);
@@ -433,8 +428,7 @@ is
        and then Ctx.Last = Ctx.Last'Old
        and then Valid_Next (Ctx, F_Data) = Valid_Next (Ctx, F_Data)'Old
        and then Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
-       and then Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old
-   is
+       and then Field_First (Ctx, F_Data) = Field_First (Ctx, F_Data)'Old is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Data) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
    begin
@@ -473,8 +467,7 @@ is
        and then Valid_Next (Ctx, F_Option_Types) = Valid_Next (Ctx, F_Option_Types)'Old
        and then Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and then Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and then Field_First (Ctx, F_Option_Types) = Field_First (Ctx, F_Option_Types)'Old
-   is
+       and then Field_First (Ctx, F_Option_Types) = Field_First (Ctx, F_Option_Types)'Old is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Option_Types);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Option_Types) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
    begin
@@ -511,8 +504,7 @@ is
        and then Ctx.Last = Ctx.Last'Old
        and then Valid_Next (Ctx, F_Options) = Valid_Next (Ctx, F_Options)'Old
        and then Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
-       and then Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old
-   is
+       and then Field_First (Ctx, F_Options) = Field_First (Ctx, F_Options)'Old is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Options) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
    begin
@@ -548,8 +540,7 @@ is
        and then Valid_Next (Ctx, F_Values) = Valid_Next (Ctx, F_Values)'Old
        and then Get_Message_Type (Ctx) = Get_Message_Type (Ctx)'Old
        and then Get_Length (Ctx) = Get_Length (Ctx)'Old
-       and then Field_First (Ctx, F_Values) = Field_First (Ctx, F_Values)'Old
-   is
+       and then Field_First (Ctx, F_Values) = Field_First (Ctx, F_Values)'Old is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Values);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Values) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
    begin

@@ -30,8 +30,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Version is
-     (RFLX.IPv4.Version (Val))
-    with
+     (RFLX.IPv4.Version (Val)) with
      Pre =>
        Valid_Version (Val);
 
@@ -47,8 +46,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.IHL is
-     (RFLX.IPv4.IHL (Val))
-    with
+     (RFLX.IPv4.IHL (Val)) with
      Pre =>
        Valid_IHL (Val);
 
@@ -63,8 +61,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.DCSP is
-     (RFLX.IPv4.DCSP (Val))
-    with
+     (RFLX.IPv4.DCSP (Val)) with
      Pre =>
        Valid_DCSP (Val);
 
@@ -79,8 +76,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.ECN is
-     (RFLX.IPv4.ECN (Val))
-    with
+     (RFLX.IPv4.ECN (Val)) with
      Pre =>
        Valid_ECN (Val);
 
@@ -95,8 +91,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Total_Length is
-     (RFLX.IPv4.Total_Length (Val))
-    with
+     (RFLX.IPv4.Total_Length (Val)) with
      Pre =>
        Valid_Total_Length (Val);
 
@@ -111,8 +106,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Identification is
-     (RFLX.IPv4.Identification (Val))
-    with
+     (RFLX.IPv4.Identification (Val)) with
      Pre =>
        Valid_Identification (Val);
 
@@ -127,8 +121,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Fragment_Offset is
-     (RFLX.IPv4.Fragment_Offset (Val))
-    with
+     (RFLX.IPv4.Fragment_Offset (Val)) with
      Pre =>
        Valid_Fragment_Offset (Val);
 
@@ -143,8 +136,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.TTL is
-     (RFLX.IPv4.TTL (Val))
-    with
+     (RFLX.IPv4.TTL (Val)) with
      Pre =>
        Valid_TTL (Val);
 
@@ -186,8 +178,7 @@ is
           when 17 =>
              (True, P_UDP),
           when others =>
-             (False, Val))
-    with
+             (False, Val)) with
      Pre =>
        Valid_Protocol (Val);
 
@@ -205,8 +196,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Header_Checksum is
-     (RFLX.IPv4.Header_Checksum (Val))
-    with
+     (RFLX.IPv4.Header_Checksum (Val)) with
      Pre =>
        Valid_Header_Checksum (Val);
 
@@ -221,8 +211,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Address is
-     (RFLX.IPv4.Address (Val))
-    with
+     (RFLX.IPv4.Address (Val)) with
      Pre =>
        Valid_Address (Val);
 
@@ -250,8 +239,7 @@ is
           when 2 =>
              Debugging_And_Measurement,
           when others =>
-             RFLX.IPv4.Option_Class'Last)
-    with
+             RFLX.IPv4.Option_Class'Last) with
      Pre =>
        Valid_Option_Class (Val);
 
@@ -268,8 +256,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Option_Number is
-     (RFLX.IPv4.Option_Number (Val))
-    with
+     (RFLX.IPv4.Option_Number (Val)) with
      Pre =>
        Valid_Option_Number (Val);
 
@@ -285,8 +272,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.IPv4.Option_Length is
-     (RFLX.IPv4.Option_Length (Val))
-    with
+     (RFLX.IPv4.Option_Length (Val)) with
      Pre =>
        Valid_Option_Length (Val);
 

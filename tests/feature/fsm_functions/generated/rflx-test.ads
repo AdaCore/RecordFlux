@@ -43,8 +43,7 @@ is
           when 1 =>
              M_Invalid,
           when others =>
-             RFLX.Test.Result'Last)
-    with
+             RFLX.Test.Result'Last) with
      Pre =>
        Valid_Result (Val);
 
@@ -61,8 +60,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Length is
-     (RFLX.Test.Length (Val))
-    with
+     (RFLX.Test.Length (Val)) with
      Pre =>
        Valid_Length (Val);
 

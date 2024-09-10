@@ -844,8 +844,7 @@ private
               Cursors (F).First >= First
               and Cursors (F).Last <= Verified_Last
               and Cursors (F).First <= Cursors (F).Last + 1
-              and Valid_Value (F, Cursors (F).Value))))
-    with
+              and Valid_Value (F, Cursors (F).Value)))) with
      Post =>
        True;
 
@@ -861,8 +860,7 @@ private
      ((if Well_Formed (Cursors (F_Length)) then True)
       and then (if Well_Formed (Cursors (F_Integer_Vector)) then Valid (Cursors (F_Length)))
       and then (if Well_Formed (Cursors (F_Enumeration_Vector)) then Well_Formed (Cursors (F_Integer_Vector)))
-      and then (if Well_Formed (Cursors (F_AV_Enumeration_Vector)) then Well_Formed (Cursors (F_Enumeration_Vector))))
-    with
+      and then (if Well_Formed (Cursors (F_AV_Enumeration_Vector)) then Well_Formed (Cursors (F_Enumeration_Vector)))) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
      Post =>
@@ -888,8 +886,7 @@ private
               and then True),
           when F_AV_Enumeration_Vector =>
              (Well_Formed (Cursors (F_Enumeration_Vector))
-              and then True))
-    with
+              and then True)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
@@ -909,8 +906,7 @@ private
           when F_Integer_Vector =>
              RFLX_Types.Bit_Length (Cursors (F_Length).Value) * 8,
           when F_Enumeration_Vector | F_AV_Enumeration_Vector =>
-             16)
-    with
+             16) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -929,32 +925,28 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_First_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First)
-    with
+     (First) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Length);
 
    function Field_First_Integer_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 8)
-    with
+     (First + 8) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Integer_Vector);
 
    function Field_First_Enumeration_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Integer_Vector (Cursors, First, Verified_Last, Written_Last) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, F_Integer_Vector))
-    with
+     (Field_First_Integer_Vector (Cursors, First, Verified_Last, Written_Last) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, F_Integer_Vector)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Enumeration_Vector);
 
    function Field_First_AV_Enumeration_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (Field_First_Integer_Vector (Cursors, First, Verified_Last, Written_Last) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, F_Integer_Vector) + 16)
-    with
+     (Field_First_Integer_Vector (Cursors, First, Verified_Last, Written_Last) + Field_Size_Internal (Cursors, First, Verified_Last, Written_Last, F_Integer_Vector) + 16) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -969,8 +961,7 @@ private
           when F_Enumeration_Vector =>
              Field_First_Enumeration_Vector (Cursors, First, Verified_Last, Written_Last),
           when F_AV_Enumeration_Vector =>
-             Field_First_AV_Enumeration_Vector (Cursors, First, Verified_Last, Written_Last))
-    with
+             Field_First_AV_Enumeration_Vector (Cursors, First, Verified_Last, Written_Last)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -1033,8 +1024,7 @@ private
                              Well_Formed (Cursors (F_AV_Enumeration_Vector))
                           then
                              (Cursors (F_AV_Enumeration_Vector).Last - Cursors (F_AV_Enumeration_Vector).First + 1 = 16
-                              and then Cursors (F_AV_Enumeration_Vector).First = Cursors (F_Enumeration_Vector).Last + 1))))
-    with
+                              and then Cursors (F_AV_Enumeration_Vector).First = Cursors (F_Enumeration_Vector).Last + 1)))) with
      Post =>
        True;
 
@@ -1147,8 +1137,7 @@ private
      (To_Actual (Ctx.Cursors (F_Length).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     (Size = Field_Size (Ctx, Fld))
-    with
+     (Size = Field_Size (Ctx, Fld)) with
      Pre =>
        RFLX.Sequence.Message.Valid_Next (Ctx, Fld);
 

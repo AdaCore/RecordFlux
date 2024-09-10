@@ -67,8 +67,7 @@ is
           when 7 =>
              MT_Unconstrained_Options,
           when others =>
-             RFLX.Universal.Message_Type'Last)
-    with
+             RFLX.Universal.Message_Type'Last) with
      Pre =>
        Valid_Message_Type (Val);
 
@@ -85,8 +84,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Universal.Length is
-     (RFLX.Universal.Length (Val))
-    with
+     (RFLX.Universal.Length (Val)) with
      Pre =>
        Valid_Length (Val);
 
@@ -101,8 +99,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Universal.Value is
-     (RFLX.Universal.Value (Val))
-    with
+     (RFLX.Universal.Value (Val)) with
      Pre =>
        Valid_Value (Val);
 
@@ -144,8 +141,7 @@ is
           when 1 =>
              (True, OT_Data),
           when others =>
-             (False, Val))
-    with
+             (False, Val)) with
      Pre =>
        Valid_Option_Type (Val);
 

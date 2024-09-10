@@ -31,8 +31,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Tiny_Int is
-     (RFLX.Test.Tiny_Int (Val))
-    with
+     (RFLX.Test.Tiny_Int (Val)) with
      Pre =>
        Valid_Tiny_Int (Val);
 
@@ -47,8 +46,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Int is
-     (RFLX.Test.Int (Val))
-    with
+     (RFLX.Test.Int (Val)) with
      Pre =>
        Valid_Int (Val);
 

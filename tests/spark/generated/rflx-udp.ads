@@ -30,8 +30,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.UDP.Port is
-     (RFLX.UDP.Port (Val))
-    with
+     (RFLX.UDP.Port (Val)) with
      Pre =>
        Valid_Port (Val);
 
@@ -47,8 +46,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.UDP.Length is
-     (RFLX.UDP.Length (Val))
-    with
+     (RFLX.UDP.Length (Val)) with
      Pre =>
        Valid_Length (Val);
 
@@ -63,8 +61,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.UDP.Checksum is
-     (RFLX.UDP.Checksum (Val))
-    with
+     (RFLX.UDP.Checksum (Val)) with
      Pre =>
        Valid_Checksum (Val);
 

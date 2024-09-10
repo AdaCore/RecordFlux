@@ -30,8 +30,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Ethernet.Address is
-     (RFLX.Ethernet.Address (Val))
-    with
+     (RFLX.Ethernet.Address (Val)) with
      Pre =>
        Valid_Address (Val);
 
@@ -47,8 +46,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Ethernet.Type_Length is
-     (RFLX.Ethernet.Type_Length (Val))
-    with
+     (RFLX.Ethernet.Type_Length (Val)) with
      Pre =>
        Valid_Type_Length (Val);
 
@@ -63,8 +61,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Ethernet.TPID is
-     (RFLX.Ethernet.TPID (Val))
-    with
+     (RFLX.Ethernet.TPID (Val)) with
      Pre =>
        Valid_TPID (Val);
 
@@ -79,8 +76,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Ethernet.TCI is
-     (RFLX.Ethernet.TCI (Val))
-    with
+     (RFLX.Ethernet.TCI (Val)) with
      Pre =>
        Valid_TCI (Val);
 

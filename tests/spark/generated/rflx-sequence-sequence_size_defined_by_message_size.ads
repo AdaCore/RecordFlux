@@ -600,8 +600,7 @@ private
               Cursors (F).First >= First
               and Cursors (F).Last <= Verified_Last
               and Cursors (F).First <= Cursors (F).Last + 1
-              and Valid_Value (F, Cursors (F).Value))))
-    with
+              and Valid_Value (F, Cursors (F).Value)))) with
      Post =>
        True;
 
@@ -615,8 +614,7 @@ private
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return Boolean is
      ((if Well_Formed (Cursors (F_Header)) then True)
-      and then (if Well_Formed (Cursors (F_Vector)) then Valid (Cursors (F_Header))))
-    with
+      and then (if Well_Formed (Cursors (F_Vector)) then Valid (Cursors (F_Header)))) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
      Post =>
@@ -636,8 +634,7 @@ private
              True,
           when F_Vector =>
              (Valid (Cursors (F_Header))
-              and then True))
-    with
+              and then True)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
@@ -655,8 +652,7 @@ private
           when F_Header =>
              8,
           when F_Vector =>
-             RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Header).Last))
-    with
+             RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Header).Last)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -675,16 +671,14 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_First_Header (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First)
-    with
+     (First) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Header);
 
    function Field_First_Vector (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 8)
-    with
+     (First + 8) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -695,8 +689,7 @@ private
           when F_Header =>
              Field_First_Header (Cursors, First, Verified_Last, Written_Last),
           when F_Vector =>
-             Field_First_Vector (Cursors, First, Verified_Last, Written_Last))
-    with
+             Field_First_Vector (Cursors, First, Verified_Last, Written_Last)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -749,8 +742,7 @@ private
                              Well_Formed (Cursors (F_Vector))
                           then
                              (Cursors (F_Vector).Last - Cursors (F_Vector).First + 1 = RFLX_Types.Bit_Length (Written_Last) - RFLX_Types.Bit_Length (Cursors (F_Header).Last)
-                              and then Cursors (F_Vector).First = Cursors (F_Header).Last + 1))))
-    with
+                              and then Cursors (F_Vector).First = Cursors (F_Header).Last + 1)))) with
      Post =>
        True;
 
@@ -863,8 +855,7 @@ private
      (To_Actual (Ctx.Cursors (F_Header).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     (if Fld = F_Vector then Size <= Available_Space (Ctx, Fld) else Size = Field_Size (Ctx, Fld))
-    with
+     (if Fld = F_Vector then Size <= Available_Space (Ctx, Fld) else Size = Field_Size (Ctx, Fld)) with
      Pre =>
        RFLX.Sequence.Sequence_Size_Defined_By_Message_Size.Valid_Next (Ctx, Fld);
 

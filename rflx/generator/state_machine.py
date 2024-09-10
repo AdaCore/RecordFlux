@@ -2585,8 +2585,8 @@ class FSMGenerator:
                         *[
                             GenericProcedureInstantiation(
                                 (type_ * "Read").flat,
-                                ProcedureSpecification(type_ * "Generic_Read"),
-                                ["Read", "Read_Pre"],
+                                type_ * "Generic_Read",
+                                [(None, ada.Variable("Read")), (None, ada.Variable("Read_Pre"))],
                             )
                             for type_ in sorted(
                                 {
@@ -2816,8 +2816,8 @@ class FSMGenerator:
                         *[
                             GenericProcedureInstantiation(
                                 (type_ * "Write").flat,
-                                ProcedureSpecification(type_ * "Generic_Write"),
-                                ["Write", "Write_Pre"],
+                                type_ * "Generic_Write",
+                                [(None, ada.Variable("Write")), (None, ada.Variable("Write_Pre"))],
                             )
                             for type_ in sorted(
                                 {
@@ -5305,8 +5305,11 @@ class FSMGenerator:
                 ),
                 GenericProcedureInstantiation(
                     "RFLX_" + (target_type * f"Set_{field}").flat,
-                    ProcedureSpecification(target_type * f"Generic_Set_{field}"),
-                    ["RFLX_Process_Data", "RFLX_Process_Data_Pre"],
+                    target_type * f"Generic_Set_{field}",
+                    [
+                        (None, ada.Variable("RFLX_Process_Data")),
+                        (None, ada.Variable("RFLX_Process_Data_Pre")),
+                    ],
                 ),
             ],
             [

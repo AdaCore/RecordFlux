@@ -61,8 +61,7 @@ is
           when 7 =>
              (True, High),
           when others =>
-             (False, Val))
-    with
+             (False, Val)) with
      Pre =>
        Valid_Priority (Val);
 

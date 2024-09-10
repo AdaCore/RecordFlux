@@ -30,8 +30,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Messages.Integer is
-     (RFLX.Messages.Integer (Val))
-    with
+     (RFLX.Messages.Integer (Val)) with
      Pre =>
        Valid_Integer (Val);
 
@@ -79,8 +78,7 @@ is
           when 32 =>
              Enum_G,
           when others =>
-             RFLX.Messages.Enum_T'Last)
-    with
+             RFLX.Messages.Enum_T'Last) with
      Pre =>
        Valid_Enum_T (Val);
 

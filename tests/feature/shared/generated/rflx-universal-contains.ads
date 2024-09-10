@@ -50,8 +50,7 @@ is
 
    function Sufficient_Space_For_Data (Universal_Message_PDU_Context : RFLX.Universal.Message.Context; Universal_Option_SDU_Context : RFLX.Universal.Option.Context) return Boolean is
      (RFLX.Universal.Option.Buffer_Size (Universal_Option_SDU_Context) >= RFLX.Universal.Message.Field_Size (Universal_Message_PDU_Context, RFLX.Universal.Message.F_Data)
-      and then RFLX_Types.To_First_Bit_Index (Universal_Option_SDU_Context.Buffer_First) + RFLX.Universal.Message.Field_Size (Universal_Message_PDU_Context, RFLX.Universal.Message.F_Data) - 1 < RFLX_Types.Bit_Index'Last)
-    with
+      and then RFLX_Types.To_First_Bit_Index (Universal_Option_SDU_Context.Buffer_First) + RFLX.Universal.Message.Field_Size (Universal_Message_PDU_Context, RFLX.Universal.Message.F_Data) - 1 < RFLX_Types.Bit_Index'Last) with
      Pre =>
        RFLX.Universal.Option.Has_Buffer (Universal_Option_SDU_Context)
        and then RFLX.Universal.Contains.Option_In_Message_Data (Universal_Message_PDU_Context);

@@ -736,8 +736,7 @@ private
               Cursors (F).First >= First
               and Cursors (F).Last <= Verified_Last
               and Cursors (F).First <= Cursors (F).Last + 1
-              and Valid_Value (F, Cursors (F).Value))))
-    with
+              and Valid_Value (F, Cursors (F).Value)))) with
      Post =>
        True;
 
@@ -754,8 +753,7 @@ private
       and then (if Well_Formed (Cursors (F_Destination_Port)) then Valid (Cursors (F_Source_Port)))
       and then (if Well_Formed (Cursors (F_Length)) then Valid (Cursors (F_Destination_Port)))
       and then (if Well_Formed (Cursors (F_Checksum)) then Valid (Cursors (F_Length)))
-      and then (if Well_Formed (Cursors (F_Payload)) then Valid (Cursors (F_Checksum))))
-    with
+      and then (if Well_Formed (Cursors (F_Payload)) then Valid (Cursors (F_Checksum)))) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
      Post =>
@@ -784,8 +782,7 @@ private
               and then True),
           when F_Payload =>
              (Valid (Cursors (F_Checksum))
-              and then True))
-    with
+              and then True)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
@@ -803,8 +800,7 @@ private
           when F_Source_Port | F_Destination_Port | F_Length | F_Checksum =>
              16,
           when F_Payload =>
-             (RFLX_Types.Bit_Length (Cursors (F_Length).Value) - 8) * 8)
-    with
+             (RFLX_Types.Bit_Length (Cursors (F_Length).Value) - 8) * 8) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -823,40 +819,35 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_First_Source_Port (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First)
-    with
+     (First) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Source_Port);
 
    function Field_First_Destination_Port (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 16)
-    with
+     (First + 16) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Destination_Port);
 
    function Field_First_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 32)
-    with
+     (First + 32) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Length);
 
    function Field_First_Checksum (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 48)
-    with
+     (First + 48) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Checksum);
 
    function Field_First_Payload (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 64)
-    with
+     (First + 64) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -873,8 +864,7 @@ private
           when F_Checksum =>
              Field_First_Checksum (Cursors, First, Verified_Last, Written_Last),
           when F_Payload =>
-             Field_First_Payload (Cursors, First, Verified_Last, Written_Last))
-    with
+             Field_First_Payload (Cursors, First, Verified_Last, Written_Last)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -942,8 +932,7 @@ private
                              Well_Formed (Cursors (F_Payload))
                           then
                              (Cursors (F_Payload).Last - Cursors (F_Payload).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Length).Value) - 8) * 8
-                              and then Cursors (F_Payload).First = Cursors (F_Checksum).Last + 1))))
-    with
+                              and then Cursors (F_Payload).First = Cursors (F_Checksum).Last + 1)))) with
      Post =>
        True;
 
@@ -1069,8 +1058,7 @@ private
      (To_Actual (Ctx.Cursors (F_Checksum).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     (Size = Field_Size (Ctx, Fld))
-    with
+     (Size = Field_Size (Ctx, Fld)) with
      Pre =>
        RFLX.UDP.Datagram.Valid_Next (Ctx, Fld);
 

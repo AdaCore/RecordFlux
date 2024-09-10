@@ -30,8 +30,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.T is
-     (RFLX.Test.T (Val))
-    with
+     (RFLX.Test.T (Val)) with
      Pre =>
        Valid_T (Val);
 

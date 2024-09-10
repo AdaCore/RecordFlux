@@ -513,8 +513,7 @@ private
               Cursors (F).First >= First
               and Cursors (F).Last <= Verified_Last
               and Cursors (F).First <= Cursors (F).Last + 1
-              and Valid_Value (F, Cursors (F).Value))))
-    with
+              and Valid_Value (F, Cursors (F).Value)))) with
      Post =>
        True;
 
@@ -528,8 +527,7 @@ private
 
    function Valid_Predecessors_Invariant (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return Boolean is
      ((if Well_Formed (Cursors (F_A)) then True)
-      and then (if Well_Formed (Cursors (F_B)) then Valid (Cursors (F_A))))
-    with
+      and then (if Well_Formed (Cursors (F_B)) then Valid (Cursors (F_A)))) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
      Post =>
@@ -549,8 +547,7 @@ private
              True,
           when F_B =>
              (Valid (Cursors (F_A))
-              and then True))
-    with
+              and then True)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
@@ -568,8 +565,7 @@ private
           when F_A =>
              1,
           when F_B =>
-             7)
-    with
+             7) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -588,16 +584,14 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_First_A (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First)
-    with
+     (First) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_A);
 
    function Field_First_B (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 1)
-    with
+     (First + 1) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -608,8 +602,7 @@ private
           when F_A =>
              Field_First_A (Cursors, First, Verified_Last, Written_Last),
           when F_B =>
-             Field_First_B (Cursors, First, Verified_Last, Written_Last))
-    with
+             Field_First_B (Cursors, First, Verified_Last, Written_Last)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -662,8 +655,7 @@ private
                              Well_Formed (Cursors (F_B))
                           then
                              (Cursors (F_B).Last - Cursors (F_B).First + 1 = 7
-                              and then Cursors (F_B).First = Cursors (F_A).Last + 1))))
-    with
+                              and then Cursors (F_B).First = Cursors (F_A).Last + 1)))) with
      Post =>
        True;
 
@@ -783,8 +775,7 @@ private
      (To_Actual (Ctx.Cursors (F_B).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     (Size = Field_Size (Ctx, Fld))
-    with
+     (Size = Field_Size (Ctx, Fld)) with
      Pre =>
        RFLX.Test.M.Valid_Next (Ctx, Fld);
 

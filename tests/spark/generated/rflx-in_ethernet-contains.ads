@@ -54,8 +54,7 @@ is
 
    function Sufficient_Space_For_Payload (Ethernet_Frame_PDU_Context : RFLX.Ethernet.Frame.Context; IPv4_Packet_SDU_Context : RFLX.IPv4.Packet.Context) return Boolean is
      (RFLX.IPv4.Packet.Buffer_Size (IPv4_Packet_SDU_Context) >= RFLX.Ethernet.Frame.Field_Size (Ethernet_Frame_PDU_Context, RFLX.Ethernet.Frame.F_Payload)
-      and then RFLX_Types.To_First_Bit_Index (IPv4_Packet_SDU_Context.Buffer_First) + RFLX.Ethernet.Frame.Field_Size (Ethernet_Frame_PDU_Context, RFLX.Ethernet.Frame.F_Payload) - 1 < RFLX_Types.Bit_Index'Last)
-    with
+      and then RFLX_Types.To_First_Bit_Index (IPv4_Packet_SDU_Context.Buffer_First) + RFLX.Ethernet.Frame.Field_Size (Ethernet_Frame_PDU_Context, RFLX.Ethernet.Frame.F_Payload) - 1 < RFLX_Types.Bit_Index'Last) with
      Pre =>
        RFLX.IPv4.Packet.Has_Buffer (IPv4_Packet_SDU_Context)
        and then RFLX.In_Ethernet.Contains.IPv4_Packet_In_Ethernet_Frame_Payload (Ethernet_Frame_PDU_Context);

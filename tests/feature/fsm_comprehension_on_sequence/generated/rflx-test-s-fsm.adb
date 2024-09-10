@@ -44,8 +44,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       function Start_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -54,8 +53,7 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -337,8 +335,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       Option_Types_Ctx : Universal.Option_Types.Context;
       T_1 : RFLX.RFLX_Types.Base_Integer;
       T_0 : Universal.Option_Type;
@@ -355,8 +352,7 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -953,8 +949,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       function Send_1_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -963,8 +958,7 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -979,8 +973,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       Message_Options_Ctx : Universal.Options.Context;
       T_3 : RFLX.RFLX_Types.Base_Integer;
       T_2 : Universal.Option_Type;
@@ -997,8 +990,7 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -1289,8 +1281,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       function Send_2_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -1299,8 +1290,7 @@ is
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
          and Ctx.P.Slots.Slot_Ptr_7 /= null
-         and Ctx.P.Slots.Slot_Ptr_8 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_8 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -1404,8 +1394,7 @@ is
          and then Offset < Message_Buffer'Length);
       procedure Read (Message_Buffer : RFLX_Types.Bytes) with
         Pre =>
-          Read_Pre (Message_Buffer)
-      is
+          Read_Pre (Message_Buffer) is
          Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
          Buffer_Last : constant RFLX_Types.Index := Buffer'First + (Length - RFLX_Types.Length'(1));
       begin

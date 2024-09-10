@@ -43,8 +43,7 @@ is
           when 3 =>
              Msg_Error,
           when others =>
-             RFLX.TLV.Tag'Last)
-    with
+             RFLX.TLV.Tag'Last) with
      Pre =>
        Valid_Tag (Val);
 
@@ -61,8 +60,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.TLV.Length is
-     (RFLX.TLV.Length (Val))
-    with
+     (RFLX.TLV.Length (Val)) with
      Pre =>
        Valid_Length (Val);
 

@@ -771,15 +771,69 @@ def test_access_parameter() -> None:
 
 def test_generic_procedure_instantiation() -> None:
     assert (
-        str(ada.GenericProcedureInstantiation("A", ada.ProcedureSpecification("B"), ["C", "D"]))
+        str(
+            ada.GenericProcedureInstantiation(
+                "A",
+                "B",
+                [(None, ada.Variable("C")), (None, ada.Variable("D"))],
+            ),
+        )
         == "procedure A is new B (C, D);"
+    )
+    assert (
+        str(
+            ada.GenericProcedureInstantiation(
+                "A",
+                "B",
+                [("P1", ada.Variable("C")), ("P2", ada.Variable("D"))],
+            ),
+        )
+        == "procedure A is new B (P1 => C, P2 => D);"
     )
 
 
 def test_generic_function_instantiation() -> None:
     assert (
-        str(ada.GenericFunctionInstantiation("A", ada.FunctionSpecification("B", "T"), ["C", "D"]))
+        str(
+            ada.GenericFunctionInstantiation(
+                "A",
+                "B",
+                [(None, ada.Variable("C")), (None, ada.Variable("D"))],
+            ),
+        )
         == "function A is new B (C, D);"
+    )
+    assert (
+        str(
+            ada.GenericFunctionInstantiation(
+                "A",
+                "B",
+                [("P1", ada.Variable("C")), ("P2", ada.Variable("D"))],
+            ),
+        )
+        == "function A is new B (P1 => C, P2 => D);"
+    )
+    assert (
+        str(
+            ada.GenericFunctionInstantiation(
+                "A",
+                "B",
+                [("P1", ada.Variable("C")), ("P2", ada.Variable("D"))],
+                overriding=True,
+            ),
+        )
+        == "overriding function A is new B (P1 => C, P2 => D);"
+    )
+    assert (
+        str(
+            ada.GenericFunctionInstantiation(
+                "A",
+                "B",
+                [("P1", ada.Variable("C")), ("P2", ada.Variable("D"))],
+                overriding=False,
+            ),
+        )
+        == "not overriding function A is new B (P1 => C, P2 => D);"
     )
 
 

@@ -30,8 +30,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       Options_Ctx : Universal.Options.Context;
       Options_Buffer : RFLX_Types.Bytes_Ptr;
       function Start_Invariant return Boolean is
@@ -40,8 +39,7 @@ is
          and Options_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Options_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
          and Ctx.P.Slots.Slot_Ptr_2 = null
-         and Ctx.P.Slots.Slot_Ptr_1 = null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_1 = null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -370,12 +368,10 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       function Reply_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
-         and Ctx.P.Slots.Slot_Ptr_2 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_2 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -445,8 +441,7 @@ is
          and then Offset < Message_Buffer'Length);
       procedure Read (Message_Buffer : RFLX_Types.Bytes) with
         Pre =>
-          Read_Pre (Message_Buffer)
-      is
+          Read_Pre (Message_Buffer) is
          Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
          Buffer_Last : constant RFLX_Types.Index := Buffer'First + (Length - RFLX_Types.Length'(1));
       begin

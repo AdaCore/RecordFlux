@@ -57,8 +57,7 @@ is
           when 1 =>
              (True, OT_Data),
           when others =>
-             (False, Val))
-    with
+             (False, Val)) with
      Pre =>
        Valid_Option_Type (Val);
 

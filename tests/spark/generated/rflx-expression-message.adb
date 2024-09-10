@@ -79,8 +79,7 @@ is
      (Ctx.Buffer /= null
       and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) < RFLX_Types.Bit_Length'Last
       and Ctx.First <= Field_First (Ctx, Fld)
-      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last)
-    with
+      and Field_First (Ctx, Fld) + Field_Size (Ctx, Fld) - 1 <= Ctx.Written_Last) with
      Pre =>
        RFLX.Expression.Message.Has_Buffer (Ctx)
        and RFLX.Expression.Message.Valid_Next (Ctx, Fld);
@@ -105,8 +104,7 @@ is
        and Has_Buffer (Ctx) = Has_Buffer (Ctx)'Old
        and Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Old
        and Field_Size (Ctx, Fld) = Field_Size (Ctx, Fld)'Old
-       and Invalid (Ctx, F_Payload)
-   is
+       and Invalid (Ctx, F_Payload) is
    begin
       for Fld_Loop in reverse Fld .. Field'Last loop
          pragma Loop_Invariant (Field_First (Ctx, Fld) = Field_First (Ctx, Fld)'Loop_Entry
@@ -194,8 +192,7 @@ is
        and then Ctx.First = Ctx.First'Old
        and then Ctx.Last = Ctx.Last'Old
        and then Valid_Next (Ctx, F_Payload) = Valid_Next (Ctx, F_Payload)'Old
-       and then Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old
-   is
+       and then Field_First (Ctx, F_Payload) = Field_First (Ctx, F_Payload)'Old is
       First : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload);
       Last : constant RFLX_Types.Bit_Index := Field_First (Ctx, F_Payload) + RFLX_Types.Bit_Length (Length) * RFLX_Types.Byte'Size - 1;
    begin

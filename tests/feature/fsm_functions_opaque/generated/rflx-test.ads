@@ -30,8 +30,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Test.Size is
-     (RFLX.Test.Size (Val))
-    with
+     (RFLX.Test.Size (Val)) with
      Pre =>
        Valid_Size (Val);
 

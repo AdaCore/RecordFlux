@@ -38,11 +38,9 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       function Start_Invariant return Boolean is
-        (Ctx.P.Slots.Slot_Ptr_1 /= null)
-       with
+        (Ctx.P.Slots.Slot_Ptr_1 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -56,8 +54,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       Valid : Boolean;
       Message_Ctx : Universal.Message.Context;
       Message_Buffer : RFLX_Types.Bytes_Ptr;
@@ -65,8 +62,7 @@ is
         (Universal.Message.Has_Buffer (Message_Ctx)
          and Message_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Message_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
-         and Ctx.P.Slots.Slot_Ptr_1 = null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_1 = null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -180,8 +176,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       Valid : Boolean;
       Message_Sequence_Ctx : Universal.Options.Context;
       Message_Sequence_Buffer : RFLX_Types.Bytes_Ptr;
@@ -189,8 +184,7 @@ is
         (Universal.Options.Has_Buffer (Message_Sequence_Ctx)
          and Message_Sequence_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Message_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
-         and Ctx.P.Slots.Slot_Ptr_1 = null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_1 = null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -367,8 +361,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       Valid : Boolean;
       Scalar_Sequence_Ctx : Universal.Values.Context;
       Scalar_Sequence_Buffer : RFLX_Types.Bytes_Ptr;
@@ -376,8 +369,7 @@ is
         (Universal.Values.Has_Buffer (Scalar_Sequence_Ctx)
          and Scalar_Sequence_Ctx.Buffer_First = RFLX.RFLX_Types.Index'First
          and Scalar_Sequence_Ctx.Buffer_Last >= RFLX.RFLX_Types.Index'First + RFLX_Types.Length'(4095)
-         and Ctx.P.Slots.Slot_Ptr_1 = null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_1 = null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -531,11 +523,9 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       function Error_Invariant return Boolean is
-        (Ctx.P.Slots.Slot_Ptr_1 /= null)
-       with
+        (Ctx.P.Slots.Slot_Ptr_1 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;

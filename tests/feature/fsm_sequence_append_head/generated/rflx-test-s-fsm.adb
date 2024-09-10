@@ -30,8 +30,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       Message_Tag : TLV.Tag;
       Tag : TLV.Tag;
       T_0 : Boolean;
@@ -43,8 +42,7 @@ is
          and Ctx.P.Slots.Slot_Ptr_4 /= null
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
-         and Ctx.P.Slots.Slot_Ptr_7 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_7 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -360,8 +358,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       function Reply_1_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -369,8 +366,7 @@ is
          and Ctx.P.Slots.Slot_Ptr_4 /= null
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
-         and Ctx.P.Slots.Slot_Ptr_7 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_7 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -385,8 +381,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       Local_Messages_Ctx : TLV.Messages.Context;
       Local_Tags_Ctx : TLV.Tags.Context;
       Message_Tag : TLV.Tag;
@@ -410,8 +405,7 @@ is
          and Ctx.P.Slots.Slot_Ptr_2 = null
          and Ctx.P.Slots.Slot_Ptr_3 = null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
-         and Ctx.P.Slots.Slot_Ptr_7 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_7 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -879,8 +873,7 @@ is
      Pre =>
        Initialized (Ctx),
      Post =>
-       Initialized (Ctx)
-   is
+       Initialized (Ctx) is
       function Reply_2_Invariant return Boolean is
         (Ctx.P.Slots.Slot_Ptr_1 = null
          and Ctx.P.Slots.Slot_Ptr_2 = null
@@ -888,8 +881,7 @@ is
          and Ctx.P.Slots.Slot_Ptr_4 /= null
          and Ctx.P.Slots.Slot_Ptr_5 /= null
          and Ctx.P.Slots.Slot_Ptr_6 /= null
-         and Ctx.P.Slots.Slot_Ptr_7 /= null)
-       with
+         and Ctx.P.Slots.Slot_Ptr_7 /= null) with
         Annotate =>
           (GNATprove, Inline_For_Proof),
         Ghost;
@@ -991,8 +983,7 @@ is
          and then Offset < Message_Buffer'Length);
       procedure Read (Message_Buffer : RFLX_Types.Bytes) with
         Pre =>
-          Read_Pre (Message_Buffer)
-      is
+          Read_Pre (Message_Buffer) is
          Length : constant RFLX_Types.Length := RFLX_Types.Length'Min (Buffer'Length, Message_Buffer'Length - Offset);
          Buffer_Last : constant RFLX_Types.Index := Buffer'First + (Length - RFLX_Types.Length'(1));
       begin

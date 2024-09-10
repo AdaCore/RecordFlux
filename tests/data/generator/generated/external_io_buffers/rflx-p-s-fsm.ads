@@ -240,8 +240,7 @@ private
                     False));
 
    function Unreachable_External_Buffer return External_Buffer is
-     (B_M)
-    with
+     (B_M) with
      Pre =>
        False;
 

@@ -702,8 +702,7 @@ private
               Cursors (F).First >= First
               and Cursors (F).Last <= Verified_Last
               and Cursors (F).First <= Cursors (F).Last + 1
-              and Valid_Value (F, Cursors (F).Value))))
-    with
+              and Valid_Value (F, Cursors (F).Value)))) with
      Post =>
        True;
 
@@ -739,8 +738,7 @@ private
                                        and then Cursors (F_Option_Number).Value = 2)
                               or else (Cursors (F_Option_Length).Value = 4
                                        and then RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                       and then Cursors (F_Option_Number).Value = 8)))))
-    with
+                                       and then Cursors (F_Option_Number).Value = 8))))) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last),
      Post =>
@@ -780,8 +778,7 @@ private
                                  and then Cursors (F_Option_Number).Value = 2)
                         or else (Cursors (F_Option_Length).Value = 4
                                  and then RFLX_Types.Base_Integer (Cursors (F_Option_Class).Value) = RFLX_Types.Base_Integer (To_Base_Integer (RFLX.IPv4.Control))
-                                 and then Cursors (F_Option_Number).Value = 8))))
-    with
+                                 and then Cursors (F_Option_Number).Value = 8)))) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last),
@@ -805,8 +802,7 @@ private
           when F_Option_Length =>
              8,
           when F_Option_Data =>
-             (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8)
-    with
+             (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -825,40 +821,35 @@ private
    pragma Warnings (Off, "formal parameter ""*"" is not referenced");
 
    function Field_First_Copied (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First)
-    with
+     (First) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Copied);
 
    function Field_First_Option_Class (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 1)
-    with
+     (First + 1) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Option_Class);
 
    function Field_First_Option_Number (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 3)
-    with
+     (First + 3) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Option_Number);
 
    function Field_First_Option_Length (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 8)
-    with
+     (First + 8) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
        and then Valid_Next_Internal (Cursors, First, Verified_Last, Written_Last, F_Option_Length);
 
    function Field_First_Option_Data (Cursors : Field_Cursors; First : RFLX_Types.Bit_Index; Verified_Last : RFLX_Types.Bit_Length; Written_Last : RFLX_Types.Bit_Length) return RFLX_Types.Bit_Index'Base is
-     (First + 16)
-    with
+     (First + 16) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -875,8 +866,7 @@ private
           when F_Option_Length =>
              Field_First_Option_Length (Cursors, First, Verified_Last, Written_Last),
           when F_Option_Data =>
-             Field_First_Option_Data (Cursors, First, Verified_Last, Written_Last))
-    with
+             Field_First_Option_Data (Cursors, First, Verified_Last, Written_Last)) with
      Pre =>
        Cursors_Invariant (Cursors, First, Verified_Last)
        and then Valid_Predecessors_Invariant (Cursors, First, Verified_Last, Written_Last)
@@ -944,8 +934,7 @@ private
                              Well_Formed (Cursors (F_Option_Data))
                           then
                              (Cursors (F_Option_Data).Last - Cursors (F_Option_Data).First + 1 = (RFLX_Types.Bit_Length (Cursors (F_Option_Length).Value) - 2) * 8
-                              and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1))))
-    with
+                              and then Cursors (F_Option_Data).First = Cursors (F_Option_Length).Last + 1)))) with
      Post =>
        True;
 
@@ -1098,8 +1087,7 @@ private
      (To_Actual (Ctx.Cursors (F_Option_Length).Value));
 
    function Valid_Size (Ctx : Context; Fld : Field; Size : RFLX_Types.Bit_Length) return Boolean is
-     (Size = Field_Size (Ctx, Fld))
-    with
+     (Size = Field_Size (Ctx, Fld)) with
      Pre =>
        RFLX.IPv4.Option.Valid_Next (Ctx, Fld);
 

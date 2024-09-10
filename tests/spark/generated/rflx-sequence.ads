@@ -30,8 +30,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Length is
-     (RFLX.Sequence.Length (Val))
-    with
+     (RFLX.Sequence.Length (Val)) with
      Pre =>
        Valid_Length (Val);
 
@@ -47,8 +46,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.Sequence.Integer is
-     (RFLX.Sequence.Integer (Val))
-    with
+     (RFLX.Sequence.Integer (Val)) with
      Pre =>
        Valid_Integer (Val);
 
@@ -80,8 +78,7 @@ is
           when 2 =>
              Two,
           when others =>
-             RFLX.Sequence.Enumeration'Last)
-    with
+             RFLX.Sequence.Enumeration'Last) with
      Pre =>
        Valid_Enumeration (Val);
 
@@ -129,8 +126,7 @@ is
           when 2 =>
              (True, AV_Two),
           when others =>
-             (False, Val))
-    with
+             (False, Val)) with
      Pre =>
        Valid_AV_Enumeration (Val);
 

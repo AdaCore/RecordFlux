@@ -79,8 +79,7 @@ is
           when 16 =>
              Information_Reply,
           when others =>
-             RFLX.ICMP.Tag'Last)
-    with
+             RFLX.ICMP.Tag'Last) with
      Pre =>
        Valid_Tag (Val);
 
@@ -126,8 +125,7 @@ is
           when 5 =>
              Source_Route_Failed,
           when others =>
-             RFLX.ICMP.Code_Destination_Unreachable'Last)
-    with
+             RFLX.ICMP.Code_Destination_Unreachable'Last) with
      Pre =>
        Valid_Code_Destination_Unreachable (Val);
 
@@ -157,8 +155,7 @@ is
           when 1 =>
              Fragment_Reassembly_Time_Exceeded,
           when others =>
-             RFLX.ICMP.Code_Time_Exceeded'Last)
-    with
+             RFLX.ICMP.Code_Time_Exceeded'Last) with
      Pre =>
        Valid_Code_Time_Exceeded (Val);
 
@@ -196,8 +193,7 @@ is
           when 3 =>
              Redirect_for_Service_Host,
           when others =>
-             RFLX.ICMP.Code_Redirect'Last)
-    with
+             RFLX.ICMP.Code_Redirect'Last) with
      Pre =>
        Valid_Code_Redirect (Val);
 
@@ -214,8 +210,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Code_Zero is
-     (RFLX.ICMP.Code_Zero (Val))
-    with
+     (RFLX.ICMP.Code_Zero (Val)) with
      Pre =>
        Valid_Code_Zero (Val);
 
@@ -230,8 +225,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Checksum is
-     (RFLX.ICMP.Checksum (Val))
-    with
+     (RFLX.ICMP.Checksum (Val)) with
      Pre =>
        Valid_Checksum (Val);
 
@@ -246,8 +240,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Identifier is
-     (RFLX.ICMP.Identifier (Val))
-    with
+     (RFLX.ICMP.Identifier (Val)) with
      Pre =>
        Valid_Identifier (Val);
 
@@ -262,8 +255,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Sequence_Number is
-     (RFLX.ICMP.Sequence_Number (Val))
-    with
+     (RFLX.ICMP.Sequence_Number (Val)) with
      Pre =>
        Valid_Sequence_Number (Val);
 
@@ -278,8 +270,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Pointer is
-     (RFLX.ICMP.Pointer (Val))
-    with
+     (RFLX.ICMP.Pointer (Val)) with
      Pre =>
        Valid_Pointer (Val);
 
@@ -294,8 +285,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Timestamp is
-     (RFLX.ICMP.Timestamp (Val))
-    with
+     (RFLX.ICMP.Timestamp (Val)) with
      Pre =>
        Valid_Timestamp (Val);
 
@@ -310,8 +300,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Gateway_Internet_Address is
-     (RFLX.ICMP.Gateway_Internet_Address (Val))
-    with
+     (RFLX.ICMP.Gateway_Internet_Address (Val)) with
      Pre =>
        Valid_Gateway_Internet_Address (Val);
 
@@ -326,8 +315,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Unused_32 is
-     (RFLX.ICMP.Unused_32 (Val))
-    with
+     (RFLX.ICMP.Unused_32 (Val)) with
      Pre =>
        Valid_Unused_32 (Val);
 
@@ -342,8 +330,7 @@ is
      (RFLX.RFLX_Types.Base_Integer (Val));
 
    function To_Actual (Val : RFLX.RFLX_Types.Base_Integer) return RFLX.ICMP.Unused_24 is
-     (RFLX.ICMP.Unused_24 (Val))
-    with
+     (RFLX.ICMP.Unused_24 (Val)) with
      Pre =>
        Valid_Unused_24 (Val);
 

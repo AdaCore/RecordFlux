@@ -56,8 +56,7 @@ is
 
    function Sufficient_Space_For_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; UDP_Datagram_SDU_Context : RFLX.UDP.Datagram.Context) return Boolean is
      (RFLX.UDP.Datagram.Buffer_Size (UDP_Datagram_SDU_Context) >= RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
-      and then RFLX_Types.To_First_Bit_Index (UDP_Datagram_SDU_Context.Buffer_First) + RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload) - 1 < RFLX_Types.Bit_Index'Last)
-    with
+      and then RFLX_Types.To_First_Bit_Index (UDP_Datagram_SDU_Context.Buffer_First) + RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload) - 1 < RFLX_Types.Bit_Index'Last) with
      Pre =>
        RFLX.UDP.Datagram.Has_Buffer (UDP_Datagram_SDU_Context)
        and then RFLX.In_IPv4.Contains.UDP_Datagram_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context);
@@ -102,8 +101,7 @@ is
 
    function Sufficient_Space_For_Payload (IPv4_Packet_PDU_Context : RFLX.IPv4.Packet.Context; ICMP_Message_SDU_Context : RFLX.ICMP.Message.Context) return Boolean is
      (RFLX.ICMP.Message.Buffer_Size (ICMP_Message_SDU_Context) >= RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload)
-      and then RFLX_Types.To_First_Bit_Index (ICMP_Message_SDU_Context.Buffer_First) + RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload) - 1 < RFLX_Types.Bit_Index'Last)
-    with
+      and then RFLX_Types.To_First_Bit_Index (ICMP_Message_SDU_Context.Buffer_First) + RFLX.IPv4.Packet.Field_Size (IPv4_Packet_PDU_Context, RFLX.IPv4.Packet.F_Payload) - 1 < RFLX_Types.Bit_Index'Last) with
      Pre =>
        RFLX.ICMP.Message.Has_Buffer (ICMP_Message_SDU_Context)
        and then RFLX.In_IPv4.Contains.ICMP_Message_In_IPv4_Packet_Payload (IPv4_Packet_PDU_Context);
