@@ -750,7 +750,7 @@ Definite messages are messages with no optional fields and an explicit size (i.e
 
 **SPARK**
 
-For each function declaration in the state machine specification a formal procedure declaration is added to the corresponding generic state machine package.
+For each function declaration in the state machine specification a procedure declaration is added to the corresponding state machine package.
 The return type and parameters of a function are represented by the first and subsequent parameters of the generated procedure declaration.
 
 **Example**
