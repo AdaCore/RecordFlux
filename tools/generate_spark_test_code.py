@@ -17,7 +17,6 @@ from rflx.model import Cache, Model
 from rflx.specification import Parser
 from tests.const import FEATURE_DIR, SPEC_DIR
 from tests.data import models
-from tests.unit.generator.generator_test import GENERATOR_TEST_CASES, GENERATOR_TEST_DATA_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logging.disable(logging.NOTSET)
@@ -49,23 +48,16 @@ def main() -> None:
         help=f"generate test code in {SPARK_TEST_DIR}",
     )
     parser.add_argument(
-        "--generator",
-        action="store_true",
-        help=f"generate test code in {GENERATOR_TEST_DATA_DIR}",
-    )
-    parser.add_argument(
         "--feature",
         action="store_true",
         help=f"generate test code in {FEATURE_DIR}/*/generated",
     )
     args = parser.parse_args(sys.argv[1:])
 
-    all_tests = not args.spark and not args.generator and not args.feature
+    all_tests = not args.spark and not args.feature
 
     if all_tests or args.spark:
         generate_spark_tests()
-    if all_tests or args.generator:
-        generate_generator_tests()
     if all_tests or args.feature:
         deduplicate_feature_specs()
         generate_feature_tests()
@@ -82,21 +74,6 @@ def generate_spark_tests() -> None:
         reproducible=True,
         ignore_unsupported_checksum=True,
     ).generate(model, Integration(), SPARK_TEST_DIR)
-
-
-def generate_generator_tests() -> None:
-    for directory in GENERATOR_TEST_DATA_DIR.iterdir():
-        remove_ada_files(directory)
-        directory.rmdir()
-
-    for tc in GENERATOR_TEST_CASES:
-        directory = GENERATOR_TEST_DATA_DIR / tc.name
-        directory.mkdir()
-        Generator(
-            "RFLX",
-            reproducible=True,
-            ignore_unsupported_checksum=True,
-        ).generate(tc.model(), tc.integration(), directory)
 
 
 def generate_feature_tests() -> None:

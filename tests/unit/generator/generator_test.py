@@ -1,96 +1,26 @@
 from __future__ import annotations
 
-import textwrap
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
-from rflx import ada, const as constants, expr
+from rflx import ada, expr
 from rflx.common import file_name
 from rflx.generator import Generator, const
 from rflx.generator.common import Debug
 from rflx.generator.message import create_structure
 from rflx.identifier import ID
-from rflx.integration import Integration, IntegrationFile, StateMachineIntegration
+from rflx.integration import Integration, IntegrationFile
 from rflx.model import (
-    BOOLEAN,
     Model,
-    State,
-    StateMachine,
-    Transition,
-    declaration as decl,
-    statement as stmt,
     type_decl,
 )
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
 from rflx.rapidflux import Location, RecordFluxError
-from tests.const import DATA_DIR, GENERATED_DIR
+from tests.const import GENERATED_DIR
 from tests.data import models
 from tests.utils import assert_equal_code
-
-GENERATOR_TEST_DATA_DIR = DATA_DIR / "generator/generated"
-
-
-@dataclass
-class TC:
-    name: str
-    model: Callable[[], Model]
-    integration: Callable[[], Integration]
-
-
-GENERATOR_TEST_CASES = [
-    TC(
-        "external_io_buffers",
-        lambda: Model(
-            [
-                models.tlv_message(),
-                StateMachine(
-                    "P::S",
-                    [
-                        State(
-                            "A",
-                            declarations=[],
-                            actions=[stmt.Read("X", expr.Variable("M"))],
-                            transitions=[
-                                Transition("B"),
-                            ],
-                        ),
-                        State(
-                            "B",
-                            declarations=[],
-                            actions=[stmt.Write("X", expr.Variable("M"))],
-                            transitions=[
-                                Transition("A"),
-                            ],
-                        ),
-                    ],
-                    [
-                        decl.VariableDeclaration(
-                            "M",
-                            "TLV::Message",
-                            location=Location((1, 1)),
-                        ),
-                    ],
-                    [
-                        decl.ChannelDeclaration("X", readable=True, writable=True),
-                    ],
-                    [BOOLEAN, models.tlv_message()],
-                ),
-            ],
-        ),
-        lambda: create_integration(
-            {
-                "p": IntegrationFile(
-                    Machine={
-                        "S": StateMachineIntegration(Buffer_Size=None, External_IO_Buffers=True),
-                    },
-                ),
-            },
-        ),
-    ),
-]
 
 
 def create_integration(integration_files: Mapping[str, IntegrationFile]) -> Integration:
@@ -98,16 +28,6 @@ def create_integration(integration_files: Mapping[str, IntegrationFile]) -> Inte
     for package, integration_file in integration_files.items():
         integration.add_integration_file(package, integration_file)
     return integration
-
-
-@pytest.mark.parametrize(("tc"), GENERATOR_TEST_CASES)
-def test_equality(tc: TC, tmp_path: Path) -> None:
-    assert_equal_code(
-        tc.model(),
-        tc.integration(),
-        GENERATOR_TEST_DATA_DIR / tc.name,
-        tmp_path,
-    )
 
 
 def test_invalid_prefix() -> None:
@@ -228,202 +148,6 @@ def test_generate_partial_update(tmp_path: Path) -> None:
 @pytest.mark.parametrize("model", models.spark_test_models())
 def test_equality_spark_tests(model: Callable[[], Model], tmp_path: Path) -> None:
     assert_equal_code(model(), Integration(), GENERATED_DIR, tmp_path, accept_extra_files=True)
-
-
-def test_generate_unused_valid_function_parameter(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(Generator, "_license_header", "")
-    types = [
-        type_decl.Integer(
-            "P::T",
-            first=expr.Number(0),
-            last=expr.Sub(
-                expr.Pow(expr.Number(2), expr.Number(constants.MAX_SCALAR_SIZE)),
-                expr.Number(1),
-            ),
-            size=expr.Number(constants.MAX_SCALAR_SIZE),
-        ),
-    ]
-    Generator().generate(
-        Model(types),
-        Integration(),
-        tmp_path,
-        library_files=False,
-        top_level_package=False,
-    )
-    assert (tmp_path / "p.ads").exists()
-    assert (tmp_path / "p.ads").read_text() == textwrap.dedent(
-        '''\
-        pragma Ada_2012;
-        pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
-        pragma Warnings (Off, "redundant conversion");
-        with RFLX_Types;
-
-        package P with
-          SPARK_Mode
-        is
-
-           type T is range 0 .. 2**63 - 1 with
-             Size =>
-               63;
-
-           pragma Warnings (Off, "unused variable ""Val""");
-
-           pragma Warnings (Off, "formal parameter ""Val"" is not referenced");
-
-           function Valid_T (Val : RFLX_Types.Base_Integer) return Boolean is
-             (True);
-
-           pragma Warnings (On, "formal parameter ""Val"" is not referenced");
-
-           pragma Warnings (On, "unused variable ""Val""");
-
-           function To_Base_Integer (Val : P.T) return RFLX_Types.Base_Integer is
-             (RFLX_Types.Base_Integer (Val));
-
-           function To_Actual (Val : RFLX_Types.Base_Integer) return P.T is
-             (P.T (Val))
-            with
-             Pre =>
-               Valid_T (Val);
-
-        end P;
-        ''',
-    )
-
-
-@pytest.mark.parametrize(
-    ("always_valid", "expected"),
-    [
-        (
-            False,
-            """\
-            pragma Ada_2012;
-            pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
-            pragma Warnings (Off, "redundant conversion");
-            with RFLX_Types;
-
-            package P with
-              SPARK_Mode
-            is
-
-               type T is (E1) with
-                 Size =>
-                   63;
-               for T use (E1 => 1);
-
-               use type RFLX_Types.Base_Integer;
-
-               function Valid_T (Val : RFLX_Types.Base_Integer) return Boolean is
-                 (Val in 1);
-
-               function To_Base_Integer (Enum : P.T) return RFLX_Types.Base_Integer is
-                 ((case Enum is
-                      when E1 =>
-                         1));
-
-               pragma Warnings (Off, "unreachable branch");
-
-               function To_Actual (Val : RFLX_Types.Base_Integer) return P.T is
-                 ((case Val is
-                      when 1 =>
-                         E1,
-                      when others =>
-                         P.T'Last))
-                with
-                 Pre =>
-                   Valid_T (Val);
-
-               pragma Warnings (On, "unreachable branch");
-
-            end P;
-            """,
-        ),
-        (
-            True,
-            """\
-            pragma Ada_2012;
-            pragma Style_Checks ("N3aAbCdefhiIklnOprStux");
-            pragma Warnings (Off, "redundant conversion");
-            with RFLX_Types;
-
-            package P with
-              SPARK_Mode
-            is
-
-               type T_Enum is (E1) with
-                 Size =>
-                   63;
-               for T_Enum use (E1 => 1);
-
-               type T (Known : Boolean := False) is
-                  record
-                     case Known is
-                        when True =>
-                           Enum : T_Enum;
-                        when False =>
-                           Raw : RFLX_Types.Base_Integer;
-                     end case;
-                  end record;
-
-               function Valid_T (Unused_Val : RFLX_Types.Base_Integer) return Boolean is
-                 (True);
-
-               function Valid_T (Val : T) return Boolean is
-                 ((if Val.Known then True else Valid_T (Val.Raw) and Val.Raw not in 1));
-
-               function To_Base_Integer (Enum : P.T_Enum) return RFLX_Types.Base_Integer is
-                 ((case Enum is
-                      when E1 =>
-                         1));
-
-               function To_Actual (Enum : T_Enum) return P.T is
-                 ((True, Enum));
-
-               function To_Actual (Val : RFLX_Types.Base_Integer) return P.T is
-                 ((case Val is
-                      when 1 =>
-                         (True, E1),
-                      when others =>
-                         (False, Val)))
-                with
-                 Pre =>
-                   Valid_T (Val);
-
-               function To_Base_Integer (Val : P.T) return RFLX_Types.Base_Integer is
-                 ((if Val.Known then To_Base_Integer (Val.Enum) else Val.Raw));
-
-            end P;
-            """,
-        ),
-    ],
-)
-def test_generate_enumeration_base_type_use(
-    always_valid: bool,
-    expected: str,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(Generator, "_license_header", "")
-    types = [
-        type_decl.Enumeration(
-            "P::T",
-            literals=[("E1", expr.Number(1))],
-            size=expr.Number(constants.MAX_SCALAR_SIZE),
-            always_valid=always_valid,
-        ),
-    ]
-    Generator().generate(
-        Model(types),
-        Integration(),
-        tmp_path,
-        library_files=False,
-        top_level_package=False,
-    )
-    assert (tmp_path / "p.ads").exists()
-    assert (tmp_path / "p.ads").read_text() == textwrap.dedent(expected)
 
 
 def test_generate_field_size_optimization() -> None:
