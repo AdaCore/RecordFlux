@@ -391,7 +391,7 @@ test_examples: test_specs test_apps
 # (cf. https://github.com/pytest-dev/pytest-cov/issues/373).
 
 test_coverage: $(RFLX)
-	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/integration
+	timeout -k 60 7200 $(PYTEST) --cov=rflx --cov=tests/unit --cov=tests/integration --cov-branch --cov-fail-under=0 --cov-report= tests/unit tests/integration tests/compilation
 	$(POETRY) run coverage report --fail-under=100 --show-missing --skip-covered --omit="rflx/lang/*"
 
 test_unit_coverage: $(RFLX)
@@ -458,7 +458,6 @@ test_compilation: $(RFLX)
 	$(MAKE) -C examples/apps/dhcp_client build
 	$(MAKE) -C examples/apps/spdm_responder lib
 	$(MAKE) -C examples/apps/dccp build
-	$(PYTEST) tests/compilation
 	$(MAKE) -C tests/spark test NOPREFIX=1
 	$(MAKE) -C tests/spark clean
 	$(MAKE) -C tests/spark test_optimized
