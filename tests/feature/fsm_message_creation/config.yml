@@ -9,4 +9,7 @@ sequence: |
   State: Process
   Read Channel: 1 0 5 1 0 2 0 3
   State: Reply
+  State: Create_Empty
+  Read Channel: 1 0 0
+  State: Send_Empty
 proof:

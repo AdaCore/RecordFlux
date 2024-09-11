@@ -324,9 +324,79 @@ is
    begin
       pragma Assert (Reply_Invariant);
       -- tests/feature/fsm_message_creation/test.rflx:40:10
-      Ctx.P.Next_State := S_Final;
+      Ctx.P.Next_State := S_Create_Empty;
       pragma Assert (Reply_Invariant);
    end Reply;
+
+   procedure Create_Empty (Ctx : in out Context) with
+     Pre =>
+       Initialized (Ctx),
+     Post =>
+       Initialized (Ctx)
+   is
+      function Create_Empty_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
+   begin
+      pragma Assert (Create_Empty_Invariant);
+      -- tests/feature/fsm_message_creation/test.rflx:47:10
+      Universal.Message.Reset (Ctx.P.M_S_Ctx);
+      if not Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Create_Empty_Invariant);
+         goto Finalize_Create_Empty;
+      end if;
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.M_S_Ctx, RFLX.Universal.Message.F_Message_Type, Universal.To_Base_Integer (Universal.MT_Data)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Create_Empty_Invariant);
+         goto Finalize_Create_Empty;
+      end if;
+      Universal.Message.Set_Message_Type (Ctx.P.M_S_Ctx, Universal.MT_Data);
+      if not Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Length) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Create_Empty_Invariant);
+         goto Finalize_Create_Empty;
+      end if;
+      if not RFLX.Universal.Message.Field_Condition (Ctx.P.M_S_Ctx, RFLX.Universal.Message.F_Length, Universal.To_Base_Integer (Universal.Length'(0))) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Create_Empty_Invariant);
+         goto Finalize_Create_Empty;
+      end if;
+      Universal.Message.Set_Length (Ctx.P.M_S_Ctx, Universal.Length'(0));
+      if not Universal.Message.Valid_Length (Ctx.P.M_S_Ctx, Universal.Message.F_Data, RFLX_Types.To_Length (0 * RFLX_Types.Byte'Size)) then
+         Ctx.P.Next_State := S_Final;
+         pragma Assert (Create_Empty_Invariant);
+         goto Finalize_Create_Empty;
+      end if;
+      Universal.Message.Set_Data_Empty (Ctx.P.M_S_Ctx);
+      Ctx.P.Next_State := S_Send_Empty;
+      pragma Assert (Create_Empty_Invariant);
+      <<Finalize_Create_Empty>>
+   end Create_Empty;
+
+   procedure Send_Empty (Ctx : in out Context) with
+     Pre =>
+       Initialized (Ctx),
+     Post =>
+       Initialized (Ctx)
+   is
+      function Send_Empty_Invariant return Boolean is
+        (Ctx.P.Slots.Slot_Ptr_1 = null
+         and Ctx.P.Slots.Slot_Ptr_2 = null)
+       with
+        Annotate =>
+          (GNATprove, Inline_For_Proof),
+        Ghost;
+   begin
+      pragma Assert (Send_Empty_Invariant);
+      -- tests/feature/fsm_message_creation/test.rflx:59:10
+      Ctx.P.Next_State := S_Final;
+      pragma Assert (Send_Empty_Invariant);
+   end Send_Empty;
 
    procedure Initialize (Ctx : in out Context) is
       M_R_Buffer : RFLX_Types.Bytes_Ptr;
@@ -378,7 +448,7 @@ is
       case Ctx.P.Next_State is
          when S_Start =>
             Universal.Message.Reset (Ctx.P.M_R_Ctx, Ctx.P.M_R_Ctx.First, Ctx.P.M_R_Ctx.First - 1);
-         when S_Process | S_Reply | S_Final =>
+         when S_Process | S_Reply | S_Create_Empty | S_Send_Empty | S_Final =>
             null;
       end case;
    end Reset_Messages_Before_Write;
@@ -392,6 +462,10 @@ is
             Process (Ctx);
          when S_Reply =>
             Reply (Ctx);
+         when S_Create_Empty =>
+            Create_Empty (Ctx);
+         when S_Send_Empty =>
+            Send_Empty (Ctx);
          when S_Final =>
             null;
       end case;
@@ -399,7 +473,7 @@ is
    end Tick;
 
    function In_IO_State (Ctx : Context) return Boolean is
-     (Ctx.P.Next_State in S_Start | S_Reply);
+     (Ctx.P.Next_State in S_Start | S_Reply | S_Send_Empty);
 
    procedure Run (Ctx : in out Context) is
    begin
@@ -432,7 +506,7 @@ is
       case Chan is
          when C_Channel =>
             case Ctx.P.Next_State is
-               when S_Reply =>
+               when S_Reply | S_Send_Empty =>
                   Universal_Message_Read (Ctx.P.M_S_Ctx);
                when others =>
                   pragma Warnings (Off, "unreachable code");

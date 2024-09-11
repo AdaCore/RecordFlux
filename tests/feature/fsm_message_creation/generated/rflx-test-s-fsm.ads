@@ -27,7 +27,7 @@ is
 
    type Channel is (C_Channel);
 
-   type State is (S_Start, S_Process, S_Reply, S_Final);
+   type State is (S_Start, S_Process, S_Reply, S_Create_Empty, S_Send_Empty, S_Final);
 
    type Private_Context is private;
 
@@ -167,7 +167,7 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Reply =>
+                 when S_Reply | S_Send_Empty =>
                     Universal.Message.Well_Formed_Message (Ctx.P.M_S_Ctx)
                     and Universal.Message.Byte_Size (Ctx.P.M_S_Ctx) > 0,
                  when others =>
@@ -177,7 +177,7 @@ private
      ((case Chan is
           when C_Channel =>
              (case Ctx.P.Next_State is
-                 when S_Reply =>
+                 when S_Reply | S_Send_Empty =>
                     Universal.Message.Byte_Size (Ctx.P.M_S_Ctx),
                  when others =>
                     RFLX_Types.Unreachable)));

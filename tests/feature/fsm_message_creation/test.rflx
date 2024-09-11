@@ -39,8 +39,27 @@ package Test is
       begin
          Channel'Write (M_S);
       transition
-         goto null
+         goto Create_Empty
       end Reply;
+
+      state Create_Empty is
+      begin
+         M_S := Universal::Message'
+            (Message_Type => Universal::MT_Data,
+             Length => 0,
+             Data => []);
+      transition
+         goto Send_Empty
+      exception
+         goto null
+      end Create_Empty;
+
+      state Send_Empty is
+      begin
+         Channel'Write (M_S);
+      transition
+         goto null
+      end Send_Empty;
    end S;
 
 end Test;

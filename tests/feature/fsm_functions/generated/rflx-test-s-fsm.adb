@@ -140,8 +140,6 @@ is
       pragma Assert (Process_Invariant);
       -- tests/feature/fsm_functions/test.rflx:56:10
       Get_Message_Type (Ctx.E, Message_Type);
-      -- tests/feature/fsm_functions/test.rflx:57:10
-      Valid_Message (Ctx.E, Message_Type, True, Valid);
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -187,9 +185,9 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions/test.rflx:58:20
+      -- tests/feature/fsm_functions/test.rflx:57:20
       T_6 := RFLX.RFLX_Types.Base_Integer (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data));
-      -- tests/feature/fsm_functions/test.rflx:58:40
+      -- tests/feature/fsm_functions/test.rflx:57:40
       Byte_Size (Ctx.E, T_7);
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
@@ -221,7 +219,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions/test.rflx:58:40
+      -- tests/feature/fsm_functions/test.rflx:57:40
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -237,9 +235,9 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions/test.rflx:58:10
+      -- tests/feature/fsm_functions/test.rflx:57:10
       Length := Test.Length (T_6) / T_7;
-      -- tests/feature/fsm_functions/test.rflx:59:68
+      -- tests/feature/fsm_functions/test.rflx:58:68
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -255,7 +253,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions/test.rflx:59:10
+      -- tests/feature/fsm_functions/test.rflx:58:10
       declare
          Definite_Message : Test.Definite_Message.Structure;
          RFLX_Create_Message_Arg_2_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
@@ -289,6 +287,13 @@ is
             goto Finalize_Process;
          end if;
          Test.Definite_Message.To_Context (Definite_Message, Ctx.P.Definite_Message_Ctx);
+      end;
+      -- tests/feature/fsm_functions/test.rflx:59:10
+      declare
+         Definite_Message : Test.Definite_Message.Structure;
+      begin
+         Test.Definite_Message.To_Structure (Ctx.P.Definite_Message_Ctx, Definite_Message);
+         Valid_Message (Ctx.E, Definite_Message, True, Valid);
       end;
       if Valid = M_Valid then
          Ctx.P.Next_State := S_Reply;

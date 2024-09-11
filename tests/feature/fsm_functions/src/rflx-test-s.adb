@@ -31,18 +31,21 @@ is
    end Create_Message;
 
    procedure Valid_Message
-      (State         : in out RFLX.Test.S_Environment.State;
-       Message_Type  :        RFLX.Universal.Option_Type;
-       Strict        :        Boolean;
-       RFLX_Result   :    out RFLX.Test.Result)
+      (State       : in out RFLX.Test.S_Environment.State;
+       Message     :        RFLX.Test.Definite_Message.Structure;
+       Strict      :        Boolean;
+       RFLX_Result :    out RFLX.Test.Result)
    is
       pragma Unreferenced (State);
       use type RFLX.Universal.Option_Type;
    begin
-      Global := 8;
-      RFLX_Result := (if Strict and then Message_Type = (Known => True, Enum => RFLX.Universal.OT_Data)
-                 then RFLX.Test.M_Valid
-                 else RFLX.Test.M_Invalid);
+      RFLX_Result :=
+         (if
+             Global = 8 and then Strict and then Message.Message_Type = (Known => True, Enum => RFLX.Universal.OT_Data)
+          then
+             RFLX.Test.M_Valid
+          else
+             RFLX.Test.M_Invalid);
    end Valid_Message;
 
    procedure Byte_Size
@@ -51,6 +54,7 @@ is
    is
       pragma Unreferenced (State);
    begin
+      Global := 8;
       RFLX_Result := Global;
    end Byte_Size;
 

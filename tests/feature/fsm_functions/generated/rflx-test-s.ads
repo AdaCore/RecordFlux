@@ -27,7 +27,7 @@ is
 
    procedure Create_Message (State : in out RFLX.Test.S_Environment.State; Message_Type : RFLX.Universal.Option_Type; Length : RFLX.Test.Length; Data : RFLX_Types.Bytes; RFLX_Result : out RFLX.Test.Definite_Message.Structure);
 
-   procedure Valid_Message (State : in out RFLX.Test.S_Environment.State; Message_Type : RFLX.Universal.Option_Type; Strict : Boolean; RFLX_Result : out RFLX.Test.Result);
+   procedure Valid_Message (State : in out RFLX.Test.S_Environment.State; Message : RFLX.Test.Definite_Message.Structure; Strict : Boolean; RFLX_Result : out RFLX.Test.Result);
 
    procedure Byte_Size (State : in out RFLX.Test.S_Environment.State; RFLX_Result : out RFLX.Test.Length);
 

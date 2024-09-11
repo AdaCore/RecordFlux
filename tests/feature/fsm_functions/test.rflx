@@ -26,7 +26,7 @@ package Test is
       return Definite_Message;
 
       with function Valid_Message
-         (Message_Type : Universal::Option_Type;
+         (Message : Definite_Message;
           Strict : Boolean)
       return Result;
 
@@ -54,9 +54,9 @@ package Test is
          Length : Length;
       begin
          Message_Type := Get_Message_Type;
-         Valid := Valid_Message (Message_Type, True);
          Length := Message.Data'Size / Byte_Size;
          Definite_Message := Create_Message (Message_Type, Length, Message.Data);
+         Valid := Valid_Message (Definite_Message, True);
       transition
          goto Reply
             if Valid = M_Valid
