@@ -25,7 +25,7 @@ Each subdirectory is considered as a feature test and must contain a `test.rflx`
 - Check for changes in SPARK code generation (if `generated` directory exists)
 - Check compilability of generated SPARK code
 - Check executability of generated SPARK code (if `sequence` key in config is defined)
-- Check provabilility of generated SPARK code (if `prove` key in config is defined)
+- Check provabilility of generated SPARK code (if `proof` key in config is defined)
 
 The checks are implemented in the `feature_test.py` in `tests/integration`, `tests/compilation` and `tests/verification`.
 
@@ -34,7 +34,7 @@ The executability and provability tests require the definition of a state machin
 - `input`: A mapping of all readable channels to a list of messages. A message is represented by a space-separated list of bytes (decimal numerals in the range 0 to 255).
 - `output`: A list of all writable channels.
 - `sequence`: The expected sequence of entered states and IO actions (read and written messages).
-- `prove`: If the `prove` key exists, the generated SPARK code for `S` and each additionally listed unit will be proved.
+- `proof`: If the `proof` key exists, the generated SPARK code for `S` and each additionally listed unit will be proved.
 
 State machine functions can be defined by putting a custom implementation of the `S` package inside the `src` directory.
 
@@ -130,12 +130,12 @@ Most of these subsets are still quite time-consuming.
 In many cases, the name of the target indicates the subset (e.g. `make test_property` runs the tests in `tests/property`).
 We list some notable targets below:
 
-- `make test_coverage`: Run unit and integration tests, require 100% code coverage.
+- `make test_coverage`: Run unit, integration and compilation tests, require 100% code coverage.
 - `make test_unit_coverage`: Run unit tests, require 95% code coverage.
 - `make test_rflx`: Run a comprehensive list of tests (but not all tests), including unit tests and integration tests, as well as compilation tests, but no proofs.
 - `make test_examples`: Run the example tests in `tests/examples` as well as the example apps in `examples/apps` (without proofs).
 - `make test`: Combination of `test_rflx` and `test_examples`.
-- `make test_compilation`: Execute all tests where GNAT is required (all other targets don't need a compiler).
+- `make test_compilation`: Execute all additional tests where GNAT is required (example apps, examples in documentation and SPARK unit tests).
 - `make prove`: Run all tests that run GNATprove, including tests in `tests/spark` and `tests/verification` (see also the explanation for feature tests).
 
 ### How to run subsets of tests
@@ -152,25 +152,29 @@ You can add the option `-vv` to get more information in case of a test failure.
 
 ## When to modify tests or add new tests
 
-### Unit tests
+### Unit Tests
 
-Unit testing is essential for early bug detection, facilitates code refactoring, and serves as executable documentation of intended behavior. Speed is an important aspect of unit testing. Fast-running tests allow you to quickly iterate on the code, providing rapid feedback on the correctness of your changes. All new or modified code should be covered by unit tests.
+Unit testing is essential for early bug detection, facilitates code refactoring, and serves as executable documentation of intended behavior. Speed is an important aspect of unit testing. Fast-running tests allow you to quickly iterate on the code, providing rapid feedback on the correctness of your changes. All new or modified code, except for the code generator, should be covered by unit tests. For the code generator, integration and feature tests are usually preferred because they are easier to maintain.
+
+### Integration Tests
+
+Integration testing ensures that different components of RecordFlux work together seamlessly. An integration test is required if a functionality is added or changed that depends on the interaction of multiple components (e.g., parsing of a specification and subsequent validation of the model).
 
 ### Code Coverage
 
 Any code changes may cause the testsuite to fail to reach the coverage targets.
 Change the unit tests or add new ones to increase the coverage.
 
-### Fixing a bug
+### Fixing a Bug
 
 When a bug is fixed in the tool, a test should be added that would fail if the bug had not been fixed.
 This is called a regression test and is intended to protect against the bug resurfacing later.
 Depending on the nature of the bug, this can be a unit test or integration test.
 
-### Adding a feature
+### Adding a Feature
 
 Adding a feature should be complemented by these tests (at least):
-- Add a corresponding unit test (e.g. if the new feature is in the state machine generator, add a unit test in `tests/unit/generator/generator_test.py`)
-- If related to code generation, add a test which exercises the feature in `tests/feature`)
 
-Integration testing ensures that different components of RecordFlux work together seamlessly. An integration test is required if a functionality is added or changed that depends on the interaction of multiple components (e.g., parsing of a specification and subsequent validation of the model).
+- Add unit tests (if the feature is not related to code generation)
+- Add integration tests if multiple components are involved
+- Add or extend a feature test which exercises the feature if the feature is related to code generation (extending tests rather than adding tests can minimize additional test execution time)
