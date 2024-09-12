@@ -281,7 +281,7 @@ tests_rflx:
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
-    - make --keep-going test_rflx
+    - make test_rflx
   artifacts:
     expose_as: "Distribution archives"
     paths:
@@ -298,7 +298,7 @@ tests_rapidflux:
     - mem:16
     - security_group:GitLabRunnerTasksExecPrivilegedSG
   script:
-    - make --keep-going test_rapidflux
+    - make test_rapidflux
 
 tests_example_apps:
   extends: .testing
@@ -316,7 +316,7 @@ tests_example_apps:
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
-    - make --keep-going test_apps
+    - make test_apps
   cache:
     - *rflx-cache
 
@@ -336,7 +336,7 @@ tests_example_specs:
     - *setup_gnat
     - *setup_gnat_cross
     - *setup_python
-    - make --keep-going test_specs
+    - make test_specs
   cache:
     - *rflx-cache
 
@@ -359,7 +359,7 @@ python_compatibility:
     - *setup_python_venv
     - *install_recordflux
     - *setup_python
-    - make --keep-going test_coverage
+    - make test_coverage
 
 gnat_pro_compatibility:
   extends: .testing
@@ -385,7 +385,7 @@ gnat_pro_compatibility:
     - *setup_gnat
     - *setup_python
     - export GNAT=pro$GNAT_VERSION
-    - make --keep-going test_compilation
+    - make test_compilation
 
 gnat_fsf_compatibility:
   extends: .testing
@@ -415,7 +415,7 @@ gnat_fsf_compatibility:
     - gnat --version
     - *setup_python
     - export GNAT=fsf$GNAT_VERSION
-    - make --keep-going test_compilation
+    - make test_compilation
 
 gnat_community_compatibility:
   extends: .testing
@@ -446,7 +446,7 @@ gnat_community_compatibility:
     - gnat --version
     - *setup_python
     - export GNAT=community$GNAT_VERSION
-    - make --keep-going test_compilation
+    - make test_compilation
 
 .show_gnatprove_cache_stats: &show_gnatprove_cache_stats
     - 'echo "GNATprove cache: $(ls -U build/gnatprove_cache | wc -l) files"'
@@ -650,7 +650,7 @@ gnat_wave_compatibility:
     - *setup_python_venv
     - *install_recordflux
     - *setup_python
-    - make --keep-going test_compilation
+    - make test_compilation
 
 spark_wave_compatibility:
   extends: .scheduled_job
