@@ -3,24 +3,24 @@ with Universal;
 package Test is
 
    generic
-      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      Channel : Channel with Readable, Writable;
    machine S is
-      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Message : Universal::Message;
    begin
       state Start is
       begin
-         Channel'Read (Message); -- §S-S-A-RD-V
+         Channel'Read (Message);
       transition
          goto Reply
-            if Message'Has_Data -- §S-S-T-HDAT, §S-E-AT-V-HDAT
-         goto null -- §S-S-T-N
+            if Message'Has_Data
+         goto null
       exception
-         goto null -- §S-S-E
+         goto null
       end Start;
 
       state Reply is
       begin
-         Channel'Write (Message); -- §S-S-A-WR-V
+         Channel'Write (Message);
       transition
          goto Start
       end Reply;

@@ -76,7 +76,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_comprehension_head/test.rflx:15:10
+      -- tests/feature/fsm_comprehension_head/test.rflx:14:10
       if not Universal.Options.Has_Element (Ctx.P.Options_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
@@ -179,7 +179,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_comprehension_head/test.rflx:17:10
+      -- tests/feature/fsm_comprehension_head/test.rflx:15:10
       if not Universal.Options.Has_Element (Ctx.P.Options_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
@@ -240,7 +240,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_comprehension_head/test.rflx:19:10
+      -- tests/feature/fsm_comprehension_head/test.rflx:16:10
       if not Universal.Options.Has_Element (Ctx.P.Options_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Start_Invariant);
@@ -339,7 +339,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_1_Invariant);
-      -- tests/feature/fsm_comprehension_head/test.rflx:30:10
+      -- tests/feature/fsm_comprehension_head/test.rflx:26:10
       if not Universal.Options.Valid (Ctx.P.Options_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_1_Invariant);
@@ -384,7 +384,7 @@ is
                begin
                   Universal.Options.Switch (RFLX_Copy_Options_Ctx, E_Ctx);
                   Universal.Option.Verify_Message (E_Ctx);
-                  -- tests/feature/fsm_comprehension_head/test.rflx:30:54
+                  -- tests/feature/fsm_comprehension_head/test.rflx:26:54
                   pragma Warnings (Off, "condition can only be False if invalid values present");
                   pragma Warnings (Off, "condition is always False");
                   pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -410,10 +410,10 @@ is
                   pragma Warnings (On, "this code can never be executed and has been deleted");
                   pragma Warnings (On, "condition is always False");
                   pragma Warnings (On, "condition can only be False if invalid values present");
-                  -- tests/feature/fsm_comprehension_head/test.rflx:30:54
+                  -- tests/feature/fsm_comprehension_head/test.rflx:26:54
                   T_0 := Universal.Option.Get_Option_Type (E_Ctx);
                   if T_0 = (Known => True, Enum => Universal.OT_Data) then
-                     -- tests/feature/fsm_comprehension_head/test.rflx:30:92
+                     -- tests/feature/fsm_comprehension_head/test.rflx:26:92
                      pragma Warnings (Off, "condition can only be False if invalid values present");
                      pragma Warnings (Off, "condition is always False");
                      pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -472,7 +472,7 @@ is
          Ctx.P.Slots.Slot_Ptr_4 := RFLX_Copy_Options_Buffer;
          pragma Assert (Ctx.P.Slots.Slot_Ptr_4 /= null);
       end;
-      -- tests/feature/fsm_comprehension_head/test.rflx:32:10
+      -- tests/feature/fsm_comprehension_head/test.rflx:27:10
       if not Universal.Options.Valid (Ctx.P.Options_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_1_Invariant);
@@ -519,7 +519,7 @@ is
                begin
                   Universal.Options.Switch (RFLX_Copy_Options_Ctx, E_Ctx);
                   Universal.Option.Verify_Message (E_Ctx);
-                  -- tests/feature/fsm_comprehension_head/test.rflx:32:47
+                  -- tests/feature/fsm_comprehension_head/test.rflx:27:47
                   pragma Warnings (Off, "condition can only be False if invalid values present");
                   pragma Warnings (Off, "condition is always False");
                   pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -545,7 +545,7 @@ is
                   pragma Warnings (On, "this code can never be executed and has been deleted");
                   pragma Warnings (On, "condition is always False");
                   pragma Warnings (On, "condition can only be False if invalid values present");
-                  -- tests/feature/fsm_comprehension_head/test.rflx:32:47
+                  -- tests/feature/fsm_comprehension_head/test.rflx:27:47
                   T_1 := Universal.Option.Get_Option_Type (E_Ctx);
                   if T_1 = (Known => True, Enum => Universal.OT_Data) then
                      if not Universal.Option.Well_Formed_Message (E_Ctx) then
@@ -669,7 +669,7 @@ is
         Ghost;
    begin
       pragma Assert (Send_1_Invariant);
-      -- tests/feature/fsm_comprehension_head/test.rflx:44:10
+      -- tests/feature/fsm_comprehension_head/test.rflx:38:10
       Ctx.P.Next_State := S_Recv;
       pragma Assert (Send_1_Invariant);
    end Send_1;
@@ -692,7 +692,7 @@ is
         Ghost;
    begin
       pragma Assert (Recv_Invariant);
-      -- tests/feature/fsm_comprehension_head/test.rflx:52:10
+      -- tests/feature/fsm_comprehension_head/test.rflx:45:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
       Ctx.P.Next_State := S_Process_2;
       pragma Assert (Recv_Invariant);
@@ -717,7 +717,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_2_Invariant);
-      -- tests/feature/fsm_comprehension_head/test.rflx:61:36
+      -- tests/feature/fsm_comprehension_head/test.rflx:53:36
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -733,7 +733,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_comprehension_head/test.rflx:61:10
+      -- tests/feature/fsm_comprehension_head/test.rflx:53:10
       if not Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_2_Invariant);
@@ -789,7 +789,7 @@ is
                begin
                   Universal.Options.Switch (RFLX_Message_Options_Ctx, E_Ctx);
                   Universal.Option.Verify_Message (E_Ctx);
-                  -- tests/feature/fsm_comprehension_head/test.rflx:61:55
+                  -- tests/feature/fsm_comprehension_head/test.rflx:53:55
                   pragma Warnings (Off, "condition can only be False if invalid values present");
                   pragma Warnings (Off, "condition is always False");
                   pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -815,7 +815,7 @@ is
                   pragma Warnings (On, "this code can never be executed and has been deleted");
                   pragma Warnings (On, "condition is always False");
                   pragma Warnings (On, "condition can only be False if invalid values present");
-                  -- tests/feature/fsm_comprehension_head/test.rflx:61:55
+                  -- tests/feature/fsm_comprehension_head/test.rflx:53:55
                   T_2 := Universal.Option.Get_Option_Type (E_Ctx);
                   if T_2 = (Known => True, Enum => Universal.OT_Data) then
                      if not Universal.Option.Well_Formed_Message (E_Ctx) then
@@ -935,7 +935,7 @@ is
         Ghost;
    begin
       pragma Assert (Send_2_Invariant);
-      -- tests/feature/fsm_comprehension_head/test.rflx:72:10
+      -- tests/feature/fsm_comprehension_head/test.rflx:63:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Send_2_Invariant);
    end Send_2;

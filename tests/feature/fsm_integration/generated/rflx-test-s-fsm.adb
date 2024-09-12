@@ -186,7 +186,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/fsm_integration/test.rflx:35:10
+      -- tests/feature/fsm_integration/test.rflx:34:10
       Ctx.P.Next_State := S_Next;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -217,7 +217,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (M_Ctx, M_Buffer);
       pragma Assert (Next_Invariant);
-      -- tests/feature/fsm_integration/test.rflx:43:10
+      -- tests/feature/fsm_integration/test.rflx:42:10
       Universal.Message.Reset (M_Ctx);
       if not Universal.Message.Sufficient_Space (M_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;

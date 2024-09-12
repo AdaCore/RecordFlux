@@ -3,21 +3,21 @@ with Universal;
 package Test is
 
    generic
-      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      Channel : Channel with Readable, Writable;
    machine S is
-      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Message : Universal::Message;
    begin
       state Start is
       begin
-         Channel'Read (Message); -- §S-S-A-RD-V
+         Channel'Read (Message);
       transition
          goto Prepare_Message
-            if Message'Valid = True -- §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
-               and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-               and Message.Length = 1 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-         goto null -- §S-S-T-N
+            if Message'Valid = True
+               and Message.Message_Type = Universal::MT_Data
+               and Message.Length = 1
+         goto null
       exception
-         goto null -- §S-S-E
+         goto null
       end Start;
 
       state Prepare_Message is
@@ -26,15 +26,14 @@ package Test is
       transition
          goto Reply
       exception
-         goto null -- §S-S-E
+         goto null
       end Prepare_Message;
 
       state Reply is
       begin
-         -- §S-S-A-A-MA, §S-E-A-T-SC, §S-E-A-E-L
-         Channel'Write (Message); -- §S-S-A-WR-V
+         Channel'Write (Message);
       transition
-         goto Next -- §S-S-T-N
+         goto Next
       end Reply;
 
       state Next is

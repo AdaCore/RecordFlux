@@ -147,7 +147,7 @@ is
       pragma Warnings (On, "unused assignment");
       Test.Message.Initialize (Local_Message_Ctx, Local_Message_Buffer);
       pragma Assert (Process_Invariant);
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:43:10
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:42:10
       if not Test.Message.Valid_Next (Ctx.P.Message_Ctx, Test.Message.F_Has_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
@@ -236,7 +236,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:51:34
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:46:34
       T_7 := RFLX.RFLX_Types.Base_Integer (Test.Message.Field_Size (Ctx.P.Message_Ctx, Test.Message.F_Data));
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
@@ -268,7 +268,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:51:54
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:46:54
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -284,7 +284,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:53:32
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:47:32
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -300,7 +300,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:49:10
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:45:10
       if not Test.Message.Valid_Next (Local_Message_Ctx, Test.Message.F_Has_Data) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
@@ -363,7 +363,7 @@ is
          RFLX_Test_Message_Set_Data (Local_Message_Ctx, RFLX_Types.To_Length (Test.Message.Field_Size (RFLX_Ctx_P_Message_Ctx_Tmp, Test.Message.F_Data)));
          Ctx.P.Message_Ctx := RFLX_Ctx_P_Message_Ctx_Tmp;
       end;
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:56:16
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:50:16
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -379,9 +379,9 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:56:16
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:50:16
       T_8 := Test.Message.Get_Has_Data (Ctx.P.Message_Ctx);
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:56:35
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:50:35
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -397,7 +397,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:56:35
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:50:35
       T_9 := Test.Message.Get_Has_Data (Local_Message_Ctx);
       if T_8 = T_9 then
          Ctx.P.Next_State := S_Reply;
@@ -431,8 +431,8 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:64:10
-      -- tests/feature/fsm_setting_of_message_fields/test.rflx:67:16
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:58:10
+      -- tests/feature/fsm_setting_of_message_fields/test.rflx:61:16
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");

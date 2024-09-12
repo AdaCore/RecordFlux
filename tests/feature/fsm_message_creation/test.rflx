@@ -3,44 +3,43 @@ with Universal;
 package Test is
 
    generic
-      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      Channel : Channel with Readable, Writable;
    machine S is
-      M_R : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
-      M_S : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      M_R : Universal::Message;
+      M_S : Universal::Message;
    begin
       state Start is
       begin
-         Channel'Read (M_R); -- §S-S-A-RD-V
+         Channel'Read (M_R);
       transition
          goto Process
-            if M_R'Valid = True -- §S-S-T-VAT, §S-E-AT-V-V, §S-S-T-L
-               and M_R.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-               and M_R.Length = 2 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-               and M_R.Length'Valid -- §S-S-T-FVAT
-               and M_R.Data'Present -- §S-S-T-FPAT
-         goto null -- §S-S-T-N
+            if M_R'Valid = True
+               and M_R.Message_Type = Universal::MT_Data
+               and M_R.Length = 2
+               and M_R.Length'Valid
+               and M_R.Data'Present
+         goto null
       exception
-         goto null -- §S-S-E
+         goto null
       end Start;
 
       state Process is
       begin
-         -- §S-S-A-A-MA, §S-E-A-T-SC, §S-E-A-E-L
          M_S := Universal::Message'
             (Message_Type => Universal::MT_Data,
              Length => M_R'Size / 8,
              Data => M_R'Opaque);
       transition
-         goto Reply -- §S-S-T-N
+         goto Reply
       exception
-         goto null -- §S-S-E
+         goto null
       end Process;
 
       state Reply is
       begin
-         Channel'Write (M_S); -- §S-S-A-WR-V
+         Channel'Write (M_S);
       transition
-         goto null -- §S-S-T-N
+         goto null
       end Reply;
    end S;
 

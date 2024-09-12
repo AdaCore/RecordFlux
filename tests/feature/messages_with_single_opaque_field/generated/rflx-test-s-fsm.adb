@@ -60,7 +60,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      -- tests/feature/messages_with_single_opaque_field/test.rflx:24:34
+      -- tests/feature/messages_with_single_opaque_field/test.rflx:23:34
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -76,7 +76,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/messages_with_single_opaque_field/test.rflx:24:10
+      -- tests/feature/messages_with_single_opaque_field/test.rflx:23:10
       Test.Message.Reset (Ctx.P.M_S_Ctx);
       declare
          pragma Warnings (Off, "is not modified, could be declared constant");
@@ -133,7 +133,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/messages_with_single_opaque_field/test.rflx:33:10
+      -- tests/feature/messages_with_single_opaque_field/test.rflx:32:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

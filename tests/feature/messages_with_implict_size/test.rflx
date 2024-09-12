@@ -3,33 +3,32 @@ with Universal;
 package Test is
 
    generic
-      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      Channel : Channel with Readable, Writable;
    machine S is
-      M_R : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
-      M_S : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      M_R : Universal::Message;
+      M_S : Universal::Message;
    begin
       state Start is
       begin
-         Channel'Read (M_R); -- §S-S-A-RD-V
+         Channel'Read (M_R);
       transition
-         goto Process -- §S-S-T-N
+         goto Process
       end Start;
 
       state Process is
       begin
-         -- §S-S-A-A-MA, §S-E-A-T-SC, §S-E-A-T-O, §S-E-A-E-L, §S-E-A-E-S
          M_S := Universal::Message'(Message_Type => Universal::MT_Unconstrained_Data, Data => M_R.Data);
       transition
-         goto Reply -- §S-S-T-N
+         goto Reply
       exception
-         goto null -- §S-S-E
+         goto null
       end Process;
 
       state Reply is
       begin
-         Channel'Write (M_S); -- §S-S-A-WR-V
+         Channel'Write (M_S);
       transition
-         goto null -- §S-S-T-N
+         goto null
       end Reply;
    end S;
 

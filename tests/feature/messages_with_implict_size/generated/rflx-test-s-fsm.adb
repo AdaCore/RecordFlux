@@ -60,7 +60,7 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      -- tests/feature/messages_with_implict_size/test.rflx:21:95
+      -- tests/feature/messages_with_implict_size/test.rflx:20:95
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -76,7 +76,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/messages_with_implict_size/test.rflx:21:10
+      -- tests/feature/messages_with_implict_size/test.rflx:20:10
       Universal.Message.Reset (Ctx.P.M_S_Ctx);
       if not Universal.Message.Sufficient_Space (Ctx.P.M_S_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
@@ -144,7 +144,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/messages_with_implict_size/test.rflx:30:10
+      -- tests/feature/messages_with_implict_size/test.rflx:29:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

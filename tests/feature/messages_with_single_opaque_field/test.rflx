@@ -6,33 +6,32 @@ package Test is
       end message;
 
    generic
-      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      Channel : Channel with Readable, Writable;
    machine S is
-      M_R : Message; -- §S-D-V-T-M, §S-D-V-E-N
-      M_S : Message; -- §S-D-V-T-M, §S-D-V-E-N
+      M_R : Message;
+      M_S : Message;
    begin
       state Start is
       begin
-         Channel'Read (M_R); -- §S-S-A-RD-V
+         Channel'Read (M_R);
       transition
-         goto Process -- §S-S-T-N
+         goto Process
       end Start;
 
       state Process is
       begin
-         -- §S-S-A-A-MA, §S-E-A-T-O, §S-E-A-E-S
          M_S := Message'(Data => M_R.Data);
       transition
-         goto Reply -- §S-S-T-N
+         goto Reply
       exception
-         goto null -- §S-S-E
+         goto null
       end Process;
 
       state Reply is
       begin
-         Channel'Write (M_S); -- §S-S-A-WR-V
+         Channel'Write (M_S);
       transition
-         goto null -- §S-S-T-N
+         goto null
       end Reply;
    end S;
 

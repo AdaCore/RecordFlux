@@ -15,103 +15,98 @@ package Test is
       end message;
 
    generic
-      Channel : Channel with Readable, Writable; -- §S-P-C-RW
-      -- §S-P-F-R-S
+      Channel : Channel with Readable, Writable;
+
       with function Get_Message_Type return Universal::Option_Type;
-      -- §S-P-F-P-S, §S-P-F-P-O, §S-P-F-R-M
+
       with function Create_Message
          (Message_Type : Universal::Option_Type;
           Length : Length;
           Data : Opaque)
       return Definite_Message;
-      -- §S-P-F-P-S, §S-P-F-R-S
+
       with function Valid_Message
          (Message_Type : Universal::Option_Type;
           Strict : Boolean)
       return Result;
-      -- §S-P-F-R-S
+
       with function Byte_Size return Length;
    machine S is
-      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
-      Definite_Message : Definite_Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Message : Universal::Message;
+      Definite_Message : Definite_Message;
    begin
       state Start is
       begin
-         Channel'Read (Message); -- §S-S-A-RD-V
+         Channel'Read (Message);
       transition
          goto Process
-            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
-               and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-               and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-         goto null -- §S-S-T-N
+            if Message'Valid
+               and Message.Message_Type = Universal::MT_Data
+               and Message.Length = 3
+         goto null
       exception
-         goto null -- §S-S-E
+         goto null
       end Start;
 
       state Process is
-         Valid : Result; -- §S-S-D-V-T-SC
-         Message_Type : Universal::Option_Type; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
+         Valid : Result;
+         Message_Type : Universal::Option_Type;
          Length : Length;
       begin
-         Message_Type := Get_Message_Type; -- §S-S-A-A-CL, §S-E-CL-N
-         Valid := Valid_Message (Message_Type, True); -- §S-S-A-A-CL, §S-E-CL-L
-         Length := Message.Data'Size / Byte_Size; -- §S-S-A-A-ME
-         -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
+         Message_Type := Get_Message_Type;
+         Valid := Valid_Message (Message_Type, True);
+         Length := Message.Data'Size / Byte_Size;
          Definite_Message := Create_Message (Message_Type, Length, Message.Data);
       transition
          goto Reply
-            if Valid = M_Valid -- §S-S-T-BE
-         goto null -- §S-S-T-N
+            if Valid = M_Valid
+         goto null
       exception
-         goto null -- §S-S-E
+         goto null
       end Process;
 
       state Reply is
       begin
-         Channel'Write (Definite_Message); -- §S-S-A-WR-V
+         Channel'Write (Definite_Message);
       transition
-         goto Process_2 -- §S-S-T-N
+         goto Process_2
       end Reply;
 
       state Process_2 is
          Length : Length;
       begin
-         Length := Message'Size / 8; -- §S-S-A-A-ME
-         -- §S-S-A-A-CL, §S-E-CL-L, §S-E-CL-V, §S-E-CL-OAT
+         Length := Message'Size / 8;
          Definite_Message := Create_Message (Universal::OT_Data, Length, Message'Opaque);
       transition
-         goto Reply_2 -- §S-S-T-N
+         goto Reply_2
       exception
-         goto null -- §S-S-E
+         goto null
       end Process_2;
 
       state Reply_2 is
       begin
-         Channel'Write (Definite_Message); -- §S-S-A-WR-V
+         Channel'Write (Definite_Message);
       transition
-         goto Process_3 -- §S-S-T-N
+         goto Process_3
       end Reply_2;
 
       state Process_3 is
          Local_Message : Definite_Message;
       begin
-         -- §S-S-A-A-CL, §S-E-CL-L, §S-E-CL-A
          Local_Message := Create_Message (Universal::OT_Data, 2, [3, 4]);
-         -- §S-S-A-MFA-S
          Definite_Message.Length := Local_Message.Length;
-         -- §S-S-A-MFA-S
          Definite_Message.Data := Local_Message.Data;
       transition
-         goto Reply_3 -- §S-S-T-N
+         goto Reply_3
       exception
-         goto null -- §S-S-E
+         goto null
       end Process_3;
 
       state Reply_3 is
       begin
-         Channel'Write (Definite_Message); -- §S-S-A-WR-V
+         Channel'Write (Definite_Message);
       transition
-         goto null -- §S-S-T-N
+         goto null
       end Reply_3;
    end S;
 

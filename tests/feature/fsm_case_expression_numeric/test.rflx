@@ -10,41 +10,41 @@ package Test is
       end message;
 
    generic
-      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      Channel : Channel with Readable, Writable;
    machine S is
-      Message : Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Message : Message;
    begin
       state Start is
       begin
-         Channel'Read (Message); -- §S-S-A-RD-V
+         Channel'Read (Message);
       transition
          goto Prepare
-            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
-         goto null -- §S-S-T-N
+            if Message'Valid
+         goto null
       exception
-         goto null -- §S-S-E
+         goto null
       end Start;
 
       state Prepare is
          Value : Tiny_Int;
       begin
-         Value := (case Message.Value is  -- §S-E-CE
+         Value := (case Message.Value is
                       when 1 | 2 => 4,
                       when 3     => 1,
                       when 4     => 2);
-         -- §S-S-A-A-MA
+
          Message := Message'(Value => Value);
       transition
-         goto Reply -- §S-S-T-N
+         goto Reply
       exception
-         goto null -- §S-S-E
+         goto null
       end Prepare;
 
       state Reply is
       begin
-         Channel'Write (Message); -- §S-S-A-WR-V
+         Channel'Write (Message);
       transition
-         goto null -- §S-S-T-N
+         goto null
       end Reply;
    end S;
 

@@ -3,39 +3,39 @@ with Universal;
 package Test is
 
    generic
-      I_1 : Channel with Readable; -- §S-P-C-R
-      I_2 : Channel with Readable; -- §S-P-C-R
-      O : Channel with Writable; -- §S-P-C-W
+      I_1 : Channel with Readable;
+      I_2 : Channel with Readable;
+      O : Channel with Writable;
    machine S is
-      Message_1 : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
-      Message_2 : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Message_1 : Universal::Message;
+      Message_2 : Universal::Message;
    begin
       state Start is
       begin
-         I_1'Read (Message_1); -- §S-S-A-RD-V
-         I_2'Read (Message_2); -- §S-S-A-RD-V
+         I_1'Read (Message_1);
+         I_2'Read (Message_2);
       transition
          goto Reply_1
-            if Message_1'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
+            if Message_1'Has_Data
          goto Reply_2
-            if Message_2'Has_Data -- §S-S-T-HDAT, §S-E-AT-HD-V
-         goto null -- §S-S-E
+            if Message_2'Has_Data
+         goto null
       exception
-         goto null -- §S-S-E
+         goto null
       end Start;
 
       state Reply_1 is
       begin
-         O'Write (Message_1); -- §S-S-A-WR-V
+         O'Write (Message_1);
       transition
-         goto Start -- §S-S-T-N
+         goto Start
       end Reply_1;
 
       state Reply_2 is
       begin
-         O'Write (Message_2); -- §S-S-A-WR-V
+         O'Write (Message_2);
       transition
-         goto Start -- §S-S-T-N
+         goto Start
       end Reply_2;
    end S;
 

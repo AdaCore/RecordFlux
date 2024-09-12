@@ -3,29 +3,28 @@ with Universal;
 package Test is
 
    generic
-      Channel : Channel with Readable, Writable; -- §S-P-C-RW
+      Channel : Channel with Readable, Writable;
    machine S is
-      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
+      Message : Universal::Message;
    begin
       state Start is
       begin
-         Channel'Read (Message); -- §S-S-A-RD-V
+         Channel'Read (Message);
       transition
          goto Prepare
-            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
-         goto null -- §S-S-T-N
+            if Message'Valid
+         goto null
       exception
-         goto null -- §S-S-E
+         goto null
       end Start;
 
       state Prepare is
-         Recv_Type : Universal::Message_Type; -- §S-D-V-T-SC
+         Recv_Type : Universal::Message_Type;
       begin
-         Recv_Type := Message.Message_Type; -- §S-S-A-A-V
-         -- §S-S-A-A-MA
+         Recv_Type := Message.Message_Type;
          Message := Universal::Message'(Message_Type => Universal::MT_Value,
                                         Length       => 1,
-                                        Value        => -- §S-E-CE
+                                        Value        =>
                                                         (case Recv_Type is
                                                             when Universal::MT_Null | Universal::MT_Data =>   2,
                                                             when Universal::MT_Value                     =>   4,
@@ -35,16 +34,16 @@ package Test is
                                                             when Universal::MT_Unconstrained_Data        =>  64,
                                                             when Universal::MT_Unconstrained_Options     => 128));
       transition
-         goto Reply -- §S-S-T-N
+         goto Reply
       exception
-         goto null -- §S-S-E
+         goto null
       end Prepare;
 
       state Reply is
       begin
-         Channel'Write (Message); -- §S-S-A-WR-V
+         Channel'Write (Message);
       transition
-         goto null -- §S-S-T-N
+         goto null
       end Reply;
    end S;
 

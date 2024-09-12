@@ -117,7 +117,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_sequence_append/test.rflx:23:55
+      -- tests/feature/fsm_sequence_append/test.rflx:22:55
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -133,7 +133,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_sequence_append/test.rflx:24:53
+      -- tests/feature/fsm_sequence_append/test.rflx:23:53
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -149,7 +149,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_sequence_append/test.rflx:22:10
+      -- tests/feature/fsm_sequence_append/test.rflx:21:10
       if not Universal.Options.Has_Element (Options_Ctx) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
@@ -268,7 +268,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_sequence_append/test.rflx:27:51
+      -- tests/feature/fsm_sequence_append/test.rflx:25:51
       T_0 := RFLX.RFLX_Types.Base_Integer (Universal.Options.Size (Options_Ctx));
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
@@ -300,7 +300,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_sequence_append/test.rflx:27:66
+      -- tests/feature/fsm_sequence_append/test.rflx:25:66
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -316,7 +316,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_sequence_append/test.rflx:26:10
+      -- tests/feature/fsm_sequence_append/test.rflx:24:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
@@ -394,7 +394,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/fsm_sequence_append/test.rflx:39:10
+      -- tests/feature/fsm_sequence_append/test.rflx:37:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

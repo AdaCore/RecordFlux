@@ -62,11 +62,11 @@ is
         Ghost;
    begin
       pragma Assert (Start_Invariant);
-      -- tests/feature/fsm_message_optimization/test.rflx:24:10
+      -- tests/feature/fsm_message_optimization/test.rflx:23:10
       Universal.Message.Verify_Message (Ctx.P.Message_Ctx);
-      -- tests/feature/fsm_message_optimization/test.rflx:27:16
+      -- tests/feature/fsm_message_optimization/test.rflx:26:16
       T_0 := Universal.Message.Well_Formed_Message (Ctx.P.Message_Ctx);
-      -- tests/feature/fsm_message_optimization/test.rflx:28:20
+      -- tests/feature/fsm_message_optimization/test.rflx:27:20
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -82,14 +82,14 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_message_optimization/test.rflx:28:20
+      -- tests/feature/fsm_message_optimization/test.rflx:27:20
       T_1 := Universal.Message.Get_Message_Type (Ctx.P.Message_Ctx);
-      -- tests/feature/fsm_message_optimization/test.rflx:28:20
+      -- tests/feature/fsm_message_optimization/test.rflx:27:20
       T_2 := T_1 = Universal.MT_Data;
-      -- tests/feature/fsm_message_optimization/test.rflx:27:16
+      -- tests/feature/fsm_message_optimization/test.rflx:26:16
       T_3 := T_0
       and then T_2;
-      -- tests/feature/fsm_message_optimization/test.rflx:29:20
+      -- tests/feature/fsm_message_optimization/test.rflx:28:20
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -105,9 +105,9 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_message_optimization/test.rflx:29:20
+      -- tests/feature/fsm_message_optimization/test.rflx:28:20
       T_4 := Universal.Message.Get_Length (Ctx.P.Message_Ctx);
-      -- tests/feature/fsm_message_optimization/test.rflx:29:20
+      -- tests/feature/fsm_message_optimization/test.rflx:28:20
       T_5 := T_4 = 3;
       if
          T_3
@@ -154,9 +154,9 @@ is
         Ghost;
    begin
       pragma Assert (Process_Invariant);
-      -- tests/feature/fsm_message_optimization/test.rflx:41:10
+      -- tests/feature/fsm_message_optimization/test.rflx:39:10
       Option_Type := (Known => True, Enum => Universal.OT_Data);
-      -- tests/feature/fsm_message_optimization/test.rflx:43:42
+      -- tests/feature/fsm_message_optimization/test.rflx:40:42
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -172,7 +172,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_message_optimization/test.rflx:43:10
+      -- tests/feature/fsm_message_optimization/test.rflx:40:10
       declare
          RFLX_Get_Option_Data_Arg_0_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
          RFLX_Get_Option_Data_Arg_0_Message_Length : constant RFLX_Types.Length := RFLX_Types.To_Length (Universal.Message.Field_Size (Ctx.P.Message_Ctx, Universal.Message.F_Data));
@@ -200,11 +200,11 @@ is
             goto Finalize_Process;
          end if;
       end;
-      -- tests/feature/fsm_message_optimization/test.rflx:45:10
+      -- tests/feature/fsm_message_optimization/test.rflx:41:10
       Local_Length := Option_Data.Length;
-      -- tests/feature/fsm_message_optimization/test.rflx:47:10
+      -- tests/feature/fsm_message_optimization/test.rflx:42:10
       Universal.Option.Reset (Ctx.P.Option_Ctx);
-      -- tests/feature/fsm_message_optimization/test.rflx:49:10
+      -- tests/feature/fsm_message_optimization/test.rflx:43:10
       if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Option_Type) then
          Ctx.P.Next_State := S_Final;
          pragma Assert (Process_Invariant);
@@ -264,14 +264,14 @@ is
          end if;
          RFLX_Universal_Option_Set_Data (Ctx.P.Option_Ctx, RFLX_Types.To_Length (Test.Option_Data.Field_Size_Data (Option_Data)));
       end;
-      -- tests/feature/fsm_message_optimization/test.rflx:56:16
+      -- tests/feature/fsm_message_optimization/test.rflx:48:16
       T_6 := Local_Length > 0;
-      -- tests/feature/fsm_message_optimization/test.rflx:57:20
+      -- tests/feature/fsm_message_optimization/test.rflx:49:20
       T_7 := Option_Type /= (Known => True, Enum => Universal.OT_Null);
-      -- tests/feature/fsm_message_optimization/test.rflx:56:16
+      -- tests/feature/fsm_message_optimization/test.rflx:48:16
       T_8 := T_6
       and then T_7;
-      -- tests/feature/fsm_message_optimization/test.rflx:58:34
+      -- tests/feature/fsm_message_optimization/test.rflx:50:34
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -287,16 +287,16 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_message_optimization/test.rflx:58:34
+      -- tests/feature/fsm_message_optimization/test.rflx:50:34
       T_9 := Universal.Option.Get_Option_Type (Ctx.P.Option_Ctx);
-      -- tests/feature/fsm_message_optimization/test.rflx:58:20
+      -- tests/feature/fsm_message_optimization/test.rflx:50:20
       T_10 := Option_Type = T_9;
-      -- tests/feature/fsm_message_optimization/test.rflx:56:16
+      -- tests/feature/fsm_message_optimization/test.rflx:48:16
       T_11 := T_8
       and then T_10;
-      -- tests/feature/fsm_message_optimization/test.rflx:59:20
+      -- tests/feature/fsm_message_optimization/test.rflx:51:20
       T_12 := Test.Option_Data.Valid_Structure (Option_Data);
-      -- tests/feature/fsm_message_optimization/test.rflx:56:16
+      -- tests/feature/fsm_message_optimization/test.rflx:48:16
       T_13 := T_11
       and then T_12;
       pragma Warnings (Off, "condition can only be False if invalid values present");
@@ -329,13 +329,13 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_message_optimization/test.rflx:60:20
+      -- tests/feature/fsm_message_optimization/test.rflx:52:20
       T_14 := RFLX.RFLX_Types.Base_Integer (Test.Option_Data.Field_Size_Length (Option_Data));
-      -- tests/feature/fsm_message_optimization/test.rflx:60:46
+      -- tests/feature/fsm_message_optimization/test.rflx:52:46
       T_15 := Universal.Length'Size;
-      -- tests/feature/fsm_message_optimization/test.rflx:60:20
+      -- tests/feature/fsm_message_optimization/test.rflx:52:20
       T_16 := T_14 = T_15;
-      -- tests/feature/fsm_message_optimization/test.rflx:56:16
+      -- tests/feature/fsm_message_optimization/test.rflx:48:16
       T_17 := T_13
       and then T_16;
       pragma Warnings (Off, "condition can only be False if invalid values present");
@@ -383,7 +383,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_message_optimization/test.rflx:61:20
+      -- tests/feature/fsm_message_optimization/test.rflx:53:20
       T_18 := RFLX.RFLX_Types.Base_Integer (Universal.Option.Field_Size (Ctx.P.Option_Ctx, Universal.Option.F_Data));
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
@@ -415,9 +415,9 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_message_optimization/test.rflx:61:39
+      -- tests/feature/fsm_message_optimization/test.rflx:53:39
       T_19 := RFLX.RFLX_Types.Base_Integer (Test.Option_Data.Field_Size_Data (Option_Data));
-      -- tests/feature/fsm_message_optimization/test.rflx:61:20
+      -- tests/feature/fsm_message_optimization/test.rflx:53:20
       T_20 := T_18 = T_19;
       if
          T_17
@@ -446,7 +446,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/fsm_message_optimization/test.rflx:69:10
+      -- tests/feature/fsm_message_optimization/test.rflx:61:10
       Ctx.P.Next_State := S_Trigger_Error;
       pragma Assert (Reply_Invariant);
    end Reply;
@@ -467,7 +467,7 @@ is
         Ghost;
    begin
       pragma Assert (Trigger_Error_Invariant);
-      -- tests/feature/fsm_message_optimization/test.rflx:78:10
+      -- tests/feature/fsm_message_optimization/test.rflx:69:10
       Get_Option_Data (Ctx.E, (RFLX_Types.Index'First => RFLX_Types.Byte'Val (0)), Null_Option_Data);
       if not Test.Option_Data.Valid_Structure (Null_Option_Data) then
          Ctx.P.Next_State := S_Error;
@@ -504,7 +504,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_message_optimization/test.rflx:80:10
+      -- tests/feature/fsm_message_optimization/test.rflx:70:10
       if not Universal.Option.Valid_Next (Ctx.P.Option_Ctx, Universal.Option.F_Length) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Trigger_Error_Invariant);

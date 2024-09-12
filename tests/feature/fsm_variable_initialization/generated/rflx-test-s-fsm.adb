@@ -137,7 +137,7 @@ is
       pragma Warnings (On, "condition can only be False if invalid values present");
       -- tests/feature/fsm_variable_initialization/test.rflx:24:10
       Ctx.P.Global := Ctx.P.Uninitialized_Global + 20;
-      -- tests/feature/fsm_variable_initialization/test.rflx:27:51
+      -- tests/feature/fsm_variable_initialization/test.rflx:26:51
       T_1 := Universal.Value'Size;
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
@@ -169,7 +169,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_variable_initialization/test.rflx:27:75
+      -- tests/feature/fsm_variable_initialization/test.rflx:26:75
       pragma Warnings (Off, "condition can only be False if invalid values present");
       pragma Warnings (Off, "condition is always False");
       pragma Warnings (Off, "this code can never be executed and has been deleted");
@@ -185,7 +185,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_variable_initialization/test.rflx:26:10
+      -- tests/feature/fsm_variable_initialization/test.rflx:25:10
       Universal.Message.Reset (Ctx.P.Message_Ctx);
       if not Universal.Message.Sufficient_Space (Ctx.P.Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Final;
@@ -243,7 +243,7 @@ is
         Ghost;
    begin
       pragma Assert (Reply_Invariant);
-      -- tests/feature/fsm_variable_initialization/test.rflx:39:10
+      -- tests/feature/fsm_variable_initialization/test.rflx:38:10
       Ctx.P.Next_State := S_Final;
       pragma Assert (Reply_Invariant);
    end Reply;

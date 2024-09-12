@@ -12,82 +12,72 @@ package Test is
       end message;
 
    generic
-      Channel : Channel with Readable, Writable; -- §S-P-C-RW
-      -- §S-P-F-R-S
+      Channel : Channel with Readable, Writable;
       with function Get_Option_Data (Data : Opaque) return Option_Data;
    machine S is
-      Message : Universal::Message; -- §S-D-V-T-M, §S-D-V-E-N
-      Option : Universal::Option; -- §S-D-V-T-M, §S-D-V-E-N
+      Message : Universal::Message;
+      Option : Universal::Option;
    begin
       state Start is
       begin
-         Channel'Read (Message); -- §S-S-A-RD-V
+         Channel'Read (Message);
       transition
          goto Process
-            if Message'Valid -- §S-S-T-VAT, §S-E-AT-V-V
-               and Message.Message_Type = Universal::MT_Data -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-               and Message.Length = 3 -- §S-S-T-S, §S-E-S-V, §S-S-T-L
-         goto null -- §S-S-T-N
+            if Message'Valid
+               and Message.Message_Type = Universal::MT_Data
+               and Message.Length = 3
+         goto null
       exception
-         goto Error -- §S-S-E
+         goto Error
       end Start;
 
       state Process is
-         Option_Type : Universal::Option_Type; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
-         Option_Data : Option_Data; -- §S-S-D-V-T-M, §S-S-D-V-E-N
-         Local_Length : Universal::Length; -- §S-S-D-V-T-SC, §S-S-D-V-E-N
+         Option_Type : Universal::Option_Type;
+         Option_Data : Option_Data;
+         Local_Length : Universal::Length;
       begin
-         -- §S-S-A-A-L
          Option_Type := Universal::OT_Data;
-         -- §S-S-A-A-CL, §S-E-CL-V, §S-E-CL-S
          Option_Data := Get_Option_Data (Message.Data);
-         -- §S-S-A-A-S
          Local_Length := Option_Data.Length;
-         -- §S-S-A-RS
          Option'Reset;
-         -- §S-S-A-MFA-L
          Option.Option_Type := Option_Type;
-         -- §S-S-A-MFA-S
          Option.Length := Option_Data.Length;
-         -- §S-S-A-MFA-S
          Option.Data := Option_Data.Data;
       transition
          goto Reply
-            if Local_Length > 0 -- §S-S-T-ME
-               and Option_Type /= Universal::OT_Null -- §S-S-T-ME, §S-S-T-V, §S-S-T-L
-               and Option_Type = Option.Option_Type -- §S-S-T-ME, §S-S-T-S, §S-S-T-L
-               and Option_Data'Valid -- §S-S-T-VAT
-               and Option_Data.Length'Size = Universal::Length'Size -- §S-S-T-ME, §S-S-T-S, §S-S-T-SAT
-               and Option.Data'Size = Option_Data.Data'Size -- §S-S-T-ME, §S-S-T-S, §S-S-T-SAT
-         goto null -- §S-S-T-N
+            if Local_Length > 0
+               and Option_Type /= Universal::OT_Null
+               and Option_Type = Option.Option_Type
+               and Option_Data'Valid
+               and Option_Data.Length'Size = Universal::Length'Size
+               and Option.Data'Size = Option_Data.Data'Size
+         goto null
       exception
-         goto null -- §S-S-E
+         goto null
       end Process;
 
       state Reply is
       begin
-         Channel'Write (Option); -- §S-S-A-WR-V
+         Channel'Write (Option);
       transition
-         goto Trigger_Error -- §S-S-T-N
+         goto Trigger_Error
       end Reply;
 
       state Trigger_Error is
          Null_Option_Data : Option_Data;
       begin
-         -- §S-S-A-A-CL, §S-E-CL-L
          Null_Option_Data := Get_Option_Data ([0]);
-         -- §S-S-A-MFA-S
          Option.Length := Null_Option_Data.Length;
       transition
-         goto null -- §S-S-T-N
+         goto null
       exception
-         goto Error -- §S-S-E
+         goto Error
       end Trigger_Error;
 
       state Error is
       begin
       transition
-         goto null -- §S-S-T-N
+         goto null
       end Error;
    end S;
 

@@ -77,7 +77,7 @@ is
       pragma Warnings (On, "unused assignment");
       Universal.Message.Initialize (Message_Ctx, Message_Buffer);
       pragma Assert (Check_Message_Invariant);
-      -- tests/feature/fsm_functions_opaque/test.rflx:23:10
+      -- tests/feature/fsm_functions_opaque/test.rflx:21:10
       Universal.Message.Reset (Message_Ctx);
       if not Universal.Message.Sufficient_Space (Message_Ctx, Universal.Message.F_Message_Type) then
          Ctx.P.Next_State := S_Error;
@@ -132,7 +132,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions_opaque/test.rflx:25:10
+      -- tests/feature/fsm_functions_opaque/test.rflx:22:10
       declare
          RFLX_Check_Size_Arg_1_Message : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
          RFLX_Check_Size_Arg_1_Message_Length : constant RFLX_Types.Length := Universal.Message.Byte_Size (Message_Ctx);
@@ -231,7 +231,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions_opaque/test.rflx:39:10
+      -- tests/feature/fsm_functions_opaque/test.rflx:35:10
       if not Universal.Options.Has_Element (Message_Sequence_Ctx) then
          Ctx.P.Next_State := S_Error;
          pragma Assert (Check_Message_Sequence_Invariant);
@@ -319,7 +319,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions_opaque/test.rflx:41:10
+      -- tests/feature/fsm_functions_opaque/test.rflx:36:10
       declare
          RFLX_Check_Size_Arg_1_Message_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
          RFLX_Check_Size_Arg_1_Message_Sequence_Length : constant RFLX_Types.Length := Universal.Options.Byte_Size (Message_Sequence_Ctx);
@@ -418,7 +418,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions_opaque/test.rflx:55:10
+      -- tests/feature/fsm_functions_opaque/test.rflx:49:10
       if
          not Universal.Values.Has_Element (Scalar_Sequence_Ctx)
          or Universal.Values.Available_Space (Scalar_Sequence_Ctx) < Universal.Value'Size
@@ -458,7 +458,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions_opaque/test.rflx:57:10
+      -- tests/feature/fsm_functions_opaque/test.rflx:50:10
       if
          not Universal.Values.Has_Element (Scalar_Sequence_Ctx)
          or Universal.Values.Available_Space (Scalar_Sequence_Ctx) < Universal.Value'Size
@@ -483,7 +483,7 @@ is
       pragma Warnings (On, "this code can never be executed and has been deleted");
       pragma Warnings (On, "condition is always False");
       pragma Warnings (On, "condition can only be False if invalid values present");
-      -- tests/feature/fsm_functions_opaque/test.rflx:59:10
+      -- tests/feature/fsm_functions_opaque/test.rflx:51:10
       declare
          RFLX_Check_Size_Arg_1_Scalar_Sequence : RFLX_Types.Bytes (RFLX_Types.Index'First .. RFLX_Types.Index'First + RFLX_Types.Length'(4095)) := (others => 0);
          RFLX_Check_Size_Arg_1_Scalar_Sequence_Length : constant RFLX_Types.Length := Universal.Values.Byte_Size (Scalar_Sequence_Ctx);
