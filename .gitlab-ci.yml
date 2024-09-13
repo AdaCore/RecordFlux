@@ -282,11 +282,6 @@ tests_rflx:
     - *setup_gnat_cross
     - *setup_python
     - make test_rflx
-  artifacts:
-    expose_as: "Distribution archives"
-    paths:
-      - dist
-      - ide/vscode/recordflux.vsix
 
 tests_rapidflux:
   extends: .testing
@@ -585,8 +580,10 @@ packaging:
     - *setup_gnat
     - make pypi_dist
   artifacts:
+    expose_as: "Distribution archives"
     paths:
       - dist
+      - rflx/ide/vscode/recordflux.vsix
 
 publishing_to_pypi:
   services:
