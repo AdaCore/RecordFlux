@@ -1067,7 +1067,22 @@ def test_reference_to_optional_field_1() -> None:
     )
 
 
-def test_reference_to_optional_field_2() -> None:
+@pytest.mark.parametrize(
+    ("size_expression"),
+    [
+        Mul(
+            Variable("Opt", location=Location((10, 30))),
+            Number(8),
+            location=Location((10, 20)),
+        ),
+        Sub(
+            Variable("Opt", location=Location((10, 30))),
+            Number(8),
+            location=Location((10, 20)),
+        ),
+    ],
+)
+def test_reference_to_optional_field_2(size_expression: Expr) -> None:
     structure = [
         Link(INITIAL, Field(ID("Flag", location=Location((1, 1))))),
         Link(
@@ -1087,11 +1102,7 @@ def test_reference_to_optional_field_2() -> None:
         Link(
             Field(ID("Any", location=Location((5, 5)))),
             Field(ID("Data", location=Location((5, 6)))),
-            size=Mul(
-                Variable("Opt", location=Location((10, 30))),
-                Number(8),
-                location=Location((10, 20)),
-            ),
+            size=size_expression,
         ),
         Link(Field(ID("Data", location=Location((7, 7)))), FINAL),
     ]

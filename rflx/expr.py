@@ -823,7 +823,8 @@ class MathBinExpr(BinExpr):
         for e in [self.left, self.right]:
             error.extend(e.check_type_instance(ty.AnyInteger).entries)
 
-        self.type_ = ty.common_type([self.left.type_, self.right.type_])
+        common_type = ty.common_type([self.left.type_, self.right.type_])
+        self.type_ = common_type if common_type != ty.UNDEFINED else ty.BASE_INTEGER
 
         return error
 
