@@ -930,17 +930,37 @@ def test_state_machine_message_field_access_in_transition(tmp_path: Path) -> Non
 
 
 @pytest.mark.parametrize(
-    ("global_decl", "local_decl", "value"),
+    ("global_decl", "local_decl", "value", "error"),
     [
-        ("Key : Opaque := [0, 1, 0];", "", "Key"),
-        ("", "Key : Opaque := [0, 1, 0];", "Key"),
-        ("", "", "[0, 1, 0]"),
+        (
+            "Key : Opaque := [0, 1, 0];",
+            "",
+            "Key",
+            r"<stdin>:13:13: error: invalid variable type\n"
+            r"<stdin>:13:13: help: use a message with an opaque field instead\n"
+            r"<stdin>:22:17: error: comparisons of opaque fields not yet supported",
+        ),
+        (
+            "",
+            "Key : Opaque := [0, 1, 0];",
+            "Key",
+            r"<stdin>:18:15: error: invalid variable type\n"
+            r"<stdin>:18:15: help: use a message with an opaque field instead\n"
+            r"<stdin>:22:17: error: comparisons of opaque fields not yet supported",
+        ),
+        (
+            "",
+            "",
+            "[0, 1, 0]",
+            r"<stdin>:22:17: error: comparisons of opaque fields not yet supported",
+        ),
     ],
 )
 def test_state_machine_comparing_opaque_values_in_comprehension(
     global_decl: str,
     local_decl: str,
     value: str,
+    error: str,
     tmp_path: Path,
 ) -> None:
     spec = f"""\
@@ -980,6 +1000,6 @@ end Test;
     # TODO(eng/recordflux/RecordFlux#1497): Support comparisons of opaque fields
     with pytest.raises(
         RecordFluxError,
-        match=r"^<stdin>:22:17: error: comparisons of opaque fields not yet supported$",
+        match=rf"^{error}$",
     ):
         utils.assert_compilable_code_string(spec, tmp_path)

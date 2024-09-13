@@ -727,6 +727,26 @@ class StateMachine(TopLevelDeclaration):
                     undefined_type(d.type_identifier, d.location)
                     d.type_ = ty.Any()
 
+                if isinstance(d, decl.VariableDeclaration) and d.type_ == ty.OPAQUE:
+                    assert d.type_identifier.location is not None
+                    self.error.push(
+                        ErrorEntry(
+                            "invalid variable type",
+                            Severity.ERROR,
+                            d.type_identifier.location,
+                            annotations=(
+                                [
+                                    Annotation(
+                                        "use a message with an opaque field instead",
+                                        Severity.HELP,
+                                        d.type_identifier.location,
+                                    ),
+                                ]
+                            ),
+                            generate_default_annotation=False,
+                        ),
+                    )
+
                 if isinstance(d, decl.FunctionDeclaration):
                     for p in d.parameters:
                         parameter_id = type_decl.internal_type_identifier(

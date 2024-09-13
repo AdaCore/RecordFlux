@@ -10,7 +10,6 @@ from rflx.model import (
     BOOLEAN,
     FINAL,
     INITIAL,
-    OPAQUE,
     Field,
     Integer,
     Link,
@@ -22,6 +21,7 @@ from rflx.model import (
     statement as stmt,
 )
 from rflx.rapidflux import Location, RecordFluxError
+from tests.data import models
 
 
 def assert_graph(graph: Dot, expected: str, tmp_path: Path) -> None:
@@ -222,7 +222,7 @@ def test_state_machine_graph(tmp_path: Path) -> None:
                 "STATE",
                 transitions=[Transition(target=ID("IGNORED_1")), Transition(target=ID("null"))],
                 actions=[stmt.VariableAssignment("Global", FALSE), stmt.Reset("Local")],
-                declarations=[decl.VariableDeclaration("Local", "Opaque")],
+                declarations=[decl.VariableDeclaration("Local", "TLV::Message")],
             ),
             State(
                 "IGNORED_1",
@@ -231,7 +231,7 @@ def test_state_machine_graph(tmp_path: Path) -> None:
         ],
         declarations=[decl.VariableDeclaration("Global", "Boolean")],
         parameters=[],
-        types=[BOOLEAN, OPAQUE],
+        types=[BOOLEAN, models.tlv_message()],
     )
 
     expected_full = r"""

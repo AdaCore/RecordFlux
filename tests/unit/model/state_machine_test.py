@@ -728,6 +728,47 @@ def test_declared_local_variable_message_field() -> None:
     )
 
 
+def test_invalid_variable_type() -> None:
+    assert_state_machine_model_error(
+        states=[
+            State(
+                "Start",
+                transitions=[
+                    Transition(
+                        target=ID("null"),
+                    ),
+                ],
+                declarations=[
+                    decl.VariableDeclaration(
+                        "Y",
+                        ID("Opaque", Location((2, 5))),
+                        location=Location((2, 3)),
+                    ),
+                ],
+            ),
+        ],
+        declarations=[
+            decl.VariableDeclaration(
+                "X",
+                ID("Opaque", Location((1, 4))),
+                location=Location((1, 2)),
+            ),
+        ],
+        parameters=[],
+        types=[OPAQUE],
+        regex=(
+            r"^"
+            r"<stdin>:1:4: error: invalid variable type\n"
+            r"<stdin>:1:4: help: use a message with an opaque field instead\n"
+            r"<stdin>:2:5: error: invalid variable type\n"
+            r"<stdin>:2:5: help: use a message with an opaque field instead\n"
+            r'<stdin>:1:2: error: unused variable "X"\n'
+            r'<stdin>:2:3: error: unused variable "Y"'
+            r"$"
+        ),
+    )
+
+
 def test_assignment_to_undeclared_variable() -> None:
     assert_state_machine_model_error(
         states=[
@@ -1956,12 +1997,18 @@ def test_conversion_invalid_argument() -> None:
             ),
         ],
         declarations=[
-            decl.VariableDeclaration("Message", "Opaque"),
+            decl.VariableDeclaration("Message", ID("Opaque", Location((1, 2)))),
             decl.VariableDeclaration("Converted", "TLV::Message"),
         ],
         parameters=[],
         types=[OPAQUE, models.tlv_message()],
-        regex=(r"^<stdin>:10:20: error: invalid argument for conversion, expected message field$"),
+        regex=(
+            r"^"
+            r"<stdin>:1:2: error: invalid variable type\n"
+            r"<stdin>:1:2: help: use a message with an opaque field instead\n"
+            r"<stdin>:10:20: error: invalid argument for conversion, expected message field"
+            r"$"
+        ),
     )
 
 

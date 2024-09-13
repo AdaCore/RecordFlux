@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import typing
-from dataclasses import dataclass
 from functools import lru_cache
 from typing import Callable, Sequence
 
@@ -482,166 +481,6 @@ def test_state_machine_evaluate_declarations(
     )
 
 
-@dataclass
-class EvaluatedDeclarationStr:
-    global_declarations: str = ""
-    initialization_declarations: str = ""
-    initialization: str = ""
-    finalization: str = ""
-
-
-@pytest.mark.parametrize(
-    ("type_", "expression", "constant", "state_machine_global", "expected"),
-    [
-        (
-            ty.OPAQUE,
-            ir.ComplexExpr([], ir.Agg([])),
-            False,
-            False,
-            EvaluatedDeclarationStr(
-                global_declarations=(
-                    "X : RFLX_Types.Bytes (RFLX_Types.Index'Last .. RFLX_Types.Index'First);"
-                ),
-            ),
-        ),
-        (
-            ty.OPAQUE,
-            ir.ComplexExpr([], ir.Agg([])),
-            True,
-            False,
-            EvaluatedDeclarationStr(
-                global_declarations=(
-                    "X : RFLX_Types.Bytes (RFLX_Types.Index'Last .. RFLX_Types.Index'First);"
-                ),
-            ),
-        ),
-        (
-            ty.OPAQUE,
-            ir.ComplexExpr([], ir.Agg([ir.IntVal(1)])),
-            False,
-            False,
-            EvaluatedDeclarationStr(
-                global_declarations=(
-                    "X : RFLX_Types.Bytes := (RFLX_Types.Index'First => RFLX_Types.Byte'Val (1))"
-                    " with\n  Size =>\n    1 * RFLX_Types.Byte'Size;"
-                ),
-            ),
-        ),
-        (
-            ty.OPAQUE,
-            ir.ComplexExpr([], ir.Agg([ir.IntVal(1)])),
-            True,
-            False,
-            EvaluatedDeclarationStr(
-                global_declarations=(
-                    "X : constant RFLX_Types.Bytes :="
-                    " (RFLX_Types.Index'First => RFLX_Types.Byte'Val (1))"
-                    " with\n  Size =>\n    1 * RFLX_Types.Byte'Size;"
-                ),
-            ),
-        ),
-        (
-            ty.OPAQUE,
-            ir.ComplexExpr([], ir.Agg([ir.IntVal(1), ir.IntVal(2)])),
-            False,
-            False,
-            EvaluatedDeclarationStr(
-                global_declarations=(
-                    "X : RFLX_Types.Bytes := (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))"
-                    " with\n  Size =>\n    2 * RFLX_Types.Byte'Size;"
-                ),
-            ),
-        ),
-        (
-            ty.OPAQUE,
-            ir.ComplexExpr([], ir.Agg([ir.IntVal(1), ir.IntVal(2)])),
-            False,
-            True,
-            EvaluatedDeclarationStr(
-                global_declarations=(
-                    "X : RFLX_Types.Bytes := (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))"
-                    " with\n  Size =>\n    2 * RFLX_Types.Byte'Size;"
-                ),
-            ),
-        ),
-        (
-            ty.OPAQUE,
-            ir.ComplexExpr([], ir.Agg([ir.IntVal(1), ir.IntVal(2)])),
-            True,
-            False,
-            EvaluatedDeclarationStr(
-                global_declarations=(
-                    "X : constant RFLX_Types.Bytes :="
-                    " (RFLX_Types.Byte'Val (1), RFLX_Types.Byte'Val (2))"
-                    " with\n  Size =>\n    2 * RFLX_Types.Byte'Size;"
-                ),
-            ),
-        ),
-        (
-            ty.OPAQUE,
-            None,
-            False,
-            False,
-            EvaluatedDeclarationStr(
-                global_declarations=("X : RFLX_Types.Bytes;"),
-            ),
-        ),
-        (
-            ty.OPAQUE,
-            None,
-            False,
-            True,
-            EvaluatedDeclarationStr(
-                global_declarations=("X : RFLX_Types.Bytes;"),
-            ),
-        ),
-        (
-            ty.OPAQUE,
-            None,
-            True,
-            False,
-            EvaluatedDeclarationStr(
-                global_declarations=("X : RFLX_Types.Bytes;"),
-            ),
-        ),
-    ],
-)
-def test_state_machine_declare(
-    type_: ty.Type,
-    expression: ir.ComplexExpr | None,
-    constant: bool,
-    state_machine_global: bool,
-    expected: EvaluatedDeclarationStr,
-) -> None:
-    loc: Location = Location((1, 1))
-    allocator = AllocatorGenerator(dummy_state_machine(), Integration())
-
-    allocator._allocation_slots[loc] = 1  # noqa: SLF001
-    fsm_generator = FSMGenerator(
-        dummy_state_machine(),
-        Integration(),
-        allocator,
-        debug=Debug.BUILTIN,
-    )
-
-    result = fsm_generator._declare(  # noqa: SLF001
-        ID("X"),
-        type_,
-        lambda _: False,
-        loc,
-        expression,
-        constant,
-        state_machine_global,
-    )
-    assert "\n".join(str(d) for d in result.global_declarations) == expected.global_declarations
-    assert (
-        "\n".join(str(d) for d in result.initialization_declarations)
-        == expected.initialization_declarations
-    )
-    assert "\n".join(str(s) for s in result.initialization) == expected.initialization
-    assert "\n".join(str(s) for s in result.finalization) == expected.finalization
-
-
 @pytest.mark.parametrize(
     ("type_", "expression", "error_type", "error_msg"),
     [
@@ -659,19 +498,6 @@ def test_state_machine_declare(
             ),
             RecordFluxError,
             r"initialization using function call not yet supported",
-        ),
-        (
-            ty.OPAQUE,
-            ir.ComplexExpr(
-                [ir.Assign("X", ir.IntVal(0), INT_TY)],
-                ir.IntVar(
-                    "X",
-                    INT_TY,
-                    origin=ir.ConstructedOrigin("X", Location((10, 20))),
-                ),
-            ),
-            RecordFluxError,
-            r"initialization not yet supported",
         ),
         (
             ty.Message("T"),

@@ -17,7 +17,6 @@ from rflx.ada import (
     And,
     AndThen,
     Annotate,
-    Aspect,
     Assignment,
     Call,
     CallStatement,
@@ -80,7 +79,6 @@ from rflx.ada import (
     RecordType,
     Selected,
     Size,
-    SizeAspect,
     Slice,
     Statement,
     String,
@@ -2918,7 +2916,7 @@ class FSMGenerator:
                 is_global,
                 declaration.location,
                 declaration.expression,
-                state_machine_global=state_machine_global,
+                state_machine_global,
             )
             if isinstance(declaration.type_, (ty.Message, ty.Sequence)):
                 has_composite_declarations |= True
@@ -3010,7 +3008,6 @@ class FSMGenerator:
         is_global: Callable[[ID], bool],
         alloc_id: Location | None,
         expression: ir.ComplexExpr | None = None,
-        constant: bool = False,
         state_machine_global: bool = False,
     ) -> EvaluatedDeclaration:
         result = EvaluatedDeclaration()
@@ -3021,44 +3018,7 @@ class FSMGenerator:
                 location=expression.expr.location,
             )
 
-        if type_ == ty.OPAQUE:
-            initialization = None
-            object_type: Expr = Variable(const.TYPES_BYTES)
-            aspects: list[Aspect] = []
-
-            if expression:
-                if expression.is_expr() and isinstance(expression.expr, ir.Agg):
-                    e = expression.expr
-                    if len(e.elements) == 0:
-                        object_type = Slice(
-                            Variable(const.TYPES_BYTES),
-                            Last(const.TYPES_INDEX),
-                            First(const.TYPES_INDEX),
-                        )
-                        initialization = None
-                    if len(e.elements) > 0:
-                        aspects.append(
-                            SizeAspect(Mul(Number(len(e.elements)), Size(const.TYPES_BYTE))),
-                        )
-                        initialization = expression.expr
-                else:
-                    fail(
-                        "initialization not yet supported",
-                        location=expression.expr.location,
-                    )
-
-            result.global_declarations.append(
-                ObjectDeclaration(
-                    [identifier],
-                    object_type,
-                    self._to_ada_expr(initialization, is_global) if initialization else None,
-                    constant=constant if initialization else False,
-                    aliased=False,
-                    aspects=aspects,
-                ),
-            )
-
-        elif isinstance(type_, (ty.UniversalInteger, ty.Integer, ty.Enumeration)):
+        if isinstance(type_, (ty.UniversalInteger, ty.Integer, ty.Enumeration)):
             result.global_declarations.append(
                 ObjectDeclaration(
                     [identifier],
