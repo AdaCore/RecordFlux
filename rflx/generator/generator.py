@@ -64,7 +64,6 @@ from rflx.ada import (
     Slice,
     SparkMode,
     String,
-    Subprogram,
     SubprogramBody,
     SubprogramDeclaration,
     SubprogramUnitPart,
@@ -1623,7 +1622,7 @@ class Generator:
         type_name: str,
         enum_value: str,
         validation_expression: Expr,
-    ) -> Subprogram:
+    ) -> SubprogramDeclaration:
         return ExpressionFunctionDeclaration(
             FunctionSpecification(
                 f"Valid_{type_name}",
@@ -1634,7 +1633,7 @@ class Generator:
         )
 
     @staticmethod
-    def _integer_conversion_functions(prefix: str, integer: Integer) -> list[Subprogram]:
+    def _integer_conversion_functions(prefix: str, integer: Integer) -> list[SubprogramDeclaration]:
         return [
             ExpressionFunctionDeclaration(
                 FunctionSpecification(

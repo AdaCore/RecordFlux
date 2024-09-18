@@ -2277,10 +2277,16 @@ class SubprogramSpecification(Base):
         self.overriding = overriding
 
     @property
-    def _overriding(self) -> str:
+    def _subprogram_kind(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def _specification(self) -> str:
         if self.overriding is None:
-            return ""
-        return f"{'' if self.overriding else 'not '}overriding "
+            overriding = ""
+        else:
+            overriding = f"{'' if self.overriding else 'not '}overriding "
+        return f"{overriding}{self._subprogram_kind} {self.identifier.ada_str}"
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -2297,17 +2303,26 @@ class ParameterizedSubprogramSpecification(SubprogramSpecification):
         parameters: Sequence[Parameter] | None = None,
         overriding: bool | None = None,
     ) -> None:
-        super().__init__(identifier, overriding)
+        super().__init__(identifier=identifier, overriding=overriding)
         self.parameters = parameters or []
 
+    @abstractmethod
+    def __str__(self) -> str:
+        raise NotImplementedError
+
     @property
-    def _parameters(self) -> str:
-        return (" (" + "; ".join(map(str, self.parameters)) + ")") if self.parameters else ""
+    def _parameterized_specification(self) -> str:
+        parameters = (" (" + "; ".join(map(str, self.parameters)) + ")") if self.parameters else ""
+        return f"{self._specification}{parameters}"
 
 
 class ProcedureSpecification(ParameterizedSubprogramSpecification):
     def __str__(self) -> str:
-        return f"{self._overriding}procedure {self.identifier.ada_str}{self._parameters}"
+        return self._parameterized_specification
+
+    @property
+    def _subprogram_kind(self) -> str:
+        return "procedure"
 
 
 class FunctionSpecification(ParameterizedSubprogramSpecification):
@@ -2321,59 +2336,55 @@ class FunctionSpecification(ParameterizedSubprogramSpecification):
         self.return_type = ID(return_type)
 
     def __str__(self) -> str:
-        return (
-            f"{self._overriding}function {self.identifier.ada_str}{self._parameters}"
-            f" return {self.return_type.ada_str}"
-        )
-
-
-class Subprogram(Declaration):
-    def __init__(
-        self,
-        specification: ParameterizedSubprogramSpecification,
-        aspects: Sequence[Aspect] | None = None,
-    ) -> None:
-        self.specification = specification
-        self.aspects = aspects or []
-
-    def __hash__(self) -> int:
-        return hash(self.specification)
+        return f"{self._parameterized_specification} return {self.return_type.ada_str}"
 
     @property
-    def _aspects(self) -> str:
-        return aspect_specification(self.aspects)
-
-    @abstractmethod
-    def __str__(self) -> str:
-        raise NotImplementedError
+    def _subprogram_kind(self) -> str:
+        return "function"
 
 
-class SubprogramDeclaration(Subprogram):
+class SubprogramDeclaration(Declaration):
     def __init__(
         self,
         specification: ParameterizedSubprogramSpecification,
         aspects: Sequence[Aspect] | None = None,
         formal_parameters: Sequence[FormalDeclaration] | None = None,
-        abstract: bool = False,
-        separate: bool = False,
     ) -> None:
-        assert not separate or not abstract
-        super().__init__(specification, aspects)
+        self.specification = specification
         self.formal_parameters = formal_parameters
-        # TODO(senier): make abstract/separate children of this class
-        self.abstract = abstract
-        self.separate = separate
+        self.aspects = aspects or []
 
     def __str__(self) -> str:
-        abstract = " is abstract" if self.abstract else ""
-        separate = " is separate" if self.separate else ""
         return (
             f"{generic_formal_part(self.formal_parameters)}"
-            f"{self.specification}{abstract}{separate}{self._aspects};"
+            f"{self.specification}{self._declaration}{self._aspects};"
         )
 
+    def __hash__(self) -> int:
+        return hash(self.specification)
 
-class SubprogramBody(Subprogram):
+    @property
+    def _declaration(self) -> str:
+        return ""
+
+    @property
+    def _aspects(self) -> str:
+        return aspect_specification(self.aspects)
+
+
+class SubprogramAbstractDeclaration(SubprogramDeclaration):
+    @property
+    def _declaration(self) -> str:
+        return " is abstract"
+
+
+class SubprogramSeparateDeclaration(SubprogramDeclaration):
+    @property
+    def _declaration(self) -> str:
+        return " is separate"
+
+
+class SubprogramBody(SubprogramDeclaration):
     def __init__(
         self,
         specification: ParameterizedSubprogramSpecification,
@@ -2381,7 +2392,7 @@ class SubprogramBody(Subprogram):
         statements: Sequence[Statement],
         aspects: Sequence[Aspect] | None = None,
     ) -> None:
-        super().__init__(specification, aspects)
+        super().__init__(specification=specification, aspects=aspects)
         self.declarations = declarations or []
         self.statements = statements or []
 
@@ -2401,7 +2412,7 @@ class SubprogramBody(Subprogram):
         )
 
 
-class ExpressionFunctionDeclaration(Subprogram):
+class ExpressionFunctionDeclaration(SubprogramDeclaration):
     def __init__(
         self,
         specification: FunctionSpecification,
@@ -2411,52 +2422,31 @@ class ExpressionFunctionDeclaration(Subprogram):
         super().__init__(specification, aspects)
         self.expression = expression
 
-    def __str__(self) -> str:
-        expression = indent_next(str(self.expression), 3)
-        if not isinstance(self.expression, (IfExpr, CaseExpr)):
-            expression = f"({expression})"
-        return f"{self.specification} is\n  {expression}{self._aspects};"
-
-
-class GenericProcedureInstantiation(Declaration):
-    def __init__(
-        self,
-        identifier: StrID,
-        generic_name: StrID,
-        associations: Sequence[tuple[StrID | None, Expr]] | None = None,
-    ) -> None:
-        self.identifier = ID(identifier)
-        self.generic_name = ID(generic_name)
-        self.associations = (
-            [(ID(n) if n else None, e) for n, e in associations] if associations else []
+    @property
+    def _declaration(self) -> str:
+        expression = (
+            f"({self.expression})"
+            if not isinstance(self.expression, (IfExpr, CaseExpr))
+            else str(self.expression)
         )
-
-    def __str__(self) -> str:
-        associations = ", ".join(
-            (f"{name.ada_str} => " if name else "") + str(element)
-            for name, element in self.associations
-        )
-        if associations:
-            associations = f" ({associations})"
-        return (
-            f"procedure {self.identifier.ada_str} is new {self.generic_name.ada_str}"
-            f"{associations};"
-        )
+        return f" is\n  {indent_next(expression, 3)}"
 
 
-class GenericFunctionInstantiation(SubprogramSpecification, Declaration):
+class GenericInstantiation(SubprogramSpecification, Declaration):
     def __init__(
         self,
         identifier: StrID,
         generic_name: StrID,
         associations: Sequence[tuple[StrID | None, Expr]] | None = None,
         overriding: bool | None = None,
+        aspects: Sequence[Aspect] | None = None,
     ) -> None:
-        super().__init__(identifier, overriding)
+        super().__init__(identifier=identifier, overriding=overriding)
         self.generic_name = ID(generic_name)
         self.associations = (
             [(ID(n) if n else None, e) for n, e in associations] if associations else []
         )
+        self.aspect = aspects
 
     def __str__(self) -> str:
         associations = ", ".join(
@@ -2465,13 +2455,54 @@ class GenericFunctionInstantiation(SubprogramSpecification, Declaration):
         )
         if associations:
             associations = f" ({associations})"
-        return (
-            f"{self._overriding}function {self.identifier.ada_str} is new"
-            f" {self.generic_name.ada_str}{associations};"
+        return f"{self._specification} is new {self.generic_name.ada_str}{associations};"
+
+
+class GenericProcedureInstantiation(GenericInstantiation):
+    def __init__(
+        self,
+        identifier: StrID,
+        generic_name: StrID,
+        associations: Sequence[tuple[StrID | None, Expr]] | None = None,
+        overriding: bool | None = None,
+        aspects: Sequence[Aspect] | None = None,
+    ) -> None:
+        super().__init__(
+            identifier=identifier,
+            generic_name=generic_name,
+            overriding=overriding,
+            associations=associations,
+            aspects=aspects,
         )
 
+    @property
+    def _subprogram_kind(self) -> str:
+        return "procedure"
 
-class SubprogramRenamingDeclaration(Subprogram):
+
+class GenericFunctionInstantiation(GenericInstantiation):
+    def __init__(
+        self,
+        identifier: StrID,
+        generic_name: StrID,
+        associations: Sequence[tuple[StrID | None, Expr]] | None = None,
+        overriding: bool | None = None,
+        aspects: Sequence[Aspect] | None = None,
+    ) -> None:
+        super().__init__(
+            identifier=identifier,
+            generic_name=generic_name,
+            overriding=overriding,
+            associations=associations,
+            aspects=aspects,
+        )
+
+    @property
+    def _subprogram_kind(self) -> str:
+        return "function"
+
+
+class SubprogramRenamingDeclaration(SubprogramDeclaration):
     def __init__(
         self,
         specification: ParameterizedSubprogramSpecification,
@@ -2480,8 +2511,9 @@ class SubprogramRenamingDeclaration(Subprogram):
         super().__init__(specification)
         self.subprogram_identifier = ID(subprogram_identifier)
 
-    def __str__(self) -> str:
-        return f"{self.specification} renames {self.subprogram_identifier.ada_str};"
+    @property
+    def _declaration(self) -> str:
+        return f" renames {self.subprogram_identifier.ada_str}"
 
 
 class Pragma(Declaration, ContextItem):
@@ -2635,9 +2667,9 @@ class UnitPart:
 
 @dataclass
 class SubprogramUnitPart:
-    specification: list[Subprogram] = dataclass_field(default_factory=list)
-    body: list[Subprogram] = dataclass_field(default_factory=list)
-    private: list[Subprogram] = dataclass_field(default_factory=list)
+    specification: list[SubprogramDeclaration] = dataclass_field(default_factory=list)
+    body: list[SubprogramDeclaration] = dataclass_field(default_factory=list)
+    private: list[SubprogramDeclaration] = dataclass_field(default_factory=list)
     statements: list[Statement] = dataclass_field(default_factory=list)
 
 

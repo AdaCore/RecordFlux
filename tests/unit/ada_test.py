@@ -771,39 +771,51 @@ def test_access_parameter() -> None:
     assert str(ada.AccessParameter("A", "B", constant=True)) == "A : access constant B"
 
 
-def test_generic_procedure_instantiation() -> None:
-    assert (
-        str(
+@pytest.mark.parametrize(
+    ("subprogram", "expected"),
+    [
+        (
+            ada.GenericFunctionInstantiation(
+                "A",
+                "B",
+                [(None, ada.Variable("C")), (None, ada.Number(42))],
+            ),
+            "function A is new B (C, 42);",
+        ),
+        (
+            ada.GenericFunctionInstantiation(
+                "A",
+                "B",
+                [("P1", ada.Variable("C")), ("P2", ada.Number(42))],
+            ),
+            "function A is new B (P1 => C, P2 => 42);",
+        ),
+        (
             ada.GenericProcedureInstantiation(
                 "A",
                 "B",
                 [(None, ada.Variable("C")), (None, ada.Variable("D"))],
             ),
-        )
-        == "procedure A is new B (C, D);"
-    )
-    assert (
-        str(
+            "procedure A is new B (C, D);",
+        ),
+        (
             ada.GenericProcedureInstantiation(
                 "A",
                 "B",
                 [("P1", ada.Variable("C")), ("P2", ada.Variable("D"))],
             ),
-        )
-        == "procedure A is new B (P1 => C, P2 => D);"
-    )
+            "procedure A is new B (P1 => C, P2 => D);",
+        ),
+    ],
+)
+def test_generic_instantiation(subprogram: ada.SubprogramDeclaration, expected: str) -> None:
+    assert str(subprogram) == expected
 
 
-def test_generic_function_instantiation() -> None:
+def test_subprogram_renaming_declaration() -> None:
     assert (
-        str(
-            ada.GenericFunctionInstantiation(
-                "A",
-                "B",
-                [(None, ada.Variable("C")), (None, ada.Variable("D"))],
-            ),
-        )
-        == "function A is new B (C, D);"
+        str(ada.SubprogramRenamingDeclaration(ada.ProcedureSpecification("A"), "B"))
+        == "procedure A renames B;"
     )
     assert (
         str(
@@ -839,10 +851,17 @@ def test_generic_function_instantiation() -> None:
     )
 
 
-def test_subprogram_renaming_declaration() -> None:
+def test_subprogram_separate_declaration() -> None:
     assert (
-        str(ada.SubprogramRenamingDeclaration(ada.ProcedureSpecification("A"), "B"))
-        == "procedure A renames B;"
+        str(ada.SubprogramSeparateDeclaration(specification=ada.ProcedureSpecification("A")))
+        == "procedure A is separate;"
+    )
+
+
+def test_subprogram_abstract_declaration() -> None:
+    assert (
+        str(ada.SubprogramAbstractDeclaration(ada.ProcedureSpecification("A")))
+        == "procedure A is abstract;"
     )
 
 
