@@ -252,8 +252,9 @@ class BinExpr(Expr):
             f"{self.parenthesized(self.left)}{self.symbol}{self.parenthesized(self.right)}",
         )
 
+    @abstractmethod
     def __neg__(self) -> Expr:
-        return self.__class__(-self.left, self.right, location=self.location)
+        raise NotImplementedError
 
     def __contains__(self, item: Expr) -> bool:
         return item == self or item in (self.left, self.right)
@@ -831,6 +832,9 @@ class MathBinExpr(BinExpr):
 
 
 class Sub(MathBinExpr):
+    def __neg__(self) -> Expr:
+        return self.__class__(self.right, self.left, location=self.location)
+
     @property
     def precedence(self) -> Precedence:
         return Precedence.BINARY_ADDING_OPERATOR
@@ -852,6 +856,9 @@ class Sub(MathBinExpr):
 
 
 class Div(MathBinExpr):
+    def __neg__(self) -> Expr:
+        return self.__class__(-self.left, self.right, location=self.location)
+
     @property
     def precedence(self) -> Precedence:
         return Precedence.MULTIPLYING_OPERATOR
@@ -879,6 +886,9 @@ class Div(MathBinExpr):
 
 
 class Pow(MathBinExpr):
+    def __neg__(self) -> Expr:
+        return Neg(self)
+
     @property
     def precedence(self) -> Precedence:
         return Precedence.HIGHEST_PRECEDENCE_OPERATOR
@@ -896,6 +906,9 @@ class Pow(MathBinExpr):
 
 
 class Mod(MathBinExpr):
+    def __neg__(self) -> Expr:
+        return Neg(self)
+
     @property
     def precedence(self) -> Precedence:
         return Precedence.MULTIPLYING_OPERATOR
@@ -924,6 +937,9 @@ class Mod(MathBinExpr):
 
 class Rem(MathBinExpr):
     """Only used by code generator and therefore provides minimum functionality."""
+
+    def __neg__(self) -> Expr:
+        return Neg(self)
 
     @property
     def precedence(self) -> Precedence:
