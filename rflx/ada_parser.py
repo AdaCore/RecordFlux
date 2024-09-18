@@ -1519,9 +1519,9 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def subprogram_declaration(
         self,
         data: (
-            tuple[ada.SubprogramSpecification, list[ada.Aspect]]
+            tuple[ada.ParameterizedSubprogramSpecification, list[ada.Aspect]]
             | tuple[
-                ada.SubprogramSpecification,
+                ada.ParameterizedSubprogramSpecification,
                 RenamingDeclaration | AbstractDeclaration,
                 list[ada.Aspect],
             ]
@@ -2008,7 +2008,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def formal_concrete_subprogram_declaration(
         self,
-        data: tuple[ada.SubprogramSpecification],
+        data: tuple[ada.ParameterizedSubprogramSpecification],
     ) -> ada.SubprogramDeclaration:
         return ada.SubprogramDeclaration(specification=data[0])
 
