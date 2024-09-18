@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import textwrap
 from collections.abc import Callable, Mapping
 
@@ -55,6 +56,7 @@ from rflx.expr import (
     Precedence,
     Present,
     QualifiedExpr,
+    Rem,
     Selected,
     Size,
     String,
@@ -722,6 +724,32 @@ def test_add_neg() -> None:
     assert -Add(Variable("X"), Number(1)) == Add(Neg(Variable("X")), Number(-1))
 
 
+@pytest.mark.parametrize(
+    ("args"),
+    [
+        [],
+        [0],
+        [42],
+        # 0 in argument
+        [0, 0],
+        [0, 5],
+        [1, 0],
+        [1, 0, 0],
+        # Argument sign variations
+        [1, 5],
+        [-1, 5],
+        [1, -5],
+        [-1, -5],
+        [1, 5, 42],
+        [-1, 5, -42],
+        [1, -5, 42],
+        [-1, -5, -42],
+    ],
+)
+def test_add_neg_eval(args: list[int]) -> None:
+    assert (-Add(*[Number(a) for a in args])).simplified() == Number(-sum(args))
+
+
 def test_add_variables() -> None:
     assert_equal(Add(Variable("X"), Variable("Y")).variables(), [Variable("X"), Variable("Y")])
 
@@ -791,6 +819,32 @@ def test_mul_neg() -> None:
     assert -Mul(Variable("X"), Number(2)) == Mul(Variable("X"), Number(-2))
 
 
+@pytest.mark.parametrize(
+    ("args"),
+    [
+        [],
+        [0],
+        [42],
+        # 0 in argument
+        [0, 0],
+        [0, 5],
+        [1, 0],
+        [1, 0, 0],
+        # Argument sign variations
+        [1, 5],
+        [-1, 5],
+        [1, -5],
+        [-1, -5],
+        [1, 5, 42],
+        [-1, 5, -42],
+        [1, -5, 42],
+        [-1, -5, -42],
+    ],
+)
+def test_mul_neg_eval(args: list[int]) -> None:
+    assert (-Mul(*[Number(a) for a in args])).simplified() == Number(-math.prod(args))
+
+
 def test_mul_variables() -> None:
     assert_equal(Mul(Variable("X"), Variable("Y")).variables(), [Variable("X"), Variable("Y")])
 
@@ -802,7 +856,25 @@ def test_mul_simplified() -> None:
 
 
 def test_sub_neg() -> None:
-    assert -Sub(Number(1), Variable("X")) == Sub(Number(-1), Variable("X"))
+    assert -Sub(Number(1), Variable("X")) == Sub(Variable("X"), Number(1))
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        # 0 in argument
+        (0, 0),
+        (0, 5),
+        (1, 0),
+        # Argument sign variations
+        (1, 5),
+        (-1, 5),
+        (1, -5),
+        (-1, -5),
+    ],
+)
+def test_sub_neg_eval(left: int, right: int) -> None:
+    assert (-Sub(Number(left), Number(right))).simplified() == Number(-(left - right))
 
 
 def test_sub_variables() -> None:
@@ -841,7 +913,23 @@ def test_sub_simplified_to_add() -> None:
 
 
 def test_div_neg() -> None:
-    assert -Div(Variable("X"), Number(1)) == Div(Neg(Variable("X")), Number(1))
+    assert -Div(Variable("X"), Number(5)) == Div(-(Variable("X")), Number(5))
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        # 0 in argument
+        (0, 5),
+        # Argument sign variations
+        (10, 5),
+        (-10, 5),
+        (10, -5),
+        (-10, -5),
+    ],
+)
+def test_div_neg_eval(left: int, right: int) -> None:
+    assert (-Div(Number(left), Number(right))).simplified() == Number(-(left // right))
 
 
 def test_div_variables() -> None:
@@ -852,6 +940,31 @@ def test_div_simplified() -> None:
     assert Div(Variable("X"), Number(1)).simplified() == Div(Variable("X"), Number(1))
     assert Div(Number(6), Number(2)).simplified() == Number(3)
     assert Div(Number(9), Number(2)).simplified() == Div(Number(9), Number(2))
+
+
+def test_pow_neg() -> None:
+    assert -Pow(Variable("X"), Number(5)) == -Pow(Variable("X"), Number(5))
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        # 0 in argument
+        (0, 0),
+        (-10, 0),
+        (0, 4),
+        # Argument sign variations
+        # Constraints:
+        # * The second argument cannot be negative.
+        # * The second argument must be tested with an even and odd value.
+        (10, 4),
+        (-10, 4),
+        (10, 5),
+        (-10, 5),
+    ],
+)
+def test_pow_neg_eval(left: int, right: int) -> None:
+    assert (-Pow(Number(left), Number(right))).simplified() == Number(-(left**right))
 
 
 def test_pow_simplified() -> None:
@@ -865,6 +978,46 @@ def test_pow_simplified() -> None:
 
 def test_pow_variables() -> None:
     assert Pow(Variable("X"), Variable("Y")).variables() == [Variable("X"), Variable("Y")]
+
+
+def test_rem_neg() -> None:
+    assert -Rem(Variable("X"), Number(5)) == -Rem(Variable("X"), Number(5))
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [
+        # 0 in argument
+        (0, 3, -Rem(Number(0), Number(3))),
+        # Argument sign variations
+        (7, 3, -Rem(Number(7), Number(3))),
+        (-7, 3, -Rem(Number(-7), Number(3))),
+        (7, -3, -Rem(Number(7), Number(-3))),
+        (-7, -3, -Rem(Number(-7), Number(-3))),
+    ],
+)
+def test_rem_neg_eval(left: int, right: int, expected: Expr) -> None:
+    assert (-Rem(Number(left), Number(right))).simplified() == expected
+
+
+def test_mod_neg() -> None:
+    assert -Mod(Variable("X"), Number(5)) == -Mod(Variable("X"), Number(5))
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        # 0 in argument
+        (0, 3),
+        # Argument sign variations
+        (7, 3),
+        (-7, 3),
+        (7, -3),
+        (-7, -3),
+    ],
+)
+def test_mod_neg_eval(left: int, right: int) -> None:
+    assert (-Mod(Number(left), Number(right))).simplified() == Number(-(left % right))
 
 
 def test_mod_simplified() -> None:
