@@ -702,7 +702,7 @@ def test_neg_substituted() -> None:
         # Argument simplifies to some other expression
         (
             Neg(Mul(Variable("X"), Add(Number(2), Number(3)))),
-            Neg(Mul(Variable("X"), Number(5))),
+            Mul(Variable("X"), Number(-5)),
         ),
         # Argument cannot be simplified
         (Neg(Variable("X")), Neg(Variable("X"))),

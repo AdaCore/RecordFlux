@@ -726,12 +726,7 @@ class Neg(Expr):
         return expr
 
     def simplified(self) -> Expr:
-        simple_expr = self.expr.simplified()
-        if isinstance(simple_expr, Neg):
-            return simple_expr.expr
-        if isinstance(simple_expr, Number):
-            return -simple_expr
-        return self.__class__(simple_expr, self.location)
+        return -self.expr.simplified()
 
 
 class MathAssExpr(AssExpr):
