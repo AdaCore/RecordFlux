@@ -2453,7 +2453,7 @@ class GenericInstantiation(SubprogramSpecification, Declaration):
         self.associations = (
             [(ID(n) if n else None, e) for n, e in associations] if associations else []
         )
-        self.aspect = aspects
+        self.aspects = aspects
 
     def __str__(self) -> str:
         associations = ", ".join(
@@ -2462,7 +2462,10 @@ class GenericInstantiation(SubprogramSpecification, Declaration):
         )
         if associations:
             associations = f" ({associations})"
-        return f"{self._specification} is new {self.generic_name.ada_str}{associations};"
+        return (
+            f"{self._specification} is new {self.generic_name.ada_str}{associations}"
+            f"{aspect_specification(self.aspects)};"
+        )
 
 
 class GenericProcedureInstantiation(GenericInstantiation):
@@ -2696,7 +2699,7 @@ def declarative_items(declarations: Sequence[Declaration], private: bool = False
     return result
 
 
-def aspect_specification(aspects: Sequence[Aspect]) -> str:
+def aspect_specification(aspects: Sequence[Aspect] | None) -> str:
     if not aspects:
         return ""
     return " with\n" + ",\n".join(indent(str(aspect), 2) for aspect in aspects)
