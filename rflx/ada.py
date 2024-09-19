@@ -2517,8 +2517,9 @@ class SubprogramRenamingDeclaration(SubprogramDeclaration):
         self,
         specification: ParameterizedSubprogramSpecification,
         subprogram_identifier: StrID,
+        aspects: Sequence[Aspect] | None = None,
     ) -> None:
-        super().__init__(specification)
+        super().__init__(specification=specification, aspects=aspects)
         self.subprogram_identifier = ID(subprogram_identifier)
 
     @property
