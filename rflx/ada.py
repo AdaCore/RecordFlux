@@ -2331,12 +2331,19 @@ class FunctionSpecification(ParameterizedSubprogramSpecification):
         identifier: StrID,
         return_type: StrID,
         parameters: Sequence[Parameter] | None = None,
+        overriding: bool | None = None,
+        not_null: bool = False,
     ) -> None:
-        super().__init__(identifier, parameters)
+        super().__init__(identifier=identifier, parameters=parameters, overriding=overriding)
         self.return_type = ID(return_type)
+        self.not_null = not_null
 
     def __str__(self) -> str:
-        return f"{self._parameterized_specification} return {self.return_type.ada_str}"
+        null_exclusion = "not null " if self.not_null else ""
+        return (
+            f"{self._parameterized_specification} return "
+            f"{null_exclusion}{self.return_type.ada_str}"
+        )
 
     @property
     def _subprogram_kind(self) -> str:
