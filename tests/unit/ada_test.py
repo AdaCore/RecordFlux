@@ -659,12 +659,17 @@ def test_formal_package_declaration() -> None:
 
 def test_generic_package_instantiation() -> None:
     assert (
-        str(ada.GenericPackageInstantiation("A", "B", ["C", "D"])) == "package A is new B (C, D);\n"
+        str(ada.GenericPackageInstantiation("A", "B", [(None, "C"), (None, "D")]))
+        == "package A is new B (C, D);\n"
+    )
+    assert (
+        str(ada.GenericPackageInstantiation("A", "B", [("P1", "C"), ("P2", "D")]))
+        == "package A is new B (P1 => C, P2 => D);\n"
     )
 
 
 def test_generic_package_instantiation_hash() -> None:
-    assert hash(ada.GenericPackageInstantiation("A", "B", ["C", "D"])) is not None
+    assert hash(ada.GenericPackageInstantiation("A", "B", [(None, "C"), (None, "D")])) is not None
 
 
 def test_package_renaming_declaration() -> None:

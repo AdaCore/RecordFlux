@@ -835,15 +835,15 @@ def create_sequence_instantiation(
             ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
             prefix * const.MESSAGE_SEQUENCE_PACKAGE,
             [
-                element_type_identifier * "Context",
-                element_type_identifier * "Initialize",
-                element_type_identifier * "Take_Buffer",
-                element_type_identifier * "Copy",
-                element_type_identifier * "Has_Buffer",
-                element_type_identifier * "Size",
-                element_type_identifier * "Message_Last",
-                element_type_identifier * "Initialized",
-                element_type_identifier * "Well_Formed_Message",
+                (None, element_type_identifier * "Context"),
+                (None, element_type_identifier * "Initialize"),
+                (None, element_type_identifier * "Take_Buffer"),
+                (None, element_type_identifier * "Copy"),
+                (None, element_type_identifier * "Has_Buffer"),
+                (None, element_type_identifier * "Size"),
+                (None, element_type_identifier * "Message_Last"),
+                (None, element_type_identifier * "Initialized"),
+                (None, element_type_identifier * "Well_Formed_Message"),
             ],
         )
     elif isinstance(element_type, model.Scalar):
@@ -860,11 +860,11 @@ def create_sequence_instantiation(
             ID(sequence_type.identifier.flat if flat else prefix * sequence_type.identifier),
             prefix * const.SCALAR_SEQUENCE_PACKAGE,
             [
-                element_type_identifier,
-                str(element_type.size),
-                prefix * element_type_package * f"Valid_{element_type.name}",
-                prefix * element_type_package * "To_Actual",
-                prefix * element_type_package * "To_Base_Integer",
+                (None, element_type_identifier),
+                (None, str(element_type.size)),
+                (None, prefix * element_type_package * f"Valid_{element_type.name}"),
+                (None, prefix * element_type_package * "To_Actual"),
+                (None, prefix * element_type_package * "To_Base_Integer"),
             ],
         )
     else:

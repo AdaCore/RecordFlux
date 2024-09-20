@@ -1550,17 +1550,22 @@ class GenericPackageInstantiation(PackageDeclaration):
         self,
         identifier: StrID,
         generic_package: StrID,
-        associations: Sequence[StrID] | None = None,
+        associations: Sequence[tuple[StrID | None, StrID | Expr]] | None = None,
     ) -> None:
         self.identifier = ID(identifier)
         self.generic_package = ID(generic_package)
-        self.associations = list(map(ID, associations or []))
+        self.associations: list[tuple[ID | None, Expr]] = [
+            (ID(i) if i else None, Variable(e) if isinstance(e, (str, ID)) else e)
+            for i, e in associations or []
+        ]
 
     def __hash__(self) -> int:
         return hash(self.identifier)
 
     def __str__(self) -> str:
-        associations = ", ".join([a.ada_str for a in self.associations])
+        associations = ", ".join(
+            [f"{n} => {i}" if n else str(i) for n, i in self.associations],
+        )
         if associations:
             associations = f" ({associations})"
         return (
