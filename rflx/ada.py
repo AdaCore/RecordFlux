@@ -2586,7 +2586,7 @@ class PackageUnit(Unit):
         declaration: PackageDeclaration,
         body_context: list[ContextItem],
         body: PackageBody,
-        formal_parameters: list[SubprogramDeclaration | TypeDeclaration] | None = None,
+        formal_parameters: list[FormalSubprogramDeclaration | TypeDeclaration] | None = None,
     ) -> None:
         assert declaration.identifier == body.identifier
         self.declaration_context = declaration_context
@@ -2611,11 +2611,9 @@ class PackageUnit(Unit):
     def ads(self) -> str:
         formal_part = ""
         if self.formal_parameters is not None:
-            formal_part = "generic"
-            for d in self.formal_parameters:
-                prefix = "with " if isinstance(d, SubprogramDeclaration) else ""
-                formal_part += f"\n{indent(prefix + str(d), 3)}"
-            formal_part += "\n"
+            formal_part = "generic\n" + "\n".join(indent(str(p), 3) for p in self.formal_parameters)
+            if self.formal_parameters:
+                formal_part += "\n"
         return f"{context_clause(self.declaration_context)}{formal_part}{self.declaration}"
 
     @property

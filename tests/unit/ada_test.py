@@ -1056,7 +1056,7 @@ def test_declarative_items() -> None:
                 body=ada.PackageBody("P"),
                 formal_parameters=[
                     ada.RangeType("T", first=ada.Number(0), last=ada.Number(124)),
-                    ada.SubprogramDeclaration(
+                    ada.FormalSubprogramDeclaration(
                         specification=ada.ProcedureSpecification(
                             "P",
                             parameters=[ada.Parameter(["P1"], "T", ada.Number(42))],
