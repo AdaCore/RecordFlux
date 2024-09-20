@@ -1456,16 +1456,18 @@ class FormalSubprogramDeclaration(FormalDeclaration):
         self,
         specification: SubprogramSpecification,
         default: StrID | None = None,
+        aspects: Sequence[Aspect] | None = None,
     ) -> None:
         self.specification = specification
         self.default = ID(default) if default else None
+        self.aspects = aspects
 
     def __hash__(self) -> int:
         return hash(self.specification)
 
     def __str__(self) -> str:
         default = f" is {self.default}" if self.default else ""
-        return f"with {self.specification}{default};"
+        return f"with {self.specification}{default}{aspect_specification(self.aspects)};"
 
 
 class FormalPackageDeclaration(FormalDeclaration):
@@ -1502,7 +1504,7 @@ class PackageDeclaration(Declaration):
         self.declarations = declarations or []
         self.private_declarations = private_declarations or []
         self.formal_parameters = formal_parameters
-        self.aspects = aspects or []
+        self.aspects = aspects
 
     def __str__(self) -> str:
         return (
@@ -1525,7 +1527,7 @@ class PackageBody(Declaration):
         self.identifier = ID(identifier)
         self.declarations = declarations or []
         self.statements = statements or []
-        self.aspects = aspects or []
+        self.aspects = aspects
 
     def __str__(self) -> str:
         if not self.declarations and not self.statements:
@@ -1593,7 +1595,7 @@ class ObjectDeclaration(Declaration):
         self.expression = expression
         self.constant = constant
         self.aliased = aliased
-        self.aspects = aspects or []
+        self.aspects = aspects
 
     def __hash__(self) -> int:
         return hash(tuple(self.identifiers))
@@ -1635,7 +1637,7 @@ class TypeDeclaration(Declaration, FormalDeclaration):
     ) -> None:
         self.identifier = ID(identifier)
         self.discriminants = discriminants
-        self.aspects = aspects or []
+        self.aspects = aspects
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -2359,12 +2361,12 @@ class SubprogramDeclaration(Declaration):
     ) -> None:
         self.specification = specification
         self.formal_parameters = formal_parameters
-        self.aspects = aspects or []
+        self.aspects = aspects
 
     def __str__(self) -> str:
         return (
             f"{generic_formal_part(self.formal_parameters)}"
-            f"{self.specification}{self._declaration}{self._aspects};"
+            f"{self.specification}{self._declaration}{aspect_specification(self.aspects)};"
         )
 
     def __hash__(self) -> int:
@@ -2373,10 +2375,6 @@ class SubprogramDeclaration(Declaration):
     @property
     def _declaration(self) -> str:
         return ""
-
-    @property
-    def _aspects(self) -> str:
-        return aspect_specification(self.aspects)
 
 
 class SubprogramAbstractDeclaration(SubprogramDeclaration):
@@ -2411,7 +2409,7 @@ class SubprogramBody(SubprogramDeclaration):
 
     def __str__(self) -> str:
         return (
-            f"{self.specification}{self._aspects} is\n"
+            f"{self.specification}{aspect_specification(self.aspects)} is\n"
             f"{self._declarations()}"
             f"begin\n"
             f"{self._statements()}\n"

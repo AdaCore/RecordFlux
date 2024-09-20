@@ -325,14 +325,11 @@ class StateMachineGenerator:
                     function.identifier,
                     procedure_parameters,
                 ),
-                [
-                    *(
-                        [Precondition(Not(Constrained("RFLX_Result")))]
-                        if isinstance(function.type_, ty.Enumeration)
-                        and function.type_.always_valid
-                        else []
-                    ),
-                ],
+                (
+                    [Precondition(Not(Constrained("RFLX_Result")))]
+                    if isinstance(function.type_, ty.Enumeration) and function.type_.always_valid
+                    else None
+                ),
             ),
         ]
 
