@@ -585,10 +585,11 @@ ADA_GRAMMAR = lark.Lark(
 
         # 12.3 (4)
         generic_association: \
-                                    explicit_generic_actual_parameter
+                                    ( name "=>" )? \
+                                        explicit_generic_actual_parameter
 
         # 12.3 (5)
-        explicit_generic_actual_parameter: name
+        explicit_generic_actual_parameter: expression
 
         # 12.4 (2/3)
         formal_object_declaration: \
@@ -855,7 +856,7 @@ class PackageInstantiationPart(PackagePart):
     def __init__(
         self,
         name: ID,
-        associations: list[ID] | None,
+        associations: list[tuple[ID | None, ada.Expr]] | None,
     ):
         self.name = name
         self.associations = associations
@@ -1910,7 +1911,7 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def generic_package_instantiation_part(
         self,
-        data: tuple[ID, list[ID] | None],
+        data: tuple[ID, list[tuple[ID | None, ada.Expr]] | None],
     ) -> PackageInstantiationPart:
         return PackageInstantiationPart(name=data[0], associations=data[1])
 
@@ -1930,12 +1931,18 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
 
     def generic_association(
         self,
-        data: list[tuple[ID | None, ada.Expr]],
+        data: list[ID | ada.Expr],
     ) -> tuple[ID | None, ada.Expr]:
-        return data[0]
+        if len(data) == 1:
+            assert isinstance(data[0], ada.Expr)
+            return None, data[0]
+        assert len(data) == 2
+        assert isinstance(data[0], ID)
+        assert isinstance(data[1], ada.Expr)
+        return data[0], data[1]
 
-    def explicit_generic_actual_parameter(self, data: list[ID]) -> tuple[None, ada.Expr]:
-        return (None, ada.Variable(data[0]))
+    def explicit_generic_actual_parameter(self, data: list[ada.Expr]) -> ada.Expr:
+        return data[0]
 
     def formal_object_declaration(
         self,
