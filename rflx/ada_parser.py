@@ -267,7 +267,9 @@ ADA_GRAMMAR = lark.Lark(
 
         # 4.1.4 (3/2)
         attribute_designator: \
-                                    identifier ( "(" expression ")" )?
+                                    identifier optional_argument
+
+        optional_argument:          ( "(" expression ")" )?
 
         # 4.3 (2)
         aggregate:                  array_aggregate
@@ -1241,7 +1243,8 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
     def selector_name(self, data: list[ID]) -> ID:
         return data[0]
 
-    def attribute_reference(self, data: tuple[ID, str]) -> ada.Attribute:
+    def attribute_reference(self, data: tuple[ID, tuple[ID, ada.Expr | None]]) -> ada.Attribute:
+        prefix, (identifier, expression) = data
         attributes: dict[str, type[ada.Attribute]] = {
             "Size": ada.Size,
             "Length": ada.Length,
@@ -1259,10 +1262,24 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
             "Class": ada.Class,
             "UnrestrictedAccess": ada.UnrestrictedAccess,
         }
-        return attributes[data[1]](data[0])
+        attribute_expressions: dict[str, type[ada.AttributeExpr]] = {
+            "Pos": ada.Pos,
+            "Succ": ada.Succ,
+            "Val": ada.Val,
+        }
 
-    def attribute_designator(self, data: list[ID]) -> str:
-        return data[0].ada_str
+        name = identifier.parts[0]
+        if expression is not None:
+            return attribute_expressions[name](prefix, expression)
+        return attributes[name](prefix)
+
+    def attribute_designator(self, data: tuple[ID, ada.Expr | None]) -> tuple[ID, ada.Expr | None]:
+        return data[0], data[1]
+
+    def optional_argument(self, data: tuple[ada.Expr]) -> ada.Expr | None:
+        if len(data) == 0:
+            return None
+        return data[0]
 
     def aggregate(
         self,

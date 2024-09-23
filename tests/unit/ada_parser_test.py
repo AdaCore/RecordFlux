@@ -1185,8 +1185,20 @@ def test_roundtrip_model(unit: ada.Unit) -> None:
 
         end P;
         """,
+        """\
+        package P
+        is
+
+           pragma Assert (L'Pos (L'Last) /= M'Pos (M'Last));
+
+           pragma Assert (L'Succ (A) = B);
+
+           pragma Assert (L'Val (A) = B);
+
+        end P;
+        """,
     ],
-    ids=range(54),
+    ids=range(55),
 )
 def test_roundtrip_text(data: str) -> None:
     data = textwrap.dedent(data)
