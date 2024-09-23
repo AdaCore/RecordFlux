@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from enum import Enum
 
-from rflx import expr, expr_conv, ty
+from rflx import expr, expr_conv, typing_ as rty
 from rflx.ada import (
     TRUE,
     Add,
@@ -121,7 +121,7 @@ class SerializerGenerator:
                                                         common.substitution(
                                                             message,
                                                             self.prefix,
-                                                            target_type=ty.BIT_LENGTH,
+                                                            target_type=rty.BIT_LENGTH,
                                                         ),
                                                     ).simplified(),
                                                 ),

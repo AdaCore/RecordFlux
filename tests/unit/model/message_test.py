@@ -8,7 +8,7 @@ from functools import lru_cache
 
 import pytest
 
-from rflx import expr_proof, ty
+from rflx import expr_proof, typing_ as rty
 from rflx.error import FatalError
 from rflx.expr import (
     FALSE,
@@ -6005,13 +6005,13 @@ def test_set_refinements() -> None:
     message.set_refinements([models.refinement()])
 
     assert message.type_.refinements == [
-        ty.Refinement(
+        rty.Refinement(
             "F",
-            ty.Message(
+            rty.Message(
                 ID("P::M", Location((1, 1))),
                 {("F",)},
                 {},
-                {ID("F"): ty.OPAQUE},
+                {ID("F"): rty.OPAQUE},
                 refinements=[],
                 is_definite=True,
             ),
@@ -6346,7 +6346,7 @@ def test_refinement_type_error_in_condition() -> None:
             message,
             Field("P"),
             message,
-            Equal(Variable("L"), Literal("True", type_=ty.BOOLEAN, location=Location((10, 20)))),
+            Equal(Variable("L"), Literal("True", type_=rty.BOOLEAN, location=Location((10, 20)))),
         )
 
 

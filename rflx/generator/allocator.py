@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import zip_longest
 
-from rflx import ir, ty
+from rflx import ir, typing_ as rty
 from rflx.ada import (
     Add,
     And,
@@ -352,8 +352,8 @@ class AllocatorGenerator:
         )
 
     @staticmethod
-    def _needs_allocation(type_: ty.Type) -> bool:
-        return isinstance(type_, (ty.Message, ty.Sequence))
+    def _needs_allocation(type_: rty.Type) -> bool:
+        return isinstance(type_, (rty.Message, rty.Sequence))
 
     def _allocate_global_slots(
         self,
@@ -421,8 +421,8 @@ class AllocatorGenerator:
                 if (
                     isinstance(statement, ir.Assign)
                     and isinstance(statement.expression, ir.Comprehension)
-                    and isinstance(statement.expression.sequence.type_, ty.Sequence)
-                    and isinstance(statement.expression.sequence.type_.element, ty.Message)
+                    and isinstance(statement.expression.sequence.type_, rty.Sequence)
+                    and isinstance(statement.expression.sequence.type_.element, rty.Message)
                     and isinstance(statement.expression.sequence, (ir.Var, ir.FieldAccess))
                 ):
                     if isinstance(statement.expression.sequence, ir.FieldAccess):

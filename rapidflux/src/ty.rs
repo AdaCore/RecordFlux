@@ -6,15 +6,14 @@ use pyo3::{
     exceptions::PyTypeError,
     prelude::*,
     sync::GILOnceCell,
-    type_object::PyTypeInfo,
-    types::{PyBool, PyBytes, PyInt, PyList, PyNotImplemented, PySet, PyTuple, PyType},
+    types::{PyBool, PyBytes, PyInt, PyNotImplemented, PySet, PyTuple},
 };
 use serde::{Deserialize, Serialize};
 
 use librapidflux::ty as lib;
 
 use crate::{
-    diagnostics::{Annotation, Location, RapidFluxError},
+    diagnostics::Location,
     identifier::{to_id, ID},
     impl_states, register_submodule_declarations,
 };
@@ -24,13 +23,6 @@ pub struct Builtins;
 
 #[pymethods]
 impl Builtins {
-    #[classattr]
-    #[pyo3(name = "UNDEFINED")]
-    fn undefined(py: Python<'_>) -> &PyObject {
-        static UNDEFINED: GILOnceCell<PyObject> = GILOnceCell::new();
-        UNDEFINED.get_or_init(py, || to_py(&lib::Ty::Undefined, py))
-    }
-
     #[classattr]
     #[pyo3(name = "BOOLEAN")]
     fn boolean(py: Python<'_>) -> &PyObject {
@@ -1051,100 +1043,6 @@ impl Bounds {
     }
 }
 
-#[pyfunction]
-fn common_type(types: &Bound<'_, PyList>, py: Python<'_>) -> PyObject {
-    to_py(
-        &lib::common_type(&types.iter().map(|t| to_ty(&t)).collect::<Vec<_>>()),
-        py,
-    )
-}
-
-#[pyfunction]
-#[pyo3(signature = (actual, expected, location = None, description = ""))]
-#[allow(clippy::needless_pass_by_value)]
-fn check_type(
-    actual: &Bound<'_, PyAny>,
-    expected: &Bound<'_, PyAny>,
-    location: Option<&Location>,
-    description: &str,
-) -> RapidFluxError {
-    let expected = if let Ok(tuple) = expected.extract::<Vec<Bound<'_, PyAny>>>() {
-        tuple
-    } else if let Ok(ty) = expected.extract::<Bound<'_, PyAny>>() {
-        Vec::from([ty])
-    } else {
-        panic!("unexpected argument type for expected: {expected}")
-    };
-    RapidFluxError(lib::check_type(
-        &to_ty(actual),
-        &expected.iter().map(|e| to_ty(e)).collect::<Vec<_>>(),
-        location.map(|l| &l.0),
-        description,
-    ))
-}
-
-#[pyfunction]
-#[pyo3(signature = (actual, expected, location = None, description = "", additional_annotations = None))]
-fn check_type_instance(
-    actual: &Bound<'_, PyAny>,
-    expected: &Bound<'_, PyAny>,
-    location: Option<&Location>,
-    description: &str,
-    additional_annotations: Option<Vec<Annotation>>,
-    py: Python<'_>,
-) -> PyResult<RapidFluxError> {
-    let mut exp = vec![];
-    let expected = if let Ok(tuple) = expected.extract::<Vec<Bound<'_, PyType>>>() {
-        tuple
-    } else if let Ok(ty) = expected.extract::<Bound<'_, PyType>>() {
-        Vec::from([ty])
-    } else {
-        panic!("unexpected argument type for expected: {expected}")
-    };
-    for e in expected {
-        if e.eq(Undefined::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Undefined);
-        } else if e.eq(Any::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Any);
-        } else if e.eq(Enumeration::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Enumeration);
-        } else if e.eq(AnyInteger::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::AnyInteger);
-        } else if e.eq(UniversalInteger::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::UniversalInteger);
-        } else if e.eq(Integer::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Integer);
-        } else if e.eq(Composite::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Composite);
-        } else if e.eq(Aggregate::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Aggregate);
-        } else if e.eq(Sequence::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Sequence);
-        } else if e.eq(Compound::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Compound);
-        } else if e.eq(Structure::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Structure);
-        } else if e.eq(Message::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Message);
-        } else if e.eq(Channel::type_object_bound(py))? {
-            exp.push(lib::TyDiscriminants::Channel);
-        } else {
-            panic!("unexpected type {e}")
-        }
-    }
-    Ok(RapidFluxError(lib::check_type_instance(
-        &to_ty(actual),
-        &exp,
-        location.map(|l| &l.0),
-        description,
-        &additional_annotations
-            .unwrap_or_default()
-            .into_iter()
-            .map(|a| a.0)
-            .collect::<Vec<_>>(),
-    )))
-}
-
 fn to_ty(obj: &Bound<'_, PyAny>) -> lib::Ty {
     if obj.extract::<PyRef<Undefined>>().is_ok() {
         lib::Ty::Undefined
@@ -1181,7 +1079,6 @@ fn to_py(obj: &lib::Ty, py: Python<'_>) -> PyObject {
         )
         .unwrap()
         .into_py(py),
-        lib::Ty::AnyInteger => Py::new(py, AnyInteger::new()).unwrap().into_py(py),
         lib::Ty::UniversalInteger(universal_integer) => Py::new(
             py,
             AnyInteger::new().add_subclass(UniversalInteger(universal_integer.clone())),
@@ -1193,7 +1090,6 @@ fn to_py(obj: &lib::Ty, py: Python<'_>) -> PyObject {
                 .unwrap()
                 .into_py(py)
         }
-        lib::Ty::Composite => Py::new(py, Composite::new()).unwrap().into_py(py),
         lib::Ty::Aggregate(aggregate) => Py::new(
             py,
             Composite::new().add_subclass(Aggregate(aggregate.clone())),
@@ -1206,7 +1102,6 @@ fn to_py(obj: &lib::Ty, py: Python<'_>) -> PyObject {
         )
         .unwrap()
         .into_py(py),
-        lib::Ty::Compound => Py::new(py, Compound::new()).unwrap().into_py(py),
         lib::Ty::Structure(structure) => Py::new(
             py,
             Compound::new().add_subclass(Structure(structure.clone())),
@@ -1267,5 +1162,5 @@ register_submodule_declarations!(
         Message,
         Channel,
     ],
-    [common_type, check_type, check_type_instance]
+    []
 );

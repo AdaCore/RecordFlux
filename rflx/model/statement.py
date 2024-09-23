@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Callable, Generator, Mapping, Sequence
 
-from rflx import expr_conv, ir, ty
+from rflx import expr_conv, ir, typing_ as rty
 from rflx.common import Base
 from rflx.expr import Expr, Variable
 from rflx.identifier import ID, StrID
@@ -14,7 +14,7 @@ class Statement(Base):
     def __init__(
         self,
         identifier: StrID,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ):
         self.identifier = ID(identifier)
@@ -24,7 +24,7 @@ class Statement(Base):
     @abstractmethod
     def check_type(
         self,
-        statement_type: ty.Type,
+        statement_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         """Set the types of variables, and check the types of the statement and expressions."""
@@ -45,7 +45,7 @@ class Assignment(Statement):
         self,
         identifier: StrID,
         expression: Expr,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(identifier, type_, location)
@@ -61,14 +61,14 @@ class VariableAssignment(Assignment):
 
     def check_type(
         self,
-        statement_type: ty.Type,
+        statement_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = statement_type
         self.expression = self.expression.substituted(typify_variable)
-        error = ty.check_type_instance(
+        error = rty.check_type_instance(
             statement_type,
-            ty.Any,
+            rty.Any,
             self.location,
             f'variable "{self.identifier}"',
         )
@@ -76,7 +76,7 @@ class VariableAssignment(Assignment):
         return error
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
-        assert isinstance(self.type_, ty.NamedTypeClass)
+        assert isinstance(self.type_, rty.NamedTypeClass)
         expression = expr_conv.to_ir(self.expression, variable_id)
         return [*expression.stmts, ir.Assign(self.identifier, expression.expr, self.type_, self)]
 
@@ -87,7 +87,7 @@ class MessageFieldAssignment(Assignment):
         message: StrID,
         field: StrID,
         expression: Expr,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(message, expression, type_, location)
@@ -99,12 +99,12 @@ class MessageFieldAssignment(Assignment):
 
     def check_type(
         self,
-        statement_type: ty.Type,
+        statement_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         error = RecordFluxError()
-        field_type: ty.Type = ty.UNDEFINED
-        if isinstance(statement_type, ty.Message):
+        field_type: rty.Type = rty.UNDEFINED
+        if isinstance(statement_type, rty.Message):
             if self.field in statement_type.fields:
                 field_type = statement_type.types[self.field]
             elif self.field in statement_type.parameters:
@@ -136,9 +136,9 @@ class MessageFieldAssignment(Assignment):
         self.type_ = statement_type
         self.expression = self.expression.substituted(typify_variable)
         error.extend(
-            ty.check_type_instance(
+            rty.check_type_instance(
                 statement_type,
-                ty.Message,
+                rty.Message,
                 self.location,
                 f'variable "{self.identifier}"',
             ).entries,
@@ -147,7 +147,7 @@ class MessageFieldAssignment(Assignment):
         return error
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
-        assert isinstance(self.type_, ty.Message)
+        assert isinstance(self.type_, rty.Message)
 
         expression = expr_conv.to_ir(self.expression, variable_id)
         return [
@@ -162,7 +162,7 @@ class AttributeStatement(Statement):
         identifier: StrID,
         attribute: str,
         parameters: list[Expr],
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(identifier, type_, location)
@@ -175,7 +175,7 @@ class AttributeStatement(Statement):
 
     def check_type(
         self,
-        statement_type: ty.Type,
+        statement_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         raise NotImplementedError
@@ -192,7 +192,7 @@ class ListAttributeStatement(AttributeStatement):
         self,
         identifier: StrID,
         parameter: Expr,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
@@ -201,20 +201,20 @@ class ListAttributeStatement(AttributeStatement):
 class Append(ListAttributeStatement):
     def check_type(
         self,
-        statement_type: ty.Type,
+        statement_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = statement_type
         self.parameter = self.parameter.substituted(typify_variable)
-        error = ty.check_type_instance(
+        error = rty.check_type_instance(
             statement_type,
-            ty.Sequence,
+            rty.Sequence,
             self.location,
             f'variable "{self.identifier}"',
         )
-        if isinstance(statement_type, ty.Sequence):
+        if isinstance(statement_type, rty.Sequence):
             error.extend(self.parameter.check_type(statement_type.element).entries)
-            if isinstance(statement_type.element, ty.Message) and isinstance(
+            if isinstance(statement_type.element, rty.Message) and isinstance(
                 self.parameter,
                 Variable,
             ):
@@ -247,7 +247,7 @@ class Append(ListAttributeStatement):
         self.parameters[0] = value
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
-        assert isinstance(self.type_, ty.Sequence)
+        assert isinstance(self.type_, rty.Sequence)
         parameter = expr_conv.to_ir(self.parameter, variable_id)
         return [
             *parameter.stmts,
@@ -258,14 +258,14 @@ class Append(ListAttributeStatement):
 class Extend(ListAttributeStatement):
     def check_type(
         self,
-        statement_type: ty.Type,
+        statement_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = statement_type
         self.parameter = self.parameter.substituted(typify_variable)
-        error = ty.check_type_instance(
+        error = rty.check_type_instance(
             statement_type,
-            ty.Sequence,
+            rty.Sequence,
             self.location,
             f'variable "{self.identifier}"',
         )
@@ -282,7 +282,7 @@ class Extend(ListAttributeStatement):
         self.parameters[0] = value
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
-        assert isinstance(self.type_, ty.Sequence)
+        assert isinstance(self.type_, rty.Sequence)
         parameter = expr_conv.to_ir(self.parameter, variable_id)
         return [
             *parameter.stmts,
@@ -295,7 +295,7 @@ class Reset(AttributeStatement):
         self,
         identifier: StrID,
         associations: Mapping[ID, Expr] | None = None,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [], type_, location)
@@ -309,7 +309,7 @@ class Reset(AttributeStatement):
 
     def check_type(
         self,
-        statement_type: ty.Type,
+        statement_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         error = RecordFluxError()
@@ -317,7 +317,7 @@ class Reset(AttributeStatement):
         self.associations = {
             i: e.substituted(typify_variable) for i, e in self.associations.items()
         }
-        if isinstance(statement_type, ty.Sequence):
+        if isinstance(statement_type, rty.Sequence):
             for i, e in self.associations.items():
                 error.push(
                     ErrorEntry(
@@ -326,7 +326,7 @@ class Reset(AttributeStatement):
                         e.location,
                     ),
                 )
-        elif isinstance(statement_type, ty.Message):
+        elif isinstance(statement_type, rty.Message):
             for i, e in self.associations.items():
                 if i in statement_type.parameter_types:
                     error.extend(e.check_type(statement_type.parameter_types[i]).entries)
@@ -348,9 +348,9 @@ class Reset(AttributeStatement):
                         ),
                     )
         error.extend(
-            ty.check_type_instance(
+            rty.check_type_instance(
                 statement_type,
-                (ty.Sequence, ty.Message),
+                (rty.Sequence, rty.Message),
                 self.location,
                 f'variable "{self.identifier}"',
             ).entries,
@@ -364,7 +364,7 @@ class Reset(AttributeStatement):
         ]
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> list[ir.Stmt]:
-        assert isinstance(self.type_, (ty.Sequence, ty.Message))
+        assert isinstance(self.type_, (rty.Sequence, rty.Message))
         associations = {}
         stmts = []
         for i, e in self.associations.items():
@@ -382,25 +382,25 @@ class ChannelAttributeStatement(AttributeStatement):
         self,
         identifier: StrID,
         parameter: Expr,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ) -> None:
         super().__init__(identifier, self.__class__.__name__, [parameter], type_, location)
 
     def check_type(
         self,
-        statement_type: ty.Type,
+        statement_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = statement_type
         self.parameters = [self.parameter.substituted(typify_variable)]
-        error = ty.check_type(
+        error = rty.check_type(
             statement_type,
             self._expected_channel_type(),
             self.location,
             f'channel "{self.identifier}"',
         )
-        error.extend(self.parameter.check_type_instance(ty.Message).entries)
+        error.extend(self.parameter.check_type_instance(rty.Message).entries)
         return error
 
     @property
@@ -415,15 +415,15 @@ class ChannelAttributeStatement(AttributeStatement):
         ]
 
     @abstractmethod
-    def _expected_channel_type(self) -> ty.Channel:
+    def _expected_channel_type(self) -> rty.Channel:
         raise NotImplementedError
 
 
 class Read(ChannelAttributeStatement):
-    def _expected_channel_type(self) -> ty.Channel:
-        return ty.Channel(readable=True, writable=False)
+    def _expected_channel_type(self) -> rty.Channel:
+        return rty.Channel(readable=True, writable=False)
 
 
 class Write(ChannelAttributeStatement):
-    def _expected_channel_type(self) -> ty.Channel:
-        return ty.Channel(readable=False, writable=True)
+    def _expected_channel_type(self) -> rty.Channel:
+        return rty.Channel(readable=False, writable=True)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import singledispatch
 from typing import Generator
 
-from rflx import ada, expr, ir, ty
+from rflx import ada, expr, ir, typing_ as rty
 from rflx.error import fail
 from rflx.identifier import ID
 
@@ -257,8 +257,8 @@ def _(expression: expr.BoolAssExpr, variable_id: Generator[ID, None, None]) -> i
     return ir.ComplexBoolExpr(
         [
             *right.stmts,
-            ir.VarDecl(right_id, ty.BOOLEAN, None, origin=right_origin),
-            ir.Assign(right_id, right.expr, ty.BOOLEAN, origin=right_origin),
+            ir.VarDecl(right_id, rty.BOOLEAN, None, origin=right_origin),
+            ir.Assign(right_id, right.expr, rty.BOOLEAN, origin=right_origin),
             *left_stmts,
         ],
         getattr(ir, expression.__class__.__name__)(
@@ -276,7 +276,7 @@ def _(expression: expr.Number, _variable_id: Generator[ID, None, None]) -> ir.Co
 
 @to_ir.register
 def _(expression: expr.Neg, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
-    assert isinstance(expression.type_, ty.AnyInteger)
+    assert isinstance(expression.type_, rty.AnyInteger)
     inner_stmts, inner_expr = _to_ir_basic_int(expression.expr, variable_id)
     return ir.ComplexIntExpr(inner_stmts, ir.Neg(inner_expr, origin=expression))
 
@@ -286,7 +286,7 @@ def _(expression: expr.MathAssExpr, variable_id: Generator[ID, None, None]) -> i
     if len(expression.terms) == 0:
         return ir.ComplexIntExpr([], ir.IntVal(0, origin=expression))
 
-    assert isinstance(expression.type_, ty.AnyInteger)
+    assert isinstance(expression.type_, rty.AnyInteger)
 
     if len(expression.terms) == 1:
         first_stmts, first_expr = _to_ir_basic_int(expression.terms[0], variable_id)
@@ -307,7 +307,7 @@ def _(expression: expr.MathAssExpr, variable_id: Generator[ID, None, None]) -> i
         location=expression.terms[1].location,
     )
 
-    assert isinstance(right_origin.type_, ty.AnyInteger)
+    assert isinstance(right_origin.type_, rty.AnyInteger)
 
     right = to_ir(right_origin, variable_id)
 
@@ -328,7 +328,7 @@ def _(expression: expr.MathAssExpr, variable_id: Generator[ID, None, None]) -> i
 
 @to_ir.register
 def _(expression: expr.MathBinExpr, variable_id: Generator[ID, None, None]) -> ir.ComplexIntExpr:
-    assert isinstance(expression.type_, ty.AnyInteger)
+    assert isinstance(expression.type_, rty.AnyInteger)
 
     left_stmts, left_expr = _to_ir_basic_int(expression.left, variable_id)
     right_stmts, right_expr = _to_ir_basic_int(expression.right, variable_id)
@@ -340,9 +340,9 @@ def _(expression: expr.MathBinExpr, variable_id: Generator[ID, None, None]) -> i
 
 @to_ir.register
 def _(expression: expr.Literal, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Enumeration)
+    assert isinstance(expression.type_, rty.Enumeration)
 
-    if expression.type_ == ty.BOOLEAN:
+    if expression.type_ == rty.BOOLEAN:
         if expression.identifier == ID("True"):
             return ir.ComplexBoolExpr([], ir.BoolVal(value=True, origin=expression))
         assert expression.identifier == ID("False")
@@ -353,22 +353,22 @@ def _(expression: expr.Literal, _variable_id: Generator[ID, None, None]) -> ir.C
 
 @to_ir.register
 def _(expression: expr.Variable, _variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    if expression.type_ == ty.BOOLEAN:
+    if expression.type_ == rty.BOOLEAN:
         return ir.ComplexBoolExpr([], ir.BoolVar(expression.name, origin=expression))
-    if isinstance(expression.type_, ty.Integer):
+    if isinstance(expression.type_, rty.Integer):
         return ir.ComplexIntExpr(
             [],
             ir.IntVar(expression.name, expression.type_, origin=expression),
         )
 
-    assert isinstance(expression.type_, ty.Any)
+    assert isinstance(expression.type_, rty.Any)
 
     return ir.ComplexExpr([], ir.ObjVar(expression.name, expression.type_, origin=expression))
 
 
 @to_ir.register
 def _(expression: expr.Attribute, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Any)
+    assert isinstance(expression.type_, rty.Any)
 
     prefix_stmts, prefix_expr = to_ir_basic_expr(expression.prefix, variable_id)
 
@@ -379,10 +379,10 @@ def _(expression: expr.Attribute, variable_id: Generator[ID, None, None]) -> ir.
 
 @to_ir.register
 def _(expression: expr.Size, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Any)
+    assert isinstance(expression.type_, rty.Any)
 
     if isinstance(expression.prefix, expr.Selected):
-        assert isinstance(expression.prefix.prefix.type_, ty.Compound)
+        assert isinstance(expression.prefix.prefix.type_, rty.Compound)
         assert isinstance(expression.prefix.prefix, expr.Variable)
         return ir.ComplexExpr(
             [],
@@ -413,41 +413,41 @@ def _attribute_to_ir(
 
 @_attribute_to_ir.register
 def _(expression: expr.Size, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, ty.Any)
+    assert isinstance(expression.prefix.type_, rty.Any)
     return ir.Size(prefix, expression.prefix.type_, origin=expression)
 
 
 @_attribute_to_ir.register
 def _(expression: expr.Length, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, ty.Any)
+    assert isinstance(expression.prefix.type_, rty.Any)
     return ir.Length(prefix, expression.prefix.type_, origin=expression)
 
 
 @_attribute_to_ir.register
 def _(expression: expr.First, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, ty.Any)
+    assert isinstance(expression.prefix.type_, rty.Any)
     return ir.First(prefix, expression.prefix.type_, origin=expression)
 
 
 @_attribute_to_ir.register
 def _(expression: expr.Last, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, ty.Any)
+    assert isinstance(expression.prefix.type_, rty.Any)
     return ir.Last(prefix, expression.prefix.type_, origin=expression)
 
 
 @_attribute_to_ir.register
 def _(expression: expr.ValidChecksum, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, ty.Any)
+    assert isinstance(expression.prefix.type_, rty.Any)
     return ir.ValidChecksum(prefix, expression.prefix.type_, origin=expression)
 
 
 @to_ir.register
 def _(expression: expr.Valid, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Any)
+    assert isinstance(expression.type_, rty.Any)
 
     if isinstance(expression.prefix, expr.Selected):
         assert isinstance(expression.prefix.prefix, expr.Variable)
-        assert isinstance(expression.prefix.prefix.type_, ty.Compound)
+        assert isinstance(expression.prefix.prefix.type_, rty.Compound)
         return ir.ComplexExpr(
             [],
             ir.FieldValid(
@@ -466,17 +466,17 @@ def _(expression: expr.Valid, variable_id: Generator[ID, None, None]) -> ir.Comp
 
 @_attribute_to_ir.register
 def _(expression: expr.Valid, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, ty.Any)
+    assert isinstance(expression.prefix.type_, rty.Any)
     return ir.Valid(prefix, expression.prefix.type_, origin=expression)
 
 
 @to_ir.register
 def _(expression: expr.Present, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Any)
+    assert isinstance(expression.type_, rty.Any)
 
     if isinstance(expression.prefix, expr.Selected):
         assert isinstance(expression.prefix.prefix, expr.Variable)
-        assert isinstance(expression.prefix.prefix.type_, ty.Compound)
+        assert isinstance(expression.prefix.prefix.type_, rty.Compound)
         return ir.ComplexExpr(
             [],
             ir.FieldPresent(
@@ -495,19 +495,19 @@ def _(expression: expr.Present, variable_id: Generator[ID, None, None]) -> ir.Co
 
 @_attribute_to_ir.register
 def _(expression: expr.Present, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, ty.Any)
+    assert isinstance(expression.prefix.type_, rty.Any)
     return ir.Present(prefix, expression.prefix.type_, origin=expression)
 
 
 @_attribute_to_ir.register
 def _(expression: expr.HasData, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, ty.Any)
+    assert isinstance(expression.prefix.type_, rty.Any)
     return ir.HasData(prefix, expression.prefix.type_, origin=expression)
 
 
 @to_ir.register
 def _(expression: expr.Head, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Any)
+    assert isinstance(expression.type_, rty.Any)
 
     if isinstance(expression.prefix, expr.Comprehension):
         comprehension = to_ir(expression.prefix, variable_id)
@@ -532,14 +532,14 @@ def _(expression: expr.Head, variable_id: Generator[ID, None, None]) -> ir.Compl
 
 @_attribute_to_ir.register
 def _(expression: expr.Head, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, ty.Composite)
-    assert isinstance(expression.prefix.type_.element, ty.Any)
+    assert isinstance(expression.prefix.type_, rty.Composite)
+    assert isinstance(expression.prefix.type_.element, rty.Any)
     return ir.Head(prefix, expression.prefix.type_, origin=expression)
 
 
 @_attribute_to_ir.register
 def _(expression: expr.Opaque, prefix: ID) -> ir.Expr:
-    assert isinstance(expression.prefix.type_, (ty.Sequence, ty.Message))
+    assert isinstance(expression.prefix.type_, (rty.Sequence, rty.Message))
     return ir.Opaque(prefix, expression.prefix.type_, origin=expression)
 
 
@@ -569,11 +569,11 @@ def _(
 
 @to_ir.register
 def _(expression: expr.Selected, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Any)
-    assert isinstance(expression.prefix.type_, ty.Compound)
+    assert isinstance(expression.type_, rty.Any)
+    assert isinstance(expression.prefix.type_, rty.Compound)
     stmts, msg = to_ir_basic_expr(expression.prefix, variable_id)
     assert isinstance(msg, ir.ObjVar)
-    if expression.type_ == ty.BOOLEAN:
+    if expression.type_ == rty.BOOLEAN:
         return ir.ComplexExpr(
             stmts,
             ir.BoolFieldAccess(
@@ -583,7 +583,7 @@ def _(expression: expr.Selected, variable_id: Generator[ID, None, None]) -> ir.C
                 origin=expression,
             ),
         )
-    if isinstance(expression.type_, ty.Integer):
+    if isinstance(expression.type_, rty.Integer):
         return ir.ComplexExpr(
             stmts,
             ir.IntFieldAccess(
@@ -593,7 +593,7 @@ def _(expression: expr.Selected, variable_id: Generator[ID, None, None]) -> ir.C
                 origin=expression,
             ),
         )
-    if isinstance(expression.type_, (ty.Enumeration, ty.Sequence)):
+    if isinstance(expression.type_, (rty.Enumeration, rty.Sequence)):
         return ir.ComplexExpr(
             stmts,
             ir.ObjFieldAccess(
@@ -616,10 +616,10 @@ def _(expression: expr.Call, variable_id: Generator[ID, None, None]) -> ir.Compl
         arguments_stmts.extend(a_ir.stmts)
         arguments_exprs.append(a_ir.expr)
 
-    assert all(isinstance(t, ty.Any) for t in expression.argument_types)
-    argument_types = [t for t in expression.argument_types if isinstance(t, ty.Any)]
+    assert all(isinstance(t, rty.Any) for t in expression.argument_types)
+    argument_types = [t for t in expression.argument_types if isinstance(t, rty.Any)]
 
-    if expression.type_ is ty.BOOLEAN:
+    if expression.type_ is rty.BOOLEAN:
         return ir.ComplexExpr(
             arguments_stmts,
             ir.BoolCall(
@@ -630,7 +630,7 @@ def _(expression: expr.Call, variable_id: Generator[ID, None, None]) -> ir.Compl
             ),
         )
 
-    if isinstance(expression.type_, ty.Integer):
+    if isinstance(expression.type_, rty.Integer):
         return ir.ComplexExpr(
             arguments_stmts,
             ir.IntCall(
@@ -642,7 +642,7 @@ def _(expression: expr.Call, variable_id: Generator[ID, None, None]) -> ir.Compl
             ),
         )
 
-    assert isinstance(expression.type_, (ty.Enumeration, ty.Structure, ty.Message))
+    assert isinstance(expression.type_, (rty.Enumeration, rty.Structure, rty.Message))
     return ir.ComplexExpr(
         arguments_stmts,
         ir.ObjCall(
@@ -673,7 +673,7 @@ def _(
 
 @to_ir.register
 def _(expression: expr.Aggregate, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Any)
+    assert isinstance(expression.type_, rty.Any)
 
     elements = []
     stmts = []
@@ -728,11 +728,11 @@ def _(expression: expr.IfExpr, variable_id: Generator[ID, None, None]) -> ir.Com
     condition = expression.condition_expressions[0][0]
     condition_stmts, condition_expr = _to_ir_basic_bool(condition, variable_id)
 
-    assert condition.type_ is ty.BOOLEAN
+    assert condition.type_ is rty.BOOLEAN
 
     then_expression = expression.condition_expressions[0][1]
 
-    if then_expression.type_ is ty.BOOLEAN and expression.else_expression.type_ is ty.BOOLEAN:
+    if then_expression.type_ is rty.BOOLEAN and expression.else_expression.type_ is rty.BOOLEAN:
         then_expr = to_ir(then_expression, variable_id)
         else_expr = to_ir(expression.else_expression, variable_id)
         assert isinstance(then_expr, ir.ComplexBoolExpr)
@@ -747,9 +747,9 @@ def _(expression: expr.IfExpr, variable_id: Generator[ID, None, None]) -> ir.Com
             ),
         )
 
-    assert isinstance(expression.type_, ty.AnyInteger)
-    assert isinstance(then_expression.type_, ty.AnyInteger)
-    assert isinstance(expression.else_expression.type_, ty.AnyInteger)
+    assert isinstance(expression.type_, rty.AnyInteger)
+    assert isinstance(then_expression.type_, rty.AnyInteger)
+    assert isinstance(expression.else_expression.type_, rty.AnyInteger)
     then_expr = to_ir(then_expression, variable_id)
     else_expr = to_ir(expression.else_expression, variable_id)
     assert isinstance(then_expr, ir.ComplexIntExpr)
@@ -787,7 +787,7 @@ def _(
 
 @to_ir.register
 def _(expression: expr.Conversion, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.NamedTypeClass)
+    assert isinstance(expression.type_, rty.NamedTypeClass)
     argument = to_ir(expression.argument, variable_id)
     return ir.ComplexExpr(
         argument.stmts,
@@ -824,7 +824,7 @@ def _(expression: expr.Comprehension, variable_id: Generator[ID, None, None]) ->
 
 @to_ir.register
 def _(expression: expr.MessageAggregate, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Message)
+    assert isinstance(expression.type_, rty.Message)
     field_values = {}
     stmts = []
     for i, e in expression.field_values.items():
@@ -842,7 +842,7 @@ def _(
     expression: expr.DeltaMessageAggregate,
     variable_id: Generator[ID, None, None],
 ) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Message)
+    assert isinstance(expression.type_, rty.Message)
     field_values = {}
     stmts = []
     for i, e in expression.field_values.items():
@@ -857,7 +857,7 @@ def _(
 
 @to_ir.register
 def _(expression: expr.CaseExpr, variable_id: Generator[ID, None, None]) -> ir.ComplexExpr:
-    assert isinstance(expression.type_, ty.Any)
+    assert isinstance(expression.type_, rty.Any)
 
     expression_stmts, expression_expr = to_ir_basic_expr(expression.expr, variable_id)
     choices = []
@@ -867,11 +867,11 @@ def _(expression: expr.CaseExpr, variable_id: Generator[ID, None, None]) -> ir.C
         # TODO(eng/recordflux/RecordFlux#633): Check for unsupported case expressions in model
         assert not e_stmts
         cs: list[ir.BasicExpr]
-        if isinstance(expression.expr.type_, ty.Enumeration):
+        if isinstance(expression.expr.type_, rty.Enumeration):
             assert all(isinstance(c, ID) for c in choice)
             cs = [ir.EnumLit(c, expression.expr.type_) for c in choice if isinstance(c, ID)]
         else:
-            assert isinstance(expression.expr.type_, ty.AnyInteger)
+            assert isinstance(expression.expr.type_, rty.AnyInteger)
             assert all(isinstance(c, expr.Number) for c in choice)
             cs = [ir.IntVal(int(c)) for c in choice if isinstance(c, expr.Number)]
         choices.append((cs, e_expr))
@@ -891,7 +891,7 @@ def _to_ir_basic_int(
     expression: expr.Expr,
     variable_id: Generator[ID, None, None],
 ) -> tuple[list[ir.Stmt], ir.BasicIntExpr]:
-    assert isinstance(expression.type_, ty.AnyInteger)
+    assert isinstance(expression.type_, rty.AnyInteger)
 
     result = to_ir(expression, variable_id)
     if isinstance(result.expr, ir.BasicIntExpr):
@@ -913,7 +913,7 @@ def _to_ir_basic_bool(
     expression: expr.Expr,
     variable_id: Generator[ID, None, None],
 ) -> tuple[list[ir.Stmt], ir.BasicBoolExpr]:
-    assert expression.type_ == ty.BOOLEAN
+    assert expression.type_ == rty.BOOLEAN
 
     result = to_ir(expression, variable_id)
     if isinstance(result.expr, ir.BasicBoolExpr):
@@ -924,8 +924,8 @@ def _to_ir_basic_bool(
         result_expr = ir.BoolVar(result_id, origin=expression)
         result_stmts = [
             *result.stmts,
-            ir.VarDecl(result_id, ty.BOOLEAN, None, origin=expression),
-            ir.Assign(result_id, result.expr, ty.BOOLEAN, origin=expression),
+            ir.VarDecl(result_id, rty.BOOLEAN, None, origin=expression),
+            ir.Assign(result_id, result.expr, rty.BOOLEAN, origin=expression),
         ]
     return (result_stmts, result_expr)
 
@@ -944,19 +944,19 @@ def to_ir_basic_expr(
         if isinstance(result.expr, ir.BoolExpr):
             result_expr = ir.BoolVar(result_id, origin=expression)
         elif isinstance(result.expr, ir.IntExpr):
-            assert isinstance(expression.type_, ty.AnyInteger)
+            assert isinstance(expression.type_, rty.AnyInteger)
             result_expr = ir.IntVar(result_id, ir.to_integer(expression.type_), origin=expression)
         else:
-            assert isinstance(expression.type_, ty.Any)
+            assert isinstance(expression.type_, rty.Any)
             result_expr = ir.ObjVar(result_id, expression.type_, origin=expression)
 
-        if isinstance(result_expr.type_, ty.Aggregate):
+        if isinstance(result_expr.type_, rty.Aggregate):
             # TODO(eng/recordflux/RecordFlux#1497): Support comparisons of opaque fields
             result_stmts = [  # pragma: no cover
                 *result.stmts,
                 ir.VarDecl(
                     result_id,
-                    ty.OPAQUE,
+                    rty.OPAQUE,
                     ir.ComplexExpr([], result.expr),
                     origin=expression,
                 ),
@@ -964,7 +964,7 @@ def to_ir_basic_expr(
         else:
             result_type = result_expr.type_
 
-            assert isinstance(result_type, ty.NamedTypeClass)
+            assert isinstance(result_type, rty.NamedTypeClass)
 
             result_stmts = [
                 *result.stmts,

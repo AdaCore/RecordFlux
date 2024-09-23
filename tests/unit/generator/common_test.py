@@ -5,19 +5,19 @@ from typing import Callable
 
 import pytest
 
-from rflx import expr, ty
+from rflx import expr, typing_ as rty
 from rflx.generator import common, const
 from rflx.identifier import ID
 from rflx.model import BUILTIN_TYPES, type_decl
 from rflx.model.message import FINAL, INITIAL, Field, Link, Message
-from rflx.rapidflux import Location
+from rflx.rapidflux import Location, ty
 from tests.data import models
 from tests.utils import assert_equal
 
 
 def test_type_translation() -> None:
-    assert (common.type_to_id(ty.BASE_INTEGER)) == const.TYPES_BASE_INT
-    assert (common.type_to_id(ty.Integer("P::mytype", ty.Bounds(1, 9)))) == ID("P::mytype")
+    assert (common.type_to_id(rty.BASE_INTEGER)) == const.TYPES_BASE_INT
+    assert (common.type_to_id(rty.Integer("P::mytype", ty.Bounds(1, 9)))) == ID("P::mytype")
 
 
 @pytest.mark.parametrize("embedded", [True, False])
@@ -47,7 +47,7 @@ def test_substitution_relation_aggregate(
                 expr.ValueRange(
                     expr.Call(
                         const.TYPES_TO_INDEX,
-                        ty.INDEX,
+                        rty.INDEX,
                         [
                             expr.Selected(
                                 expr.Indexed(
@@ -60,7 +60,7 @@ def test_substitution_relation_aggregate(
                     ),
                     expr.Call(
                         const.TYPES_TO_INDEX,
-                        ty.INDEX,
+                        rty.INDEX,
                         [
                             expr.Selected(
                                 expr.Indexed(
@@ -78,7 +78,7 @@ def test_substitution_relation_aggregate(
     else:
         equal_call = expr.Call(
             "Equal",
-            ty.BOOLEAN,
+            rty.BOOLEAN,
             [
                 expr.Variable("Ctx"),
                 expr.Variable("F_Value"),
@@ -98,11 +98,11 @@ def test_substitution_relation_aggregate(
     [
         (
             (expr.Variable("Length"), expr.Number(1)),
-            (expr.Call("Get_Length", ty.BASE_INTEGER, [expr.Variable("Ctx")]), expr.Number(1)),
+            (expr.Call("Get_Length", rty.BASE_INTEGER, [expr.Variable("Ctx")]), expr.Number(1)),
         ),
         (
             (expr.Number(1), expr.Variable("Length")),
-            (expr.Number(1), expr.Call("Get_Length", ty.BASE_INTEGER, [expr.Variable("Ctx")])),
+            (expr.Number(1), expr.Call("Get_Length", rty.BASE_INTEGER, [expr.Variable("Ctx")])),
         ),
         ((expr.Number(1), expr.Variable("Unknown")), (expr.Number(1), expr.Variable("Unknown"))),
     ],
@@ -172,13 +172,13 @@ def test_param_enumeration_condition() -> None:
         expr.Equal(
             expr.Call(
                 "RFLX_Types::Base_Integer",
-                ty.BASE_INTEGER,
-                [expr.Call("To_Base_Integer", ty.BASE_INTEGER, [expr.Variable("Param")])],
+                rty.BASE_INTEGER,
+                [expr.Call("To_Base_Integer", rty.BASE_INTEGER, [expr.Variable("Param")])],
             ),
             expr.Call(
                 "RFLX_Types::Base_Integer",
-                ty.BASE_INTEGER,
-                [expr.Call("To_Base_Integer", ty.BASE_INTEGER, [expr.Literal("E1")])],
+                rty.BASE_INTEGER,
+                [expr.Call("To_Base_Integer", rty.BASE_INTEGER, [expr.Literal("E1")])],
             ),
         ),
     )

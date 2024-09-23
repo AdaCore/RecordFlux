@@ -145,7 +145,7 @@ impl From<Severity> for lib::Severity {
 
 #[pyclass(module = "rflx.rapidflux")]
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Annotation(pub lib::Annotation);
+pub struct Annotation(lib::Annotation);
 
 #[pymethods]
 impl Annotation {
@@ -319,7 +319,7 @@ impl ErrorEntry {
 #[pyclass(module = "rflx.rapidflux", extends = PyException, subclass)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[pyo3(name = "RecordFluxError")]
-pub struct RapidFluxError(pub lib::RapidFluxError);
+pub struct RapidFluxError(lib::RapidFluxError);
 
 #[pymethods]
 impl RapidFluxError {

@@ -30,7 +30,7 @@ from rflx.model import (
 from rflx.model.message import ByteOrder
 from rflx.rapidflux import Location, RecordFluxError, Severity
 from rflx.specification import parser
-from rflx.ty import UNDEFINED
+from rflx.typing_ import UNDEFINED
 from tests.const import SPEC_DIR
 from tests.data import models
 from tests.utils import (

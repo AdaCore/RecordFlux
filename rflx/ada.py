@@ -11,7 +11,7 @@ from sys import intern
 
 from typing_extensions import Self
 
-from rflx import expr, ty
+from rflx import expr, typing_ as rty
 from rflx.common import Base, file_name, indent, indent_next, unique
 from rflx.identifier import ID, StrID
 
@@ -611,7 +611,7 @@ class Call(Name):
 
     def rflx_expr(self) -> expr.Call:
         assert not self.named_arguments
-        return expr.Call(self.identifier, ty.UNDEFINED, [a.rflx_expr() for a in self.arguments])
+        return expr.Call(self.identifier, rty.UNDEFINED, [a.rflx_expr() for a in self.arguments])
 
 
 class Slice(Name):

@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from rflx import expr, lang, model, ty
+import rflx.typing_ as rty
+from rflx import expr, lang, model
 from rflx.common import STDIN, unique
 from rflx.const import RESERVED_WORDS
 from rflx.error import fail
@@ -599,7 +600,7 @@ def create_variable(error: RecordFluxError, expression: lang.Expr, filename: Pat
         return expr.Literal(
             create_id(error, expression.f_identifier, filename),
             location=location,
-            type_=ty.BOOLEAN,
+            type_=rty.BOOLEAN,
         )
     return expr.Variable(create_id(error, expression.f_identifier, filename), location=location)
 
@@ -675,7 +676,7 @@ def create_call(error: RecordFluxError, expression: lang.Expr, filename: Path) -
     assert isinstance(expression, lang.Call)
     return expr.Call(
         create_id(error, expression.f_identifier, filename),
-        ty.UNDEFINED,
+        rty.UNDEFINED,
         [create_expression(error, a, filename) for a in expression.f_arguments],
         location=node_location(expression, filename),
     )
@@ -1020,7 +1021,7 @@ def create_math_expression(
     }
     validate_handler(error, "math expression", expression, list(handlers.keys()), filename)
     result = handlers[expression.kind_name](error, expression, filename)
-    if result.type_ == ty.BOOLEAN:
+    if result.type_ == rty.BOOLEAN:
         fail(
             "boolean expression in math context",
             location=node_location(expression, filename),
@@ -1285,7 +1286,7 @@ def create_message_structure(
         condition = (
             create_bool_expression(error, then.f_condition, filename)
             if then.f_condition
-            else expr.Literal("True", type_=ty.BOOLEAN, location=node_location(then, filename))
+            else expr.Literal("True", type_=rty.BOOLEAN, location=node_location(then, filename))
         )
         size, first = extract_aspect(then.f_aspects)
         return target, condition, size, first, node_location(then, filename)

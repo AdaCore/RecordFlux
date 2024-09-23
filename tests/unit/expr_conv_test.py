@@ -2,7 +2,7 @@ from typing import Callable
 
 import pytest
 
-from rflx import ada, expr_conv, ir, ty
+from rflx import ada, expr_conv, ir, typing_ as rty
 from rflx.expr import (
     FALSE,
     TRUE,
@@ -58,11 +58,12 @@ from rflx.expr import (
     Variable,
 )
 from rflx.identifier import ID, id_generator
+from rflx.rapidflux import ty
 
-INT_TY = ty.Integer("I", ty.Bounds(10, 100))
-ENUM_TY = ty.Enumeration("E", [ID("E1"), ID("E2")])
-MSG_TY = ty.Message("M")
-SEQ_TY = ty.Sequence("S", ty.Message("M"))
+INT_TY = rty.Integer("I", ty.Bounds(10, 100))
+ENUM_TY = rty.Enumeration("E", [ID("E1"), ID("E2")])
+MSG_TY = rty.Message("M")
+SEQ_TY = rty.Sequence("S", rty.Message("M"))
 
 
 @pytest.mark.parametrize("expression", [And, AndThen, Or, OrElse])
@@ -146,7 +147,7 @@ def test_to_ir_not() -> None:
         ir.Not(ir.BoolVal(value=True)),
     )
     assert expr_conv.to_ir(
-        Not(Variable("X", type_=ty.BOOLEAN)),
+        Not(Variable("X", type_=rty.BOOLEAN)),
         id_generator(),
     ) == ir.ComplexBoolExpr(
         [],
@@ -157,8 +158,8 @@ def test_to_ir_not() -> None:
         id_generator(),
     ) == ir.ComplexBoolExpr(
         [
-            ir.VarDecl("T_0", ty.BOOLEAN),
-            ir.Assign("T_0", ir.Less(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), ty.BOOLEAN),
+            ir.VarDecl("T_0", rty.BOOLEAN),
+            ir.Assign("T_0", ir.Less(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)), rty.BOOLEAN),
         ],
         ir.Not(ir.BoolVar("T_0")),
     )
@@ -174,7 +175,7 @@ def test_to_ir_and_or(  # type: ignore[misc]
         ir.BoolVal(value=True),
     )
     assert expr_conv.to_ir(
-        op(Variable("X", type_=ty.BOOLEAN)),
+        op(Variable("X", type_=rty.BOOLEAN)),
         id_generator(),
     ) == ir.ComplexBoolExpr(
         [],
@@ -182,31 +183,31 @@ def test_to_ir_and_or(  # type: ignore[misc]
     )
     assert expr_conv.to_ir(
         op(
-            Variable("X", type_=ty.BOOLEAN),
-            Variable("Y", type_=ty.BOOLEAN),
-            Variable("Z", type_=ty.BOOLEAN),
+            Variable("X", type_=rty.BOOLEAN),
+            Variable("Y", type_=rty.BOOLEAN),
+            Variable("Z", type_=rty.BOOLEAN),
         ),
         id_generator(),
     ) == ir.ComplexBoolExpr(
         [
-            ir.VarDecl("T_0", ty.BOOLEAN),
-            ir.Assign("T_0", ir_op(ir.BoolVar("Y"), ir.BoolVar("Z")), ty.BOOLEAN),
+            ir.VarDecl("T_0", rty.BOOLEAN),
+            ir.Assign("T_0", ir_op(ir.BoolVar("Y"), ir.BoolVar("Z")), rty.BOOLEAN),
         ],
         ir_op(ir.BoolVar("X"), ir.BoolVar("T_0")),
     )
     assert expr_conv.to_ir(
         op(
             op(
-                Variable("X", type_=ty.BOOLEAN),
-                Variable("Y", type_=ty.BOOLEAN),
+                Variable("X", type_=rty.BOOLEAN),
+                Variable("Y", type_=rty.BOOLEAN),
             ),
-            Variable("Z", type_=ty.BOOLEAN),
+            Variable("Z", type_=rty.BOOLEAN),
         ),
         id_generator(),
     ) == ir.ComplexBoolExpr(
         [
-            ir.VarDecl("T_0", ty.BOOLEAN),
-            ir.Assign("T_0", ir_op(ir.BoolVar("X"), ir.BoolVar("Y")), ty.BOOLEAN),
+            ir.VarDecl("T_0", rty.BOOLEAN),
+            ir.Assign("T_0", ir_op(ir.BoolVar("X"), ir.BoolVar("Y")), rty.BOOLEAN),
         ],
         ir_op(ir.BoolVar("T_0"), ir.BoolVar("Z")),
     )
@@ -226,14 +227,14 @@ def test_to_ir_neg() -> None:
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
-            ir.VarDecl("T_0", ty.BASE_INTEGER),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
             ir.Assign(
                 "T_0",
                 ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
-                ty.BASE_INTEGER,
+                rty.BASE_INTEGER,
             ),
         ],
-        ir.Neg(ir.IntVar("T_0", ty.BASE_INTEGER)),
+        ir.Neg(ir.IntVar("T_0", rty.BASE_INTEGER)),
     )
 
 
@@ -259,14 +260,14 @@ def test_to_ir_add_mul(  # type: ignore[misc]
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
-            ir.VarDecl("T_0", ty.BASE_INTEGER),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
             ir.Assign(
                 "T_0",
                 ir_op(ir.IntVar("Y", INT_TY), ir.IntVar("Z", INT_TY)),
-                ty.BASE_INTEGER,
+                rty.BASE_INTEGER,
             ),
         ],
-        ir_op(ir.IntVar("X", INT_TY), ir.IntVar("T_0", ty.BASE_INTEGER)),
+        ir_op(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
     )
     assert expr_conv.to_ir(
         op(
@@ -279,14 +280,14 @@ def test_to_ir_add_mul(  # type: ignore[misc]
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
-            ir.VarDecl("T_0", ty.BASE_INTEGER),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
             ir.Assign(
                 "T_0",
                 ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
-                ty.BASE_INTEGER,
+                rty.BASE_INTEGER,
             ),
         ],
-        ir_op(ir.IntVar("T_0", ty.BASE_INTEGER), ir.IntVar("Z", INT_TY)),
+        ir_op(ir.IntVar("T_0", rty.BASE_INTEGER), ir.IntVar("Z", INT_TY)),
     )
 
 
@@ -319,14 +320,14 @@ def test_to_ir_sub_div_pow_mod(  # type: ignore[misc]
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
-            ir.VarDecl("T_0", ty.BASE_INTEGER),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
             ir.Assign(
                 "T_0",
                 ir_op(ir.IntVar("X", INT_TY), ir.IntVar("Y", INT_TY)),
-                ty.BASE_INTEGER,
+                rty.BASE_INTEGER,
             ),
         ],
-        ir_op(ir.IntVar("T_0", ty.BASE_INTEGER), ir.IntVar("Z", INT_TY)),
+        ir_op(ir.IntVar("T_0", rty.BASE_INTEGER), ir.IntVar("Z", INT_TY)),
     )
 
 
@@ -338,7 +339,7 @@ def test_to_ir_literal() -> None:
 
 
 def test_to_ir_variable() -> None:
-    assert expr_conv.to_ir(Variable("X", type_=ty.BOOLEAN), id_generator()) == ir.ComplexBoolExpr(
+    assert expr_conv.to_ir(Variable("X", type_=rty.BOOLEAN), id_generator()) == ir.ComplexBoolExpr(
         [],
         ir.BoolVar("X"),
     )
@@ -382,7 +383,7 @@ def test_to_ir_attribute_int(attribute: Expr, ir_attribute: ir.Expr) -> None:
         (Valid(Variable("X", type_=MSG_TY)), ir.Valid("X", MSG_TY)),
         (Present(Variable("X", type_=MSG_TY)), ir.Present("X", MSG_TY)),
         (
-            HasData(Variable("X", type_=ty.Channel(readable=True, writable=False))),
+            HasData(Variable("X", type_=rty.Channel(readable=True, writable=False))),
             ir.HasData("X", MSG_TY),
         ),
     ],
@@ -397,16 +398,16 @@ def test_to_ir_aggregate() -> None:
         id_generator(),
     ) == ir.ComplexExpr(
         [
-            ir.VarDecl("T_0", ty.BASE_INTEGER),
-            ir.Assign("T_0", ir.First("X", INT_TY), ty.BASE_INTEGER),
-            ir.VarDecl("T_1", ty.BASE_INTEGER),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
+            ir.Assign("T_0", ir.First("X", INT_TY), rty.BASE_INTEGER),
+            ir.VarDecl("T_1", rty.BASE_INTEGER),
             ir.Assign(
                 "T_1",
-                ir.Add(ir.IntVar("T_0", ty.BASE_INTEGER), ir.IntVal(1)),
-                ty.BASE_INTEGER,
+                ir.Add(ir.IntVar("T_0", rty.BASE_INTEGER), ir.IntVal(1)),
+                rty.BASE_INTEGER,
             ),
         ],
-        ir.Agg([ir.IntVar("T_1", ty.BASE_INTEGER), ir.IntVal(2)]),
+        ir.Agg([ir.IntVar("T_1", rty.BASE_INTEGER), ir.IntVal(2)]),
     )
 
 
@@ -434,8 +435,8 @@ def test_to_ir_relation(  # type: ignore[misc]
 def test_to_ir_if_expr() -> None:
     assert expr_conv.to_ir(
         IfExpr(
-            [(Variable("X", type_=ty.BOOLEAN), Variable("Y", type_=ty.BOOLEAN))],
-            Variable("Z", type_=ty.BOOLEAN),
+            [(Variable("X", type_=rty.BOOLEAN), Variable("Y", type_=rty.BOOLEAN))],
+            Variable("Z", type_=rty.BOOLEAN),
         ),
         id_generator(),
     ) == ir.ComplexBoolExpr(
@@ -444,12 +445,12 @@ def test_to_ir_if_expr() -> None:
             ir.BoolVar("X"),
             ir.ComplexBoolExpr([], ir.BoolVar("Y")),
             ir.ComplexBoolExpr([], ir.BoolVar("Z")),
-            ty.BOOLEAN,
+            rty.BOOLEAN,
         ),
     )
     assert expr_conv.to_ir(
         IfExpr(
-            [(Variable("X", type_=ty.BOOLEAN), Variable("Y", type_=INT_TY))],
+            [(Variable("X", type_=rty.BOOLEAN), Variable("Y", type_=INT_TY))],
             Variable("Z", type_=INT_TY),
         ),
         id_generator(),
@@ -466,7 +467,7 @@ def test_to_ir_if_expr() -> None:
         IfExpr(
             [
                 (
-                    And(Variable("X", type_=ty.BOOLEAN), TRUE),
+                    And(Variable("X", type_=rty.BOOLEAN), TRUE),
                     Add(Variable("Y", type_=INT_TY), Number(1)),
                 ),
             ],
@@ -475,8 +476,8 @@ def test_to_ir_if_expr() -> None:
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
-            ir.VarDecl("T_0", ty.BOOLEAN),
-            ir.Assign("T_0", ir.And(ir.BoolVar("X"), ir.BoolVal(value=True)), ty.BOOLEAN),
+            ir.VarDecl("T_0", rty.BOOLEAN),
+            ir.Assign("T_0", ir.And(ir.BoolVar("X"), ir.BoolVal(value=True)), rty.BOOLEAN),
         ],
         ir.IntIfExpr(
             ir.BoolVar("T_0"),
@@ -493,15 +494,15 @@ def test_to_ir_number() -> None:
 
 def test_to_ir_selected() -> None:
     assert expr_conv.to_ir(
-        Selected(Variable("X", type_=ty.Message("M")), "Y", type_=ty.BOOLEAN),
+        Selected(Variable("X", type_=rty.Message("M")), "Y", type_=rty.BOOLEAN),
         id_generator(),
     ) == ir.ComplexExpr([], ir.BoolFieldAccess("X", "Y", MSG_TY))
     assert expr_conv.to_ir(
-        Selected(Variable("X", type_=ty.Message("M")), "Y", type_=INT_TY),
+        Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY),
         id_generator(),
     ) == ir.ComplexExpr([], ir.IntFieldAccess("X", "Y", MSG_TY))
     assert expr_conv.to_ir(
-        Neg(Selected(Variable("X", type_=ty.Message("M")), "Y", type_=INT_TY)),
+        Neg(Selected(Variable("X", type_=rty.Message("M")), "Y", type_=INT_TY)),
         id_generator(),
     ) == ir.ComplexIntExpr(
         [
@@ -511,7 +512,7 @@ def test_to_ir_selected() -> None:
         ir.Neg(ir.IntVar("T_0", INT_TY)),
     )
     assert expr_conv.to_ir(
-        Selected(Variable("X", type_=ty.Message("M")), "Y", type_=SEQ_TY),
+        Selected(Variable("X", type_=rty.Message("M")), "Y", type_=SEQ_TY),
         id_generator(),
     ) == ir.ComplexExpr([], ir.ObjFieldAccess("X", "Y", MSG_TY))
 
@@ -521,30 +522,30 @@ def test_to_ir_call() -> None:
         Call(
             "X",
             INT_TY,
-            [Variable("Y", type_=ty.BOOLEAN), Variable("Z", type_=INT_TY)],
+            [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=INT_TY)],
         ),
         id_generator(),
     ) == ir.ComplexExpr(
         [],
-        ir.IntCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [ty.BOOLEAN, INT_TY], INT_TY),
+        ir.IntCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], INT_TY),
     )
     assert expr_conv.to_ir(
         Call(
             "X",
-            ty.BOOLEAN,
-            [Variable("Y", type_=ty.BOOLEAN), Variable("Z", type_=ty.BOOLEAN)],
+            rty.BOOLEAN,
+            [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=rty.BOOLEAN)],
         ),
         id_generator(),
     ) == ir.ComplexExpr(
         [],
-        ir.BoolCall("X", [ir.BoolVar("Y"), ir.BoolVar("Z")], [ty.BOOLEAN, ty.BOOLEAN]),
+        ir.BoolCall("X", [ir.BoolVar("Y"), ir.BoolVar("Z")], [rty.BOOLEAN, rty.BOOLEAN]),
     )
     assert expr_conv.to_ir(
         Call(
             "X",
-            ty.BOOLEAN,
+            rty.BOOLEAN,
             [
-                And(Variable("X", type_=ty.BOOLEAN), TRUE),
+                And(Variable("X", type_=rty.BOOLEAN), TRUE),
                 Add(Variable("Y", type_=INT_TY), Number(1)),
             ],
         ),
@@ -557,25 +558,25 @@ def test_to_ir_call() -> None:
                 ir.And(ir.BoolVar("X"), ir.BoolVal(value=True)),
                 ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)),
             ],
-            [ty.BOOLEAN, INT_TY],
+            [rty.BOOLEAN, INT_TY],
         ),
     )
     assert expr_conv.to_ir(
         Call(
             "X",
             MSG_TY,
-            [Variable("Y", type_=ty.BOOLEAN), Variable("Z", type_=INT_TY)],
+            [Variable("Y", type_=rty.BOOLEAN), Variable("Z", type_=INT_TY)],
         ),
         id_generator(),
     ) == ir.ComplexExpr(
         [],
-        ir.ObjCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [ty.BOOLEAN, INT_TY], MSG_TY),
+        ir.ObjCall("X", [ir.BoolVar("Y"), ir.IntVar("Z", INT_TY)], [rty.BOOLEAN, INT_TY], MSG_TY),
     )
 
 
 def test_to_ir_conversion() -> None:
     assert expr_conv.to_ir(
-        Conversion("I", Variable("Y", type_=ty.BOOLEAN), type_=INT_TY),
+        Conversion("I", Variable("Y", type_=rty.BOOLEAN), type_=INT_TY),
         id_generator(),
     ) == ir.ComplexExpr([], ir.Conversion(INT_TY, ir.BoolVar("Y")))
 
@@ -584,7 +585,7 @@ def test_to_ir_comprehension() -> None:
     assert expr_conv.to_ir(
         Comprehension(
             "X",
-            Selected(Variable("M", type_=ty.Message("M")), "Y", type_=ty.Sequence("S", INT_TY)),
+            Selected(Variable("M", type_=rty.Message("M")), "Y", type_=rty.Sequence("S", INT_TY)),
             Add(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY), Number(1)),
             Less(Sub(Variable("X", type_=INT_TY), Number(1)), Number(ir.INT_MAX)),
         ),
@@ -596,21 +597,21 @@ def test_to_ir_comprehension() -> None:
             ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
             ir.ComplexExpr(
                 [
-                    ir.VarDecl("T_0", ty.BASE_INTEGER),
+                    ir.VarDecl("T_0", rty.BASE_INTEGER),
                     ir.Assign(
                         "T_0",
                         ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)),
-                        ty.BASE_INTEGER,
+                        rty.BASE_INTEGER,
                     ),
                 ],
-                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", ty.BASE_INTEGER)),
+                ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
             ),
             ir.ComplexBoolExpr(
                 [
-                    ir.VarDecl("T_1", ty.BASE_INTEGER),
-                    ir.Assign("T_1", ir.Add(ir.IntVar("X", INT_TY), ir.IntVal(-1)), ty.BOOLEAN),
+                    ir.VarDecl("T_1", rty.BASE_INTEGER),
+                    ir.Assign("T_1", ir.Add(ir.IntVar("X", INT_TY), ir.IntVal(-1)), rty.BOOLEAN),
                 ],
-                ir.Less(ir.IntVar("T_1", ty.BASE_INTEGER), ir.IntVal(ir.INT_MAX)),
+                ir.Less(ir.IntVar("T_1", rty.BASE_INTEGER), ir.IntVal(ir.INT_MAX)),
             ),
         ),
     )
@@ -629,9 +630,9 @@ def test_to_ir_message_aggregate(  # type: ignore[misc]
             "X",
             {
                 "Y": Selected(
-                    Variable("M", type_=ty.Message("M")),
+                    Variable("M", type_=rty.Message("M")),
                     "Y",
-                    type_=ty.Sequence("S", INT_TY),
+                    type_=rty.Sequence("S", INT_TY),
                 ),
                 "Z": Add(Variable("X", type_=INT_TY), Variable("Y", type_=INT_TY), Number(1)),
             },
@@ -640,14 +641,14 @@ def test_to_ir_message_aggregate(  # type: ignore[misc]
         id_generator(),
     ) == ir.ComplexExpr(
         [
-            ir.VarDecl("T_0", ty.BASE_INTEGER),
-            ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), ty.BASE_INTEGER),
+            ir.VarDecl("T_0", rty.BASE_INTEGER),
+            ir.Assign("T_0", ir.Add(ir.IntVar("Y", INT_TY), ir.IntVal(1)), rty.BASE_INTEGER),
         ],
         ir_agg(
             "X",
             {
                 ID("Y"): ir.ObjFieldAccess("M", ID("Y"), MSG_TY),
-                ID("Z"): ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", ty.BASE_INTEGER)),
+                ID("Z"): ir.Add(ir.IntVar("X", INT_TY), ir.IntVar("T_0", rty.BASE_INTEGER)),
             },
             MSG_TY,
         ),

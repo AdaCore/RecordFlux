@@ -4,7 +4,8 @@ from abc import abstractmethod
 from collections.abc import Callable, Generator, Sequence
 from typing import ClassVar
 
-from rflx import expr_conv, ir, ty
+import rflx.typing_ as rty
+from rflx import expr_conv, ir
 from rflx.common import Base
 from rflx.error import fail
 from rflx.expr import Expr, Selected, Variable
@@ -31,7 +32,7 @@ class Declaration(Base):
 
     @property
     @abstractmethod
-    def type_(self) -> ty.Type:
+    def type_(self) -> rty.Type:
         raise NotImplementedError
 
     @property
@@ -54,12 +55,12 @@ class TypeCheckableDeclaration(Declaration):
         self,
         identifier: StrID,
         type_identifier: StrID,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ):
         super().__init__(identifier, location)
         self._type_identifier = ID(type_identifier)
-        self._type: ty.Type = type_
+        self._type: rty.Type = type_
 
     @property
     def type_identifier(self) -> ID:
@@ -70,17 +71,17 @@ class TypeCheckableDeclaration(Declaration):
         self._type_identifier = identifier
 
     @property
-    def type_(self) -> ty.Type:
+    def type_(self) -> rty.Type:
         return self._type
 
     @type_.setter
-    def type_(self, value: ty.Type) -> None:
+    def type_(self, value: rty.Type) -> None:
         self._type = value
 
     @abstractmethod
     def check_type(
         self,
-        declaration_type: ty.Type,
+        declaration_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         """Set the types of the declaration and variables, and check the types of expressions."""
@@ -95,7 +96,7 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         identifier: StrID,
         type_identifier: StrID,
         expression: Expr | None = None,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ):
         super().__init__(identifier, type_identifier, type_, location)
@@ -107,7 +108,7 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
 
     def check_type(
         self,
-        declaration_type: ty.Type,
+        declaration_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = declaration_type
@@ -124,7 +125,7 @@ class VariableDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         return []
 
     def to_ir(self, variable_id: Generator[ID, None, None]) -> ir.VarDecl:
-        assert isinstance(self.type_, ty.NamedTypeClass), self.type_
+        assert isinstance(self.type_, rty.NamedTypeClass), self.type_
         expression = expr_conv.to_ir(self.expression, variable_id) if self.expression else None
         return ir.VarDecl(
             self.identifier,
@@ -142,7 +143,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         identifier: StrID,
         type_identifier: StrID,
         expression: Selected,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ):
         super().__init__(identifier, type_identifier, type_, location)
@@ -153,7 +154,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
 
     def check_type(
         self,
-        declaration_type: ty.Type,
+        declaration_type: rty.Type,
         typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = declaration_type
@@ -161,11 +162,11 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
         assert isinstance(expression, Selected)
         self.expression = expression
 
-        error = self.expression.prefix.check_type_instance(ty.Message)
+        error = self.expression.prefix.check_type_instance(rty.Message)
         if error.has_errors():
             return error
 
-        assert isinstance(self.expression.prefix.type_, ty.Message)
+        assert isinstance(self.expression.prefix.type_, rty.Message)
 
         error = RecordFluxError()
         for r in self.expression.prefix.type_.refinements:
@@ -193,7 +194,7 @@ class RenamingDeclaration(TypeCheckableDeclaration, BasicDeclaration):
                     ),
                 ],
             )
-        error.extend(self.expression.check_type(ty.OPAQUE).entries)
+        error.extend(self.expression.check_type(rty.OPAQUE).entries)
         return error
 
     def variables(self) -> Sequence[Variable]:
@@ -215,7 +216,7 @@ class FormalDeclaration(Declaration):
 
 
 class Parameter(Base):
-    def __init__(self, identifier: StrID, type_identifier: StrID, type_: ty.Type = ty.UNDEFINED):
+    def __init__(self, identifier: StrID, type_identifier: StrID, type_: rty.Type = rty.UNDEFINED):
         super().__init__()
         self._identifier = ID(identifier)
         self._type_identifier = ID(type_identifier)
@@ -244,7 +245,7 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
         identifier: StrID,
         parameters: Sequence[Parameter],
         return_type: StrID,
-        type_: ty.Type = ty.UNDEFINED,
+        type_: rty.Type = rty.UNDEFINED,
         location: Location | None = None,
     ):
         super().__init__(identifier, return_type, type_, location)
@@ -261,7 +262,7 @@ class FunctionDeclaration(TypeCheckableDeclaration, FormalDeclaration):
 
     def check_type(
         self,
-        declaration_type: ty.Type,
+        declaration_type: rty.Type,
         _typify_variable: Callable[[Expr], Expr],
     ) -> RecordFluxError:
         self.type_ = declaration_type
@@ -310,8 +311,8 @@ class ChannelDeclaration(FormalDeclaration):
         return f"{self.identifier} : Channel{with_aspects}"
 
     @property
-    def type_(self) -> ty.Type:
-        return ty.Channel(self.readable, self.writable)
+    def type_(self) -> rty.Type:
+        return rty.Channel(self.readable, self.writable)
 
     @property
     def readable(self) -> bool:

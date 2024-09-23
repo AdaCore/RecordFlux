@@ -10,7 +10,8 @@ from enum import Enum
 from functools import cached_property, partial
 from typing import Callable
 
-from rflx import expr, expr_proof, ty
+import rflx.typing_ as rty
+from rflx import expr, expr_proof
 from rflx.common import Base, indent, indent_next, unique, verbose_repr
 from rflx.const import MP_CONTEXT
 from rflx.error import are_all_locations_present, fail, fatal_fail
@@ -531,8 +532,8 @@ class Message(type_decl.TypeDecl):
         self._refinements = refinements
 
     @property
-    def type_(self) -> ty.Message:
-        return ty.Message(
+    def type_(self) -> rty.Message:
+        return rty.Message(
             self.full_name,
             (
                 {
@@ -547,7 +548,7 @@ class Message(type_decl.TypeDecl):
             ),
             {f.identifier: t.type_ for f, t in self._parameter_types.items()},
             {f.identifier: t.type_ for f, t in self._field_types.items()},
-            [ty.Refinement(r.field.identifier, r.sdu.type_, r.package) for r in self._refinements],
+            [rty.Refinement(r.field.identifier, r.sdu.type_, r.package) for r in self._refinements],
             self.is_definite,
         )
 
@@ -924,13 +925,13 @@ class Message(type_decl.TypeDecl):
             if f in parameters:
                 if not isinstance(t, type_decl.Scalar):
                     assert f.identifier.location is not None
-                    additional_annotations = []
+                    additionnal_annotations = []
                     if not (
                         type_decl.is_builtin_type(t.identifier)
                         or type_decl.is_internal_type(t.identifier)
                     ):
                         assert t.identifier.location is not None
-                        additional_annotations.append(
+                        additionnal_annotations.append(
                             Annotation(
                                 "type declared here",
                                 Severity.NOTE,
@@ -939,11 +940,11 @@ class Message(type_decl.TypeDecl):
                         )
 
                     self.error.extend(
-                        ty.check_type_instance(
+                        rty.check_type_instance(
                             t.type_,
-                            (ty.Enumeration, ty.AnyInteger),
+                            (rty.Enumeration, rty.AnyInteger),
                             location=f.identifier.location,
-                            additional_annotations=additional_annotations,
+                            additionnal_annotations=additionnal_annotations,
                         ).entries,
                     )
                 elif isinstance(t, type_decl.Enumeration) and t.always_valid:
@@ -1531,7 +1532,7 @@ class Message(type_decl.TypeDecl):
                 if expression == expr.UNDEFINED:
                     continue
                 for var in expression.variables():
-                    if var.type_ == ty.Undefined():
+                    if var.type_ == rty.Undefined():
                         self.error.push(
                             ErrorEntry(
                                 f'undefined variable "{var.identifier}"',
@@ -1549,10 +1550,10 @@ class Message(type_decl.TypeDecl):
         def remove_types(expression: expr.Expr) -> expr.Expr:
             if isinstance(expression, expr.Variable):
                 expression = copy(expression)
-                expression.type_ = ty.Undefined()
+                expression.type_ = rty.Undefined()
             return expression
 
-        def check_expr_type(expression: expr.Expr, ty: ty.Type, path: Sequence[Link]) -> None:
+        def check_expr_type(expression: expr.Expr, ty: rty.Type, path: Sequence[Link]) -> None:
             entries = expression.check_type(ty).entries
             assert self.location is not None
 
@@ -1593,7 +1594,7 @@ class Message(type_decl.TypeDecl):
                     types[l.source] = self.types[l.source]
 
                 substituted_condition = l.condition.substituted(typed_variable)
-                check_expr_type(substituted_condition, ty.BOOLEAN, path)
+                check_expr_type(substituted_condition, rty.BOOLEAN, path)
 
                 for expression in (
                     l.size.substituted(typed_variable),
@@ -1602,7 +1603,7 @@ class Message(type_decl.TypeDecl):
                     if expression == expr.UNDEFINED:
                         continue
 
-                    check_expr_type(expression, ty.BASE_INTEGER, path)
+                    check_expr_type(expression, rty.BASE_INTEGER, path)
 
     def _verify_links(self) -> None:
         for link in self.structure:
@@ -2607,7 +2608,7 @@ class Refinement(type_decl.TypeDecl):
             )
 
     def _verify_condition(self) -> None:
-        self.error.extend(self.condition.check_type(ty.Any()).entries)
+        self.error.extend(self.condition.check_type(rty.Any()).entries)
 
         if not self.error.has_errors() and self.condition != expr.TRUE:
             for cond, val in [
@@ -3004,7 +3005,7 @@ class UncheckedMessage(type_decl.UncheckedTypeDecl):
                             .substituted(substitute_message_variables)
                             .substituted(typed_variable)
                         )
-                        merged_condition.check_type(ty.Any()).propagate()
+                        merged_condition.check_type(rty.Any()).propagate()
                         proof = expr_proof.Proof(
                             merged_condition,
                             [
@@ -3399,7 +3400,7 @@ def typed_expression(
             *qualified_type_names,
         }, f'variable "{expression.identifier}" has the same name as a literal'
         if expression.name.lower() == "message":
-            expression.type_ = ty.OPAQUE
+            expression.type_ = rty.OPAQUE
         elif Field(expression.identifier) in types:
             expression.type_ = types[Field(expression.identifier)].type_
     if isinstance(expression, expr.Literal) and expression.identifier in qualified_enum_literals:

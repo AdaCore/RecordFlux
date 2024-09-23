@@ -5,7 +5,8 @@ from collections import abc
 
 import pytest
 
-from rflx import expr, ty
+import rflx.typing_ as rty
+from rflx import expr
 from rflx.identifier import ID
 from rflx.model import (
     BOOLEAN,
@@ -18,7 +19,7 @@ from rflx.model import (
     declaration as decl,
     statement as stmt,
 )
-from rflx.rapidflux import Location, RecordFluxError
+from rflx.rapidflux import Location, RecordFluxError, ty
 from tests.data import models
 from tests.utils import assert_equal, assert_state_machine_model_error, get_test_model
 
@@ -49,7 +50,7 @@ def test_str() -> None:
                                 condition=expr.And(
                                     expr.Equal(expr.Variable("Z"), expr.TRUE),
                                     expr.Equal(
-                                        expr.Call("G", ty.BOOLEAN, [expr.Variable("F")]),
+                                        expr.Call("G", rty.BOOLEAN, [expr.Variable("F")]),
                                         expr.TRUE,
                                     ),
                                 ),
@@ -139,7 +140,7 @@ def test_identifier_normalization(monkeypatch: pytest.MonkeyPatch) -> None:
                             condition=expr.And(
                                 expr.Equal(expr.Variable("z"), expr.TRUE),
                                 expr.Equal(
-                                    expr.Call("g", ty.BOOLEAN, [expr.Variable("f")]),
+                                    expr.Call("g", rty.BOOLEAN, [expr.Variable("f")]),
                                     expr.TRUE,
                                 ),
                             ),
@@ -268,7 +269,7 @@ def test_inconsistent_identifier_casing() -> None:
                                 expr.Equal(
                                     expr.Call(
                                         ID("g", location=Location((7, 7))),
-                                        ty.BOOLEAN,
+                                        rty.BOOLEAN,
                                         [expr.Variable(ID("f", location=Location((8, 8))))],
                                     ),
                                     expr.TRUE,
@@ -859,7 +860,7 @@ def test_function_declaration_invalid_parameter_type(
                 actions=[
                     stmt.VariableAssignment(
                         "Result",
-                        expr.Call("Function", ty.BOOLEAN, [expr.Variable("M")]),
+                        expr.Call("Function", rty.BOOLEAN, [expr.Variable("M")]),
                     ),
                 ],
             ),
@@ -914,7 +915,7 @@ def test_function_declaration_invalid_return_type(
                 actions=[
                     stmt.VariableAssignment(
                         "Result",
-                        expr.Call("Function", ty.BOOLEAN, []),
+                        expr.Call("Function", rty.BOOLEAN, []),
                     ),
                 ],
             ),
@@ -947,7 +948,7 @@ def test_call_to_undeclared_function() -> None:
                         "Global",
                         expr.Call(
                             "UndefSub",
-                            ty.UNDEFINED,
+                            rty.UNDEFINED,
                             [expr.Variable("Global")],
                             location=Location((10, 20)),
                         ),
@@ -983,7 +984,7 @@ def test_call_undeclared_variable() -> None:
                         "Result",
                         expr.Call(
                             "SubProg",
-                            ty.BOOLEAN,
+                            rty.BOOLEAN,
                             [expr.Variable("Undefined", location=Location((10, 20)))],
                         ),
                     ),
@@ -1014,7 +1015,7 @@ def test_call_invalid_argument_type() -> None:
                         "Result",
                         expr.Call(
                             "Function",
-                            ty.BOOLEAN,
+                            rty.BOOLEAN,
                             [expr.Variable("Channel", location=Location((10, 20)))],
                         ),
                     ),
@@ -1050,7 +1051,7 @@ def test_call_missing_arguments() -> None:
                         "Result",
                         expr.Call(
                             "Function",
-                            ty.BOOLEAN,
+                            rty.BOOLEAN,
                             location=Location((10, 20)),
                         ),
                     ),
@@ -1080,7 +1081,7 @@ def test_call_too_many_arguments() -> None:
                         "Result",
                         expr.Call(
                             "Function",
-                            ty.BOOLEAN,
+                            rty.BOOLEAN,
                             [expr.TRUE, expr.Number(1)],
                             location=Location((10, 20)),
                         ),
@@ -1289,7 +1290,7 @@ def test_undeclared_variable_in_function_call() -> None:
                         "Result",
                         expr.Call(
                             "SubProg",
-                            ty.BOOLEAN,
+                            rty.BOOLEAN,
                             [expr.Variable("Undefined", location=Location((10, 20)))],
                         ),
                     ),
@@ -2029,7 +2030,7 @@ def test_undefined_type_in_parameters(parameters: abc.Sequence[decl.FormalDeclar
                 transitions=[
                     Transition(
                         target=ID("null"),
-                        condition=expr.Equal(expr.Call("X", ty.BOOLEAN, [expr.TRUE]), expr.TRUE),
+                        condition=expr.Equal(expr.Call("X", rty.BOOLEAN, [expr.TRUE]), expr.TRUE),
                     ),
                     Transition(
                         target=ID("Start"),
@@ -2467,15 +2468,15 @@ def test_resolving_of_function_calls() -> None:
 
     global_decl = state_machine.declarations[ID("Global")]
     assert isinstance(global_decl, decl.VariableDeclaration)
-    assert global_decl.expression == expr.Call("Func", ty.BOOLEAN)
+    assert global_decl.expression == expr.Call("Func", rty.BOOLEAN)
 
     local_decl = state_machine.states[0].declarations[ID("Local")]
     assert isinstance(local_decl, decl.VariableDeclaration)
-    assert local_decl.expression == expr.Call("Func", ty.BOOLEAN)
+    assert local_decl.expression == expr.Call("Func", rty.BOOLEAN)
 
     local_stmt = state_machine.states[0].actions[0]
     assert isinstance(local_stmt, stmt.VariableAssignment)
-    assert local_stmt.expression == expr.Call("Func", ty.BOOLEAN)
+    assert local_stmt.expression == expr.Call("Func", rty.BOOLEAN)
 
 
 @pytest.mark.parametrize(
@@ -2734,7 +2735,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message("M", is_definite=False),
+                        type_=rty.Message("M", is_definite=False),
                     ),
                 ],
                 transitions=[Transition(target=ID("null"))],
@@ -2745,7 +2746,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message("M", is_definite=False),
+                        type_=rty.Message("M", is_definite=False),
                     ),
                 ],
                 transitions=[Transition(target=ID("null"))],
@@ -2758,7 +2759,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2773,7 +2774,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2790,7 +2791,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Int",
                         "Integer",
-                        type_=ty.Integer("Integer", ty.Bounds(0, 255)),
+                        type_=rty.Integer("Integer", ty.Bounds(0, 255)),
                     ),
                 ],
                 transitions=[Transition(target=ID("null"))],
@@ -2801,7 +2802,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Int",
                         "Integer",
-                        type_=ty.Integer("Integer", ty.Bounds(0, 255)),
+                        type_=rty.Integer("Integer", ty.Bounds(0, 255)),
                     ),
                 ],
                 transitions=[Transition(target=ID("null"))],
@@ -2814,7 +2815,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2829,7 +2830,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2846,7 +2847,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2864,7 +2865,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2884,7 +2885,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2904,7 +2905,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2926,7 +2927,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2947,7 +2948,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2970,7 +2971,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2978,7 +2979,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg2",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -2989,7 +2990,7 @@ def test_state_normalization(
                         "Msg",
                         expr.Call(
                             "Func",
-                            ty.Message(
+                            rty.Message(
                                 "M",
                                 is_definite=True,
                             ),
@@ -3005,12 +3006,12 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Structure("M"),
+                        type_=rty.Structure("M"),
                     ),
                     decl.VariableDeclaration(
                         "Msg2",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -3021,7 +3022,7 @@ def test_state_normalization(
                         "Msg",
                         expr.Call(
                             "Func",
-                            type_=ty.Structure(
+                            type_=rty.Structure(
                                 "M",
                             ),
                             args=[expr.Opaque("Msg2")],
@@ -3038,7 +3039,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message("M", is_definite=True),
+                        type_=rty.Message("M", is_definite=True),
                     ),
                 ],
                 actions=[
@@ -3047,7 +3048,7 @@ def test_state_normalization(
                         expr.Selected(
                             prefix=expr.Variable(
                                 "Msg",
-                                type_=ty.Message(
+                                type_=rty.Message(
                                     "M",
                                     is_definite=True,
                                 ),
@@ -3064,7 +3065,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Structure(
+                        type_=rty.Structure(
                             "M",
                         ),
                     ),
@@ -3075,7 +3076,7 @@ def test_state_normalization(
                         expr.Selected(
                             prefix=expr.Variable(
                                 "Msg",
-                                type_=ty.Structure(
+                                type_=rty.Structure(
                                     "M",
                                 ),
                             ),
@@ -3093,7 +3094,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -3113,7 +3114,7 @@ def test_state_normalization(
                     decl.VariableDeclaration(
                         "Msg",
                         "Message",
-                        type_=ty.Message(
+                        type_=rty.Message(
                             "M",
                             is_definite=True,
                         ),
@@ -3144,7 +3145,7 @@ def test_message_assignment_from_function() -> None:
                 transitions=[Transition(target=ID("null"))],
                 exception_transition=Transition(target=ID("null")),
                 declarations=[decl.VariableDeclaration("Msg", "Null_Msg::Message")],
-                actions=[stmt.VariableAssignment("Msg", expr.Call("SubProg", ty.BASE_INTEGER))],
+                actions=[stmt.VariableAssignment("Msg", expr.Call("SubProg", rty.BASE_INTEGER))],
             ),
         ],
         declarations=[],
@@ -3178,7 +3179,7 @@ def test_unchecked_state_machine_checked() -> None:
                         condition=expr.And(
                             expr.Equal(expr.Variable("Z"), expr.TRUE),
                             expr.Equal(
-                                expr.Call("G", ty.BOOLEAN, [expr.Variable("F")]),
+                                expr.Call("G", rty.BOOLEAN, [expr.Variable("F")]),
                                 expr.TRUE,
                             ),
                         ),
@@ -3228,7 +3229,7 @@ def test_unchecked_state_machine_checked() -> None:
                         condition=expr.And(
                             expr.Equal(expr.Variable("Z"), expr.TRUE),
                             expr.Equal(
-                                expr.Call("G", ty.BOOLEAN, [expr.Variable("F")]),
+                                expr.Call("G", rty.BOOLEAN, [expr.Variable("F")]),
                                 expr.TRUE,
                             ),
                         ),

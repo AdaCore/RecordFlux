@@ -3,7 +3,7 @@ from typing import Callable
 import pytest
 import z3
 
-from rflx import ty
+from rflx import typing_ as rty
 from rflx.expr import (
     FALSE,
     TRUE,
@@ -182,7 +182,7 @@ def test_to_z3_attribute(attribute: Expr, z3name: str) -> None:
 
 def test_to_z3_attribute_error() -> None:
     with pytest.raises(Z3TypeError):
-        _to_z3(First(Call("X", ty.BASE_INTEGER)))
+        _to_z3(First(Call("X", rty.BASE_INTEGER)))
 
 
 def test_to_z3_aggregate() -> None:
@@ -192,7 +192,7 @@ def test_to_z3_aggregate() -> None:
 @pytest.mark.parametrize("relation", [Less, LessEqual, GreaterEqual, Greater])
 def test_to_z3_relation_error(relation: Callable[[Expr, Expr], Expr]) -> None:
     with pytest.raises(Z3TypeError):
-        _to_z3(relation(Variable("X", type_=ty.BOOLEAN), Number(1)))
+        _to_z3(relation(Variable("X", type_=rty.BOOLEAN), Number(1)))
 
 
 def test_to_z3_less() -> None:

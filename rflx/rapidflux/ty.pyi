@@ -2,10 +2,9 @@ from collections import abc
 from typing import Final
 
 from rflx.identifier import StrID
-from rflx.rapidflux import ID, Annotation, Location, RecordFluxError
+from rflx.rapidflux import ID, Location
 
 class Builtins:
-    UNDEFINED: Final[Undefined]
     BOOLEAN: Final[Enumeration]
     INDEX: Final[Integer]
     BIT_LENGTH: Final[Integer]
@@ -159,18 +158,3 @@ class Bounds:
     @property
     def upper(self) -> int: ...
     def merge(self, bounds: Bounds) -> Bounds: ...
-
-def common_type(types: abc.Sequence[Type]) -> Type: ...
-def check_type(
-    actual: Type,
-    expected: Type | tuple[Type, ...],
-    location: Location | None,
-    description: str,
-) -> RecordFluxError: ...
-def check_type_instance(
-    actual: Type,
-    expected: type[Type] | tuple[type[Type], ...],
-    location: Location | None,
-    description: str = "",
-    additional_annotations: abc.Sequence[Annotation] | None = None,
-) -> RecordFluxError: ...

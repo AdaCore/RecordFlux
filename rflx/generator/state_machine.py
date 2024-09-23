@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import typing
+import typing as ty
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field as dataclass_field
 from functools import partial, singledispatchmethod
@@ -8,7 +8,7 @@ from typing import NoReturn
 
 from typing_extensions import Self
 
-from rflx import ada, ir, model, ty
+from rflx import ada, ir, model, typing_ as rty
 from rflx.ada import (
     FALSE,
     TRUE,
@@ -244,22 +244,22 @@ class StateMachineGenerator:
             ),
         ]
 
-        if function.type_ == ty.Undefined():
+        if function.type_ == rty.Undefined():
             fatal_fail(
                 f'return type of function "{function.identifier}" is undefined',
                 location=function.location,
             )
-        if function.type_ == ty.OPAQUE:
+        if function.type_ == rty.OPAQUE:
             fatal_fail(
                 f'Opaque as return type of function "{function.identifier}" not allowed',
                 location=function.location,
             )
-        if isinstance(function.type_, ty.Sequence):
+        if isinstance(function.type_, rty.Sequence):
             fail(
                 f'sequence as return type of function "{function.identifier}" not yet supported',
                 location=function.location,
             )
-        if isinstance(function.type_, ty.Message):
+        if isinstance(function.type_, rty.Message):
             if not function.type_.is_definite:
                 fatal_fail(
                     "non-definite message"
@@ -267,7 +267,7 @@ class StateMachineGenerator:
                     location=function.location,
                 )
             if any(
-                isinstance(field_type, ty.Sequence) and field_type != ty.OPAQUE
+                isinstance(field_type, rty.Sequence) and field_type != rty.OPAQUE
                 for field_type in function.type_.types.values()
             ):
                 fail(
@@ -279,7 +279,7 @@ class StateMachineGenerator:
         self._state_machine_context.referenced_types.append(function.return_type)
 
         for a in function.arguments:
-            if isinstance(a.type_, ty.Sequence) and a.type_ != ty.OPAQUE:
+            if isinstance(a.type_, rty.Sequence) and a.type_ != rty.OPAQUE:
                 fail(
                     f'sequence as parameter of function "{function.identifier}" not yet supported',
                     location=function.location,
@@ -289,13 +289,13 @@ class StateMachineGenerator:
                     [a.identifier],
                     (
                         const.TYPES_BYTES
-                        if a.type_ == ty.OPAQUE
+                        if a.type_ == rty.OPAQUE
                         else (
                             ID("Boolean")
-                            if a.type_ == ty.BOOLEAN
+                            if a.type_ == rty.BOOLEAN
                             else (
                                 self._prefix * a.type_identifier * "Structure"
-                                if isinstance(a.type_, ty.Message)
+                                if isinstance(a.type_, rty.Message)
                                 else self._prefix * a.type_identifier
                             )
                         )
@@ -303,7 +303,7 @@ class StateMachineGenerator:
                 ),
             )
 
-            assert isinstance(a.type_, (ty.Integer, ty.Enumeration, ty.Message, ty.Sequence))
+            assert isinstance(a.type_, (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence))
 
             self._state_machine_context.referenced_types.append(a.type_.identifier)
 
@@ -312,10 +312,10 @@ class StateMachineGenerator:
                 [ID("RFLX_Result")],
                 (
                     self._prefix * function.return_type * "Structure"
-                    if isinstance(function.type_, ty.Message)
+                    if isinstance(function.type_, rty.Message)
                     else (
                         ID("Boolean")
-                        if function.type_ == ty.BOOLEAN
+                        if function.type_ == rty.BOOLEAN
                         else self._prefix * function.return_type
                     )
                 ),
@@ -331,7 +331,7 @@ class StateMachineGenerator:
                 [
                     *(
                         [Precondition(Not(Constrained("RFLX_Result")))]
-                        if isinstance(function.type_, ty.Enumeration)
+                        if isinstance(function.type_, rty.Enumeration)
                         and function.type_.always_valid
                         else []
                     ),
@@ -585,7 +585,7 @@ class FSMGenerator:
                     ),
                 ]
                 if any(
-                    type_identifier == ty.BASE_INTEGER.identifier
+                    type_identifier == rty.BASE_INTEGER.identifier
                     for type_identifier in self._state_machine_context.used_types_body
                 )
                 else []
@@ -617,7 +617,7 @@ class FSMGenerator:
         composite_globals = [
             d
             for d in self._state_machine.declarations
-            if isinstance(d, ir.VarDecl) and isinstance(d.type_, (ty.Message, ty.Sequence))
+            if isinstance(d, ir.VarDecl) and isinstance(d.type_, (rty.Message, rty.Sequence))
         ]
 
         channel_reads = self._channel_io(self._state_machine, read=True)
@@ -734,7 +734,7 @@ class FSMGenerator:
                         or (isinstance(action, ir.Write) and write)
                     )
                     and isinstance(action.expression, ir.Var)
-                    and isinstance(action.expression.type_, ty.Message)
+                    and isinstance(action.expression.type_, rty.Message)
                 ):
                     channels[action.channel].append(
                         ChannelAccess(
@@ -898,8 +898,8 @@ class FSMGenerator:
                                 ),
                             )
                             for declaration in composite_globals
-                            if isinstance(declaration.type_, (ty.Message, ty.Sequence))
-                            and declaration.type_ != ty.OPAQUE
+                            if isinstance(declaration.type_, (rty.Message, rty.Sequence))
+                            and declaration.type_ != rty.OPAQUE
                         ],
                         *(
                             [
@@ -1123,7 +1123,7 @@ class FSMGenerator:
             ]
 
             for d in declarations:
-                if isinstance(d.type_, (ty.Message, ty.Sequence)) and d.type_ != ty.OPAQUE:
+                if isinstance(d.type_, (rty.Message, rty.Sequence)) and d.type_ != rty.OPAQUE:
                     self._state_machine_context.used_packages_body.append(
                         const.TYPES_OPERATORS_PACKAGE,
                     )
@@ -1478,7 +1478,7 @@ class FSMGenerator:
                     if (
                         isinstance(action, ir.Read)
                         and isinstance(action.expression, ir.Var)
-                        and isinstance(action.expression.type_, ty.Message)
+                        and isinstance(action.expression.type_, rty.Message)
                     )
                 ],
             )
@@ -1597,7 +1597,7 @@ class FSMGenerator:
                 if (
                     isinstance(action, (ir.Read, ir.Write))
                     and isinstance(action.expression, ir.Var)
-                    and isinstance(action.expression.type_, ty.Message)
+                    and isinstance(action.expression.type_, rty.Message)
                 )
             )
         ]
@@ -2920,7 +2920,7 @@ class FSMGenerator:
                 declaration.expression,
                 state_machine_global=state_machine_global,
             )
-            if isinstance(declaration.type_, (ty.Message, ty.Sequence)):
+            if isinstance(declaration.type_, (rty.Message, rty.Sequence)):
                 has_composite_declarations |= True
 
         if state_machine_global and self._allocator.required:
@@ -3006,7 +3006,7 @@ class FSMGenerator:
     def _declare(  # noqa: PLR0912, PLR0913
         self,
         identifier: ID,
-        type_: ty.Type,
+        type_: rty.Type,
         is_global: Callable[[ID], bool],
         alloc_id: Location | None,
         expression: ir.ComplexExpr | None = None,
@@ -3021,7 +3021,7 @@ class FSMGenerator:
                 location=expression.expr.location,
             )
 
-        if type_ == ty.OPAQUE:
+        if type_ == rty.OPAQUE:
             initialization = None
             object_type: Expr = Variable(const.TYPES_BYTES)
             aspects: list[Aspect] = []
@@ -3058,13 +3058,13 @@ class FSMGenerator:
                 ),
             )
 
-        elif isinstance(type_, (ty.UniversalInteger, ty.Integer, ty.Enumeration)):
+        elif isinstance(type_, (rty.UniversalInteger, rty.Integer, rty.Enumeration)):
             result.global_declarations.append(
                 ObjectDeclaration(
                     [identifier],
                     (
                         self._ada_type(type_.identifier)
-                        if isinstance(type_, ty.NamedTypeClass)
+                        if isinstance(type_, rty.NamedTypeClass)
                         else const.TYPES_BASE_INT
                     ),
                     (
@@ -3091,7 +3091,7 @@ class FSMGenerator:
                         location=expression.expr.location,
                     )
 
-        elif isinstance(type_, (ty.Message, ty.Sequence)):
+        elif isinstance(type_, (rty.Message, rty.Sequence)):
             if expression is not None:
                 fail(
                     f"initialization for {type_} not yet supported",
@@ -3120,9 +3120,9 @@ class FSMGenerator:
                             {
                                 n: First(self._ada_type(t.identifier))
                                 for n, t in type_.parameter_types.items()
-                                if isinstance(t, (ty.Integer, ty.Enumeration))
+                                if isinstance(t, (rty.Integer, rty.Enumeration))
                             }
-                            if isinstance(type_, ty.Message)
+                            if isinstance(type_, rty.Message)
                             else None
                         ),
                     ),
@@ -3133,7 +3133,7 @@ class FSMGenerator:
             result.finalization.extend(
                 self._free_context_buffer(identifier, type_identifier, is_global, alloc_id),
             )
-        elif isinstance(type_, ty.Structure):
+        elif isinstance(type_, rty.Structure):
             # Messages with initialization clauses are not optimized
             assert expression is None
 
@@ -3153,10 +3153,10 @@ class FSMGenerator:
                 location=identifier.location,
             )
 
-        assert isinstance(type_, (ty.NamedTypeClass, ty.UniversalInteger)), type_
+        assert isinstance(type_, (rty.NamedTypeClass, rty.UniversalInteger)), type_
 
         type_identifier = (
-            type_.identifier if isinstance(type_, ty.NamedTypeClass) else const.TYPES_BASE_INT
+            type_.identifier if isinstance(type_, rty.NamedTypeClass) else const.TYPES_BASE_INT
         )
         if state_machine_global:
             self._state_machine_context.referenced_types.append(type_identifier)
@@ -3168,7 +3168,7 @@ class FSMGenerator:
     def _assign(  # noqa: PLR0913
         self,
         target: ID,
-        target_type: ty.Type,
+        target_type: rty.Type,
         expression: ir.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
@@ -3192,7 +3192,7 @@ class FSMGenerator:
             )
 
         if (
-            isinstance(target_type, ty.Message)
+            isinstance(target_type, rty.Message)
             and isinstance(expression, ir.Var)
             and expression.identifier == target
         ):
@@ -3216,7 +3216,7 @@ class FSMGenerator:
             )
 
         if isinstance(expression, ir.Comprehension):
-            assert isinstance(target_type, ty.Sequence)
+            assert isinstance(target_type, rty.Sequence)
             return self._assign_to_comprehension(
                 target,
                 target_type,
@@ -3259,12 +3259,12 @@ class FSMGenerator:
                 ir.CaseExpr,
             ),
         ) and (
-            isinstance(expression.type_, (ty.AnyInteger, ty.Enumeration, ty.Aggregate))
-            or expression.type_ == ty.OPAQUE
+            isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
+            or expression.type_ == rty.OPAQUE
         ):
             assert isinstance(
                 target_type,
-                (ty.Integer, ty.Enumeration, ty.Message, ty.Sequence),
+                (rty.Integer, rty.Enumeration, rty.Message, rty.Sequence),
             ), target_type
             return [
                 Assignment(
@@ -3275,7 +3275,7 @@ class FSMGenerator:
 
         if isinstance(expression, ir.Var) and isinstance(
             expression.type_,
-            (ty.Message, ty.Sequence),
+            (rty.Message, rty.Sequence),
         ):
             _unsupported_expression(expression, "in assignment")
 
@@ -3287,7 +3287,7 @@ class FSMGenerator:
         field_access: ir.FieldAccess,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        if isinstance(field_access.message_type, ty.Structure):
+        if isinstance(field_access.message_type, rty.Structure):
             return [
                 Assignment(
                     Variable(variable_id(target, is_global)),
@@ -3295,15 +3295,15 @@ class FSMGenerator:
                 ),
             ]
 
-        assert isinstance(field_access.message_type, ty.Message)
+        assert isinstance(field_access.message_type, rty.Message)
 
         message_type_id = field_access.message_type.identifier
         message_context = context_id(field_access.message, is_global)
         field = field_access.field
 
         if (
-            isinstance(field_access.type_, (ty.AnyInteger, ty.Enumeration))
-            or field_access.type_ == ty.OPAQUE
+            isinstance(field_access.type_, (rty.AnyInteger, rty.Enumeration))
+            or field_access.type_ == rty.OPAQUE
         ):
             if field in field_access.message_type.parameter_types:
                 return [
@@ -3323,7 +3323,7 @@ class FSMGenerator:
                 ),
             ]
 
-        if isinstance(field_access.type_, ty.Sequence):
+        if isinstance(field_access.type_, rty.Sequence):
             # Eng/RecordFlux/RecordFlux#577
             # The relevant buffer part has to be copied from the message context into a
             # sequence context. With the current implementation the sequence needs to
@@ -3348,7 +3348,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        assert isinstance(message_aggregate.type_, ty.Message)
+        assert isinstance(message_aggregate.type_, rty.Message)
 
         self._state_machine_context.used_types_body.append(const.TYPES_BIT_LENGTH)
 
@@ -3359,7 +3359,7 @@ class FSMGenerator:
             for f, v in message_aggregate.field_values.items()
             if f in message_aggregate.type_.parameter_types
             for t in [message_aggregate.type_.parameter_types[f]]
-            if isinstance(t, (ty.Integer, ty.Enumeration))
+            if isinstance(t, (rty.Integer, rty.Enumeration))
         ]
 
         return [
@@ -3388,7 +3388,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        assert isinstance(delta_message_aggregate.type_, ty.Message)
+        assert isinstance(delta_message_aggregate.type_, rty.Message)
 
         self._state_machine_context.used_types_body.append(const.TYPES_BIT_LENGTH)
 
@@ -3438,7 +3438,7 @@ class FSMGenerator:
         state: ID,
         alloc_id: Location | None,
     ) -> Sequence[Statement]:
-        if not isinstance(head.type_, (ty.Integer, ty.Enumeration, ty.Message)):
+        if not isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message)):
             fatal_fail(
                 f"unexpected sequence element type {head.type_}"
                 f' for "{head}" in assignment of "{target}"',
@@ -3463,11 +3463,11 @@ class FSMGenerator:
         state: ID,
         alloc_id: Location | None,
     ) -> Sequence[Statement]:
-        assert isinstance(find.sequence.type_, ty.Sequence)
+        assert isinstance(find.sequence.type_, rty.Sequence)
         sequence_type_id = find.sequence.type_.identifier
         sequence_element_type = find.sequence.type_.element
 
-        if isinstance(sequence_element_type, ty.Message):
+        if isinstance(sequence_element_type, rty.Message):
             if isinstance(find.sequence, ir.Var):
                 sequence_id = ID(f"{find.sequence}")
                 comprehension_sequence_id = copy_id(sequence_id)
@@ -3485,13 +3485,13 @@ class FSMGenerator:
             def comprehension_statements(
                 local_exception_handler: ExceptionHandler,
             ) -> list[Statement]:
-                assert isinstance(find.type_, (ty.Integer, ty.Enumeration, ty.Message))
+                assert isinstance(find.type_, (rty.Integer, rty.Enumeration, rty.Message))
                 assert isinstance(
                     sequence_element_type,
-                    (ty.Message, ty.Integer, ty.Enumeration),
+                    (rty.Message, rty.Integer, rty.Enumeration),
                 )
                 default_assignment = []
-                if isinstance(find.type_, (ty.Integer, ty.Enumeration)):
+                if isinstance(find.type_, (rty.Integer, rty.Enumeration)):
                     default_assignment = [Assignment(target, First(find.type_.identifier))]
                 return [
                     Declare(
@@ -3534,7 +3534,7 @@ class FSMGenerator:
                     alloc_id,
                 )
             if isinstance(find.sequence, ir.FieldAccess):
-                assert isinstance(selected.message_type, ty.Message)
+                assert isinstance(selected.message_type, rty.Message)
                 message_id = selected.message
                 message_type = selected.message_type.identifier
                 message_field = selected.field
@@ -3579,8 +3579,8 @@ class FSMGenerator:
         state: ID,
         alloc_id: Location | None,
     ) -> Sequence[Statement]:
-        assert isinstance(head.prefix_type, ty.Sequence)
-        assert isinstance(head.type_, (ty.Integer, ty.Enumeration, ty.Message))
+        assert isinstance(head.prefix_type, rty.Sequence)
+        assert isinstance(head.type_, (rty.Integer, rty.Enumeration, rty.Message))
 
         target_type = head.type_.identifier
         sequence_type = head.prefix_type.identifier
@@ -3588,7 +3588,7 @@ class FSMGenerator:
         sequence_context = context_id(sequence_id, is_global)
         sequence_identifier = ID(f"{head.prefix}")
 
-        if isinstance(head.type_, (ty.Integer, ty.Enumeration)):
+        if isinstance(head.type_, (rty.Integer, rty.Enumeration)):
             return [
                 # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
                 self._raise_exception_if(
@@ -3621,7 +3621,7 @@ class FSMGenerator:
                 ),
             ]
 
-        assert isinstance(head.type_, ty.Message)
+        assert isinstance(head.type_, rty.Message)
 
         self._state_machine_context.used_types_body.append(const.TYPES_LENGTH)
         self._state_machine_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
@@ -3757,15 +3757,15 @@ class FSMGenerator:
     def _assign_to_comprehension(  # noqa: PLR0913
         self,
         target: ID,
-        target_type: ty.Sequence,
+        target_type: rty.Sequence,
         comprehension: ir.Comprehension,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
         state: ID,
         alloc_id: Location | None,
     ) -> Sequence[Statement]:
-        assert isinstance(comprehension.type_, (ty.Sequence, ty.Aggregate))
-        assert isinstance(comprehension.sequence.type_, ty.Sequence)
+        assert isinstance(comprehension.type_, (rty.Sequence, rty.Aggregate))
+        assert isinstance(comprehension.sequence.type_, rty.Sequence)
 
         self._state_machine_context.used_types_body.append(const.TYPES_BIT_LENGTH)
 
@@ -3778,7 +3778,7 @@ class FSMGenerator:
 
         reset_target = CallStatement(target_type.identifier * "Reset", [Variable(target_context)])
 
-        if isinstance(sequence_element_type, ty.Message):
+        if isinstance(sequence_element_type, rty.Message):
             iterator_type_id = sequence_element_type.identifier
 
             if isinstance(comprehension.sequence, ir.Var):
@@ -3817,7 +3817,7 @@ class FSMGenerator:
             if isinstance(comprehension.sequence, ir.FieldAccess):
                 field_access = comprehension.sequence
 
-                assert isinstance(field_access.message_type, ty.Message)
+                assert isinstance(field_access.message_type, rty.Message)
 
                 message_id = ID(field_access.message)
                 message_type = field_access.message_type.identifier
@@ -3892,7 +3892,7 @@ class FSMGenerator:
         target_id = variable_id(target, is_global)
         message_id = context_id(target, is_global)
 
-        if isinstance(call_expr.type_, ty.Message):
+        if isinstance(call_expr.type_, rty.Message):
             type_identifier = self._ada_type(call_expr.type_.identifier)
             local_declarations.append(
                 ObjectDeclaration(
@@ -3928,7 +3928,7 @@ class FSMGenerator:
                 ],
             )
 
-        elif isinstance(call_expr.type_, ty.Structure):
+        elif isinstance(call_expr.type_, rty.Structure):
             type_identifier = self._ada_type(call_expr.type_.identifier)
             post_call.append(
                 # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
@@ -3960,7 +3960,7 @@ class FSMGenerator:
             ):
                 _unsupported_expression(a, "as function argument")
 
-            if isinstance(a, ir.Var) and isinstance(a.type_, ty.Message):
+            if isinstance(a, ir.Var) and isinstance(a.type_, rty.Message):
                 type_identifier = self._ada_type(a.type_.identifier)
                 local_declarations.append(
                     ObjectDeclaration(
@@ -3978,8 +3978,8 @@ class FSMGenerator:
                     ),
                 )
                 arguments.append(self._to_ada_expr(a, is_global))
-            elif isinstance(a, ir.FieldAccess) and a.type_ == ty.OPAQUE:
-                assert isinstance(a.type_, ty.Sequence)
+            elif isinstance(a, ir.FieldAccess) and a.type_ == rty.OPAQUE:
+                assert isinstance(a.type_, rty.Sequence)
                 self._state_machine_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
                 argument_name = f"RFLX_{call_expr.identifier}_Arg_{i}_{a.message}"
                 argument_length = f"{argument_name}_Length"
@@ -4055,7 +4055,7 @@ class FSMGenerator:
                 arguments.append(argument)
             elif isinstance(a, ir.Opaque) and isinstance(
                 a.prefix_type,
-                (ty.Message, ty.Sequence),
+                (rty.Message, rty.Sequence),
             ):
                 self._state_machine_context.used_types_body.append(const.TYPES_LENGTH)
                 self._state_machine_context.used_packages_body.append(const.TYPES_OPERATORS_PACKAGE)
@@ -4125,7 +4125,7 @@ class FSMGenerator:
                                     type_identifier
                                     * (
                                         "Well_Formed_Message"
-                                        if isinstance(a.prefix_type, ty.Message)
+                                        if isinstance(a.prefix_type, rty.Message)
                                         else "Valid"
                                     ),
                                     [Variable(context)],
@@ -4166,7 +4166,7 @@ class FSMGenerator:
                 ),
             ]
 
-        if isinstance(call_expr.type_, ty.Structure):
+        if isinstance(call_expr.type_, rty.Structure):
             return [*call, *post_call]
 
         return call
@@ -4178,7 +4178,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        if not isinstance(conversion.type_, ty.Message):
+        if not isinstance(conversion.type_, rty.Message):
             return [
                 Assignment(
                     variable_id(target, is_global),
@@ -4186,10 +4186,10 @@ class FSMGenerator:
                 ),
             ]
 
-        assert isinstance(conversion.type_, ty.Message)
+        assert isinstance(conversion.type_, rty.Message)
         assert isinstance(conversion.argument, ir.FieldAccess), f"{target}, {conversion}"
-        assert conversion.argument.type_ == ty.OPAQUE
-        assert isinstance(conversion.argument.message_type, ty.Message)
+        assert conversion.argument.type_ == rty.OPAQUE
+        assert isinstance(conversion.argument.message_type, rty.Message)
 
         pdu = conversion.argument.message_type
         sdu = conversion.type_
@@ -4272,12 +4272,12 @@ class FSMGenerator:
         self,
         target: ID,
         target_field: ID,
-        message_type: ty.Type,
+        message_type: rty.Type,
         value: ir.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        assert isinstance(message_type, ty.Message)
+        assert isinstance(message_type, rty.Message)
 
         target_context = context_id(target, is_global)
 
@@ -4327,7 +4327,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        assert isinstance(append.type_, ty.Sequence)
+        assert isinstance(append.type_, rty.Sequence)
 
         self._state_machine_context.used_types_body.append(const.TYPES_BIT_LENGTH)
 
@@ -4369,7 +4369,7 @@ class FSMGenerator:
                 ),
             ]
 
-        if isinstance(append.type_.element, (ty.Integer, ty.Enumeration)):
+        if isinstance(append.type_.element, (rty.Integer, rty.Enumeration)):
             if isinstance(append.expression, (ir.Var, ir.EnumLit, ir.IntVal)):
                 sequence_type = append.type_.identifier
                 sequence_context = context_id(append.sequence, is_global)
@@ -4388,7 +4388,7 @@ class FSMGenerator:
 
             _unsupported_expression(append.expression, "in Append statement")
 
-        if isinstance(append.type_.element, ty.Message):
+        if isinstance(append.type_.element, rty.Message):
             sequence_type = append.type_.identifier
             sequence_context = context_id(append.sequence, is_global)
             element_type = append.type_.element.identifier
@@ -4445,7 +4445,7 @@ class FSMGenerator:
     def _read(read: ir.Read, is_global: Callable[[ID], bool]) -> Sequence[Statement]:
         if not isinstance(read.expression, ir.Var) or not isinstance(
             read.expression.type_,
-            ty.Message,
+            rty.Message,
         ):
             _unsupported_expression(read.expression, "in Read statement")
 
@@ -4463,7 +4463,7 @@ class FSMGenerator:
     ) -> Sequence[Statement]:
         if not isinstance(write.expression, ir.Var) or not isinstance(
             write.expression.type_,
-            ty.Message,
+            rty.Message,
         ):
             _unsupported_expression(write.expression, "in Write statement")
 
@@ -4510,7 +4510,7 @@ class FSMGenerator:
         reset: ir.Reset,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        assert isinstance(reset.type_, (ty.Message, ty.Sequence))
+        assert isinstance(reset.type_, (rty.Message, rty.Sequence))
 
         target_type = reset.type_.identifier
         target_context = context_id(reset.identifier, is_global)
@@ -4527,16 +4527,16 @@ class FSMGenerator:
         raise NotImplementedError(f"{type(expression).__name__} is not yet supported")
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Var, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Var, is_global: ty.Callable[[ID], bool]) -> Expr:
         # TODO(eng/recordflux/RecordFlux#1359): Replace typing.Callable by collections.abc.Callable
         return Variable(variable_id(expression.identifier, is_global))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.IntVar, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntVar, is_global: ty.Callable[[ID], bool]) -> Expr:
         return Variable(variable_id(expression.identifier, is_global))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.EnumLit, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.EnumLit, _is_global: ty.Callable[[ID], bool]) -> Expr:
         literal = Literal(expression.identifier)
 
         if expression.type_.always_valid:
@@ -4545,38 +4545,38 @@ class FSMGenerator:
         return literal
 
     @_to_ada_expr.register
-    def _(self, expression: ir.IntVal, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntVal, _is_global: ty.Callable[[ID], bool]) -> Expr:
         return Number(expression.value)
 
     @_to_ada_expr.register
-    def _(self, expression: ir.BoolVal, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.BoolVal, _is_global: ty.Callable[[ID], bool]) -> Expr:
         return Literal(str(expression.value))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.First, _is_global: typing.Callable[[ID], bool]) -> Expr:
-        assert isinstance(expression.type_, (ty.AnyInteger, ty.Enumeration))
+    def _(self, expression: ir.First, _is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration))
         return First(self._ada_type(expression.prefix))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Last, _is_global: typing.Callable[[ID], bool]) -> Expr:
-        assert isinstance(expression.type_, (ty.AnyInteger, ty.Enumeration))
+    def _(self, expression: ir.Last, _is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.type_, (rty.AnyInteger, rty.Enumeration))
         return Last(self._ada_type(expression.prefix))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Valid, is_global: typing.Callable[[ID], bool]) -> Expr:
-        if isinstance(expression.prefix_type, ty.Message):
+    def _(self, expression: ir.Valid, is_global: ty.Callable[[ID], bool]) -> Expr:
+        if isinstance(expression.prefix_type, rty.Message):
             return Call(
                 expression.prefix_type.identifier * "Well_Formed_Message",
                 [Variable(context_id(expression.prefix, is_global))],
             )
 
-        if isinstance(expression.prefix_type, ty.Structure):
+        if isinstance(expression.prefix_type, rty.Structure):
             return Call(
                 expression.prefix_type.identifier * "Valid_Structure",
                 [Variable(expression.prefix)],
             )
 
-        if isinstance(expression.prefix_type, ty.Sequence):
+        if isinstance(expression.prefix_type, rty.Sequence):
             return Call(
                 expression.prefix_type.identifier * "Valid",
                 [Variable(context_id(expression.prefix, is_global))],
@@ -4588,25 +4588,25 @@ class FSMGenerator:
         if (
             isinstance(expression.left, ir.IntExpr)
             and isinstance(expression.right, ir.IntExpr)
-            and isinstance(expression.left.type_, ty.Integer)
-            and isinstance(expression.right.type_, ty.Integer)
+            and isinstance(expression.left.type_, rty.Integer)
+            and isinstance(expression.right.type_, rty.Integer)
             and (
-                expression.left.type_ != ty.BASE_INTEGER
-                or expression.right.type_ != ty.BASE_INTEGER
+                expression.left.type_ != rty.BASE_INTEGER
+                or expression.right.type_ != rty.BASE_INTEGER
             )
         ):
-            self._state_machine_context.used_types_body.append(ty.BASE_INTEGER.identifier)
-            self._state_machine_context.referenced_types_body.append(ty.BASE_INTEGER.identifier)
+            self._state_machine_context.used_types_body.append(rty.BASE_INTEGER.identifier)
+            self._state_machine_context.referenced_types_body.append(rty.BASE_INTEGER.identifier)
 
             result = expression.__class__(
                 (
-                    ir.IntConversion(ty.BASE_INTEGER, expression.left)
-                    if expression.left.type_ != ty.BASE_INTEGER
+                    ir.IntConversion(rty.BASE_INTEGER, expression.left)
+                    if expression.left.type_ != rty.BASE_INTEGER
                     else expression.left
                 ),
                 (
-                    ir.IntConversion(ty.BASE_INTEGER, expression.right)
-                    if expression.right.type_ != ty.BASE_INTEGER
+                    ir.IntConversion(rty.BASE_INTEGER, expression.right)
+                    if expression.right.type_ != rty.BASE_INTEGER
                     else expression.right
                 ),
             )
@@ -4620,10 +4620,13 @@ class FSMGenerator:
     def _relation_to_ada_expr(
         self,
         expression: ir.Relation,
-        is_global: typing.Callable[[ID], bool],
+        is_global: ty.Callable[[ID], bool],
     ) -> Expr:
         assert isinstance(expression, (ir.Equal, ir.NotEqual))
-        if isinstance(expression.left.type_, ty.Enumeration) and expression.left.type_.always_valid:
+        if (
+            isinstance(expression.left.type_, rty.Enumeration)
+            and expression.left.type_.always_valid
+        ):
             relation = Equal if isinstance(expression, ir.Equal) else NotEqual
 
             self._state_machine_context.used_types_body.append(expression.left.type_.identifier)
@@ -4640,23 +4643,23 @@ class FSMGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Size, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Size, is_global: ty.Callable[[ID], bool]) -> Expr:
         if (
-            isinstance(expression.prefix_type, ty.AnyInteger)
+            isinstance(expression.prefix_type, rty.AnyInteger)
             or (
-                isinstance(expression.prefix_type, ty.Aggregate)
-                and isinstance(expression.prefix_type.element, ty.AnyInteger)
+                isinstance(expression.prefix_type, rty.Aggregate)
+                and isinstance(expression.prefix_type.element, rty.AnyInteger)
             )
             or (
-                isinstance(expression.prefix_type, (ty.Integer, ty.Enumeration))
+                isinstance(expression.prefix_type, (rty.Integer, rty.Enumeration))
                 and expression.prefix == expression.prefix_type.identifier
             )
         ):
             return Size(expression.prefix)
 
         if (
-            isinstance(expression.prefix_type, (ty.Message, ty.Sequence))
-            and expression.prefix_type != ty.OPAQUE
+            isinstance(expression.prefix_type, (rty.Message, rty.Sequence))
+            and expression.prefix_type != rty.OPAQUE
         ):
             type_ = expression.prefix_type.identifier
             context = context_id(expression.prefix, is_global)
@@ -4665,23 +4668,23 @@ class FSMGenerator:
         assert False
 
     @_to_ada_expr.register
-    def _(self, expression: ir.HasData, is_global: typing.Callable[[ID], bool]) -> Expr:
-        assert isinstance(expression.prefix_type, ty.Message)
+    def _(self, expression: ir.HasData, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.prefix_type, rty.Message)
         type_ = expression.prefix_type.identifier
         context = context_id(expression.prefix, is_global)
         return Greater(Call(type_ * "Byte_Size", [Variable(context)]), Number(0))
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Opaque, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Opaque, is_global: ty.Callable[[ID], bool]) -> Expr:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Head, _is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Head, _is_global: ty.Callable[[ID], bool]) -> Expr:
         _unsupported_expression(expression, "in expression")
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldValidNext, is_global: typing.Callable[[ID], bool]) -> Expr:
-        assert isinstance(expression.message_type, ty.Message)
+    def _(self, expression: ir.FieldValidNext, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.message_type, rty.Message)
         type_name = expression.message_type.identifier
         return Call(
             type_name * "Valid_Next",
@@ -4692,14 +4695,14 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldValid, is_global: typing.Callable[[ID], bool]) -> Expr:
-        assert isinstance(expression.message_type, ty.Message)
+    def _(self, expression: ir.FieldValid, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.message_type, rty.Message)
         type_name = expression.message_type.identifier
         return Call(
             type_name
             * (
                 "Valid"
-                if isinstance(expression.field_type, (ty.Integer, ty.Enumeration))
+                if isinstance(expression.field_type, (rty.Integer, rty.Enumeration))
                 else "Well_Formed"
             ),
             [
@@ -4709,14 +4712,14 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldPresent, is_global: typing.Callable[[ID], bool]) -> Expr:
-        assert isinstance(expression.message_type, ty.Message)
+    def _(self, expression: ir.FieldPresent, is_global: ty.Callable[[ID], bool]) -> Expr:
+        assert isinstance(expression.message_type, rty.Message)
         type_name = expression.message_type.identifier
         return Call(
             type_name
             * (
                 "Valid"
-                if isinstance(expression.field_type, (ty.Integer, ty.Enumeration))
+                if isinstance(expression.field_type, (rty.Integer, rty.Enumeration))
                 else "Well_Formed"
             ),
             [
@@ -4726,20 +4729,20 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldSize, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldSize, is_global: ty.Callable[[ID], bool]) -> Expr:
         type_ = expression.message_type.identifier
-        if isinstance(expression.message_type, ty.Message):
+        if isinstance(expression.message_type, rty.Message):
             context = context_id(expression.message, is_global)
             return Call(
                 type_ * "Field_Size",
                 [Variable(context), Variable(type_ * "F_" + expression.field)],
             )
 
-        assert isinstance(expression.message_type, ty.Structure)
+        assert isinstance(expression.message_type, rty.Structure)
         return Call(type_ * f"Field_Size_{expression.field}", [Variable(expression.message)])
 
     @_to_ada_expr.register
-    def _(self, expression: ir.UnaryExpr, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.UnaryExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
         result = getattr(ada, expression.__class__.__name__)(
             self._to_ada_expr(expression.expression, is_global),
         )
@@ -4747,7 +4750,7 @@ class FSMGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: ir.BinaryExpr, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.BinaryExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
         self._record_used_types(expression)
         name = expression.__class__.__name__
         if name == "And":
@@ -4762,7 +4765,7 @@ class FSMGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Relation, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Relation, is_global: ty.Callable[[ID], bool]) -> Expr:
         relation = self._convert_types_of_int_relation(expression)
         result = getattr(ada, relation.__class__.__name__)(
             self._to_ada_expr(relation.left, is_global),
@@ -4772,7 +4775,7 @@ class FSMGenerator:
         return result
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Equal, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Equal, is_global: ty.Callable[[ID], bool]) -> Expr:
         if expression.left == ir.BoolVal(value=True) and isinstance(expression.right, ir.Var):
             return Variable(variable_id(expression.right.identifier, is_global))
         if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(value=True):
@@ -4787,7 +4790,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.NotEqual, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.NotEqual, is_global: ty.Callable[[ID], bool]) -> Expr:
         if expression.left == ir.BoolVal(value=True) and isinstance(expression.right, ir.Var):
             return Not(Variable(variable_id(expression.right.identifier, is_global)))
         if isinstance(expression.left, ir.Var) and expression.right == ir.BoolVal(value=True):
@@ -4802,14 +4805,14 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Call, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Call, is_global: ty.Callable[[ID], bool]) -> Expr:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: ir.FieldAccess, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.FieldAccess, is_global: ty.Callable[[ID], bool]) -> Expr:
         if expression.field in expression.message_type.parameter_types:
             return Selected(Variable(context_id(expression.message, is_global)), expression.field)
-        if isinstance(expression.message_type, ty.Structure):
+        if isinstance(expression.message_type, rty.Structure):
             raise NotImplementedError
         return Call(
             expression.message_type.identifier * f"Get_{expression.field}",
@@ -4817,13 +4820,13 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.IntFieldAccess, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IntFieldAccess, is_global: ty.Callable[[ID], bool]) -> Expr:
         if expression.field in expression.message_type.parameter_types:
             return Selected(
                 Variable(context_id(expression.message, is_global)),
                 expression.field,
             )
-        if isinstance(expression.message_type, ty.Structure):
+        if isinstance(expression.message_type, rty.Structure):
             return Selected(Variable(expression.message), expression.field)
         return Call(
             expression.message_type.identifier * f"Get_{expression.field}",
@@ -4831,7 +4834,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.IfExpr, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.IfExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
         assert expression.then_expr.is_expr()
         assert expression.else_expr.is_expr()
         return ada.IfThenElse(
@@ -4841,14 +4844,14 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Conversion, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Conversion, is_global: ty.Callable[[ID], bool]) -> Expr:
         return Conversion(
             self._ada_type(expression.target_type.identifier),
             self._to_ada_expr(expression.argument, is_global),
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Agg, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Agg, is_global: ty.Callable[[ID], bool]) -> Expr:
         assert len(expression.elements) > 0
         if len(expression.elements) == 1:
             return NamedAggregate(
@@ -4862,7 +4865,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.NamedAgg, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.NamedAgg, is_global: ty.Callable[[ID], bool]) -> Expr:
         elements: list[tuple[ID | ada.Expr, ada.Expr]] = [
             (
                 n if isinstance(n, ID) else self._to_ada_expr(n, is_global),
@@ -4873,11 +4876,11 @@ class FSMGenerator:
         return NamedAggregate(*elements)
 
     @_to_ada_expr.register
-    def _(self, expression: ir.Str, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.Str, is_global: ty.Callable[[ID], bool]) -> Expr:
         raise NotImplementedError
 
     @_to_ada_expr.register
-    def _(self, expression: ir.CaseExpr, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.CaseExpr, is_global: ty.Callable[[ID], bool]) -> Expr:
         choices = [
             (self._to_ada_expr(choice, is_global), self._to_ada_expr(expr, is_global))
             for choices, expr in expression.choices
@@ -4886,7 +4889,7 @@ class FSMGenerator:
         return ada.CaseExpr(self._to_ada_expr(expression.expression, is_global), choices)
 
     @_to_ada_expr.register
-    def _(self, expression: ir.SufficientSpace, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.SufficientSpace, is_global: ty.Callable[[ID], bool]) -> Expr:
         return Call(
             expression.message_type.identifier * "Sufficient_Space",
             [
@@ -4898,7 +4901,7 @@ class FSMGenerator:
         )
 
     @_to_ada_expr.register
-    def _(self, expression: ir.HasElement, is_global: typing.Callable[[ID], bool]) -> Expr:
+    def _(self, expression: ir.HasElement, is_global: ty.Callable[[ID], bool]) -> Expr:
         return Call(
             expression.prefix_type.identifier * "Has_Element",
             [Variable(context_id(expression.prefix, is_global))],
@@ -4906,8 +4909,8 @@ class FSMGenerator:
 
     def _record_used_types(self, expression: ir.BinaryExpr) -> None:
         for e in [expression.left, expression.right]:
-            if isinstance(e.type_, ty.Integer) or (
-                isinstance(e.type_, ty.Enumeration) and not e.type_.always_valid
+            if isinstance(e.type_, rty.Integer) or (
+                isinstance(e.type_, rty.Enumeration) and not e.type_.always_valid
             ):
                 self._state_machine_context.used_types_body.append(e.type_.identifier)
                 self._state_machine_context.referenced_types_body.append(e.type_.identifier)
@@ -5020,7 +5023,7 @@ class FSMGenerator:
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        assert isinstance(message_aggregate.type_, ty.Message)
+        assert isinstance(message_aggregate.type_, rty.Message)
 
         message_type = message_aggregate.type_
 
@@ -5047,12 +5050,12 @@ class FSMGenerator:
         self,
         message_context: ID,
         field: ID,
-        message_type: ty.Message,
+        message_type: rty.Message,
         value: ir.Expr,
         exception_handler: ExceptionHandler,
         is_global: Callable[[ID], bool],
     ) -> Sequence[Statement]:
-        if isinstance(value, ir.FieldAccess) and value.type_ == ty.OPAQUE:
+        if isinstance(value, ir.FieldAccess) and value.type_ == rty.OPAQUE:
             target_context = message_context
             target_message_type = message_type
             target_field = field
@@ -5061,7 +5064,7 @@ class FSMGenerator:
             source_message_type = value.message_type
             self._state_machine_context.used_types_body.append(const.TYPES_LENGTH)
 
-            if isinstance(source_message_type, ty.Message):
+            if isinstance(source_message_type, rty.Message):
                 return [
                     self._set_opaque_field_to_message_field(
                         target_message_type.identifier,
@@ -5074,7 +5077,7 @@ class FSMGenerator:
                     ),
                 ]
 
-            assert isinstance(source_message_type, ty.Structure)
+            assert isinstance(source_message_type, rty.Structure)
             return [
                 self._set_opaque_field_to_message_field_from_structure(
                     target_message_type.identifier,
@@ -5092,7 +5095,7 @@ class FSMGenerator:
             target_message_type = message_type
             target_field = field
             source_context = context_id(value.prefix, is_global)
-            assert isinstance(value.prefix_type, ty.Message)
+            assert isinstance(value.prefix_type, rty.Message)
             source_message_type = value.prefix_type
             return [
                 self._set_opaque_field_to_message(
@@ -5109,13 +5112,13 @@ class FSMGenerator:
         message_model = self._model_type(message_type_id)
         assert isinstance(message_model, model.Message)
         field_type = message_type.field_types[field]
-        assert isinstance(field_type, ty.NamedTypeClass)
+        assert isinstance(field_type, rty.NamedTypeClass)
         statements: list[Statement] = []
         result = statements
 
-        if isinstance(field_type, ty.Sequence):
+        if isinstance(field_type, rty.Sequence):
             size: Expr
-            if isinstance(value, ir.Var) and isinstance(value.type_, (ty.Message, ty.Sequence)):
+            if isinstance(value, ir.Var) and isinstance(value.type_, (rty.Message, rty.Sequence)):
                 type_ = value.type_.identifier
                 context = context_id(value.identifier, is_global)
                 # TODO(eng/recordflux/RecordFlux#1742): Move check into IR
@@ -5129,7 +5132,7 @@ class FSMGenerator:
                                     Variable(message_type_id * f"F_{field}"),
                                     (
                                         Length(value.identifier)
-                                        if value.type_ == ty.OPAQUE
+                                        if value.type_ == rty.OPAQUE
                                         else Call(type_ * "Byte_Size", [Variable(context)])
                                     ),
                                 ],
@@ -5184,7 +5187,7 @@ class FSMGenerator:
                 value,
                 (ir.Var, ir.EnumLit, ir.BinaryIntExpr, ir.Size),
             )
-            and isinstance(value.type_, (ty.AnyInteger, ty.Enumeration, ty.Aggregate))
+            and isinstance(value.type_, (rty.AnyInteger, rty.Enumeration, rty.Aggregate))
         ):
             if isinstance(value, ir.Agg) and len(value.elements) == 0:
                 statements.append(
@@ -5197,7 +5200,7 @@ class FSMGenerator:
                 ada_value: ada.Expr
                 if (
                     isinstance(value, ir.Var)
-                    and isinstance(value.type_, ty.Enumeration)
+                    and isinstance(value.type_, rty.Enumeration)
                     and value.type_.always_valid
                 ):
                     ada_value = Selected(self._to_ada_expr(value, is_global), "Enum")
@@ -5205,15 +5208,15 @@ class FSMGenerator:
                     ada_value = Literal(value.identifier)
                 else:
                     ada_value = self._to_ada_expr(value, is_global)
-                    if isinstance(field_type, (ty.Enumeration, ty.Integer)):
+                    if isinstance(field_type, (rty.Enumeration, rty.Integer)):
                         ada_value = QualifiedExpr(
                             self._ada_type(field_type.identifier),
                             ada_value,
                         )
                 if (
                     not isinstance(ada_value, Number)
-                    and isinstance(value.type_, ty.NamedTypeClass)
-                    and value.type_ == ty.BOOLEAN
+                    and isinstance(value.type_, rty.NamedTypeClass)
+                    and value.type_ == rty.BOOLEAN
                     and common.has_scalar_value_dependent_condition(message_model)
                 ):
                     to_base_integer = const.BUILTIN_TYPES_CONVERSIONS_PACKAGE * "To_Base_Integer"
@@ -5240,7 +5243,7 @@ class FSMGenerator:
                                         )
                                         if isinstance(
                                             value.type_,
-                                            (ty.Enumeration, ty.AnyInteger),
+                                            (rty.Enumeration, rty.AnyInteger),
                                         )
                                         else None
                                     ),
@@ -5250,7 +5253,7 @@ class FSMGenerator:
                                         if isinstance(value, ir.Agg)
                                         else (
                                             Call(const.TYPES_TO_BIT_LENGTH, [Length(ada_value)])
-                                            if isinstance(value.type_, ty.Sequence)
+                                            if isinstance(value.type_, rty.Sequence)
                                             else Number(0)
                                         )
                                     ),
@@ -5270,7 +5273,7 @@ class FSMGenerator:
                         ),
                     ],
                 )
-        elif isinstance(value, ir.Var) and isinstance(value.type_, ty.Sequence):
+        elif isinstance(value, ir.Var) and isinstance(value.type_, rty.Sequence):
             sequence_context = context_id(value.identifier, is_global)
             sequence_type_id = value.type_.identifier
             statements.extend(
@@ -5304,7 +5307,7 @@ class FSMGenerator:
                     ),
                 ],
             )
-        elif isinstance(value, ir.Var) and isinstance(value.type_, ty.Message):
+        elif isinstance(value, ir.Var) and isinstance(value.type_, rty.Message):
             _unsupported_expression(value, "in message aggregate")
         else:
             _unsupported_expression(value, "as value of message field")
@@ -5817,7 +5820,7 @@ class FSMGenerator:
         sequence_identifier: ID,
         sequence_type: ID,
         target_identifier: ID,
-        target_type: ty.Sequence | ty.Integer | ty.Enumeration | ty.Message,
+        target_type: rty.Sequence | rty.Integer | rty.Enumeration | rty.Message,
         iterator_identifier: ID,
         iterator_type: ID,
         selector_stmts: list[ir.Stmt],
@@ -5832,9 +5835,9 @@ class FSMGenerator:
         assert not isinstance(selector, ir.MsgAgg)
 
         assert (
-            isinstance(target_type.element, (ty.Integer, ty.Enumeration, ty.Message))
-            if isinstance(target_type, ty.Sequence)
-            else isinstance(target_type, (ty.Integer, ty.Enumeration, ty.Message))
+            isinstance(target_type.element, (rty.Integer, rty.Enumeration, rty.Message))
+            if isinstance(target_type, rty.Sequence)
+            else isinstance(target_type, (rty.Integer, rty.Enumeration, rty.Message))
         )
 
         target_type_id = target_type.identifier
@@ -5882,7 +5885,7 @@ class FSMGenerator:
                 ],
             ),
         ]
-        if isinstance(target_type, (ty.Message, ty.Sequence)):
+        if isinstance(target_type, (rty.Message, rty.Sequence)):
             target_invariants += [
                 PragmaStatement(
                     "Loop_Invariant",
@@ -5929,7 +5932,7 @@ class FSMGenerator:
                 ),
             ]
 
-        if isinstance(target_type, ty.Sequence):
+        if isinstance(target_type, rty.Sequence):
             target_invariants += [
                 PragmaStatement(
                     "Loop_Invariant",
@@ -5953,7 +5956,7 @@ class FSMGenerator:
                 is_global,
                 state,
             )
-            if isinstance(target_type, ty.Sequence)
+            if isinstance(target_type, rty.Sequence)
             else self._comprehension_assign_element(
                 target_identifier,
                 target_type,
@@ -6041,7 +6044,7 @@ class FSMGenerator:
     def _comprehension_assign_element(  # noqa: PLR0913
         self,
         target_identifier: ID,
-        target_type: ty.Integer | ty.Enumeration | ty.Message,
+        target_type: rty.Integer | rty.Enumeration | rty.Message,
         selector_stmts: list[ir.Stmt],
         selector: ir.Expr,
         update_context: Sequence[Statement],
@@ -6052,7 +6055,7 @@ class FSMGenerator:
         target_type_id = target_type.identifier
         assign_element: Sequence[Statement]
 
-        if isinstance(target_type, ty.Message):
+        if isinstance(target_type, rty.Message):
             if not isinstance(selector, ir.Var):
                 fail(
                     "expressions other than variables not yet supported"
@@ -6125,7 +6128,7 @@ class FSMGenerator:
                 ),
             ]
 
-        elif isinstance(target_type, (ty.Integer, ty.Enumeration)):
+        elif isinstance(target_type, (rty.Integer, rty.Enumeration)):
             assign_element = [
                 Assignment(
                     Variable(variable_id(target_identifier, is_global)),
@@ -6150,7 +6153,7 @@ class FSMGenerator:
     def _comprehension_append_element(  # noqa: PLR0913
         self,
         target_identifier: ID,
-        target_type: ty.Sequence,
+        target_type: rty.Sequence,
         selector_stmts: list[ir.Stmt],
         selector: ir.Expr,
         _: Sequence[Statement],
@@ -6158,13 +6161,13 @@ class FSMGenerator:
         is_global: Callable[[ID], bool],
         state: ID,
     ) -> Sequence[Statement]:
-        assert isinstance(target_type, ty.Sequence)
+        assert isinstance(target_type, rty.Sequence)
 
         target_type_id = target_type.identifier
         required_space: Expr
         append_element: list[Statement]
 
-        if isinstance(target_type.element, ty.Message):
+        if isinstance(target_type.element, rty.Message):
             if not isinstance(selector, ir.Var):
                 fail(
                     "expressions other than variables not yet supported"
@@ -6209,13 +6212,13 @@ class FSMGenerator:
                 ),
             ]
 
-        elif isinstance(target_type.element, (ty.Integer, ty.Enumeration)):
+        elif isinstance(target_type.element, (rty.Integer, rty.Enumeration)):
             required_space = Size(
                 (
                     target_type.element.identifier + "_Enum"
                     if isinstance(
                         target_type.element,
-                        ty.Enumeration,
+                        rty.Enumeration,
                     )
                     and target_type.element.always_valid
                     else target_type.element.identifier
@@ -6486,7 +6489,7 @@ class FSMGenerator:
     def _convert_type(
         self,
         expression: ir.Expr,
-        target_type: ty.Type,
+        target_type: rty.Type,
     ) -> ir.Expr:
         if target_type.is_compatible_strong(expression.type_) and not isinstance(
             expression,
@@ -6494,7 +6497,7 @@ class FSMGenerator:
         ):
             return expression
 
-        assert isinstance(target_type, (ty.Integer, ty.Enumeration)), target_type
+        assert isinstance(target_type, (rty.Integer, rty.Enumeration)), target_type
 
         self._state_machine_context.referenced_types_body.append(target_type.identifier)
 

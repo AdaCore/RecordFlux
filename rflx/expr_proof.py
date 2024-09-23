@@ -10,7 +10,7 @@ from typing import Final, Union
 
 import z3
 
-from rflx import expr, ty
+from rflx import expr, typing_ as rty
 from rflx.const import MP_CONTEXT
 from rflx.error import are_all_locations_present
 from rflx.identifier import ID
@@ -294,7 +294,7 @@ def _(expression: expr.Literal) -> z3.ExprRef:
 
 @_to_z3.register
 def _(expression: expr.Variable) -> z3.ExprRef:
-    if expression.type_ == ty.BOOLEAN:
+    if expression.type_ == rty.BOOLEAN:
         return z3.Bool(expression.name)
     return z3.Int(expression.name)
 
