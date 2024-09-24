@@ -394,6 +394,7 @@ ADA_GRAMMAR = lark.Lark(
         # 5.1 (4/2)
         compound_statement: \
                                     if_statement
+                                  | block_statement
 
         # 5.2 (2)
         assignment_statement: \
@@ -411,6 +412,13 @@ ADA_GRAMMAR = lark.Lark(
         elsif:                      "elsif" condition "then" sequence_of_statements
         optional_else:              elsebranch?
         elsebranch:                 "else" sequence_of_statements
+
+        # 5.6 (2)
+        block_statement:            "declare" \
+                                        declarative_part \
+                                    "begin" \
+                                        handled_sequence_of_statements \
+                                    "end" ";"
 
         # 6.1 (4.1/2)
         procedure_specification:    "procedure" defining_program_unit_name parameter_profile
@@ -1624,6 +1632,12 @@ class TreeToAda(lark.Transformer[lark.lexer.Token, ada.PackageUnit]):
         data: tuple[list[ada.Statement]],
     ) -> list[ada.Statement]:
         return data[0]
+
+    def block_statement(
+        self,
+        data: tuple[list[ada.Declaration], list[ada.Statement]],
+    ) -> ada.Declare:
+        return ada.Declare(declarations=data[0], statements=data[1])
 
     def procedure_specification(
         self,
